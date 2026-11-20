@@ -326,6 +326,7 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
   examples: [
     '~ deals combat damage to a player',
     '~ deals combat damage to an opponent',
+    'a creature deals combat damage to one of your opponents',
     '~ deals combat damage to a creature',
     '~ deals combat damage to a player or planeswalker',
     '~ deals combat damage to a player who controls more lands than you',
@@ -364,6 +365,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
         damagedWords('playerOrPlaneswalker', ' to a player or planeswalker'),
         damagedWords('player', ' to a player'),
         damagedWords('opponent', ' to an opponent'),
+        // Issue 101 (Gix, Yawgmoth Praetor): "one of your opponents" is an opponent of the controller.
+        damagedWords('opponent', ' to one of your opponents'),
         damagedWords('creature', ' to a creature'),
         damagedWords(undefined, ''),
       ),

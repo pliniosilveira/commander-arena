@@ -78,6 +78,8 @@ describe('amounts that read an object', () => {
       'times',
       'lifeLostThisWay',
       'lifeLostThisTurn',
+      // Issue 101: the creatures attacking the player a loseLife affects.
+      'attackersOfAffected',
       // CR 402.1: the cards in that player's hand, read for each player a dealDamage hurts.
       'cardsInHandOfAffected',
       'lifeGainedThisTurn',
@@ -102,6 +104,7 @@ describe('amounts that read an object', () => {
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'differentManaValuesAmong',
+      'differentNamesAmong',
       'timesAttacked',
       // Issue 81 (Omnath): "for each unspent mana you have".
       'unspentMana',

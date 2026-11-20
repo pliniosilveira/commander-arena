@@ -618,6 +618,9 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     "target creature that's red or green",
     'target creature with flying',
     'target nontoken creature',
+    // Issue 101 (CR 111.1): a token named by the word after the noun.
+    'target creature token you control',
+    'up to one target creature token you control',
     'target creature without flying',
     'up to three target nonattacking creatures',
     'target creature an opponent controls with mana value 3 or greater',
@@ -677,9 +680,13 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   parse: targetOf(
     ID.targetPermanent,
     (plural) => {
+      // Issue 101 (Kaya, Geist Hunter): "target creature token you control", the word "token" after the noun (CR 111.1).
+      // The bare "target creature token" is `noun.target-creature-token`'s: here a token is named with a controller ("you control").
+      const withToken = (p: Parser<IrFilter>): Parser<IrFilter> =>
+        satisfy(p, (f) => f.token !== true || f.controller !== undefined);
       const base = plural
-        ? permanentPhrase(true, 'all')
-        : withColorList(permanentPhrase(false, 'all'));
+        ? withToken(permanentPhrase(true, 'all', true))
+        : withColorList(withToken(permanentPhrase(false, 'all', true)));
       return choice(
         map(sequence(literal('nonattacking '), base), ([, filter]) => ({
           ...filter,

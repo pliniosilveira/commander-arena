@@ -57,6 +57,13 @@ interface TokenEffect {
   >;
 }
 
+/** "Until end of turn, ... twice that many of those tokens are created instead" (issue 101): the doubling an effect of the game made, as the replacement of a permanent would say it. */
+function doublingOf(
+  filter: import('../ast/types').ObjectFilter,
+): Extract<TokenEffect['replacement'], { mode: 'double' }> {
+  return { kind: 'tokensInstead', what: filter, mode: 'double' };
+}
+
 /** More effects than this on one event and the question is asked without searching (it never skips a question that should be asked). */
 const MAX_SEARCHED = 8;
 
@@ -97,6 +104,19 @@ function tokenEffects(state: GameState, seat: SeatId): readonly TokenEffect[] {
           replacement: ability.replacement,
         },
       });
+    });
+  }
+  // Issue 101 (Kaya, Geist Hunter, CR 614.1a, 613.7): the doublings an effect of the game made until end of turn, among the permanents' by timestamp.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'tokensDoubled' || e.change.controller !== seat) continue;
+    found.push({
+      timestamp: e.timestamp,
+      effect: {
+        key: `tokens:${e.id}`,
+        object: e.change.source,
+        objectName: 'an effect',
+        replacement: doublingOf(e.change.filter),
+      },
     });
   }
   return found.sort((a, b) => a.timestamp - b.timestamp).map((f) => f.effect);

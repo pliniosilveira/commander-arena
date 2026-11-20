@@ -10,7 +10,7 @@
  * as it would be with the permanent not yet on the battlefield. That is how the state is when
  * `moveObject` calls these: the object has left its old zone and is not yet on the battlefield.
  */
-import type { Ability, Cost, CountAmount, Replacement } from '../ast/types';
+import type { Ability, Amount, Cost, CountAmount, Replacement } from '../ast/types';
 import type { GameState } from '../state/types';
 import type { ChoiceKind } from './chosen';
 import { type ConditionContext, evaluateCondition } from './conditions';
@@ -117,7 +117,7 @@ export function entersWithCounters(
   x = 0,
   escaped = false,
   /** Reads a `countOf` as the permanent enters (D-131): "for each Zombie card in your graveyard". */
-  counted: (count: CountAmount) => number = () => 0,
+  counted: (count: CountAmount | Extract<Amount, { kind: 'diedThisTurn' }>) => number = () => 0,
   /** The times the spell the permanent came from was kicked (D-254, CR 702.33c): "for each time it was kicked". 0 for a permanent that was not cast. */
   kicks = 0,
 ): Record<string, number> {
@@ -128,7 +128,7 @@ export function entersWithCounters(
       const count =
         typeof r.count === 'number'
           ? r.count
-          : r.count.kind === 'countOf'
+          : r.count.kind === 'countOf' || r.count.kind === 'diedThisTurn'
             ? counted(r.count)
             : r.count.kind === 'sum'
               ? r.count.of.reduce((n, part) => n + counted(part), 0)

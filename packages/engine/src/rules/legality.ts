@@ -187,6 +187,15 @@ export function mayCastPlotted(state: GameState, seat: SeatId, obj: GameObject):
  * CR 601.2, 305.1, 611.2a (D-151): whether an effect ("You may play that card this turn") lets `seat` cast or play the card `obj` in exile: a
  * `playPermission` of the seat that names this very object (a card that left exile is a new one, CR 400.7) and has not ended.
  */
+/** CR 903.3, 508.1 (issue 101): whether `seat` declared a commander of theirs as an attacker this turn (any combat phase; a commander that has died since still counts). */
+function attackedWithCommanderThisTurn(state: GameState, seat: SeatId): boolean {
+  return state.turnLog.attackedWith.some((a) => {
+    if (a.seat !== seat) return false;
+    const obj = state.objects[a.object];
+    return obj !== undefined && isCommanderCardId(state, obj.card);
+  });
+}
+
 export function mayPlayFromExile(
   state: GameState,
   seat: SeatId,
@@ -208,7 +217,9 @@ export function mayPlayFromExile(
         // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
         (asLand || (e.change.free === true) === free) &&
         // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
-        !(asLand && e.change.castOnly === true),
+        !(asLand && e.change.castOnly === true) &&
+        // Issue 101 (Neriv, CR 903.3): "during any turn you attacked with a commander".
+        (e.change.whenAttackedWithCommander !== true || attackedWithCommanderThisTurn(state, seat)),
     )
   );
 }

@@ -40,6 +40,22 @@ test('the first printing that has pictures is taken; one without is skipped', ()
   expect(parseCommanderSearch(answer)?.normal).toBe('https://cards.scryfall.io/normal/front/a.jpg');
 });
 
+test('a printing that shows another name than the card is skipped', () => {
+  const answer = {
+    data: [
+      { name: 'Giada, Font of Hope', printed_name: 'Miku, Font of Pop', image_uris: IMG('miku') },
+      {
+        name: 'Giada, Font of Hope',
+        printed_name: 'Giada, Font of Hope',
+        image_uris: IMG('giada'),
+      },
+    ],
+  };
+  expect(parseCommanderSearch(answer)?.normal).toBe(
+    'https://cards.scryfall.io/normal/front/giada.jpg',
+  );
+});
+
 test('an empty or malformed answer, or images from another host, is no match', () => {
   expect(parseCommanderSearch({ object: 'list', data: [] })).toBeNull();
   expect(parseCommanderSearch(null)).toBeNull();

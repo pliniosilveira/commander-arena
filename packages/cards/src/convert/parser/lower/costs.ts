@@ -90,7 +90,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return options.x === true ? ok({ kind: 'payXLife' }) : failure(cost);
     case 'discardX':
       // CR 107.3a, 601.2b (D-386): "discard X cards" is announced as the spell is cast; the engine runs it as an additional cost of a spell only.
-      return options.discardX === true ? ok({ kind: 'discardX' }) : failure(cost);
+      if (options.discardX === true) return ok({ kind: 'discardX' });
+      // Issue 101 (Gix, CR 107.3a, 602.2b): in the cost of an ordinary activated ability it is the `discard` cost with `countX`, the X announced as the ability is activated.
+      return options.ordinary === true
+        ? ok({ kind: 'discard', count: 0, countX: true })
+        : failure(cost);
     case 'blight':
       // CR 701.68a (D-407): Blight 1 is paid as the cost of an ordinary activated ability: the player chooses the creature as it is activated.
       return options.ordinary === true ? ok({ kind: 'blight', count: cost.count }) : failure(cost);

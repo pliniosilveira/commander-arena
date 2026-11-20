@@ -22,6 +22,7 @@ import {
   ANNIHILATOR_WORD,
   grantedKeyword,
   landwalkOf,
+  MOBILIZE_WORD,
   WARD_WORD,
 } from '../rules/keyword/vocabulary';
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
@@ -531,6 +532,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
       // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
       if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
+      if (MOBILIZE_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:mobilize'];
       // D-640, D-638: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
       if (ANNIHILATOR_WORD.test(effect.keyword)) {
         return ['static:grantKeyword', 'keyword:annihilator'];

@@ -11,6 +11,7 @@ import {
 } from '../../combinators';
 import type { IrAbility, IrAmount, IrClause, IrCounterSpec, Span } from '../../ir/types';
 import { countAmount } from '../amount/count';
+import { HISTORY_VALUE } from '../amount/history';
 import { positiveCount } from '../amount/index';
 import { family, spanned } from '../registry';
 
@@ -59,6 +60,26 @@ export function countersTail(
     };
   };
   return (ctx, pos) => {
+    // Issue 101 (Bone Devourer, CR 614.12): "~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn": a count of the game's history, read as it enters.
+    if (allowEach) {
+      const counted = sequence(
+        literal(' with a number of '),
+        spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+        pattern(/ counters on it equal to /i),
+        HISTORY_VALUE,
+        literal('.'),
+      )(ctx, pos);
+      if (counted.ok) {
+        const [, kind, , amount] = counted.value;
+        const counter: IrCounterSpec = {
+          kind: 'counterSpec',
+          name: kind.value[0].toLowerCase(),
+          span: kind.span,
+          rule,
+        };
+        return { ok: true, value: { count: amount, counter }, pos: counted.pos };
+      }
+    }
     const r = sequence(
       literal(' with '),
       count,

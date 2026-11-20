@@ -349,10 +349,13 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           ),
           null,
         ),
-        // CR 508.4, 110.5b: "that's tapped and attacking", said of one token.
+        // CR 508.4, 110.5b: "that's tapped and attacking", said of one token, "that are tapped and attacking" of several (Hero of Bladehold).
         optional(
           quiet(
-            map(pattern(/ that['’]s tapped and attacking(?![\p{L}\p{N}])/iu), () => true as const),
+            map(
+              pattern(/ that(?:['’]s| are) tapped and attacking(?![\p{L}\p{N}])/iu),
+              () => true as const,
+            ),
           ),
           null,
         ),
@@ -453,6 +456,7 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     "a 1/1 red Goblin creature token that's tapped and attacking",
     'a 1/1 red Goblin creature token that’s tapped and attacking',
     "a 1/1 white Soldier creature token with flying that's tapped and attacking",
+    'two 1/1 white Soldier creature tokens that are tapped and attacking',
   ],
   rejects: [
     "a 1/1 red Goblin creature token that's tapped and attacking and",

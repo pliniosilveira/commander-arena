@@ -30,7 +30,7 @@ import {
 } from './types';
 
 export interface ScenarioBuilder {
-  /** The seat the following calls describe. Exactly two seats exist (0 and 1). */
+  /** The seat the following calls describe: 0 to `seats - 1` (two seats unless `scenario({ seats })` says more). */
   seat(seat: SeatId): ScenarioBuilder;
   life(life: number): ScenarioBuilder;
   poison(counters: number): ScenarioBuilder;
@@ -93,11 +93,20 @@ function entries<O extends PlaceOptions>(args: ZoneArgs<O>): { name: string; opt
   });
 }
 
-export function scenario(): ScenarioBuilder {
+export interface ScenarioOptions {
+  /** How many seats the game has, 2 to 4. Default 2. */
+  readonly seats?: number;
+}
+
+export function scenario(options: ScenarioOptions = {}): ScenarioBuilder {
+  const seatCount = options.seats ?? 2;
+  if (!Number.isInteger(seatCount) || seatCount < 2 || seatCount > 4) {
+    throw new ScenarioError(`A scenario has 2 to 4 seats, not ${seatCount}`);
+  }
   const spec: ScenarioSpec = {
     seed: 1,
     settings: {},
-    seats: [emptySeatSpec(), emptySeatSpec()],
+    seats: Array.from({ length: seatCount }, () => emptySeatSpec()),
     placements: [],
     custom: new Map<string, CardDefinition>(),
     step: 'precombatMain',
@@ -106,7 +115,7 @@ export function scenario(): ScenarioBuilder {
   let current: SeatId | null = null;
 
   const scope = (what: string): SeatId => {
-    if (current === null) throw new ScenarioError(`Call .seat(0) or .seat(1) before .${what}()`);
+    if (current === null) throw new ScenarioError(`Call .seat(n) before .${what}()`);
     return current;
   };
   const seatSpec = (what: string) => {
@@ -127,9 +136,9 @@ export function scenario(): ScenarioBuilder {
 
   const builder: ScenarioBuilder = {
     seat(seat) {
-      if (seat !== 0 && seat !== 1) {
+      if (!Number.isInteger(seat) || seat < 0 || seat >= seatCount) {
         throw new ScenarioError(
-          `Seat ${seat} does not exist: the engine supports exactly two seats`,
+          `Seat ${seat} does not exist: this scenario has ${seatCount} seats (0 to ${seatCount - 1})`,
         );
       }
       current = seat;

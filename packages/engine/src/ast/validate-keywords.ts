@@ -87,6 +87,18 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         }
       }
       return true;
+    case 'fabricate':
+      // CR 702.123a: "Fabricate N": N is a number, at least 1.
+      if (!isCount(k.count) || k.count < 1) {
+        issue(out, `${path}.count`, 'fabricate needs a positive integer');
+      }
+      return true;
+    case 'mobilize':
+      // CR 702.181a: "Mobilize N": N is a number, at least 1, or the power of the creature ("mobilize X, where X is its power").
+      if (k.count !== 'power' && (!isCount(k.count) || k.count < 1)) {
+        issue(out, `${path}.count`, 'mobilize needs a positive integer or its power');
+      }
+      return true;
     case 'afflict':
     case 'annihilator':
     case 'backup':

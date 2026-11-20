@@ -416,6 +416,33 @@ export function runEntersTappedGroup(
 }
 
 /**
+ * "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead" (issue 101, CR 614.1a, 614.5): one
+ * continuous effect with no set of objects, read where tokens would be created (`rules/token-replacement.ts`).
+ */
+export function runDoubleTokens(
+  state: GameState,
+  node: Extract<Effect, { kind: 'doubleTokens' }>,
+  ctx: SelectContext,
+): StepOutcome {
+  // The effect names its source in the question a player is asked when several replacements apply; a spell or ability always has one.
+  if (ctx.source === null) return done(state);
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: 'endOfTurn',
+    change: {
+      kind: 'tokensDoubled',
+      filter: node.tokens,
+      controller: ctx.controller,
+      source: ctx.source,
+    },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "Until your next turn" (D-179, CR 500.1): the effects waiting for a turn of `seat` end as that turn begins, when it is the turn they were
  * waiting for (numbered as they say or later).
  */

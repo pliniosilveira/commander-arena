@@ -41,7 +41,7 @@ export interface SeatSpec {
 export interface ScenarioSpec {
   seed: number;
   settings: Partial<GameSettings>;
-  seats: [SeatSpec, SeatSpec];
+  seats: SeatSpec[];
   placements: Placement[];
   custom: ReadonlyMap<string, CardDefinition>;
   step: StepId;

@@ -8,7 +8,7 @@ import { defineRule, quietly, spanned } from '../registry';
 import { customToken } from '../token/index';
 import { replacement } from './shared';
 
-const LEAD = 'if one or more artifact tokens would be created under your control, ';
+const LEAD = /if one or more (artifact|creature) tokens would be created under your control, /iu;
 
 const that = (words: string) =>
   map(
@@ -33,13 +33,15 @@ export const REPLACEMENT_TOKENS_INSTEAD = defineRule<IrAbility>({
     'CR 616.1 (Interaction of Replacement and/or Prevention Effects)',
   ],
   examples: [
+    // Issue 101 (Divine Visitation, CR 614.1a, 111.2): the tokens that would be created are creature tokens.
+    'If one or more creature tokens would be created under your control, that many 4/4 white Angel creature tokens with flying and vigilance are created instead.',
     'If one or more artifact tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead.',
     'If one or more artifact tokens would be created under your control, those tokens plus an additional 1/1 colorless Thopter artifact creature token with flying are created instead.',
   ],
   rejects: [
     'If one or more artifact tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead',
+    'If one or more land tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead.',
     'If one or more artifact tokens would be created under an opponent’s control, that many 5/5 red Dragon creature tokens with flying are created instead.',
-    'If one or more creature tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead.',
     'If one or more artifact tokens would be created under your control, two 5/5 red Dragon creature tokens with flying are created instead.',
     'If one or more artifact tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created.',
     'If one or more artifact tokens would be created under your control, those tokens plus a 1/1 colorless Thopter artifact creature token with flying are created instead.',
@@ -49,8 +51,10 @@ export const REPLACEMENT_TOKENS_INSTEAD = defineRule<IrAbility>({
   ],
   parse: (ctx, pos) => {
     const id = 'replacement.tokens-instead';
-    const head = literal(LEAD)(ctx, pos);
+    const head = pattern(LEAD)(ctx, pos);
     if (!head.ok) return head;
+    // Issue 101 (Divine Visitation): "creature tokens" as well as "artifact tokens".
+    const kind = head.value[1]?.toLowerCase() === 'creature' ? 'creature' : 'artifact';
     const tail = sequence(
       choice(
         map(
@@ -82,7 +86,7 @@ export const REPLACEMENT_TOKENS_INSTEAD = defineRule<IrAbility>({
     const what: IrNoun = {
       kind: 'noun',
       det: 'each',
-      filter: { types: ['artifact'], token: true, raw: 'artifact tokens' },
+      filter: { types: [kind], token: true, raw: `${kind} tokens` },
       upTo: false,
       plural: true,
       other: false,

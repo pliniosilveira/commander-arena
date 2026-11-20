@@ -104,8 +104,12 @@ export function checkDragonsEffect(
       // Lobelia (CR 118.9): "without paying its mana cost", of the cards exiled with this permanent.
       if (e.free !== undefined) {
         if (e.free !== true) issue(out, `${path}.free`, 'free must be true when present');
-        if (kindOf(e.objects) !== 'linkedExile') {
-          issue(out, `${path}.free`, "a free play permission names 'linkedExile' cards");
+        if (kindOf(e.objects) !== 'linkedExile' && kindOf(e.objects) !== 'moved') {
+          issue(out, `${path}.free`, "a free play permission names 'linkedExile' or 'moved' cards");
+        }
+        // Issue 101: no mana is spent on a free play, so the any-color rider has nothing to act on.
+        if (e.anyManaColor !== undefined) {
+          issue(out, `${path}.free`, 'a free play does not spend mana as though of any color');
         }
       }
       if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
@@ -117,6 +121,23 @@ export function checkDragonsEffect(
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
+      }
+      // Issue 101 (CR 903.3, 508.1): "during any turn you attacked with a commander": the permission is used in some turns only, so it lasts while the cards are exiled, and it is to play.
+      if (e.duringTurnsAttackedWithCommander !== undefined) {
+        if (e.duringTurnsAttackedWithCommander !== true) {
+          issue(
+            out,
+            `${path}.duringTurnsAttackedWithCommander`,
+            'duringTurnsAttackedWithCommander must be true when present',
+          );
+        }
+        if (e.lasts !== 'whileExiled' || e.castOnly !== undefined) {
+          issue(
+            out,
+            `${path}.duringTurnsAttackedWithCommander`,
+            'a permission for turns of a commander attack lasts while exiled and is not castOnly',
+          );
+        }
       }
       // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" is about casting a spell.
       if (e.anyManaColor !== undefined) {

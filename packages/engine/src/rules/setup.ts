@@ -33,6 +33,12 @@ export interface GameConfig {
   readonly seed: number;
   readonly decks: readonly DeckConfig[];
   readonly settings?: Partial<GameSettings>;
+  /**
+   * Allow 3 or 4 decks. Off by default and off in the app: the rules for leaving the game
+   * (CR 800.4) are not built yet, so a game with more than two seats can reach engine gaps. The
+   * probe, the soak and the scenario tests turn it on; it goes away with the release phase.
+   */
+  readonly allowMoreThanTwoSeats?: boolean;
 }
 
 const OPENING_HAND = 7;
@@ -64,10 +70,16 @@ function emptySeat(id: SeatId): SeatState {
 
 /** Creates a game and stops at the first mulligan decision (CR 103.5). */
 export function createGame(config: GameConfig): Outcome {
-  if (config.decks.length !== 2) {
-    // v1 is one human against one AI. Every rule below is written for any number of seats; the
-    // multiplayer pieces (800.4a leaving the game, APNAP around the table) arrive with multiplayer.
-    throw new Error('The engine supports exactly two seats');
+  // v1 is one human against one AI. Every rule below is written for any number of seats; the
+  // multiplayer pieces (800.4a leaving the game, APNAP around the table) arrive with multiplayer,
+  // so 3 or 4 seats are reachable only behind `allowMoreThanTwoSeats`.
+  const maxSeats = config.allowMoreThanTwoSeats === true ? 4 : 2;
+  if (config.decks.length < 2 || config.decks.length > maxSeats) {
+    throw new Error(
+      maxSeats === 2
+        ? 'The engine supports exactly two seats'
+        : 'The engine supports two to four seats',
+    );
   }
   const settings: GameSettings = { ...DEFAULT_SETTINGS, ...config.settings };
   const definitions: CardDefinition[] = [];

@@ -55,6 +55,7 @@ import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
+import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
@@ -613,6 +614,7 @@ export const CONDITION_RULES = [
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
+  ...MARDU_SURGE_CONDITION_RULES,
   // Twilight Diviner (Meren deck): "they entered or were cast from a graveyard".
   ...ENTERED_FROM_GRAVEYARD_CONDITION_RULES,
   // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
