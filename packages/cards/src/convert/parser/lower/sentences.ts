@@ -1101,6 +1101,19 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
       rule: cast.rule,
     };
   }
+  // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped.": a card chosen from the graveyard, the choice of none or one is
+  // the offer itself (the engine's `moveToZone` of a `choose` with `optional`), so it is not wrapped in a `may`.
+  if (clause?.verb === 'putFromZone' && clause.optional && more.length === 0) {
+    if (
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined
+    ) {
+      return refuse(sentence);
+    }
+    const may = { kind: 'flag' as const, value: true, span: clause.span, rule: clause.rule };
+    return lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
+  }
   if (
     clause === undefined ||
     more.length > 0 ||

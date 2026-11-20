@@ -152,3 +152,44 @@ describe('"Whenever a land you control enters, you may have target player lose 3
     g.expect.counters(fiend.name, {});
   });
 });
+
+describe('"Whenever ~ attacks, mill three cards. Then you may return a land card from your graveyard to the battlefield tapped." (CR 701.17, 608.2d, 110.2a)', () => {
+  const teval = parsed(
+    'SYNTHETIC Parsed Balance',
+    'Creature — Spirit Dragon',
+    'Whenever ~ attacks, mill three cards. Then you may return a land card from your graveyard to the battlefield tapped.',
+    { manaCost: '{1}{B}', power: '2', toughness: '2', colors: ['B'] },
+  );
+  const build = () =>
+    scenario()
+      .seat(0)
+      .define(teval)
+      .battlefield(teval.name)
+      .graveyard('Forest')
+      .library('Island', 'Island', 'Island', 'Island', 'Island')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('mills three, then the land of the graveyard returns tapped on request', () => {
+    const g = build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([teval.name]);
+    g.passAll();
+    g.expect.zone('Island', 'graveyard', { seat: 0 });
+    g.act(0).chooseCards('Forest');
+    g.expect.zone('Forest', 'battlefield', { seat: 0 });
+    g.expect.tapped('Forest');
+  });
+
+  test('declining leaves the land in the graveyard', () => {
+    const g = build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([teval.name]);
+    g.passAll();
+    g.act(0).chooseCards();
+    g.expect.zone('Forest', 'graveyard', { seat: 0 });
+  });
+});

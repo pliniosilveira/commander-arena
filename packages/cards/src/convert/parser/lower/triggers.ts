@@ -1631,6 +1631,8 @@ function lowerTriggeredAbility(
       c.verb === 'putMovedOntoBattlefield' ||
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
+      // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped": the engine's choice of none or one card is the offer.
+      (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
       // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
