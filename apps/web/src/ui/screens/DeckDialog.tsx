@@ -68,12 +68,12 @@ export function DeckDialog({
   const inTab = decks
     .filter((deck) => deck.kind === tab)
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
-  // The search matches the name, the commander and the blurb, ignoring case.
+  // The search matches the name and the commander, ignoring case.
   const shown = inTab.filter(
     (deck) =>
       matchesColorFilter(deck.colors, colorFilter) &&
       (needle === '' ||
-        `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle)),
+        `${deck.name} ${deck.commander}`.toLowerCase().includes(needle)),
   );
 
   // A random button chooses a deck at once.
@@ -198,7 +198,6 @@ export function DeckDialog({
                   {deck.name}
                   {deck.edited && <span className="scr-deck-tag">edited</span>}
                 </span>
-                <span className="scr-deck-blurb">{deck.blurb}</span>
                 {(deck.set !== undefined || deck.year !== undefined) && (
                   <span className="scr-deck-set">
                     {[deck.set, deck.year].filter((part) => part !== undefined).join(' · ')}
