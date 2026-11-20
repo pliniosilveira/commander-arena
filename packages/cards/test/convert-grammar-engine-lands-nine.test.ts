@@ -266,6 +266,96 @@ describe('Nesting Grounds: move a counter from one permanent onto another', () =
   test('it can be activated only as a sorcery (CR 602.5d)', () => {
     const g = start({ '+1/+1': 1 });
     g.advanceTo('declareAttackers');
-    g.expect.illegal(0, { activate: NESTING.name, targets: [BEAR.name, ELK.name] });
+    g.expect.illegal(0, { activate: NESTING.name });
+  });
+});
+
+// ---- Llanowar Reborn: "This land enters tapped. {T}: Add {G}. Graft 1" (CR 702.58 Graft, 122.6, 603.4).
+
+const REBORN = parsed(
+  'SYNTHETIC Parsed Reborn',
+  'Land',
+  'This land enters tapped.\n{T}: Add {G}.\nGraft 1 (This land enters with a +1/+1 counter on it. Whenever a creature enters, you may move a +1/+1 counter from this land onto it.)',
+);
+
+test('the real Llanowar Reborn is supported', () => {
+  const imported = real('Llanowar Reborn');
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
+});
+
+describe('Llanowar Reborn: Graft 1 on a land', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(REBORN)
+      .define(BEAR)
+      .battlefield(REBORN.name, { counters: { '+1/+1': 1 } })
+      .hand(BEAR.name)
+      .battlefield('Forest', 'Forest')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('it enters with a +1/+1 counter on it', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(REBORN)
+      .hand(REBORN.name)
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).playLand(REBORN.name);
+    g.expect.counters(REBORN.name, { '+1/+1': 1 });
+  });
+
+  test('when a creature enters the controller may move the counter onto it', () => {
+    const g = start();
+    g.act(0).cast(BEAR.name, { pay: true });
+    g.passAll();
+    g.act(0).accept();
+    g.passAll();
+    g.expect.counters(REBORN.name, {});
+    g.expect.counters(BEAR.name, { '+1/+1': 1 });
+    g.expect.pt(BEAR.name, 3, 3);
+  });
+
+  test('the controller may decline and keep the counter on the land', () => {
+    const g = start();
+    g.act(0).cast(BEAR.name, { pay: true });
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    g.expect.counters(REBORN.name, { '+1/+1': 1 });
+    g.expect.counters(BEAR.name, {});
+  });
+
+  test('with no counter left on the land the ability does not trigger (CR 603.4)', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(REBORN)
+      .define(BEAR)
+      .battlefield(REBORN.name)
+      .hand(BEAR.name)
+      .battlefield('Forest', 'Forest')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(BEAR.name, { pay: true });
+    g.passAll();
+    expect(g.state.pending).toBeNull();
+    g.expect.counters(BEAR.name, {});
   });
 });

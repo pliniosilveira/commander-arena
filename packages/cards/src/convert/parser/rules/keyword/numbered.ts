@@ -21,6 +21,8 @@ export const NUMBERED_KEYWORDS = [
   'devour',
   // Stage P68 (D-230, CR 702.165): "Backup 1".
   'backup',
+  // CR 702.58 (Graft): "Graft 1".
+  'graft',
 ] as const;
 
 /** "toxic 1": the word, a space and a positive whole number in digits (the form Oracle text uses). */

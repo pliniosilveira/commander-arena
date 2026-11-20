@@ -408,6 +408,63 @@ function lowerNumbered(
 }
 
 /**
+ * "Graft 1" (CR 702.58 Graft): "This permanent enters with N +1/+1 counters on it. Whenever another creature enters, if this permanent has a +1/+1 counter on it, you may move a
+ * +1/+1 counter from this permanent onto that creature." The two ordinary abilities the keyword stands for, as the reminder text says them: the replacement that gives the counters
+ * and the triggered ability that moves one (the engine's `moveCounter`). "Another" is the creature that is not this permanent, so a creature with Graft does not trigger on its own
+ * entering. The rule text of CR 702.58 could not be read in this environment (the repository keeps no CR text, `AGENTS.md`), so the wording is the reminder text of the cards.
+ */
+function lowerGraft(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  const [count, ...more] = ability.params;
+  if (count?.kind !== 'number' || more.length > 0 || ability.cost !== undefined) {
+    return failure(ability);
+  }
+  if (!Number.isSafeInteger(count.value) || count.value < 1) return failure(ability);
+  const blocked = gate(ability, [
+    'ability:replacement',
+    'replacement:entersWithCounters',
+    'ability:triggered',
+    'trigger:entersBattlefield',
+    'effect:may',
+    'effect:moveCounter',
+    'selector:triggerSubject',
+    'condition:amountIs',
+    'amount:countersOn',
+  ]);
+  if (blocked !== null) return blocked;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'replacement',
+        replacement: { kind: 'entersWithCounters', counter: '+1/+1', count: count.value },
+      },
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'entersBattlefield',
+          what: { types: ['creature'], other: true },
+        },
+        interveningIf: {
+          kind: 'amountIs',
+          amount: { kind: 'countersOn', of: { kind: 'this' }, counter: '+1/+1' },
+          compare: { cmp: 'atLeast', value: 1 },
+        },
+        effect: {
+          kind: 'may',
+          effect: {
+            kind: 'moveCounter',
+            from: { kind: 'this' },
+            to: { kind: 'triggerSubject' },
+            counter: '+1/+1',
+          },
+        },
+      },
+    ],
+    rule: 'keyword.graft',
+  };
+}
+
+/**
  * "Affinity for artifacts" (CR 702.41a, stage P21): the keyword with the filter of what it counts. The
  * engine counts the permanents the caster controls on the battlefield (`affinity` is a static cost
  * reduction of the spell itself), so the filter names card types and subtypes and nothing else: the
@@ -527,6 +584,7 @@ export function lowerKeyword(
   if (ability.name === 'station') return lowerStation(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
   if (ability.name === 'enchantPlayer') return lowerEnchantPlayer(ability);
+  if (ability.name === 'graft') return lowerGraft(ability);
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
