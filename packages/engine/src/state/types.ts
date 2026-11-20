@@ -1847,6 +1847,11 @@ export type Instruction =
        * without, nobody may look at it (D-187: its `exiledFaceDown` is set, and an effect may let a player look).
        */
       readonly faceDown?: true;
+      /**
+       * With `faceDown` and `linkTo`: the player who looked at the card as it was exiled (Lobelia, Defender of Bag End, CR 406.3) and may go on looking at it; the card is `exiledFaceDown` with
+       * this player in its `lookers`, not Hideaway's (whose looker is whoever controls the permanent).
+       */
+      readonly lookBy?: SeatId;
       /** The land is played (CR 305.1, 305.2a: it counts as the player's land play), as an effect allows (`castFree` with `play`, D-145). */
       readonly playAsLand?: true;
       /**
@@ -2122,7 +2127,8 @@ export type ContinuousChange =
       readonly castOnly?: true;
       /**
        * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
-       * (the plain cast, paying the mana cost, is not allowed by this permission). Only with `castOnly`.
+       * (the plain cast, paying the mana cost, is not allowed by this permission). With `castOnly` (Lorehold group 2), or without it (`mayPlay.free`, Lobelia, Defender of Bag End: a land card
+       * is played as usual).
        */
       readonly free?: true;
       /**

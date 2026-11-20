@@ -204,7 +204,8 @@ export function mayPlayFromExile(
         e.change.kind === 'playPermission' &&
         e.change.seat === seat &&
         e.objects.includes(obj.id) &&
-        (e.change.free === true) === free &&
+        // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
+        (asLand || (e.change.free === true) === free) &&
         // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
         !(asLand && e.change.castOnly === true),
     )
@@ -1059,7 +1060,10 @@ export function flashbackObjects(state: GameState, seat: SeatId): ObjectId[] {
 
 /** Every land the seat could play now, one entry per land face of a card with several (CR 712.12). */
 export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
-  const fromExile = state.exile.filter((id) => mayPlayFromExile(state, seat, getObject(state, id)));
+  // Lobelia, Defender of Bag End (CR 305.1): a land card an effect lets the seat play without paying its mana cost is a land to play (`asLand`, as `canPlayLand` asks).
+  const fromExile = state.exile.filter((id) =>
+    mayPlayFromExile(state, seat, getObject(state, id), true),
+  );
   const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
     (id) =>
       mayPlayFromGraveyard(state, seat, getObject(state, id)) ||
