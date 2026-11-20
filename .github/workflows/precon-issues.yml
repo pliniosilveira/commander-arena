@@ -74,6 +74,14 @@ jobs:
             echo "Dry run: ${{ inputs.dry_run }}"
             echo
             jq -r '.[] | "- " + .title + (if .needsSupport then "" else " (the engine already runs every card)" end)' precon-work/issues.json
+            echo
+            echo "Printings Archidekt named (card lines with a set code, of all card lines) and the commander line:"
+            echo
+            for f in precon-work/*.txt; do
+              named=$(grep -cE '^[0-9]+x .* \([A-Za-z0-9]+\) ' "$f" || true)
+              total=$(grep -cE '^[0-9]+x ' "$f" || true)
+              echo "- $(basename "$f" .txt): $named of $total; $(sed -n 2p "$f" | cut -c1-80)"
+            done
           } >> "$GITHUB_STEP_SUMMARY"
       # The folder has no leading dot: the upload skips hidden files and folders.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
