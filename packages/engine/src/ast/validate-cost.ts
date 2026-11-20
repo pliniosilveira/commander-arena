@@ -484,11 +484,22 @@ function checkObjectsAbilityReduction(
     issue(out, `${path}.objects`, 'an ability cost reduction needs a filter of the objects');
   } else {
     checkFilter(s.objects, `${path}.objects`, out);
-    if (s.objects.zone !== 'graveyard') {
+    // Issue 345: with a floor (`minTotal`) the creatures on the battlefield are named too.
+    if (
+      s.objects.zone !== 'graveyard' &&
+      !(s.minTotal !== undefined && s.objects.zone === 'battlefield')
+    ) {
       issue(
         out,
         `${path}.objects.zone`,
-        'the abilities of cards in a graveyard are the ones named (zone: "graveyard")',
+        'the abilities of cards in a graveyard are the ones named (zone: "graveyard"), or with minTotal the creatures on the battlefield',
+      );
+    }
+    if (s.minTotal !== undefined && (!isCount(s.minTotal) || s.minTotal < 1)) {
+      issue(
+        out,
+        `${path}.minTotal`,
+        'the floor of the mana left in the cost is a positive integer',
       );
     }
     if (
@@ -508,6 +519,15 @@ function checkObjectsAbilityReduction(
   if (typeof s.amount === 'number') {
     if (!isCount(s.amount) || s.amount < 1) {
       issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+    }
+  } else if (s.amount?.kind === 'powerOf') {
+    // Issue 345 (CR 601.2f): "where X is ~'s power", read as the ability is activated, never while `derive` works.
+    if (s.minTotal === undefined || kindOf(s.amount.of) !== 'this') {
+      issue(
+        out,
+        `${path}.amount`,
+        'a cost reduction reads the power of this permanent only, with a floor (minTotal)',
+      );
     }
   } else {
     checkStateAmount(s.amount, `${path}.amount`, out, 'a cost reduction');

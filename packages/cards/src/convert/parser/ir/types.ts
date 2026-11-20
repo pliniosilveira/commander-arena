@@ -1488,6 +1488,9 @@ export type IrStaticEffect =
       readonly amount: number;
       readonly types: readonly string[];
     }
+  // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana." (Agatha of the
+  // Vile Cauldron, issue 345, CR 601.2f, 118.7): the power of the permanent itself taken off the generic mana, leaving at least one mana.
+  | { readonly kind: 'creatureAbilityCostReductionByPower' }
   /**
    * "As an additional cost to cast ~, sacrifice a creature." (stage P13, CR 118.8): costs paid with
    * the spell's total cost. The statement's subject is `~`.

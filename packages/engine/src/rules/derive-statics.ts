@@ -149,6 +149,8 @@ export interface AbilityReductionSource {
   readonly targeting?: ObjectFilter;
   /** The objects whose activated abilities cost less, cards in a graveyard (D-461); absent for an Equip reduction. */
   readonly objects?: ObjectFilter;
+  /** `abilityCostReduction` `minTotal` (issue 345): the mana the cost keeps at least. */
+  readonly minTotal?: number;
   readonly amount: Amount;
 }
 
@@ -324,7 +326,12 @@ function abilityReductionsOf(
     if (a.kind === 'static' && a.static.kind === 'abilityCostReduction') {
       out.push(
         a.static.abilities === 'ofObjects'
-          ? { object, objects: a.static.objects, amount: a.static.amount }
+          ? {
+              object,
+              objects: a.static.objects,
+              amount: a.static.amount,
+              ...(a.static.minTotal === undefined ? {} : { minTotal: a.static.minTotal }),
+            }
           : { object, targeting: a.static.targeting, amount: a.static.amount },
       );
     }

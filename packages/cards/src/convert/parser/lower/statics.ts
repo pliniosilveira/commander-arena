@@ -554,6 +554,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:costIncrease'];
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
+    case 'creatureAbilityCostReductionByPower':
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
       return ['static:costPerExtraTarget'];
@@ -1047,6 +1048,31 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
+  // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. ..." (issue 345, Agatha of the Vile Cauldron, CR 601.2f, 118.7).
+  if (first.kind === 'creatureAbilityCostReductionByPower') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:abilityCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'abilityCostReduction',
+            abilities: 'ofObjects',
+            objects: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+            amount: { kind: 'powerOf', of: { kind: 'this' } },
+            minTotal: 1,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-641, CR 601.2f).
   if (first.kind === 'costPerExtraTarget') {
     if (

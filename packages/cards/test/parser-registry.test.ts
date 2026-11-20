@@ -242,6 +242,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
+  'static.creature-ability-cost-reduction-power': asIs,
   'static.graveyard-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),

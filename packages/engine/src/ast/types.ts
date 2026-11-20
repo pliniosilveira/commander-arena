@@ -6166,6 +6166,12 @@ export type StaticEffect =
       readonly abilities: 'ofObjects';
       readonly objects: ObjectFilter;
       readonly amount: Amount;
+      /**
+       * "This effect can't reduce the mana in that cost to less than one mana" (issue 345, Agatha of the Vile Cauldron, CR 601.2f, 118.7): the reduction of this static ability leaves
+       * at least this many mana in the cost (a generic number counts its value, any other symbol one, X none). With it `objects` may name creatures on the battlefield
+       * (`zone: 'battlefield'`) as well as cards in a graveyard.
+       */
+      readonly minTotal?: number;
     }
   /**
    * "Lands you control have "{T}: Add one mana of any color."" (D-099): the subject has the mana
