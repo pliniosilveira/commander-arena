@@ -355,7 +355,9 @@ describe('Llanowar Reborn: Graft 1 on a land', () => {
       .build();
     g.act(0).cast(BEAR.name, { pay: true });
     g.passAll();
-    expect(g.state.pending).toBeNull();
+    // Nothing is asked: no "may" question, only the ordinary priority of the player (the trigger needs a +1/+1 counter on the land as it triggers).
+    expect(g.state.pending?.kind).toBe('priority');
     g.expect.counters(BEAR.name, {});
+    g.expect.counters(REBORN.name, {});
   });
 });
