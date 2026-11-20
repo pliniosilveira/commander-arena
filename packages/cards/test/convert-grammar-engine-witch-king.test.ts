@@ -26,6 +26,7 @@ function real(name: string): CardDefinition {
 const ANGEL = 'Serra Angel'; // 4/4
 const BEARS = 'Grizzly Bears'; // 2/2
 const ELVES = 'Llanowar Elves'; // 1/1
+const YARGLE = 'Yargle, Glutton of Urborg'; // legendary 9/3
 const LIBRARY = Array.from({ length: 8 }, () => 'Swamp');
 
 describe('Witch-king, Bringer of Ruin', () => {
@@ -61,6 +62,42 @@ describe('Witch-king, Bringer of Ruin', () => {
     expect(g.state.pending).toMatchObject({ kind: 'choosePermanent', seat: 1 });
     g.act(1).choosePermanents(`${BEARS}[0]`);
     g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+});
+
+describe('Ringwraiths', () => {
+  const wraiths = real('Ringwraiths');
+
+  const cast = (target: string) => {
+    const g = scenario()
+      .define(wraiths)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(wraiths.name)
+      .pool('CCCCBB')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(target)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(wraiths.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    return g;
+  };
+
+  test('a legendary creature that gets -3/-3 makes its controller lose 3 life (CR 608.2c)', () => {
+    const g = cast(YARGLE);
+    g.expect.zone(YARGLE, 'graveyard', { seat: 1 });
+    g.expect.life(1, 37);
+    g.expect.invariants();
+  });
+
+  test('a creature that is not legendary only gets -3/-3 until end of turn: no life is lost', () => {
+    const g = cast(ANGEL);
+    g.expect.pt(ANGEL, 1, 1);
+    g.expect.life(1, 40);
     g.expect.invariants();
   });
 });
