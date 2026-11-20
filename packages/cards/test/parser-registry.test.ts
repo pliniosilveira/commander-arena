@@ -1175,6 +1175,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  // Ahoy Mateys deck, group 4.
+  'noun.each-creature-that-is-subtype-or-subtype': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
+  'noun.each-creature-you-control-but-dont-own': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
   // D-270: a target of two zones, read by `exile`.

@@ -941,6 +941,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enchanted',
     // D-647: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
     'enchantedByYou',
+    // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
+    'notOwnedByYou',
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
@@ -1838,6 +1840,8 @@ export const SELECTOR_KINDS = [
   'enchanted',
   /** "Enchanted by an Aura you control" (CR 303.4e, D-647): the engine's `ObjectFilter.enchantedByYou`. */
   'enchantedByYou',
+  /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */
+  'notOwnedByYou',
   /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
