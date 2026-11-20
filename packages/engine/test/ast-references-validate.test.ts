@@ -104,6 +104,8 @@ describe('amounts that read an object', () => {
       'timesAttacked',
       // Issue 81 (Omnath): "for each unspent mana you have".
       'unspentMana',
+      // Call for Unity: "for each unity counter on ~".
+      'countersOnSource',
       'affected',
       'half',
       'multiple',

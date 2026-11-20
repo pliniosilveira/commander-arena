@@ -176,6 +176,8 @@ describe('Golden-Tail Trainer: "other modified creatures you control get +X/+X u
 
   test.each([
     'Whenever ~ attacks, other modified creatures you control get +X/+X until end of turn, where X is the number of creatures you control.',
+    // The group of other creatures may also gain a keyword (Pippin's "get +3/+3 and gain haste"): a second change the grammar now reads.
+    "Whenever ~ attacks, other modified creatures you control get +X/+X and gain trample until end of turn, where X is ~'s power.",
   ])('the definition of X may be any amount the grammar reads (SYNTHETIC): %s', (text) => {
     const parsed = read(text, 'creature');
     expect(parsed.unparsed).toEqual([]);
@@ -187,7 +189,6 @@ describe('Golden-Tail Trainer: "other modified creatures you control get +X/+X u
     "Whenever ~ attacks, another modified creature you control gets +X/+X until end of turn, where X is ~'s power.",
     "Whenever ~ attacks, other modified creatures you control get +X/+X until your next turn, where X is ~'s power.",
     'Whenever ~ attacks, other modified creatures you control get +X/+X until end of turn.',
-    "Whenever ~ attacks, other modified creatures you control get +X/+X and gain trample until end of turn, where X is ~'s power.",
   ])('near misses are not read (never half read): %s', (text) => {
     const parsed = read(text, 'creature');
     expect(parsed.abilities).toEqual([]);
