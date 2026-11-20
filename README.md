@@ -76,7 +76,7 @@ Your imported decks are saved in your browser and appear on the **My decks** pag
 - **Space** passes or confirms. The button always says where it takes you.
 - **P** passes the rest of your turn. **Esc** cancels.
 - **Ctrl+Z** takes back a small action, such as tapping a land for mana.
-- **F** turns Full Control on or off. With it on, the game stops at every step so you can respond.
+- **F** turns Full Control on or off. With it on, the game stops at every step so you can respond. With it off, the game also answers for you the two questions of "Partner with" when the partner is your commander and in plain sight: it cannot be in your library, so nobody searches.
 
 The game passes for you when there is nothing to decide, and it always stops to show you an opponent's spell before it happens. **Settings** has the theme, text size, animation speed, where the game stops, and Concede.
 
