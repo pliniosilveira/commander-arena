@@ -1,5 +1,5 @@
 {
-  "parserVersion": 170,
+  "parserVersion": 171,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -7179,18 +7179,10 @@
     "c46a02db-13d6-477f-9da0-822599470168": {
       "name": "Dazzling Theater // Prop Room",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 1,
-          "ability": 0,
-          "text": "Untap each creature you control during each other player's untap step.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a5ad4cb3"
+      "ast": "a73ba198"
     },
     "c4d36522-3ace-4bfb-bf2d-1a366f458698": {
       "name": "Suture Priest",
@@ -9331,7 +9323,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 845,
+      "supported": 846,
       "total": 865
     }
   }
