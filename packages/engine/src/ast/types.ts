@@ -6768,12 +6768,13 @@ export interface ManaAbility {
     readonly subtypes?: readonly Subtype[];
     /**
      * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of
-     * these qualities, as it is cast: `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
+     * these qualities, as it is cast (`colorless`, Shrine of the Forsaken Gods "only to cast colorless spells", CR 105.2c: the spell has no color): `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
      * least the number; `hasX` there is an {X} in its mana cost, whatever X is. With `types` or `subtypes`, the spell is of those as well. Not with `chosenType`.
      */
     readonly qualities?: readonly (
       | { readonly kind: 'manaValueAtLeast'; readonly value: number }
       | { readonly kind: 'hasX' }
+      | { readonly kind: 'colorless' }
     )[];
     /**
      * "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (D-151): the mana may also be spent on an activated ability of

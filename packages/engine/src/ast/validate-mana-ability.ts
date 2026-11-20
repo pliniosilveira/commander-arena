@@ -185,12 +185,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           only.qualities.forEach((q, i) => {
             const ok =
               q?.kind === 'hasX' ||
+              q?.kind === 'colorless' ||
               (q?.kind === 'manaValueAtLeast' && Number.isSafeInteger(q.value) && q.value >= 1);
             if (!ok) {
               issue(
                 out,
                 `${path}.spendOnly.qualities[${i}]`,
-                'a quality is hasX or manaValueAtLeast of a whole number from 1',
+                'a quality is hasX, colorless or manaValueAtLeast of a whole number from 1',
               );
             }
           });

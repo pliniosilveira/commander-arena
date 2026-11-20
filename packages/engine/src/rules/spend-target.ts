@@ -22,6 +22,8 @@ export function spellSpendTarget(
     manaValue: manaValueOfCost(derived.manaCost, spell),
     // CR 107.3: an {X} in the mana cost, whatever value X has.
     hasX: derived.manaCost !== null && xSymbolCount(derived.manaCost) > 0,
+    // CR 105.2c: a colorless object has no color; read by "Spend this mana only to cast colorless spells".
+    colorless: derived.colors.length === 0,
     ...(anyType ? { anyType: true as const } : {}),
   };
 }

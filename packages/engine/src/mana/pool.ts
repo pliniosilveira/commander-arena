@@ -18,6 +18,8 @@ export type SpendTarget =
       readonly manaValue?: number;
       /** Whether its mana cost has an {X} (CR 107.3); read by a `qualities` restriction. */
       readonly hasX?: boolean;
+      /** Whether the spell has no color (CR 105.2c); read by a `colorless` quality. */
+      readonly colorless?: boolean;
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
@@ -73,7 +75,11 @@ export function restrictionAllows(
       !restriction.qualities.some((q) =>
         q.kind === 'hasX'
           ? 'hasX' in target && target.hasX === true
-          : 'manaValue' in target && target.manaValue !== undefined && target.manaValue >= q.value,
+          : q.kind === 'colorless'
+            ? 'colorless' in target && target.colorless === true
+            : 'manaValue' in target &&
+              target.manaValue !== undefined &&
+              target.manaValue >= q.value,
       )
     ) {
       return false;

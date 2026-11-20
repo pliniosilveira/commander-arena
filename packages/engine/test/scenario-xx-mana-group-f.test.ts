@@ -55,7 +55,7 @@ describe('the cards are valid', () => {
     );
     expect(
       validateCard(
-        edit(ROCK, (a) => ({ ...a, spendOnly: { qualities: [{ kind: 'colorless' }] } })),
+        edit(ROCK, (a) => ({ ...a, spendOnly: { qualities: [{ kind: 'flying' }] } })),
       ),
     ).not.toEqual([]);
     expect(

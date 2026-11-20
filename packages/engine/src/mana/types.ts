@@ -44,6 +44,7 @@ export type ManaRestriction =
       readonly qualities?: readonly (
         | { readonly kind: 'manaValueAtLeast'; readonly value: number }
         | { readonly kind: 'hasX' }
+        | { readonly kind: 'colorless' }
       )[];
     };
 

@@ -82,6 +82,13 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
+  // "Spend this mana only to cast colorless spells." (Shrine of the Forsaken Gods, CR 106.6, 105.2c): the one quality `colorless`.
+  const colorless = clause.args.colorless;
+  if (colorless?.kind === 'flag' && colorless.value) {
+    return plainClause(clause) && clause.args.spells === undefined
+      ? { qualities: [{ kind: 'colorless' as const }] }
+      : null;
+  }
   // "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of the qualities.
   const atLeast = clause.args.manaValueAtLeast;
   const hasX = clause.args.hasX;

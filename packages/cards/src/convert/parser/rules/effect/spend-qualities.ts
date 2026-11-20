@@ -91,4 +91,42 @@ export const EFFECT_SPEND_ONLY_QUALITIES = defineRule<Clauses>({
   },
 });
 
-export const SPEND_QUALITIES_EFFECT_RULES = [EFFECT_SPEND_ONLY_QUALITIES].map(quietly);
+/**
+ * `effect.spend-only-colorless`: "Spend this mana only to cast colorless spells." (CR 106.6, 105.2c: a mana ability may restrict what its mana can be spent on; here the spell
+ * must have no color). It says something about the mana ability before it: the lowering of that ability gives the engine its `spendOnly` with the `colorless` quality; anywhere
+ * else it is read and not run. Not read: a color ("white spells"), "colorless creature spells", "or" another quality, "abilities", the sentence without its period.
+ */
+export const EFFECT_SPEND_ONLY_COLORLESS = defineRule<Clauses>({
+  id: 'effect.spend-only-colorless',
+  family: 'effect',
+  leading: ['spend'],
+  cites: ['CR 106.6 (Mana)', 'CR 105.2c (Colors)', 'CR 605.1a (Mana Abilities)'],
+  examples: [
+    'spend this mana only to cast colorless spells',
+    'Spend this mana only to cast colorless spells',
+  ],
+  rejects: [
+    'spend this mana only to cast white spells',
+    'spend this mana only to cast colorless creature spells',
+    'spend this mana only to cast colorless spells or spells with {X} in their mana costs',
+    'spend this mana only to cast colorless spells or activate abilities',
+    'spend this mana only to cast colored spells',
+    'spend this mana only to cast spells',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/spend this mana only to cast colorless spells(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const id = 'effect.spend-only-colorless';
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'spendOnly', { colorless: flag(id, span) }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+export const SPEND_QUALITIES_EFFECT_RULES = [
+  EFFECT_SPEND_ONLY_QUALITIES,
+  EFFECT_SPEND_ONLY_COLORLESS,
+].map(quietly);

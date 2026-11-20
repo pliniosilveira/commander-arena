@@ -52,3 +52,48 @@ describe('Raging Ravine: a land that becomes a 3/3 Elemental and grows when it a
     g.expect.pt(RAVINE.name, 4, 4);
   });
 });
+
+// ---- Shrine of the Forsaken Gods: "{T}: Add {C}{C}. Spend this mana only to cast colorless spells. Activate only if you control seven or more lands." (CR 106.6, 105.2c, 605.1a, 602.5).
+
+const SHRINE = parsed(
+  'SYNTHETIC Parsed Shrine',
+  'Land',
+  '{T}: Add {C}.\n{T}: Add {C}{C}. Spend this mana only to cast colorless spells. Activate only if you control seven or more lands.',
+);
+const ARTIFACT = parsed('SYNTHETIC Parsed Colorless Rock', 'Artifact', '', { manaCost: '{2}' });
+const GREEN = parsed('SYNTHETIC Parsed Green Bear', 'Creature — Bear', '', {
+  manaCost: '{2}',
+  colors: ['G'],
+  power: '2',
+  toughness: '2',
+});
+
+describe('Shrine of the Forsaken Gods: two colorless mana for colorless spells, with seven lands', () => {
+  const start = (lands: number) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(SHRINE, ARTIFACT, GREEN)
+      .hand(ARTIFACT.name, GREEN.name)
+      .battlefield(SHRINE.name, { tapped: false })
+      .battlefield(...Array.from({ length: lands - 1 }, () => 'Wastes'))
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('with seven lands its mana pays for a colorless spell', () => {
+    const g = start(7);
+    g.act(0).cast(ARTIFACT.name, { pay: true });
+    g.passAll();
+    g.expect.zone(ARTIFACT.name, 'battlefield', { seat: 0 });
+  });
+
+  test('with six lands the second ability cannot be activated (the first one still adds one)', () => {
+    const g = start(6);
+    g.act(0).tapForMana(SHRINE.name);
+    g.expect.pool(0, 'C');
+  });
+});
