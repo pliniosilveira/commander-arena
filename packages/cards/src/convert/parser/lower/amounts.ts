@@ -854,6 +854,20 @@ export function lowerDefinedPt(
     }
     return { ok: true, value: lowered.value, rule };
   }
+  // Issue 145 (Soul of Eternity, CR 604.3, 119.1): "equal to your life total", the engine's `lifeTotalOf` of you.
+  if (count.kind === 'lifeTotalOf') {
+    const lowered = lowerAmount(count, ctx, rule);
+    if (!lowered.ok) return lowered;
+    if (
+      lowered.value === null ||
+      typeof lowered.value !== 'object' ||
+      lowered.value.kind !== 'lifeTotalOf' ||
+      lowered.value.player.kind !== 'you'
+    ) {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    return { ok: true, value: { kind: 'lifeTotalOf', player: { kind: 'you' } }, rule };
+  }
   return count.kind === 'sum' ? sumInStatic(count, ctx, rule) : countInStatic(count, ctx, rule);
 }
 

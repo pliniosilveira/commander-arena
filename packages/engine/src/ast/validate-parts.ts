@@ -2391,6 +2391,20 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'devotion is not supported as a plain static power/toughness modifier');
     return;
   }
+  // Issue 145 (Soul of Eternity, CR 604.3): "equal to your life total": a characteristic-defining ability only, of the controller.
+  if (amount?.kind === 'lifeTotalOf') {
+    const player = (a as { player?: { kind?: string } }).player;
+    if (plain) {
+      issue(
+        out,
+        path,
+        'a life total is the amount of a characteristic-defining ability, not a plain static power/toughness modifier',
+      );
+    } else if (player?.kind !== 'you') {
+      issue(out, `${path}.player`, 'a characteristic-defining ability reads the life total of you');
+    }
+    return;
+  }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
   // Issue 81 (Omnath, CR 106.4): "for each unspent mana you have": plain (+N/+N) only.
   if (amount?.kind === 'unspentMana') {

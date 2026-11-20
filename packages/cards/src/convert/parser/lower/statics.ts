@@ -503,7 +503,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'ptCount':
       return ['static:modifyPt', 'amount:countOf'];
     case 'definesPt':
-      return ['static:characteristicPt', 'amount:countOf'];
+      return [
+        'static:characteristicPt',
+        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+      ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];

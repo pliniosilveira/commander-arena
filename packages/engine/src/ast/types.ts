@@ -517,6 +517,12 @@ export type StaticPtAmount =
 export type DefinedPtAmount =
   | CountAmount
   | Extract<Amount, { readonly kind: 'devotion' }>
+  /**
+   * "~'s power and toughness are each equal to your life total" (issue 145, CR 604.3, 119.1): the life total of the controller of the object (its owner outside the battlefield
+   * and the stack), read each time the characteristics are worked out. Only `you`; a life total below 0 is 0 (CR 208.1: a negative power or toughness is 0 for state-based
+   * actions, and a characteristic-defining ability sets the number as it is).
+   */
+  | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
 
