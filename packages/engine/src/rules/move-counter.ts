@@ -37,21 +37,24 @@ export function runMoveCounter(
     const [only, ...more] = kinds;
     if (only === undefined) return done(state);
     if (more.length > 0) {
-      // CR 608.2d: the controller chooses which kind of counter moves.
-      return done(
-        state,
-        [],
-        [
-          {
-            kind: 'chooseOne',
-            options: kinds.map((counter) => ({
-              label: counter,
-              effect: { ...effect, counter },
-            })),
-            chosen: null,
-          },
-        ],
-      );
+      // CR 608.2d: the controller chooses which kind of counter moves (a counter will move: every kind offered is legal and the choice is not optional).
+      return {
+        ...done(
+          state,
+          [],
+          [
+            {
+              kind: 'chooseOne',
+              options: kinds.map((counter) => ({
+                label: counter,
+                effect: { ...effect, counter },
+              })),
+              chosen: null,
+            },
+          ],
+        ),
+        performed: 1,
+      };
     }
     return moveOne(state, fromId, toId, only, ctx);
   }
@@ -75,8 +78,12 @@ function moveOne(
   next = patchObject(next, to.id, {
     counters: { ...to.counters, [kind]: (to.counters[kind] ?? 0) + 1 },
   });
-  return done(next, [
-    { kind: 'counterRemoved', object: from.id, counter: kind, count: 1 },
-    { kind: 'counterAdded', object: to.id, counter: kind, count: 1, by: ctx.controller },
-  ]);
+  // `performed` is what "you may" and "if you do" read (D-135): one counter moved.
+  return {
+    ...done(next, [
+      { kind: 'counterRemoved', object: from.id, counter: kind, count: 1 },
+      { kind: 'counterAdded', object: to.id, counter: kind, count: 1, by: ctx.controller },
+    ]),
+    performed: 1,
+  };
 }

@@ -4161,6 +4161,8 @@ export const MAY_EFFECT_KINDS = [
   'removeCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
+  // Graft (CR 702.58): "you may move a +1/+1 counter from this permanent onto that creature."
+  'moveCounter',
 ];
 
 /**

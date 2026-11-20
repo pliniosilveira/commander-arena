@@ -742,6 +742,7 @@ describe('unmatched abilities', () => {
       'effect.for-each-draw',
       'effect.lands-enter-tapped-this-turn',
       'effect.move-counters-onto-others',
+      'effect.move-counter-between-targets',
       'effect.search-pair',
       'effect.opponent-attacking-untaps',
       'effect.each-player-gains-control-of-owned',
