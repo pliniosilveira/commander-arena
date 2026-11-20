@@ -217,6 +217,63 @@ describe('Prize Pig', () => {
   });
 });
 
+describe('Crypt Incursion', () => {
+  const incursion = real('Crypt Incursion');
+  const start = () =>
+    scenario()
+      .define(incursion)
+      .seat(0)
+      .hand(incursion.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .graveyard('Grizzly Bears', { label: 'mineBears' })
+      .library(...FILLER)
+      .seat(1)
+      .graveyard('Grizzly Bears', { label: 'bears1' })
+      .graveyard('Grizzly Bears', { label: 'bears2' })
+      .graveyard('Island', { label: 'island' })
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(incursion)).toEqual([]);
+  });
+
+  test('exiles only the creature cards of the chosen graveyard and gains 3 life for each', () => {
+    const g = start();
+    g.act(0).cast(incursion.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    expect(g.object('bears1').zone).toBe('exile');
+    expect(g.object('bears2').zone).toBe('exile');
+    expect(g.object('island').zone).toBe('graveyard');
+    expect(g.object('mineBears').zone).toBe('graveyard');
+    g.expect.life(0, 46);
+    g.expect.invariants();
+  });
+
+  test('may target its own controller; an empty graveyard gains nothing', () => {
+    const g = start();
+    g.act(0).cast(incursion.name, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    expect(g.object('mineBears').zone).toBe('exile');
+    g.expect.life(0, 43);
+    const none = scenario()
+      .define(incursion)
+      .seat(0)
+      .hand(incursion.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .library(...FILLER)
+      .seat(1)
+      .graveyard('Island')
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+    none.act(0).cast(incursion.name, { targets: [{ player: 1 }], pay: true });
+    none.passAll();
+    none.expect.life(0, 40);
+  });
+});
+
 describe('what the new readings do not take', () => {
   const status = (text: string) => parseOnly(spellCard('Synthetic Probe', text)).support.status;
 

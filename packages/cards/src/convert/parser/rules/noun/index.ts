@@ -507,7 +507,10 @@ export const NOUN_ALL_GRAVEYARDS = defineRule<IrNoun>({
   ),
 });
 
-/** `noun.all-graveyard-cards`: "all land cards from your graveyard". */
+/**
+ * `noun.all-graveyard-cards`: "all land cards from your graveyard", and, with the graveyard of a player the text names, "all creature cards from target player's graveyard" (Crypt Incursion,
+ * CR 404.1, 108.3, 115.1: the cards of that kind its owner has there; the player is a target, or each opponent, or each player, carried as `of` as `noun.player-graveyard` does).
+ */
 export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
   id: ID.allGraveyard,
   family: 'noun',
@@ -517,13 +520,52 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
     'all land cards from your graveyard',
     'all cards from a graveyard',
     'all creature cards from all graveyards',
+    "all creature cards from target player's graveyard",
+    'all cards from target opponent’s graveyard',
+    "all land cards from each opponent's graveyard",
   ],
-  rejects: ['all lands', 'each land card from your graveyard'],
-  parse: node<IrFilter, IrNoun>(
-    ID.allGraveyard,
-    map(sequence(literal('all '), graveyardPhrase(true)), ([, filter]) => filter),
-    (filter) => bare('each', filter, { plural: true }),
-  ),
+  rejects: [
+    'all lands',
+    'each land card from your graveyard',
+    "all creature cards from target player's graveyards",
+    "all creature cards from target creature's graveyard",
+    "all creature cards from target player's library",
+    "all creature cards from target player's",
+  ],
+  parse: (ctx, pos) => {
+    const own = node<IrFilter, IrNoun>(
+      ID.allGraveyard,
+      map(sequence(literal('all '), graveyardPhrase(true)), ([, filter]) => filter),
+      (filter) => bare('each', filter, { plural: true }),
+    )(ctx, pos);
+    if (own.ok) return own;
+    const r = sequence(
+      literal('all '),
+      graveyardPhrase(true, 'fromPlayers'),
+      satisfy(
+        family<IrNoun>('noun', { only: [ID.player] }),
+        (n) => n.det === 'target' || n.det === 'eachOpponent' || n.det === 'eachPlayer',
+      ),
+      pattern(new RegExp(`['’]s graveyard${END}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    const [, filter, of] = r.value;
+    return {
+      ok: true,
+      value: {
+        kind: 'noun',
+        det: 'each',
+        filter: { ...filter, raw: ctx.text.slice(pos, r.pos) },
+        upTo: false,
+        plural: true,
+        other: false,
+        of,
+        span: { start: pos, end: r.pos },
+        rule: ID.allGraveyard,
+      },
+      pos: r.pos,
+    };
+  },
 });
 
 /** `noun.target-permanent`: "target nonland permanent an opponent controls" (CR 110.1, 115.1). */

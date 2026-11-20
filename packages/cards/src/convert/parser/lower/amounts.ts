@@ -568,6 +568,12 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
     }
     case 'exiledAsCost': {
+      // Crypt Incursion (CR 608.2c): "Exile all creature cards from target player's graveyard. You gain 3 life for each card exiled this way.": after an exile instruction of the same
+      // text, the cards exiled this way are the ones that instruction moved (the engine's `moved`), not cards exiled to pay an additional cost.
+      if (ctx.lastEffectKind === 'exile') {
+        const moved = needs('movedCount');
+        return moved ?? { ok: true, value: { kind: 'movedCount' }, rule };
+      }
       const blocked = needs('exiledAsCost');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'exiledAsCost' }, rule };
