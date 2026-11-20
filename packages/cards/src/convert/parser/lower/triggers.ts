@@ -740,9 +740,10 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
   }
-  // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information.
+  // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information. The player of "whenever a creature an
+  // opponent controls enters" is the controller of the permanent that entered (CR 110.2a): "that player".
   if (
-    (only.event === 'dies' || only.event === 'leavesBattlefield') &&
+    (only.event === 'dies' || only.event === 'leavesBattlefield' || only.event === 'enters') &&
     only.subject !== undefined &&
     only.subject.det !== 'self' &&
     only.actor === undefined

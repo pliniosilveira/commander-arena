@@ -774,7 +774,9 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   // CR 603.10a, 400.7: "Whenever a creature an opponent controls dies, that player loses 2 life": the player of a death trigger is the controller of the
   // permanent that died (last known information), so "that player" has an antecedent. A text that says no such pronoun is unchanged.
   if (
-    (source.event === 'dies' || source.event === 'leavesBattlefield') &&
+    (source.event === 'dies' ||
+      source.event === 'leavesBattlefield' ||
+      source.event === 'enters') &&
     source.alternatives === undefined &&
     subject !== undefined &&
     subject.det !== 'self' &&
