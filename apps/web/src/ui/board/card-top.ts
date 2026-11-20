@@ -49,14 +49,12 @@ const SIDE_ART: ReadonlySet<string> = new Set(['Saga', 'Class', 'Case']);
 
 /**
  * How the top of an object's card is drawn on its tile, or null when the tile keeps the drawn frame
- * over the art alone: a face-down permanent, a token that is not a copy of a card (its own frame
- * has the type line elsewhere), and the frames with no type line under the art (a split card or a
- * Room, a Saga, a Class, a Case, a battle, a melded permanent).
+ * over the art alone: a face-down permanent and the frames with no type line under the art (a split
+ * card or a Room, a Saga, a Class, a Case, a battle, a melded permanent). A token is cut where a
+ * card is: its printed type line stands lower, so its tile shows the title and the art.
  */
 export function cardTopOf(o: ObjectView): CardTop | null {
   if (isFaceDownPermanent(o)) return null;
-  if (o.isToken && (o.tokenDefinition === undefined || o.tokenDefinition.manaCost === null))
-    return null;
   if (o.meld !== undefined) return null;
   if (o.layout === 'split' || o.layout === 'saga' || o.layout === 'class') return null;
   if (o.types.includes('battle')) return null;

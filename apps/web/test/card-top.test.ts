@@ -50,7 +50,6 @@ describe('the top of the printed card on a tile', () => {
 
   test.each([
     ['a face-down permanent', { faceDown: true, faceDownBy: 'manifest' }],
-    ['a token with a frame of its own', { isToken: true }],
     ['a split card', { layout: 'split' }],
     ['a Saga', { layout: 'saga', types: ['enchantment'], subtypes: ['Saga'] }],
     ['a Class', { layout: 'class', types: ['enchantment'], subtypes: ['Class'] }],
@@ -60,18 +59,7 @@ describe('the top of the printed card on a tile', () => {
     expect(cardTopOf(obj(over))).toBeNull();
   });
 
-  test('a token that is a copy of a card is drawn as that card', () => {
-    const copy = obj({
-      isToken: true,
-      tokenDefinition: { manaCost: ['1', 'G'] } as unknown as NonNullable<
-        ObjectView['tokenDefinition']
-      >,
-    });
-    expect(cardTopOf(copy)).toEqual({ cover: 1 });
-    const token = obj({
-      isToken: true,
-      tokenDefinition: { manaCost: null } as unknown as NonNullable<ObjectView['tokenDefinition']>,
-    });
-    expect(cardTopOf(token)).toBeNull();
+  test('a token is cut where a card is', () => {
+    expect(cardTopOf(obj({ isToken: true }))).toEqual({ cover: 1 });
   });
 });
