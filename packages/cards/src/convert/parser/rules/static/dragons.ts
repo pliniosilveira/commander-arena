@@ -12,12 +12,14 @@ import {
   type Parser,
   pattern,
   quiet,
+  satisfy,
   sequence,
 } from '../../combinators';
 import type { IrFilter, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { BASE_PT, CREATURE_TYPE_LIST } from '../effect/becomes';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { CARD_TYPES, comparisonSuffix, typeWords, withComparison } from '../noun/phrases';
+import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, quietly } from '../registry';
 import type { StaticUnit } from './grants';
 import { QUOTED_ABILITY } from './quoted';
@@ -117,6 +119,8 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may cast creature spells from the top of your library.',
     'You may cast artifact spells with mana value 3 or less from the top of your library.',
     'You may cast spells from the top of your library.',
+    // Issue 144 (Conspicuous Snoop): a creature type.
+    'You may cast Goblin spells from the top of your library.',
     // Death Toll deck, group D (CR 601.2b, 118.8): an additional cost for each such spell.
     'You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs.',
   ],
@@ -139,14 +143,30 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may play lands from the top of your library.',
     'You may cast creature spells from the top of your library. You may look at the top card of your library any time.',
     'You may cast creature cards from the top of your library.',
+    'You may cast Goblins spells from the top of your library.',
+    'You may cast Goblin from the top of your library.',
+    'You may cast Goblin Warrior spells from the top of your library. If you cast a creature spell this way, it gains haste until end of turn.',
   ],
   parse: (ctx, pos) => {
     const id = 'static.cast-from-top';
     const r = sequence(
       literal('you may cast '),
       optional(
-        map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
-        [] as string[],
+        choice(
+          map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => ({
+            types,
+            subtypes: [] as string[],
+          })),
+          // Issue 144 (Conspicuous Snoop): "Goblin spells", a creature type.
+          map(
+            sequence(
+              satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
+              literal(' '),
+            ),
+            ([w]) => ({ types: [] as string[], subtypes: [w.subtype] }),
+          ),
+        ),
+        { types: [] as string[], subtypes: [] as string[] },
       ),
       literal('spells'),
       optional(
@@ -158,10 +178,11 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, types, , compared, ended] = r.value;
+    const [, { types, subtypes }, , compared, ended] = r.value;
     const sacrifice = /by sacrificing/iu.test(ended[0] ?? '');
     const base: IrFilter = {
       ...(types.length > 0 ? { types } : {}),
+      ...(subtypes.length > 0 ? { subtypes } : {}),
       raw: ctx.text.slice(pos, r.pos),
     };
     const spells = withComparison(base, compared);

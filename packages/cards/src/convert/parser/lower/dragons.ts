@@ -113,6 +113,8 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           ...(look === undefined ? {} : { lookAt: true as const }),
           // "You may cast it this turn" (Lorehold group 1): the permission is to cast, a land card is not played.
           ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),
+          // Issue 144 (Grenzo): "you may spend mana as though it were mana of any color to cast that spell".
+          ...(arg(clause, 'anyManaColor')?.kind === 'flag' ? { anyManaColor: true as const } : {}),
         },
       ],
       rule: clause.rule,

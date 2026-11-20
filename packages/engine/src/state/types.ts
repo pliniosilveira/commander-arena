@@ -492,6 +492,11 @@ export interface StackData {
    */
   readonly anyManaType?: true;
   /**
+   * True when an effect lets mana be spent as though it were mana of any color to cast this spell (issue 144, CR 609.4b: "you may spend mana as though it were mana of any color to cast
+   * that spell"): a mana of a color pays any colored symbol of its cost; colorless mana still pays only generic mana and {C}. Absent otherwise, and for an ability.
+   */
+  readonly anyManaColor?: true;
+  /**
    * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
    * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
    * (CR 400.7). Absent otherwise, and for an ability.
@@ -2116,6 +2121,11 @@ export type ContinuousChange =
        * this permission carries `StackData.bottomInstead` (`rules/cast.ts`, `beginCast`).
        */
       readonly bottomInstead?: true;
+      /**
+       * "Until end of turn, you may cast that card and you may spend mana as though it were mana of any color to cast that spell" (`mayPlay.anyManaColor`, issue 144, CR 609.4b): the spell
+       * cast with this permission carries `StackData.anyManaColor` (`rules/cast.ts`, `beginCast`), and the cost of the card is read that way while it is still in exile.
+       */
+      readonly anyManaColor?: true;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,

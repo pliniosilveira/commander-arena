@@ -126,6 +126,7 @@ import {
   remainders,
   usePayOptions,
 } from './pay-options';
+import { playPermissionAnyColor } from './play-permission-color';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -277,6 +278,10 @@ export function beginCast(
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
         ? { exileInstead: true as const }
+        : {}),
+      // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" of the permission the card is cast with.
+      ...(zone === 'exile' && !resolving && playPermissionAnyColor(state, seat, obj.id)
+        ? { anyManaColor: true as const }
         : {}),
       // Lorehold group 2 (CR 614.1a): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" of the permission the card is cast with.
       ...(zone === 'exile' &&

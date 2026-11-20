@@ -2456,6 +2456,11 @@ export type Effect =
        * no longer applies). Needs cards exiled face down.
        */
       readonly lookAt?: true;
+      /**
+       * "Until end of turn, you may cast that card and you may spend mana as though it were mana of any color to cast that spell" (issue 144, CR 609.4b): the spell cast with this permission
+       * can be paid with mana of any color for any colored symbol of its cost (colorless mana still pays generic mana only). Needs `castOnly`: the rider is about casting a spell.
+       */
+      readonly anyManaColor?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -6530,6 +6535,18 @@ export type StaticEffect =
       readonly subject: { readonly kind: 'this' };
       readonly from: ObjectFilter;
       readonly alsoSubtypes?: readonly Subtype[];
+    }
+  /**
+   * "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card." (issue 144, Conspicuous Snoop; CR 613.1f, 113.6, 604.1, 401.5):
+   * while the top card of its controller's library matches `card` (a filter describing the card as it is printed: its card types, subtypes, colors; no zone, owner or controller), the
+   * permanent, which must be the subject (`this`), has every activated and mana ability of that card, in layer 6 with the permanent's timestamp, after its own abilities; with no card
+   * on top, or one that does not match, it has none. The words "as long as" are this: there is no separate condition. Read from the card as printed (it is in a library: no layer but a copy
+   * effect changes it there), each time the permanent's abilities are looked at, so a new top card changes them at once. Only `this`.
+   */
+  | {
+      readonly kind: 'grantActivatedAbilitiesOfTopCard';
+      readonly subject: { readonly kind: 'this' };
+      readonly card: ObjectFilter;
     }
   /**
    * "You have hexproof." (CR 702.11b, 113.6, D-149): the controller of the permanent with the ability can't be the target of spells or

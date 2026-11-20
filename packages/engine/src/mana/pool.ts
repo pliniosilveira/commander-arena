@@ -14,6 +14,11 @@ export type SpendTarget =
        * of the mana itself and the snow of {S} are not about its type and still apply.
        */
       readonly anyType?: true;
+      /**
+       * Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell": a mana of a color pays any colored symbol of the spell's cost. Colorless mana
+       * is no color, so it still pays generic mana only.
+       */
+      readonly anyColor?: true;
       /** The mana value of the spell as it is cast (CR 202.3e: an {X} counts as the value announced on the stack, 0 elsewhere); read by a `qualities` restriction. */
       readonly manaValue?: number;
       /** Whether its mana cost has an {X} (CR 107.3); read by a `qualities` restriction. */

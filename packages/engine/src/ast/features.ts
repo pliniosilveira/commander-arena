@@ -1205,6 +1205,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'setPt',
     'cantBeBlockedBy',
     'takeFromLinkedExile',
+    // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
+    'grantActivatedAbilitiesOfTopCard',
     'castAsThoughFlash',
     // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
     'creatureOffBattlefield',
@@ -2066,6 +2068,8 @@ export const STATIC_KINDS = [
   'cantBeBlockedBy',
   /** "... has the power, toughness, and creature types of the last creature card exiled with it" (CR 607.2a, D-139). */
   'takeFromLinkedExile',
+  /** "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card" (CR 613.1f, issue 144): the engine's `grantActivatedAbilitiesOfTopCard`. */
+  'grantActivatedAbilitiesOfTopCard',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
   /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */

@@ -228,6 +228,8 @@ describe('the dimensions', () => {
       'setPt',
       'cantBeBlockedBy',
       'takeFromLinkedExile',
+      // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
+      'grantActivatedAbilitiesOfTopCard',
       'castAsThoughFlash',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',

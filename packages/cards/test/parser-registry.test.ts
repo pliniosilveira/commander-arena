@@ -1030,6 +1030,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
   'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
   'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
+  // Issue 144 (Goblin Dark-Dwellers, Glimpse the Impossible, Conspicuous Snoop).
+  'effect.cast-own-graveyard-card-free': permanent((e) => `When ~ enters, ${e}.`),
+  'amount.for-each-card-put-into-your-graveyard': spell(
+    (e) =>
+      `Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token ${e}.`,
+  ),
+  'static.top-card-abilities': asIs,
   // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
   'effect.extra-beginning-phase': permanent(
     (e) => `At the beginning of each of your postcombat main phases, ${e}.`,

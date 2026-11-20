@@ -68,6 +68,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
+import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
@@ -2370,6 +2371,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
+  ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".

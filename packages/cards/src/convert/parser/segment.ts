@@ -579,6 +579,12 @@ const MAY_CAST_FROM_YOUR_GRAVEYARD =
   /(?:^|, )you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\.$/i;
 const EXILE_THAT_SPELL_INSTEAD_YOUR =
   /^if that spell would be put into your graveyard, exile it instead\.$/i;
+/**
+ * "When this creature enters, you may cast target instant or sorcery card with mana value 3 or less from your graveyard without paying its mana cost. If that spell would be put into your
+ * graveyard, exile it instead." (issue 144, Goblin Dark-Dwellers, CR 118.9, 614.1a): the second sentence is a rider of the cast the first one allows (`effect.cast-own-graveyard-card-free`).
+ */
+const CAST_FROM_YOUR_GRAVEYARD_FREE =
+  /(?:^|, )you may cast target [^.,]* cards? [^.,]*from your graveyard without paying its mana cost\.$/i;
 
 /**
  * "You may cast target creature card in a graveyard this turn. When you cast it this turn, ~ gains all activated abilities of that card until end of turn." (issue 159, CR 603.7,
@@ -696,6 +702,14 @@ const REMOVE_COUNTERS_MANA_VALUE =
   /^remove a number of [^.]* counters equal to that card['’]s mana value from [^.]*\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
+/**
+ * "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put
+ * into your graveyard this way. Those tokens have \"Sacrifice this token: Add {C}.\"" (issue 144, Glimpse the Impossible, CR 603.7, 111.4): the second sentence says what the tokens the
+ * delayed ability makes have, so the two are read as one (`effect.create-token`).
+ */
+const DELAYED_TOKENS_FOR_EACH_GRAVEYARD =
+  /^at the beginning of the next end step, [^.]*create [^.]* tokens? for each card put into your graveyard this way\.$/i;
+const THOSE_TOKENS_HAVE_QUOTED_ABILITY = /^those tokens have ["“].*["”]\.?$/i;
 /**
  * "Create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and \"...\"" (issue 89, CR 303.4f, 702.5a): an
  * Aura token is created attached to a target and the sentence after it says what it enchants and has, so the two are read as one (`effect.create-token`).
@@ -881,6 +895,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
+        (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
@@ -903,6 +918,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, CHOOSE_ANY_OPPONENT_AT_RANDOM) && said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT)) ||

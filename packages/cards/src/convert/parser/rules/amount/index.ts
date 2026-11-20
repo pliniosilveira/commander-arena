@@ -7,6 +7,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { EXPERIENCE_AMOUNT_RULES } from './experience';
+import { F144_AMOUNT_RULES } from './f144';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
@@ -496,6 +497,8 @@ export const AMOUNT_RULES = [
   ...CARD_TYPES_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".
   ...HOFRI_AMOUNT_RULES,
+  // Issue 144 (Glimpse the Impossible): "for each card put into your graveyard this way".
+  ...F144_AMOUNT_RULES,
   ...DISCARDED_TYPES_AMOUNT_RULES,
   // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
   ...QUANDRIX_G_AMOUNT_RULES,

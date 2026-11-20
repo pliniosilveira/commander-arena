@@ -13,6 +13,8 @@ export function spellSpendTarget(
   state: GameState,
   spell: GameObject,
   anyType: boolean,
+  /** Issue 144 (CR 609.4b): mana can be spent as though it were mana of any color: left out, what the spell on the stack says. */
+  anyColor: boolean = spell.stack?.anyManaColor === true,
 ): Extract<SpendTarget, { types: readonly string[] }> {
   const derived = derive(state, spell);
   return {
@@ -25,5 +27,6 @@ export function spellSpendTarget(
     // CR 105.2a: the colors of the spell, which a "monocolored spells" restriction reads.
     colors: derived.colors,
     ...(anyType ? { anyType: true as const } : {}),
+    ...(anyColor ? { anyColor: true as const } : {}),
   };
 }

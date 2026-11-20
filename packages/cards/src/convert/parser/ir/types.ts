@@ -607,6 +607,8 @@ export type IrAmount =
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
   | { readonly kind: 'exiledStillThere'; readonly span: Span }
+  // Issue 144 (CR 608.2c): "for each card put into your graveyard this way", the cards the instruction before it moved
+  | { readonly kind: 'movedCount'; readonly span: Span }
   // D-654 (CR 603.10a, 113.7a): "for each Aura you controlled that was attached to it": the Auras of the controller that were attached to the permanent the trigger is about
   | { readonly kind: 'aurasAttachedToIt'; readonly span: Span }
   /** Number of cards selected for the spell's optional additional exile cost (D-575). */
@@ -1637,6 +1639,11 @@ export type IrStaticEffect =
       readonly alsoSubtypes: readonly string[];
     }
   /**
+   * "As long as the top card of your library is a Goblin card, ~ has all activated abilities of that card." (issue 144, CR 613.1f, 401.5): the activated abilities of the card on top of the
+   * library, while it is `card`. The subject is `~`.
+   */
+  | { readonly kind: 'grantActivatedAbilitiesOfTopCard'; readonly card: IrFilter }
+  /**
    * "~ can't attack or block unless you control another creature with power 4 or greater" (stage P32, D-147, CR 508.1a, 509.1a): the
    * restrictions (`cantAttack`, `cantBlock` or both) that hold unless the condition does. The subject is `~`.
    */
@@ -1998,6 +2005,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'cardTypesAmongThoseCards',
   'shortfall',
   'exiledStillThere',
+  'movedCount',
   'aurasAttachedToIt',
   'manaSpent',
   'votesFor',

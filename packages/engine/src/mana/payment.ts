@@ -128,6 +128,8 @@ interface Entry {
   readonly genericOnly: boolean;
   /** The card types of the permanent that makes it (D-183). */
   readonly types: readonly string[];
+  /** Issue 144 (CR 609.4b): its mana of a color pays any colored symbol of the spell, as the spell may be paid with mana as though it were of any color. */
+  readonly anyColor: boolean;
 }
 
 interface Item {
@@ -279,6 +281,10 @@ function onlyColorOf(request: PaymentRequest): ManaColor | null | undefined {
   return 'ability' in request.spell ? request.spell.onlyColor : undefined;
 }
 
+function spendsAnyColor(request: PaymentRequest): boolean {
+  return 'anyColor' in request.spell && request.spell.anyColor === true;
+}
+
 function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]): Item[] {
   const reserve = new Set<ManaColor>(request.reserve ?? []);
   const items: Item[] = [];
@@ -305,6 +311,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           payAct: restrictionAllows(mana.restriction, { ability: true }),
           genericOnly: false,
           types: mana.sourceTypes ?? [],
+          anyColor: spendsAnyColor(request),
         },
       ],
       maxYield: 1,
@@ -368,6 +375,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           payAct: !mandatory && source.genericOnly !== true,
           genericOnly: source.genericOnly === true,
           types: source.types ?? [],
+          anyColor: spendsAnyColor(request),
         });
       });
     }
@@ -405,6 +413,12 @@ function assignUnits(
     for (const { state: s, usedMask, actMask } of level.values()) {
       // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
       const dims = entry.genericOnly ? [] : [colorDim(color)];
+      // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
+      if (entry.anyColor && !entry.genericOnly && color !== 'C') {
+        for (const other of COLOR_DIMS) {
+          if (other !== 'C' && other !== color) dims.push(colorDim(other));
+        }
+      }
       if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
       dims.push(GENERIC_DIM);
       // Mana of a source with no mana cost may instead pay an activation cost (one level only).

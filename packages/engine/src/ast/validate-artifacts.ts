@@ -205,6 +205,33 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
         }
       }
       return true;
+    case 'grantActivatedAbilitiesOfTopCard':
+      // Issue 144 (CR 613.1f, 401.5): the permanent's own ability, naming the card on top of the library by a filter of the card as printed.
+      if (kindOf(s.subject) !== 'this') {
+        issue(
+          out,
+          `${path}.subject`,
+          'grantActivatedAbilitiesOfTopCard is the ability of the permanent itself ("this")',
+        );
+      }
+      if (s.card === undefined || s.card === null || typeof s.card !== 'object') {
+        issue(out, `${path}.card`, 'grantActivatedAbilitiesOfTopCard names the top card: a filter');
+      } else {
+        checkDescribing(s.card, `${path}.card`, out);
+        if (
+          filterSome(
+            s.card,
+            (f) => f.zone !== undefined || f.owner !== undefined || f.controller !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.card`,
+            'the top card is read as printed: no zone, owner or controller',
+          );
+        }
+      }
+      return true;
     case 'spellsCantBeCountered':
       // D-185: "Creature spells you control can't be countered": the filter describes the spell as it is on the stack.
       if (s.spells === undefined || s.spells === null || typeof s.spells !== 'object') {
