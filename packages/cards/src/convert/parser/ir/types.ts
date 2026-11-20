@@ -456,6 +456,8 @@ export type IrAmount =
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
   // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
   | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
+  // "equal to the number of creatures attacking them" (issue 101, CR 508.1b): each player the life loss affects loses their own number
+  | { readonly kind: 'attackersOfAffected'; readonly span: Span }
   // "equal to the number of cards in that player's hand" (CR 402.1): each player the damage is dealt to is hurt for their own hand size
   | { readonly kind: 'cardsInHandOfAffected'; readonly span: Span }
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
@@ -1999,6 +2001,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',
+  'attackersOfAffected',
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
   'enteredThisTurn',

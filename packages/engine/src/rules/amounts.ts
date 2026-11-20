@@ -285,6 +285,8 @@ export function amountOf(
   // D-365: "the life that player lost this turn" is read for each player the `loseLife` effect affects (`lifeAmountFor`), never here: `validateCard` allows it
   // only as the whole amount of that effect, so this is not reached for a card.
   if (amount.kind === 'lifeLostThisTurn') return 0;
+  // Issue 101: "the number of creatures attacking them" is read for each player the `loseLife` effect affects (`lifeAmountFor`), as `lifeLostThisTurn` is.
+  if (amount.kind === 'attackersOfAffected') return 0;
   // CR 402.1: "the number of cards in that player's hand" is read for each player the `dealDamage` effect hurts (`runDealDamage`), never here: `validateCard` allows it only
   // as the whole amount of that effect.
   if (amount.kind === 'cardsInHandOfAffected') return 0;

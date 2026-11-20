@@ -1191,7 +1191,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `${playerVerb(effect.player, ability, 'gain')} ${quantity(effect.amount, defs, LIFE)}`;
     case 'loseLife':
       // D-365: "Each opponent loses life equal to the life that player lost this turn", not "loses the life ... life".
-      if (typeof effect.amount === 'object' && effect.amount.kind === 'lifeLostThisTurn') {
+      if (
+        typeof effect.amount === 'object' &&
+        (effect.amount.kind === 'lifeLostThisTurn' || effect.amount.kind === 'attackersOfAffected')
+      ) {
         return `${playerVerb(effect.player, ability, 'lose')} life equal to ${amountPhrase(effect.amount)}`;
       }
       return typeof effect.amount === 'object' && effect.amount.kind === 'triggerDamage'

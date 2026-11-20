@@ -22,6 +22,11 @@ export function lifeAmountFor(
   if (typeof amount === 'object' && amount.kind === 'lifeLostThisTurn') {
     return getSeat(state, seat).lifeLostThisTurn;
   }
+  // CR 508.1b, 506.3 (issue 101): the creatures attacking that player, not a planeswalker or a battle they control.
+  if (typeof amount === 'object' && amount.kind === 'attackersOfAffected') {
+    const attackers = state.combat?.attackers ?? [];
+    return attackers.filter((a) => a.target.kind === 'player' && a.target.seat === seat).length;
+  }
   return read();
 }
 

@@ -1311,6 +1311,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostThisWay',
     // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
     'lifeLostThisTurn',
+    // Issue 101 (CR 508.1b): "the number of creatures attacking them", read for each player a `loseLife` affects.
+    'attackersOfAffected',
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
@@ -2211,6 +2213,8 @@ export const AMOUNT_KINDS = [
   'lifeLostThisWay',
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
+  /** "The number of creatures attacking them" (issue 101, CR 508.1b): the engine's `attackersOfAffected`, the whole amount of a `loseLife`. */
+  'attackersOfAffected',
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',

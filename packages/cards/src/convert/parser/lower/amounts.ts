@@ -302,6 +302,12 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
     }
+    case 'attackersOfAffected': {
+      // CR 508.1b (issue 101): each affected player's own count of the creatures attacking them; refused for any instruction but a `loseLife` of a player other than "you".
+      const blocked = needs('attackersOfAffected');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'attackersOfAffected' }, rule };
+    }
     case 'cardsInHandOfAffected': {
       // CR 402.1: the engine reads each player's own hand as the damage is dealt to them; the damage lowering refuses it where the recipients are not players, and
       // `validateCard` refuses it in any other amount.
@@ -939,6 +945,7 @@ export const AMOUNT_NEEDS = [
   'amount:manaSpent',
   'amount:lifeLostThisWay',
   'amount:lifeLostThisTurn',
+  'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',

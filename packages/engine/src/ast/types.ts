@@ -151,6 +151,12 @@ export type Amount =
    */
   | { readonly kind: 'lifeLostThisTurn' }
   /**
+   * "The number of creatures attacking them" (issue 101, Within Range: "each opponent loses life equal to the number of creatures attacking them"; CR 508.1b, 506.3): the creatures
+   * declared as attackers whose attack target is the player the effect applies to (as a player: an attack on a planeswalker or a battle they control is not an attack on them), read for
+   * each of them as the effect applies to them. It is the whole `amount` of a `loseLife` and nothing else, as `lifeLostThisTurn` is.
+   */
+  | { readonly kind: 'attackersOfAffected' }
+  /**
    * "The number of cards in that player's hand" (CR 402.1, 120.3; Stormbreath Dragon: "deals damage to each opponent equal to the number of cards in that player's hand"):
    * the hand size of the player the effect applies to, read for each of them as the damage is dealt to them. It is the whole `amount` of a `dealDamage` whose recipient
    * is a player selector and nothing else (as `lifeLostThisTurn` is for a `loseLife`), so it is not valid inside another amount or in any other effect.

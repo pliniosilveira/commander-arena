@@ -97,3 +97,36 @@ describe('this creature or your commander in an attack trigger (CR 508.1, 903.3)
     expect(messages(spell)).toContain('isSource is read in the filter');
   });
 });
+
+describe('the number of creatures attacking them (CR 508.1b)', () => {
+  const loses = (amount: unknown): Effect => ({
+    kind: 'loseLife',
+    player: { kind: 'eachOpponent' },
+    amount: amount as never,
+  });
+
+  test('attackersOfAffected is the whole amount of a loseLife', () => {
+    expect(validateCard(creature([attackTrigger(loses({ kind: 'attackersOfAffected' }))]))).toEqual(
+      [],
+    );
+  });
+
+  test('it is refused as part of another amount and in another effect', () => {
+    expect(
+      messages(
+        creature([attackTrigger(loses({ kind: 'sum', of: [{ kind: 'attackersOfAffected' }, 1] }))]),
+      ),
+    ).toContain('attackersOfAffected');
+    expect(
+      messages(
+        creature([
+          attackTrigger({
+            kind: 'gainLife',
+            player: { kind: 'you' },
+            amount: { kind: 'attackersOfAffected' } as never,
+          }),
+        ]),
+      ),
+    ).toContain('attackersOfAffected is the amount of a loseLife effect');
+  });
+});

@@ -266,6 +266,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'lifeLostThisTurn':
       // D-365 (CR 119.3): read for each player the instruction affects.
       return 'the life that player lost this turn';
+    case 'attackersOfAffected':
+      // Issue 101 (CR 508.1b): read for each player the instruction affects.
+      return 'the number of creatures attacking them';
     case 'lifeGainedThisTurn':
       return 'the amount of life you gained this turn';
     case 'enteredThisTurn':

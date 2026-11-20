@@ -2221,6 +2221,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         'cardsInHandOfAffected is the whole amount of a dealDamage to players, not part of another amount',
       );
       break;
+    case 'attackersOfAffected':
+      // Issue 101: only as the whole amount of a `loseLife` (checked with the effect).
+      issue(
+        out,
+        path,
+        'attackersOfAffected is the whole amount of a loseLife effect, not part of another amount',
+      );
+      break;
     case 'lifeLostThisTurn':
       // D-365: only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
       issue(
@@ -6501,9 +6509,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'increaseSpeed':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
-      if (kindOf(e.amount) === 'lifeLostThisTurn') {
+      if (kindOf(e.amount) === 'lifeLostThisTurn' || kindOf(e.amount) === 'attackersOfAffected') {
         if (e.kind !== 'loseLife') {
-          issue(out, `${path}.amount`, 'lifeLostThisTurn is the amount of a loseLife effect');
+          issue(out, `${path}.amount`, `${kindOf(e.amount)} is the amount of a loseLife effect`);
         }
       } else {
         checkAmount(e.amount, `${path}.amount`, scope, out);

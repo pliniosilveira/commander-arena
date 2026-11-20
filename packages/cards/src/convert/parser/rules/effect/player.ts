@@ -265,7 +265,11 @@ export const lifeAction: Action = (subject, you, rule) => {
                         'amount.damage-dealt-this-way',
                       ]
                     : // D-365: "loses life equal to the life that player lost this turn" (a loss only; the lowering reads it for another player than "you").
-                      [...EQUAL_AMOUNTS, 'amount.life-lost-this-turn'],
+                      [
+                        ...EQUAL_AMOUNTS,
+                        'amount.life-lost-this-turn',
+                        'amount.attackers-of-affected',
+                      ],
               }),
             ),
             ([, , amount]) => amount,

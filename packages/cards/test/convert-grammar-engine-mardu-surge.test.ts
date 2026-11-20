@@ -277,3 +277,29 @@ describe('Legion Warboss: a token that gains haste and must attack this combat (
     g.expect.legal(0, { declareAttackers: [{ attacker: 'Goblin' }] });
   });
 });
+
+describe('Within Range: each opponent loses life for the creatures attacking them (CR 508.1b)', () => {
+  const range = real('Within Range');
+
+  test('the card is valid, and each attacking creature costs the opponent 1 life', () => {
+    expect(validateCard(range)).toEqual([]);
+    const g = scenario()
+      .define(range)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(range.name)
+      .battlefield(BEARS, { count: 3 })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([
+      { attacker: `${BEARS}[0]` },
+      { attacker: `${BEARS}[1]` },
+      { attacker: `${BEARS}[2]` },
+    ]);
+    g.passAll();
+    g.expect.life(1, 37);
+  });
+});
