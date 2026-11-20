@@ -645,3 +645,46 @@ describe('Sauron, the Necromancer', () => {
     expect(tokens(g)).toHaveLength(1);
   });
 });
+
+describe('Morgul-Knife Wound', () => {
+  const wound = real('Morgul-Knife Wound');
+
+  const upkeep = () =>
+    scenario()
+      .define(wound)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(ANGEL)
+      .battlefield(wound.name, { attachedTo: ANGEL })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('end', { active: 1 })
+      .build();
+
+  test('enchanted creature gets -3/-0', () => {
+    const g = upkeep();
+    g.expect.pt(ANGEL, 1, 4);
+  });
+
+  test('at the beginning of the upkeep of its controller the creature is exiled unless they pay 2 life; the Aura then goes to the graveyard (CR 118.12a, 613.1f, 704.5m)', () => {
+    const g = upkeep();
+    g.advanceTo('upkeep');
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    g.expect.zone(ANGEL, 'exile', { seat: 0 });
+    g.expect.zone(wound.name, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('paying 2 life keeps the creature, with the Aura on it', () => {
+    const g = upkeep();
+    g.advanceTo('upkeep');
+    g.passAll();
+    g.act(0).accept();
+    g.passAll();
+    g.expect.zone(ANGEL, 'battlefield', { seat: 0 });
+    g.expect.attached(wound.name, ANGEL);
+    g.expect.life(0, 38);
+  });
+});
