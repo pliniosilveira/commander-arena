@@ -653,6 +653,7 @@ describe('unmatched abilities', () => {
       'effect.tap-and-stun-those-creatures',
       'effect.adapt',
       'effect.next-spell-modifier',
+      'effect.next-spell-pay-life',
       'effect.put-milled-into-hand',
       'effect.pay-any-number-of-times',
       'effect.exile-up-to-that-many-and-copy',
