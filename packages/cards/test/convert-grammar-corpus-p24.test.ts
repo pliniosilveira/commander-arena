@@ -174,8 +174,8 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'artifact',
-    text: 'You may look at the top card of your library any time.\nYou may play lands from the top of your library.',
-    expect: no('You may play lands from the top of your library.', NONE),
+    text: 'You may look at the top card of your library any time.\nYou may play creature cards from the top of your library.',
+    expect: no('You may play creature cards from the top of your library.', NONE),
     note: "SYNTHETIC second line (Bolas's Citadel-shaped): the look is read, the other line is the reason",
   },
 ];

@@ -52,15 +52,18 @@ const TRANSFORM: readonly Line[] = [
 const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
-    text: 'At the beginning of each upkeep, if no spells were cast last turn, transform ~.',
-    expect: no('no spells were cast last turn, transform ~.', 'ability.triggered'),
-    note: 'backlog: 32 cards; the werewolf shape, no condition reads it (the upkeep trigger is read)',
+    text: 'At the beginning of each upkeep, if an opponent cast two or more spells last turn, transform ~.',
+    expect: no('an opponent cast two or more spells last turn, transform ~.', 'ability.triggered'),
+    note: 'the werewolf shape is read since issue 345 ("no spells were cast last turn", "a player cast two or more"); another subject of the cast is not',
   },
   {
     kind: 'creature',
-    text: 'At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.',
-    expect: no('a player cast two or more spells last turn, transform ~.', 'ability.triggered'),
-    note: 'backlog: 32 cards; the other half of the werewolf shape',
+    text: 'At the beginning of each upkeep, if an opponent cast three or more spells last turn, transform ~.',
+    expect: no(
+      'an opponent cast three or more spells last turn, transform ~.',
+      'ability.triggered',
+    ),
+    note: 'the other half of the werewolf shape, with another subject of the cast',
   },
   {
     kind: 'creature',

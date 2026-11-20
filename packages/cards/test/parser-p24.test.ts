@@ -326,11 +326,11 @@ describe('the support of a card with these lines (validateCard is the last gate,
     // Bolas's Citadel-shaped: the look is read, the rest of the card is not (SYNTHETIC second line).
     const imported = card(
       'Artifact',
-      `${LOOK_AT_TOP}\nYou may play lands from the top of your library.`,
+      `${LOOK_AT_TOP}\nYou may play creature cards from the top of your library.`,
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed.map((u) => u.text)).toEqual([
-      'You may play lands from the top of your library.',
+      'You may play creature cards from the top of your library.',
     ]);
   });
 
