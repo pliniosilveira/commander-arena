@@ -206,6 +206,12 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
             aria-hidden="true"
           />
         )}
+        {o.isToken && top !== null && (
+          // The printed frame of a token looks like a card's at this size: a stripe in the corner says it is one.
+          <span className="board-tile-token-mark" data-token-mark>
+            Token
+          </span>
+        )}
         <span className="board-tile-name">{o.name}</span>
         {o.isToken && h >= 64 && (
           <span className="board-tile-token" data-token-line>
