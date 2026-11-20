@@ -148,9 +148,37 @@ describe('row layout (A19)', () => {
     expect(layout.tileW).toBe(56);
   });
 
-  test('tokens are only grouped when the plain row does not fit', () => {
+  test('tokens are only grouped when the plain row does not fit at the preferred size', () => {
     const tokens = Array.from({ length: 4 }, () => obj());
     expect(layoutRow(tokens, 800, spec).grouped).toBe(false);
+  });
+
+  // Issue 368: a row of equal tokens that only fits by shrinking its tiles is grouped instead, so the cards stay readable.
+  test('equal tokens group before the tiles have to shrink, not after they reach the minimum', () => {
+    const tokens = Array.from({ length: 10 }, () => obj());
+    expect(fitTiles(Array(10).fill(false), 700, spec).tileW).toBeLessThan(74);
+    const layout = layoutRow(tokens, 700, spec);
+    expect(layout.grouped).toBe(true);
+    expect(layout.entries).toHaveLength(1);
+    expect(layout.tileW).toBe(74);
+    expect(layout.overflow).toBe(false);
+  });
+
+  test('nontoken permanents still shrink: they do not group', () => {
+    const cards = Array.from({ length: 10 }, () => obj({ isToken: false }));
+    const layout = layoutRow(cards, 700, spec);
+    expect(layout.grouped).toBe(false);
+    expect(layout.tileW).toBeLessThan(74);
+    expect(layout.overflow).toBe(false);
+  });
+
+  test('a mixed row groups the tokens and keeps the other cards at full size when that is enough', () => {
+    const cards = Array.from({ length: 6 }, () => obj({ isToken: false, name: 'Bears' }));
+    const tokens = Array.from({ length: 6 }, () => obj());
+    const layout = layoutRow([...cards, ...tokens], 600, spec);
+    expect(layout.grouped).toBe(true);
+    expect(layout.entries).toHaveLength(7);
+    expect(layout.tileW).toBe(74);
   });
 });
 

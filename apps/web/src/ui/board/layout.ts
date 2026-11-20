@@ -18,7 +18,7 @@ export interface RowSpec {
 export interface RowLayout {
   readonly entries: readonly TileEntry[];
   readonly tileW: number;
-  /** Identical tokens were collapsed because the row did not fit at the minimum width. */
+  /** Identical tokens were collapsed because the row did not fit at the preferred width. */
   readonly grouped: boolean;
   /** Still wider than the row after grouping: the row scrolls horizontally. */
   readonly overflow: boolean;
@@ -52,7 +52,7 @@ export function fitTiles(
 }
 
 /**
- * Decides one row: prefer full size, shrink to the minimum, then group identical tokens, then
+ * Decides one row: prefer full size, then group identical tokens, then shrink to the minimum, then
  * scroll. `width` null means "not measured yet" (server render): draw at preferred size.
  */
 export function layoutRow(
@@ -71,10 +71,15 @@ export function layoutRow(
     width,
     spec,
   );
-  if (!plain.overflow)
+  // Issue 368: identical tokens are grouped as soon as the row cannot keep the preferred tile size (A19 used to group only after the tiles
+  // had shrunk to the minimum and still overflowed): a group keeps the other cards readable, so it comes before shrinking.
+  if (plain.tileW >= spec.preferredW && !plain.overflow)
     return { entries: single, tileW: plain.tileW, grouped: false, overflow: false };
   const entries = groupTokens(objects, extraKey);
   const grouped = entries.length < single.length;
+  if (!grouped) {
+    return { entries: single, tileW: plain.tileW, grouped: false, overflow: plain.overflow };
+  }
   const fit = fitTiles(
     entries.map((e) => tappedOf(e) === true),
     width,
