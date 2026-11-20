@@ -5,6 +5,7 @@ import {
   applyAction,
   type CardId,
   createGame,
+  type DeckConfig,
   type GameConfig,
   type GameState,
   type GameView,
@@ -14,6 +15,7 @@ import {
   type SeatId,
   stateHash,
 } from '@commander-arena/engine';
+import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import {
   type Agent,
@@ -23,13 +25,17 @@ import {
   runGame,
 } from '../src/index';
 import {
+  COMMANDERS,
   CTX,
   deckFromMix,
-  LATER_STYLE_PAIRS,
+  LATER_NAMES,
   LIBRARY_STYLE_PAIRS,
-  MANIFEST_STYLE_PAIRS,
-  PLAY_RULE_STYLE_PAIRS,
+  lcg,
+  MANIFEST_LANDS,
+  MANIFEST_SPELLS,
+  PLAY_RULE_NAMES,
   SEARCH_STYLE_PAIRS,
+  smallDeck,
   smallGameConfig,
   stylesFor,
 } from './helpers';
@@ -91,9 +97,18 @@ function secretsFor(state: GameState, viewer: SeatId): Secrets {
     if (seat.id === viewer) visible.push(...seat.hand);
     else hidden.push(...seat.hand);
   }
-  // CR 113.7a: the text of an ability on the stack is public, so a string in its AST (a land type in a search filter) is no secret.
+  // CR 113.7a: an ability on the stack exists independently of its source and is public: its text, so a string in its AST (a land type in a search filter) is no secret, and
+  // the name of its source, which the view shows on the ability. The source may have gone back to a hand since (a Pinger bounced in response to its own ability), so that name
+  // is in a hidden zone too, and it is still no secret. `nameOf` has no name for an ability, so the name is read from the view.
+  const abilityNames = state.stack.flatMap((id) => {
+    const obj = state.objects[id];
+    if (obj === undefined || obj.card !== null || obj.token !== null) return [];
+    const name = shown.stack.find((o) => o.id === id)?.name;
+    return name === undefined ? [] : [name];
+  });
   const visibleNames = new Set([
     ...visible.map((id) => nameOf(state, id)),
+    ...abilityNames,
     ...quotedStringsOfStack(state.stack, (id) => state.objects[id as ObjectId]?.stack?.ability),
   ]);
   const objectIds = new Set<string>(hidden);
@@ -388,6 +403,41 @@ async function playAndAudit(config: GameConfig, agentSeeds: [number, number]): P
   return audit;
 }
 
+/**
+ * The cards behind the three hidden-zone audits that share one test: the play-rule cards that show the top card of the library (CR 401.5, D-125), the cards with foretell
+ * (CR 702.143a, D-128) and the cards that manifest (CR 701.40, D-312). Read from the card pools of the old one-style-each tests; the test checks that none is empty.
+ */
+const TOP_CARD_CARDS = [...new Set(PLAY_RULE_NAMES.filter((n) => n.startsWith('SYNTHETIC Seer')))];
+const FORETELL_CARDS = [...new Set(LATER_NAMES.filter((n) => n.startsWith('SYNTHETIC Foretell')))];
+const MANIFEST_CARDS = [
+  ...new Set(
+    MANIFEST_SPELLS.filter((n) =>
+      ['Self', 'Everyone', 'Theft', 'Maker', 'Shift'].some((k) => n === `SYNTHETIC Manifest ${k}`),
+    ),
+  ),
+];
+const ZONE_BODIES = ['Grizzly Bears', 'Giant Spider', 'Murder'] as const;
+
+/**
+ * A deck that holds, by construction, 2 cards that show the top card, 2 with foretell and 3 that manifest, picked by `deckSeed`, on lands of every color (a manifested card of
+ * any cost can be turned up), with a few bodies and removal. What a game does with them is still up to the draw and the agents, so the audit counts the views it got.
+ */
+function zoneDeck(deckSeed: number): DeckConfig {
+  const roll = lcg(deckSeed * 2654435761 + 12345);
+  const pick = (names: readonly string[], n: number) =>
+    Array.from({ length: n }, () => names[roll(names.length)] ?? '');
+  return deckFromMix({
+    commander: COMMANDERS[roll(COMMANDERS.length)] ?? COMMANDERS[0],
+    lands: Array.from({ length: 10 }, () => MANIFEST_LANDS[roll(MANIFEST_LANDS.length)] ?? ''),
+    spells: [
+      ...pick(TOP_CARD_CARDS, 2),
+      ...pick(FORETELL_CARDS, 2),
+      ...pick(MANIFEST_CARDS, 3),
+      ...ZONE_BODIES,
+    ],
+  });
+}
+
 describe('hidden information (SPEC scenario test 28)', () => {
   test('across 12 random games no view leaks the opponent hand or library order', async () => {
     const total = newAudit();
@@ -432,43 +482,25 @@ describe('hidden information (SPEC scenario test 28)', () => {
     expect(total.forbiddenIdsChecked).toBeGreaterThan(10_000);
   }, 120_000);
 
-  test('play-rule decks: only the player with the permanent sees the top card of their own library', async () => {
+  test('hidden-zone decks: the top card of an own library, foretold cards and manifested cards show the other seat nothing', async () => {
+    // Each of the three pools has cards, so the decks below really hold them.
+    expect(TOP_CARD_CARDS.length).toBeGreaterThan(0);
+    expect(FORETELL_CARDS.length).toBeGreaterThan(0);
+    expect(MANIFEST_CARDS.length).toBeGreaterThan(0);
     const total = newAudit();
-    for (let g = 1; g <= 9; g += 1) {
-      const styles = PLAY_RULE_STYLE_PAIRS[g % PLAY_RULE_STYLE_PAIRS.length] ?? [
-        'playRules',
-        'playRules',
+    for (let g = 1; g <= 8; g += 1) {
+      // Every third game puts a deck of the ordinary spell mix on seat 1: a seat that has none of these cards views a seat that has them.
+      const decks: [DeckConfig, DeckConfig] = [
+        zoneDeck(g * 2 + 1),
+        g % 3 === 0 ? smallDeck(g * 2 + 2, 'spells') : zoneDeck(g * 2 + 2),
       ];
-      const audit = await playAndAudit(smallGameConfig(90 + g, styles), [120 + g, 220 + g]);
+      const audit = await playAndAudit({ seed: 90 + g, decks }, [120 + g, 220 + g]);
       for (const key of Object.keys(total) as (keyof Audit)[]) total[key] += audit[key];
     }
     // The top card was shown to its owner in many views, and never to anyone else (checked in auditView).
     expect(total.topCardViews).toBeGreaterThan(20);
-    expect(total.forbiddenIdsChecked).toBeGreaterThan(10_000);
-  }, 120_000);
-
-  test('cast-later decks: a foretold card is face down to the other seat and nothing about it leaks', async () => {
-    const total = newAudit();
-    for (let g = 1; g <= 9; g += 1) {
-      const styles = LATER_STYLE_PAIRS[g % LATER_STYLE_PAIRS.length] ?? ['later', 'later'];
-      const audit = await playAndAudit(smallGameConfig(95 + g, styles), [130 + g, 230 + g]);
-      for (const key of Object.keys(total) as (keyof Audit)[]) total[key] += audit[key];
-    }
     // Foretold cards were on the table in many views, as placeholders for the other seat (checked in auditView).
     expect(total.faceDownViews).toBeGreaterThan(20);
-    expect(total.forbiddenIdsChecked).toBeGreaterThan(10_000);
-  }, 120_000);
-
-  test('manifest decks: a face-down permanent of the other seat is a labelled 2/2 and nothing about its card leaks', async () => {
-    const total = newAudit();
-    for (let g = 1; g <= 9; g += 1) {
-      const styles = MANIFEST_STYLE_PAIRS[g % MANIFEST_STYLE_PAIRS.length] ?? [
-        'manifest',
-        'manifest',
-      ];
-      const audit = await playAndAudit(smallGameConfig(120 + g, styles), [140 + g, 240 + g]);
-      for (const key of Object.keys(total) as (keyof Audit)[]) total[key] += audit[key];
-    }
     // Face-down permanents of the other seat were on the table in many views (checked in auditView), and their names and card ids were among the secrets.
     expect(total.faceDownPermanentViews).toBeGreaterThan(20);
     expect(total.forbiddenIdsChecked).toBeGreaterThan(10_000);
@@ -511,6 +543,29 @@ describe('hidden information (SPEC scenario test 28)', () => {
     // Seat 0 always has seat 1's unique cards to not know about.
     expect(audit.forbiddenNamesChecked).toBeGreaterThan(500);
   }, 60_000);
+
+  test('the name an ability on the stack shows is no secret, even when its source went back to a hand', () => {
+    // Seat 0 activates its Pinger and, holding priority, bounces it with Unsummon: the card is in a hand, a hidden zone, and its ability is still on the stack with the
+    // name of its source (CR 113.7a). Seat 1 sees that name in its view, and the audit must not call it a leak.
+    const PINGER = 'SYNTHETIC Pinger';
+    const g = scenario()
+      .seat(0)
+      .battlefield(PINGER, 'Island')
+      .hand('Unsummon', { label: 'bounce' })
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .build();
+    g.act(0).activate(PINGER, { targets: ['Grizzly Bears'] });
+    g.act(0).cast('bounce', { targets: [PINGER], pay: true });
+    g.act(0).pass();
+    g.act(1).pass();
+    g.expect.stack([`${PINGER} (ability)`]);
+    expect(g.state.seats[0]?.hand.map((id) => g.state.objects[id]?.card).length).toBe(1);
+    const view = getView(g.state, 1);
+    expect(JSON.stringify(view.stack)).toContain(PINGER);
+    expect(secretsFor(g.state, 1).names.has(PINGER)).toBe(false);
+    expect(() => auditView(g.state, 1, newAudit())).not.toThrow();
+  });
 
   test('the viewer sees own hand in full, with the objects of its pending decision', async () => {
     const created = createGame(smallGameConfig(4)).state;
