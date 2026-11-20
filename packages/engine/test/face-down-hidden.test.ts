@@ -283,6 +283,8 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   summoningSick: 'public',
   controlEnds: 'public',
   ringBearer: 'public',
+  goadedBy: 'public',
+  affectedBy: 'public',
   pairedWith: 'public',
   pairedPhasedOut: 'public',
   wouldBeSummoningSick: 'public',

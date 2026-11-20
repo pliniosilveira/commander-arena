@@ -1,6 +1,6 @@
 /**
- * One battlefield row (A19): tiles at a preferred size, shrunk as the row fills, identical tokens
- * grouped below the minimum width, horizontal scrolling with arrows when it still overflows.
+ * One battlefield row (A19): tiles at a preferred size, equal permanents grouped, the tiles shrunk
+ * as the row fills, horizontal scrolling with arrows when it still overflows.
  */
 import type { ObjectView } from '@commander-arena/engine';
 import {
@@ -15,6 +15,7 @@ import { useInteraction } from '../interaction';
 import { useTextScale } from '../panels/text-size';
 import { HostStack } from './Attached';
 import { stripReserve } from './attach';
+import { CARD_TOP_ASPECT, cardTopHeight } from './card-top';
 import { LandRow } from './LandRow';
 import { layoutRow, type RowSpec } from './layout';
 import { useMeasure } from './measure';
@@ -29,13 +30,15 @@ const ROW_LABEL: Readonly<Record<RowKind, string>> = {
   other: 'Other permanents',
 };
 
-/** Tile proportions per row: how tall at most, how wide relative to height, the legible minimum. */
+/**
+ * Tile proportions per row: how tall at most, how wide relative to height, the narrowest tile. Every
+ * tile has the shape of the top of a card cut under its type line (`card-top.ts`), wider than tall.
+ */
 const ROW_SHAPE: Readonly<Record<RowKind, { maxH: number; aspect: number; minW: number }>> = {
   // D-240 (issue 137): the largest tiles are a quarter bigger than they were (108, 84 and 70 before).
-  creature: { maxH: 136, aspect: 0.74, minW: 56 },
-  other: { maxH: 105, aspect: 0.9, minW: 54 },
-  // Square, so a tapped land (turned 90 degrees) takes no more room than an untapped one.
-  land: { maxH: 88, aspect: 1, minW: 56 },
+  creature: { maxH: 136, aspect: CARD_TOP_ASPECT, minW: 96 },
+  other: { maxH: 105, aspect: CARD_TOP_ASPECT, minW: 84 },
+  land: { maxH: 88, aspect: CARD_TOP_ASPECT, minW: 56 },
 };
 
 /**
@@ -76,6 +79,11 @@ function GroupTile({
   const [pos, setPos] = useState<CSSProperties>({});
   const open = hovered || pinned;
   const first = objects[0];
+  const ix = useInteraction();
+  // While the game asks for some of them, a click on the pile answers with one member: it then
+  // differs from the rest (selected), leaves the pile, and the next click takes the next one.
+  const pick = first !== undefined && ix.clickable.has(first.id) ? first.id : null;
+  const popW = Math.round(96 * scale);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -114,18 +122,16 @@ function GroupTile({
         h={h}
         count={objects.length}
         role={roles.get(first.id)}
-        onActivate={() => setPinned((p) => !p)}
+        onActivate={() => (pick === null ? setPinned((p) => !p) : ix.onObject(pick))}
       />
       {open && (
-        <fieldset className="board-group-pop" style={pos} aria-label={`${first.name} tokens`}>
+        <fieldset
+          className="board-group-pop"
+          style={pos}
+          aria-label={first.isToken ? `${first.name} tokens` : `Every ${first.name}`}
+        >
           {objects.map((o) => (
-            <Tile
-              key={o.id}
-              object={o}
-              w={Math.round(64 * scale)}
-              h={Math.round(88 * scale)}
-              role={roles.get(o.id)}
-            />
+            <Tile key={o.id} object={o} w={popW} h={cardTopHeight(popW)} role={roles.get(o.id)} />
           ))}
         </fieldset>
       )}
@@ -143,7 +149,7 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
   );
   const scale = useTextScale();
   const spec = rowSpec(kind, size?.height ?? 100, reserve, scale);
-  // Tokens that differ in what the player acts on must not hide inside one group.
+  // Permanents that differ in what the player acts on must not hide inside one group.
   const extraKey = useCallback(
     (o: ObjectView) =>
       `${ix.clickable.has(o.id)}|${ix.selected.has(o.id)}|${ix.badge(o.id) ?? ''}|${roleKey(
@@ -155,6 +161,8 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
   const { scroller, more, updateMore, scrollBy } = useRowScroll(
     `${layout.entries.length}|${layout.tileW}|${size?.width}`,
   );
+  // A tile narrower than the preferred width keeps its shape, so the card's top is cut at the same line.
+  const tileH = Math.min(spec.tileH, cardTopHeight(layout.tileW));
   const style = {
     '--row-h': `${spec.tileH}px`,
     '--attach-reserve': `${reserve}px`,
@@ -178,13 +186,7 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
         {layout.entries.map((e) => {
           if (e.kind === 'group') {
             return (
-              <GroupTile
-                key={e.key}
-                objects={e.objects}
-                w={layout.tileW}
-                h={spec.tileH}
-                roles={roles}
-              />
+              <GroupTile key={e.key} objects={e.objects} w={layout.tileW} h={tileH} roles={roles} />
             );
           }
           const under = attachments.get(e.object.id);
@@ -193,7 +195,7 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
               key={e.object.id}
               object={e.object}
               w={layout.tileW}
-              h={spec.tileH}
+              h={tileH}
               role={roles.get(e.object.id)}
             />
           ) : (
@@ -202,7 +204,7 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
               host={e.object}
               attachments={under}
               w={layout.tileW}
-              h={spec.tileH}
+              h={tileH}
               role={roles.get(e.object.id)}
             />
           );

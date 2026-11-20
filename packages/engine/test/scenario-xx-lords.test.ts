@@ -5,7 +5,8 @@
 // (timestamps), CR 611.2c (a continuous effect from a resolving spell or ability changes only the objects it
 // affected when it began), CR 613.4b (layer 7b before 7c), CR 205.3m (creature types).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-subjects.ts) or real fixtures.
-import { describe, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
+import { getView } from '../src/view';
 import { twoSeatGame } from './two-seat-helpers';
 
 const LORD = 'SYNTHETIC Undead Lord'; // 2/2 Zombie: other Zombie creatures get +1/+1 (every controller)
@@ -26,6 +27,26 @@ describe('"Other Zombie creatures get +1/+1": a lord over a filter of every cont
     g.expect.pt({ name: ZOMBIE, seat: 0 }, 3, 3);
     g.expect.pt({ name: ZOMBIE, seat: 1 }, 3, 3);
     g.expect.pt(BEARS, 2, 2);
+  });
+
+  test('the view of every player names the permanents whose static abilities apply to a permanent (CR 604.1)', () => {
+    const g = twoSeatGame(
+      (b) => b.battlefield(LORD).battlefield(BARON).battlefield(ZOMBIE).battlefield(BEARS),
+      (b) => b.battlefield(ZOMBIE),
+    );
+    const lord = g.id({ name: LORD, seat: 0 });
+    const baron = g.id({ name: BARON, seat: 0 });
+    for (const seat of [0, 1] as const) {
+      const affectedBy = (id: string) =>
+        getView(g.state, seat).battlefield.find((o) => o.id === id)?.affectedBy;
+      // My Zombie: both lords. The other player's: only the lord that reaches every controller.
+      expect(affectedBy(g.id({ name: ZOMBIE, seat: 0 }))).toEqual([lord, baron]);
+      expect(affectedBy(g.id({ name: ZOMBIE, seat: 1 }))).toEqual([lord]);
+      // A lord is affected by the other lord, never by itself; a creature no ability names, by none.
+      expect(affectedBy(lord)).toEqual([baron]);
+      expect(affectedBy(baron)).toEqual([lord]);
+      expect(affectedBy(g.id(BEARS))).toBeUndefined();
+    }
   });
 
   test('two lords each affect the other, and the bonuses add up', () => {

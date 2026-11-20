@@ -5,7 +5,8 @@
  * player would slide them at a table. In the attackers' row the blocked attackers come first, so they
  * line up with the blockers' row. Every other creature keeps its place after them. The order only
  * changes for declared blocks: while the player is still picking (`tentative`), tiles stay where they
- * are, so the one under the pointer does not move.
+ * are, so the one under the pointer does not move. After the combat the creatures stay where it put
+ * them (`keptOrder`): moving them back was a second jump with no reason the player could see.
  */
 import type { ObjectView } from '@commander-arena/engine';
 import type { CombatRole } from './resolve';
@@ -37,5 +38,23 @@ export function combatOrder(
       }
       return a.rank - b.rank || a.place - b.place;
     })
+    .map((r) => r.object);
+}
+
+/**
+ * `objects` in the order a combat left them: those `kept` names first, in its order, then the rest
+ * in their own order (a creature that arrived since). The row keeps the places the last declared
+ * blocks gave, so the creatures do not jump back when the combat ends. `kept` empty: `objects` as is.
+ */
+export function keptOrder(
+  objects: readonly ObjectView[],
+  kept: readonly string[],
+): readonly ObjectView[] {
+  if (kept.length === 0) return objects;
+  const place = new Map(kept.map((id, i) => [id, i]));
+  if (!objects.some((o) => place.has(o.id))) return objects;
+  return objects
+    .map((object, at) => ({ object, at, kept: place.get(object.id) ?? kept.length }))
+    .sort((a, b) => a.kept - b.kept || a.at - b.at)
     .map((r) => r.object);
 }
