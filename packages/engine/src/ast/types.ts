@@ -436,7 +436,9 @@ export type ThisWayKind =
   | 'exiledPowerOwn'
   // Deadly Tempest (CR 608.2c, 608.2h): "each player loses life equal to the number of creatures they controlled that were destroyed this way": the whole amount of a `loseLife`, read for
   // each player it affects as the number of creatures that player controlled (as they were just before they died) that the `destroy` effects of this resolution destroyed.
-  | 'destroyedCreaturesOfAffected';
+  | 'destroyedCreaturesOfAffected'
+  // Revival Experiment (CR 608.2c): "You lose 3 life for each card returned this way": the cards a `moveToZone` of a `choose` selector put from a graveyard onto the battlefield in this resolution.
+  | 'returned';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -2781,6 +2783,12 @@ export type Effect =
        * had where it was, the owner's for a card; that was wrong.)
        */
       readonly controller?: 'owner' | 'you';
+      /**
+       * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 708.3, 613.2b): the permanents enter face down, as a land with the Forest subtype and no other
+       * characteristic (the face-down status `forestLand`); the card's own enters replacements and triggers do not apply (CR 708.3). Only with `to` `battlefield` and a selector
+       * that is not `choose`. A face-down permanent of this kind is never turned face up.
+       */
+      readonly faceDownAs?: 'forestLand';
       /**
        * For battlefield: the permanents enter with `count` counters of the kind on them ("return it to
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6

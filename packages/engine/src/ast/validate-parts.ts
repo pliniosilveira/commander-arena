@@ -422,6 +422,14 @@ export function checkFilter(
         'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
       );
     }
+    // CR 107.3a: "each nonland permanent with mana value X or less" reads the X announced for the spell or ability that has the selector.
+    if (a?.kind === 'x' && ownerScope !== undefined && !ownerScope.xAllowed) {
+      issue(
+        out,
+        `${path}.${limitKey}`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
+      );
+    }
     if (f.manaValue !== undefined) {
       issue(
         out,
@@ -1576,6 +1584,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   destroyedOwnNontoken: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
+  returned: 'a moveToZone effect that chooses cards of a graveyard',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
   discarded: 'a discard effect',
@@ -1605,6 +1614,14 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'destroy')
     return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
+  if (
+    e?.kind === 'moveToZone' &&
+    e.to === 'battlefield' &&
+    e.objects?.kind === 'choose' &&
+    e.objects.filter?.zone === 'graveyard'
+  ) {
+    return ['returned'];
+  }
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
@@ -5637,6 +5654,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (kindOf(e.objects) === 'choose') {
           issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
+        }
+      }
+      // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
+      if (e.faceDownAs !== undefined) {
+        if (e.faceDownAs !== 'forestLand') {
+          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' when present");
+        }
+        if (e.to !== 'battlefield') {
+          issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
+        }
+        if (kindOf(e.objects) === 'choose') {
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            'a card chosen as the effect runs does not enter face down',
+          );
         }
       }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.

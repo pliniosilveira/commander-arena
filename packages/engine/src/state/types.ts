@@ -299,7 +299,7 @@ export interface GameObject {
  * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
  * it is turned face up for its morph cost). Megamorph, Disguise and cloak would be more values.
  */
-export type FaceDownBy = 'manifest' | 'morph';
+export type FaceDownBy = 'manifest' | 'morph' | 'forestLand';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {
@@ -1786,10 +1786,14 @@ export type Instruction =
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
       readonly withCounters?: { readonly counter: string; readonly count: number };
+      /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
+      readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */
       readonly countsNonland?: true;
+      /** A card that really goes from a graveyard onto the battlefield is counted as `thisWay` `returned` (`moveToZone` of a `choose` selector). */
+      readonly countsReturned?: true;
       /** A creature that really goes to exile adds `power` to the total of `seat` in `thisWay` `exiledPowerBy` (Oversimplify; both read before the creatures left, CR 608.2h). */
       readonly exiledPower?: { readonly seat: SeatId; readonly power: number };
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
@@ -1963,6 +1967,8 @@ export interface ThisWayCounts {
   readonly destroyed?: number;
   /** The nonland cards `exileOwnGraveyardCard` put into exile (D-231). */
   readonly exiledNonland?: number;
+  /** The cards a `moveToZone` of a `choose` selector really put from a graveyard onto the battlefield (CR 608.2c: "for each card returned this way"). */
+  readonly returned?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
   /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */

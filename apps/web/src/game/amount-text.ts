@@ -157,6 +157,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'discardedTypeCount':
       // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way".
       return 'the number of card types among cards discarded this way';
+    case 'returned':
+      // Revival Experiment (CR 608.2c): "for each card returned this way".
+      return 'the number of cards returned to the battlefield this way';
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
