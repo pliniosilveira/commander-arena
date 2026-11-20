@@ -10,6 +10,7 @@
  * `effect.investigate` is the keyword action that makes a Clue (CR 701.16a), also "once for each ...".
  */
 import {
+  choice,
   fail,
   literal,
   map,
@@ -122,7 +123,10 @@ const createdTokens: Parser<{
       pos: tail.pos,
     };
   }
-  const rider = sequence(literal('. They have '), TOKEN_QUOTED_ABILITY)(ctx, head.pos);
+  const rider = sequence(
+    choice(literal('. They have '), literal('. Those tokens have ')),
+    TOKEN_QUOTED_ABILITY,
+  )(ctx, head.pos);
   if (rider.ok) {
     return {
       ok: true,
@@ -174,6 +178,8 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     'create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and "Whenever enchanted creature attacks, you gain 1 life."',
     'create a white Aura enchantment token named Contract attached to target creature. The token has enchant creature',
     'create a number of 1/1 black and green Pest creature tokens equal to the number of +1/+1 counters on ~. They have "When ~ dies, you gain 1 life."',
+    // Issue 144 (Glimpse the Impossible): the same rider with "Those tokens".
+    'create a 0/1 colorless Eldrazi Spawn creature token for each card put into your graveyard this way. Those tokens have "Sacrifice ~: Add {C}."',
   ],
   rejects: [
     'create X Treasure tokens for each time it was kicked',

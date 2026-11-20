@@ -187,6 +187,37 @@ export function linkedCardOf(
   return null;
 }
 
+/**
+ * The card on top of the library of the controller of `source` when `card` describes it (issue 144, CR 401.5, 613.1f: "As long as the top card of your library is a Goblin card"),
+ * read by what is printed on it (it is in a library: no layer but a copy effect changes it there). Null when the library is empty or the top card does not match.
+ */
+export function topCardOf(
+  state: GameState,
+  source: GameObject,
+  card: ObjectFilter,
+): GameObject | null {
+  const owner = controllerOf(state, source);
+  const topId = state.seats[owner]?.library[0];
+  const top = topId === undefined ? undefined : state.objects[topId];
+  if (top === undefined) return null;
+  const c = copiableValues(state, top).characteristics;
+  const view: FilterSubject = {
+    types: c.types,
+    supertypes: c.supertypes,
+    subtypes: c.subtypes,
+    colors: c.colors,
+  };
+  // The filter describes the card (a "Goblin card"); where it is and whose it is are the library's.
+  const matches = matchesFilterWith(
+    state,
+    top,
+    () => view,
+    { ...card, zone: 'library' },
+    { controller: owner, source: source.id },
+  );
+  return matches ? top : null;
+}
+
 /** The creature types printed on a card (CR 205.3m): its subtypes that are not those of another card type. */
 function creatureTypesOf(state: GameState, card: GameObject): readonly Subtype[] {
   return copiableValues(state, card).characteristics.subtypes.filter(

@@ -1563,6 +1563,22 @@ function runEffect(
         // CR 603.7c (issue 81, Synthetic Destiny): "reveal cards ... until you reveal that many creature cards" at the next end step: how many is what the effect before it did as it
         // resolved (`thisWay`), fixed now, when the delayed ability is created.
         baked = bindThisWay(inner, ctx.thisWay);
+        // Issue 144 (Glimpse the Impossible, CR 603.7c, 400.7): "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a
+        // token for each card put into your graveyard this way": the cards are the ones the effect before it exiled, bound as they are now (`boundObjects` in exile: a card that left
+        // exile since is a new object and is not found). With none in exile there is nothing to wait for.
+        const [first, ...rest] = inner.effects;
+        if (
+          first?.kind === 'moveToZone' &&
+          first.to === 'graveyard' &&
+          first.objects.kind === 'moved'
+        ) {
+          const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+          if (ids.length === 0) return done(state);
+          baked = {
+            ...inner,
+            effects: [{ ...first, objects: { kind: 'boundObjects', ids, zone: 'exile' } }, ...rest],
+          };
+        }
       }
       const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: baked };
       return done({

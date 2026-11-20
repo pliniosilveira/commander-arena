@@ -613,6 +613,14 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'movedCount': {
+      // CR 608.2c (issue 144): "for each card put into your graveyard this way": the cards the move to the graveyard before it moved.
+      const blocked = needs('movedCount');
+      if (blocked !== null) return blocked;
+      if (ctx.lastEffectKind !== 'moveToZone')
+        return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'movedCount' }, rule };
+    }
     case 'exiledStillThere': {
       // CR 400.7 (stage P34, D-152): the cards the instruction before it exiled, counted when a delayed trigger resolves.
       if (ctx.exiled !== 'top') return { ok: false, needs: [], at: amount.span, rule };

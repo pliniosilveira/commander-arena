@@ -61,6 +61,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
+import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -1044,6 +1045,8 @@ export const EFFECT_UNTAP = tapRule('untap');
 export const EFFECT_RULES = [
   // Finale of Promise (issue 121): the four sentences of its one instruction start like a plain "you may cast", and are tried first.
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
+  // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
+  ...F144_FIRST_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1162,6 +1165,8 @@ export const EFFECT_RULES = [
   ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
+  // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
+  ...F144_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,

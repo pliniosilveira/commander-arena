@@ -548,6 +548,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:opponentsCantCastSpells'];
     case 'takeFromLinkedExile':
       return ['static:takeFromLinkedExile'];
+    case 'grantActivatedAbilitiesOfTopCard':
+      return ['static:grantActivatedAbilitiesOfTopCard'];
     case 'costReduction':
       return ['static:costReduction'];
     case 'costIncrease':
@@ -1078,6 +1080,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (
     first.kind === 'castAsThoughFlash' ||
     first.kind === 'takeFromLinkedExile' ||
+    first.kind === 'grantActivatedAbilitiesOfTopCard' ||
     first.kind === 'opponentsCantCastSpells'
   ) {
     if (more.length > 0) return failure(ability);
@@ -1130,7 +1133,13 @@ function lowerOwnStatic(
   ability: Static,
   effect: Extract<
     IrStaticEffect,
-    { kind: 'castAsThoughFlash' | 'takeFromLinkedExile' | 'opponentsCantCastSpells' }
+    {
+      kind:
+        | 'castAsThoughFlash'
+        | 'takeFromLinkedExile'
+        | 'grantActivatedAbilitiesOfTopCard'
+        | 'opponentsCantCastSpells';
+    }
   >,
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
@@ -1175,6 +1184,27 @@ function lowerOwnStatic(
         {
           kind: 'static',
           static: { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
+  if (effect.kind === 'grantActivatedAbilitiesOfTopCard') {
+    // Issue 144 (CR 613.1f, 401.5): the permanent's own ability; "as long as" is the effect itself, so a condition of the statement is not read.
+    if (subject.det !== 'self' || ability.statement.condition !== undefined)
+      return failure(ability);
+    const card = lowerFilter(noun(effect.card));
+    if (!card.ok) return card;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'grantActivatedAbilitiesOfTopCard',
+            subject: { kind: 'this' },
+            card: card.value,
+          },
         },
       ],
       rule: ability.rule,
@@ -1225,6 +1255,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:castAsThoughFlash',
   'static:opponentsCantCastSpells',
   'static:takeFromLinkedExile',
+  'static:grantActivatedAbilitiesOfTopCard',
   'static:restrictionUnless',
   'static:loseAllAbilities',
   'static:setColors',

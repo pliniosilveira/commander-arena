@@ -352,6 +352,13 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       const self = `this ${ctx.noun}`;
       return `As long as a card exiled with ${self} is ${kind}, ${self} has the power, toughness and creature types of the last ${bare} exiled with it${still === '' ? '' : `. It's still ${/^[aeiou]/i.test(still) ? 'an' : 'a'} ${still}`}`;
     }
+    case 'grantActivatedAbilitiesOfTopCard': {
+      // Issue 144 (CR 613.1f, 401.5): Conspicuous Snoop's "As long as the top card of your library is a Goblin card, ...".
+      const card = filterPhrase(effect.card, 'card');
+      if (card === null || effect.subject.kind !== 'this') return null;
+      const kind = card.endsWith(' card') ? card : `${card} card`;
+      return `As long as the top card of your library is ${kind}, this ${ctx.noun} has all activated abilities of that card`;
+    }
     case 'castFromTopOfLibrary':
       // D-151 (CR 601.3): "You may cast creature spells with power 4 or greater from the top of your library".
       return castFromTopText(effect);
