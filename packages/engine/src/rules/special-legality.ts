@@ -20,7 +20,7 @@ import type { GameObject, GameState } from '../state/types';
 import { manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
 import { castAs } from './cast-cost';
 import { derive } from './derive';
-import { faceOf, timingAllows } from './legality';
+import { faceOf, hasSorceryTiming, timingAllows } from './legality';
 import { planFor } from './mana-engine';
 import { splitSecondOnStack } from './split-second';
 
@@ -35,6 +35,14 @@ export function suspendOf(
     if (a.kind === 'keyword' && a.keyword.kind === 'suspend') {
       return { count: a.keyword.count, cost: a.keyword.cost };
     }
+  }
+  return null;
+}
+
+/** The plot ability a face prints (CR 702.170a): its cost, or null. */
+export function plotOf(face: CardFace | null): { readonly cost: readonly Cost[] } | null {
+  for (const a of face?.abilities ?? []) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'plot') return { cost: a.keyword.cost };
   }
   return null;
 }
@@ -98,4 +106,25 @@ export function foretellableObjects(state: GameState, seat: SeatId): ObjectId[] 
 /** A card of the seat's own that is in exile foretold (face down, CR 702.143a): whoever it is, only its owner may look. */
 export function isForetold(obj: GameObject): boolean {
   return obj.zone === 'exile' && obj.foretoldTurn !== undefined;
+}
+
+/** The mana of the plot action of this card (CR 702.170a), or null when it has no plot. */
+export function plotSymbols(state: GameState, obj: GameObject): readonly string[] | null {
+  const plot = plotOf(faceOf(state, obj));
+  return plot === null ? null : manaSymbolsOf(plot.cost).filter((s) => s !== '0');
+}
+
+/** CR 702.170a-b: whether `seat` may plot `obj` now: any time they have priority during their main phase with the stack empty, and they can pay the plot cost. */
+export function canPlot(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  if (obj.zone !== 'hand' || obj.owner !== seat || obj.card === null) return false;
+  if (!hasSorceryTiming(state, seat)) return false;
+  const symbols = plotSymbols(state, obj);
+  if (symbols === null) return false;
+  if (derive(state, castAs(obj, seat, 0)).types.includes('land')) return false;
+  return canPay(state, seat, symbols);
+}
+
+/** The cards in the hand of `seat` it may plot now, in hand order. */
+export function plottableObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'hand', seat).filter((id) => canPlot(state, seat, getObject(state, id)));
 }

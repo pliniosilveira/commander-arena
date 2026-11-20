@@ -55,7 +55,8 @@ type StateAmount = Extract<
       | 'sacrificedAsCost'
       | 'tappedAsCostPower'
       | 'exiledAsCost'
-      | 'cardTypesAmong';
+      | 'cardTypesAmong'
+      | 'differentManaValuesAmong';
   }
 >;
 
@@ -102,7 +103,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'sacrificedAsCost' ||
     amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
-    amount.kind === 'cardTypesAmong'
+    amount.kind === 'cardTypesAmong' ||
+    amount.kind === 'differentManaValuesAmong'
   );
 }
 
@@ -159,6 +161,26 @@ function cardTypesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectCon
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     for (const type of derive(state, obj).types) seen.add(type);
+  }
+  return seen.size;
+}
+
+/**
+ * CR 202.3 (Eris, Roar of the Storm): "the number of different mana values among instant and sorcery cards in your graveyard": the distinct mana values of the objects the filter
+ * matches, each once. The mana value is that of the card where it is (CR 202.3b: an object that is not a spell has its mana cost's value; no mana cost is 0, CR 202.1b).
+ */
+function differentManaValuesAmongOf(
+  state: GameState,
+  filter: ObjectFilter,
+  ctx: SelectContext,
+): number {
+  const zone = filter.zone ?? 'graveyard';
+  const seen = new Set<number>();
+  for (const id of objectsInZone(state, zone)) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    seen.add(manaValueOfCost(derive(state, obj).manaCost, obj));
   }
   return seen.size;
 }
@@ -414,6 +436,8 @@ export function stateAmountOf(
     }
     case 'cardTypesAmong':
       return cardTypesAmongOf(state, amount.filter, ctx);
+    case 'differentManaValuesAmong':
+      return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':
@@ -454,9 +478,14 @@ export function stateAmountOf(
     case 'spellsCastThisTurn': {
       // CR 601.2i (D-638): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
       const types = amount.ofTypes;
-      if (types === undefined) return getSeat(state, ctx.controller).spellsCastThisTurn;
+      if (types === undefined && amount.otherThanThis !== true) {
+        return getSeat(state, ctx.controller).spellsCastThisTurn;
+      }
       return state.turnLog.castSpells.filter(
-        (s) => s.seat === ctx.controller && s.types.some((t) => types.includes(t)),
+        (s) =>
+          s.seat === ctx.controller &&
+          (types === undefined || s.types.some((t) => types.includes(t))) &&
+          (amount.otherThanThis !== true || s.object !== ctx.source),
       ).length;
     }
     case 'greatestManaValueCast': {

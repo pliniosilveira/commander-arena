@@ -38,6 +38,15 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (!isOneOf(t.by, ['you', 'any'])) {
         issue(out, `${path}.by`, `unknown player ${String(t.by)}`);
       }
+      // Issue 121: "When the twelfth hour counter is put on ~": a kind of counter and a number of 2 or more.
+      if (t.reaches !== undefined) {
+        if (!Number.isSafeInteger(t.reaches) || t.reaches < 2) {
+          issue(out, `${path}.reaches`, 'reaches is a whole number of 2 or more');
+        }
+        if (t.counter === undefined) {
+          issue(out, `${path}.counter`, 'reaches needs the kind of counter');
+        }
+      }
       return true;
     case 'playerAttacksOpponent':
       // D-648: no parameters.

@@ -47,12 +47,13 @@ export function hasActivation(decision: PriorityDecision, id: ObjectId): boolean
   return decision.options.some((o) => o.kind === 'activate' && o.object === id);
 }
 
-/** True when the decision lists a special action (Suspend, Foretell: D-128) for this card in the hand. */
+/** True when the decision lists a special action (Suspend, Foretell: D-128; Plot) for this card in the hand. */
 export function hasSpecialAction(decision: PriorityDecision, id: ObjectId): boolean {
   return decision.options.some(
     (o) =>
       (o.kind === 'suspend' ||
         o.kind === 'foretell' ||
+        o.kind === 'plot' ||
         o.kind === 'turnFaceUp' ||
         o.kind === 'unlockDoor') &&
       o.object === id,
@@ -100,7 +101,8 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
   }
   // The special actions of a card in the hand (CR 116.2f, 116.2h): "Suspend 2 — {1}{B}", "Foretell {2}".
   for (const o of decision.options) {
-    if ((o.kind !== 'suspend' && o.kind !== 'foretell') || o.object !== id) continue;
+    if ((o.kind !== 'suspend' && o.kind !== 'foretell' && o.kind !== 'plot') || o.object !== id)
+      continue;
     items.push({
       key: o.kind,
       label: specialActionLabel(o.kind, card),

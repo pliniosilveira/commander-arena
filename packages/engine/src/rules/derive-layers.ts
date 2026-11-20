@@ -183,8 +183,8 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
 }
 
 /**
- * The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-638: ward, CR 702.86b: annihilator, CR 702.144a: demonstrate, a triggered
- * ability that triggers on its own for each instance, as a spell is given it by "Creature spells you cast have demonstrate") and so are not added once only.
+ * The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-638: ward, CR 702.86b: annihilator, CR 702.144a: demonstrate, CR 702.40b: storm, CR 702.85c: cascade)
+ * and so are not added once only (a spell that is given demonstrate, storm or cascade has the trigger of the grant besides the ones it has printed).
  */
 const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'exalted',
@@ -193,6 +193,8 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'ward',
   'annihilator',
   'demonstrate',
+  'storm',
+  'cascade',
 ];
 
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability). */

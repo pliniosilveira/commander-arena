@@ -13,7 +13,7 @@
  * - a modal spell (a "target" inside a mode's text is changed too, but a mode that was chosen for its
  *   targets is a different question: `docs/ROADMAP.md`);
  * - a player or "any target" slot (what "each player" would mean is not read off the text);
- * - a slot in a zone other than the battlefield, or on the stack;
+ * - a slot in a zone other than the battlefield or a graveyard, or on the stack;
  * - a `target` that is not a plain selector of an effect (an amount that reads a target's power, the
  *   owner of cards "in target player's graveyard", ...): the replaced word would not read as "each".
  * - a spell with no target, which has nothing for the cost to change.
@@ -36,8 +36,12 @@ function eachFor(spec: TargetSpec | undefined): unknown {
   if (spec === undefined || spec.what.kind !== 'object') return REFUSED;
   const { filter } = spec.what;
   if (filter.stackKind !== undefined) return REFUSED;
-  if (filter.zone !== undefined && filter.zone !== 'battlefield') return REFUSED;
-  return { kind: 'each', filter: { ...filter, zone: 'battlefield' } };
+  // Issue 121 (Mizzix's Mastery: "Exile target card that's an instant or sorcery from your graveyard" becomes "each card that's ..."): a slot of cards in a graveyard is
+  // changed to the cards there; another zone is not.
+  if (filter.zone !== undefined && filter.zone !== 'battlefield' && filter.zone !== 'graveyard') {
+    return REFUSED;
+  }
+  return { kind: 'each', filter: { ...filter, zone: filter.zone ?? 'battlefield' } };
 }
 
 function rewrite(

@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -110,6 +111,7 @@ import {
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
+import { NEXT_SPELL_EFFECT_RULES } from './next-spell';
 import { NILS_EFFECT_RULES } from './nils';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
@@ -152,10 +154,12 @@ import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
+import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
+import { QUICK_DRAW_EFFECT_RULES, QUICK_DRAW_FIRST_EFFECT_RULES } from './quick-draw';
 import { RAMP_LANDS_EFFECT_RULES } from './ramp-lands';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
@@ -1043,6 +1047,8 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
+  // Finale of Promise (issue 121): the four sentences of its one instruction start like a plain "you may cast", and are tried first.
+  ...QUICK_DRAW_FIRST_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1101,6 +1107,14 @@ export const EFFECT_RULES = [
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...COPY_SPELL_TWICE_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
+  // CR 701.46a (Adapt): "Adapt 4".
+  ...ADAPT_EFFECT_RULES,
+  // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
+  ...NEXT_SPELL_EFFECT_RULES,
+  // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
+  ...PUT_MILLED_EFFECT_RULES,
+  // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
+  ...QUICK_DRAW_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,

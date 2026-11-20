@@ -103,6 +103,7 @@ import {
   hasKickedTargets,
   libraryCastPermission,
   mayCastFromGraveyard,
+  mayCastPlotted,
   mayPlayFromExile,
   playPermissionBottoms,
   targetSpecsOf,
@@ -111,6 +112,7 @@ import {
 import { applyPaymentPlan, payableSources } from './mana-engine';
 import { manaValueOfCost } from './mana-value';
 import { legalModeSets, modalOfSpellText, modesDecision, printedOrder, specModes } from './modes';
+import { applyNextSpellEffects } from './next-spell';
 import { payByTapping } from './pay-manual';
 import {
   colorsOfChoice,
@@ -212,6 +214,7 @@ export function beginCast(
     zone === 'graveyard' &&
     !resolving &&
     alternative !== 'retrace' &&
+    alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
       ? graveyardPlayPermission(state, seat, obj, false)
       : null;
@@ -253,6 +256,8 @@ export function beginCast(
         : {}),
       // D-667 (CR 702.81a): cast from the graveyard by its retrace ability.
       ...(alternative === 'retrace' ? { retrace: true as const } : {}),
+      // CR 702.133a: cast from the graveyard by its jump-start ability.
+      ...(alternative === 'jumpStart' ? { jumpStart: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
@@ -261,7 +266,8 @@ export function beginCast(
       (!resolving &&
         alternative === 'free' &&
         zone === 'exile' &&
-        mayPlayFromExile(state, seat, obj, false, true))
+        // CR 702.170d: a plotted card is cast from exile without paying its mana cost, by the plotted status rather than by an alternative cost of the face.
+        (mayPlayFromExile(state, seat, obj, false, true) || mayCastPlotted(state, seat, obj)))
         ? { byEffect: true as const }
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
@@ -1483,6 +1489,16 @@ function withSpentRiders(
     if (r.colors !== undefined && !spell.colors.some((c) => r.colors?.includes(c) === true)) {
       return false;
     }
+    // Issue 121 (CR 202.3e): "with mana value 3 or less": the value the spell has on the stack, with the X announced.
+    if (r.manaValueAtMost !== undefined) {
+      const onStack = state.objects[casting.object];
+      if (
+        onStack === undefined ||
+        manaValueOfCost(derive(state, onStack).manaCost, onStack) > r.manaValueAtMost
+      ) {
+        return false;
+      }
+    }
     if (r.commander === true) {
       // CR 903.3 (D-229): the spell is a card its caster owns and designated as a commander.
       const card = state.objects[casting.object]?.card;
@@ -1568,7 +1584,25 @@ function withSpentRiders(
       subject: casting.object,
     });
   }
-  const triggers = [...scries, ...copies];
+  // Issue 121 (Forger's Foundry, CR 106.6, 603.2, 607.2a): "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead of
+  // putting it into its owner's graveyard as it resolves": a triggered ability of the permanent that made the mana, for each mana spent, waiting to go on the stack above the spell.
+  const exiles: PendingTrigger[] = [];
+  for (const r of riders) {
+    if (r.kind !== 'exileLinked' || r.source === undefined || !matches(r)) continue;
+    exiles.push({
+      source: r.source,
+      controller: casting.seat,
+      abilityIndex: -1,
+      ability: {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'endStep', whose: 'you' },
+        optional: true,
+        effect: { kind: 'exileOnResolve', spell: { kind: 'triggerSubject' }, linked: true },
+      },
+      subject: casting.object,
+    });
+  }
+  const triggers = [...scries, ...copies, ...exiles];
   return triggers.length === 0
     ? next
     : { ...next, pendingTriggers: [...next.pendingTriggers, ...triggers] };
@@ -1658,6 +1692,8 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       commanderCasts: { ...next.commanderCasts, [card]: (next.commanderCasts[card] ?? 0) + 1 },
     };
   }
+  // Issue 121 (CR 601.2f, 702.40a, 702.85a): the effects that name this spell, "the next instant or sorcery spell you cast this turn", are used up and give it their keyword.
+  next = applyNextSpellEffects(next, casting.seat, casting.object);
   // CR 601.2c: the spell's targets became targets as they were chosen; Ward and the like see it now.
   events.push(...becameTargetEvents(next, casting.object, casting.seat));
   // CR 700.13 (D-464): casting a spell that targets an opponent, what they control or a card in their graveyard is committing a crime.

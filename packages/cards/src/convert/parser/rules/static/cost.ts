@@ -98,7 +98,13 @@ function reduction(): Parser<IrAmount> {
         }),
       ),
       family<IrAmount>('amount', {
-        only: ['amount.for-each', 'amount.for-each-counter', 'amount.for-each-this-way'],
+        only: [
+          'amount.for-each',
+          'amount.for-each-counter',
+          'amount.for-each-this-way',
+          // Eris, Roar of the Storm (issue 121): "costs {2} less to cast for each different mana value among ...".
+          'amount.for-each-different-mana-value',
+        ],
       }),
     ),
   );
@@ -121,8 +127,16 @@ function reduction(): Parser<IrAmount> {
     const base = h.value[0];
     const counted = each(ctx, h.pos);
     if (!counted.ok) return { ok: true, value: base, pos: h.pos };
-    if (base.kind !== 'number' || base.value !== 1) return fail(ctx, h.pos);
     const of = counted.value[1];
+    // CR 118.7a: a count of distinct values reduces the generic mana by the step of the text for each ("costs {2} less ... for each different mana value").
+    if (base.kind === 'number' && base.value > 1 && of.kind === 'differentManaValuesAmong') {
+      return {
+        ok: true,
+        value: { kind: 'multiple', factor: base.value, of, span: base.span },
+        pos: counted.pos,
+      };
+    }
+    if (base.kind !== 'number' || base.value !== 1) return fail(ctx, h.pos);
     return {
       ok: true,
       value: of,
@@ -147,6 +161,8 @@ const REDUCTION_CONDITIONS = [
   'condition.control-your-commander',
   // Stage P50 (D-207): "~ costs {3} less to cast if it targets a tapped creature".
   'condition.it-targets',
+  // Octavia, Living Thesis (issue 121): "~ costs {8} less to cast if you have eight or more instant and/or sorcery cards in your graveyard".
+  'condition.amount-count',
 ] as const;
 
 const REDUCTION_IF: Parser<IrCondition> = map(
@@ -185,6 +201,7 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {X} less to cast, where X is the greatest power among creatures you control.',
     '~ costs {X} less to cast, where X is the number of creatures you control.',
     '~ costs {1} less to cast for each +1/+1 counter on ~.',
+    '~ costs {2} less to cast for each different mana value among instant and sorcery cards in your graveyard.',
     // Stage P38 (D-182): a condition on the reduction.
     '~ costs {3} less to cast if you control a creature with power 4 or greater.',
     '~ costs {2} less to cast if you control a Dragon.',

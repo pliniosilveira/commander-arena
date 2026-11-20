@@ -571,6 +571,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: what.value,
         ...(t.counter === undefined ? {} : { counter: t.counter }),
         by: t.by,
+        ...(t.reaches === undefined ? {} : { reaches: t.reaches }),
       });
     }
     case 'playerAttacksOpponent': {

@@ -110,7 +110,13 @@ export function spellXCost(
   const flashbackOfManaCost = alternative === 'flashback' && flashbackCostOf(face) === null;
   if (flashbackOfManaCost) return { mana: printed, life, ...extra };
   // D-667 (CR 702.81a): a retrace cast pays the mana cost, so an {X} in it is announced as for any cast.
-  if (alternative !== undefined && alternative !== 'retrace' && printed > 0) return NO_X;
+  if (
+    alternative !== undefined &&
+    alternative !== 'retrace' &&
+    alternative !== 'jumpStart' &&
+    printed > 0
+  )
+    return NO_X;
   return { mana: printed, life, ...extra };
 }
 

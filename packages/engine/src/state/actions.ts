@@ -56,6 +56,11 @@ export type Action =
    */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
   /**
+   * Plot a card from the hand (CR 702.170a-b, 116.2k): during your main phase with the stack empty, pay its plot cost and exile it; it becomes plotted. A special action. Paid with a
+   * `payMana` decision.
+   */
+  | { readonly kind: 'plot'; readonly object: ObjectId }
+  /**
    * Turn a face-down permanent you control face up (CR 116.2b, 701.40b, 708.8, D-310): a special action, any time you have priority, that does not use the stack. For a
    * manifested permanent it pays the mana cost of its card, with a `payMana` decision (purpose `turnFaceUp`), and is legal only when the card is a creature card with a
    * mana cost.

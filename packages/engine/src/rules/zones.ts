@@ -388,6 +388,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   if (
     old.zone === 'stack' &&
     (old.stack?.flashback === true ||
+      old.stack?.jumpStart === true ||
       old.stack?.aftermath === true ||
       old.stack?.alt === 'harmonize') &&
     to !== 'exile'

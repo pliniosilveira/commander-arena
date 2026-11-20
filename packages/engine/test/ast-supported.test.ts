@@ -73,6 +73,8 @@ const EXECUTABLE_KEYWORDS = [
   'cascade', // scenario-xx-cascade
   'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
+  'jumpStart', // scenario-xx-jump-start
+  'plot', // scenario-xx-plot
   'aftermath', // scenario-xx-aftermath
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
@@ -176,6 +178,8 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   cascade: { kind: 'cascade' },
   demonstrate: { kind: 'demonstrate' },
   retrace: { kind: 'retrace' },
+  jumpStart: { kind: 'jumpStart' },
+  plot: { kind: 'plot', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   aftermath: { kind: 'aftermath' },
   unearth: { kind: 'unearth', cost: [{ kind: 'mana', symbols: ['R'] }] },
   encore: { kind: 'encore', cost: [{ kind: 'mana', symbols: ['3', 'R'] }] },

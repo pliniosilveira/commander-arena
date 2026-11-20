@@ -642,7 +642,7 @@ function lowerPayAnyAmount(
   ctx: LowerContext,
 ): LowerResult<Effects> | null {
   const [clause, ...more] = sentence.clauses;
-  if (clause?.verb !== 'payAnyAmount') return null;
+  if (clause?.verb !== 'payAnyAmount' && clause?.verb !== 'payAnyNumberOfTimes') return null;
   const next = sentences[i + 1];
   const mana = clause.args.mana;
   if (
@@ -655,7 +655,8 @@ function lowerPayAnyAmount(
     sentence.reflexive === true ||
     mana?.kind !== 'manaSpec' ||
     mana.what.kind !== 'symbols' ||
-    mana.what.symbols.length !== 1 ||
+    (clause.verb === 'payAnyAmount' && mana.what.symbols.length !== 1) ||
+    mana.what.symbols.length === 0 ||
     next?.reflexive !== true ||
     next.condition !== undefined ||
     next.where !== undefined ||
@@ -668,15 +669,25 @@ function lowerPayAnyAmount(
   const blocked = missingFeatures(['effect:payAnyAmount', 'effect:reflexive']);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
   const symbol = mana.what.symbols[0];
-  if (symbol === undefined || !/^[WUBRGC]$/.test(symbol)) return refuse(sentence);
+  // Issue 121 (Bloodthirsty Adversary): "pay {2}{R} any number of times": the mana of one payment, numbers and colors only.
+  const perTime = clause.verb === 'payAnyNumberOfTimes';
+  if (perTime && !mana.what.symbols.every((s) => /^(?:\d+|[WUBRGC])$/.test(s))) {
+    return refuse(sentence);
+  }
+  if (!perTime && (symbol === undefined || !/^[WUBRGC]$/.test(symbol))) return refuse(sentence);
   // The targets of the reflexive ability are its own (CR 603.12).
   const before = ctx.targets.length;
+  const wasPayReflexive = ctx.payReflexive;
+  ctx.payReflexive = perTime;
   const after = lowerClauses(next.clauses, ctx);
+  ctx.payReflexive = wasPayReflexive;
   if (!after.ok) return after;
   const own = ctx.targets.splice(before);
   const effect: Effect = {
     kind: 'payAnyAmount',
-    symbol: symbol as 'W' | 'U' | 'B' | 'R' | 'G' | 'C',
+    ...(perTime
+      ? { cost: [...mana.what.symbols] }
+      : { symbol: symbol as 'W' | 'U' | 'B' | 'R' | 'G' | 'C' }),
     reflexive: {
       ...(own.length > 0 ? { targets: own } : {}),
       effect: ownSource(oneEffect(after.value), ctx),
@@ -1652,6 +1663,8 @@ function countsWhatHappened(
   if (amount.thatMany === true) {
     return (
       earlier.verb === 'sacrifice' ||
+      // Issue 121 (Bloodthirsty Adversary): "pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters": the number of times paid.
+      earlier.verb === 'payAnyNumberOfTimes' ||
       (earlier.verb === 'discard' &&
         (earlier.args.anyNumber !== undefined || earlier.args.allCards !== undefined))
     );

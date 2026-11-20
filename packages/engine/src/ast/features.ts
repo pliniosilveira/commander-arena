@@ -127,6 +127,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRiderCopy',
     // Issue 241: "If you spend this mana to cast your commander, it enters with ... additional +1/+1 counters" (`spentRider.grants.countersCommanderCasts`).
     'manaSpentRiderCounters',
+    // Issue 121: "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead" (`spentRider.grants.exileLinked`).
+    'manaSpentRiderExile',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
@@ -432,6 +434,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTopCast',
     // "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9).
     'mayCastEachType',
+    // Issue 121: "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (CR 601.2f, 702.40a).
+    'nextSpellModifier',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -626,6 +630,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-665: Demonstrate (CR 702.144a); D-667: Retrace (CR 702.81a).
     'demonstrate',
     'retrace',
+    // CR 702.133a: Jump-start, cast from the graveyard by discarding a card, then exiled.
+    'jumpStart',
     // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
     'aftermath',
     // D-124: Unearth (CR 702.84a).
@@ -643,6 +649,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cumulativeUpkeep',
     // D-128: Suspend (CR 702.62a).
     'suspend',
+    // CR 702.170a: Plot.
+    'plot',
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
@@ -1301,6 +1309,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'greatestPowerAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
+    // Issue 121: "the number of different mana values among instant and sorcery cards in your graveyard" (Eris).
+    'differentManaValuesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
@@ -1379,6 +1389,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // D-667: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
     'retrace',
+    // CR 702.133a: Jump-start (cast from the graveyard by discarding a card as an additional cost).
+    'jumpStart',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
   ],
@@ -1526,6 +1538,8 @@ export const ABILITY_FEATURES = [
   'manaSpentRiderCopy',
   /** Issue 241: `spentRider.grants.countersCommanderCasts`: the commander cast with the mana enters with extra +1/+1 counters. */
   'manaSpentRiderCounters',
+  /** Issue 121: `spentRider.grants.exileLinked`: a spell cast with the mana may be exiled as it resolves and is remembered by the permanent (Forger's Foundry). */
+  'manaSpentRiderExile',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
@@ -2181,6 +2195,8 @@ export const AMOUNT_KINDS = [
   'greatestPowerAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
+  /** "The number of different mana values among instant and sorcery cards in your graveyard" (CR 202.3, issue 121): the engine's `differentManaValuesAmong`. */
+  'differentManaValuesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
@@ -2272,6 +2288,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'morph',
   'tapPermanents',
   'retrace',
+  'jumpStart',
   'sacrificeFromGraveyard',
   'impending',
 ] as const;
@@ -2331,6 +2348,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
   manaSpentRiderCounters: true,
+  manaSpentRiderExile: true,
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
@@ -2523,6 +2541,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileUntilCast: true,
   revealTopCast: true,
   mayCastEachType: true,
+  nextSpellModifier: true,
   revealTop: true,
   revealTopDuel: true,
   replaceEnchant: true,
@@ -2661,6 +2680,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   demonstrate: true,
   retrace: true,
+  jumpStart: true,
   aftermath: true,
   unearth: true,
   encore: true,
@@ -2671,6 +2691,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   echo: true,
   cumulativeUpkeep: true,
   suspend: true,
+  plot: true,
   storm: true,
   gravestorm: true,
   replicate: true,

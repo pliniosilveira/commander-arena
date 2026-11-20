@@ -56,8 +56,10 @@ export interface ManaRider {
    * `haste`: the spell's permanent has haste until end of turn. `scry`: its controller scries `count` (a triggered ability of `source`, group 4 of the Vraska deck).
    * `counters` (issue 241): the commander spell it was spent on enters with as many more +1/+1 counters as the times it has been cast from the command zone (`countCommanderCasts`).
    * `copy` (D-328): a triggered ability of `source` copies the spell (`newTargets`: whether its controller may choose new targets for the copy).
+   * `exileLinked` (issue 121, Forger's Foundry): a triggered ability of `source` lets its controller exile the spell instead of putting it into its owner's graveyard as it resolves,
+   * remembered as exiled with `source`.
    */
-  readonly kind: 'haste' | 'scry' | 'copy' | 'counters';
+  readonly kind: 'haste' | 'scry' | 'copy' | 'counters' | 'exileLinked';
   readonly types?: readonly string[];
   /** D-328: "a red instant or sorcery spell": the spell has one of these colors (`W`, `U`, `B`, `R`, `G`). */
   readonly colors?: readonly string[];
@@ -66,6 +68,8 @@ export interface ManaRider {
   readonly subtypes?: readonly string[];
   /** "...a creature spell that shares a creature type with your commander": the spell has a creature type one of the caster's commanders has (CR 903.3). */
   readonly sharesTypeWithCommander?: true;
+  /** "...with mana value 3 or less" (issue 121): the spell's mana value, with the X announced for it, is no more than this (CR 202.3e). */
+  readonly manaValueAtMost?: number;
   /** "...to cast your commander" (D-229): the spell is a card its caster designated as a commander (CR 903.3). */
   readonly commander?: true;
   /** The scry rider: how many (D-229: `commanderCasts`, X is the times the commander cast has been cast from the command zone), and the permanent whose ability it is. */

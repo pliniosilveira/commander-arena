@@ -380,6 +380,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-spell-color': permanent(
     (e) => `Whenever you cast a spell, you gain 1 life ${e}.`,
   ),
+  // Lock and Load (issue 121): the count of the other instants and sorceries cast this turn.
+  'amount.for-each-other-spell-cast': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),
@@ -528,6 +530,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
+  // Midnight Clock (issue 121): the Nth counter of a kind put on the permanent.
+  'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,
@@ -697,6 +701,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.player-or-planeswalker': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),
   'amount.for-each-card-type': spell((e) => `Target creature gets +1/+1 until end of turn ${e}.`),
+  // Eris (issue 121): the count of distinct mana values among the cards of a zone.
+  'amount.for-each-different-mana-value': spell(
+    (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.for-each-card-type-among-those-cards': permanent(
     (e) =>
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
@@ -758,6 +766,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
   'trigger.roll-highest': whenever,
   'keyword.buyback': asIs,
+  // Plot (issue 121): the keyword line stands alone.
+  'keyword.plot': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'noun.up-to-one-target-spell': spell(
@@ -1030,6 +1040,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Group 2b-b (D-328): the rider that copies the spell the mana is spent on follows the "Add" sentence of its mana ability.
   'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
+  // Forger's Foundry (issue 121): the rider of the mana the ability before it adds.
+  'effect.mana-rider-exile': permanent((e) => `{T}: Add {U}. ${cap(e)}.`),
+  // Bloodthirsty Adversary (issue 121): the payment and the ability it buys.
+  'effect.pay-any-number-of-times': permanent(
+    (e) => `When ~ enters, you may ${e}. When you pay this cost one or more times, draw a card.`,
+  ),
+  'effect.exile-up-to-that-many-and-copy': permanent(
+    (e) =>
+      `When ~ enters, you may pay {2}{R} any number of times. When you pay this cost one or more times, ${e}.`,
+  ),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
   // Bruna deck, Ajani (D-268).
@@ -1155,6 +1175,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.where-x-exiled-creatures': spell((e) => `Exile all creatures. Incubate X, ${e}.`),
   'effect.incubate': spell((e) => `Exile all creatures. ${cap(e)}.`),
+  // Adapt (issue 121): the keyword action stands as an instruction.
+  'effect.adapt': permanent((e) => `When ~ enters, ${e}.`),
   // Issue 81 (Jace, Multiverse Architect): the payer is the player whose combat it is.
   'effect.pay-or-cant-attack-planeswalkers': permanent(
     (e) => `At the beginning of combat on each opponent's turn, ${e}.`,

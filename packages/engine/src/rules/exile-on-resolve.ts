@@ -26,12 +26,18 @@ export function markExileOnResolve(
   spells: readonly ObjectId[],
   by: SeatId,
   source: ObjectId,
+  linked = false,
 ): GameState {
   let next = state;
   for (const id of spells) {
     const obj = next.objects[id];
     if (obj?.zone !== 'stack' || obj.stack?.kind !== 'spell' || obj.card === null) continue;
-    next = patchObject(next, id, { stack: { ...obj.stack, exileOnResolve: { by, source } } });
+    next = patchObject(next, id, {
+      stack: {
+        ...obj.stack,
+        exileOnResolve: linked ? { by, source, linked: true } : { by, source },
+      },
+    });
   }
   return next;
 }
@@ -61,7 +67,8 @@ export function exiledAsItResolves(
 /** The delayed triggered ability that returns the card the resolved spell became in exile (CR 603.7, 603.7c). */
 export function returnExiledSpell(obj: GameObject, exiled: ObjectId): DelayedTrigger | null {
   const mark = obj.stack?.exileOnResolve;
-  if (mark === undefined) return null;
+  // Issue 121: a card exiled "with" the permanent stays there; nothing returns it.
+  if (mark === undefined || mark.linked === true) return null;
   return {
     source: mark.source,
     controller: mark.by,

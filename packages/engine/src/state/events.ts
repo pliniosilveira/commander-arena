@@ -692,6 +692,8 @@ export type GameEvent =
    * no cost and carries no card id.
    */
   | { readonly kind: 'foretold'; readonly seat: SeatId; readonly object: ObjectId }
+  /** A card was plotted (CR 702.170a): `seat` paid its plot cost and exiled it from their hand, face up. `object` is the card in exile (public). */
+  | { readonly kind: 'plotted'; readonly seat: SeatId; readonly object: ObjectId }
   /** CR 701.3 (Attach): an Aura or Equipment became attached to a permanent. */
   | { readonly kind: 'attached'; readonly object: ObjectId; readonly to: ObjectId }
   /** An Aura that enchants a player entered attached to that player (CR 303.4b, issue 160, D-629). */

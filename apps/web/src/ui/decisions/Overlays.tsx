@@ -334,7 +334,7 @@ export function DockPanel(props: OverlayProps): ReactNode {
               {unlockPayDetail(index.get(d.source), d.door ?? 0)}
             </p>
           ) : null}
-          {d.purpose === 'suspend' || d.purpose === 'foretell' ? (
+          {d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'plot' ? (
             <p className="dec-sub dec-left" data-special-pay>
               {specialPayDetail(d.purpose, nameOf(index, d.source), index.get(d.source))}
             </p>

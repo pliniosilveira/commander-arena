@@ -130,3 +130,43 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
     };
   },
 });
+
+/**
+ * `amount.for-each-other-spell-cast`: "for each other instant and sorcery spell you've cast this turn" (Lock and Load, CR 601.2i, 608.2h): the spells the controller has cast so far this turn
+ * of those types, counted as the effect resolves, not counting the spell that is resolving. Not read: spells of another type or of all types, another player's spells, "last turn".
+ */
+export const AMOUNT_FOR_EACH_OTHER_SPELL_CAST = defineRule<IrAmount>({
+  id: 'amount.for-each-other-spell-cast',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 601.2i (Casting Spells)', 'CR 608.2h (Resolving Spells and Abilities)'],
+  examples: [
+    "for each other instant and sorcery spell you've cast this turn",
+    'for each other instant and sorcery spell you have cast this turn',
+    'for each other instant and sorcery spell you’ve cast this turn',
+  ],
+  rejects: [
+    "for each instant and sorcery spell you've cast this turn",
+    "for each other spell you've cast this turn",
+    "for each other instant and sorcery spell you've cast",
+    'for each other instant and sorcery spell an opponent has cast this turn',
+    "for each other instant and sorcery spell you've cast last turn",
+    "for each other creature spell you've cast this turn",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /for each other instant and sorcery spell you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'spellsCastThisTurn',
+        ofTypes: ['instant', 'sorcery'],
+        otherThanThis: true,
+        span: { start: pos, end: r.pos },
+      },
+      pos: r.pos,
+    };
+  },
+});

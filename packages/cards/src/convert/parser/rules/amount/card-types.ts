@@ -102,7 +102,47 @@ export const AMOUNT_FOR_EACH_CARD_TYPE_AMONG_THOSE_CARDS = defineRule<IrAmount>(
   parse: cardTypesAmongThoseCards('for each card type'),
 });
 
+/**
+ * `amount.for-each-different-mana-value`: "for each different mana value among instant and sorcery cards in your graveyard" (Eris, Roar of the Storm, CR 202.3, 608.2c): how many distinct
+ * mana values the cards of a zone have between them, each once. The engine's `differentManaValuesAmong`. Not read: "for each mana value", "among permanents you control", "among cards
+ * on the battlefield", "among the cards in your graveyard", the plural "mana values", "for each different power".
+ */
+export const AMOUNT_FOR_EACH_DIFFERENT_MANA_VALUE = defineRule<IrAmount>({
+  id: 'amount.for-each-different-mana-value',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 202.3 (Mana Value)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'for each different mana value among instant and sorcery cards in your graveyard',
+    'for each different mana value among cards in your graveyard',
+  ],
+  rejects: [
+    'for each mana value among cards in your graveyard',
+    'for each different mana value among permanents you control',
+    'for each different mana value among cards on the battlefield',
+    'for each different mana value among the cards in your graveyard',
+    'for each different mana values among cards in your graveyard',
+    'for each different power among cards in your graveyard',
+    'for each different mana value',
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'amount.for-each-different-mana-value';
+    const r = spanned(
+      sequence(literal('for each different mana value among '), counted(rule, true)),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const of = r.value.value[1];
+    if (of.filter.card !== true) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: { kind: 'differentManaValuesAmong', of, span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
 export const CARD_TYPES_AMOUNT_RULES = [
   AMOUNT_FOR_EACH_CARD_TYPE,
   AMOUNT_FOR_EACH_CARD_TYPE_AMONG_THOSE_CARDS,
+  AMOUNT_FOR_EACH_DIFFERENT_MANA_VALUE,
 ];
