@@ -43,6 +43,7 @@ import { colorLetter, lowerFilter } from './nouns';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
+import { isSpellKeywordStatic, lowerSpellKeywordStatic } from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
@@ -582,6 +583,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantKeywordToHandCards'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
+    case 'spellKeyword':
+      return ['static:grantKeywordToSpells'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
@@ -916,6 +919,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isKeepsDamage(first)) return lowerKeepsDamage(ability);
   // Issue 104 (CR 702.29a, 613.1f): "Each creature card in your hand has cycling {1}{U}."
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
+  // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
+  if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
   const parts: IrStaticPart[] = [

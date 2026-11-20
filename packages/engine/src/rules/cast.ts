@@ -1035,7 +1035,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
     events.push({ kind: 'lifeChanged', seat: casting.seat, from: life, to: life - cost.life });
   }
   // CR 702.51b, 702.126b, 702.66b: Convoke, Improvise and Delve apply after the total cost is determined.
-  return askPayOptions(next, events, payMechanismsOf(faceOf(next, spell)));
+  return askPayOptions(next, events, payMechanismsOf(next, spell, faceOf(next, spell)));
 }
 
 /**

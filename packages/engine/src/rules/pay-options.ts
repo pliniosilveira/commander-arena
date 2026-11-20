@@ -20,6 +20,7 @@
  *    (`payOptionSources`), so a spell is offered when the resources make it payable, the same planner that
  *    pays for it, with a creature that could also tap for mana counted once.
  */
+import type { Ability } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { Color } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
@@ -27,7 +28,7 @@ import type { PaymentSource } from '../mana';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
-import type { GameState } from '../state/types';
+import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { moveObject } from './zones';
@@ -37,11 +38,21 @@ export type PayMechanism = 'convoke' | 'improvise' | 'delve';
 /** The order the questions are asked in. */
 export const PAY_MECHANISMS: readonly PayMechanism[] = ['convoke', 'improvise', 'delve'];
 
-/** The cost-payment keywords the face has, in the order they are asked (each at most once). */
-export function payMechanismsOf(face: CardFace | null): PayMechanism[] {
-  return PAY_MECHANISMS.filter((m) =>
-    (face?.abilities ?? []).some((a) => a.kind === 'keyword' && a.keyword.kind === m),
-  );
+/**
+ * The cost-payment keywords the spell has, in the order they are asked (each at most once, CR 702.51d, 702.126c, 702.66c): the ones its face prints and the ones an effect gives it
+ * as it is cast ("Creature spells you cast have convoke", `grantKeywordToSpells`, CR 613.1f), read from what `derive` gives the spell. `spell` is the stack object or the card as it
+ * is cast (`castAs`).
+ */
+export function payMechanismsOf(
+  state: GameState,
+  spell: GameObject,
+  face: CardFace | null,
+): PayMechanism[] {
+  const has = (abilities: readonly Ability[], m: PayMechanism): boolean =>
+    abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === m);
+  const printed = face?.abilities ?? [];
+  const given = derive(state, spell).abilities;
+  return PAY_MECHANISMS.filter((m) => has(printed, m) || has(given, m));
 }
 
 interface ColoredSlot {

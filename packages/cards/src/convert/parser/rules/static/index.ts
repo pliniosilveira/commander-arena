@@ -42,6 +42,7 @@ import { PT_COUNT_STATIC_RULES } from './pt-count';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
 import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
+import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 
 /**
@@ -149,4 +150,6 @@ export const STATIC_RULES = [
   ...SKYBONDER_STATIC_RULES,
   // Galadriel deck, group 3 (issue 43): "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
   ...GALADRIEL_G3_STATIC_RULES,
+  // Issue 145 (Hatsune Miku deck): "Creature spells you cast have demonstrate."
+  ...SPELL_KEYWORD_GRANT_STATIC_RULES,
 ];

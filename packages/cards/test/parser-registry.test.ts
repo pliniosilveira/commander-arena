@@ -757,6 +757,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
+  'static.spells-you-cast-have-keyword': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.graveyard-cards-have-flashback': asIs,

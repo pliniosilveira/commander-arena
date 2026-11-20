@@ -457,6 +457,39 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'grantKeywordToSpells':
+      // Issue 145 (CR 702.144a, 702.51a): "Creature spells you cast have demonstrate": only the keywords the engine reads from a spell as it is cast, for the spells of the permanent's
+      // controller a filter names, as the spells they are on the stack (a spell the controller casts: `controller` is 'you', and nothing else says where or whose it is).
+      if (s.keyword?.kind !== 'demonstrate' && s.keyword?.kind !== 'convoke') {
+        issue(out, `${path}.keyword`, 'only demonstrate and convoke can be given to spells');
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        s.what?.controller !== 'you' ||
+        filterSome(s.what, (f) => f.controller !== undefined && f.controller !== 'you')
+      ) {
+        issue(out, `${path}.what`, "the spells are the ones you cast: controller is 'you'");
+      }
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            f.keywords !== undefined ||
+            f.notKeywords !== undefined ||
+            f.targetsObject !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the spells are named by what they are: no zone, owner, stackKind, keywords, targets, combat or source',
+        );
+      }
+      break;
     case 'grantFlashbackToGraveyardCards':
       // CR 702.34a: "Each instant and sorcery card in your graveyard has flashback": the cards of the controller's graveyard a filter names, as the cards they are.
       checkFilter(s.what, `${path}.what`, out);
