@@ -240,6 +240,8 @@ function lowerManaAbility(
   colorChosen = false,
 ): LowerResult<readonly Ability[]> | null {
   const [add, ...afterAdd] = clauses;
+  // Issue 345 (Soulbright Flamekin, CR 605.1a): an ability whose first instruction is not "Add ..." is not the mana ability shape, whatever a later instruction (a conditional "add") does.
+  if (add?.verb !== 'addMana') return null;
   const spec = add?.args.mana;
   if (
     spec?.kind === 'manaSpec' &&
@@ -275,7 +277,6 @@ function lowerManaAbility(
   }
   // D-487 (CR 605.1a): mana added by a later instruction of an ability with a target ("Any number of target players each lose 2 life. You add {B}{B}.") is not a mana
   // ability: the ordinary reading runs it through the stack, and refuses mana added where nothing is targeted (`lowerOrdinary`).
-  if (add?.verb !== 'addMana') return null;
   if (spec?.kind !== 'manaSpec' || !plainClause(add)) {
     return failure(ability);
   }

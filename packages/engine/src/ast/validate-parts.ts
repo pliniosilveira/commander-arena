@@ -155,6 +155,8 @@ export interface Scope {
   readonly triggerAttacked?: boolean;
   /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
   readonly triggeredAbility?: boolean;
+  /** True in the effect of an activated ability too (issue 345, CR 608.2c): `abilityResolvedTimes` counts the resolutions of a triggered or an activated ability. */
+  readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
@@ -4064,6 +4066,8 @@ export const MAY_EFFECT_KINDS = [
   'removeCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
+  'addMana',
 ];
 
 /**
@@ -4157,11 +4161,11 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'abilityResolvedTimes':
       // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
-      if (scope.triggeredAbility !== true) {
+      if (scope.triggeredAbility !== true && scope.activatedAbility !== true) {
         issue(
           out,
           path,
-          'abilityResolvedTimes counts the resolutions of a triggered ability: it is only valid in the effect of one',
+          'abilityResolvedTimes counts the resolutions of a triggered or an activated ability: it is only valid in the effect of one',
         );
       }
       if (!isCount(c.times) || c.times < 1) {

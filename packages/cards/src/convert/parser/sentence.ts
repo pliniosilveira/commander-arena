@@ -262,7 +262,7 @@ interface SentenceOptions {
    * engine does not run stays unread. D-403 (Danitha deck, Cosmic Rebirth): "You may put it onto the battlefield." too, the offer
    * of a card a target phrase of the spell named, which only the pair of sentences of `lowerMayElse` runs.
    */
-  readonly may: boolean | 'discard';
+  readonly may: boolean | 'discard' | 'afterTest';
   /**
    * "If ~ was kicked, ..." may start the sentence and " instead" end it (CR 608.2c, 614.1a). Only
    * the bodies whose lowering handles a conditional sentence ask for it, so a condition is never
@@ -515,7 +515,9 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             ),
             null,
           )
-        : options.may && !reflexive
+        : // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add ...": "you may" after a leading test only.
+          (options.may === true || (options.may === 'afterTest' && condition !== undefined)) &&
+            !reflexive
           ? optional(
               choice<'you' | NonNullable<IrSentence['mayBy']>>(
                 map(literal('you may '), () => 'you' as const),
@@ -619,7 +621,7 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
  * them as it reads any body (`lowerSentences`), and refuses them in a mana ability.
  */
 export const ACTIVATED_SENTENCE: Parser<IrSentence> = sentenceParser({
-  may: false,
+  may: 'afterTest',
   conditional: true,
   delayed: true,
 });

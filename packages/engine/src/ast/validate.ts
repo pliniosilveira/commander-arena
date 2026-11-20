@@ -1938,6 +1938,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
+        activatedAbility: true,
         xAllowed: Array.isArray(a.cost) && hasXCost(a.cost),
         ...(a.functionsIn === 'graveyard' ? { fromGraveyard: true } : {}),
         // D-133: "the sacrificed creature" is readable where the cost sacrificed something.

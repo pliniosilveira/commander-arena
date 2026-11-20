@@ -1015,7 +1015,20 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
   head: 'addMana',
   id: 'lower.add-mana',
   needs: ['effect:addMana'],
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...": the offer is the engine's `may` of the mana.
+  acceptsOptional: true,
   lower(clause, ctx) {
+    if (clause.optional) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const added = ADD_MANA.lower({ ...clause, optional: false }, ctx);
+      if (!added.ok) return added;
+      return {
+        ok: true,
+        value: added.value.map((effect) => ({ kind: 'may' as const, effect })),
+        rule: clause.rule,
+      };
+    }
     const spec = arg(clause, 'mana');
     if (spec?.kind !== 'manaSpec') return failure(clause);
     // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
