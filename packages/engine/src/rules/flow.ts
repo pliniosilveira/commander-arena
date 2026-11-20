@@ -112,6 +112,8 @@ export function startTurn(state: GameState, seat: SeatId): Outcome {
   // CR 121.1: "each turn" counts of draws start over for every player (the `drawn` trigger's `nth`, D-111),
   // and so does the life each player lost (Spectacle, CR 702.137a, D-124) and the count of spells each cast (Storm,
   // CR 702.40a, D-129).
+  // Issue 345: what each player cast in the turn that has just ended, kept for "last turn" conditions.
+  next = { ...next, lastTurnSpellsCast: next.seats.map((s) => s.spellsCastThisTurn) };
   for (const s of next.seats) {
     next = patchSeat(next, s.id, {
       landsPlayedThisTurn: 0,

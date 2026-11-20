@@ -531,6 +531,13 @@ export function evaluateCondition(
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
       );
+    case 'spellsCastLastTurn': {
+      // Issue 345, CR 601.2i: the spells each player cast in the turn before this one.
+      const counts = state.lastTurnSpellsCast ?? [];
+      return condition.mode === 'none'
+        ? counts.every((n) => n === 0)
+        : counts.some((n) => n >= (condition.atLeast ?? 1));
+    }
     case 'attackedWithCreaturesThisTurn':
       // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
       return (

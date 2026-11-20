@@ -1064,6 +1064,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromGraveyardThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
+    // Issue 345: "if no spells were cast last turn", "if a player cast two or more spells last turn".
+    'spellsCastLastTurn',
     // Issue 279: "if you attacked with three or more creatures this turn".
     'attackedWithCreaturesThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
@@ -1870,6 +1872,8 @@ export const CONDITION_KINDS = [
   'castFromGraveyardThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
+  /** "If no spells were cast last turn" (CR 601.2i, issue 345): the engine's `spellsCastLastTurn`. */
+  'spellsCastLastTurn',
   /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
   'attackedWithCreaturesThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */

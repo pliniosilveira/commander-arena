@@ -765,6 +765,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
+  'condition.spells-cast-last-turn': permanent(
+    (e) => `At the beginning of each upkeep, if ${e}, you gain 1 life.`,
+  ),
   // Issue 279 (Windfall).
   'amount.discarded-most-this-way': spell(
     (e) => `Each player discards their hand, then draws cards ${e}.`,

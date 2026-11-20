@@ -2,7 +2,7 @@
  * Conditions of the Niv-Mizzet deck program (issue 25, D-318): what the engine's per-seat count of spells cast tells. "You've cast three or more spells this
  * turn" (CR 601.2i: a spell is cast once it is on the stack with its costs paid; the count of the turn adds them up).
  */
-import { choice, fail, map, pattern, satisfy, sequence } from '../../combinators';
+import { choice, fail, literal, map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrCondition } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { BOUNDARY, typeChoice } from '../noun/phrases';
@@ -125,6 +125,73 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.spells-cast-last-turn`: "no spells were cast last turn", "a player cast two or more spells last turn" (issue 345, Duskwatch Recruiter and Krallenhorde Howler; CR 601.2i,
+ * 603.4: the spells each player cast in the turn before the current one, a copy never counted, CR 707.10). The engine's `spellsCastLastTurn`, read as the ability triggers and as it
+ * resolves. Not read: "this turn", "you cast", a count of fewer, zero, "a spell was cast", "last turn" left out, a period.
+ */
+export const CONDITION_SPELLS_CAST_LAST_TURN = defineRule<IrCondition>({
+  id: 'condition.spells-cast-last-turn',
+  family: 'condition',
+  leading: ['no', 'a'],
+  cites: [
+    'CR 601.2i (Casting Spells)',
+    'CR 603.4 (Handling Triggered Abilities)',
+    'CR 707.10 (Copying Objects)',
+  ],
+  examples: [
+    'no spells were cast last turn',
+    'a player cast two or more spells last turn',
+    'a player cast three or more spells last turn',
+    'a player cast 2 or more spells last turn',
+  ],
+  rejects: [
+    'no spells were cast last turn.',
+    'no spells were cast this turn',
+    'no spells were cast',
+    'a spell was cast last turn',
+    'a player cast two or more spells this turn',
+    'a player cast two or more spells',
+    'a player cast one or more spells last turn',
+    'a player cast 0 or more spells last turn',
+    'a player cast two or fewer spells last turn',
+    'you cast two or more spells last turn',
+    'a player cast two spells last turn',
+  ],
+  parse: (ctx, pos) => {
+    const none = pattern(new RegExp(`no spells were cast last turn${BOUNDARY}`, 'iu'))(ctx, pos);
+    if (none.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'spellsCastLastTurn', mode: 'none' },
+          span: { start: pos, end: none.pos },
+          rule: 'condition.spells-cast-last-turn',
+        },
+        pos: none.pos,
+      };
+    }
+    const r = sequence(
+      literal('a player cast '),
+      spanned(satisfy(quantity, (n) => n >= 2)),
+      pattern(new RegExp(` or more spells last turn${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, count] = r.value;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'spellsCastLastTurn', mode: 'aPlayerAtLeast', atLeast: count.value },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.spells-cast-last-turn',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.attacked-with-creatures`: "you attacked with three or more creatures this turn" (CR 508.1: the player who declares the attackers attacks with them;
  * issue 279, Windbrisk Heights): the engine's `attackedWithCreaturesThisTurn`, the different creatures the controller declared as attackers in any combat of the turn.
  * Not read: "or fewer", "an opponent attacked", a kind of creature ("with three or more Dragons"), "this combat" (a test of one combat, which
@@ -177,5 +244,6 @@ export const CONDITION_ATTACKED_WITH_CREATURES = defineRule<IrCondition>({
 
 export const SPELLS_CAST_CONDITION_RULES = [
   CONDITION_SPELLS_CAST_THIS_TURN,
+  CONDITION_SPELLS_CAST_LAST_TURN,
   CONDITION_ATTACKED_WITH_CREATURES,
 ];

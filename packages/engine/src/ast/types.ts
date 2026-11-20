@@ -5458,6 +5458,16 @@ export type Condition =
       readonly ofTypes?: readonly CardType[];
     }
   /**
+   * "If no spells were cast last turn", "if a player cast two or more spells last turn" (issue 345, CR 601.2i, 603.4): read from `GameState.lastTurnSpellsCast`, the spells each player cast in
+   * the turn before the current one (a copy is not cast, CR 707.10). `none`: no player cast one. `aPlayerAtLeast`: some player cast at least `atLeast` (two or more). With no turn before
+   * (the first turn) nobody cast any. It does not change during a turn, so it is read as the ability triggers and as it resolves. Not for a static ability.
+   */
+  | {
+      readonly kind: 'spellsCastLastTurn';
+      readonly mode: 'none' | 'aPlayerAtLeast';
+      readonly atLeast?: number;
+    }
+  /**
    * "If you attacked with three or more creatures this turn" (issue 279, CR 508.1): the controller of the condition declared at least `atLeast` different
    * creatures as attackers this turn, in any combat phase (a creature that attacks twice counts once), from `TurnLog.attackedWith`; a creature that has died
    * since still counts. Reads the turn log only, so it is read as the ability is activated or resolves. Not for a static ability.

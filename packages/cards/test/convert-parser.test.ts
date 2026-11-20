@@ -531,6 +531,7 @@ describe('unmatched abilities', () => {
       'condition.total-mana-value-exiled-this-way',
       'condition.two-milled-cards-share-all-types',
       'condition.spells-cast-this-turn',
+      'condition.spells-cast-last-turn',
       'condition.attacked-with-creatures',
       'condition.cards-in-library',
       'condition.player-declines',

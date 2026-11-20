@@ -3078,6 +3078,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, path, 'the gained-and-lost-life condition has no extra fields');
       }
       break;
+    case 'spellsCastLastTurn':
+      // Issue 345 (CR 601.2i): `none`, or `aPlayerAtLeast` with a positive count.
+      if (c.mode !== 'none' && c.mode !== 'aPlayerAtLeast') {
+        issue(out, `${path}.mode`, 'mode is none or aPlayerAtLeast');
+      } else if (c.mode === 'none' && c.atLeast !== undefined) {
+        issue(out, `${path}.atLeast`, 'none takes no count');
+      } else if (c.mode === 'aPlayerAtLeast' && (!isCount(c.atLeast) || c.atLeast < 1)) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
