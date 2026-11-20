@@ -1585,7 +1585,8 @@ export type TokenPreset =
   | 'Map'
   | 'Gingerbrute'
   | 'Incubator'
-  | 'Lander';
+  | 'Lander'
+  | 'Junk';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }

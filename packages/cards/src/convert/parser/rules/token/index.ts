@@ -82,6 +82,7 @@ const PREDEFINED = [
   'Map',
   'Gingerbrute',
   'Lander',
+  'Junk',
   'Blood',
 ] as const;
 type Predefined = (typeof PREDEFINED)[number];
@@ -133,6 +134,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Gingerbrute token',
     // CR 111.10u (Horizon Explorer, Seedship Impact).
     'a Lander token',
+    // CR 111.10t (Break Down).
+    'a Junk token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
