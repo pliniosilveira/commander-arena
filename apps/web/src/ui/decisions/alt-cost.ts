@@ -22,7 +22,9 @@ export function alternativeLabel(kind: NamedAlternative, card: ObjectView | unde
   // D-149 (CR 118.9): "Cast for {W}, tapping four creatures with flying".
   if (kind === 'tapPermanents') return tapAlternativeLabel(entry);
   // Issue 159: "Cast for {B}{B}, sacrificing 2 creatures".
-  if (kind === 'sacrificeFromGraveyard') return sacrificeAlternativeLabel(entry);
+  if (kind === 'sacrificeFromGraveyard' || kind === 'sacrificePermanents') {
+    return sacrificeAlternativeLabel(entry);
+  }
   const label = `${ALTERNATIVE_NAMES[kind]} ${symbolsText(withX(entry.cost, 0))}`;
   return entry.exile === undefined ? label : `${label}, exile ${plural(entry.exile, 'other card')}`;
 }
@@ -55,7 +57,8 @@ export function sacrificeAlternativeLabel(
 ): string {
   const { sacrifice } = entry;
   if (sacrifice === undefined) return ALTERNATIVE_NAMES.sacrificeFromGraveyard;
-  const mana = withX(entry.cost, 0);
+  // A cost of {0} (Flare of Malice: nothing but the sacrifice) has no mana to name.
+  const mana = withX(entry.cost, 0).filter((s) => s !== '0');
   const what = plural(sacrifice.count, sacrifice.filter.types?.[0] ?? 'permanent');
   return mana.length === 0
     ? `Cast by sacrificing ${what}`

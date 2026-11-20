@@ -369,9 +369,71 @@ export const STATIC_GRAVEYARD_SACRIFICE_ALT_COST = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.sacrifice-alt-cost`: "You may sacrifice a nontoken black creature rather than pay ~'s mana cost." (Flare of Malice; CR 118.9: an alternative cost, chosen as the spell is cast;
+ * CR 601.2h, 701.21a: sacrificing a permanent is a cost, and only the caster's own can be sacrificed). One permanent a phrase of the permanent family names, no mana. Not read: a number, a
+ * cost with mana, "instead of paying", another end, a permanent that is not the caster's, a choice of kinds.
+ */
+export const STATIC_SACRIFICE_ALT_COST = defineRule<IrStatic>({
+  id: 'static.sacrifice-alt-cost',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 118.9 (Costs)',
+    'CR 601.2h (Casting Spells)',
+    'CR 701.21a (Sacrifice)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: [
+    "You may sacrifice a nontoken black creature rather than pay ~'s mana cost.",
+    "You may sacrifice a creature rather than pay ~'s mana cost.",
+    "You may sacrifice an artifact rather than pay ~'s mana cost.",
+  ],
+  rejects: [
+    "You may sacrifice a nontoken black creature rather than pay ~'s mana cost",
+    "You may sacrifice two creatures rather than pay ~'s mana cost.",
+    "You may sacrifice a nontoken black creature instead of paying ~'s mana cost.",
+    "You may sacrifice a creature an opponent controls rather than pay ~'s mana cost.",
+    "You may sacrifice a creature or an artifact rather than pay ~'s mana cost.",
+    "You may sacrifice a creature rather than pay ~'s mana cost and draw a card.",
+    "You may pay {B} and sacrifice a creature rather than pay ~'s mana cost.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.sacrifice-alt-cost';
+    const r = sequence(
+      literal('you may sacrifice '),
+      pattern(/an? /iu),
+      satisfy(
+        map(permanentPhrase(false, 'all'), withoutZone),
+        (filter) => filter.controller === undefined || filter.controller === 'you',
+      ),
+      literal(" rather than pay ~'s mana cost"),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, , filter] = r.value;
+    if (filter.anyOf !== undefined) return fail(ctx, pos);
+    const selfAt = ctx.text.indexOf('~', pos);
+    const self = subjectNoun('self', '~', { start: selfAt, end: selfAt + 1 }, id);
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos + 'you may sacrifice '.length, end: r.pos },
+      rule: id,
+    };
+    const effect: IrStaticEffect = { kind: 'sacrificeAlternative', what, count: 1 };
+    return { ok: true, value: staticOf(id, self, [effect], pos, r.pos), pos: r.pos };
+  },
+});
+
 export const ANGEL_PLAY_RULES = [
   STATIC_BLOCK_TAX,
   STATIC_OTHERS_ENTER_WITH_COUNTERS,
   STATIC_TAP_ALT_COST,
   STATIC_GRAVEYARD_SACRIFICE_ALT_COST,
+  STATIC_SACRIFICE_ALT_COST,
 ].map(quietly);

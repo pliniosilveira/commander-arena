@@ -275,8 +275,8 @@ const TRIGGERS: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Whenever an opponent sacrifices a permanent, draw a card.',
-    expect: no('opponent sacrifices a permanent, draw a card.', 'trigger.or'),
-    note: 'SYNTHETIC; the engine trigger knows you and any player',
+    expect: OK,
+    note: 'SYNTHETIC; since Nazgûl Battle-Mace the engine trigger knows an opponent too (permanentSacrificed by opponent)',
   },
   {
     kind: 'enchantment',

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 179,
+  "parserVersion": 180,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -1363,6 +1363,14 @@
       "reasons": [],
       "ast": "db1d116e"
     },
+    "1ea3ba2d-e88f-4879-92f2-681637094b45": {
+      "name": "Nazgûl Battle-Mace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "297ef1fc"
+    },
     "1f1ad44c-1811-40e3-976b-03f19866abd5": {
       "name": "Assemble the Entmoot",
       "group": "acceptance",
@@ -1996,6 +2004,14 @@
       "reasons": [],
       "ast": "1ab06e4e"
     },
+    "2eb1b429-8d11-42f3-8815-5a60b6a4e2d5": {
+      "name": "Witch-king of Angmar",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c2f743ca"
+    },
     "2ef0961a-0543-4371-8c2a-333881b735e5": {
       "name": "Tomik, Wielder of Law",
       "group": "acceptance",
@@ -2571,19 +2587,10 @@
     "3aa83ed2-f48b-4ce6-a614-2c54ddf50538": {
       "name": "The One Ring",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, if you cast it, you gain protection from everything until your next turn.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fd3f3928"
+      "ast": "4deddfaa"
     },
     "3adbd963-e85d-4569-963a-4472594f06f9": {
       "name": "Woe Strider",
@@ -2784,6 +2791,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0a62fcba"
+    },
+    "40eb9904-dea3-47cf-963a-04821f98ba64": {
+      "name": "The Black Gate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5ef703f2"
     },
     "40ed32a6-ad56-48c7-aecf-b4238c34c212": {
       "name": "Shiko and Narset, Unified",
@@ -3025,6 +3040,14 @@
       "reasons": [],
       "ast": "79e7b8e9"
     },
+    "48a62778-7c11-486f-a0e1-020c283a7ef9": {
+      "name": "Nazgûl",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5dc4bb57"
+    },
     "48e603a2-b965-4fbc-ad57-4388bce5ac8b": {
       "name": "Gods Willing",
       "group": "acceptance",
@@ -3226,6 +3249,14 @@
       "reasons": [],
       "ast": "5030422d"
     },
+    "4ce156f8-6b0b-41ce-9e8f-b2735c757406": {
+      "name": "Flare of Malice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e953716"
+    },
     "4cfaa5cf-cc3d-49a7-9544-38a8bb7e9ec1": {
       "name": "Frontier Siege",
       "group": "acceptance",
@@ -3329,6 +3360,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f32e05c4"
+    },
+    "4fe8af73-c84a-44bd-9739-ee5c8b027874": {
+      "name": "Crypt of Agadeem",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "866efba4"
     },
     "506667b1-7922-4959-a5b3-0f8abe8c3615": {
       "name": "Deadbridge Chant",
@@ -3698,6 +3737,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "79bf0bbd"
+    },
+    "591fe685-767e-4e6e-905e-cc8b423caa19": {
+      "name": "Echoing Return",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "46456774"
     },
     "594f6881-c059-46f8-aa4e-7151d502de73": {
       "name": "Jace, Vryn's Prodigy // Jace, Telepath Unbound",
@@ -4312,6 +4359,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9316f863"
+    },
+    "660f370a-b25b-4ea5-b765-7abf96899c1c": {
+      "name": "The Darkness Crystal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4ac4c07"
     },
     "663d451b-f848-41cc-b541-0c6fe37d3d54": {
       "name": "Hofri Ghostforge",
@@ -5608,6 +5663,14 @@
       "reasons": [],
       "ast": "b1729717"
     },
+    "867dbd5a-c3cf-41ce-980b-c9babc6f30f2": {
+      "name": "Minas Morgul, Dark Fortress",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "164dc96e"
+    },
     "8682266c-2b0f-496e-b1c6-1fb338feac24": {
       "name": "Perplexing Test",
       "group": "acceptance",
@@ -5889,6 +5952,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c20762ee"
+    },
+    "8dcd7e2b-75a9-476a-a0a0-798613e8dad6": {
+      "name": "Sauron, the Necromancer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "611d07ba"
     },
     "8dd5f5af-d2d8-4356-8617-8381081b930c": {
       "name": "Yavimaya, Cradle of Growth",
@@ -7341,6 +7412,14 @@
       "reasons": [],
       "ast": "c93b85e3"
     },
+    "afcb21bb-aeb3-4024-9ce1-68ba7fb64b2d": {
+      "name": "Witch-king, Bringer of Ruin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ad21a375"
+    },
     "afe2f7a4-9440-4d93-801f-a18b627efb21": {
       "name": "Great Train Heist",
       "group": "acceptance",
@@ -7711,6 +7790,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cb8867d9"
+    },
+    "bc3d5911-3580-4132-9daf-2826495b5739": {
+      "name": "Stitch Together",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "58737ca9"
     },
     "bcd3e6a1-7b76-408d-9236-3791c3e1064a": {
       "name": "Excavation Technique",
@@ -9476,6 +9563,14 @@
       "reasons": [],
       "ast": "3c6e194d"
     },
+    "ea5103f5-27e0-4eb1-902c-7f34652d6bf3": {
+      "name": "Orcish Bowmasters",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "97bafc54"
+    },
     "ea86abfa-6cab-4ef0-8463-34136fc25b59": {
       "name": "Duplicant",
       "group": "training",
@@ -9668,6 +9763,14 @@
       "reasons": [],
       "ast": "f911d921"
     },
+    "eea18c55-8695-4ba1-9b38-3e7638692f5f": {
+      "name": "Saw in Half",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aca48af8"
+    },
     "eecb3047-a563-441a-9175-200421981ac3": {
       "name": "Ugin, the Spirit Dragon",
       "group": "acceptance",
@@ -9756,6 +9859,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f0443af4"
+    },
+    "f09278dc-1e67-4cd8-977d-4b3b94430aac": {
+      "name": "Ringwraiths",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ec0cbe8"
     },
     "f0950c95-a297-489d-b166-74bba6af5376": {
       "name": "Ancient Cornucopia",
@@ -9967,6 +10078,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b6ec8430"
+    },
+    "f48b2349-797e-4e79-aea7-2413e78129e1": {
+      "name": "Morgul-Knife Wound",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "926f436d"
     },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
@@ -10412,7 +10531,7 @@
   },
   "summary": {
     "training": {
-      "supported": 157,
+      "supported": 158,
       "total": 175
     },
     "holdout": {
@@ -10420,8 +10539,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 989,
-      "total": 1008
+      "supported": 1005,
+      "total": 1024
     }
   }
 }

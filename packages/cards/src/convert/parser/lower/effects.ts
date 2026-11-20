@@ -33,6 +33,8 @@ import { amountArg, arg, type Effects, eachObject, failure, operand } from './cl
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
+  CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
+  CHOOSE_PLAYER,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
@@ -84,6 +86,7 @@ import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
   BECOMES_LOSES_ALL,
+  BECOMES_WHILE_COUNTER,
   GAIN_STATIC_ABILITY,
   GIVE_POISON,
 } from './granted-static';
@@ -1738,6 +1741,10 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       ...(what.anyNumber === true ? (['selector:anyNumber'] as const) : []),
       ...(what.atLeastOne === true ? (['selector:atLeastOne'] as const) : []),
       ...(what.greatest !== undefined ? (['selector:greatest'] as const) : []),
+      ...(what.least !== undefined ? (['selector:least'] as const) : []),
+      ...(what.dealtCombatDamageToYou === true
+        ? (['selector:chooseDealtCombatDamageToYou'] as const)
+        : []),
     ]);
     if (blocked.length > 0) return failure(clause, blocked);
     const filter = lowerFilter(what);
@@ -1763,6 +1770,8 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
       ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
       ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
+      ...(what.least === undefined ? {} : { least: what.least }),
+      ...(what.dealtCombatDamageToYou === true ? { dealtCombatDamageToYou: true as const } : {}),
       ...(xCount !== undefined ? { count: xCount } : {}),
       ...(count > 1 && what.anyNumber !== true ? { count } : {}),
     };
@@ -2348,6 +2357,29 @@ const PLAYER_LOCK: Lowering<IrClause, Effects> = {
   },
 };
 
+const PLAYER_PROTECTION: Lowering<IrClause, Effects> = {
+  head: 'playerProtection',
+  id: 'lower.player-protection',
+  needs: ['effect:grantPlayerProtectionEverything'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'player');
+    if (named?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(named, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
   ADD_COUNTERS,
@@ -2483,6 +2515,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainExperience'),
   playerVerb('loseLife'),
   PLAYER_LOCK,
+  PLAYER_PROTECTION,
   playerVerb('mill'),
   MANIFEST,
   playerVerb('shuffle'),
@@ -2515,6 +2548,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_ABILITY,
   GRANT_MANA_ABILITY,
   RESTRICT,
+  CHOOSE_PLAYER,
+  CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
   BECOMES,
@@ -2640,6 +2675,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   BECOMES_FOR_GOOD,
+  BECOMES_WHILE_COUNTER,
   BECOMES_LOSES_ALL,
   GIVE_POISON,
   GAIN_CONTROL,
@@ -2716,6 +2752,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
+        kind === 'diesThisWay' ||
         kind === 'cardsExiledWithSelf'
         ? []
         : missingFeatures([`condition:${kind}`]),

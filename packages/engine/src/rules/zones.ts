@@ -39,6 +39,7 @@ import {
   getSeat,
   isSeatZone,
   loseLifeBy,
+  patchObject,
   printedCard,
   removeFromZone,
   setObject,
@@ -55,6 +56,7 @@ import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { entryCounters } from './counter-bonus';
+import { quietFlow } from './damage-order';
 import { entersTransformed } from './day-night';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
@@ -95,6 +97,7 @@ import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
+import { gainLife } from './life-gain';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
@@ -1262,6 +1265,27 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const made = createTokens(next, dieInstead.controller, definition, count);
     next = made.state;
     events.push(...made.events);
+  }
+  // The Darkness Crystal (CR 614.1a, 119.1): "instead exile it and you gain 2 life": the controller of the permanent with the replacement gains the life as the creature is exiled.
+  if (dieInstead?.alsoGainLife !== undefined) {
+    const gained = gainLife(
+      next,
+      dieInstead.controller,
+      dieInstead.alsoGainLife,
+      quietFlow(),
+      dieInstead.source,
+    );
+    if (gained.kind === 'gained') {
+      next = gained.state;
+      events.push(...gained.events);
+    }
+  }
+  // CR 607.2a: the permanent with the replacement remembers the card it exiled ("exiled with ~"), when another ability of it reads that link.
+  if (dieInstead?.linkExiled === true && to === 'exile') {
+    const owner = next.objects[dieInstead.source];
+    if (owner?.zone === 'battlefield') {
+      next = patchObject(next, owner.id, { linkedExile: [...(owner.linkedExile ?? []), newId] });
+    }
   }
   if ((to === 'graveyard' || to === 'exile') && isCommanderCardId(state, old.card)) {
     // CR 903.9a: the owner may move it to the command zone the next time state-based actions run.

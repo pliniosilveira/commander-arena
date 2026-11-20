@@ -819,6 +819,15 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       return ok({ kind: 'thisWayAtLeast', what: 'destroyed', count: 1 });
     }
+    case 'diesThisWay': {
+      // "If that creature dies this way" (Saw in Half, CR 700.4, 608.2c): the creature a destroy before it in the same text named, which must be a target of the text.
+      const blocked = missingFeatures(['condition:diedThisWay']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const at = ctx ?? newContext('ability', []);
+      const id = test.who.ref ?? '';
+      if (!/^t\d+$/.test(id) || !at.targets.some((t) => t.id === id)) return failure(c, []);
+      return ok({ kind: 'diedThisWay', of: { kind: 'target', id } });
+    }
     case 'discardedSpellThisWay': {
       // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c): what a discard before it in the same text did.
       const blocked = missingFeatures(['condition:thisWayAtLeast']);

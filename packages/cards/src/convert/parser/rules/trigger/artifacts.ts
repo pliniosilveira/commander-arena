@@ -126,7 +126,7 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH = defineRule<IrTrigger>({
 });
 
 /**
- * `trigger.combat-damage-batch-to-you` (issue 81, Tamiyo, Upriser Crowned): "one or more creatures deal combat damage to you while you're the monarch" (CR 603.2c, 510.2, 725.2:
+ * `trigger.combat-damage-batch-to-you` (issue 81, Tamiyo, Upriser Crowned): "one or more creatures deal combat damage to you while you're the monarch", or without it (Witch-king of Angmar) (CR 603.2c, 510.2, 725.2:
  * one trigger for the creatures, of any controller, that damaged the controller in one damage event; "while you're the monarch" is part of the event: the controller was the monarch as
  * the damage was dealt). The engine's `combatDamageBatch` with `to: 'you'` and `whileMonarch`. Not read: other recipients, a group of one controller, without the condition.
  */
@@ -142,9 +142,10 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH_TO_YOU = defineRule<IrTrigger>({
   examples: [
     "one or more creatures deal combat damage to you while you're the monarch",
     'one or more creatures deal combat damage to you while you’re the monarch',
+    // Witch-king of Angmar (CR 603.2c, 510.2): without the monarch.
+    'one or more creatures deal combat damage to you',
   ],
   rejects: [
-    'one or more creatures deal combat damage to you',
     "one or more creatures deal combat damage to a player while you're the monarch",
     "one or more creatures you control deal combat damage to you while you're the monarch",
     "one or more creatures deals combat damage to you while you're the monarch",
@@ -168,12 +169,16 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH_TO_YOU = defineRule<IrTrigger>({
           ),
         ),
         pattern(
-          new RegExp(` deal combat damage to you while you['’]re the monarch${NOT_IN_WORD}`, 'iu'),
+          new RegExp(
+            ` deal combat damage to you(?: while you['’]re the monarch)?${NOT_IN_WORD}`,
+            'iu',
+          ),
         ),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [group] = r.value;
+    const [group, tail] = r.value;
+    const whileMonarch = /monarch/iu.test(tail[0]);
     const subject: IrNoun = {
       ...makeNoun('trigger.combat-damage-batch-to-you', group.span, 'a', group.value[1]),
       plural: true,
@@ -185,7 +190,7 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH_TO_YOU = defineRule<IrTrigger>({
         event: 'combatDamageBatch',
         subject,
         damaged: 'you',
-        whileMonarch: true,
+        ...(whileMonarch ? { whileMonarch: true as const } : {}),
         args: {},
         span: { start: pos, end: r.pos },
         rule: 'trigger.combat-damage-batch-to-you',

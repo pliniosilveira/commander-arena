@@ -30,6 +30,7 @@ import type {
   IrColorSpec,
   IrDuration,
   IrKeywordArg,
+  IrNameArg,
   IrNoun,
   IrTypeList,
   Span,
@@ -743,6 +744,74 @@ export const EFFECT_EACH_BECOMES = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.becomes-while-counter`: "for as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types" (Minas Morgul, Dark Fortress; CR 611.2b,
+ * 122.1, 205.1b, 205.3d, 613.1d): the creature an earlier instruction of the text named has the creature type besides its types as long as it has a counter of the kind, and not
+ * after it loses the last one (the effect ends for good). The engine's additive `setTypes` with `whileHasCounter`. Not read: another subject than "that creature", "a"
+ * counter of no kind, a color, "until end of turn", the words without "in addition to its other types".
+ */
+export const EFFECT_BECOMES_WHILE_COUNTER = defineRule<Clauses>({
+  id: 'effect.becomes-while-counter',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 611.2b (Continuous Effects)',
+    'CR 122.1 (Counters)',
+    'CR 205.1b (Type Line)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    "for as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types",
+    'for as long as that creature has a shadow counter on it, it’s a Wraith in addition to its other types',
+  ],
+  rejects: [
+    "for as long as that creature has a shadow counter on it, it's a Wraith",
+    "for as long as that creature has a counter on it, it's a Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, it's a blue Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types until end of turn",
+    "for as long as target creature has a shadow counter on it, it's a Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, that creature's a Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, it's a Wraiths in addition to its other types",
+    "as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types",
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.becomes-while-counter';
+    const head = sequence(
+      literal('for as long as '),
+      family<IrNoun>('noun', { only: ['noun.that-object'] }),
+      pattern(/ has an? ([a-z]+) counter on it, it['’]s an? /iu),
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const [, subject, counter] = head.value;
+    const types = spanned(CREATURE_TYPE_LIST)(ctx, head.pos);
+    if (!types.ok) return types;
+    const tail = pattern(IN_ADDITION)(ctx, types.pos);
+    if (!tail.ok) return tail;
+    const span = { start: pos, end: tail.pos };
+    const kind = (counter[1] ?? '').toLowerCase();
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value.value,
+      additive: true,
+      span: types.value.span,
+      rule,
+    };
+    const named: IrNameArg = { kind: 'name', name: kind, span, rule };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          rule,
+          'becomesWhileCounter',
+          { objects: subject, types: typeList, counter: named },
+          span,
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
 export const BECOMES_RULES = [
   EFFECT_LOSES_ABILITIES,
   EFFECT_BECOMES,
@@ -751,4 +820,5 @@ export const BECOMES_RULES = [
   EFFECT_LEAD_BECOMES,
   EFFECT_LEAD_BECOMES_TARGET,
   EFFECT_HAVE_BASE_PT,
+  EFFECT_BECOMES_WHILE_COUNTER,
 ];

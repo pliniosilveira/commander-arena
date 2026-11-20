@@ -335,6 +335,11 @@ export interface LowerContext {
    */
   randomYardCard: boolean;
   /**
+   * True after "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d): "that player" of the instructions after it is the player chosen, the engine's `chosenPlayer`.
+   * Set by the lowering of `choosePlayer`, never cleared inside one ability.
+   */
+  choseAPlayer: boolean;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -418,6 +423,7 @@ export function newContext(
     exiledRef: null,
     lastEffectKind: null,
     randomYardCard: false,
+    choseAPlayer: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

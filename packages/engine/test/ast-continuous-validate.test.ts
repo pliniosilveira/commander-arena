@@ -103,6 +103,7 @@ describe('the continuous-effect nodes that are valid and supported', () => {
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      'whileHasCounter',
       'forAsLongAsYouControlThis',
       'forAsLongAsThisRemains',
       // D-517: "doesn't untap during its controller's next untap step", the duration of a `restrict` of `doesntUntap` only.

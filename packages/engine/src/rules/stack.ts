@@ -342,6 +342,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(head.kind === 'chooseObjects' && head.chosen !== null
           ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
           : {}),
+        // The Black Gate: the player chosen is what "that player" means for the rest of the resolution.
+        ...(head.kind === 'choosePlayer' && head.chosen !== null
+          ? { chosenPlayer: head.chosen }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -1018,6 +1022,39 @@ export function answerResolutionAssign(state: GameState, option: string): Resolv
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],
+  );
+}
+
+/** Records the player chosen by "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionChoosePlayer(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'choosePlayer' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'playerChoice' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const seat = Number(option.slice('seat:'.length));
+  const updated: Instruction = { ...head, chosen: seat };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
   );
 }
 

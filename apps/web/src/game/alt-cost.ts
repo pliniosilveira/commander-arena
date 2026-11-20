@@ -37,6 +37,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   tapPermanents: 'Tap creatures',
   // Issue 159: "cast this from your graveyard by paying {B}{B} and sacrificing two creatures".
   sacrificeFromGraveyard: 'Sacrifice creatures',
+  // CR 118.9, 701.21a (Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost".
+  sacrificePermanents: 'Sacrifice a creature',
   // Issue 81 (CR 702.176a): enters with time counters and is not a creature until the last is removed.
   impending: 'Impending',
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (Marshland Bloodcaster).
@@ -55,6 +57,7 @@ export function alternativeLogWords(kind: NamedAlternative): string {
   // D-149 (CR 118.9): the cost taps creatures; it has no keyword to name.
   if (kind === 'tapPermanents') return 'by tapping creatures';
   if (kind === 'sacrificeFromGraveyard') return 'from the graveyard by sacrificing creatures';
+  if (kind === 'sacrificePermanents') return 'by sacrificing creatures';
   // CR 702.37c, 708.4: the card is the face-down spell; it pays {3}, not its morph cost (that turns it face up).
   if (kind === 'morph') return 'face down';
   // CR 118.9: the life is the spell's mana value, which the cast event does not carry: the log says how the cost was paid.

@@ -5,7 +5,7 @@
  * addition to its other types.", is `effect.becomes-in-addition` of the Hofri deck). Every sentence is about the objects the instruction before it put onto the battlefield, which the
  * lowering checks (`ctx.movedOnto`).
  */
-import { fail, literal, map, pattern, sequence } from '../../combinators';
+import { fail, literal, map, optional, pattern, sequence } from '../../combinators';
 import type { IrArg, IrNoun } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, quietly, spanned } from '../registry';
@@ -237,6 +237,71 @@ export const EFFECT_PUT_EXILED_WITH_BATTLEFIELD = defineRule<Clauses>({
 });
 
 /**
+ * `effect.put-target-exiled-with-battlefield`: "Put target creature card exiled with ~ onto the battlefield tapped under your control with two additional +1/+1 counters on it." (The Darkness
+ * Crystal; CR 607.2a: a card the linked ability of the permanent exiled; CR 115.1 it is a target; CR 110.2a, 122.6 and 614.1c: it enters tapped, under your control, with the counters on
+ * it). The engine's `moveToZone` of the target card of the exile to the battlefield, with the counters. The words "additional" and "tapped" are optional, "a" or a number of counters.
+ * Not read: "each", "a card", another zone, "under its owner's control", "exiled with" another object, a counter that is not a +1/+1 counter, a count of 0 or one that is not a
+ * number.
+ */
+export const EFFECT_PUT_TARGET_EXILED_WITH_BATTLEFIELD = defineRule<Clauses>({
+  id: 'effect.put-target-exiled-with-battlefield',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 607.2a (Linked Abilities)',
+    'CR 115.1 (Targets)',
+    'CR 110.2a (Permanents)',
+    'CR 122.6 (Counters)',
+    'CR 614.1c (Replacement Effects)',
+  ],
+  examples: [
+    'put target creature card exiled with ~ onto the battlefield tapped under your control with two additional +1/+1 counters on it',
+    'put target creature card exiled with ~ onto the battlefield under your control',
+    'put target card exiled with ~ onto the battlefield tapped under your control with an additional +1/+1 counter on it',
+  ],
+  rejects: [
+    'put each creature card exiled with ~ onto the battlefield tapped under your control',
+    "put target creature card exiled with ~ onto the battlefield under its owner's control",
+    'put target creature card exiled with ~ onto the battlefield',
+    'put target creature card exiled with ~ into your hand',
+    'put target creature card exiled with that creature onto the battlefield under your control',
+    'put target creature card exiled with ~ onto the battlefield under your control with two additional flying counters on it',
+    'put target creature card exiled with ~ onto the battlefield under your control with zero additional +1/+1 counters on it',
+    'put target creature card exiled with ~ onto the battlefield under your control and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.put-target-exiled-with-battlefield';
+    const r = sequence(
+      literal('put '),
+      family<IrNoun>('noun', { only: ['noun.target-card-exiled-with-self'] }),
+      pattern(/ onto the battlefield( tapped)? under your control/iu),
+      optional(
+        sequence(pattern(/ with (?:an? |(two|three|four) )additional \+1\/\+1 counters? on it/iu)),
+        null,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, objects, where, counters] = r.value;
+    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+    const count =
+      counters === null
+        ? 0
+        : ({ two: 2, three: 3, four: 4 }[(counters[0][1] ?? '').toLowerCase()] ?? 1);
+    const span = { start: pos, end: r.pos };
+    const to: IrArg = {
+      kind: 'zoneSpec',
+      zone: 'battlefield',
+      whose: 'you',
+      ...(where[1] === undefined ? {} : { tapped: true as const }),
+      ...(counters === null ? {} : { counters: { counter: '+1/+1', count } }),
+      span,
+      rule: id,
+    };
+    return { ok: true, value: [makeClause(id, 'return', { objects, to }, span)], pos: r.pos };
+  },
+});
+
+/**
  * `effect.return-to-command-zone-at-end-step`: "Return it to the command zone at the beginning of the next end step." (issue 103, Hellkite Courser; CR 603.7, 603.7c, 400.7j, 903.9: a
  * delayed triggered ability about the commander the instruction before it put onto the battlefield; once that object has changed zones it is a new object and the ability does nothing).
  * The engine's `delayedTrigger` at the end step of each turn, whose effect moves the `moved` objects to the command zone. Not read: "your next end step", another object than "it",
@@ -359,4 +424,5 @@ export const GISA_G4_EFFECT_RULES = [
   quietly(EFFECT_EXILE_AT_END_STEP),
   quietly(EFFECT_EXILE_INSTEAD_WHEN_LEAVING),
   quietly(EFFECT_PUT_EXILED_WITH_BATTLEFIELD),
+  quietly(EFFECT_PUT_TARGET_EXILED_WITH_BATTLEFIELD),
 ];

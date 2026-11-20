@@ -203,6 +203,13 @@ export interface IrNoun extends IrNode {
    * of the filter that have the greatest value of this stat among them.
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
+  /** "a creature with the least power among creatures they control" (CR 701.21a): as `greatest`, the permanents with the smallest value of the stat. */
+  readonly least?: 'power' | 'toughness' | 'manaValue';
+  /**
+   * "a creature of their choice that dealt combat damage to you this turn" (Witch-king of Angmar, CR 510.2, 701.21a): the chosen permanent is among those that dealt combat damage this turn
+   * to the controller of the ability (the engine's `ChooseSelector.dealtCombatDamageToYou`).
+   */
+  readonly dealtCombatDamageToYou?: true;
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
   /**
@@ -442,6 +449,11 @@ export interface IrFilter {
    * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
    */
   readonly powerGreaterThanNoun?: IrNoun;
+  /**
+   * "all other cards with the same name as that card" (Echoing Return, CR 201.2, 608.2c): the engine's `sameNameAs` of the target this noun is. A target noun of its own, numbered with the
+   * other targets of the text; the binding pass walks it as it walks `powerGreaterThanNoun`.
+   */
+  readonly sameNameAsNoun?: IrNoun;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
@@ -698,6 +710,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'searchedThisWay' }
     // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
     | { readonly kind: 'destroyedThisWay' }
+    // "If that creature dies this way" (Saw in Half, CR 700.4, 608.2c): the creature a destroy before it in the same text named went to a graveyard; `who` is that creature
+    | { readonly kind: 'diesThisWay'; readonly who: IrNoun }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
@@ -1210,6 +1224,11 @@ export interface IrToken extends IrNode {
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
   readonly copyOf?: IrNoun;
   /**
+   * "..., except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time." (Saw in Half, CR 707.9b, 107.1a): with `copyOf`, the
+   * copy has half the power and toughness the original had, rounded up (the engine's `copyOf.halfPt`).
+   */
+  readonly copyHalfPt?: true;
+  /**
    * "..., except it's a 4/4 black Zombie" (Hashaton deck group 5, D-382, CR 707.9b): what the copy is instead of what it copies, with `copyOf`: its power and toughness, its colors
    * (as color words; empty for colorless) and its creature types (instead of its own, CR 205.3d).
    */
@@ -1218,6 +1237,8 @@ export interface IrToken extends IrNode {
     readonly toughness: number;
     readonly colors: readonly string[];
     readonly subtypes: readonly string[];
+    /** "..., except it's a 3/3 black Wraith with menace" (Sauron, the Necromancer, CR 707.9b, 707.9a): the keywords (as written, lowercase) the copy has besides its abilities. */
+    readonly keywords?: readonly string[];
   };
   /**
    * "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103, CR 707.9b): with `copyOf`, the copy has this power and toughness,
@@ -1407,6 +1428,8 @@ export interface IrTrigger extends IrNode {
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
   /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
   readonly nth?: number;
+  /** "... draws a card except the first one they draw in each of their draw steps" (CR 504.1): the engine's `drawn` trigger `exceptFirstInDrawStep`. */
+  readonly exceptFirstInDrawStep?: true;
   /** 'cast': only the first spell of the kind the subject names that the actor casts each turn ("your first instant or sorcery spell each turn", CR 601.2i). */
   readonly firstOfKind?: true;
   /** 'classLevel': the level a Class became (CR 716.2). */
@@ -1884,6 +1907,15 @@ export type IrStaticEffect =
   | {
       readonly kind: 'graveyardSacrificeAlternative';
       readonly cost: IrCost;
+      readonly what: IrNoun;
+      readonly count: number;
+    }
+  /**
+   * "You may sacrifice a nontoken black creature rather than pay ~'s mana cost." (Flare of Malice, CR 118.9, 601.2h, 701.21a): an alternative cost of the face that pays no mana and sacrifices
+   * `count` permanents `what` describes. The subject is `~`.
+   */
+  | {
+      readonly kind: 'sacrificeAlternative';
       readonly what: IrNoun;
       readonly count: number;
     }

@@ -201,3 +201,40 @@ export const GIVE_POISON: Lowering<IrClause, Effects> = {
     };
   },
 };
+
+/**
+ * "For as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types" (Minas Morgul, Dark Fortress; CR 611.2b, 122.1, 205.3d, 613.1d): the
+ * engine's additive `setTypes` of the creature the sentence before named, with `whileHasCounter`. Only creature types are added.
+ */
+export const BECOMES_WHILE_COUNTER: Lowering<IrClause, Effects> = {
+  head: 'becomesWhileCounter',
+  id: 'lower.becomes-while-counter',
+  needs: ['effect:setTypes', 'duration:whileHasCounter'],
+  lower(clause, ctx) {
+    const subject = operand(clause, 'objects');
+    const types = arg(clause, 'types');
+    const counter = arg(clause, 'counter');
+    if (subject?.kind !== 'noun' || types?.kind !== 'typeList' || counter?.kind !== 'name') {
+      return failure(clause);
+    }
+    if (types.additive !== true || types.cardTypes !== undefined) return failure(clause);
+    if (!types.subtypes.every((t) => CREATURE_TYPES.has(t))) return failure(clause);
+    const objects = objectSelectorOf(subject, ctx);
+    if (!objects.ok) return objects;
+    if (objects.value.kind !== 'target') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'setTypes',
+          objects: objects.value,
+          subtypes: [...types.subtypes],
+          additive: true,
+          whileHasCounter: counter.name,
+          duration: 'permanent',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};

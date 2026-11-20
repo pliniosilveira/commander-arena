@@ -52,4 +52,53 @@ export const NOUN_A_PERMANENT_SHARING_TYPE = defineRule<IrNoun>({
   ),
 });
 
-export const BRAIDS_NOUN_RULES = [NOUN_A_PERMANENT_SHARING_TYPE];
+/**
+ * `noun.a-creature-that-dealt-damage-to-you`: "a creature of their choice that dealt combat damage to you this turn" (Witch-king of Angmar, CR 510.2, 701.21a, 608.2d): the creature an
+ * opponent sacrifices, chosen among those they control that dealt combat damage this turn to the controller of the ability (`TurnLog.combatDamaged`). Not read: another noun than
+ * "creature", "of your choice", "to a player", "to an opponent", another time than "this turn", "damage" with no "combat".
+ */
+export const NOUN_A_CREATURE_THAT_DEALT_DAMAGE_TO_YOU = defineRule<IrNoun>({
+  id: 'noun.a-creature-that-dealt-damage-to-you',
+  family: 'noun',
+  leading: ['a'],
+  cites: [
+    'CR 510.2 (Combat Damage Step)',
+    'CR 701.21a (Sacrifice)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: ['a creature of their choice that dealt combat damage to you this turn'],
+  rejects: [
+    'a permanent of their choice that dealt combat damage to you this turn',
+    'a creature of your choice that dealt combat damage to you this turn',
+    'a creature of their choice that dealt combat damage to a player this turn',
+    'a creature of their choice that dealt combat damage to an opponent this turn',
+    'a creature of their choice that dealt damage to you this turn',
+    'a creature of their choice that dealt combat damage to you',
+    'a creature of their choice that dealt combat damage to you last turn',
+    'a creature that dealt combat damage to you this turn',
+    'two creatures of their choice that dealt combat damage to you this turn',
+  ],
+  parse: node<string, IrNoun>(
+    'noun.a-creature-that-dealt-damage-to-you',
+    map(
+      pattern(
+        /a creature of their choice that dealt combat damage to you this turn(?![\p{L}\p{N}])/iu,
+      ),
+      (m) => m[0],
+    ),
+    (raw) => ({
+      kind: 'noun',
+      det: 'a',
+      filter: { raw, types: ['creature'] } satisfies IrFilter,
+      upTo: false,
+      plural: false,
+      other: false,
+      dealtCombatDamageToYou: true,
+    }),
+  ),
+});
+
+export const BRAIDS_NOUN_RULES = [
+  NOUN_A_PERMANENT_SHARING_TYPE,
+  NOUN_A_CREATURE_THAT_DEALT_DAMAGE_TO_YOU,
+];

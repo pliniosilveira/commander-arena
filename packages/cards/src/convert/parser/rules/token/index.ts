@@ -29,7 +29,7 @@ import {
   TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
-import { TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
+import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
 
@@ -929,6 +929,8 @@ export const TOKEN_RULES = [
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,
   TOKEN_COPY_EXCEPT_ADDITIVE,
+  // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
+  TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
   ...GALADRIEL_G3_TOKEN_RULES,
   ...AURA_TOKEN_RULES,

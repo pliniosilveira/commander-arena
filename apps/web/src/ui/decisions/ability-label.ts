@@ -513,6 +513,8 @@ function recipientText(
       return 'the defending player';
     case 'playerToYourRight':
       return 'the player to your right';
+    case 'chosenPlayer':
+      return 'that player';
     case 'attackedBy':
       // D-139 (CR 508.1b): "the player or planeswalker it's attacking".
       return "the player or planeswalker it's attacking";
@@ -634,11 +636,12 @@ function greatestOf(
   stat: 'power' | 'toughness' | 'manaValue',
   filter: ObjectFilter,
   theirs: boolean,
+  extreme: 'greatest' | 'least' = 'greatest',
 ): string {
   const things = thingsPhrase({ ...filter, controller: 'you' }, true);
   const group = things === null ? 'permanents' : things;
   const word = stat === 'manaValue' ? 'mana value' : stat;
-  return ` with the greatest ${word} among ${group.replace(/ you control$/, theirs ? ' they control' : ' you control')}`;
+  return ` with the ${extreme} ${word} among ${group.replace(/ you control$/, theirs ? ' they control' : ' you control')}`;
 }
 
 /** The gist of a sacrifice effect: "Defending player sacrifices 2 permanents", "Sacrifice this creature". */
@@ -664,9 +667,11 @@ function sacrificeText(
       : objects.anyNumber === true
         ? anyNumberOf(objects.filter, theirs, objects.atLeastOne === true)
         : `${chosenPermanents(objects.filter, objects.count ?? 1, defs)}${
-            objects.greatest === undefined
-              ? ''
-              : greatestOf(objects.greatest, objects.filter, theirs)
+            objects.greatest !== undefined
+              ? greatestOf(objects.greatest, objects.filter, theirs)
+              : objects.least !== undefined
+                ? greatestOf(objects.least, objects.filter, theirs, 'least')
+                : ''
           }`;
   if (player === undefined) return `Sacrifice ${what}`;
   // CR 101.4 (D-131): each of several players chooses their own, in turn order.
@@ -699,6 +704,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'playerToYourRight':
       return { who: 'the player to your right', third: true };
+    case 'chosenPlayer':
+      return { who: 'that player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
     case 'triggerAttackedPlayer':

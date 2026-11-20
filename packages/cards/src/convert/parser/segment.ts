@@ -257,6 +257,9 @@ const COPY_IF_TARGETS =
  * the copy of the first targets, so the two are read as one (`effect.copy-spell`). Joined only to a sentence that ends in the copy of the spell of the trigger.
  */
 const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
+/** "Round up each time." (Saw in Half, CR 107.1a): the rounding of the halves the copy exception before it says, so it stays with that sentence. */
+const ROUND_UP_SENTENCE = /^round up each time\.$/i;
+const HALF_COPY_END = /their toughness is half that creature['’]s toughness\.$/i;
 const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
 
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
@@ -268,6 +271,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
   if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
+  if (ROUND_UP_SENTENCE.test(said)) return HALF_COPY_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&

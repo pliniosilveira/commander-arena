@@ -960,13 +960,12 @@ export const TRIGGER_LANDFALL = defineRule<IrTrigger>({
 /**
  * `trigger.sacrifice`: "you sacrifice a permanent", "you sacrifice a creature", "a player
  * sacrifices a permanent" (CR 701.21: the event is a permanent being sacrificed, by you or by any
- * player; it is judged as it was on the battlefield, CR 603.10a). "An opponent sacrifices" is not
- * read: the engine's trigger knows only you and any player.
+ * player; it is judged as it was on the battlefield, CR 603.10a), and "an opponent sacrifices" (Nazgûl Battle-Mace: a player who is not the controller).
  */
 export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
   id: 'trigger.sacrifice',
   family: 'trigger',
-  leading: ['you', 'a'],
+  leading: ['you', 'a', 'an'],
   cites: ['CR 701.21 (Sacrifice)', 'CR 603.10a (Handling Triggered Abilities)'],
   examples: [
     'you sacrifice a permanent',
@@ -974,6 +973,8 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'you sacrifice an artifact',
     'a player sacrifices a permanent',
     'a player sacrifices a creature',
+    'an opponent sacrifices a permanent',
+    'an opponent sacrifices a nontoken permanent',
   ],
   rejects: [
     'you sacrifice ~',
@@ -984,7 +985,8 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'a player sacrifices',
     'a player sacrifices ~',
     'a player sacrifices a creature you control',
-    'an opponent sacrifices a permanent',
+    'an opponent sacrifices a creature you control',
+    'an opponent sacrifice a permanent',
     'a player sacrifice a permanent',
   ],
   parse: (ctx, pos) => {
@@ -999,6 +1001,14 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
             { raw: 'a player' },
           ),
         ),
+        map(spanned(literal('an opponent sacrifices ')), ({ span }) =>
+          makeNoun(
+            'trigger.sacrifice',
+            { start: span.start, end: span.start + 'an opponent'.length },
+            'eachOpponent',
+            { raw: 'an opponent' },
+          ),
+        ),
       ),
       satisfy(objectSubject('trigger.sacrifice'), (n) => n.filter.controller !== 'opponent'),
     )(ctx, pos);
@@ -1006,8 +1016,7 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     const [actor, subject] = r.value;
     // Whoever sacrifices, the permanent is theirs, so "a player sacrifices a creature you control"
     // says something else.
-    if (actor.det === 'eachPlayer' && subject.filter.controller !== undefined)
-      return fail(ctx, pos);
+    if (actor.det !== 'you' && subject.filter.controller !== undefined) return fail(ctx, pos);
     return {
       ok: true,
       value: trigger('trigger.sacrifice', { start: pos, end: r.pos }, 'sacrifice', {
@@ -1134,7 +1143,7 @@ export const TRIGGER_CHAPTER = defineRule<IrTrigger>({
 /**
  * `trigger.enters-and-cast`: "~ enters and whenever you cast a spell with mana value 4 or greater" (stage P48, D-205, CR 603.2c, 603.6a, 601.2i): one
  * ability that two events cause, each by its own words ("When ~ enters and whenever you cast ..."). Like `trigger.or` it lowers to one engine ability
- * for each event, sharing the effect. The second event is `trigger.cast` as the card writes it; two entering events or any other pair are not read.
+ * for each event, sharing the effect. The second event is `trigger.cast` (or a card played or drawn) as the card writes it; two entering events or any other pair are not read.
  */
 export const TRIGGER_ENTERS_AND_CAST = quietly(
   defineRule<IrTrigger>({
@@ -1153,6 +1162,8 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
       '~ enters and whenever you cast your first spell with {X} in its mana cost each turn',
       // Death Toll deck, group D: the second event may be a card played (a land played or a spell cast).
       '~ enters and whenever you play a card with two or more card types',
+      // Orcish Bowmasters: the second event may be a card drawn.
+      '~ enters and whenever an opponent draws a card except the first one they draw in each of their draw steps',
     ],
     rejects: [
       '~ enters and whenever you play a card',
@@ -1175,7 +1186,7 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
         ),
         literal(' and whenever '),
         family<IrTrigger>('trigger', {
-          only: ['trigger.cast', 'trigger.cast-x', 'trigger.play-card'],
+          only: ['trigger.cast', 'trigger.cast-x', 'trigger.play-card', 'trigger.drawn'],
         }),
       )(ctx, pos);
       if (!r.ok) return r;

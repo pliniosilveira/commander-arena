@@ -427,9 +427,13 @@ class Binder {
       powerNoun === undefined
         ? bareFilter
         : { ...bareFilter, powerGreaterThanNoun: this.noun(powerNoun) };
+    // "target creature card and all other cards with the same name as that card": the target is numbered with the others of the text.
+    const nameNoun = noun.filter.sameNameAsNoun;
+    const named =
+      nameNoun === undefined ? filter : { ...filter, sameNameAsNoun: this.noun(nameNoun) };
     let out: IrNoun = {
       ...noun,
-      filter,
+      filter: named,
       ...(of === undefined ? {} : { of }),
       ...(members === undefined ? {} : { members }),
     };
@@ -653,6 +657,7 @@ class Binder {
     const condition =
       clause.condition !== undefined &&
       (test?.kind === 'unlessPays' ||
+        test?.kind === 'diesThisWay' ||
         test?.kind === 'objectMatches' ||
         test?.kind === 'controlsThat' ||
         test?.kind === 'manaValueAtMostAmount')
@@ -728,6 +733,7 @@ class Binder {
         const condition =
           s.condition !== undefined &&
           (test?.kind === 'objectMatches' ||
+            test?.kind === 'diesThisWay' ||
             test?.kind === 'controlsThat' ||
             test?.kind === 'manaValueAtMostAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }

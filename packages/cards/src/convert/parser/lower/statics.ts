@@ -631,6 +631,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'freeCast':
     case 'tapAlternative':
     case 'graveyardSacrificeAlternative':
+    case 'sacrificeAlternative':
       return [];
     case 'playerHexproof':
       return ['static:playerHexproof'];

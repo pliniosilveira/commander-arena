@@ -184,6 +184,8 @@ const LEAD_CONDITIONS = [
   'condition.two-milled-cards-share-all-types',
   // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
   'condition.destroyed-this-way',
+  // Saw in Half: "If that creature dies this way, ..." after a destroy.
+  'condition.dies-this-way',
   // Death Toll deck: "Delirium — Then if there are four or more card types among cards in your graveyard, create ..." (CR 205.2a, 608.2c).
   'condition.card-types-among',
   // Prize Pig: "Then if there are three or more ribbon counters on ~, remove those counters and untap it." (CR 122.1, 608.2c).

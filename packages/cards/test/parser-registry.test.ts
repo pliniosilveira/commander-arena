@@ -269,6 +269,25 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `{T}: Return target creature card from your graveyard to the battlefield. ${cap(e)}.`,
   ),
   'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
+  'effect.put-target-exiled-with-battlefield': permanent((e) => `{6}, {T}: ${cap(e)}.`),
+  // Sauron, the Necromancer: the delayed sentence that exiles the token it made.
+  'effect.exile-made-token-unless-ring-bearer': spell(
+    (e) =>
+      `Create a 1/1 white Soldier creature token. At the beginning of the next end step, ${e}.`,
+  ),
+  // Saw in Half.
+  'condition.dies-this-way': spell(
+    (e) => `Destroy target creature. If ${e}, its controller gains 1 life.`,
+  ),
+  'token.copies-half-pt': spell(
+    (e) => `Destroy target creature. If that creature dies this way, its controller creates ${e}.`,
+  ),
+  'effect.choose-player-most-life': permanent(
+    (e) => `{1}{B}, {T}: ${cap(e)}. Target creature can't be blocked this turn.`,
+  ),
+  'effect.cant-be-blocked-by-that-players-creatures': permanent(
+    (e) => `{1}{B}, {T}: Choose a player with the most life or tied for most life. ${cap(e)}.`,
+  ),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.
@@ -531,6 +550,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
+  'static.sacrifice-alt-cost': asIs,
   // Issue 144 (Goblin Negotiation): the number of tokens follows "create a number of ... tokens".
   'amount.excess-damage-dealt-this-way': spell(
     (e) =>
@@ -1058,6 +1078,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, you may sacrifice a creature. If you do, each opponent may sacrifice ${e}.`,
   ),
+  // Witch-king of Angmar: what an opponent sacrifices after combat damage to the controller.
+  'noun.a-creature-that-dealt-damage-to-you': permanent(
+    (e) =>
+      `Whenever one or more creatures deal combat damage to you, each opponent sacrifices ${e}.`,
+  ),
+  // Echoing Return: the target card and the cards with its name, returned together.
+  'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,
@@ -1189,6 +1216,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `{T}, Sacrifice one or more artifacts: Choose a color. ${cap(e)}.`,
   ),
   'keyword.partner-with': asIs,
+  'keyword.deck-limit': asIs,
   // D-492: the optional sacrifice and the copies are one statement of a spell.
   'static.additional-cost-sacrifice-copies': spell((e) => e),
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
