@@ -440,6 +440,10 @@ export function runInstruction(
       tapped: instruction.tapped,
       commanderChoice: instruction.commanderChoice,
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
+      // CR 708.3: "return it to the battlefield face down": it is turned face down before it enters.
+      ...(instruction.entersFaceDown === undefined
+        ? {}
+        : { entersFaceDown: instruction.entersFaceDown }),
       // CR 712.21b (D-279): the controller of the effect is the player who exiles a melded permanent.
       by: res.controller,
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
@@ -1080,12 +1084,20 @@ function runEffect(
         effect.withCounters,
       );
       // CR 400.7, 303.4 (Animate Dead): "Return enchanted creature card to the battlefield ... attach this Aura to it": the permanent remembers it was put there with this Aura.
-      const moves =
+      const placed =
         effect.putWithSource === true && effect.to === 'battlefield'
           ? plainMoves.map(
               (m): Instruction => (m.kind === 'move' ? { ...m, putWith: res.source } : m),
             )
           : plainMoves;
+      // CR 708.3: "return it to the battlefield face down. It's a Forest land": each card is put onto the battlefield face down, with that status.
+      const moves =
+        effect.faceDownAs !== undefined && effect.to === 'battlefield'
+          ? placed.map(
+              (m): Instruction =>
+                m.kind === 'move' ? { ...m, entersFaceDown: effect.faceDownAs ?? 'forestLand' } : m,
+            )
+          : placed;
       // CR 303.4f (D-149): an Aura card put onto the battlefield chooses what it enchants as it enters.
       // CR 303.4g, 303.4i (D-207): "attached to target creature ...": the effect names the object, so the Aura does not choose; it enters attached to the target
       // when that is still a legal object to enchant, and stays where it is when the target is gone.

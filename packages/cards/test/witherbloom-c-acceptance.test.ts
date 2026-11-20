@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
 
-const NAMES = ['Gaze of Granite', 'Revival Experiment'] as const;
+const NAMES = ['Gaze of Granite', 'Revival Experiment', 'Yedora, Grave Gardener'] as const;
 const corpus = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
 );

@@ -176,7 +176,7 @@ import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
-import { WITHERBLOOM_C_EFFECT_RULES } from './witherbloom-c';
+import { WITHERBLOOM_C_EARLY_EFFECT_RULES, WITHERBLOOM_C_EFFECT_RULES } from './witherbloom-c';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
 const TAP_OPERANDS = [
@@ -1180,6 +1180,8 @@ export const EFFECT_RULES = [
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
   EFFECT_EXILE,
+  // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
+  ...WITHERBLOOM_C_EARLY_EFFECT_RULES,
   EFFECT_RETURN,
   // Before the plain counter: its phrase is a prefix of this one.
   EFFECT_COUNTER_UNLESS,

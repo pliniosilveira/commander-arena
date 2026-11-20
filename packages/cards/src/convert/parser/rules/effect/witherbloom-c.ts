@@ -50,4 +50,53 @@ export const EFFECT_RETURN_ONE_PER_PERMANENT_TYPE = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.return-it-face-down-forest-land`: "return it to the battlefield face down under its owner's control. It's a Forest land" (Yedora, Grave Gardener; CR 708.2, 708.3, 613.2b,
+ * 110.2: the card is put onto the battlefield face down, with the characteristics of a land with the Forest subtype and no other, under its owner's control). Two sentences that
+ * `splitSentences` keeps together. The engine's `moveToZone` of the card the creature became (`triggerCard`) with `faceDownAs`. Not read: another land type, another type, "under
+ * your control", the first sentence alone.
+ */
+export const EFFECT_RETURN_IT_FACE_DOWN_FOREST_LAND = defineRule<Clauses>({
+  id: 'effect.return-it-face-down-forest-land',
+  family: 'effect',
+  leading: ['return'],
+  cites: [
+    'CR 708.2 (Face-Down Spells and Permanents)',
+    'CR 708.3 (Face-Down Spells and Permanents)',
+    'CR 613.2b (Interaction of Continuous Effects)',
+    'CR 110.2 (Permanents)',
+  ],
+  examples: [
+    "return it to the battlefield face down under its owner's control. It's a Forest land",
+    'return it to the battlefield face down under its owner’s control. It’s a Forest land',
+  ],
+  rejects: [
+    "return it to the battlefield face down under its owner's control",
+    "return it to the battlefield face down under its owner's control. It's a Mountain land",
+    "return it to the battlefield face down under your control. It's a Forest land",
+    "return it to the battlefield under its owner's control. It's a Forest land",
+    "return it to the battlefield face down under its owner's control. It's a Forest creature",
+    "return that card to the battlefield face down under its owner's control. It's a Forest land",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.return-it-face-down-forest-land';
+    const r = spanned(
+      pattern(
+        /return it to the battlefield face down under its owner['’]s control\. It['’]s a Forest land(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: [makeClause(id, 'returnFaceDownForestLand', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
 export const WITHERBLOOM_C_EFFECT_RULES = [EFFECT_RETURN_ONE_PER_PERMANENT_TYPE].map(quietly);
+
+/** Before `effect.return`, whose phrase ("return it to the battlefield ...") is a prefix of this one. */
+export const WITHERBLOOM_C_EARLY_EFFECT_RULES = [EFFECT_RETURN_IT_FACE_DOWN_FOREST_LAND].map(
+  quietly,
+);

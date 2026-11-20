@@ -3,7 +3,7 @@
  */
 import type { CardType, Effect } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
-import type { Effects } from './clauses';
+import { type Effects, failure } from './clauses';
 import type { Lowering } from './types';
 
 /** The six permanent types, in the order CR 110.4 gives them. */
@@ -42,6 +42,38 @@ const RETURN_ONE_PER_PERMANENT_TYPE: Lowering<IrClause, Effects> = {
   }),
 };
 
+/**
+ * "Return it to the battlefield face down under its owner's control. It's a Forest land" in a dies trigger (CR 708.2, 708.3, 613.2b, 400.7, 603.10a, 110.2): the card the creature
+ * became in the graveyard, if it is still there, enters face down as a land with the Forest subtype, under its owner's control. "It" is that card only in the body of a dies trigger.
+ */
+const RETURN_FACE_DOWN_FOREST_LAND: Lowering<IrClause, Effects> = {
+  head: 'returnFaceDownForestLand',
+  id: 'lower.return-face-down-forest-land',
+  needs: [
+    'effect:moveToZone',
+    'selector:triggerCard',
+    'selector:triggerSubject',
+    'ability:moveFaceDownLand',
+  ],
+  lower: (clause, ctx) =>
+    ctx.diesTrigger
+      ? {
+          ok: true,
+          value: [
+            {
+              kind: 'moveToZone',
+              objects: { kind: 'triggerCard' },
+              to: 'battlefield',
+              controller: 'owner',
+              faceDownAs: 'forestLand',
+            },
+          ],
+          rule: clause.rule,
+        }
+      : failure(clause),
+};
+
 export const WITHERBLOOM_C_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   RETURN_ONE_PER_PERMANENT_TYPE,
+  RETURN_FACE_DOWN_FOREST_LAND,
 ];

@@ -3,8 +3,9 @@
 // Cards are SYNTHETIC.
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
-import { validateCard } from '../src/index';
+import { isFeatureSupported, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
+import { confirmOptionalDecision } from './pending-helpers';
 
 const GAZE = 'SYNTHETIC Granite Gaze C';
 const eachAtMostX = {
@@ -205,5 +206,152 @@ describe('one card of each permanent type from the graveyard, then "for each car
     g.act(0).cast(REVIVE, { pay: true });
     g.passAll();
     g.expect.life(0, 40);
+  });
+});
+
+// "Whenever another nontoken creature you control dies, you may return it to the battlefield face down under its owner's control. It's a Forest land."
+// Pins: CR 708.2 and 613.2b (a face-down permanent has only the characteristics the effect gives it, layer 1b: here a land with the Forest subtype, no name, no color, no
+// power or toughness), CR 305.6 (a Forest has the intrinsic ability "{T}: Add {G}"), CR 708.3 (it enters face down), CR 110.2 (under its owner's control), CR 400.7 and
+// 603.10a (the card the creature became in the graveyard).
+const GARDENER = 'SYNTHETIC Grave Gardener C';
+const gardener = singleFace({
+  name: GARDENER,
+  manaCost: ['2', 'B', 'G'],
+  types: ['enchantment'],
+  colors: ['B', 'G'],
+  colorIdentity: ['B', 'G'],
+  oracleText: 'SYNTHETIC: return a creature that died face down as a Forest land.',
+  abilities: [
+    {
+      kind: 'triggered',
+      trigger: {
+        kind: 'dies',
+        what: { types: ['creature'], controller: 'you', other: true, token: false },
+      },
+      optional: true,
+      effect: {
+        kind: 'moveToZone',
+        objects: { kind: 'triggerCard' },
+        to: 'battlefield',
+        controller: 'owner',
+        faceDownAs: 'forestLand',
+      },
+    },
+  ],
+});
+
+describe('a creature that died returns face down as a Forest land (CR 708.2, 305.6)', () => {
+  const build = () =>
+    scenario()
+      .define(gardener)
+      .seat(0)
+      .hand('Lightning Bolt')
+      .battlefield(GARDENER)
+      .battlefield('Mountain')
+      .battlefield('Grizzly Bears')
+      .library('Island', { count: 8 })
+      .seat(1)
+      .library('Island', { count: 8 })
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+  const kill = (g: ReturnType<typeof build>) => {
+    g.act(0).cast('Lightning Bolt', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+  };
+
+  test('the card is valid and the face-down land is a feature the engine runs', () => {
+    expect(validateCard(gardener)).toEqual([]);
+    expect(isFeatureSupported('ability:moveFaceDownLand')).toBe(true);
+  });
+
+  test('accepting returns it face down: a Forest land, not a creature, with no name, color or power', () => {
+    const g = build();
+    kill(g);
+    confirmOptionalDecision(g);
+    g.act(0).accept();
+    g.passAll();
+    const bears = g.object({ name: 'Grizzly Bears', zone: 'battlefield' });
+    expect(bears.faceDown).toEqual({ by: 'forestLand', n: 1 });
+    expect(bears.controller).toBe(0);
+    g.expect.derived('Grizzly Bears', {
+      types: ['land'],
+      subtypes: ['Forest'],
+      colors: [],
+      keywords: [],
+    });
+    const view = g.view(1).battlefield.find((o) => o.id === bears.id);
+    expect(view?.name).toBe('Face-down land 1');
+    expect(view?.types).toEqual(['land']);
+    expect(view?.power).toBeNull();
+    g.expect.invariants();
+  });
+
+  test('it taps for {G}, as a Forest does (CR 305.6)', () => {
+    const g = build();
+    kill(g);
+    confirmOptionalDecision(g);
+    g.act(0).accept();
+    g.passAll();
+    g.act(0).tapForMana('Grizzly Bears');
+    g.expect.pool(0, 'G');
+  });
+
+  test('it cannot be turned face up', () => {
+    const g = build();
+    kill(g);
+    confirmOptionalDecision(g);
+    g.act(0).accept();
+    g.passAll();
+    const bears = g.object({ name: 'Grizzly Bears', zone: 'battlefield' });
+    expect(g.legalActions(0).some((a) => a.kind === 'turnFaceUp' && a.object === bears.id)).toBe(
+      false,
+    );
+  });
+
+  test('declining leaves the card in the graveyard', () => {
+    const g = build();
+    kill(g);
+    confirmOptionalDecision(g);
+    g.act(0).decline();
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+  });
+});
+
+describe('faceDownAs is validated', () => {
+  test.each([
+    ['to the hand', { to: 'hand' as const }],
+    [
+      'a chosen card',
+      {
+        to: 'battlefield' as const,
+        objects: {
+          kind: 'choose' as const,
+          filter: { zone: 'graveyard' as const, controller: 'you' as const },
+        },
+      },
+    ],
+  ])('%s is refused', (_label, change) => {
+    const base = gardener.faces[0];
+    const ability = base?.abilities?.[0];
+    if (
+      base === undefined ||
+      ability?.kind !== 'triggered' ||
+      ability.effect.kind !== 'moveToZone'
+    ) {
+      throw new Error('missing');
+    }
+    const bad = {
+      ...gardener,
+      name: 'SYNTHETIC Grave Gardener Bad',
+      faces: [
+        {
+          ...base,
+          name: 'SYNTHETIC Grave Gardener Bad',
+          abilities: [{ ...ability, effect: { ...ability.effect, ...change } }],
+        },
+      ],
+    };
+    expect(validateCard(bad).length).toBeGreaterThan(0);
   });
 });

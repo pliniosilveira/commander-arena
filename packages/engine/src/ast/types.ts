@@ -2776,6 +2776,12 @@ export type Effect =
        */
       readonly controller?: 'owner' | 'you';
       /**
+       * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 708.3, 613.2b): the permanents enter face down, as a land with the Forest subtype and no other
+       * characteristic (the face-down status `forestLand`); the card's own enters replacements and triggers do not apply (CR 708.3). Only with `to` `battlefield` and a selector
+       * that is not `choose`. A face-down permanent of this kind is never turned face up.
+       */
+      readonly faceDownAs?: 'forestLand';
+      /**
        * For battlefield: the permanents enter with `count` counters of the kind on them ("return it to
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
        * and 614.1c: a replacement effect), so they are there when anything triggers from the entering.

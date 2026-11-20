@@ -5645,6 +5645,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
         }
       }
+      // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
+      if (e.faceDownAs !== undefined) {
+        if (e.faceDownAs !== 'forestLand') {
+          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' when present");
+        }
+        if (e.to !== 'battlefield') {
+          issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
+        }
+        if (kindOf(e.objects) === 'choose') {
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            'a card chosen as the effect runs does not enter face down',
+          );
+        }
+      }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
       if (e.attachTo !== undefined) {
         if (e.to !== 'battlefield') {

@@ -647,6 +647,13 @@ const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
 const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [^.]*\.$/i;
 const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
 /**
+ * "Whenever another nontoken creature you control dies, you may return it to the battlefield face down under its owner's control. It's a Forest land." (Witherbloom Witchcraft, group C,
+ * CR 708.2, 613.2b): the second sentence says what the face-down permanent is, so the two are read as one instruction (`effect.return-it-face-down-forest-land`).
+ */
+const RETURN_IT_FACE_DOWN =
+  /(?:^|, )(?:you may )?return it to the battlefield face down under its owner['’]s control\.$/i;
+const ITS_A_FOREST_LAND = /^it['’]s a Forest land\.$/i;
+/**
  * "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~." (Galadriel deck, group 3, CR 701.20a, 400.7j): the second sentence
  * reads the card the first one drew and revealed, so the two are read as one instruction (`effect.draw-reveal-remove`; the first may follow a loyalty cost).
  */
@@ -835,6 +842,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, RETURN_IT_FACE_DOWN) && said(b, ITS_A_FOREST_LAND)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||

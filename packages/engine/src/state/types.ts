@@ -299,7 +299,7 @@ export interface GameObject {
  * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
  * it is turned face up for its morph cost). Megamorph, Disguise and cloak would be more values.
  */
-export type FaceDownBy = 'manifest' | 'morph';
+export type FaceDownBy = 'manifest' | 'morph' | 'forestLand';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {
@@ -1786,6 +1786,8 @@ export type Instruction =
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
       readonly withCounters?: { readonly counter: string; readonly count: number };
+      /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
+      readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */
