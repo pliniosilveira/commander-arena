@@ -288,8 +288,8 @@ describe('"Its controller creates ..." (CR 111.2): a token for the controller of
       'effect.player.create-token',
     ],
     [
-      'Destroy target creature. Its owner creates a Treasure token.',
-      'Its owner creates a Treasure token.',
+      'Destroy target creature. Its owners create a Treasure token.',
+      'Its owners create a Treasure token.',
       'spell.effect',
     ],
     // Stage P28: another player creates a token (the controller of the token is the player named), a Treasure and not a
@@ -390,8 +390,8 @@ describe('"Its controller may search their library ..." (CR 701.23a, 608.2d, 110
       'effect.search-by',
     ],
     [
-      'Exile target creature. Its owner may search their library for a basic land card, put it onto the battlefield, then shuffle.',
-      'Its owner may search their library for a basic land card, put it onto the battlefield, then shuffle.',
+      'Exile target creature. Its owners may search their library for a basic land card, put it onto the battlefield, then shuffle.',
+      'Its owners may search their library for a basic land card, put it onto the battlefield, then shuffle.',
       'spell.effect',
     ],
     [

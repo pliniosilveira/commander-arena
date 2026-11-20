@@ -8,7 +8,7 @@
  * must be everything it said.
  */
 
-import type { Condition, Cost, Effect } from '@commander-arena/engine';
+import type { Condition, Cost, Effect, PlayerSelector } from '@commander-arena/engine';
 import {
   type IrAmount,
   type IrArg,
@@ -209,6 +209,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     effects.push(...lowered.value);
     ctx.lowered += 1;
     ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
+    const lastEffect = lowered.value[lowered.value.length - 1];
+    ctx.lastPlayer =
+      lastEffect !== undefined && 'player' in lastEffect && typeof lastEffect.player === 'object'
+        ? (lastEffect.player as PlayerSelector)
+        : null;
     if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
       ctx.randomYardCard = true;
     noteRemoved(lowered.value, ctx);
@@ -349,6 +355,11 @@ function isRecipientless(clause: IrClause): boolean {
   return clause.verb === 'dealDamage' && clause.args.to === undefined;
 }
 
+/** "exile the top three cards instead": an exile of the top cards that names no library (`effect.exile-top-instead`). */
+function isLibraryless(clause: IrClause): boolean {
+  return clause.verb === 'exileTopInstead';
+}
+
 interface Step {
   readonly effects: readonly Effect[];
   /** An unconditional sentence of one instruction: what an "instead" sentence can replace. */
@@ -459,6 +470,37 @@ function lowerCantBeRegenerated(
   const blocked = missingFeatures(['effect:destroy']);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
   return { ok: true, value: [{ ...effect, cantBeRegenerated: true }], rule: clause.rule };
+}
+
+/**
+ * "Each of them enters with an additional -1/-1 counter on it." (Aberrant Return, CR 614.1c, 122.6): the permanents the sentence before it put onto the battlefield enter with the
+ * counters, a replacement effect of the entering, so the engine's `withCounters` of that `moveToZone`. Only right after a sentence whose one effect is such a move of several
+ * objects (a target slot of more than one, or every one of a kind), which has no counters of its own yet.
+ */
+function lowerEntersWithAdditional(
+  sentence: IrSentence,
+  previous: Step | undefined,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'entersWithAdditionalCounters') return null;
+  if (more.length > 0 || clause.optional || sentence.condition !== undefined) {
+    return refuse(sentence);
+  }
+  if (clause.condition !== undefined || clause.duration !== undefined) return refuse(sentence);
+  const count = clause.args.count;
+  const counter = clause.args.counter;
+  const [effect, ...rest] = previous?.effects ?? [];
+  if (count?.kind !== 'number' || counter?.kind !== 'name') return refuse(sentence);
+  if (effect?.kind !== 'moveToZone' || rest.length > 0) return refuse(sentence);
+  if (effect.to !== 'battlefield' || effect.withCounters !== undefined) return refuse(sentence);
+  if (effect.objects.kind !== 'target' && effect.objects.kind !== 'each') {
+    return refuse(sentence);
+  }
+  return {
+    ok: true,
+    value: [{ ...effect, withCounters: { counter: counter.name, count: count.value } }],
+    rule: clause.rule,
+  };
 }
 
 /** The effects a compound effect holds, each list being a sequence of its own. */
@@ -980,8 +1022,12 @@ function lowerRepeatWhile(
     steps.length !== 1 ||
     process === undefined ||
     ctx.targets.length > 0 ||
-    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same).
-    process.effects[process.effects.length - 1]?.kind !== 'mill'
+    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same): a mill, or cards drawn before a clash (CR 701.30d, Hoarder's Greed).
+    !(
+      process.effects[process.effects.length - 1]?.kind === 'mill' ||
+      (process.effects[process.effects.length - 1]?.kind === 'clash' &&
+        process.effects.some((e) => e.kind === 'draw'))
+    )
   ) {
     return refuse(sentence);
   }
@@ -1656,6 +1702,26 @@ function ellipticalDamage(
   return { ok: true, value: [{ ...base, amount: amount.value }], rule: clause.rule };
 }
 
+/**
+ * The sentence "If this spell's additional cost was paid, exile the top three cards instead.": the earlier exile of the top cards of the controller's library with a new number.
+ * Only after one sentence that is one such exile (CR 701.13), which says whose library the elliptical words mean.
+ */
+function ellipticalExileTop(
+  sentence: IrSentence,
+  clause: IrClause,
+  previous: Step,
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const [base] = previous.effects;
+  if (previous.effects.length !== 1 || base?.kind !== 'exileTop' || base.from !== undefined) {
+    return refuse(sentence);
+  }
+  if (base.faceDown === true || base.linked === true) return refuse(sentence);
+  const count = amountArg(clause, 'count', ctx);
+  if (!count.ok) return count;
+  return { ok: true, value: [{ ...base, count: count.value }], rule: clause.rule };
+}
+
 /** The `thisWay` amounts a clause reads, wherever in its amounts they are (a token's count, a draw's count, ...). */
 function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] {
   const out: Extract<IrAmount, { kind: 'thisWay' }>[] = [];
@@ -1712,7 +1778,9 @@ function countsWhatHappened(
       // Issue 121 (Bloodthirsty Adversary): "pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters": the number of times paid.
       earlier.verb === 'payAnyNumberOfTimes' ||
       (earlier.verb === 'discard' &&
-        (earlier.args.anyNumber !== undefined || earlier.args.allCards !== undefined))
+        (earlier.args.anyNumber !== undefined ||
+          earlier.args.upTo !== undefined ||
+          earlier.args.allCards !== undefined))
     );
   }
   const [word] = amount.words;
@@ -1765,8 +1833,9 @@ function countsWhatHappened(
       // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return of one card per permanent type before it put onto the battlefield.
       return earlier.verb === 'returnOnePerPermanentType';
     case 'countersRemoved':
-      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
-      return earlier.verb === 'removeAllCounters';
+      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it. Eventide's Shadow: "the number of counters removed this way" after counters the
+      // controller chose to remove.
+      return earlier.verb === 'removeAllCounters' || earlier.verb === 'removeChosenCounters';
     case 'excessDamageDealt':
     // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':
@@ -2166,6 +2235,13 @@ function lowerStep(
     steps.push({ effects: payAny.value, replaceable: false });
     return { last: i + 1 };
   }
+  const additional = lowerEntersWithAdditional(sentence, steps[steps.length - 1]);
+  if (additional !== null) {
+    if (!additional.ok) return stop(additional);
+    steps.pop();
+    steps.push({ effects: additional.value, replaceable: false });
+    return { last: i };
+  }
   const regenerated = lowerCantBeRegenerated(sentence, sentences[i - 1], steps[steps.length - 1]);
   if (regenerated !== null) {
     if (!regenerated.ok) return stop(regenerated);
@@ -2371,7 +2447,9 @@ function lowerStep(
   const replacement =
     sentence.clauses.length === 1 && isRecipientless(first)
       ? ellipticalDamage(sentence, first, previous, ctx)
-      : lowerClauses(sentence.clauses, ctx);
+      : sentence.clauses.length === 1 && isLibraryless(first)
+        ? ellipticalExileTop(sentence, first, previous, ctx)
+        : lowerClauses(sentence.clauses, ctx);
   if (!replacement.ok) return stop(replacement);
   // "If this spell was kicked, exile target nonland permanent instead.": the slots of each way (CR 702.33g, 601.2c).
   if (

@@ -84,6 +84,8 @@ const REPLACEMENT_UMBRA_ARMOR = /^umbra armor$/i;
 /** "If ~ was kicked, it enters with ...": a conditional replacement of the permanent itself. */
 const REPLACEMENT_IF_ENTERS = /^if [^,]+, (?:~|it) enters\b/i;
 const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap|reveal this card from your hand)\b/i;
+/** "Put a -1/-1 counter on ~: Untap ~." (Devoted Druid, CR 118.3, 122.1): counters put on the permanent are a cost with no symbol before it. */
+const COST_PUT_COUNTERS_WORDS = /^put (?:an? |\w+ )[^:,]* counters? on ~$/i;
 /**
  * The loyalty symbol that starts a loyalty ability (CR 606.2, 606.4, 606.5; stage P47, D-202): "+1", "−2" (U+2212, which Oracle text writes; a hyphen-minus and an
  * en dash too), "0", "−X", each with or without the square brackets of the rules text. The colon follows at once.
@@ -1276,7 +1278,9 @@ function activatedSkeleton(
   const all = splitSentences(text, colon + 1, text.length);
   // "Activate only ..." (CR 602.5) and "This ability costs {4} less to activate if ..." (stage P30, CR 601.2f) follow the effect.
   const firstRestriction = all.findIndex((s) =>
-    /^(?:activate\b|this ability costs\b)/i.test(text.slice(s.start)),
+    /^(?:activate\b|this ability costs\b|only your opponents may activate\b)/i.test(
+      text.slice(s.start),
+    ),
   );
   const body = firstRestriction === -1 ? all : all.slice(0, firstRestriction);
   const restrictions = firstRestriction === -1 ? [] : all.slice(firstRestriction);
@@ -1433,7 +1437,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
   const colon = costColon(text);
   if (colon > 0) {
     const costText = text.slice(0, colon);
-    if (costText.includes('{') || COST_WORDS.test(costText)) {
+    if (
+      costText.includes('{') ||
+      COST_WORDS.test(costText) ||
+      COST_PUT_COUNTERS_WORDS.test(costText)
+    ) {
       return activatedSkeleton(text, colon, base);
     }
   }

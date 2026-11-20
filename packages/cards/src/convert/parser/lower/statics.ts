@@ -644,6 +644,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:opponentsCantWin'];
     case 'cantGainLife':
       return ['static:cantGainLife'];
+    case 'damageCantBePrevented':
+      return ['static:damageCantBePrevented'];
+    case 'damageAsThoughWither':
+      return ['static:damageAsThoughWither'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':

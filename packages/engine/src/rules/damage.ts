@@ -22,6 +22,7 @@ import { controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
 import { type Asked, type OrderFlow, quietFlow, settleDamage } from './damage-order';
 import { derive } from './derive';
+import { allDamageHasWither, damageCantBePrevented } from './global-statics';
 import { abilitiesHaveKeyword } from './keywords';
 import { gainLife } from './life-gain';
 import { commanderCardOf } from './melded';
@@ -88,7 +89,8 @@ function sourceInfo(state: GameState, source: ObjectId): SourceInfo | null {
     deathtouch: abilitiesHaveKeyword(abilities, 'deathtouch'),
     lifelink: abilitiesHaveKeyword(abilities, 'lifelink'),
     infect: abilitiesHaveKeyword(abilities, 'infect'),
-    wither: abilitiesHaveKeyword(abilities, 'wither'),
+    // CR 702.80a, 120.3d: a source has wither, or "all damage is dealt as though its source had wither" (`damageAsThoughWither`).
+    wither: abilitiesHaveKeyword(abilities, 'wither') || allDamageHasWither(state),
     toxic: toxicValue(abilities),
     // CR 903.3b (D-277): a melded permanent one of whose cards is a commander is that commander.
     commanderCard: commanderCardOf(state, obj),
@@ -210,7 +212,10 @@ export function dealDamageAsking(
   if (wouldDeal <= 0) return { kind: 'dealt', state: input, events: [] };
   // CR 702.16e (D-229): damage that would be dealt to a permanent with protection from a color (D-376: or a card type) of the source is prevented. It is applied before the
   // other prevention effects (CR 616.1: the affected player chooses the order; taking protection first keeps a shield for later and never costs them).
-  if (wouldDealTo.kind === 'object') {
+  // CR 615.12: with "damage can't be prevented" in play, protection prevents nothing.
+  if (damageCantBePrevented(input)) {
+    // nothing is prevented
+  } else if (wouldDealTo.kind === 'object') {
     const target = input.objects[wouldDealTo.id];
     if (target !== undefined && hasProtectionFrom(input, target, source)) {
       return { kind: 'dealt', state: input, events: [] };

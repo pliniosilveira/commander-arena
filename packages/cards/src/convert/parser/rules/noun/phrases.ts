@@ -19,7 +19,7 @@ import {
   separatedBy1,
   sequence,
 } from '../../combinators';
-import type { IrComparison, IrFilter } from '../../ir/types';
+import type { IrAmount, IrComparison, IrFilter } from '../../ir/types';
 import { GRANTABLE_KEYWORDS } from '../keyword/vocabulary';
 import { readCreatureType } from './creature-types';
 import { PLANESWALKER_TYPES, SUBTYPE_WORD_NUMBERED, type SubtypeWord, subtypeOf } from './subtypes';
@@ -1032,6 +1032,8 @@ interface CardWords {
   readonly subtypes: readonly string[];
   /** "non-Dragon creature card" (CR 205.3d): creature types the card does not have. */
   readonly notSubtypes?: readonly string[];
+  /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
+  readonly notSupertypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1048,6 +1050,9 @@ export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
   preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' | 'fromTheirs' | 'fromPlayers' = 'from',
+  // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
+  // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
+  amountLimit?: Parser<IrAmount>,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
     preposition === 'fromTheirs'
@@ -1074,6 +1079,8 @@ export function graveyardPhrase(
                   map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
                   // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
                   ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+                  // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
+                  ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
                 );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
@@ -1092,6 +1099,11 @@ export function graveyardPhrase(
   );
   const typed: Parser<CardWords> = map(
     sequence(
+      // "nonlegendary creature card" (CR 205.4: legendary is a supertype), the engine's `notSupertypes`.
+      optional(
+        map(literal('nonlegendary '), () => ['legendary']),
+        [] as string[],
+      ),
       nonSubtypes,
       many(
         map(
@@ -1107,11 +1119,12 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notSubtypes, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
+      ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
     }),
   );
   // "nonland permanent card" (stage P33, D-150, CR 110.1, 205.2a): a card that is a permanent card is of one of the permanent types, so the
@@ -1211,8 +1224,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
+    // A negated supertype inside a union is another reading, not built here.
+    if (notSupertypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
     if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
@@ -1270,17 +1285,29 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X_OR_LESS), false),
       // "Saga card with mana value X from your graveyard" (CR 107.3a, 202.3): the mana value is the X announced for the ability.
       optional(quiet(MANA_VALUE_X), false),
+      optional(
+        quiet(
+          amountLimit === undefined
+            ? fail
+            : map(
+                sequence(literal(' with mana value less than or equal to '), amountLimit),
+                ([, amount]) => amount,
+              ),
+        ),
+        undefined,
+      ),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), false),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, notSupertypes, extra, subtypeAnyOf },
       ,
       compared,
       atMostX,
       equalsX,
+      limitAmount,
       controller,
       putThere,
     ] = r.value;
@@ -1296,6 +1323,7 @@ export function graveyardPhrase(
           ...filter,
           ...(subtypes.length > 0 ? { subtypes } : {}),
           ...(notSubtypes !== undefined ? { notSubtypes } : {}),
+          ...(notSupertypes !== undefined ? { notSupertypes } : {}),
           ...(anyOf.length > 0
             ? {
                 anyOf: [...anyOf.map((t): IrFilter => ({ types: [t], raw: t })), ...(extra ?? [])],
@@ -1306,6 +1334,7 @@ export function graveyardPhrase(
           ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
+          ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),
           card: true,
         },
         compared,

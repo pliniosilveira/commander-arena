@@ -341,6 +341,8 @@ function walkEffect(
         (effect.kind === 'setPt' ||
           effect.kind === 'setTypes' ||
           effect.kind === 'grantKeyword' ||
+          // CR 613.1f, 611.2a: "Target creature becomes a Treasure artifact ... and loses all other card types and abilities" (Vraska, Betrayal's Sting): no end, a layer 6 loss.
+          effect.kind === 'loseAllAbilities' ||
           // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
           (effect.kind === 'setColors' && effect.additive === true))
       ) {
@@ -525,6 +527,25 @@ function activationCostIssues(
       path,
       message:
         'more than one blight cost, or one with a creature-tapping cost, is not implemented by the engine yet',
+    });
+  }
+  if (costs.some((c) => c.kind === 'blight' && c.optional === true)) {
+    // CR 118.8: "you may blight 1" is the optional additional cost of a spell (`CardFace.additionalCosts`); no ability's cost is optional.
+    out.push({
+      path,
+      message: 'an optional blight is run only as an additional cost to cast a spell',
+    });
+  }
+  if (
+    allowed?.includes('blight') === true &&
+    costs.some((c) => c.kind === 'blight') &&
+    costs.length > 1
+  ) {
+    // CR 702.21a, 701.68a: `rules/pay-unless.ts` pays a blight as the only cost of the ability.
+    out.push({
+      path,
+      message:
+        'a blight cost of Ward is the only cost of the ability: it is not combined with another',
     });
   }
   if (
@@ -858,11 +879,12 @@ function walkAbility(
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'ward') {
         // CR 702.21a: paid when the ward ability resolves (rules/pay-unless.ts): mana, life and
-        // discarding cards (D-095), no X.
+        // discarding cards (D-095), no X; D-407 (CR 701.68a): or a blight, alone.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
           'mana',
           'payLife',
           'discard',
+          'blight',
         ]);
       } else if (a.keyword.kind === 'kicker' || a.keyword.kind === 'multikicker') {
         // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts).

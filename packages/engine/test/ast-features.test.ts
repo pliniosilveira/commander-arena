@@ -103,11 +103,17 @@ describe('the dimensions', () => {
       // Issue 233: "If X is 5 or more".
       'xAtLeast',
       'replicated',
+      // CR 118.8, 701.68a: "if this spell's additional cost was paid" (the optional blight).
+      'additionalCostPaid',
       'sacrificedAsCost',
       'controlCommander',
       'sourceHasCounter',
       'subjectGreaterPt',
       'subjectControllerHasMore',
+      // Auntie Ool, Massacre Girl, Lasting Tarfire.
+      'subjectControlledByYou',
+      'subjectStat',
+      'putCountersThisTurn',
       'triggerPlayerHasMore',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
@@ -178,6 +184,8 @@ describe('the dimensions', () => {
       'attackedWithCreaturesThisTurn',
       'thisAttackedThisTurn',
       'dieResult',
+      // CR 701.30d: "If you win" after a clash.
+      'clashWon',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
@@ -252,6 +260,8 @@ describe('the dimensions', () => {
       'cantLoseGame',
       'opponentsCantWin',
       'cantGainLife',
+      'damageCantBePrevented',
+      'damageAsThoughWither',
       'playerProtection',
       'cantHaveCounters',
       'cantBeSacrificed',

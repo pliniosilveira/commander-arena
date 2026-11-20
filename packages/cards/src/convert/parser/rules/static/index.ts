@@ -49,6 +49,7 @@ import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
 import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
+import { WORLD_RULES_STATIC_RULES } from './world-rules';
 
 /**
  * `static.no-maximum-hand-size`: "You have no maximum hand size." (CR 402.2: a player's maximum
@@ -144,6 +145,8 @@ export const STATIC_RULES = [
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."
   ...HASHATON_G2_STATIC_RULES,
+  // Everlasting Torment: "Players can't gain life.", "Damage can't be prevented.", "All damage is dealt as though its source had wither."
+  ...WORLD_RULES_STATIC_RULES,
   // Hashaton deck, group 6 (D-377): "You and creatures you control have protection from the chosen card type."
   ...HASHATON_G6_STATIC_RULES,
   ...SHALAI_STATIC_RULES,

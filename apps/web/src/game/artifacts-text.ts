@@ -395,7 +395,8 @@ export function stateTriggerWording(condition: Condition, self: string): string 
     condition.kind === 'amountIs' &&
     typeof condition.amount === 'object' &&
     condition.amount.kind === 'countersOn' &&
-    condition.amount.of.kind === 'this'
+    condition.amount.of.kind === 'this' &&
+    condition.amount.counter !== undefined
   ) {
     const { value, cmp } = condition.compare;
     const counter = condition.amount.counter;

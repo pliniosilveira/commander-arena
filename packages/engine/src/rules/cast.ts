@@ -64,6 +64,7 @@ import { amountOf } from './amounts';
 import { becameTargetEvents } from './becomes-target';
 import {
   answerBehold,
+  answerBlightAdditional,
   answerDiscard,
   answerExile,
   answerSacrifice,
@@ -1040,6 +1041,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         exile: cost.exile,
         ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),
         tap: cost.tap,
+        ...(cost.blight === undefined ? {} : { blight: cost.blight }),
       },
     },
   };
@@ -1352,6 +1354,11 @@ export function answerCastExile(state: GameState, chosen: readonly ObjectId[]): 
   return answerExile(state, chosen, finishCast);
 }
 
+/** The answer to the question of the optional blight of a spell's additional cost (CR 118.8, 701.68a); the caller checked it against the decision. */
+export function answerCastBlight(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerBlightAdditional(state, chosen, finishCast);
+}
+
 /** Pays the optional hand-exile additional cost after the mana payment. */
 export function answerCastAdditionalExilePayment(state: GameState): Result {
   return payAdditionalCosts(state, [], finishCast);
@@ -1438,12 +1445,16 @@ export function answerPayment(
     if (plan === null) return fail('You cannot pay that cost');
     const applied = applyPaymentPlan(cleared, seat, plan, plan.lifePaid);
     return finish(
-      withManaSpent(
-        withSpentRiders(applied.state, casting, derivedSpell, applied.riders),
+      withPhyrexianLife(
+        withManaSpent(
+          withSpentRiders(applied.state, casting, derivedSpell, applied.riders),
+          casting,
+          applied.spent,
+          applied.spentSnow,
+          applied.spentColors,
+        ),
         casting,
-        applied.spent,
-        applied.spentSnow,
-        applied.spentColors,
+        plan.lifePaid,
       ),
       applied.events,
     );
@@ -1453,12 +1464,16 @@ export function answerPayment(
   const paid = payByTapping(cleared, seat, casting.totalCost, spell, action.taps);
   if ('error' in paid) return fail(paid.error);
   return finish(
-    withManaSpent(
-      withSpentRiders(paid.state, casting, derivedSpell, paid.riders),
+    withPhyrexianLife(
+      withManaSpent(
+        withSpentRiders(paid.state, casting, derivedSpell, paid.riders),
+        casting,
+        paid.spent,
+        paid.spentSnow,
+        paid.spentColors,
+      ),
       casting,
-      paid.spent,
-      paid.spentSnow,
-      paid.spentColors,
+      paid.phyrexianLifePaid,
     ),
     paid.events,
   );
@@ -1631,6 +1646,22 @@ function withSpentRiders(
   return triggers.length === 0
     ? next
     : { ...next, pendingTriggers: [...next.pendingTriggers, ...triggers] };
+}
+
+/**
+ * CR 107.4f, 601.2h, 702.150a: the spell remembers the life paid for the Phyrexian mana symbols of its cost (2 life for each symbol paid that way), which Compleated reads as the
+ * permanent enters. Nothing for an ability, and nothing when no Phyrexian symbol was paid with life.
+ */
+function withPhyrexianLife(
+  state: GameState,
+  casting: NonNullable<GameState['casting']>,
+  life: number,
+): GameState {
+  const stack = state.objects[casting.object]?.stack;
+  if (casting.activation !== null || life <= 0 || stack === null || stack === undefined) {
+    return state;
+  }
+  return patchObject(state, casting.object, { stack: { ...stack, phyrexianLifePaid: life } });
 }
 
 /**

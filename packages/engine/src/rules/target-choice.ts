@@ -189,9 +189,14 @@ export function targetChoiceSpecs(
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
       ...(spec.ownedByTarget === undefined ? {} : { ownedBy: spec.ownedByTarget }),
-      ...(slotMode?.differentFrom === undefined
+      ...(slotMode?.differentFrom === undefined && spec.alsoDifferentFrom === undefined
         ? {}
-        : { differentFromAll: slotMode.differentFrom }),
+        : {
+            differentFromAll: [
+              ...(spec.alsoDifferentFrom ?? []),
+              ...(slotMode?.differentFrom ?? []),
+            ],
+          }),
       target: spec,
       legal,
       ...(slotMode === undefined ? {} : { mode: slotMode.mode }),

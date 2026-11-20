@@ -16,6 +16,8 @@ const ITS_CONTROLLER = new RegExp(
   'iu',
 );
 
+const ITS_OWNER = new RegExp(`(its|that (?:${OBJECT_WORDS})['’]s) owner(?![\\p{L}\\p{N}'’])`, 'iu');
+
 /** The pronoun the possessive stands for: "it" for "its", "that creature" for "that creature's". */
 export function possessedNoun(rule: string, head: string, start: number): IrNoun {
   const word = head.toLowerCase() === 'its' ? head.slice(0, 2) : head.slice(0, head.length - 2);
@@ -66,6 +68,47 @@ export const NOUN_ITS_CONTROLLER = defineRule<IrNoun>({
       of,
       span: { start: pos, end: m.pos },
       rule: 'noun.its-controller',
+    };
+    return { ok: true, value: noun, pos: m.pos };
+  }) satisfies Parser<IrNoun>,
+});
+
+/**
+ * `noun.its-owner`: "its owner", "that creature's owner" (Oft-Nabbed Goat, "its owner draws that many cards"; CR 108.3, 608.2h: the player who owns an object an earlier part of the
+ * text named, read from its last-known information when it has left). The object is a pronoun like any other, left to the binding pass. The engine's `ownerOf`. Not read: "its
+ * owners", "that player's owner", "target creature's owner", "its owner's" and a bare "its".
+ */
+export const NOUN_ITS_OWNER = defineRule<IrNoun>({
+  id: 'noun.its-owner',
+  family: 'noun',
+  leading: ['its', 'that'],
+  cites: ['CR 108.3 (Cards)', 'CR 608.2h (Resolving Spells and Abilities)'],
+  examples: ['its owner', "that creature's owner", 'that permanent’s owner', 'Its owner'],
+  rejects: [
+    'its controller',
+    'its owners',
+    'it owner',
+    'that player',
+    "that player's owner",
+    'target creature’s owner',
+    'its',
+    'its owner’s',
+  ],
+  parse: ((ctx, pos) => {
+    const m = pattern(ITS_OWNER)(ctx, pos);
+    if (!m.ok) return fail(ctx, pos);
+    const head = m.value[1] ?? '';
+    const of = possessedNoun('noun.its-owner', head, pos);
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'ownerOf',
+      filter: { raw: ctx.text.slice(pos, m.pos) },
+      upTo: false,
+      plural: false,
+      other: false,
+      of,
+      span: { start: pos, end: m.pos },
+      rule: 'noun.its-owner',
     };
     return { ok: true, value: noun, pos: m.pos };
   }) satisfies Parser<IrNoun>,

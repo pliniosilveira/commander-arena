@@ -25,6 +25,7 @@ import {
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
+import { countersOfKind } from './counters-of-kind';
 import { defendingPlayerOf } from './defending';
 import { derive } from './derive';
 import { keywordKindsOf } from './derive-keywords';
@@ -278,6 +279,10 @@ export function matchesFilter(
     ...(filter.manaValueAtMost !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueAtMost, ctx) }
       : {}),
+    // CR 400.7, 603.10a: the card the permanent the trigger is about became, which "another target ... card" leaves out.
+    ...(filter.notTriggerCard === true && ctx.triggerSubject !== undefined
+      ? { excludedCards: successorsOf(state, ctx.triggerSubject, () => true) }
+      : {}),
     // CR 202.3: "with lesser mana value": at most one less than the amount.
     ...(filter.manaValueBelow !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
@@ -354,6 +359,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
+    f.notTriggerCard === true ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );
@@ -459,6 +465,12 @@ function manaValueLimitOf(
         ? ctx
         : { ...ctx, owners: resolvePlayers(state, owner, ctx, ctx.targets ?? []) };
     return countMatching(state, amount.filter, countedContext);
+  }
+  // CR 122.1, 603.10a: "with mana value less than or equal to the number of counters on that creature": the counters the permanent the trigger is about had, as it last was.
+  if (amount.kind === 'countersOn' && amount.of.kind === 'triggerSubject') {
+    const subject =
+      ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
+    return countersOfKind(subject?.counters, amount.counter);
   }
   if (amount.kind === 'powerOf' && ctx.source !== null) {
     return Math.max(0, powerOfObject(state, ctx.source) ?? 0);
@@ -910,6 +922,14 @@ export function resolvePlayers(
         state,
         opponentsOf(state, ctx.controller).filter((seat) => seat !== ctx.triggerPlayer),
       );
+    case 'eachPlayerExcept': {
+      // CR 102.1 (Oft-Nabbed Goat): "each other player": every player still in the game but the ones `except` names.
+      const left = resolvePlayers(state, selector.except, ctx, targets);
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter((seat) => !left.includes(seat)),
+      );
+    }
     case 'all':
       // D-131: "you and target opponent": the players the members name, each once, in APNAP order (CR 101.4).
       return apnapOrder(
@@ -1022,6 +1042,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'eachPlayer' ||
     sel.kind === 'eachOpponent' ||
     sel.kind === 'eachOtherOpponent' ||
+    sel.kind === 'eachPlayerExcept' ||
     sel.kind === 'all' ||
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||

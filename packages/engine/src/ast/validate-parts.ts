@@ -174,6 +174,8 @@ export interface Scope {
   readonly mayAvailable?: boolean;
   /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-271). */
   readonly dieSides?: number;
+  /** True after a `clash` earlier in the same sequence: the condition `clashWon` reads who won it (CR 701.30d). */
+  readonly clashed?: boolean;
   /** True in the effect of a delayed trigger whose creating sequence exiled cards before it: `exiledStillThere` has cards to count (D-151). */
   readonly exiledStillThere?: boolean;
 }
@@ -314,6 +316,9 @@ export function checkFilter(
   ) {
     issue(out, `${path}.hasCounter`, 'hasCounter must be true or the name of a counter');
   }
+  if (f.notTriggerCard !== undefined && f.notTriggerCard !== true) {
+    issue(out, `${path}.notTriggerCard`, 'notTriggerCard must be true when present');
+  }
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
@@ -423,12 +428,14 @@ export function checkFilter(
       a?.kind === 'lifeGainedThisTurn' ||
       // CR 107.3m: "with mana value X or less" in the enters trigger of the permanent itself: the X of the spell it came from (`validateCard` checks the trigger and the cost).
       a?.kind === 'enteredX' ||
+      // CR 122.1, 603.10a (Puca's Covenant): "with mana value less than or equal to the number of counters on that creature": the permanent the trigger is about, as it last was.
+      (a?.kind === 'countersOn' && a.of?.kind === 'triggerSubject') ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
         `${path}.${limitKey}`,
-        'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
+        'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell, the mana value of the spell that triggered it or the counters on the permanent that triggered it',
       );
     }
     // CR 107.3a: "each nonland permanent with mana value X or less" reads the X announced for the spell or ability that has the selector.
@@ -1205,6 +1212,21 @@ export function declareTargets(
         );
       }
     }
+    if (spec.alsoDifferentFrom !== undefined) {
+      // CR 115.3: more earlier slots of the same ability the targets of this one differ from; a nearest slot (`differentFrom`) goes with them.
+      if (
+        spec.differentFrom === undefined ||
+        !Array.isArray(spec.alsoDifferentFrom) ||
+        spec.alsoDifferentFrom.length === 0 ||
+        spec.alsoDifferentFrom.some((id) => typeof id !== 'string' || !declared.has(id))
+      ) {
+        issue(
+          out,
+          `${p}.alsoDifferentFrom`,
+          'alsoDifferentFrom names earlier target slots of the same ability, with differentFrom',
+        );
+      }
+    }
     if (spec.ownedByTarget !== undefined) {
       // CR 115.1, 608.2b: cards in the graveyard of the player an earlier slot of the ability targets.
       if (typeof spec.ownedByTarget !== 'string' || declared.get(spec.ownedByTarget) !== 'player') {
@@ -1438,6 +1460,10 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerExcept':
+      // CR 102.1 (Oft-Nabbed Goat): "each other player": the players the `except` selector does not name.
+      checkPlayerSelector(sel.except, `${path}.except`, scope, out);
+      break;
     case 'triggerPlayer':
       // D-133: "that player": only a trigger whose event is about a player has one.
       if (scope.triggerPlayer !== true) {
@@ -1557,6 +1583,7 @@ export const PLAYER_ONLY = [
   'eachPlayer',
   'eachOpponent',
   'eachOtherOpponent',
+  'eachPlayerExcept',
   'all',
   'controllerOf',
   'ownerOf',
@@ -1631,7 +1658,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
   excessDamageDealt: 'a dealDamage effect',
-  countersRemoved: 'a removeAllCounters effect',
+  countersRemoved: 'a removeAllCounters or removeChosenCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
@@ -1671,7 +1698,9 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
-  if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
+  if (e?.kind === 'removeAllCounters' || e?.kind === 'removeChosenCounters') {
+    return ['countersRemoved'];
+  }
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
   // Lorehold group 1: "If you search your library this way, shuffle."
@@ -1894,7 +1923,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'toughnessOf':
     case 'countersOn':
       checkAmountObject(a.of, `${path}.of`, scope, out);
-      if (a.kind === 'countersOn' && (typeof a.counter !== 'string' || a.counter === '')) {
+      if (
+        a.kind === 'countersOn' &&
+        a.counter !== undefined &&
+        (typeof a.counter !== 'string' || a.counter === '')
+      ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;
@@ -1907,7 +1940,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           `an aggregate is "greatest" or "total", not ${JSON.stringify(a.how)}`,
         );
       }
-      if (!isOneOf(a.stat, ['power', 'toughness', 'manaValue'])) {
+      if (!isOneOf(a.stat, ['power', 'toughness', 'manaValue', 'counters'])) {
         issue(out, `${path}.stat`, `unknown stat ${JSON.stringify(a.stat)}`);
       }
       if (a.filter === undefined || a.filter === null) {
@@ -2042,6 +2075,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeTotalOf':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
+    case 'poisonShortfall':
+      // CR 122.1, 107.1b: a positive whole number less a player's poison counters, read as the instruction runs.
+      if (!isCount(a.limit) || a.limit < 1) {
+        issue(out, `${path}.limit`, 'limit must be a positive integer');
+      }
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
       break;
     case 'experienceCounters':
@@ -2737,6 +2777,9 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           'the number of -1/-1 counters of a blight must be a positive integer',
         );
       }
+      if (cost.optional !== undefined && cost.optional !== true) {
+        issue(out, `${path}.optional`, 'optional must be true when present');
+      }
       break;
     case 'sacrifice':
       if (cost.countX !== undefined) {
@@ -3291,6 +3334,29 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'subjectControlledByYou':
+      // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
+      break;
+    case 'subjectStat':
+      if (!isOneOf(c.stat, ['power', 'toughness'])) {
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      if (!Number.isSafeInteger(c.compare?.value)) {
+        issue(out, `${path}.compare.value`, 'a power or toughness is compared with a whole number');
+      }
+      break;
+    case 'putCountersThisTurn':
+      // CR 122.6 (Lasting Tarfire): the turn log of the controller of the ability; no parameter is needed.
+      if (c.counter !== undefined && (typeof c.counter !== 'string' || c.counter === '')) {
+        issue(out, `${path}.counter`, 'counter name must be non-empty when present');
+      }
+      if (c.onType !== undefined && !(CARD_TYPES as readonly string[]).includes(c.onType)) {
+        issue(out, `${path}.onType`, `unknown card type ${String(c.onType)}`);
+      }
+      break;
     case 'triggerPlayerHasMore':
       // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
@@ -3427,6 +3493,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'clashWon':
+      // CR 701.30d: who won a clash is read in the `conditional` or `repeatWhile` after the clash (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        'clashWon reads the clash earlier in the same resolution: it is only valid in a conditional effect after a clash of the same sequence',
+      );
+      break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
       issue(
@@ -3452,6 +3526,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'kicked':
     case 'castInOwnMainPhase': // issue 244: no parameters; it reads the spell it is asked of
     case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
+    case 'additionalCostPaid': // CR 118.8, 701.68a: the face must list an optional blight additional cost (`checkAdditionalCostPaid`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
@@ -4602,6 +4677,18 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         'ringBearerChosen is the intervening "if" of a ringTempted trigger, read as it triggers and again as it resolves',
       );
       break;
+    case 'subjectControlledByYou':
+    case 'subjectStat':
+      // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
+      if (scope.triggerSubject !== 'permanent') {
+        issue(
+          out,
+          path,
+          `${c.kind} reads the permanent the trigger is about: it is only valid in the effect of a trigger about a permanent`,
+        );
+      }
+      checkCondition(c, path, out);
+      break;
     case 'abilityResolvedTimes':
       // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
       if (scope.triggeredAbility !== true && scope.activatedAbility !== true) {
@@ -4638,6 +4725,12 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       if (!isCount(c.count) || c.count < 1) {
         issue(out, `${path}.count`, 'a count of one or more');
+      }
+      break;
+    case 'clashWon':
+      // CR 701.30d: "If you win": the clash earlier in the same sequence.
+      if (scope.clashed !== true) {
+        issue(out, path, 'clashWon needs a clash before it in the same sequence');
       }
       break;
     case 'dieResult': {
@@ -4863,6 +4956,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           if (child?.kind === 'rollDie' && isCount(child.sides)) {
             after = { ...after, dieSides: child.sides };
           }
+          // CR 701.30d: after a clash, the condition `clashWon` can read who won it.
+          if (child?.kind === 'clash') after = { ...after, clashed: true };
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
             after = { ...after, voteOptions: child.options };
@@ -5110,17 +5205,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.effects`, 'a repeated process needs at least one effect');
         break;
       }
-      if (e.effects[e.effects.length - 1]?.kind !== 'mill') {
+      // CR 701.30d (Hoarder's Greed): or a process that draws cards and ends in a clash, repeated while the controller wins it; each pass draws, so the repeat ends when a library does.
+      const clashes =
+        e.effects[e.effects.length - 1]?.kind === 'clash' &&
+        e.effects.some((child) => child?.kind === 'draw');
+      if (e.effects[e.effects.length - 1]?.kind !== 'mill' && !clashes) {
         issue(
           out,
           `${path}.effects`,
-          'the repeated process ends with a mill (each pass takes cards out of a library, so the repeat ends)',
+          'the repeated process ends with a mill (each pass takes cards out of a library, so the repeat ends), or draws cards and ends with a clash',
         );
       }
       checkEffect({ kind: 'sequence', effects: e.effects }, `${path}.effects`, scope, out);
-      const after = { ...scope, movedAvailable: true };
+      const after = { ...scope, movedAvailable: true, ...(clashes ? { clashed: true } : {}) };
       checkEffectCondition(e.condition, `${path}.condition`, after, out);
-      if (e.condition?.kind !== 'objectMatches' || kindOf(e.condition.of) !== 'moved') {
+      if (clashes) {
+        if (e.condition?.kind !== 'clashWon') {
+          issue(
+            out,
+            `${path}.condition`,
+            'the test of a repeated clash reads who won it (clashWon)',
+          );
+        }
+      } else if (e.condition?.kind !== 'objectMatches' || kindOf(e.condition.of) !== 'moved') {
         issue(
           out,
           `${path}.condition`,
@@ -5231,14 +5338,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
       else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
-      else if (named === 'this' && scope.owner === 'ability' && e.player !== undefined) {
-        // CR 613.1b: "that player gains control of this artifact": the permanent with the ability, for the one player `player` names.
+      else if (named === 'this' && scope.owner === 'ability') {
+        // CR 613.1b: "that player gains control of this artifact" (the one player `player` names) or "gain control of ~" (the controller of the ability): the permanent with the ability.
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       } else
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target, the permanent that caused the trigger, or (with a player who gains control) the permanent with the ability',
+          'gainControl names a target, the permanent that caused the trigger, or the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -5546,6 +5653,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachPlayer' ||
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'attackedPlayers' ||
         e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
@@ -5774,6 +5882,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'populate':
       // CR 701.36 (D-627): no fields.
       break;
+    case 'blight':
+      // CR 701.68a: "Blight 1" as an instruction: a positive number of -1/-1 counters.
+      if (!isCount(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'blight puts a positive whole number of -1/-1 counters');
+      }
+      break;
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): a kind of counter and the permanents it moves onto.
       if (typeof e.counter !== 'string' || e.counter === '') {
@@ -5906,6 +6020,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'removeAllPlayerCounters':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'moveCounter':
+      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
+      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      checkRef(e.to, 'object', `${path}.to`, scope, out);
+      break;
+    case 'removeChosenCounters':
+      // CR 122.1, 608.2d: the permanents the counters may come off, and at most `upTo` of them.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.upTo !== undefined && (!isCount(e.upTo) || e.upTo < 1)) {
+        issue(out, `${path}.upTo`, 'upTo must be a positive integer');
+      }
       break;
     case 'moveAllCounters':
       // CR 122.1: both permanents are targets of the ability (or the triggering permanent), as for a copy that names its original.
@@ -6685,6 +6811,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 701.9, 107.1c: "Discard up to N cards": the player chooses how many, up to `count`, so no other way of choosing goes with it.
+      if (e.kind === 'discard' && e.upTo !== undefined) {
+        if (
+          e.upTo !== true ||
+          e.anyNumber !== undefined ||
+          e.hand !== undefined ||
+          e.random !== undefined ||
+          e.unless !== undefined ||
+          e.together !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.upTo`,
+            'upTo is true, and goes with none of anyNumber, hand, random, unless or together',
+          );
+        }
+      }
       // D-139: "discard N cards unless you discard an artifact card": a filter of the cards in the hand.
       if (e.kind === 'discard' && e.unless !== undefined) {
         checkFilter(e.unless, `${path}.unless`, out);
@@ -6729,6 +6872,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseLife':
     case 'gainEnergy':
     case 'gainExperience':
+    case 'givePoison':
     case 'increaseSpeed':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
@@ -6782,9 +6926,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachPlayer' ||
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player wins the game: name a single player');
+      }
+      break;
+    case 'exchangeLifeWithPt':
+      // CR 701.12g: one player and one permanent swap their values.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (
+        e.player.kind === 'eachOpponent' ||
+        e.player.kind === 'eachOtherOpponent' ||
+        e.player.kind === 'eachPlayerExcept' ||
+        e.player.kind === 'all'
+      ) {
+        issue(out, `${path}.player`, 'an exchange is made by one player: name a single player');
       }
       break;
     case 'setLifeTotal':
@@ -7234,6 +7391,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'noMaxHandSizeForGame':
       // CR 402.2: no parameters; it is the controller's.
       break;
+    case 'clash':
+      // CR 701.30b: the controller clashes with an opponent; no parameters.
+      break;
     case 'rollDie':
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
       if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
@@ -7261,7 +7421,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'doubleCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
-      if (typeof e.counter !== 'string' || e.counter === '') {
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;

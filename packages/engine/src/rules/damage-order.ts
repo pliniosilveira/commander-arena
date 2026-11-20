@@ -40,6 +40,7 @@ import { redirectKey, redirectsFor } from './damage-redirect';
 
 export type { DamageEvent, DamageModifier } from './damage-modifier';
 
+import { damageCantBePrevented } from './global-statics';
 import {
   isShield,
   type Shield,
@@ -65,6 +66,18 @@ export function damageModifiers(
   state: GameState,
   event: DamageEvent,
   used: readonly string[] = [],
+): readonly DamageModifier[] {
+  const found = modifiersFor(state, event, used);
+  // CR 615.12a: with "damage can't be prevented" in play, each prevention effect is applied to the event just once.
+  return damageCantBePrevented(state)
+    ? found.filter((m) => m.kind !== 'prevent' || !used.includes(m.key))
+    : found;
+}
+
+function modifiersFor(
+  state: GameState,
+  event: DamageEvent,
+  used: readonly string[],
 ): readonly DamageModifier[] {
   if (event.amount <= 0) return [];
   const { source, to, combat } = event;
@@ -223,6 +236,19 @@ export function applyModifier(current: Settling, modifier: DamageModifier): Sett
           combat: current.event.combat,
         },
       ],
+    };
+  }
+  if (damageCantBePrevented(current.state)) {
+    // CR 615.12: the prevention effect is applied, prevents nothing and leaves a shield as it was, but its additional effects take place (the counter a static
+    // prevention removes). CR 615.12a: it is applied to this event just once.
+    const removal = origin.kind === 'static' ? counterRemoval(current, origin.prevention) : null;
+    return {
+      ...current,
+      ...(removal === null
+        ? {}
+        : { state: removal.state, events: [...current.events, removal.event] }),
+      applied: current.applied + 1,
+      used: [...current.used, modifier.key],
     };
   }
   const lane = (took: number) => ({

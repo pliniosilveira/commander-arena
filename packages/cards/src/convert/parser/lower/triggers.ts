@@ -576,12 +576,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
       if (t.by === undefined) return failure(t);
+      const blocked = t.perCounter === true ? missingFeatures(['trigger:countersAddedEach']) : [];
+      if (blocked.length > 0) return failure(t, blocked);
       return ok({
         kind: 'countersAdded',
         what: what.value,
         ...(t.counter === undefined ? {} : { counter: t.counter }),
         by: t.by,
         ...(t.reaches === undefined ? {} : { reaches: t.reaches }),
+        ...(t.perCounter === true ? { each: true as const } : {}),
       });
     }
     case 'playerAttacksOpponent': {
@@ -1087,6 +1090,66 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   return { ...ability, body: { ...ability.body, sentences } };
 }
 
+/**
+ * "When ~ dies, if it had one or more -1/-1 counters on it, its owner draws that many cards and each other player loses that much life." (Oft-Nabbed Goat, CR 603.10a, 122.1): in the
+ * body of a trigger whose intervening "if" says the source had one or more counters of a kind, "that many" and "that much" are the number of those counters the source had, which the
+ * engine reads from its last-known information (`countersOn` of `this`).
+ */
+function hadCountersThatMany(ability: Triggered): Triggered {
+  const test = ability.interveningIf?.test;
+  if (
+    test?.kind !== 'hadCounters' ||
+    test.oneOrMore !== true ||
+    test.counter === undefined ||
+    ability.modal !== undefined ||
+    // Only about the source itself: of another permanent that left, the counters it had are not the source's.
+    ability.trigger.subject?.det !== 'self'
+  ) {
+    return ability;
+  }
+  const counter = test.counter;
+  const counters = (amount: IrAmount): IrAmount => ({
+    kind: 'countersOn',
+    of: {
+      kind: 'noun',
+      det: 'self',
+      filter: { raw: '~' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: amount.span,
+      rule: ability.interveningIf?.rule ?? 'condition.had-counters',
+    },
+    counter,
+    span: amount.span,
+  });
+  const retarget = (amount: IrAmount): IrAmount => {
+    switch (amount.kind) {
+      case 'thisWay':
+        return amount.thatMany === true ? counters(amount) : amount;
+      case 'triggerDamage':
+        return amount.life === true ? amount : counters(amount);
+      default:
+        return amount;
+    }
+  };
+  const sentences = ability.body.sentences.map((sentence) => ({
+    ...sentence,
+    clauses: sentence.clauses.map(
+      (clause): IrClause => ({
+        ...clause,
+        args: Object.fromEntries(
+          Object.entries(clause.args).map(([key, arg]) => [
+            key,
+            isIrAmount(arg) ? retarget(arg) : arg,
+          ]),
+        ),
+      }),
+    ),
+  }));
+  return { ...ability, body: { ...ability.body, sentences } };
+}
+
 /** The count a prime-number condition reads, inside the intervening "if" (alone or joined with others by "and"). */
 function primeCountOf(condition: IrCondition | undefined): IrAmount | null {
   const test = condition?.test;
@@ -1211,7 +1274,7 @@ function lowerTriggeredAbility(
   if (taken === null) return failure(written);
   const { once, doOnce } = taken;
   // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
-  const ability = conditionAmountThatMany(eventAmountThatMany(taken.ability));
+  const ability = hadCountersThatMany(conditionAmountThatMany(eventAmountThatMany(taken.ability)));
   // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
   // lowering of those does not carry the flag into.
   if (doOnce && ability.modal !== undefined) return failure(written);
@@ -1248,6 +1311,8 @@ function lowerTriggeredAbility(
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.triggeredBody = true;
+  ctx.deathOfOther =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
   ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
@@ -1287,9 +1352,20 @@ function lowerTriggeredAbility(
       events.length === 1 && only !== undefined && ability.trigger.subject?.det === 'a'
         ? foldHadCounters(only, ifWritten.test.counter)
         : null;
-    if (folded === null) return failure(ifWritten, []);
-    triggers[0] = folded;
-    foldedCounters = true;
+    if (folded !== null) {
+      triggers[0] = folded;
+      foldedCounters = true;
+    } else {
+      // "When ~ dies, if it had one or more -1/-1 counters on it, ..." (Oft-Nabbed Goat, CR 603.10a, 122.1): the permanent itself, as it last was, had a counter of the kind the text names
+      // (the engine's `sourceHasCounter`, which Persist and Undying read). "That many" of the body is the number of those counters.
+      const kind = ifWritten.test.counter;
+      if (!itIsSelf || kind === undefined || ability.trigger.event !== 'dies') {
+        return failure(ifWritten, []);
+      }
+      const blocked = missingFeatures(['condition:sourceHasCounter']);
+      if (blocked.length > 0) return failure(ifWritten, blocked);
+      interveningIf = { kind: 'sourceHasCounter', counter: kind };
+    }
   } else if (ifWritten?.test.kind === 'costContainsX') {
     // "Whenever you cast an instant or sorcery spell or activate an ability, if that spell's mana cost or that ability's activation cost contains {X}, ..." (Unbound Flourishing, CR 107.3,
     // 603.4): about the spell or ability of the event itself, so a part of each event, read as it happens: the spell has an {X} in its mana cost (`xInManaCost`), the ability an X in its

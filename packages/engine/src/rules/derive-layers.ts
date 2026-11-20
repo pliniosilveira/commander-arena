@@ -305,8 +305,8 @@ export function basePtOf(
   let power = base.power;
   let toughness = base.toughness;
   for (const e of ofKind(effects, 'setPt')) {
-    power = e.change.power;
-    toughness = e.change.toughness;
+    power = e.change.power ?? power;
+    toughness = e.change.toughness ?? toughness;
   }
   return { power, toughness };
 }

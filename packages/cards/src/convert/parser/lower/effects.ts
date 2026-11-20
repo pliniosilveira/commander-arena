@@ -26,6 +26,7 @@ import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
+import { BLIGHT_LOWERINGS } from './blight';
 import { CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -52,6 +53,7 @@ import { lowerCopyToken } from './copies';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -79,7 +81,12 @@ import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
-import { BECOMES_FOR_GOOD, GAIN_STATIC_ABILITY } from './granted-static';
+import {
+  BECOMES_FOR_GOOD,
+  BECOMES_LOSES_ALL,
+  GAIN_STATIC_ABILITY,
+  GIVE_POISON,
+} from './granted-static';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
@@ -169,7 +176,13 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
   if (verb !== 'tap' && verb !== 'untap' && verb !== 'exile') return null;
   const objects = operand(clause, 'objects');
   if (objects === undefined) return null;
-  return itemsOf(objects).some((item) => item.ref !== undefined && ctx.removed.has(item.ref))
+  // CR 400.7: the target an earlier instruction put onto the battlefield is "it" as the new object (`moved`), which "exile it" can name (Puppeteer Clique).
+  return itemsOf(objects).some(
+    (item) =>
+      item.ref !== undefined &&
+      ctx.removed.has(item.ref) &&
+      !(verb === 'exile' && ctx.movedOnto === item.ref),
+  )
     ? failure(clause)
     : null;
 }
@@ -259,7 +272,7 @@ function simple(
         // D-178: "untap that land" and "tap it" after a search name the card it found (the engine's `moved`).
         verb === 'exile'
           ? // D-206: "you may exile that card from your graveyard" names the card a discard trigger is about.
-            { thisCard: true, triggerSubject: true }
+            { thisCard: true, triggerSubject: true, moved: true }
           : verb === 'tap' || verb === 'untap'
             ? { moved: true }
             : {},
@@ -1302,6 +1315,18 @@ function playerVerb(
           rule: clause.rule,
         };
       }
+      // "Discard up to two cards" (CR 701.9, 107.1c): the player chooses none to N; what was discarded is what "that many" counts afterwards.
+      if (verb === 'discard' && arg(clause, 'upTo') !== undefined) {
+        const blocked = missingFeatures(['selector:discardUpTo']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        if (typeof amount.value !== 'number') return failure(clause);
+        ctx.thisWay = 'discarded';
+        return {
+          ok: true,
+          value: [{ kind: 'discard', player: player.value, count: amount.value, upTo: true }],
+          rule: clause.rule,
+        };
+      }
       // "Discard two cards unless you discard an artifact card" (stage P31, D-140, CR 701.9): the one card of a kind instead.
       const unless = arg(clause, 'unless');
       if (unless !== undefined) {
@@ -1913,11 +1938,16 @@ const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
   needs: ['effect:doubleCounters'],
   lower(clause, ctx) {
     const counter = arg(clause, 'counter');
-    if (counter?.kind !== 'counterSpec') return failure(clause);
+    // No kind named: "each kind of counter on it" (Ferrafor), every kind the object has.
+    if (counter !== undefined && counter.kind !== 'counterSpec') return failure(clause);
     return eachObject(
       clause,
       ctx,
-      (objects) => ({ kind: 'doubleCounters', objects, counter: counter.name }),
+      (objects) => ({
+        kind: 'doubleCounters',
+        objects,
+        ...(counter === undefined ? {} : { counter: counter.name }),
+      }),
       'objects',
       { triggerSubject: true },
     );
@@ -2592,6 +2622,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...BLIGHT_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
   ...SLIVER_D_LOWERINGS,
@@ -2599,6 +2630,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
+  ...COUNTER_CHOICE_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,
@@ -2608,6 +2640,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   BECOMES_FOR_GOOD,
+  BECOMES_LOSES_ALL,
+  GIVE_POISON,
   GAIN_CONTROL,
 ];
 
@@ -2667,7 +2701,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                       ? 'attackersAtYouAtLeast'
                       : test === 'attackedHasMoreLife'
                         ? 'attackedHasMoreLifeThanOtherOpponent'
-                        : test;
+                        : test === 'controlsThat'
+                          ? 'subjectControlledByYou'
+                          : test;
     return failure(
       clause,
       kind === 'raw' ||

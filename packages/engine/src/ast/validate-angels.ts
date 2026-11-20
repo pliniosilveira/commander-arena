@@ -47,6 +47,11 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           issue(out, `${path}.counter`, 'reaches needs the kind of counter');
         }
       }
+      // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" triggers once for each counter.
+      if (t.each !== undefined) {
+        if (t.each !== true) issue(out, `${path}.each`, 'each must be true when present');
+        if (t.reaches !== undefined) issue(out, `${path}.each`, 'each does not go with reaches');
+      }
       return true;
     case 'playerAttacksOpponent':
       // D-648: no parameters.
@@ -280,10 +285,17 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       return true;
     case 'cantGainLife':
-      // CR 119.7 (D-363): the opponents of the controller are the only group the engine reads.
-      if (s.who !== 'opponents') {
-        issue(out, `${path}.who`, 'cantGainLife is said of the opponents of the controller');
+      // CR 119.7 (D-363): the opponents of the controller, or every player.
+      if (s.who !== 'opponents' && s.who !== 'players') {
+        issue(
+          out,
+          `${path}.who`,
+          'cantGainLife is said of the opponents of the controller or of the players',
+        );
       }
+      return true;
+    case 'damageCantBePrevented':
+    case 'damageAsThoughWither':
       return true;
     case 'cantBeSacrificed':
       // CR 701.21a: said of the permanent itself, with nothing to check.

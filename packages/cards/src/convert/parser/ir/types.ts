@@ -168,6 +168,11 @@ export interface IrNoun extends IrNode {
    */
   readonly otherTarget?: true;
   /**
+   * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
+   * this one, not only the slot just before it.
+   */
+  readonly otherTargetAll?: true;
+  /**
    * "attach ~ to it" (CR 701.3, 603.2): the word was "it", which names the token the sentence made and, where it made none, the object the trigger is about (Hero's
    * Blade: "Whenever a legendary creature you control enters, you may attach ~ to it").
    */
@@ -528,14 +533,15 @@ export type IrAmount =
   | {
       readonly kind: 'countersOn';
       readonly of: IrNoun;
-      readonly counter: string;
+      /** The kind of counter; left out for "the number of counters on that creature" (every kind added together). */
+      readonly counter?: string;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"
   | {
       readonly kind: 'aggregate';
       readonly how: 'greatest' | 'total';
-      readonly stat: 'power' | 'toughness' | 'manaValue';
+      readonly stat: 'power' | 'toughness' | 'manaValue' | 'counters';
       readonly of: IrNoun;
       /** "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once, as the spell is cast, not as it resolves. */
       readonly asCast?: true;
@@ -702,6 +708,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
+    | { readonly kind: 'additionalCostPaid' }
     // "X is 5 or more" (issue 233, CR 107.3a): the X announced for the spell
     | { readonly kind: 'xAtLeast'; readonly atLeast: number }
     // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included
@@ -748,6 +755,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
+    // CR 701.30d: "you win", the controller won the clash the text made before it
+    | { readonly kind: 'clashWon' }
     // "If X is 10 or more" (CR 107.3, 608.2c): the X announced for the spell, against a number
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
@@ -831,7 +840,22 @@ export interface IrCondition extends IrNode {
       }
     // Stage P33 (D-150): "if it had counters on it" (CR 603.10a): the permanent that left the battlefield had a counter (of the kind named,
     // when the text names one), as it last was; the lowering folds it into the filter of the trigger about the permanent
-    | { readonly kind: 'hadCounters'; readonly counter?: string }
+    // `oneOrMore` (Oft-Nabbed Goat): "it had one or more -1/-1 counters on it", whose number "that many" and "that much" of the body then name
+    | { readonly kind: 'hadCounters'; readonly counter?: string; readonly oneOrMore?: true }
+    // Auntie Ool, Cursewretch (CR 603.10a, 608.2h): "you control that creature", "you don't control it" (`not` of this): the permanent the text means by `who`, which the binding pass names
+    | { readonly kind: 'controlsThat'; readonly who: IrNoun; readonly negated?: true }
+    // Massacre Girl, Known Killer (CR 603.10a, 113.7a, 208.1): "its toughness was less than 1": the power or toughness of the permanent the trigger is about, as it is or as it last was
+    | {
+        readonly kind: 'subjectStat';
+        readonly stat: 'power' | 'toughness';
+        readonly compare: IrComparison;
+      }
+    // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
+    | {
+        readonly kind: 'putCountersThisTurn';
+        readonly counter?: string;
+        readonly onType?: string;
+      }
     // Stage P33 (D-150): "none of those creatures attacked you" is `not` of this (CR 508.1b): at least one creature of the attackers that
     // triggered the ability was declared as attacking its controller as a player
     | { readonly kind: 'attackersAttackedYou' }
@@ -1458,6 +1482,8 @@ export interface IrTrigger extends IrNode {
   readonly by?: 'you' | 'any';
   /** 'countersAdded' "the twelfth hour counter is put on ~" (Midnight Clock, issue 121): the number of counters of the kind the putting reaches. */
   readonly reaches?: number;
+  /** 'countersAdded' "a -1/-1 counter is put on a creature" (Flourishing Defenses, CR 122.6): the singular wording, once for each counter put on. */
+  readonly perCounter?: true;
   /**
    * 'attacks' "while you don't control another Dinosaur" (stage P32, D-147, CR 603.2): a condition that is part of the event itself,
    * read once as it happens (not an intervening "if", CR 603.4, which is read again as the ability resolves).
@@ -1487,6 +1513,8 @@ export interface IrRestriction extends IrNode {
   readonly timing?: 'sorcery';
   /** Activate only once each turn. */
   readonly perTurn?: number;
+  /** "Only your opponents may activate this ability." (CR 602.2): who may activate it. */
+  readonly activator?: 'opponents';
   /** "Activate only if you control a Swamp." (stage P14, CR 602.5b): the test, read like any other. */
   readonly condition?: IrCondition;
   /**
@@ -1796,8 +1824,12 @@ export type IrStaticEffect =
    * protection from the card type it chose as it entered. The subject is `you`; the statement's `also` gives the same to "creatures you control".
    */
   | { readonly kind: 'playerProtection'; readonly quality: 'chosenCardType' }
-  /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent. */
-  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
+  /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent; "Players can't gain life." is said of `players`. */
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' | 'players' }
+  /** "Damage can't be prevented." (CR 615.12): the permanent changes a rule of the game. */
+  | { readonly kind: 'damageCantBePrevented' }
+  /** "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d): the permanent changes a rule of the game. */
+  | { readonly kind: 'damageAsThoughWither' }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
    * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.

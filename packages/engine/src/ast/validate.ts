@@ -1551,6 +1551,30 @@ function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): v
   });
 }
 
+/**
+ * CR 118.8, 701.68a: the condition `additionalCostPaid` reads whether a spell paid the optional blight of its additional cost, so the face lists one and only the spell's own text reads it.
+ */
+function checkAdditionalCostPaid(face: CardFace, path: string, out: AstIssue[]): void {
+  const reads = (node: unknown) => effectHas(node, 'additionalCostPaid');
+  const optional = (face.additionalCosts ?? []).some((c) => c?.kind === 'blight');
+  face.abilities.forEach((a, i) => {
+    if (reads(a)) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'additionalCostPaid is read by the effect of the spell whose additional cost it asks about, not by an ability',
+      );
+    }
+  });
+  if (!optional && reads(face.spell)) {
+    issue(
+      out,
+      path,
+      'additionalCostPaid reads whether the additional cost of a spell was paid: the face needs an optional blight cost (CR 701.68a)',
+    );
+  }
+}
+
 /** The mana cost of the face as a cost and its additional costs: where a spell can have an X. */
 function spellCosts(face: CardFace): readonly Cost[] {
   const mana: readonly Cost[] =
@@ -1794,12 +1818,31 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       );
       const subject = subjectOf(a.trigger);
       // CR 603.3d: a target filter reads the triggering object only where it is a spell (`manaValueAtMost` of its mana value).
-      if (JSON.stringify(a.targets ?? []).includes('"triggerSubject"') && subject !== 'stack') {
+      const targetsText = JSON.stringify(a.targets ?? []);
+      // CR 400.7, 603.10a: "another target ... card" besides the card the permanent the trigger is about became.
+      if (targetsText.includes('"notTriggerCard"') && subject !== 'permanent') {
         issue(
           out,
           `${path}.targets`,
-          'a target filter that reads the triggering spell needs a cast trigger',
+          'notTriggerCard leaves out the card of the permanent the trigger is about: it needs a trigger about a permanent',
         );
+      }
+      if (targetsText.includes('"triggerSubject"')) {
+        // CR 122.1, 603.10a (Puca's Covenant): "mana value less than or equal to the number of counters on that creature" reads the counters of the permanent the trigger is about.
+        const readsSpell = targetsText.includes('"manaValueOf"');
+        if (readsSpell && subject !== 'stack') {
+          issue(
+            out,
+            `${path}.targets`,
+            'a target filter that reads the triggering spell needs a cast trigger',
+          );
+        } else if (!readsSpell && subject !== 'permanent') {
+          issue(
+            out,
+            `${path}.targets`,
+            'a target filter that reads the counters of the triggering permanent needs a trigger about a permanent',
+          );
+        }
       }
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({
@@ -1944,6 +1987,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore reads the controller of a permanent the event is about',
           );
         }
+        // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
+        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+          if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
+            issue(
+              out,
+              `${path}.interveningIf`,
+              `${kind} reads the permanent the event is about: it needs a trigger about a permanent`,
+            );
+          }
+        }
         // D-648: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
         if (
           conditionHas(a.interveningIf, 'attackedHasMoreLifeThanOtherOpponent') &&
@@ -2034,6 +2087,11 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
+        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+          if (conditionHas(a.triggerCondition, kind)) {
+            issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
+          }
+        }
         if (conditionHas(a.triggerCondition, 'subjectGreaterPt')) {
           issue(out, `${path}.triggerCondition`, 'subjectGreaterPt is read as an intervening "if"');
         }
@@ -2103,6 +2161,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         if (a.exhaust !== true) issue(out, `${path}.exhaust`, 'exhaust must be true when present');
         if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
           issue(out, `${path}.exhaust`, 'a loyalty ability is limited by CR 606.3: no exhaust');
+        }
+      }
+      // CR 602.2: "Only your opponents may activate this ability": an ability of a permanent, not a loyalty ability.
+      if (a.activator !== undefined) {
+        if (a.activator !== 'opponents') issue(out, `${path}.activator`, 'activator is opponents');
+        if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
+          issue(out, `${path}.activator`, 'a loyalty ability is activated by its controller only');
+        }
+        if (a.functionsIn !== undefined && a.functionsIn !== 'battlefield') {
+          issue(out, `${path}.activator`, 'only an ability of the battlefield has an activator');
         }
       }
       // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
@@ -2441,6 +2509,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAdditionalCosts(face.additionalCosts, `${path}.additionalCosts`, out);
   }
   checkSacrificedAsCost(face, path, out);
+  checkAdditionalCostPaid(face, path, out);
   if (face.additionalCostChoice !== undefined) {
     checkAdditionalCostChoice(
       face.additionalCostChoice,

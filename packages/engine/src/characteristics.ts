@@ -77,6 +77,13 @@ export const LAND_TYPES: readonly Subtype[] = [
   ...['Planet', 'Power-Plant', 'Sphere', 'Swamp', 'Tower', 'Town', 'Urza’s'],
 ];
 
+/** The artifact types (CR 205.3g). */
+export const ARTIFACT_TYPES: readonly Subtype[] = [
+  ...['Attraction', 'Blood', 'Bobblehead', 'Book', 'Clue', 'Contraption', 'Equipment'],
+  ...['Food', 'Fortification', 'Gold', 'Heartwood', 'Incubator', 'Infinity', 'Junk', 'Lander'],
+  ...['Map', 'Mutagen', 'Powerstone', 'Spacecraft', 'Stone', 'Treasure', 'Vehicle', 'Vibranium'],
+];
+
 /**
  * Subtypes that are not creature types: artifact types (CR 205.3g), enchantment types (205.3h),
  * land types (205.3i) and spell types (205.3k). An effect that sets creature types (CR 205.1a,
@@ -84,9 +91,7 @@ export const LAND_TYPES: readonly Subtype[] = [
  * effect. Planeswalker types (CR 205.3j) are the generated table `PLANESWALKER_TYPES` (D-200).
  */
 const NON_CREATURE_SUBTYPES: ReadonlySet<Subtype> = new Set([
-  ...['Attraction', 'Blood', 'Bobblehead', 'Book', 'Clue', 'Contraption', 'Equipment'],
-  ...['Food', 'Fortification', 'Gold', 'Heartwood', 'Incubator', 'Infinity', 'Junk', 'Lander'],
-  ...['Map', 'Mutagen', 'Powerstone', 'Spacecraft', 'Stone', 'Treasure', 'Vehicle', 'Vibranium'],
+  ...ARTIFACT_TYPES,
   ...['Aura', 'Background', 'Cartouche', 'Case', 'Class', 'Curse', 'Plan', 'Role', 'Room', 'Rune'],
   ...['Saga', 'Shard', 'Shrine'],
   ...LAND_TYPES,

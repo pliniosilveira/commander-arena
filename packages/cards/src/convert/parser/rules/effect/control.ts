@@ -28,7 +28,7 @@ const DURATION = optional(
  * `effect.gain-control`: "gain control of target creature until end of turn", "gain control of that artifact until the end of your next turn",
  * "gain control of target artifact for as long as you control ~", "gain control of target creature" (CR 613.1b: a control-changing effect is
  * applied in layer 2; CR 611.2a: its duration is the one it states, and none stated means the rest of the game; CR 611.2c: the permanent is
- * fixed when it begins). One object, a target or the permanent an earlier word of the text names ("that artifact", "it"); the player who gains
+ * fixed when it begins). One object, a target, the permanent with the ability ("gain control of ~") or the permanent an earlier word of the text names ("that artifact", "it"); the player who gains
  * control is the controller of the ability. A group, "up to" and a player who is not "you" are other lines, and so are the durations the engine has
  * no node for ("until your next turn", "for as long as ~ remains tapped").
  */
@@ -53,6 +53,8 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature for as long as you control ~',
     'gain control of target permanent until end of turn',
     'gain control of target creature an opponent controls until end of turn',
+    'gain control of ~',
+    'gain control of ~ until end of turn',
   ],
   rejects: [
     'gain control of target creature until your next turn',
@@ -64,7 +66,6 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of up to one target creature until end of turn',
     'gain control of each creature until end of turn',
     'gain control of all creatures until end of turn',
-    'gain control of ~ until end of turn',
     'gain control of target player until end of turn',
     'gain control of target creature until end of turn, then',
     'gains control of target creature until end of turn',
@@ -79,7 +80,9 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
       literal('gain control of '),
       // One permanent: a target, or "that artifact" and "it" for what the text named before. A plural, "up to" and a player are other nouns.
       refuseAt(
-        family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.that-object', 'noun.it'] }),
+        family<IrNoun>('noun', {
+          only: ['noun.target-permanent', 'noun.that-object', 'noun.it', 'noun.self'],
+        }),
         (n) => !n.plural && !n.upTo && n.filter.player === undefined,
         (_n, _ctx, start) => start,
       ),

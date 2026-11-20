@@ -70,6 +70,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.cast-from-graveyard',
   // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
   'condition.cast-in-own-main-phase',
+  // Burning Curiosity (CR 118.8, 701.68a): "If this spell's additional cost was paid, exile the top three cards instead."
+  'condition.additional-cost-paid',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
@@ -91,6 +93,8 @@ const CONTROL_CONDITIONS = [
   'condition.control-none',
   'condition.control-commander',
   'condition.control-your-commander',
+  // Auntie Ool, Cursewretch: "draw a card if you control that creature. If you don't control it, ...".
+  'condition.control-that-creature',
 ] as const;
 
 /** "If the creature you control has trample, excess damage is dealt to that creature's controller instead." (stage P32). */
@@ -168,6 +172,8 @@ const LEAD_CONDITIONS = [
   ...TRIGGER_SPELL_CONDITIONS,
   ...RESOLUTION_CONDITIONS,
   ...DIE_CONDITIONS,
+  // CR 701.30d (Hoarder's Greed): "If you win, repeat this process." after a clash.
+  'condition.you-win-clash',
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.

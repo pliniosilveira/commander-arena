@@ -31,6 +31,8 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchSeat } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { manaSymbolsOf } from './alt-costs';
+import { blightCandidates } from './blight-candidates';
+import { blightChosenEvent, putBlightCounters } from './blight-effect';
 import { controllerOf } from './control';
 import { discardCostDecision, discardObjects } from './discard-cost';
 import { lifeOf } from './enters';
@@ -91,6 +93,11 @@ export function discardOf(cost: readonly Cost[]): number {
   return cost.reduce((n, c) => n + (c.kind === 'discard' ? c.count : 0), 0);
 }
 
+/** The -1/-1 counters the cost puts on a creature of the payer (Ward—Blight 2, CR 701.68a): the sum of its `blight` costs. */
+export function blightOf(cost: readonly Cost[]): number {
+  return cost.reduce((n, c) => n + (c.kind === 'blight' ? c.count : 0), 0);
+}
+
 /** The energy counters the cost removes (CR 107.14, D-209): the sum of its `energy` costs. */
 export function energyOf(cost: readonly Cost[]): number {
   return cost.reduce((n, c) => n + (c.kind === 'energy' ? c.count : 0), 0);
@@ -106,11 +113,17 @@ export function canPayUnless(state: GameState, payer: SeatId, cost: readonly Cos
   if (
     cost.some(
       (c) =>
-        c.kind !== 'mana' && c.kind !== 'payLife' && c.kind !== 'discard' && c.kind !== 'energy',
+        c.kind !== 'mana' &&
+        c.kind !== 'payLife' &&
+        c.kind !== 'discard' &&
+        c.kind !== 'energy' &&
+        c.kind !== 'blight',
     )
   ) {
     return false;
   }
+  // CR 701.68b: a player with no creature that can take the counters can't choose to blight, so can't pay (CR 118.3).
+  if (blightOf(cost) > 0 && blightCandidates(state, payer).length === 0) return false;
   const life = lifeOf(cost);
   const seat = getSeat(state, payer);
   if (life > 0 && (seat.life < life || lifeTotalIsLocked(state, payer))) return false;
@@ -174,6 +187,23 @@ export function runCounterUnlessPays(
         purpose: purposeOf(instruction),
         ...(instruction.kind === 'counterUnlessPays' ? { subject: instruction.object } : {}),
         ...upkeepField(instruction),
+      },
+    };
+  }
+  if (instruction.stage === 'blight') {
+    // CR 701.68a: the creature of the payer that gets the -1/-1 counters; they accepted, so no `cancel`.
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat: payer,
+        source: res.object,
+        purpose: 'blight',
+        min: 1,
+        max: 1,
+        legal: blightCandidates(state, payer),
       },
     };
   }
@@ -266,6 +296,19 @@ export function acceptUnless(
     events.push({ kind: 'energyChanged', seat: payer, from: had, to: had - energy });
   }
   const rest = res.queue.slice(1);
+  // CR 701.68a (Ward—Blight 2): with several creatures that can take the counters the payer chooses one (stage 'blight'); with one the engine chooses it.
+  const blight = blightOf(head.cost);
+  if (blight > 0) {
+    const legal = blightCandidates(next, payer);
+    if (legal.length > 1)
+      return { state: next, events, queue: [{ ...head, stage: 'blight' }, ...rest] };
+    const [only] = legal;
+    if (only !== undefined) {
+      const put = putBlightCounters(next, only, blight, payer);
+      next = put.state;
+      events.push(blightChosenEvent(payer, res.object, [only], true), ...put.events);
+    }
+  }
   const discard = discardOf(head.cost);
   const hand = getSeat(next, payer).hand;
   if (discard > 0 && hand.length > discard) {
@@ -306,6 +349,27 @@ export function discardUnless(
   return {
     state: moved.state,
     events: moved.events,
+    queue: afterDiscard(head, res.queue.slice(1)),
+  };
+}
+
+/**
+ * The payer chose the creature that gets the -1/-1 counters of a blight cost (stage 'blight', CR 701.68a): the counters go on, then what is left of the cost. Null when the
+ * creature is not one of the candidates (the caller checked the answer against the decision).
+ */
+export function blightUnless(
+  state: GameState,
+  res: ResolutionContext,
+  head: UnlessInstruction,
+  payer: SeatId,
+  chosen: readonly ObjectId[],
+): UnlessAnswer | null {
+  const [id] = chosen;
+  if (id === undefined || !blightCandidates(state, payer).includes(id)) return null;
+  const put = putBlightCounters(state, id, blightOf(head.cost), payer);
+  return {
+    state: put.state,
+    events: [blightChosenEvent(payer, res.object, [id], false), ...put.events],
     queue: afterDiscard(head, res.queue.slice(1)),
   };
 }

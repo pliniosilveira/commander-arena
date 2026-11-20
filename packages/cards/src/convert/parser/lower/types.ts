@@ -149,6 +149,8 @@ export interface LowerContext {
    * reads it. Null before any roll; a second roll in one text is refused.
    */
   dieSides: number | null;
+  /** True once the text clashed (CR 701.30b): "If you win" reads who won it. A second clash in one text is refused. */
+  clashed: boolean;
   /**
    * The groups of "each" a text named so far, by the reference the binding pass gave them (D-517, CR 608.2c): "Tap all creatures target player controls. Those creatures don't
    * untap during that player's next untap step." reads "those creatures" as the same group, which the engine names by the selector again (the group is the same one as the
@@ -175,6 +177,16 @@ export interface LowerContext {
   staticSubjectIsSelf: boolean;
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
+  /**
+   * True while the body of a trigger about other permanents dying is lowered ("Whenever a creature you control with a counter on it dies", Puca's Covenant, CR 603.10a): "another target
+   * ... card from your graveyard" is then besides the card the creature that died became (`ObjectFilter.notTriggerCard`).
+   */
+  deathOfOther: boolean;
+  /**
+   * The player the last instruction lowered was said of (a `player` of the effect): "each other player" is every player but that one ("its owner draws that many cards and each
+   * other player loses that much life"). Null before the first instruction and after one that names no player.
+   */
+  lastPlayer: PlayerSelector | null;
   /**
    * The name of the creature the intervening "if" of the ability named ("if you both own and control ~ and a creature named X", D-278, CR 701.42a): "exile them,
    * then meld them into Y" reads it. Null where no such condition came before.
@@ -408,11 +420,14 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
+    clashed: false,
     eachMentions: new Map(),
     chosenObjectRefs: new Set(),
     staticCondition: false,
     text: '',
     interveningCondition: false,
+    deathOfOther: false,
+    lastPlayer: null,
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,

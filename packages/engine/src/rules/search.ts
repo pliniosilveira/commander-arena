@@ -284,6 +284,8 @@ export function runDiscard(
   // another could then be kept).
   const choice = alone.length > 0 && hand.length > 1;
   const anyNumber = instruction.anyNumber === true;
+  // CR 701.9, 107.1c: "discard up to N cards": none to N of the hand, the player's choice.
+  const upTo = instruction.upTo === true;
   // CR 701.9b (D-209): "discard a card at random": the generator picks them, nobody chooses.
   let random: { readonly cards: readonly ObjectId[]; readonly rng: GameState['rng'] } | null = null;
   if (instruction.random === true && instruction.chosen === null) {
@@ -294,7 +296,13 @@ export function runDiscard(
   const chosen =
     instruction.chosen ??
     random?.cards ??
-    (anyNumber ? (hand.length === 0 ? [] : null) : hand.length <= count && !choice ? hand : null);
+    (anyNumber || upTo
+      ? hand.length === 0
+        ? []
+        : null
+      : hand.length <= count && !choice
+        ? hand
+        : null);
   if (chosen === null) {
     const max = Math.min(count, hand.length);
     const decision: Omit<ChooseCardsDecision, 'id'> = {
@@ -304,14 +312,16 @@ export function runDiscard(
       purpose: 'discard',
       zone: 'hand',
       legal: hand,
-      min: anyNumber ? 0 : choice ? 1 : count,
-      max: anyNumber ? hand.length : choice ? max : count,
+      min: anyNumber || upTo ? 0 : choice ? 1 : count,
+      max: anyNumber ? hand.length : upTo ? max : choice ? max : count,
       reveal: true,
       prompt: anyNumber
         ? 'Discard any number of cards'
-        : choice
-          ? `${discardPrompt(max)}, or discard one card that matches instead`
-          : discardPrompt(count),
+        : upTo
+          ? `Discard up to ${max === 1 ? 'a card' : `${max} cards`}`
+          : choice
+            ? `${discardPrompt(max)}, or discard one card that matches instead`
+            : discardPrompt(count),
       ...(choice ? { orSingle: alone } : {}),
     };
     return { state, events: [], front: [], needs: decision };

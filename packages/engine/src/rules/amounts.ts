@@ -14,6 +14,7 @@ import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState } from '../state/types';
 import { commanderIdentity } from './commander-identity';
 import { controllerOf } from './control';
+import { countersOfKind } from './counters-of-kind';
 import { derive } from './derive';
 import { commandersCastCount, commandersManaValue } from './derive-count';
 import { devotionOf } from './devotion';
@@ -122,10 +123,12 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
 export function statOf(
   state: GameState,
   id: ObjectId,
-  stat: 'power' | 'toughness' | 'manaValue',
+  stat: 'power' | 'toughness' | 'manaValue' | 'counters',
 ): number | null {
   const obj = state.objects[id];
   if (obj === undefined) return null;
+  // CR 122.1: counters belong to no layer; every kind on the object counts.
+  if (stat === 'counters') return Object.values(obj.counters).reduce((n, c) => n + c, 0);
   const d = derive(state, obj);
   if (stat === 'power') return d.power;
   if (stat === 'toughness') return d.toughness;
@@ -270,6 +273,11 @@ export function amountOf(
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;
+  }
+  // CR 122.1, 107.1b: the limit less the player's poison counters now; a negative result is 0.
+  if (amount.kind === 'poisonShortfall') {
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : Math.max(0, amount.limit - getSeat(state, seat).poison);
   }
   if (amount.kind === 'enteredX') {
     // CR 107.3m, 107.3g (Hylda group 3): the X of the spell the permanent resolved from, which the permanent remembers (`GameObject.castX`), or last-known information
@@ -440,7 +448,7 @@ export function stateAmountOf(
       if (id === undefined) return 0;
       // CR 113.7a: an object that left the battlefield is read as it last existed.
       const obj = state.objects[id] ?? state.lki[id]?.object;
-      return obj?.counters[amount.counter] ?? 0;
+      return countersOfKind(obj?.counters, amount.counter);
     }
     case 'aggregate': {
       // CR 109.4, 608.2c: "the greatest power among creatures they control", the player a target of the spell or ability: read now, with the targets.

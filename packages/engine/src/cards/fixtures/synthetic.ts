@@ -25,6 +25,7 @@ import { SYNTHETIC_ATTACK_MAGNET_LIST } from './synthetic-attack-magnet';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
+import { SYNTHETIC_BLIGHT_CURSE_LIST } from './synthetic-blight-curse';
 import { SYNTHETIC_BLOCK_POWER_LIST } from './synthetic-block-power';
 import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
 import { SYNTHETIC_BRAIDS_LIST } from './synthetic-braids';
@@ -580,6 +581,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_SLIVER_C_LIST,
   ...SYNTHETIC_PILES_LIST,
   ...SYNTHETIC_HASHATON_G2_LIST,
+  ...SYNTHETIC_BLIGHT_CURSE_LIST,
   ...SYNTHETIC_TROYAN_G4_LIST,
   ...SYNTHETIC_PRISMARI_G1_LIST,
   ...SYNTHETIC_PRISMARI_G2_LIST,

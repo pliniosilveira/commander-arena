@@ -40,6 +40,7 @@ import { runPayAmount } from './pay-amount';
 import type { ManualTap } from './pay-manual';
 import {
   acceptUnless,
+  blightUnless,
   declineUnless,
   discardUnless,
   payUnlessMana,
@@ -325,6 +326,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
             }),
         // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
         ...(out.dieResult === undefined ? {} : { dieResult: out.dieResult }),
+        ...(out.clashWon === undefined ? {} : { clashWon: out.clashWon }),
         // D-135: what the instruction did, for "if you do" and "when you do"; a `may` effect starts it again.
         ...(out.resetPerformed === true
           ? { performed: 0 }
@@ -585,6 +587,16 @@ export function answerResolutionChoice(
   const res = state.resolution;
   const head = res?.queue[0];
   if (!res || head === undefined) return null;
+  // Ward—Blight 2 (CR 701.68a): the payer chose the creature that gets the -1/-1 counters of the cost they accepted (rules/pay-unless.ts).
+  if (
+    (head.kind === 'counterUnlessPays' || head.kind === 'unlessPays') &&
+    head.stage === 'blight'
+  ) {
+    const d = state.pending;
+    if (d?.kind !== 'choosePermanent') return null;
+    const answer = blightUnless(state, res, head, d.seat, chosen);
+    return answer === null ? null : continueUnless(answer, res);
+  }
   // D-668 (CR 303.4f): the permanent a token that is an Aura enters enchanting.
   if (
     head.kind === 'enterToken' &&
@@ -616,6 +628,7 @@ export function answerResolutionChoice(
     head.kind !== 'amass' &&
     head.kind !== 'populate' &&
     head.kind !== 'moveCounters' &&
+    head.kind !== 'blight' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {
@@ -827,6 +840,7 @@ export function answerResolutionEntersChosen(
     d?.kind !== 'chooseOption' ||
     d.purpose === 'replacement' ||
     d.purpose === 'meldOrder' ||
+    d.purpose === 'counterPick' ||
     d.purpose === 'pile'
   )
     return null;
@@ -1007,6 +1021,37 @@ export function answerResolutionAssign(state: GameState, option: string): Resolv
   );
 }
 
+/** Records the opponent the controller chose to clash with (CR 701.30b) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionClashOpponent(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'clash') return null;
+  const updated: Instruction = { ...head, chosen: option };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/** Records the answer of a clashing player (CR 701.30a, 701.30c): put the card they revealed on the bottom of their library, or not. Null when no such question is waiting. */
+export function answerResolutionClash(state: GameState, accept: boolean): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const asked = state.pending;
+  if (!res || head?.kind !== 'clash' || asked?.kind !== 'confirmOptional') return null;
+  const updated: Instruction = {
+    ...head,
+    decisions: [...head.decisions, { seat: asked.seat, bottom: accept }],
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
 /**
  * Records the answer to "create a Food token or a Treasure token" (CR 608.2d, D-175) on the instruction that asked: the index of the
  * option whose words were chosen. Then continues. Null when no such question is waiting.
@@ -1083,6 +1128,24 @@ export function answerResolutionProtectionColor(
   const color = colorOfAnswer(option);
   if (color === null) return null;
   const updated: Instruction = { ...head, chosen: color };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to "Remove any number of counters ..." / "Move a counter ..." (CR 122.1, 122.5, 608.2d): the option chosen among the counters that may be taken, or the one that stops,
+ * on the `counterPick` instruction that asked. Then continues. Null when no such question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionCounterPick(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'counterPick') return null;
+  const updated: Instruction = { ...head, chosen: option };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],

@@ -36,6 +36,47 @@ export const RESTRICTION_SORCERY = defineRule<IrRestriction>({
 });
 
 /**
+ * `restriction.opponents-only`: "Only your opponents may activate this ability." and "... and only as a sorcery." (CR 602.2: the player who activates an ability controls
+ * it; Oft-Nabbed Goat). One node with who may activate (`activator`) and, when said, the sorcery timing of CR 602.5d.
+ */
+export const RESTRICTION_OPPONENTS_ONLY = defineRule<IrRestriction>({
+  id: 'restriction.opponents-only',
+  family: 'restriction',
+  leading: ['only'],
+  cites: [
+    'CR 602.2 (Activating Activated Abilities)',
+    'CR 602.5d (Activating Activated Abilities)',
+  ],
+  examples: [
+    'Only your opponents may activate this ability.',
+    'Only your opponents may activate this ability and only as a sorcery.',
+  ],
+  rejects: [
+    'Only your opponents may activate this ability',
+    'Only your opponents may activate this ability and only as an instant.',
+    'Only your opponents may activate this ability and only once each turn.',
+    'Only you may activate this ability.',
+    'Only your opponents may activate abilities.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('only your opponents may activate this ability'),
+      optional(literal(' and only as a sorcery'), null),
+      literal('.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const restriction: IrRestriction = {
+      kind: 'restriction',
+      activator: 'opponents',
+      ...(r.value[1] === null ? {} : { timing: 'sorcery' as const }),
+      span: { start: pos, end: r.pos },
+      rule: 'restriction.opponents-only',
+    };
+    return { ok: true, value: restriction, pos: r.pos };
+  },
+});
+
+/**
  * `restriction.if`: "Activate only if you control five or more lands.", "Activate only if you
  * control a Swamp." (CR 602.5b: a restriction on the use of an activated ability; it is looked at
  * when the ability is activated, and a mana ability that asks what another could produce does not
@@ -235,6 +276,7 @@ export const RESTRICTION_COST_REDUCED_BY = defineRule<IrRestriction>({
 
 export const RESTRICTION_RULES = [
   RESTRICTION_SORCERY,
+  RESTRICTION_OPPONENTS_ONLY,
   RESTRICTION_IF,
   RESTRICTION_ONCE_EACH_TURN,
   RESTRICTION_COST_REDUCTION,

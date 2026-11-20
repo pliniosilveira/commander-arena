@@ -123,7 +123,7 @@ export function cannotWinGame(state: GameState, seat: SeatId): boolean {
 
 /**
  * CR 119.7, 604.1 (D-363): whether an effect says the player `seat` can't gain life: a permanent an opponent of `seat` controls has `cantGainLife` ("Your
- * opponents can't gain life"). `rules/life-gain.ts` reads it, so every gain of life the player would make (an effect, lifelink damage, an exchange that
+ * opponents can't gain life"), or any permanent has it for `players` ("Players can't gain life"). `rules/life-gain.ts` reads it, so every gain of life the player would make (an effect, lifelink damage, an exchange that
  * raises the life total) does not happen.
  */
 export function cannotGainLife(state: GameState, seat: SeatId): boolean {
@@ -131,10 +131,14 @@ export function cannotGainLife(state: GameState, seat: SeatId): boolean {
     const obj = state.objects[id];
     if (obj === undefined) continue;
     const controller = controllerOf(state, obj);
-    if (controller === seat || !mayHaveStatic(state, obj, 'cantGainLife')) continue;
+    if (!mayHaveStatic(state, obj, 'cantGainLife')) continue;
+    // `players` is every player, the controller too; `opponents` only the opponents of the controller.
     if (
       derive(state, obj).abilities.some(
-        (a) => a.kind === 'static' && a.static.kind === 'cantGainLife',
+        (a) =>
+          a.kind === 'static' &&
+          a.static.kind === 'cantGainLife' &&
+          (a.static.who === 'players' || controller !== seat),
       )
     ) {
       return true;

@@ -140,6 +140,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:chooseFromTriggerSources',
   'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
+  'selector:eachPlayerExcept',
   'selector:discardedThisWay',
 ];
 
@@ -813,6 +814,19 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           if (!limit.ok) return limit;
           if (limit.value.kind !== 'triggerSubject') return failure(noun, []);
           atMost = { kind: 'manaValueOf', of: limit.value };
+        } else if (dynamic.kind === 'countersOn') {
+          // "with mana value less than or equal to the number of counters on that creature" (Puca's Covenant, CR 202.3, 122.1, 603.10a): the counters of the permanent the trigger
+          // is about, as it last was, read as the targets are chosen and again as the ability resolves (the engine's `countersOn` of the `triggerSubject`).
+          const blockedCounters = missingFeatures(['amount:countersOn']);
+          if (blockedCounters.length > 0) return failure(noun, blockedCounters);
+          const limit = objectRefOf(dynamic.of, ctx, { triggerSubject: true });
+          if (!limit.ok) return limit;
+          if (limit.value.kind !== 'triggerSubject') return failure(noun, []);
+          atMost = {
+            kind: 'countersOn',
+            of: limit.value,
+            ...(dynamic.counter === undefined ? {} : { counter: dynamic.counter }),
+          };
         } else {
           if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
             return failure(noun, []);
@@ -855,12 +869,27 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         void _x;
         subject = { ...noun, filter: rest };
       }
+      // "return another target permanent card ... from your graveyard" in the trigger of a creature that died (Puca's Covenant, CR 400.7, 603.10a, 109.1): "another" is besides the card
+      // that creature became, which the permanent with the ability is not (it is no card in a graveyard).
+      const exceptDying =
+        ctx.deathOfOther &&
+        subject.other &&
+        subject.otherTarget !== true &&
+        subject.filter.zone === 'graveyard';
+      if (exceptDying) {
+        const blockedExcept = missingFeatures(['selector:notTriggerCard']);
+        if (blockedExcept.length > 0) return failure(noun, blockedExcept);
+        subject = { ...subject, other: false };
+      }
       const lowered = lowerFilter(subject);
       if (!lowered.ok) return lowered;
+      const withExcept = exceptDying
+        ? { ...lowered, value: { ...lowered.value, notTriggerCard: true as const } }
+        : lowered;
       const filter =
         atMost === undefined
-          ? lowered
-          : { ...lowered, value: { ...lowered.value, manaValueAtMost: atMost } };
+          ? withExcept
+          : { ...withExcept, value: { ...withExcept.value, manaValueAtMost: atMost } };
       // "target creature with mana value X" (CR 107.3a, 601.2b): the spell announces the X its target is read against (`SpellText.x`).
       if (filter.value.manaValueX === true) ctx.usesX = true;
       // "for each opponent, exile up to one target ... that player controls" (stage P33, D-150, CR 115.1, 601.2c): one slot with at most one
@@ -936,6 +965,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                       what: { kind: 'object', filter: filter.value },
                       ...boundsOf(noun),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
+                      // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
+                      ...(apart === undefined ||
+                      noun.otherTargetAll !== true ||
+                      ctx.targets.length < 2
+                        ? {}
+                        : { alsoDifferentFrom: ctx.targets.slice(0, -1).map((t) => t.id) }),
                     };
     }
     ctx.targets.push(spec);
@@ -1291,6 +1326,18 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     case 'you':
     case 'eachPlayer':
     case 'eachOpponent': {
+      // "its owner draws that many cards and each other player loses that much life" (Oft-Nabbed Goat, CR 102.1): every player but the one the instruction before it was said of, when that
+      // is a player the text names by an object or a target (after "you", "each other player" is "each opponent").
+      if (
+        noun.det === 'eachOpponent' &&
+        /^each other player$/iu.test(noun.filter.raw.trim()) &&
+        (ctx.lastPlayer?.kind === 'ownerOf' ||
+          ctx.lastPlayer?.kind === 'controllerOf' ||
+          ctx.lastPlayer?.kind === 'target')
+      ) {
+        const blockedExcept = gate(noun, ['selector:eachPlayerExcept']);
+        return blockedExcept ?? ok({ kind: 'eachPlayerExcept', except: ctx.lastPlayer });
+      }
       // "Each other opponent" (stage P34, D-152, CR 102.2): the opponents but the player the event of the trigger is about.
       if (noun.det === 'eachOpponent' && noun.other) {
         const blockedOther = gate(noun, ['selector:eachOtherOpponent']);

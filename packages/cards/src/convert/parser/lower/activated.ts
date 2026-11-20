@@ -592,6 +592,8 @@ interface Restrictions {
   readonly costReducedBy?: { readonly amount: Amount };
   /** "Activate only once each turn." (stage P31, D-140, CR 602.5b). */
   readonly oncePerTurn?: true;
+  /** "Only your opponents may activate this ability" (CR 602.2). */
+  readonly activator?: 'opponents';
 }
 
 /**
@@ -610,6 +612,7 @@ function restrictionsOf(
   let costReducedIf: Restrictions['costReducedIf'];
   let costReducedBy: Restrictions['costReducedBy'];
   let oncePerTurn = false;
+  let activator: 'opponents' | undefined;
   // CR 702.142a (Boast): "Boast — [Cost]: [Effect]" means "[Cost]: [Effect]. Activate only if this creature attacked this turn and only once each turn."
   if (ability.boast === true) {
     if (!allowOnce) return failure(ability);
@@ -668,6 +671,20 @@ function restrictionsOf(
       costReducedIf = { generic: amount.value, condition: lowered.value };
       continue;
     }
+    // "Only your opponents may activate this ability [and only as a sorcery]." (CR 602.2): who may activate; an ordinary activation only.
+    if (restriction.activator !== undefined) {
+      if (!allowTiming || activator !== undefined || restriction.condition !== undefined) {
+        return failure(restriction);
+      }
+      const blocked = gate(restriction, ['ability:activatorOpponents']);
+      if (blocked !== null) return blocked;
+      activator = restriction.activator;
+      if (restriction.timing === 'sorcery') {
+        if (timing !== undefined) return failure(restriction);
+        timing = 'sorcery';
+      }
+      continue;
+    }
     // One sentence may say both ("Activate only if you control a Swamp and only as a sorcery.", stage P29).
     if (restriction.timing === undefined && restriction.condition === undefined) {
       return failure(restriction);
@@ -691,6 +708,7 @@ function restrictionsOf(
     ...(costReducedIf === undefined ? {} : { costReducedIf }),
     ...(costReducedBy === undefined ? {} : { costReducedBy }),
     ...(oncePerTurn ? { oncePerTurn: true as const } : {}),
+    ...(activator === undefined ? {} : { activator }),
   };
   return { ok: true, value, rule: ability.rule };
 }
@@ -789,6 +807,7 @@ function restrictionFields(restrictions: Restrictions) {
       ? {}
       : { costReducedBy: restrictions.costReducedBy }),
     ...(restrictions.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
+    ...(restrictions.activator === undefined ? {} : { activator: restrictions.activator }),
   };
 }
 
@@ -1020,6 +1039,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:costReducedIf',
   'ability:costReducedBy',
   'ability:oncePerTurn',
+  'ability:activatorOpponents',
   'ability:manaInstead',
   'manaAlso:dealDamage',
   'manaAlso:loseLife',

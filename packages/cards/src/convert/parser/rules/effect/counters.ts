@@ -13,6 +13,7 @@ import {
   literal,
   map,
   optional,
+  type Parser,
   pattern,
   satisfy,
   separatedBy1,
@@ -167,9 +168,13 @@ export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
     'double the number of charge counters on ~',
     'double the number of +1/+1 counters on each creature you control',
     'double the number of +1/+1 counters on any number of other target creatures',
+    'double the number of each kind of counter on target creature',
+    'double the number of each kind of counter on ~',
   ],
   rejects: [
     'double the number of counters on target creature',
+    'double the number of each kind of counter',
+    'double the number of each kind of counters on target creature',
     'double the number of +1/+1 counters on target creature you control and draw a card',
     'double the number of +1/+1 counters on',
     'double the number of +1/+1 counters',
@@ -181,19 +186,31 @@ export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
     'effect.double-counters',
     sequence(
       literal('double the number of '),
-      map(
-        spanned(pattern(COUNTER_NAME)),
-        ({ value, span }): IrCounterSpec => ({
-          kind: 'counterSpec',
-          name: value[0].toLowerCase(),
-          span,
-          rule: 'effect.double-counters',
-        }),
+      choice(
+        map(
+          sequence(
+            map(
+              spanned(pattern(COUNTER_NAME)),
+              ({ value, span }): IrCounterSpec => ({
+                kind: 'counterSpec',
+                name: value[0].toLowerCase(),
+                span,
+                rule: 'effect.double-counters',
+              }),
+            ),
+            pattern(/ counters on /i),
+          ),
+          ([counter]) => counter,
+        ),
+        // "each kind of counter on target creature" (Ferrafor, CR 701.10, 122.1): every kind the object has, so no counter kind is named.
+        map(pattern(/each kind of counter on /i), () => null),
       ),
-      pattern(/ counters on /i),
       operands(DOUBLE_COUNTER_OPERANDS, 'effect.double-counters'),
     ),
-    ([, counter, , objects]) => ({ verb: 'doubleCounters', args: { counter, objects } }),
+    ([, counter, objects]) => ({
+      verb: 'doubleCounters',
+      args: counter === null ? { objects } : { counter, objects },
+    }),
   ),
 });
 
@@ -475,6 +492,116 @@ export const EFFECT_ADD_COUNTERS_OTHER_AND_SELF = defineRule<Clauses>({
 });
 
 /**
+ * `effect.add-counters-distinct-targets`: "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target
+ * creature" (Incremental Blight; CR 122.6, 608.2c, 115.1, 115.3): two or three instructions of one sentence, each its own number of counters of its own kind on its own target.
+ * "Another" and "a third" make each target differ from the ones before it (a target noun without them may share a target). Only a target creature or permanent of one kind of noun
+ * each, "target ..." first, "another target ..." second and, with three, "a third target ..." last. Not read: another order or number of items, a plain "target" after the first,
+ * "a second target", a trailing clause, objects that are not a single target.
+ */
+export const EFFECT_ADD_COUNTERS_DISTINCT_TARGETS = defineRule<Clauses>({
+  id: 'effect.add-counters-distinct-targets',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 115.3 (Targets)',
+  ],
+  examples: [
+    'put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature',
+    'put a +1/+1 counter on target creature and two +1/+1 counters on another target creature',
+    'put a -1/-1 counter on target creature, a +1/+1 counter on another target creature, and a charge counter on a third target permanent',
+  ],
+  rejects: [
+    'put a -1/-1 counter on target creature, two -1/-1 counters on target creature, and three -1/-1 counters on a third target creature',
+    'put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on target creature',
+    'put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a second target creature',
+    'put a -1/-1 counter on target creature, two -1/-1 counters on a third target creature',
+    'put a -1/-1 counter on target creature and two -1/-1 counters on a third target creature',
+    'put a -1/-1 counter on another target creature, two -1/-1 counters on another target creature',
+    'put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature and draw a card',
+    'put a -1/-1 counter on target creature and two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature',
+    'put a -1/-1 counter on target creature, two -1/-1 counters on another target creatures',
+    'put a -1/-1 counter on up to one target creature and two -1/-1 counters on another target creature',
+    'put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, three -1/-1 counters on a third target creature, and four -1/-1 counters on a fourth target creature',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.add-counters-distinct-targets';
+    type Item = readonly [readonly [IrAmount, IrCounterSpec], IrNoun];
+    const oneTarget = (noun: IrNoun) =>
+      noun.det === 'target' &&
+      !noun.plural &&
+      !noun.upTo &&
+      noun.anyNumber !== true &&
+      noun.filter.player === undefined &&
+      noun.filter.anyTarget !== true;
+    const counters = (): Parser<[IrAmount, IrCounterSpec]> =>
+      map(
+        sequence(
+          family<IrAmount>('amount', { only: ['amount.number', 'amount.article'] }),
+          literal(' '),
+          map(
+            spanned(pattern(COUNTER_NAME)),
+            ({ value, span }): IrCounterSpec => ({
+              kind: 'counterSpec',
+              name: value[0].toLowerCase(),
+              span,
+              rule: id,
+            }),
+          ),
+          pattern(/ counters? on /i),
+        ),
+        ([count, , counter]): [IrAmount, IrCounterSpec] => [count, counter],
+      );
+    const plain = satisfy(
+      family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+      (n) => oneTarget(n) && !n.other,
+    );
+    const another = map(
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+        (n) => oneTarget(n) && n.other,
+      ),
+      (n): IrNoun => ({ ...n, other: false, otherTarget: true, otherTargetAll: true }),
+    );
+    const third = map(
+      sequence(
+        literal('a third '),
+        satisfy(
+          family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+          (n) => oneTarget(n) && !n.other,
+        ),
+      ),
+      ([, n]): IrNoun => ({ ...n, otherTarget: true, otherTargetAll: true }),
+    );
+    const first = sequence(literal('put '), counters(), plain)(ctx, pos);
+    if (!first.ok) return first;
+    const rest = choice(
+      // Two items: "..., and two ... on another target creature".
+      map(sequence(literal(' and '), counters(), another), ([, c, n]): readonly Item[] => [[c, n]]),
+      // Three: ", two ... on another target creature, and three ... on a third target creature".
+      map(
+        sequence(literal(', '), counters(), another, literal(', and '), counters(), third),
+        ([, c2, n2, , c3, n3]): readonly Item[] => [
+          [c2, n2],
+          [c3, n3],
+        ],
+      ),
+    )(ctx, first.pos);
+    if (!rest.ok) return rest;
+    const span = { start: pos, end: rest.pos };
+    const items: readonly Item[] = [[first.value[1], first.value[2]], ...rest.value];
+    return {
+      ok: true,
+      value: items.map(([[count, counter], objects]) =>
+        makeClause(id, 'addCounters', { count, counter, objects }, span),
+      ),
+      pos: rest.pos,
+    };
+  },
+});
+
+/**
  * `effect.player-add-counters`: "Target player puts a +1/+1 counter on each creature they control" (CR 122.6, 109.4, 608.2c, 115.1): a chosen player puts counters on every permanent
  * of a kind they control. The player is a target noun of its own, numbered with the other targets of the text; the permanents are the engine's `each` selector with `controlledBy`
  * that player. Not read: "you" and the other subjects (`effect.add-counters`), a plural subject, "puts" with a number of counters that is not a number or "a", other objects, a
@@ -536,6 +663,8 @@ export const EFFECT_PLAYER_ADD_COUNTERS = defineRule<Clauses>({
 
 export const COUNTER_RULES = [
   EFFECT_PLAYER_ADD_COUNTERS,
+  // Before the plain rule, which would read the first instruction and leave the rest of the sentence unread.
+  EFFECT_ADD_COUNTERS_DISTINCT_TARGETS,
   // Before the plain rule, which would read the first half and leave " and a +1/+1 counter on ..." unread.
   EFFECT_ADD_COUNTERS_SELF_AND_OTHER,
   EFFECT_ADD_COUNTERS_OTHER_AND_SELF,

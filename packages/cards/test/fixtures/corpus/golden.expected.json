@@ -1,5 +1,5 @@
 {
-  "parserVersion": 177,
+  "parserVersion": 178,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -65,6 +65,14 @@
       ],
       "reasons": [],
       "ast": "01e7a19c"
+    },
+    "00e0b103-892c-49b3-836d-867fff197bbd": {
+      "name": "Puppeteer Clique",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "842ca07c"
     },
     "01546b7d-a233-4176-8843-d732074dc5b6": {
       "name": "Doubling Season",
@@ -138,13 +146,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 0,
-          "text": "Compleated",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
           "ability": 1,
           "text": "+1: Tap up to one target artifact or creature. It doesn't untap during its controller's next untap step.",
           "reason": "unrecognised",
@@ -171,7 +172,15 @@
       "reasons": [
         "Unknown mana symbol \"G/U/P\" (hybrid Phyrexian symbols (CR 107.4f) are not representable in ManaCost yet)"
       ],
-      "ast": "c808457c"
+      "ast": "4b33fa06"
+    },
+    "025939a0-424a-41bf-8fc9-2ef9ea5485f7": {
+      "name": "Fire Covenant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c1485097"
     },
     "028dcef2-3de9-4dde-ba17-f9e077b3190d": {
       "name": "Mindblade Render",
@@ -308,6 +317,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ed661185"
+    },
+    "05d09c55-f551-4cb4-a8d2-4811dccc848d": {
+      "name": "Vraska, Betrayal's Sting",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "53a6e8b3"
     },
     "05d7222b-cc08-4f1f-8e35-6058599572ba": {
       "name": "Twilight Diviner",
@@ -655,6 +672,14 @@
       "reasons": [],
       "ast": "9cc2d400"
     },
+    "0cdece2a-0bdf-4e6d-9ddc-4a8d58b2ec29": {
+      "name": "Tree of Perdition",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "02478f25"
+    },
     "0d2fa39a-9cac-4a1f-bb1e-b6162e6d5169": {
       "name": "Lazotep Quarry",
       "group": "acceptance",
@@ -977,6 +1002,14 @@
       ],
       "reasons": [],
       "ast": "5dd824a2"
+    },
+    "159cd205-6afc-4d8c-a4b9-501911a9c345": {
+      "name": "Incremental Blight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "89ed9e9e"
     },
     "15e5136e-ed15-49a8-b027-e09436673fb4": {
       "name": "Culling Ritual",
@@ -2350,6 +2383,14 @@
       "reasons": [],
       "ast": "2b55ad53"
     },
+    "367d4cf2-270f-4236-af10-7d5e8ea8c9fe": {
+      "name": "Persist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3a47cd97"
+    },
     "36a9de4c-8073-475d-8679-e50844eef09e": {
       "name": "Halo Fountain",
       "group": "acceptance",
@@ -2487,6 +2528,14 @@
       "reasons": [],
       "ast": "4d098038"
     },
+    "39b67a4d-6a87-41f0-a86f-b66671ccc20d": {
+      "name": "The Reaper, King No More",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "875d8303"
+    },
     "39c10798-9dfc-47a2-9da3-b4038509aebe": {
       "name": "Underworld Connections",
       "group": "acceptance",
@@ -2502,6 +2551,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "15e7102e"
+    },
+    "3a92b235-196b-4f46-9d20-06f4d3653d36": {
+      "name": "Aberrant Return",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "87efc3f0"
     },
     "3aa83ed2-f48b-4ce6-a614-2c54ddf50538": {
       "name": "The One Ring",
@@ -3903,6 +3960,14 @@
       "reasons": [],
       "ast": "bc9399d0"
     },
+    "60040023-7bf0-42e0-ab30-46a730675564": {
+      "name": "Hoarder's Greed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15cb4971"
+    },
     "6022608a-6cf2-45bd-adec-63211710a5ed": {
       "name": "White Auracite",
       "group": "acceptance",
@@ -4014,6 +4079,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c879a6c8"
+    },
+    "63193ad4-bbd2-4cc3-98e2-9f6b985e8ae7": {
+      "name": "Oft-Nabbed Goat",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "387b05d9"
     },
     "632e2979-d88a-482e-9bb8-57b683c5310f": {
       "name": "Secret Tunnel",
@@ -5253,6 +5326,14 @@
       "reasons": [],
       "ast": "05930850"
     },
+    "7f420633-901d-47f9-ae0f-0f5b0ea8359c": {
+      "name": "Burning Curiosity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ad85820c"
+    },
     "7f77a84e-5a4b-4834-aefa-3cecc175ae8e": {
       "name": "Jace, the Mind Sculptor",
       "group": "acceptance",
@@ -5598,6 +5679,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca74f1c1"
+    },
+    "8859a692-d107-4de2-9110-4681fc2761c7": {
+      "name": "Glissa Sunslayer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4dc1a174"
     },
     "888e711a-1251-4704-8ef1-b4b98ec54b5a": {
       "name": "Nahiri's Lithoforming",
@@ -5970,6 +6059,14 @@
       "reasons": [],
       "ast": "fea77e87"
     },
+    "92ac8aa4-e23c-4ed9-8317-c249a17ce3d2": {
+      "name": "Eventide's Shadow",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3cb71643"
+    },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
       "group": "acceptance",
@@ -6281,6 +6378,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0dab19c0"
+    },
+    "9b832f87-0bd5-47bd-ab9c-718bd9a6c441": {
+      "name": "Puca's Covenant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ff998ab6"
     },
     "9b93ff69-f195-4d72-8e1d-574c3e53bca8": {
       "name": "Sleep",
@@ -6682,6 +6787,14 @@
       "reasons": [],
       "ast": "32e7cccb"
     },
+    "a46f9136-b904-403e-b263-e99c9a2fe2ec": {
+      "name": "Ferrafor, Young Yew",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9733df38"
+    },
     "a492a323-df8a-40fd-bff0-50091baa7700": {
       "name": "Kenrith's Transformation",
       "group": "training",
@@ -6725,7 +6838,7 @@
           "text": "−2: You may put an Equipment card from your hand or graveyard onto the battlefield.",
           "reason": "unrecognised",
           "slot": "effect",
-          "closestRule": "effect.add-counters"
+          "closestRule": "effect.add-counters-distinct-targets"
         },
         {
           "face": 0,
@@ -8194,6 +8307,14 @@
       "reasons": [],
       "ast": "c6e5fd37"
     },
+    "cb814e16-acf7-41d5-a357-1323dcc369f3": {
+      "name": "Devoted Druid",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2c960723"
+    },
     "cb923c4d-1d2e-4039-90bb-72d1981b9738": {
       "name": "Endless Atlas",
       "group": "training",
@@ -8257,6 +8378,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5323f377"
+    },
+    "ccb39f4a-2684-4eb7-9066-aad81ae08962": {
+      "name": "Massacre Girl, Known Killer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0272657a"
     },
     "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
       "name": "Sunken Hollow",
@@ -8401,6 +8530,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0089b6"
+    },
+    "d27bb97d-286b-4947-8d7b-443e4df93319": {
+      "name": "Nesting Grounds",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b041ae31"
     },
     "d30d8968-ec24-4155-97e2-28efd52c8810": {
       "name": "Malevolent Rumble",
@@ -8915,6 +9052,14 @@
       "reasons": [],
       "ast": "9f2ff0a2"
     },
+    "de41081e-713c-4005-90f7-65d9426208f1": {
+      "name": "Everlasting Torment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cca844af"
+    },
     "de4e5120-b958-4dcb-ad78-d0f726b7a881": {
       "name": "There and Back Again",
       "group": "acceptance",
@@ -9114,6 +9259,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cf8cd556"
+    },
+    "e3cd53c1-86bd-4177-adb0-a1fa693b44c6": {
+      "name": "Auntie Ool, Cursewretch",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3c36c352"
     },
     "e43b478b-4cb8-42b1-a5b0-0b1421b84852": {
       "name": "Coin of Fate",
@@ -9636,6 +9789,14 @@
       "reasons": [],
       "ast": "8f21f172"
     },
+    "f1b26eb1-6337-42d6-a475-53ad6427f00f": {
+      "name": "Flourishing Defenses",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "69f9ca33"
+    },
     "f21ce158-2925-4658-ab7b-b73718d31965": {
       "name": "Diluvian Primordial",
       "group": "acceptance",
@@ -9663,7 +9824,7 @@
           "text": "Whenever one or more land cards are put into your graveyard from your library, put them onto the battlefield tapped.",
           "reason": "unrecognised",
           "slot": "amount",
-          "closestRule": "effect.add-counters"
+          "closestRule": "effect.add-counters-distinct-targets"
         }
       ],
       "reasons": [],
@@ -9734,6 +9895,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "24cf07f5"
+    },
+    "f3d1b2e9-6ede-416d-937b-2063ea278d2f": {
+      "name": "Kulrath Knight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "62e45204"
     },
     "f3d48efa-910a-4872-a5b1-a353c5dbce99": {
       "name": "Pinnacle Monk // Mystic Peak",
@@ -9943,6 +10112,14 @@
       "reasons": [],
       "ast": "ee188b63"
     },
+    "f7e55117-69fb-412e-b16e-d92e0f95f629": {
+      "name": "Cathartic Pyre",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "805a9f30"
+    },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
       "group": "training",
@@ -10135,6 +10312,14 @@
       "reasons": [],
       "ast": "052f1ee9"
     },
+    "fcd2142e-ba84-4693-9b29-ecc43feba2b8": {
+      "name": "Sinister Gnarlbark",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "50ff0433"
+    },
     "fd51dce2-8e8a-4686-910e-1bbc2825d190": {
       "name": "Radical Idea",
       "group": "acceptance",
@@ -10176,6 +10361,14 @@
       "reasons": [],
       "ast": "172f45c2"
     },
+    "ff5502d2-37f5-4ad5-bee2-3a03ec973268": {
+      "name": "Lasting Tarfire",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "185eeeed"
+    },
     "ff5caed4-0276-476d-8fae-edae2536df7f": {
       "name": "Archangel of Tithes",
       "group": "holdout",
@@ -10211,8 +10404,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 962,
-      "total": 981
+      "supported": 987,
+      "total": 1006
     }
   }
 }

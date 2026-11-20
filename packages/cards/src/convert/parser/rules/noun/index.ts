@@ -16,6 +16,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
+import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
@@ -23,7 +24,7 @@ import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
-import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER } from './controller';
+import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
@@ -142,6 +143,16 @@ function targetOf(
         plural: true,
       }),
   );
+  // "one, two, or three target creature cards" (Aberrant Return, CR 115.1, 601.2c): at least one target and at most three.
+  const oneToThree: Parser<Bare> = map(
+    sequence(spanned(literal('one, two, or three')), literal(' target '), targetPhrase(true)),
+    ([count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: 3, span: count.span },
+        minTargets: 1,
+        plural: true,
+      }),
+  );
   const upTo: Parser<Bare> = (ctx, pos) => {
     const head = sequence(
       literal('up to '),
@@ -199,6 +210,7 @@ function targetOf(
       ...(allowX ? [xTargets] : []),
       eachOf,
       oneOrTwo,
+      oneToThree,
       upToOneOther,
       upTo,
       upToThatMany,
@@ -356,8 +368,21 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Junji, the Midnight Sky (CR 205.3d): a creature card that has no Dragon type.
     'target non-Dragon creature card from a graveyard',
     "target non-Zombie creature card from an opponent's graveyard",
+    // Persist (CR 205.4): a creature card that is not legendary.
+    'target nonlegendary creature card from your graveyard',
+    // Aberrant Return (CR 115.1, 601.2c): at least one and at most three, from any graveyards.
+    'one, two, or three target creature cards from graveyards',
+    'one, two, or three target creature cards from your graveyard',
+    // Puca's Covenant (CR 202.3, 122.1): a limit of the counters on the permanent the trigger is about.
+    'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
   ],
   rejects: [
+    'one, two, or three target creature card from graveyards',
+    'one, two, three target creature cards from graveyards',
+    'one, two, or four target creature cards from graveyards',
+    'target nonlegendary nonlegendary creature card from your graveyard',
+    'target nonlegendary creature or planeswalker card from your graveyard',
+    'target nonlegendary Dragon creature card or Ugin planeswalker card from your graveyard',
     'target creature',
     'target card',
     'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
@@ -367,8 +392,14 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'two target Aura or Equipment cards from your graveyard',
     'target Aura or Equipment from your graveyard',
     'target Aura or Equipment or Saga card from your graveyard',
+    'target permanent card with mana value less than or equal to the number of counters on that creature',
+    'target permanent card with mana value less than or equal to the number of +1/+1 counters on that creature from your graveyard',
+    'target permanent card with mana value less than or equal to the number of counters on target creature from your graveyard',
   ],
-  parse: targetOf(ID.targetGraveyard, graveyardPhrase),
+  parse: targetOf(ID.targetGraveyard, (plural) =>
+    // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
+    graveyardPhrase(plural, 'from', NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard)),
+  ),
 });
 
 /**
@@ -961,6 +992,8 @@ export const NOUN_RULES = [
   // D-392 (Hashaton, group 9): "that source's controller".
   ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,
+  // Oft-Nabbed Goat: "its owner draws that many cards".
+  NOUN_ITS_OWNER,
   // Issue 279 (Curse of the Swine): "for each creature exiled this way, its controller".
   NOUN_EACH_EXILED_CONTROLLER,
   NOUN_ATTACKED_BY_IT,

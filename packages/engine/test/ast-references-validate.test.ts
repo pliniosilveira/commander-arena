@@ -71,6 +71,8 @@ describe('amounts that read an object', () => {
       'colorsOf',
       // D-151: "the difference" (Discover).
       'shortfall',
+      // CR 122.1, 107.1b: "the difference" between nine and a player's poison counters (Vraska, Betrayal's Sting).
+      'poisonShortfall',
       'countOf',
       'timesKicked',
       // D-183: "the amount of mana spent to cast it".

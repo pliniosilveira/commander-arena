@@ -158,7 +158,11 @@ export function lowerAmount(
       if (!of.ok) return of;
       return {
         ok: true,
-        value: { kind: 'countersOn', of: of.value, counter: amount.counter },
+        value: {
+          kind: 'countersOn',
+          of: of.value,
+          ...(amount.counter === undefined ? {} : { counter: amount.counter }),
+        },
         rule,
       };
     }

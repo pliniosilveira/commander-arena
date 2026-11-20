@@ -160,6 +160,9 @@ const COUNTER_KIND = choice(
   map(pattern(/counters(?![\p{L}\p{N}])/iu), () => undefined),
 );
 
+/** "a -1/-1 counter is put on ", "a counter is put on ": one counter, the kind (if named) in group 1. */
+const SINGLE_COUNTER_PUT = /an? (?:([+-]\d+\/[+-]\d+|[a-z]+) )?counter is put on /iu;
+
 /**
  * `trigger.counters-added`: "you put one or more +1/+1 counters on ~", "you put one or more counters on a creature you control", "one or
  * more +1/+1 counters are put on ~" (CR 122.6, 122.6a: counters are put on an object by an effect, a cost, or as it enters; the ability
@@ -169,7 +172,7 @@ const COUNTER_KIND = choice(
 export const TRIGGER_COUNTERS_ADDED = defineRule<IrTrigger>({
   id: 'trigger.counters-added',
   family: 'trigger',
-  leading: ['you', 'one'],
+  leading: ['you', 'one', 'a'],
   cites: ['CR 122.6 (Counters)', 'CR 122.6a (Counters)', 'CR 603.2 (Handling Triggered Abilities)'],
   examples: [
     'you put one or more +1/+1 counters on ~',
@@ -179,8 +182,15 @@ export const TRIGGER_COUNTERS_ADDED = defineRule<IrTrigger>({
     'you put one or more +1/+1 counters on another creature',
     'one or more +1/+1 counters are put on ~',
     'one or more counters are put on a creature you control',
+    'a -1/-1 counter is put on a creature',
+    'a +1/+1 counter is put on ~',
+    'a counter is put on a creature you control',
   ],
   rejects: [
+    'a -1/-1 counters is put on a creature',
+    'a -1/-1 counter is put on',
+    'a -1/-1 counter is removed from a creature',
+    'a -1/-1 counter is put on it',
     'you put a +1/+1 counter on ~',
     'you put one or more +1/+1 counters',
     'you put one or more +1/+1 counters on',
@@ -213,8 +223,18 @@ export const TRIGGER_COUNTERS_ADDED = defineRule<IrTrigger>({
             ? { by: 'any' as const, counter: passive.value[1], pos: passive.pos }
             : null;
         })();
-    if (read === null) return fail(ctx, pos);
-    const subject = triggerSubject(id)(ctx, read.pos);
+    // CR 122.6, 603.2 (Flourishing Defenses): "a -1/-1 counter is put on a creature" triggers once for each counter put on.
+    const single = read === null ? pattern(SINGLE_COUNTER_PUT)(ctx, pos) : null;
+    if (read === null && !single?.ok) return fail(ctx, pos);
+    const each = read === null;
+    const head =
+      read !== null
+        ? read
+        : single?.ok
+          ? { by: 'any' as const, counter: single.value[1]?.toLowerCase(), pos: single.pos }
+          : null;
+    if (head === null) return fail(ctx, pos);
+    const subject = triggerSubject(id)(ctx, head.pos);
     if (!subject.ok) return subject;
     // The subject says what the counters are put on, not who puts them: "you" and a count are other wordings.
     return {
@@ -223,8 +243,9 @@ export const TRIGGER_COUNTERS_ADDED = defineRule<IrTrigger>({
         kind: 'trigger',
         event: 'countersAdded',
         subject: subject.value,
-        by: read.by,
-        ...(read.counter === undefined ? {} : { counter: read.counter }),
+        by: head.by,
+        ...(head.counter === undefined ? {} : { counter: head.counter }),
+        ...(each ? { perCounter: true as const } : {}),
         args: {},
         span: { start: pos, end: subject.pos },
         rule: id,

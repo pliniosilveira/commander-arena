@@ -120,4 +120,44 @@ export const CONDITION_THIS_IN_YOUR_GRAVEYARD = defineRule<IrCondition>({
   },
 });
 
-export const ARDEN_CONDITION_RULES = [CONDITION_DIE_RESULT, CONDITION_THIS_IN_YOUR_GRAVEYARD];
+/**
+ * `condition.you-win-clash`: "you win" (CR 701.30d: a player wins a clash if they revealed a card with a higher mana value than all other cards revealed in that clash), the test of the sentence
+ * after "clash with an opponent". Where it may stand (after the clash of the same text) is checked by the lowering, which knows the clash. Not read: "you win the game" (an effect),
+ * "you lose", "you won", "an opponent wins" and more words after it.
+ */
+export const CONDITION_YOU_WIN_CLASH = defineRule<IrCondition>({
+  id: 'condition.you-win-clash',
+  family: 'condition',
+  leading: ['you'],
+  cites: ['CR 701.30d (Clash)'],
+  examples: ['you win'],
+  rejects: [
+    'you win the game',
+    'you won',
+    'you lose',
+    'you wins',
+    'an opponent wins',
+    'you win a coin flip',
+    'you win or lose',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/you win(?![\p{L}\p{N}])(?! the game)(?! or )/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'clashWon' },
+        span: r.value.span,
+        rule: 'condition.you-win-clash',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const ARDEN_CONDITION_RULES = [
+  CONDITION_DIE_RESULT,
+  CONDITION_THIS_IN_YOUR_GRAVEYARD,
+  CONDITION_YOU_WIN_CLASH,
+];

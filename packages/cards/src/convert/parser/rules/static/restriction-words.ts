@@ -107,7 +107,10 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
         ]
       : []),
     // D-407 (CR 508.1a): "can't attack", said of the permanent an Aura or Equipment is attached to ("can't attack or block" is `restrictionEffects`).
-    ...(subject === 'attached' ? [phrase("can['’]t attack", 'cantAttack')] : []),
+    // Lorwyn Eclipsed (Kulrath Knight, CR 508.1a): the same of a group, "Creatures your opponents control with counters on them can't attack or block."
+    ...(subject === 'attached' || subject === 'plural'
+      ? [phrase("can['’]t attack", 'cantAttack')]
+      : []),
     // Issue 201 (Shiny Impetus, CR 701.15): "is goaded", said of the permanent an Aura is attached to.
     ...(subject === 'attached' ? [phrase('is goaded', 'goaded')] : []),
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
@@ -143,11 +146,11 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
 
 /**
  * The restrictions one phrase states: the one of `restrictionPhrase`, or both of "can't attack or block" (D-407, CR 508.1a, 509.1a: two restrictions, each its
- * own static ability of the engine). Said only of the permanent an Aura or Equipment is attached to.
+ * own static ability of the engine). Said of the permanent an Aura or Equipment is attached to and of a group.
  */
 export function restrictionEffects(subject: RestrictionSubject): Parser<readonly IrStaticEffect[]> {
   const single = map(restrictionPhrase(subject), (effect): readonly IrStaticEffect[] => [effect]);
-  if (subject !== 'attached') return single;
+  if (subject !== 'attached' && subject !== 'plural') return single;
   const both = map(
     pattern(new RegExp(`can['’]t attack or block${END}`, 'iu')),
     (): readonly IrStaticEffect[] => [

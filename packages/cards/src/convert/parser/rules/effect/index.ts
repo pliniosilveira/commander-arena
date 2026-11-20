@@ -31,6 +31,7 @@ import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
+import { BLIGHT_EFFECT_RULES } from './blight';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
@@ -41,6 +42,7 @@ import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
+import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -61,6 +63,8 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
+import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
+import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
@@ -162,6 +166,7 @@ import { PUMP_RULES } from './pump';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
+import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
@@ -855,6 +860,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
     "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
+    // Persist (CR 205.4, 122.6, 614.1c): a nonlegendary card of your graveyard, entering with a -1/-1 counter.
+    'return target nonlegendary creature card from your graveyard to the battlefield with a -1/-1 counter on it',
     "return a land you control to its owner's hand",
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
@@ -1228,6 +1235,14 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
+  // Lorwyn Eclipsed (CR 701.68a): "blight 1" as an instruction.
+  ...BLIGHT_EFFECT_RULES,
+  // Aberrant Return: "Each of them enters with an additional -1/-1 counter on it." after a put onto the battlefield.
+  ...ENTERS_WITH_ADDITIONAL_EFFECT_RULES,
+  // The Reaper, King No More: "put that card onto the battlefield under your control", before the plain put of counters.
+  ...PUT_THAT_CARD_EFFECT_RULES,
+  // Burning Curiosity: "exile the top three cards instead".
+  ...EXILE_TOP_INSTEAD_EFFECT_RULES,
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
   ...COPY_ONE_OF_THEM_EFFECT_RULES,
   // Sliver Swarm deck, group D (issue 133): "Each player chooses a creature type."
@@ -1235,6 +1250,7 @@ export const EFFECT_RULES = [
   ...ADDITIONAL_LAND_EFFECT_RULES,
   ...RAMP_LANDS_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,
+  ...COUNTER_CHOICE_RULES,
   ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,
   // Issue 160 (D-628): "Each player gains control of all creatures they own."

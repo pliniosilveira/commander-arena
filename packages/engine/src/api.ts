@@ -27,6 +27,7 @@ import {
   answerBuyback,
   answerCastAdditionalExile,
   answerCastBehold,
+  answerCastBlight,
   answerCastDiscard,
   answerCastExile,
   answerCastSacrifice,
@@ -99,7 +100,10 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionClash,
+  answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
+  answerResolutionCounterPick,
   answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionEntersChosen,
@@ -390,6 +394,8 @@ function answerConfirm(
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
+  // CR 701.30c: "put the card you revealed on the bottom of your library?", asked of each clashing player as the clash resolves.
+  if (d.purpose === 'clash') return finishResolutionAnswer(answerResolutionClash(state, accept));
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
   // ability resolves.
   if (
@@ -493,6 +499,11 @@ function answerChooseOption(
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionReselect(state, option));
   }
+  if (d.purpose === 'clashOpponent') {
+    // CR 701.30b: the opponent the controller chose to clash with.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
   if (d.purpose === 'assignOpponent') {
     // Issue 81 (Dack Fayden): the opponent the controller chose for a permanent.
     if (!d.options.includes(option)) return fail('That is not one of the options');
@@ -516,6 +527,11 @@ function answerChooseOption(
     // CR 702.16a, 608.2d (D-514): the card type the controller chose for "gains protection from the card type of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
+  }
+  if (d.purpose === 'counterPick') {
+    // CR 122.1, 122.5, 608.2d: the counter the controller takes (or "Done") for "remove any number of counters" and "move a counter".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionCounterPick(state, option));
   }
   if (d.purpose === 'pile') {
     // CR 700.3 (D-303): the pile the chooser picked.
@@ -960,7 +976,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           : answerTapCost(state, action.objects);
       }
       // D-407 (CR 701.68a): the creature that gets the -1/-1 counters of a blight cost.
-      if (d.purpose === 'blight') return answerBlight(state, action.objects);
+      // CR 118.8, 701.68a: or the optional blight of a spell's additional cost (asked once the mana is paid).
+      if (d.purpose === 'blight' && d.forCost === true) {
+        return state.casting?.activation == null
+          ? answerCastBlight(state, action.objects)
+          : answerBlight(state, action.objects);
+      }
       // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
       if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".

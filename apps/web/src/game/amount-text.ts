@@ -252,7 +252,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return `${possessive(amount.of, ctx)} mana value`;
     case 'countersOn': {
       // "+1/+1" is "+1/+1 counters"; a kind named by words is "age counters".
-      return `the number of ${amount.counter} counters on ${objectPronoun(amount.of, ctx)}`;
+      return amount.counter === undefined
+        ? `the number of counters on ${objectPronoun(amount.of, ctx)}`
+        : `the number of ${amount.counter} counters on ${objectPronoun(amount.of, ctx)}`;
     }
     case 'timesKicked':
       return 'the number of times it was kicked';
@@ -304,6 +306,8 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'aggregate': {
       const things = thingsPhrase(amount.filter, true);
       if (things === null) return UNKNOWN_AMOUNT;
+      // CR 122.1: the counters of every kind on the objects, added together.
+      if (amount.stat === 'counters') return `the number of counters among ${things}`;
       const stat = STAT_WORDS[amount.stat];
       return amount.how === 'greatest'
         ? `the greatest ${stat} among ${things}`

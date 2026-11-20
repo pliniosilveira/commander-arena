@@ -18,7 +18,7 @@ import { defineRule, family, node, spanned } from '../registry';
 
 const WARD_COST = family<IrCost>('cost', { only: ['cost.mana'] });
 const WARD_DASH_COST = family<IrCost>('cost', {
-  only: ['cost.pay-life', 'cost.sacrifice', 'cost.discard'],
+  only: ['cost.pay-life', 'cost.sacrifice', 'cost.discard', 'cost.blight'],
 });
 
 /** The ward keyword node: `cost` is the one cost of the keyword. */
@@ -101,6 +101,9 @@ export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
     'Ward—Sacrifice a permanent.',
     'Ward—Discard a card.',
     'Ward—Discard two cards.',
+    // Lorwyn Eclipsed (CR 702.21a, 701.68a): a blight as the cost of Ward.
+    'Ward—Blight 2.',
+    'Ward—Blight 1',
     'ward {1}',
     // D-467 (CR 702.21a, 118.1): the two costs the engine pays for a ward ability, together.
     'Ward—{2}, Pay 2 life.',
@@ -115,6 +118,10 @@ export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
     'Ward—Pay 3 life..',
     'Ward—Discard a creature card.',
     'Ward—Discard your hand.',
+    'Ward—Blight X.',
+    'Ward—Blight 2, Pay 2 life.',
+    'Ward—Blight.',
+    'Ward—Blight 2..',
     'Ward—Discard this card.',
     'Ward—{2}, Pay 0 life.',
     'Ward—{2}, Pay 2 life, Pay 1 life',

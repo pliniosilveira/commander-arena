@@ -309,7 +309,68 @@ export const EFFECT_COUNT_LIBRARY_LIFE_TOTAL = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.exchange-life-pt`: "exchange target opponent's life total with ~'s toughness" (CR 701.12g, 119.5): a player's life total and the power or toughness of the permanent the
+ * ability is on swap. Only a player noun and only "~" for the permanent (the lowering reads only that one); the flag `power` says which of the two it is, `toughness` otherwise.
+ */
+export const EFFECT_EXCHANGE_LIFE_PT = defineRule<Clauses>({
+  id: 'effect.exchange-life-pt',
+  family: 'effect',
+  leading: ['exchange'],
+  cites: ['CR 701.12g (Exchange)', 'CR 119.5 (Life)'],
+  examples: [
+    "exchange target opponent's life total with ~'s toughness",
+    "exchange target player's life total with ~'s power",
+    'exchange target opponent’s life total with ~’s toughness',
+  ],
+  rejects: [
+    "exchange target opponent's life total with ~'s",
+    "exchange target opponent's life total with ~'s loyalty",
+    "exchange target opponent's life total with target creature's toughness",
+    "exchange target opponent's life with ~'s toughness",
+    "exchange target creature's life total with ~'s toughness",
+    "exchange target opponent's life total with ~'s toughness until end of turn",
+    "exchange target opponent's life total with ~'s toughness and draw a card",
+  ],
+  parse: single(
+    'effect.exchange-life-pt',
+    map(
+      sequence(
+        literal('exchange '),
+        family<IrNoun>('noun', { only: ['noun.player'] }),
+        pattern(/['’]s life total with /iu),
+        spanned(pattern(/~['’]s (?:power|toughness)(?![\p{L}\p{N}])/iu)),
+      ),
+      ([, player, , stat]) => {
+        const rule = 'effect.exchange-life-pt';
+        const object: IrNoun = {
+          kind: 'noun',
+          det: 'self',
+          filter: { raw: '~' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: { start: stat.span.start, end: stat.span.start + 1 },
+          rule,
+        };
+        const power: IrArg = {
+          kind: 'flag',
+          value: /power$/iu.test(stat.value[0] ?? ''),
+          span: stat.span,
+          rule,
+        };
+        return { player, object, power };
+      },
+    ),
+    ({ player, object, power }) => ({
+      verb: 'exchangeLifeWithPt',
+      args: { player, object, power },
+    }),
+  ),
+});
+
 export const PLANESWALKER_EFFECT_RULES = [
+  EFFECT_EXCHANGE_LIFE_PT,
   EFFECT_DOUBLE_LIFE_TOTAL,
   EFFECT_LIFE_TOTAL_BECOMES,
   EFFECT_COUNT_LIBRARY_LIFE_TOTAL,

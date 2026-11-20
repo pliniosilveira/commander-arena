@@ -45,6 +45,7 @@ export function payByTapping(
       spent: readonly (readonly string[])[];
       spentSnow: number;
       spentColors: readonly ManaColor[];
+      phyrexianLifePaid: number;
     }
   | { error: string } {
   let working = state;
@@ -84,5 +85,6 @@ export function payByTapping(
     spent: applied.spent,
     spentSnow: applied.spentSnow,
     spentColors: applied.spentColors,
+    phyrexianLifePaid: plan.lifePaid,
   };
 }

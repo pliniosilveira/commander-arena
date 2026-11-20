@@ -249,6 +249,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
   // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
+  'restriction.opponents-only': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
   'static.creature-ability-cost-reduction-power': asIs,
   'static.graveyard-ability-cost-reduction': asIs,
@@ -541,6 +542,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-cast-early': asIs,
   // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
   'static.opponents-cant-gain-life': asIs,
+  // Everlasting Torment: each line stands alone.
+  'static.players-cant-gain-life': asIs,
+  'static.damage-cant-be-prevented': asIs,
+  'static.all-damage-as-though-wither': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
   'static.you-planeswalkers-creatures-hexproof': asIs,
@@ -584,6 +589,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.player-attacks-opponent': whenever,
   'trigger.unblocked-opponent-attackers': whenever,
   'trigger.enchanted-tapped-for-mana': whenever,
+  // Lorwyn Eclipsed (Blight Curse deck): the conditions and the noun of the counter group.
+  'condition.control-that-creature': permanent(
+    (e) => `Whenever one or more -1/-1 counters are put on a creature, draw a card if ${e}.`,
+  ),
+  'condition.its-stat-was': permanent(
+    (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
+  ),
+  'condition.you-put-counter-this-turn': permanent(
+    (e) => `At the beginning of each end step, if ${e}, ~ deals 2 damage to each opponent.`,
+  ),
+  'noun.its-owner': permanent((e) => `When ~ dies, ${e} draws a card.`),
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,
@@ -658,6 +674,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // Stage P69 (D-271): the die roll and the card in the graveyard (Arden Angel).
   'effect.roll-die': spell((e) => `${cap(e)}.`),
+  'condition.you-win-clash': spell(
+    (e) => `You lose 1 life, then clash with an opponent. If ${e}, you gain 1 life.`,
+  ),
   'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
   'condition.this-in-your-graveyard': permanent(
     (e) =>
@@ -996,6 +1015,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-in-own-main-phase': spell(
     (e) => `Exile target artifact. If ${e}, exile target enchantment.`,
   ),
+  // Burning Curiosity (CR 118.8, 701.68a): the optional blight of the additional cost is what the condition reads.
+  'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),

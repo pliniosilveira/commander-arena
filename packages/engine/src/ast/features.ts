@@ -108,6 +108,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'oncePerTurn',
     // Issue 345 (CR 702.177a): "Exhaust — {cost}: ..." (`ActivatedAbility.exhaust`).
     'exhaust',
+    // CR 602.2: "Only your opponents may activate this ability" (`ActivatedAbility.activator`).
+    'activatorOpponents',
     // D-145: "If you control a creature with power 4 or greater, add two mana of any one color instead" (`ManaAbility.instead`).
     'manaInstead',
     // D-149: "Spend this mana only to cast an Angel spell." (`ManaAbility.spendOnly`)
@@ -171,6 +173,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discardCostX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
+    // "As an additional cost to cast this spell, you may blight 1" (`Cost` `blight` with `optional`, CR 118.8, 701.68a), and "Ward—Blight 2" (CR 702.21a).
+    'optionalBlight',
     // D-583: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
     'sacrificeOneOrMore',
     // "Sacrifice a Swamp and a Forest: ..." (`Cost` `sacrifice` with `alongside`, CR 701.21a, 118.3): a different permanent for each part.
@@ -222,6 +226,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainLife',
     // D-201: "Target player's life total becomes N" (CR 119.5).
     'setLifeTotal',
+    // CR 701.12g: "Exchange target opponent's life total with this creature's toughness".
+    'exchangeLifeWithPt',
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
@@ -234,6 +240,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeAllCounters',
     // Nexus Mentality: "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6).
     'moveAllCounters',
+    // CR 122.5, 122.1 (Nesting Grounds, Eventide's Shadow, Glissa Sunslayer): the controller chooses which counters to move or remove.
+    'moveCounter',
+    'removeChosenCounters',
     'removeAllPlayerCounters',
     // Galadriel group 3: "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1).
     'removeCounters',
@@ -241,6 +250,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainEnergy',
     // CR 122.1: "You get an experience counter" (`gainExperience`).
     'gainExperience',
+    // CR 122.1: "They get a number of poison counters equal to the difference" (`givePoison`).
+    'givePoison',
     // CR 702.179c: "Increase your speed by 1" (`increaseSpeed`).
     'increaseSpeed',
     // "You have no maximum hand size for the rest of the game" (CR 402.2).
@@ -298,6 +309,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
+    'clash',
     'scry',
     'surveil',
     // Issue 81 (Map token, Restless Anchorage): "target creature you control explores" (CR 701.44).
@@ -405,6 +418,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'amass',
     // D-627: "Populate" (CR 701.36).
     'populate',
+    // "Blight 1" as an instruction (CR 701.68a).
+    'blight',
     // Issue 208: "You may play an additional land this turn." (CR 305.2).
     'additionalLandDropThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
@@ -579,6 +594,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersFromGraveyard',
     // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
     'activatesAbilityX',
+    // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" (`countersAdded` with `each`).
+    'countersAddedEach',
   ],
   keywordKinds: [
     'flying',
@@ -620,6 +637,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
+    // CR 702.150a: Compleated.
+    'compleated',
     // D-264: Ascend on a permanent (CR 702.131b).
     'ascend',
     // CR 702.179a: Start your engines!, the speed of a player (`rules/speed.ts`).
@@ -885,6 +904,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayer',
     'eachOpponent',
     'eachOtherOpponent',
+    // Oft-Nabbed Goat: "each other player" besides its owner (`eachPlayerExcept`, CR 102.1).
+    'eachPlayerExcept',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -1043,6 +1064,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 701.21a (Plaguecrafter): "each player who can't" (`PlayerSelector` `couldntSacrificeThisWay`) and `discard.together`.
     'couldntSacrificeThisWay',
     'discardTogether',
+    // CR 701.9 (Cathartic Pyre): "discard up to two cards" (`discard.upTo`).
+    'discardUpTo',
     // D-139: "two or more colors" (`ObjectFilter.colorCount`).
     'colorCount',
     // Zimone's Hypothesis: "power of the chosen quality" (`ObjectFilter.powerParity`).
@@ -1054,6 +1077,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackedBy',
     // D-145: "with a counter on it" (`ObjectFilter.hasCounter`), "target commander" (`ObjectFilter.commander`).
     'hasCounter',
+    // Puca's Covenant: "another target permanent card ... from your graveyard" of a trigger about a creature that died (`ObjectFilter.notTriggerCard`).
+    'notTriggerCard',
     'commander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
@@ -1075,6 +1100,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'xAtLeast',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
+    // CR 118.8, 701.68a: "if this spell's additional cost was paid" (the optional blight).
+    'additionalCostPaid',
     // D-491: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
     'sacrificedAsCost',
     'controlCommander',
@@ -1083,6 +1110,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectGreaterPt',
     // D-229: "if that player controls more lands than you".
     'subjectControllerHasMore',
+    // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
+    'subjectControlledByYou',
+    'subjectStat',
+    'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
@@ -1173,6 +1204,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisAttackedThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
+    // CR 701.30d: "If you win" after a clash.
+    'clashWon',
     // "If X is 10 or more" (CR 107.3, 608.2c).
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
@@ -1282,6 +1315,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'opponentsCantWin',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
+    // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
+    'damageCantBePrevented',
+    'damageAsThoughWither',
     // D-377 (CR 702.16): "You have protection from the chosen card type."
     'playerProtection',
     // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
@@ -1350,6 +1386,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'colorsOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
     'shortfall',
+    // CR 122.1, 107.1b: "equal to the difference" between nine and a player's poison counters.
+    'poisonShortfall',
     'countOf',
     'timesKicked',
     // D-183: "the amount of mana spent to cast it".
@@ -1606,6 +1644,8 @@ export const ABILITY_FEATURES = [
   'oncePerTurn',
   /** "Exhaust — {cost}: ..." (CR 702.177a, issue 345): `ActivatedAbility.exhaust`, activated only once. */
   'exhaust',
+  /** "Only your opponents may activate this ability" (CR 602.2): `ActivatedAbility.activator`. */
+  'activatorOpponents',
   'manaInstead',
   'manaSpendOnly',
   /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
@@ -1670,6 +1710,8 @@ export const ABILITY_FEATURES = [
   'discardCostX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
+  /** "As an additional cost to cast this spell, you may blight 1" (CR 118.8, 701.68a): a `blight` cost with `optional` in a face's `additionalCosts`, chosen as the cost is paid; `additionalCostPaid` reads it. */
+  'optionalBlight',
   /** "{T}, Sacrifice one or more artifacts: ..." (D-583, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
   'sacrificeOneOrMore',
   /** "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3, 602.2b): a `sacrifice` cost with `alongside` in an activated ability, one different permanent for each part, chosen as the cost is paid. */
@@ -1718,6 +1760,8 @@ export const TRIGGER_FEATURES = [
   'entersFromGraveyard',
   /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
   'activatesAbilityX',
+  /** "Whenever a -1/-1 counter is put on a creature" (CR 122.6, 603.2): the engine's `countersAdded` with `each`, once for each counter. */
+  'countersAddedEach',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -1743,6 +1787,8 @@ export const SELECTOR_KINDS = [
   'eachOpponent',
   /** "Each other opponent" (D-151): the opponents besides the player of the trigger's event. */
   'eachOtherOpponent',
+  /** "Each other player" besides the one a selector names (CR 102.1, Oft-Nabbed Goat): the engine's `PlayerSelector` `eachPlayerExcept`. */
+  'eachPlayerExcept',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
@@ -1934,6 +1980,8 @@ export const SELECTOR_KINDS = [
   'couldntSacrificeThisWay',
   /** "Each player who can't discards a card" (CR 701.9, 101.4): all the cards chosen are discarded at once, the engine's `discard.together`. */
   'discardTogether',
+  /** "Discard up to two cards" (CR 701.9, 107.1c, Cathartic Pyre): the player chooses none to N, the engine's `discard.upTo`. */
+  'discardUpTo',
   /** "Permanents that are two or more colors", "monocolored" (CR 105.2, D-139): the engine's `ObjectFilter.colorCount`. */
   'colorCount',
   /** "Each creature with an odd power" (Zimone's Hypothesis): the engine's `ObjectFilter.powerParity`. */
@@ -1946,6 +1994,8 @@ export const SELECTOR_KINDS = [
   'attackedBy',
   /** "A creature with a counter on it" (CR 122.1, D-145): the engine's `ObjectFilter.hasCounter`. */
   'hasCounter',
+  /** "Another target permanent card" besides the card the creature that died became (CR 400.7, 603.10a, 109.1): the engine's `ObjectFilter.notTriggerCard`. */
+  'notTriggerCard',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
@@ -1970,6 +2020,8 @@ export const CONDITION_KINDS = [
   'xAtLeast',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
+  /** "If this spell's additional cost was paid" (CR 118.8, 701.68a): the engine's `additionalCostPaid`. */
+  'additionalCostPaid',
   /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "If you control a commander" (CR 903.3d): the engine's `controlCommander`. */
@@ -1980,6 +2032,12 @@ export const CONDITION_KINDS = [
   'subjectGreaterPt',
   /** "If that player controls more lands than you" (CR 603.4, D-229): the engine's `subjectControllerHasMore`. */
   'subjectControllerHasMore',
+  /** "Draw a card if you control that creature" (CR 603.10a, 608.2h): the engine's `subjectControlledByYou`. */
+  'subjectControlledByYou',
+  /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
+  'subjectStat',
+  /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
+  'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
@@ -2074,6 +2132,8 @@ export const CONDITION_KINDS = [
   'thisAttackedThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
+  /** "If you win" after a clash (CR 701.30d): the engine's `clashWon`. */
+  'clashWon',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
   /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
@@ -2210,6 +2270,9 @@ export const STATIC_KINDS = [
   'opponentsCantWin',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
+  /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
+  'damageCantBePrevented',
+  'damageAsThoughWither',
   /** "You have protection from the chosen card type" (CR 702.16, D-377): the engine's `playerProtection`. */
   'playerProtection',
   /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */
@@ -2295,6 +2358,8 @@ export const AMOUNT_KINDS = [
   'colorsOf',
   /** "The difference" between a number and a mana value (D-151): the engine's `shortfall`. */
   'shortfall',
+  /** "The difference" between a number and a player's poison counters (CR 122.1, 107.1b): the engine's `poisonShortfall`. */
+  'poisonShortfall',
   'countOf',
   /** "For each time it was kicked" (CR 702.33c): the engine's `timesKicked`. */
   'timesKicked',
@@ -2489,6 +2554,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   costReducedBy: true,
   oncePerTurn: true,
   exhaust: true,
+  activatorOpponents: true,
   manaInstead: true,
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
@@ -2522,6 +2588,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   sacrificeX: true,
   discardCostX: true,
   optionalSacrifice: true,
+  optionalBlight: true,
   sacrificeOneOrMore: true,
   sacrificeEach: true,
   reflexiveModal: true,
@@ -2572,6 +2639,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   becomeCopyOfCard: true,
   gainLife: true,
   setLifeTotal: true,
+  exchangeLifeWithPt: true,
   loseLife: true,
   loseGame: true,
   winGame: true,
@@ -2580,10 +2648,13 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   untap: true,
   removeAllCounters: true,
   moveAllCounters: true,
+  moveCounter: true,
+  removeChosenCounters: true,
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
   gainExperience: true,
+  givePoison: true,
   increaseSpeed: true,
   noMaxHandSizeForGame: true,
   connive: true,
@@ -2613,6 +2684,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  clash: true,
   scry: true,
   surveil: true,
   explore: true,
@@ -2687,6 +2759,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   empowerJace: true,
   amass: true,
   populate: true,
+  blight: true,
   additionalLandDropThisTurn: true,
   moveCountersOnto: true,
   createEmblem: true,
@@ -2778,6 +2851,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tapBatch: true,
   entersFromGraveyard: true,
   activatesAbilityX: true,
+  countersAddedEach: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,
@@ -2816,6 +2890,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   partnerWith: true,
   chooseBackground: true,
   canBeCommander: true,
+  compleated: true,
   ascend: true,
   startYourEngines: true,
   soulbond: true,

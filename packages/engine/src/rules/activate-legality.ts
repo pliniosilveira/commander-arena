@@ -98,7 +98,12 @@ export function activationRefusal(
   if (zone === 'battlefield' && hasRestriction(state, obj, 'cantActivateAbilities')) {
     return 'The activated abilities of that permanent cannot be activated';
   }
-  if (zone === 'battlefield' ? controllerOf(state, obj) !== seat : obj.owner !== seat) {
+  if (ability.activator === 'opponents') {
+    // CR 602.2: "Only your opponents may activate this ability": a player the permanent's controller is an opponent of (CR 102.2).
+    if (zone !== 'battlefield' || controllerOf(state, obj) === seat) {
+      return 'Only an opponent of the controller may activate that ability';
+    }
+  } else if (zone === 'battlefield' ? controllerOf(state, obj) !== seat : obj.owner !== seat) {
     return 'You cannot activate an ability of an object you do not control';
   }
   // CR 606.3: a loyalty ability is activated only any time you could cast a sorcery, ...
@@ -179,14 +184,18 @@ export function activatableAbilities(
 ): { object: ObjectId; abilityIndex: number }[] {
   const out: { object: ObjectId; abilityIndex: number }[] = [];
   const candidates = [
-    ...state.battlefield.filter((id) => controllerOf(state, getObject(state, id)) === seat),
+    // Every permanent: an ability only opponents may activate is offered on the others' permanents (CR 602.2); `activationRefusal` decides which.
+    ...state.battlefield,
     ...zoneList(state, 'command', seat).filter((id) => state.objects[id]?.emblem === true),
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'graveyard', seat).filter((id) => hasGraveyardAbility(state, id)),
   ];
   for (const id of candidates) {
     const obj = getObject(state, id);
-    for (const { abilityIndex } of activatedAbilitiesOf(state, obj)) {
+    const ownedBySeat = obj.zone !== 'battlefield' || controllerOf(state, obj) === seat;
+    for (const { abilityIndex, ability } of activatedAbilitiesOf(state, obj)) {
+      // Another player's permanent offers only what its ability lets an opponent activate (CR 602.2).
+      if (!ownedBySeat && ability.activator !== 'opponents') continue;
       if (activationRefusal(state, seat, obj, abilityIndex) === null) {
         out.push({ object: id, abilityIndex });
       }

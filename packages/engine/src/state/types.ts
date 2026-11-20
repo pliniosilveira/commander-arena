@@ -469,6 +469,11 @@ export interface StackData {
    */
   readonly manaSpent?: ManaSpent;
   /**
+   * The life paid for the Phyrexian mana symbols of the spell's mana cost (CR 107.4f, 601.2h; 2 life for each symbol), written as the cost is paid: Compleated (CR 702.150a) reads it
+   * as the permanent enters. Absent when no Phyrexian symbol was paid with life, and for an ability.
+   */
+  readonly phyrexianLifePaid?: number;
+  /**
    * True when mana that carries a haste rider was spent on the spell (D-151: "If that mana is spent on a Dragon creature spell, it gains haste until
    * end of turn"), or when an effect that let the spell be cast says it gains haste until end of turn (Thundermane Dragon): the permanent the spell
    * becomes has haste until the end of that turn. Absent otherwise, and for an ability.
@@ -583,6 +588,11 @@ export interface StackData {
    * chosen, which `splitCostExiled` reads. Absent for every other object.
    */
   readonly exiledAsCost?: readonly ObjectId[];
+  /**
+   * For a spell cast with the optional blight of its additional cost paid (CR 118.8, 701.68a): true, which the condition `additionalCostPaid` reads (from last-known information once the
+   * spell has left the stack). Absent when it was not paid and for every other object.
+   */
+  readonly blighted?: true;
   /**
    * For a reflexive triggered ability (CR 603.12, D-177): the ids of the permanents the resolution that created it had sacrificed, which the
    * `sacrificed` reference reads (from last-known information: they are gone). Absent for every other object.
@@ -1001,6 +1011,9 @@ export interface CastingContext {
     readonly exile: number;
     /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
     readonly exileFromHand?: ObjectId[];
+    /** The number of -1/-1 counters of an optional blight additional cost ("you may blight 1"), asked once the mana is paid; absent for none. `blightAsked` is set while the question is pending. */
+    readonly blight?: number;
+    readonly blightAsked?: true;
     /** The untapped permanents to tap as part of the cost (the `tapPermanents` alternative cost, D-149), or null. */
     readonly tap?: { readonly filter: ObjectFilter; readonly count: number } | null;
   };
@@ -1211,6 +1224,30 @@ export type Instruction =
    * 'moveCounters' (`min` 0, `max` 1) names the permanent it goes onto, or none to stop. `chosen` is the answer, null until then. See rules/move-counters.ts.
    */
   | {
+      /**
+       * "Blight 1" (`blight`, CR 701.68a): the controller puts `count` -1/-1 counters on a creature they control; a `choosePermanent` decision of purpose 'blight' (not `forCost`) asks which
+       * when more than one can take them. `chosen` is the answer, null until then. See rules/blight-effect.ts.
+       */
+      readonly kind: 'blight';
+      readonly count: number;
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "Remove any number of counters from among permanents", "Remove up to three counters from target permanent", "Move a counter from target permanent onto a second target
+   * permanent" (`removeChosenCounters`, `moveCounter`; CR 122.1, 122.5): one counter at a time, a `chooseOption` decision of purpose 'counterPick' says which. `objects` are the permanents the
+   * counters may come off, read when the effect started; `to` the permanent a move puts the counter on (null for a removal); `left` the counters that may still be taken (null: any number);
+   * `removed` the counters taken so far; `chosen` the answer (an option of the decision), null until then. See rules/counter-pick.ts.
+   */
+  | {
+      readonly kind: 'counterPick';
+      readonly mode: 'remove' | 'move';
+      readonly objects: readonly ObjectId[];
+      readonly to: ObjectId | null;
+      readonly left: number | null;
+      readonly removed: number;
+      readonly chosen: string | null;
+    }
+  | {
       readonly kind: 'moveCounters';
       readonly counter: string;
       readonly to: ObjectFilter;
@@ -1404,6 +1441,23 @@ export type Instruction =
    */
   | { readonly kind: 'exileAnyNumber'; readonly answer: boolean | null }
   /**
+   * "Clash with an opponent" (`clash`, CR 701.30): `opponent` is the opponent who clashes with the controller (null until chosen, `chosen` the option answered, `seat:<n>`), `revealed` the card
+   * each clashing player revealed and its mana value (null until they are revealed), `decisions` whether each player who revealed one has decided to put it on the bottom (in turn order), each recorded as the player answers. See rules/clash.ts.
+   */
+  | {
+      readonly kind: 'clash';
+      readonly opponent: SeatId | null;
+      readonly chosen: string | null;
+      readonly revealed:
+        | readonly {
+            readonly seat: SeatId;
+            readonly card: ObjectId;
+            readonly value: number;
+          }[]
+        | null;
+      readonly decisions: readonly { readonly seat: SeatId; readonly bottom: boolean }[];
+    }
+  /**
    * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest
    * on the bottom of your library in a random order" (`lookAtTop`, D-139), in two stages: `take` looks, asks which matching cards to take
    * (`chosen` is null until answered; no question when none matches) and moves them to the hand; `rest` puts `left` (the cards looked at
@@ -1526,6 +1580,8 @@ export type Instruction =
       readonly unless?: ObjectFilter;
       /** "Discard any number of cards" (`discard.anyNumber`, D-151): the player chooses none, some or all of the hand. */
       readonly anyNumber?: true;
+      /** "Discard up to two cards" (`discard.upTo`, CR 701.9, 107.1c): the player chooses none to `count` of the hand. */
+      readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
       /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
@@ -1623,7 +1679,7 @@ export type Instruction =
       readonly kind: 'counterUnlessPays';
       readonly object: ObjectId;
       readonly cost: readonly Cost[];
-      readonly stage: 'ask' | 'discard' | 'pay';
+      readonly stage: 'ask' | 'discard' | 'blight' | 'pay';
       readonly purpose: 'ward' | 'counterUnlessPays';
     }
   /**
@@ -1637,7 +1693,7 @@ export type Instruction =
       readonly kind: 'unlessPays';
       readonly seat: SeatId;
       readonly cost: readonly Cost[];
-      readonly stage: 'ask' | 'discard' | 'pay';
+      readonly stage: 'ask' | 'discard' | 'blight' | 'pay';
       readonly effect: Effect;
       readonly optional: boolean;
       /**
@@ -1997,6 +2053,8 @@ export interface ResolutionContext {
   readonly performed?: number;
   /** The natural result of the latest `rollDie` of this resolution (CR 706.2, D-271), which the condition `dieResult` reads. Absent until a die is rolled. */
   readonly dieResult?: number;
+  /** Whether the controller won the latest `clash` of this resolution (CR 701.30d), which the condition `clashWon` reads. Absent until a clash happens. */
+  readonly clashWon?: boolean;
   /**
    * The keys answered so far to the replacement questions (CR 616.1, D-191) of the instruction at the head of the queue, in the order the
    * questions came: the damage it deals is simulated again with them (nothing is dealt until no question is left) and the next question, if
@@ -2194,7 +2252,8 @@ export type ContinuousChange =
    */
   | { readonly kind: 'nextSpellLife'; readonly seat: SeatId }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
-  | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
+  /** `null` leaves that characteristic as the other effects before it set it (CR 701.12g: an exchange sets only a power or only a toughness). */
+  | { readonly kind: 'setPt'; readonly power: number | null; readonly toughness: number | null }
   | { readonly kind: 'loseAllAbilities' }
   /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp
@@ -2458,6 +2517,16 @@ export interface TurnLog {
     readonly types: readonly CardType[];
     readonly subtypes: readonly Subtype[];
     readonly controller: SeatId | null;
+  }[];
+  /**
+   * Each time a player put counters on a permanent this turn (CR 122.6, Lasting Tarfire: "if you put a counter on a creature this turn"), in order: the player, the kind of counter and
+   * the card types the permanent had as it got them. Counters no player put (`counterAdded` with no `by`) are not here. Absent until one was put, so the state of a game where none
+   * was is as it was.
+   */
+  readonly countersPut?: readonly {
+    readonly seat: SeatId;
+    readonly counter: string;
+    readonly types: readonly CardType[];
   }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];

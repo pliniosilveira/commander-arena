@@ -1497,7 +1497,6 @@ describe('"~ deals X damage divided as you choose among ..." (CR 601.2d, 120.3)'
   });
 
   test.each([
-    '~ deals X damage divided as you choose among any number of target creatures.',
     '~ deals 3 damage divided among any number of target creatures.',
     '~ deals 3 damage divided as you choose among any number of creatures.',
     '~ deals 3 damage divided as you choose among target creature.',
@@ -1507,6 +1506,21 @@ describe('"~ deals X damage divided as you choose among ..." (CR 601.2d, 120.3)'
     expect(dropped(text, 'sorcery')).toMatchObject({
       reason: expect.stringMatching(/notRunnable|unrecognised/),
     });
+  });
+
+  test('an X total is read for a spell (Fire Covenant) and still not for an ability', () => {
+    expect(
+      spellOf(
+        '~ deals X damage divided as you choose among any number of target creatures.',
+        'instant',
+      )?.targets?.[0],
+    ).toMatchObject({ divide: { total: { kind: 'x' } } });
+    expect(
+      dropped(
+        '{T}: ~ deals X damage divided as you choose among any number of target creatures.',
+        'creature',
+      ),
+    ).toMatchObject({ reason: 'notRunnable' });
   });
 
   test('the total as the spell is cast is read nowhere else', () => {

@@ -36,10 +36,12 @@ import { attachEntered, attachObject } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
+import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runChooseOne } from './choose-one';
+import { newClash, runClash } from './clash';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
@@ -57,6 +59,7 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
+import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
   asking,
@@ -86,6 +89,7 @@ import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
 import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
+import { runExchangeLifeWithPt } from './exchange-life';
 import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
 import { runExilePiles, startExilePiles } from './exile-piles';
@@ -269,6 +273,7 @@ export function runInstruction(
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
   if (instruction.kind === 'assignControl') return runAssignControl(state, res, instruction);
+  if (instruction.kind === 'clash') return runClash(state, res, instruction);
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'protectionColor') {
     return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
@@ -282,7 +287,9 @@ export function runInstruction(
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
   if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
+  if (instruction.kind === 'blight') return runBlight(state, res, instruction);
   if (instruction.kind === 'moveCounters') return runMoveCounters(state, res, instruction);
+  if (instruction.kind === 'counterPick') return runCounterPick(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -1795,6 +1802,10 @@ function runEffect(
           : state,
       );
 
+    case 'blight':
+      // CR 701.68a (Blight): the controller chooses a creature they control and puts the counters on it as the instruction runs (rules/blight-effect.ts).
+      return done(state, [], [{ kind: 'blight', count: effect.count, chosen: null }]);
+
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): the counters move one at a time, each a choice of the controller, as the instruction runs (rules/move-counters.ts).
       return done(
@@ -2154,6 +2165,10 @@ function runEffect(
       return done(won.state, [...events, ...won.events]);
     }
 
+    case 'exchangeLifeWithPt':
+      // CR 701.12g: the life total of a player and the power or toughness of a permanent swap.
+      return runExchangeLifeWithPt(state, effect, ctx, targets, flow, res.source);
+
     case 'setLifeTotal': {
       // CR 119.5 (D-201): the player gains or loses the life that takes their life total to the number; a player who has it already does neither.
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
@@ -2370,20 +2385,26 @@ function runEffect(
       const blockers = counterBlockers(state);
       const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
-        const count = next.objects[id]?.counters[effect.counter] ?? 0;
-        if (count <= 0) continue;
-        const put = putCountersOn(
-          state,
-          next,
-          id,
-          effect.counter,
-          count,
-          ctx.controller,
-          blockers,
-          bonuses,
-        );
-        next = put.state;
-        events.push(...put.events);
+        // "each kind of counter on it": the kinds it has as the effect begins for it, each doubled by its own count (CR 701.10 Double).
+        const kinds =
+          effect.counter === undefined
+            ? Object.entries(next.objects[id]?.counters ?? {})
+            : [[effect.counter, next.objects[id]?.counters[effect.counter] ?? 0] as const];
+        for (const [counter, count] of kinds) {
+          if (count <= 0) continue;
+          const put = putCountersOn(
+            state,
+            next,
+            id,
+            counter,
+            count,
+            ctx.controller,
+            blockers,
+            bonuses,
+          );
+          next = put.state;
+          events.push(...put.events);
+        }
       }
       return done(next, events);
     }
@@ -2528,6 +2549,10 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
+    case 'clash':
+      // CR 701.30b: the controller clashes with an opponent, in stages (rules/clash.ts); who won is what `clashWon` reads.
+      return done(state, [], [newClash()]);
+
     case 'rollDie': {
       // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
       const rolled = rollDie(next, res.controller, effect.sides);
@@ -2576,6 +2601,18 @@ function runEffect(
         const had = getSeat(next, seat).energy ?? 0;
         next = patchSeat(next, seat, { energy: had + amount });
         events.push({ kind: 'energyChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
+    case 'givePoison': {
+      // CR 122.1, 704.5c (Vraska, Betrayal's Sting): each player named puts that many poison counters on themselves.
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const had = getSeat(next, seat).poison;
+        next = patchSeat(next, seat, { poison: had + amount });
+        events.push({ kind: 'poisonChanged', seat, from: had, to: had + amount });
       }
       return done(next, events);
     }
@@ -2634,6 +2671,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(effect.upTo === true ? { upTo: true as const } : {}),
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
@@ -3106,6 +3144,46 @@ function runEffect(
       return done(moved, events);
     }
 
+    case 'moveCounter': {
+      // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
+      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
+      const toId = resolveObjects(state, effect.to, ctx, targets)[0];
+      if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
+      return done(
+        next,
+        [],
+        [
+          {
+            kind: 'counterPick',
+            mode: 'move',
+            objects: [fromId],
+            to: toId,
+            left: 1,
+            removed: 0,
+            chosen: null,
+          },
+        ],
+      );
+    }
+
+    case 'removeChosenCounters':
+      // CR 122.1, 608.2d: the controller takes counters off the permanents the selector names, one at a time (rules/counter-pick.ts).
+      return done(
+        next,
+        [],
+        [
+          {
+            kind: 'counterPick',
+            mode: 'remove',
+            objects: resolveObjects(state, effect.objects, ctx, targets),
+            to: null,
+            left: effect.upTo ?? null,
+            removed: 0,
+            chosen: null,
+          },
+        ],
+      );
+
     case 'removeAllPlayerCounters': {
       const removed: GameEvent[] = [];
       for (const id of resolvePlayers(state, effect.player, ctx, targets)) {
@@ -3171,6 +3249,7 @@ function runEffect(
         ...(res.performed === undefined ? {} : { performed: res.performed }),
         // D-271: "If the result is 1": the die the earlier instruction rolled.
         ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
+        ...(res.clashWon === undefined ? {} : { clashWon: res.clashWon }),
       });
       const chosen = holds ? effect.effect : effect.else;
       return chosen === undefined
