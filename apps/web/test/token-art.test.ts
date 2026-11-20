@@ -154,6 +154,32 @@ describe('token answers', () => {
     expect(parseTokenSearch({ ...two({}), has_more: true })).toBeNull();
   });
 
+  test('two different tokens of one name: the rules text of the token asked for picks its card', () => {
+    // SYNTHETIC answer in the shape of Scryfall's for the two Pests: Scryfall writes "this creature".
+    const base = { name: 'Pest', type_line: 'Token Creature — Pest', power: '1', toughness: '1' };
+    const attacks = { normal: 'https://cards.scryfall.io/normal/attacks.jpg' };
+    const dies = { normal: 'https://cards.scryfall.io/normal/dies.jpg' };
+    const both = {
+      total_cards: 2,
+      has_more: false,
+      data: [
+        {
+          ...base,
+          oracle_text: 'Whenever this creature attacks, you gain 1 life.',
+          image_uris: attacks,
+        },
+        { ...base, oracle_text: 'When this creature dies, you gain 1 life.', image_uris: dies },
+      ],
+    };
+    expect(parseTokenSearch(both, 'When this token dies, you gain 1 life.')).toEqual(dies);
+    expect(parseTokenSearch(both, 'Whenever this token attacks, you gain 1 life.')).toEqual(
+      attacks,
+    );
+    // No card says it, or nothing to compare with: still ambiguous.
+    expect(parseTokenSearch(both, 'Flying')).toBeNull();
+    expect(parseTokenSearch(both)).toBeNull();
+  });
+
   test('shares an in-flight lookup and all image sizes across token instances', async () => {
     const request = vi.fn<RequestQueue['request']>().mockResolvedValue({
       kind: 'response',
