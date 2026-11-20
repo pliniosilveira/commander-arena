@@ -189,8 +189,8 @@ const REDUCTIONS: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Each spell you cast that’s red or green costs {1} less to cast.',
-    expect: no('Each spell you cast that’s red or green costs {1} less to cast.', 'none'),
-    note: 'replay: 1 card',
+    expect: OK,
+    note: 'replay: 1 card; read since the Tannuk deck (issue 347): `static.each-spell-cost-reduction`, a choice of two colors',
   },
   {
     kind: 'enchantment',
