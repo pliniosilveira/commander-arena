@@ -92,6 +92,18 @@ const TAPPED = optional(
   null,
 );
 
+/**
+ * "tapped and attacking " (CR 508.4, Ghalta and Mavren): a custom creature token created tapped that joins the combat; "attacking " alone is not read (the engine's
+ * `enterAttacking` has no untapped form to name). Before the plain "tapped ", of which it is the start.
+ */
+const TAPPED_AND_ATTACKING = optional(
+  choice(
+    map(literal('tapped and attacking '), (): true | 'attacking' => 'attacking'),
+    map(literal('tapped '), (): true | 'attacking' => true),
+  ),
+  null,
+);
+
 /** The words of a predefined token after its count: "tapped Treasure tokens" (the plural, when the count is X or "a number of", CR 111.10). */
 function predefinedToken(count: Parser<IrAmount>, pluralOnly = false): Parser<Bare> {
   return map(
@@ -290,7 +302,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       sequence(
         count,
         literal(' '),
-        TAPPED,
+        TAPPED_AND_ATTACKING,
         pattern(/(\d+|X)\/(\d+|X) /),
         COLORS,
         literal(' '),
@@ -350,7 +362,8 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
     ]): Bare => ({
       kind: 'token',
       ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
-      ...(tapped === null ? {} : { tapped }),
+      ...(tapped === null ? {} : { tapped: true as const }),
+      ...(tapped === 'attacking' ? { attacking: true as const } : {}),
       ...(named === null ? {} : { named }),
       ...(pt[1] === 'X'
         ? { ptAmount: true as const }

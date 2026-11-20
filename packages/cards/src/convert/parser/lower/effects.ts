@@ -1922,6 +1922,29 @@ function ownTokenName(named: string, ctx: LowerContext): string | null {
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
+  // "Create a tapped and attacking X/X ... creature token" (CR 508.4, Ghalta and Mavren): the tokens are created tapped, then the engine's `enterAttacking` of what was just made
+  // puts them in the combat, never declared as attackers. A custom creature token only; whether the ability is one of an attack is the engine's check (`validateCard`).
+  if (token.attacking === true) {
+    const { attacking: _attacking, ...plain } = token;
+    const inner = lowerCreateToken({ ...clause, args: { ...clause.args, token: plain } }, ctx);
+    if (!inner.ok) return inner;
+    const [made, ...rest] = inner.value;
+    if (
+      made?.kind !== 'createToken' ||
+      rest.length > 0 ||
+      made.token.kind !== 'custom' ||
+      made.tapped !== true
+    ) {
+      return failure(clause);
+    }
+    const blocked = missingFeatures(['effect:enterAttacking']);
+    if (blocked.length > 0) return failure(clause, blocked);
+    return {
+      ok: true,
+      value: [made, { kind: 'enterAttacking', objects: { kind: 'moved' } }],
+      rule: clause.rule,
+    };
+  }
   // "For each opponent, create two 3/3 ... tokens with flying that attack that opponent this turn if able." (Prismari deck group 2, D-652, CR 111.2, 508.1d): the same tokens, made for
   // each opponent and required to attack it. A custom creature token only, with no controller of its own.
   const perOpponent = arg(clause, 'perOpponentAttack');

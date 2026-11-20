@@ -157,6 +157,8 @@ export interface Scope {
   readonly triggeredAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
+  readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
   readonly mainPhaseTrigger?: boolean;
   /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
