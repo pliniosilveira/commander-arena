@@ -169,3 +169,27 @@ describe('The One Ring', () => {
     g.expect.life(0, 37);
   });
 });
+
+describe('Nazgûl', () => {
+  const nazgul = real('Nazgûl');
+
+  test('"A deck can have up to nine cards named Nazgûl" is a deck-construction line: a keyword with the limit and no effect in a game (CR 100.2a)', () => {
+    const lines = nazgul.faces[0]?.abilities ?? [];
+    expect(lines).toContainEqual({ kind: 'keyword', keyword: { kind: 'deckLimit', limit: 9 } });
+  });
+
+  test('it enters and the line does nothing: the Ring tempts its controller, nothing else happens', () => {
+    const g = scenario()
+      .define(nazgul)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(nazgul.name)
+      .pool('CCB')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(nazgul.name, { pay: true });
+    g.passAll();
+    g.expect.zone(nazgul.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+});

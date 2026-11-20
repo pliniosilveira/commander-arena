@@ -5234,6 +5234,11 @@ export type Keyword =
    */
   | { readonly kind: 'partner' }
   /**
+   * "A deck can have up to nine cards named Nazgûl" (CR 100.2a, 702.124 does not apply: a deck-construction rule, Nazgûl): no effect in the game, as Partner has none. Accepted so that
+   * the card is supported; `packages/cards` reads the limit from the stored card's text when it checks a deck (`validate/deck.ts`). `limit` is a whole number of at least 2.
+   */
+  | { readonly kind: 'deckLimit'; readonly limit: number }
+  /**
    * CR 702.124j (Partner with [name], D-490): "You may designate two legendary cards as your commander rather than one if each has a 'partner with [name]' ability with the
    * other's name" (a deck-construction ability: `packages/cards` reads it from the stored card, D-053) and "When this permanent enters, target player may search their library for a
    * card named [name], reveal it, put it into their hand, then shuffle": the second is a triggered ability the engine builds for the keyword (`rules/derive-keywords.ts`), so the card

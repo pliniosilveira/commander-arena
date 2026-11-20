@@ -634,6 +634,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'partner',
     // D-490: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
     'partnerWith',
+    // CR 100.2a: "A deck can have up to nine cards named ~": a deck-construction line with no effect in a game.
+    'deckLimit',
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
@@ -2891,6 +2893,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   devoid: true,
   partner: true,
   partnerWith: true,
+  deckLimit: true,
   chooseBackground: true,
   canBeCommander: true,
   compleated: true,

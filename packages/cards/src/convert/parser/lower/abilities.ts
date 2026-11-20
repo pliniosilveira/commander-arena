@@ -603,6 +603,19 @@ export function lowerKeyword(
       rule: 'keyword.partner-with',
     };
   }
+  // CR 100.2a: "A deck can have up to nine cards named ~": a deck-construction line, no effect in a game.
+  if (ability.name === 'deckLimit') {
+    const [limit] = ability.params;
+    if (ability.params.length !== 1 || limit?.kind !== 'number') return failure(ability);
+    if (!Number.isSafeInteger(limit.value) || limit.value < 2) return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:deckLimit']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'deckLimit', limit: limit.value } }],
+      rule: 'keyword.deck-limit',
+    };
+  }
   if (ability.name === 'protection') return lowerProtection(ability);
   // A creature type ("Halflingcycling {4}", D-538) names its type in `quality`; the five land types and "basic land" are in the table.
   const typeSearch: ObjectFilter | undefined =
@@ -1150,6 +1163,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:mobilize',
   'keyword:fabricate',
   'keyword:partnerWith',
+  'keyword:deckLimit',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',
