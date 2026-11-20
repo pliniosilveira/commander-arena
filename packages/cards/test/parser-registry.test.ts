@@ -249,6 +249,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
   // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
+  'restriction.during-your-turn-and-if': permanent((e) => `{1}: Draw a card. ${e}`),
   'restriction.opponents-only': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
   'static.creature-ability-cost-reduction-power': asIs,
