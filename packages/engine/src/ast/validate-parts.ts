@@ -3253,6 +3253,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
       break;
+    case 'maxSpeed':
+      // CR 702.179e: whether one of the players the selector names has speed 4. A condition has no targets and reads no trigger subject.
+      checkConditionPlayers(c.player, `${path}.player`, out);
+      break;
     case 'playerHasDesignation':
       // D-131: whether the designation's holder is one of the players the selector names (so "an opponent is the
       // monarch" is `eachOpponent`). A condition has no targets and reads no trigger subject.
@@ -6353,6 +6357,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseLife':
     case 'gainEnergy':
     case 'gainExperience':
+    case 'increaseSpeed':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
       if (kindOf(e.amount) === 'lifeLostThisTurn') {

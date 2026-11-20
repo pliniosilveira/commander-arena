@@ -3055,6 +3055,11 @@ export type Effect =
    */
   | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "Increase your speed by 1" (CR 702.179c, 702.179d): each player the selector names has `amount` more speed; a player with no speed gets that value (CR 702.179c). Speed does not
+   * go past 4, the speed of max speed (CR 702.179e; the repository's CR text does not state a cap: unverified). One `speedChanged` event for each. Nothing for an amount of 0 or less.
+   */
+  | { readonly kind: 'increaseSpeed'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
    * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): the controller of the effect has no maximum hand size from now on, so a cleanup step makes them
    * discard nothing. Not a static ability: it works for the player, not a permanent, and does not end when a permanent leaves. No event; it stays in `SeatState.noMaximumHandSize`.
    */
@@ -3223,7 +3228,9 @@ export type Effect =
    * ends, whether or not it was tapped. "Can't be countered" is about a spell, so it is not accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
    * block for as long as you control this Saga", CR 611.2b): as for `gainControl`, the effect does nothing when the permanent with the ability is not
    * on the battlefield under its controller's control as it would begin, and otherwise ends, for good, as that stops being so. Only in the ability
-   * of a permanent, with `cantBlock`, `cantBeBlocked` or `attacksEachCombat`.
+   * of a permanent, with `cantBlock`, `cantBeBlocked` or `attacksEachCombat`. "That token attacks this combat if able" (CR 508.1d, 506.1, 611.2a) is `attacksEachCombat` with
+   * `duration: 'thisCombat'`, the only pair for that duration: the requirement lasts until the end of combat step ends (`expireEndOfCombatEffects`), and binds the objects the effect
+   * named, as it began (CR 611.2c), at the declare attackers step of the combat it is made in or of a later one before it ends.
    */
   | {
       readonly kind: 'restrict';
@@ -3233,7 +3240,8 @@ export type Effect =
         | Duration
         | 'forAsLongAsYouControlThis'
         | 'forAsLongAsThisRemains'
-        | 'untilNextUntapStep';
+        | 'untilNextUntapStep'
+        | 'thisCombat';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -4894,6 +4902,11 @@ export type Keyword =
    */
   | { readonly kind: 'ascend' }
   /**
+   * CR 702.179a (Start your engines!): a static ability, "If a player controls a permanent with start your engines! and that player has no speed, their speed becomes 1"
+   * (a state-based action, CR 704.5aa, `rules/speed.ts`). The speed itself is the designation `SeatState.speed`. Printed only: it cannot be granted.
+   */
+  | { readonly kind: 'startYourEngines' }
+  /**
    * CR 702.95a (Soulbond, D-286): "Soulbond is a keyword that represents two triggered abilities": when this creature enters, if you control both it and
    * another creature and both are unpaired, you may pair them; and whenever another creature you control enters, if you control both it and this one and
    * both are unpaired, you may pair them. `derive` expands it into those two abilities (`rules/derive-keywords.ts`); the pair is the designation
@@ -5384,6 +5397,11 @@ export type Condition =
       readonly player: PlayerSelector;
       readonly designation: Designation;
     }
+  /**
+   * "Max speed -- [ability]", "if you have max speed" (CR 702.178a, 702.179e): one of the players `player` names has max speed (speed 4, `SeatState.speed`). A player with no speed
+   * does not (CR 702.179b). A static ability may use it (a designation-like read that no layer changes) and so may an activated or a mana ability (`activateOnlyIf`).
+   */
+  | { readonly kind: 'maxSpeed'; readonly player: PlayerSelector }
   /**
    * "Activate only if this Class is level 1" (CR 716.2a, 716.2d, D-235): the source permanent is at level `level` now; a permanent with no level is at level 1.
    * Read for the permanent the ability belongs to (an activated ability's `activateOnlyIf`).

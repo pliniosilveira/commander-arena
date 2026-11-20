@@ -228,6 +228,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainEnergy',
     // CR 122.1: "You get an experience counter" (`gainExperience`).
     'gainExperience',
+    // CR 702.179c: "Increase your speed by 1" (`increaseSpeed`).
+    'increaseSpeed',
     // "You have no maximum hand size for the rest of the game" (CR 402.2).
     'noMaxHandSizeForGame',
     'connive',
@@ -595,6 +597,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'canBeCommander',
     // D-264: Ascend on a permanent (CR 702.131b).
     'ascend',
+    // CR 702.179a: Start your engines!, the speed of a player (`rules/speed.ts`).
+    'startYourEngines',
     // D-286: soulbond (CR 702.95a): two triggered abilities the engine builds for a creature; printed only.
     'soulbond',
     'exalted',
@@ -1034,6 +1038,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'amountIsPrime',
     // D-131: "if you're the monarch" (CR 725): a player has a designation.
     'playerHasDesignation',
+    // CR 702.179e, 702.178a: "Max speed -- [ability]", "if you have max speed".
+    'maxSpeed',
     // D-235: "Activate only if this Class is level N".
     'classLevelIs',
     // D-133: "as long as you have 30 or more life", "as long as it's untapped" (also "if you control your commander").
@@ -1126,6 +1132,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
     'untilNextUntapStep',
+    'thisCombat',
   ],
   // CR 611.3, 613.1f, 613.4c: "+N/+N" in layer 7c and keyword grants in layer 6, from `derive`.
   // D-094: `restriction` ("can't block", "can't be blocked", "attacks each combat if able",
@@ -1851,6 +1858,8 @@ export const CONDITION_KINDS = [
   'amountIsPrime',
   /** "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the engine's `playerHasDesignation`. */
   'playerHasDesignation',
+  /** "Max speed -- [ability]" (CR 702.178a, 702.179e): the engine's `maxSpeed`. */
+  'maxSpeed',
   /** "Activate only if this Class is level N" (CR 716.2a, D-235): the engine's `classLevelIs`. */
   'classLevelIs',
   /** "As long as you have 30 or more life", "7 life more than your starting life total" (CR 119.1, D-133): the engine's `lifeTotal`. */
@@ -1968,6 +1977,8 @@ export const DURATION_KINDS = [
   'forAsLongAsThisRemains',
   /** "Doesn't untap during its controller's next untap step" (CR 502.3, D-517): the duration of a `restrict` of `doesntUntap`. */
   'untilNextUntapStep',
+  /** "Attacks this combat if able" (CR 506.1, 508.1d, 611.2a): the duration of a `restrict` of `attacksEachCombat` that ends with the combat. */
+  'thisCombat',
 ] as const;
 export type DurationKind = (typeof DURATION_KINDS)[number];
 
@@ -2392,6 +2403,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeAllPlayerCounters: true,
   gainEnergy: true,
   gainExperience: true,
+  increaseSpeed: true,
   noMaxHandSizeForGame: true,
   connive: true,
   createCopies: true,
@@ -2618,6 +2630,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   chooseBackground: true,
   canBeCommander: true,
   ascend: true,
+  startYourEngines: true,
   soulbond: true,
   exalted: true,
   annihilator: true,

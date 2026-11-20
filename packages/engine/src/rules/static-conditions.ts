@@ -24,7 +24,7 @@ import {
 import { controllerOf } from './control';
 import { cardTypesAmongForSource, countForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
-import { designationHolders } from './designations';
+import { designationHolders, hasMaxSpeed } from './designations';
 import { matchesFilterWith } from './filter-match';
 import { partnerOf } from './pairing';
 
@@ -153,6 +153,8 @@ export function staticConditionHolds(
       const holders = designationHolders(state, condition.designation);
       return playersOf(state, condition.player, source).some((seat) => holders.includes(seat));
     }
+    case 'maxSpeed': // CR 702.179e (speed is 4): the speed of a player, which no layer changes
+      return playersOf(state, condition.player, source).some((seat) => hasMaxSpeed(state, seat));
     case 'and':
       return condition.terms.every((t) => staticConditionHolds(state, t, source));
     case 'or':

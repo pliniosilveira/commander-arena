@@ -17,6 +17,7 @@ import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { PLOT_KEYWORD_RULES } from './plot';
 import { protectionKeyword } from './protection';
 import { simpleKeyword } from './simple';
+import { SPEED_KEYWORD_RULES } from './speed';
 import { STATION_KEYWORD_RULES } from './station';
 import { TYPECYCLING_RULES } from './typecycling';
 import { UPKEEP_KEYWORD_RULES } from './upkeep';
@@ -393,4 +394,6 @@ export const KEYWORD_RULES = [
   ...GALADRIEL_G3_KEYWORD_RULES,
   // CR 702.170a (Plot): "Plot {3}{U}".
   ...PLOT_KEYWORD_RULES,
+  // CR 702.179a (Start your engines!), issue 144.
+  ...SPEED_KEYWORD_RULES,
 ];

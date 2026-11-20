@@ -23,7 +23,7 @@ import {
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
-import { designationHolders } from './designations';
+import { designationHolders, hasMaxSpeed } from './designations';
 import { manaSpentOf } from './mana-spent';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
@@ -412,6 +412,15 @@ export function evaluateCondition(
         [],
       );
       return named.some((seat) => holders.includes(seat));
+    }
+    case 'maxSpeed': {
+      // CR 702.179e: speed is 4. (The validator lets a condition name only players that need neither a target nor the trigger subject.)
+      return resolvePlayers(
+        state,
+        condition.player,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      ).some((seat) => hasMaxSpeed(state, seat));
     }
     case 'ownTurnNumber': {
       // CR 500.1 (D-149): the controller's own turn, and how many turns they have had (this one included).

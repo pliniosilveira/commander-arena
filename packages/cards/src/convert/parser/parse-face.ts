@@ -11,6 +11,7 @@ import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
 import { missingFeatures } from './lower/features';
 import { finishSpell, type SpellParts } from './lower/index';
+import { atMaxSpeedAll, withoutMaxSpeedLabel } from './max-speed';
 import {
   escapeRegExp,
   type NormalizeOptions,
@@ -155,7 +156,11 @@ export function parseFaceText(
       selfName,
     };
     const threshold = symbol === null ? null : Number(symbol[1]);
-    const body = symbol === null ? text : (symbol[2] ?? '');
+    const labelled = symbol === null ? text : (symbol[2] ?? '');
+    // CR 702.178a (issue 144): "Max speed — [ability]" is the ability as long as the player's speed is 4; the label is read here, not dropped as a flavor word.
+    const unlabelled = withoutMaxSpeedLabel(labelled);
+    const maxSpeedLine = unlabelled !== null;
+    const body = unlabelled ?? labelled;
     if (threshold !== null) afterStationSymbol = true;
     const asWritten = compileLine(body, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not
@@ -167,6 +172,25 @@ export function parseFaceText(
     const result = bare === body ? asWritten : compileLine(bare, lineOptions);
     if (!result.ok) {
       unparsed.push(unparsedAbility(faceIndex, index, text, result.failure));
+    } else if (maxSpeedLine) {
+      // The engine has the condition for an activated, a mana and a static ability only; any other line with the label is refused as a whole, never half run.
+      const gated =
+        result.kind === 'abilities' && threshold === null ? atMaxSpeedAll(result.abilities) : null;
+      const blocked = missingFeatures(['condition:maxSpeed']);
+      if (gated === null || blocked.length > 0) {
+        unparsed.push(
+          unparsedAbility(faceIndex, index, text, {
+            reason: 'notRunnable',
+            stoppedAt: text,
+            closestRule: result.ruleId,
+            recognised: [],
+            ...(blocked.length > 0 ? { needs: blocked } : {}),
+          }),
+        );
+        continue;
+      }
+      abilities.push(...gated);
+      for (const _ of gated) lineOf.push({ index, text, ruleId: result.ruleId });
     } else if (threshold !== null) {
       // CR 721.2a (Station): "N+ | [abilities]" is "as long as this permanent has N or more charge counters on it, it has [abilities]". A symbol on a face that is not a station
       // card, a threshold of 0, a line that is not an ability and one with a power and toughness box (CR 721.2b: not built) are refused as a whole.

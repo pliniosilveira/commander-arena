@@ -41,6 +41,7 @@ import { cannotLoseGame } from './player-protection';
 import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
+import { gainStartingSpeeds } from './speed';
 import { moveObject, recordLastKnown } from './zones';
 
 export interface SbaResult {
@@ -129,6 +130,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const blessed = gainCitysBlessings(state);
   if (blessed !== null) {
     return { state: blessed.state, events: blessed.events, performed: true, decision: null };
+  }
+
+  // CR 704.5aa, 702.179a: a player with a permanent with start your engines! and no speed gets speed 1.
+  const started = gainStartingSpeeds(state);
+  if (started !== null) {
+    return { state: started.state, events: started.events, performed: true, decision: null };
   }
 
   // 1. Find everything against the unchanged state (CR 704.3).

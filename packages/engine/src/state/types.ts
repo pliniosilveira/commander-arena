@@ -649,6 +649,11 @@ export interface SeatState {
    */
   readonly citysBlessing?: true;
   /**
+   * The player's speed (CR 702.179b, 702.179c): a number from 1 to 4 once a rule or effect sets it, kept for the rest of the game (`rules/speed.ts`). Absent until then: a player
+   * has no speed (CR 702.179b), which reads as 0 for an effect that refers to speed (CR 702.179f). Public.
+   */
+  readonly speed?: number;
+  /**
    * The energy counters the player has (CR 107.14, 122.1, D-209), kept for the rest of the game; paid by removing them. Absent until the first time
    * (a player has none). Public.
    */
@@ -783,7 +788,7 @@ export interface LastKnownInfo {
  * (CR 603.3a).
  */
 /**
- * The inherent triggered abilities that belong to no object: the two of the monarch (CR 725.2, D-127: the end-step draw, and the steal) and the
+ * The inherent triggered abilities that belong to no object: the speed of a player (CR 702.179d, `speedUp`), the two of the monarch (CR 725.2, D-127: the end-step draw, and the steal) and the
  * three of the Ring that turn on as it tempts a player more often (CR 701.54c, D-196: the loot when the Ring-bearer attacks, the sacrifice of the
  * creature that blocks it, the life loss when it deals combat damage to a player).
  */
@@ -792,7 +797,8 @@ export type InherentAbility =
   | 'monarchSteal'
   | 'ringLoot'
   | 'ringBlocked'
-  | 'ringDamage';
+  | 'ringDamage'
+  | 'speedUp';
 
 export interface PendingTrigger {
   /**
@@ -2388,6 +2394,11 @@ export interface TurnLog {
   readonly lifeGainedTotal: readonly number[];
   /** Each triggered ability that has triggered this turn (D-149): "this ability triggers only once each turn" (CR 603.2). */
   readonly triggered: readonly { readonly object: ObjectId; readonly abilityIndex: number }[];
+  /**
+   * The players whose inherent speed ability (CR 702.179d: "This ability triggers only once each turn") has triggered this turn. Absent until one did, so the state of a game with no
+   * speed is as it was.
+   */
+  readonly speedTriggered?: readonly SeatId[];
   /**
    * Each triggered ability whose controller has taken the action it represents this turn (D-256): "Do this only once each turn" (CR 603.2h): the
    * source permanent, the ability on it and the player who took the action (the source's controller as the ability resolved).

@@ -130,7 +130,9 @@ export function runContinuous(
         ? ('endOfTurn' as const)
         : node.duration === 'untilNextUntapStep'
           ? ('nextUntapStep' as const)
-          : ('permanent' as const);
+          : node.duration === 'thisCombat'
+            ? ('endOfCombat' as const)
+            : ('permanent' as const);
   if (until === null) return done(state);
   // CR 613.1f, 702.165a (D-230): Backup's grant: one effect for each ability, in the order they are written (one timestamp each).
   if (node.kind === 'grantAbility') {
