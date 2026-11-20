@@ -5848,6 +5848,19 @@ export type Replacement =
       readonly permanents?: ObjectFilter;
     }
   /**
+   * "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+   * (CR 614.1a, 614.5, 616.1, 120.3; Torbran, Thane of Red Fell, Mechanized Warfare): a replacement effect of a permanent on the battlefield for
+   * every damage event, combat or not, whose source `sources` matches and whose recipient is an opponent of the controller of the permanent with the
+   * ability or a permanent such an opponent controls. The same source deals `amount` more damage than it would have (the source is the original
+   * source, not the permanent with the ability, CR 120.3); an event of 0 damage is no event and is not replaced. `sources` is read for the source as it is,
+   * or as it last was when it has left the battlefield (CR 113.7a), in the zone it is in (a spell on the stack is a source, CR 609.7), with
+   * `controller: 'you'` required: the source is controlled by the controller of the permanent with the ability. Each such effect applies once to an event
+   * (CR 614.5), so two of them add up, and the player dealt the damage orders them with the effects that prevent or redirect it (CR 616.1,
+   * `rules/damage-order.ts`): damage that is all prevented is no longer replaced. Damage a spell divides or a creature assigns is divided before this applies
+   * (CR 120.3: each amount is its own event). It is the ability of the permanent (lost with "loses all abilities").
+   */
+  | { readonly kind: 'damageBonus'; readonly sources: ObjectFilter; readonly amount: number }
+  /**
    * "If you would draw a card, skip that draw instead." (D-332, CR 614.1a, 614.11, 121.6): a replacement effect of a permanent on the battlefield
    * for every card its controller would draw, by an effect or by the draw step. The draw simply does not happen: no card moves, nothing was
    * drawn (no "whenever you draw" ability triggers, CR 121.1) and, as the draw was not attempted, the player does not lose for an empty library
