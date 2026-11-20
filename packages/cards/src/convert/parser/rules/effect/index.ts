@@ -153,6 +153,7 @@ import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
+import { RAMP_LANDS_EFFECT_RULES } from './ramp-lands';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
@@ -1150,6 +1151,7 @@ export const EFFECT_RULES = [
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
   ...COPY_ONE_OF_THEM_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...RAMP_LANDS_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,
   ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,

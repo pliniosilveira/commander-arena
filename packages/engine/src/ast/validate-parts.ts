@@ -5370,12 +5370,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
-      if (!isCount(e.count) || e.count < 1) {
+      if (typeof e.count === 'number' ? !isCount(e.count) || e.count < 1 : e.count === undefined) {
         issue(
           out,
           `${path}.count`,
           'additionalLandDropThisTurn adds a positive whole number of land plays',
         );
+      } else if (typeof e.count !== 'number') {
+        // CR 107.3a: "play X additional lands": an amount read as the effect runs.
+        checkAmount(e.count, `${path}.count`, scope, out);
       }
       break;
     case 'amass':
