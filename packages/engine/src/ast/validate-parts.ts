@@ -4010,6 +4010,25 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
       );
     }
   }
+  // "Put a creature card from defending player's hand onto the battlefield": the hand of one named player, the chooser choosing.
+  if (sel.fromHandOf !== undefined) {
+    checkPlayerSelector(sel.fromHandOf, `${path}.fromHandOf`, scope, out);
+    if (
+      sel.filter?.zone !== 'hand' ||
+      sel.fromMoved === true ||
+      sel.alsoGraveyard !== undefined ||
+      sel.optional !== true
+    ) {
+      issue(
+        out,
+        `${path}.fromHandOf`,
+        'a choice from the hand of another player names the hand as its zone, is optional and is not a choice among moved cards or from the graveyard',
+      );
+    }
+    if (sel.fromHandOf.kind !== 'defendingPlayer') {
+      issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
+    }
+  }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
       issue(out, `${path}.count`, 'count must be a positive integer');
@@ -6139,6 +6158,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
+        }
+        if ((e.objects as ChooseSelector).fromHandOf !== undefined && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            "a card chosen from another player's hand is put onto the battlefield",
+          );
         }
         if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {
           issue(

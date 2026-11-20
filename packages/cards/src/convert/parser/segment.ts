@@ -742,6 +742,15 @@ const REMOVE_COUNTERS_MANA_VALUE =
 const COUNT_LIBRARY = /^count the number of cards in your library\.$/i;
 const LIFE_TOTAL_BECOMES_THAT_NUMBER = /^your life total becomes that number\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
+/**
+ * "Create Ragavan, a legendary 2/1 red Monkey creature token. Ragavan enters tapped and attacking." (Kari Zev, CR 508.4, 110.5b): the second sentence is the state the one named token
+ * enters in, read as one instruction (`effect.create-token`).
+ */
+const LOOK_AT_DEFENDERS_HAND = /(?:^|, )look at defending player['’]s hand\.$/i;
+const PUT_CREATURE_FROM_IT_ATTACKING =
+  /^you may put a creature card from it onto the battlefield under your control tapped and attacking that player or a planeswalker they control\.$/i;
+const CREATE_NAMED_TOKEN = /(?:^|, )create [^.]*, a legendary [^.]* creature token(?: [^.]*)?\.$/i;
+const NAMED_TOKEN_ENTERS_TAPPED_ATTACKING = /^[^.]+ enters tapped and attacking\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 /**
  * "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put
@@ -973,6 +982,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
+        (said(a, CREATE_NAMED_TOKEN) && said(b, NAMED_TOKEN_ENTERS_TAPPED_ATTACKING)) ||
+        (said(a, LOOK_AT_DEFENDERS_HAND) && said(b, PUT_CREATURE_FROM_IT_ATTACKING)) ||
         (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
