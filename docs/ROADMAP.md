@@ -138,9 +138,10 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 ## Unread wordings and small limits
 
-One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
+One line per known limit, at most 40 words; delete the line in the change that fixes it. Rulings were mostly unread (cloud sessions cannot reach Scryfall): behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- `nextSpellPayLife` works from the hand and command zone only; agents use it only when mana cannot cast the card.
 - Plot works from the hand with a mana cost; a card an effect makes plotted (CR 702.170c) and a plot ability working from another zone (CR 702.170f) are not built.
 - A land on top of the library (`playLandsFromTopOfLibrary`) is playable unseen, but the web shows no top card then and the agents never play it.
 - "Target spell or creature" is plain text in the web.
