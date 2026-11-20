@@ -1,17 +1,45 @@
 /**
  * Issue 366: the picture of a commander. Scryfall's name lookup gives the default printing; a commander is the face of the deck, so
- * a nicer one is asked for first: a printing with a special frame (borderless, extended art, showcase or full art). When
- * Scryfall has none, or cannot be reached, the card is drawn as before, by name.
+ * a nicer one is asked for first: a printing with a special frame (borderless, extended art, showcase or full art), in the set the
+ * deck's list names, else in any set. Then the printing the list names; when there is none, or Scryfall cannot be reached, the card
+ * is drawn as before, by name.
  */
 import { createRequestQueue, type RequestQueue } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
 import { printingOfCommander } from './commander-printing';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
 
-/** The search for the special printings of one commander (a double-faced card is asked by its front face). Foil or not: the picture is the same scan. */
-export function commanderArtQuery(name: string): string {
+/**
+ * The search for the special printings of one commander (a double-faced card is asked by its front face), in one set when `set` is
+ * given (a code the decklist reader has already checked: letters and digits). Foil or not: the picture is the same scan.
+ */
+export function commanderArtQuery(name: string, set?: string): string {
   const front = (name.split(' // ')[0] ?? name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `!"${front}" game:paper (is:borderless or is:extendedart or is:showcase or is:fullart)`;
+  const inSet = set === undefined ? '' : ` set:${set}`;
+  return `!"${front}" game:paper${inSet} (is:borderless or is:extendedart or is:showcase or is:fullart)`;
+}
+
+export interface ArtLookups {
+  readonly search: (query: string) => Promise<CardArt | null>;
+  readonly printing: (set: string, collector: string, name: string) => Promise<CardArt | null>;
+}
+
+/**
+ * The picture of a commander, best first: a special printing in the set the deck's list names, a special printing in any set, the
+ * printing the list names, and null (the card is then drawn by name). A list that names no printing starts at the second.
+ */
+export async function findCommanderArt(
+  name: string,
+  printing: { readonly set: string; readonly collector: string } | null,
+  lookups: ArtLookups,
+): Promise<CardArt | null> {
+  if (printing !== null) {
+    const inSet = await lookups.search(commanderArtQuery(name, printing.set));
+    if (inSet !== null) return inSet;
+  }
+  const anywhere = await lookups.search(commanderArtQuery(name));
+  if (anywhere !== null) return anywhere;
+  return printing === null ? null : lookups.printing(printing.set, printing.collector, name);
 }
 
 /**
@@ -99,21 +127,17 @@ const lookupPrinting = createPrintingLookup(queue);
 export function useCommanderArt(name: string | null, version: ArtVersion): string | null {
   const query = name === null || name === '' ? null : commanderArtQuery(name);
   const printing = query === null || name === null ? null : printingOfCommander(name);
-  // The key of this commander's lookup: the named printing when the deck's list has one, else the search.
+  // The key of this commander's lookup: the printing the deck's list names, when it names one, and the search.
   const key = printing === null ? query : `${printing.set}/${printing.collector}\n${query}`;
   const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
   useEffect(() => {
     if (query === null || key === null || name === null) return;
     let alive = true;
-    const named =
-      printing === null
-        ? Promise.resolve(null)
-        : lookupPrinting(printing.set, printing.collector, name);
-    void named
-      .then((art) => art ?? lookup(query))
-      .then((art) => {
+    void findCommanderArt(name, printing, { search: lookup, printing: lookupPrinting }).then(
+      (art) => {
         if (alive) setFound({ query: key, art });
-      });
+      },
+    );
     return () => {
       alive = false;
     };
