@@ -8,6 +8,7 @@
 import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
 import { type CSSProperties, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
+import { useCommanderArt } from './commander-art';
 import type { ArtVersion } from './image-uris';
 import { useTokenArt } from './token-art';
 
@@ -56,6 +57,8 @@ interface ArtProps {
   readonly className: string;
   readonly style?: CSSProperties;
   readonly tokenDefinition?: TokenDefinition;
+  /** A commander is drawn with a special printing when Scryfall has one (issue 366). */
+  readonly commander?: boolean;
 }
 
 /** An image that stays invisible until it has loaded and removes itself if it cannot. */
@@ -67,16 +70,21 @@ export function Art({
   className,
   style,
   tokenDefinition,
+  commander = false,
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
+  const special = useCommanderArt(commander && !isToken ? name : null, version);
   // Issue 32: a token that is a copy of a card has the card's mana cost (no real token has one) and no token card of its
   // own on Scryfall, so it is drawn with the art of the card it copies.
   const copiesACard = tokenDefinition !== undefined && tokenDefinition.manaCost !== null;
-  const url = copiesACard
-    ? imageUrl(name, false, version, back)
-    : tokenDefinition === undefined
-      ? imageUrl(name, isToken, version, back)
-      : tokenUrl;
+  const url =
+    special !== null && !back
+      ? special
+      : copiesACard
+        ? imageUrl(name, false, version, back)
+        : tokenDefinition === undefined
+          ? imageUrl(name, isToken, version, back)
+          : tokenUrl;
   if (url === null) return null;
   return <LoadedArt key={url} url={url} className={className} style={style} />;
 }

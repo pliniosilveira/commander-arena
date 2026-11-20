@@ -330,6 +330,16 @@ export interface IrFilter {
    */
   readonly sharesCreatureTypeWithIt?: true;
   /**
+   * "a creature card that shares a creature type with the sacrificed creature" (Descendants' Fury, CR 205.3m, 701.21a, 113.7a): the card has a creature type the permanent an earlier
+   * sacrifice of the same text sacrificed had, as it last was. Read in the filter of a library search `revealUntil`; the engine's `sharesCreatureTypeWith: 'sacrificed'`.
+   */
+  readonly sharesCreatureTypeWithSacrificed?: true;
+  /**
+   * "each other creature you control that shares a creature type with it" (Titan of Littjara, CR 205.3m, 702.73a): the permanent has a creature type the source of the ability has. "It" is the
+   * source only in a trigger about the card itself entering or attacking, which the lowering of the ability checks (`usesSharesWithSource`); the engine's `sharesCreatureTypeWith: 'source'`.
+   */
+  readonly sharesCreatureTypeWithSource?: true;
+  /**
    * "a permanent of their choice that shares a card type with it" (Braids, CR 205.2a, 701.21a, 113.7a): the permanent has a card type the permanent an earlier sacrifice of the same
    * text sacrificed had, as it last was. Read in the filter of a sacrifice only; the engine's `sharesCardTypeWith: 'sacrificed'`.
    */
@@ -1687,7 +1697,7 @@ export type IrStaticEffect =
       readonly types?: readonly string[];
     }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
-  | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
+  | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter; readonly anyPlayer?: true }
   /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**
@@ -1744,7 +1754,10 @@ export type IrStaticEffect =
    * "Creature spells you cast have demonstrate." (issue 145, CR 702.144a, 702.51a, 613.1f): the spells the controller casts that the subject names (a noun with `det: 'each'` and the
    * controller `you`) have the keyword `keyword`, a keyword with no parameter.
    */
-  | { readonly kind: 'spellKeyword'; readonly keyword: 'demonstrate' | 'convoke' }
+  | {
+      readonly kind: 'spellKeyword';
+      readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
+    }
   /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
@@ -1901,6 +1914,22 @@ export type IrStaticEffect =
    * subject is `~`.
    */
   | { readonly kind: 'keepsDamage' }
+  /**
+   * "The "legend rule" doesn't apply to Slivers you control." (issue 133, CR 704.5j, 604.1): the permanents of the controller the subject names (a noun with `det: 'each'` and the
+   * controller `you`) are not subject to the legend rule while the permanent has the ability.
+   */
+  | { readonly kind: 'legendRuleDoesntApply' }
+  /**
+   * "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types. The same is true for creature spells you control and creature
+   * cards you own that aren't on the battlefield." (issue 133, CR 613.1d, 607.2d): the subject is the group of permanents (a noun whose filter is the choice of the two groups); the
+   * creature spells and cards outside the battlefield are named by the second sentence.
+   */
+  | { readonly kind: 'chosenTypeGroups' }
+  /**
+   * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (issue 133, CR 702.141a, 613.1f): the creature cards of `cards` in the graveyard of the controller
+   * (the statement's subject, `you`) have Encore with the cost the mana value of the card.
+   */
+  | { readonly kind: 'graveyardEncore'; readonly cards: IrNoun }
   | { readonly kind: 'raw'; readonly text: string };
 
 /** One more subject of a statement and what it gets or has: "~ gets +2/+2 and creatures you control have vigilance". */

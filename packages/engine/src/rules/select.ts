@@ -320,10 +320,15 @@ export function matchesFilter(
       : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     // CR 205.2a, 701.21a (Braids): "shares a card type with it" after a sacrifice reads the permanent sacrificed first in this resolution, as it last was.
+    // CR 205.3m, 113.7a (Titan of Littjara): "shares a creature type with it" of an ability about its own source reads the source, as it is or as it last was.
     ...(readsSharedType(filter)
       ? subjectSubtypesOf(
           state,
-          readsSacrificedType(filter) ? ctx.sacrificed?.[0] : ctx.triggerSubject,
+          readsSacrificedType(filter)
+            ? ctx.sacrificed?.[0]
+            : readsSourceType(filter)
+              ? (ctx.source ?? undefined)
+              : ctx.triggerSubject,
         )
       : {}),
   };
@@ -363,9 +368,18 @@ function readsSharedType(f: ObjectFilter): boolean {
   );
 }
 
-/** Whether the filter, or one of its `anyOf` members, asks for a card type shared with the permanent an earlier sacrifice sacrificed (Braids). */
+/** Whether the filter, or one of its `anyOf` members, asks for a type shared with the permanent an earlier sacrifice sacrificed (Braids, Descendants' Fury). */
 function readsSacrificedType(f: ObjectFilter): boolean {
-  return f.sharesCardTypeWith === 'sacrificed' || (f.anyOf?.some(readsSacrificedType) ?? false);
+  return (
+    f.sharesCardTypeWith === 'sacrificed' ||
+    f.sharesCreatureTypeWith === 'sacrificed' ||
+    (f.anyOf?.some(readsSacrificedType) ?? false)
+  );
+}
+
+/** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the source of the ability (Titan of Littjara). */
+function readsSourceType(f: ObjectFilter): boolean {
+  return f.sharesCreatureTypeWith === 'source' || (f.anyOf?.some(readsSourceType) ?? false);
 }
 
 /** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */

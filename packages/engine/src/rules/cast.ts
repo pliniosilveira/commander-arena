@@ -59,7 +59,6 @@ import {
   manaSymbolsOf,
   multikickerCostOf,
   namedAlternativeCostOf,
-  replicateCostOf,
 } from './alt-costs';
 import { amountOf } from './amounts';
 import { becameTargetEvents } from './becomes-target';
@@ -81,6 +80,7 @@ import {
   castManaPlan,
   isNamedAlternative,
   largestSpellX,
+  replicateCostFor,
   spellCost,
   spellXCostOf,
 } from './cast-cost';
@@ -562,7 +562,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
   const spell = getObject(state, casting.object);
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
-  const cost = replicateCostOf(faceOf(state, spell));
+  const cost = replicateCostFor(state, spell, faceOf(state, spell));
   if (cost === null) return toBuyback(state, events);
   const before = casting.snapshot;
   const card = getObject(before, casting.from);

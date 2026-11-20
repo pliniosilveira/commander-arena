@@ -131,6 +131,7 @@ import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -297,9 +298,28 @@ const COUNTER_UNLESS: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const costs = arg(clause, 'cost');
     if (objects?.kind !== 'noun' || costs?.kind !== 'costList') return failure(clause);
-    const spell = objectRefOf(objects, ctx);
+    // Issue 133 (Diffusion Sliver, CR 702.21a): "counter that spell or ability unless its controller pays {2}" in a trigger about becoming a target: the spell or ability that
+    // targeted, as the engine's Ward counters it. "That spell" is only said of a trigger about spells.
+    let spell: ReturnType<typeof objectRefOf>;
+    if (objects.det === 'triggerSubject') {
+      const wanted = /^that spell or ability$/iu.test(objects.filter.raw.trim()) ? 'both' : 'spell';
+      if (
+        objects.rule !== 'effect.counter-that-unless' ||
+        ctx.becomesTargetOf === null ||
+        (wanted === 'spell' && ctx.becomesTargetOf !== 'spell')
+      ) {
+        return failure(clause);
+      }
+      const missing = missingFeatures(['selector:triggerSubject']);
+      if (missing.length > 0) return failure(clause, missing);
+      spell = { ok: true, value: { kind: 'triggerSubject' }, rule: clause.rule };
+    } else {
+      spell = objectRefOf(objects, ctx);
+    }
     if (!spell.ok) return spell;
-    if (spell.value.kind !== 'target') return failure(clause);
+    if (spell.value.kind !== 'target' && spell.value.kind !== 'triggerSubject') {
+      return failure(clause);
+    }
     const cost: Cost[] = [];
     for (const item of costs.costs) {
       const lowered = lowerCost(item);
@@ -1513,12 +1533,18 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (blocked.length > 0) return failure(clause, blocked);
       if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
     }
+    // "You may reveal any number of cards of the chosen type from among them": every card looked at may be taken, so `max` is the number looked at (a number, not an amount read later).
+    const any = arg(clause, 'anyNumber');
+    const anyNumber = any?.kind === 'flag' && any.value;
+    if (anyNumber && (typeof count.value !== 'number' || toBattlefield || castFree)) {
+      return failure(clause);
+    }
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
       take: {
         filter: filter.value,
-        max: 1,
+        max: anyNumber && typeof count.value === 'number' ? count.value : 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
         ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
@@ -2455,6 +2481,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
+  // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
+  ...SLIVER_D_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

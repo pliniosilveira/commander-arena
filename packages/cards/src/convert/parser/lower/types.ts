@@ -67,6 +67,11 @@ export interface LowerContext {
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
+   * What the events of the trigger are, when every one is a permanent becoming the target (`becomesTarget`): 'spell' for spells only, 'both' for spells and abilities. "Counter that
+   * spell or ability unless its controller pays {2}" names the spell or ability that targeted, the engine's `triggerSubject` there (Diffusion Sliver, CR 702.21a, 603.2).
+   */
+  becomesTargetOf: 'spell' | 'both' | null;
+  /**
    * The ids of targets an earlier instruction of this text sent away from the battlefield (destroy,
    * exile, return, sacrifice): "it" after them is the card in its new zone, which a tap or an untap
    * cannot reach. Filled by `lowerSentences` as each clause is lowered.
@@ -196,6 +201,11 @@ export interface LowerContext {
   damageBatchTrigger: boolean;
   /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
   selfAttackTrigger: boolean;
+  /**
+   * True in the body of a triggered ability whose every event is the card itself entering the battlefield or attacking (Titan of Littjara): "it" in "shares a creature type with it" is
+   * the source of the ability, the one case the engine's `sharesCreatureTypeWith: 'source'` is read from the words.
+   */
+  selfEntersOrAttacksTrigger: boolean;
   /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
@@ -355,6 +365,7 @@ export function newContext(
     cycleTriggerX: false,
     lifeGainedIf: false,
     activateTrigger: false,
+    becomesTargetOf: null,
     removed: new Set(),
     madeAToken: false,
     tokensMade: false,
@@ -411,6 +422,7 @@ export function newContext(
     diesTrigger: false,
     damageBatchTrigger: false,
     selfAttackTrigger: false,
+    selfEntersOrAttacksTrigger: false,
     cardName,
     selfName: '',
     namedWholeName: false,

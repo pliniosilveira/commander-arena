@@ -257,6 +257,11 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
         // D-408: `{ kind: 'this' }` is the spell's own ability; anything else is the filter of a permanent's.
         checkDescribing(s.spells as ObjectFilter, `${path}.spells`, out);
       }
+      if (s.anyPlayer !== undefined && s.anyPlayer !== true) {
+        issue(out, `${path}.anyPlayer`, 'anyPlayer is true or absent');
+      } else if (s.anyPlayer === true && (s.spells as { kind?: unknown } | null)?.kind === 'this') {
+        issue(out, `${path}.anyPlayer`, 'anyPlayer works with a filter of spells, not `this`');
+      }
       return true;
     case 'setTypes':
       // The "in addition to its other types" form with named types; the chosen-type form is checked in validate.ts.

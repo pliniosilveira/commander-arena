@@ -35,7 +35,7 @@ import { settleDayNight } from './day-night';
 import { derive } from './derive';
 import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
-import { type LegendCandidate, legendRuleDecision } from './legend-rule';
+import { exemptFromLegendRule, type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
 import { endBrokenPairs } from './pairing-sba';
 import { cannotLoseGame } from './player-protection';
@@ -166,7 +166,9 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       cease.push(obj);
     if (obj.zone !== 'battlefield') continue;
     const d = derive(state, obj);
-    if (d.supertypes.includes('legendary')) legendary.push({ object: obj, name: d.name });
+    if (d.supertypes.includes('legendary') && !exemptFromLegendRule(state, obj)) {
+      legendary.push({ object: obj, name: d.name });
+    }
     if (d.types.includes('creature') && d.toughness !== null) {
       if (d.toughness <= 0) toGraveyard.push(obj);
       else if (

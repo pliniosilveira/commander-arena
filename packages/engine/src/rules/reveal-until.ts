@@ -46,6 +46,8 @@ export function runRevealUntil(
           source: res.source,
           // D-261: "that shares a creature type with it": the creature a "dies" trigger is about.
           ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
+          // CR 701.21a, 113.7a (Descendants' Fury): "shares a creature type with the sacrificed creature": the permanent the effects before this one sacrificed.
+          ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
         },
       )
     ) {
