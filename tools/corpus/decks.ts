@@ -34,6 +34,9 @@ export interface DeckLine {
   readonly name: string;
   readonly count: number;
   readonly section: DeckSectionName;
+  /** The printing the list names (`(set) number`), when it does. */
+  readonly set?: string;
+  readonly collector?: string;
 }
 
 export interface ParsedDeck {
@@ -51,7 +54,11 @@ export function readDeck(name: string, text: string): ParsedDeck {
   const lines: DeckLine[] = [];
   for (const section of ['commander', 'main'] as const) {
     for (const entry of parsed.sections[section]) {
-      lines.push({ name: entry.name, count: entry.count, section });
+      const printing =
+        entry.set !== null && entry.collector !== null
+          ? { set: entry.set, collector: entry.collector }
+          : {};
+      lines.push({ name: entry.name, count: entry.count, section, ...printing });
     }
   }
   let ignored = 0;
