@@ -6,7 +6,7 @@
  */
 import { createRequestQueue, type RequestQueue } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
-import { printingOfCommander } from './commander-printing';
+import { printingOf } from './deck-printings';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
 
 /**
@@ -94,7 +94,10 @@ export function createCommanderArtLookup(queue: Queue) {
     );
 }
 
-/** The pictures of one printing, by set code and collector number, when the card it answers has the name asked for. */
+/**
+ * The pictures of one printing, by set code and collector number, when the card it answers has the name asked for. A printing under
+ * another printed name (a Universes Beyond reprint) is used: the deck's list chose it.
+ */
 export function createPrintingLookup(queue: Queue) {
   const cache = new Map<string, Promise<CardArt | null>>();
   return (set: string, collector: string, name: string): Promise<CardArt | null> =>
@@ -103,12 +106,11 @@ export function createPrintingLookup(queue: Queue) {
       queue,
       `https://api.scryfall.com/cards/${encodeURIComponent(set)}/${encodeURIComponent(collector)}`,
       (json) => {
-        const card = json as { name?: unknown; printed_name?: unknown } | null;
+        const card = json as { name?: unknown } | null;
         const front = (value: unknown) => (typeof value === 'string' ? value.split(' // ')[0] : '');
-        // A list that names the wrong printing, or a renamed one, must not draw another card.
+        // A list that names the printing of another card must not draw that card.
         if (front(card?.name)?.toLowerCase() !== (name.split(' // ')[0] ?? name).toLowerCase())
           return null;
-        if (typeof card?.printed_name === 'string' && card.printed_name !== card.name) return null;
         return parseCardArt(json);
       },
     );
@@ -123,10 +125,38 @@ const queue = createRequestQueue({
 const lookup = createCommanderArtLookup(queue);
 const lookupPrinting = createPrintingLookup(queue);
 
+/**
+ * The picture of the printing the deck's list names for the card `name` (not a commander: `useCommanderArt` covers those).
+ * `pending` while it is asked for, so the card is not first drawn in another printing; `url` null when the list names none, or
+ * when Scryfall answers another card or a printing under another name (then the card is drawn by name).
+ */
+export function useListedArt(
+  name: string | null,
+  version: ArtVersion,
+): { readonly pending: boolean; readonly url: string | null } {
+  const printing = name === null || name === '' ? null : printingOf(name);
+  const key =
+    printing === null || name === null ? null : `${printing.set}/${printing.collector}\n${name}`;
+  const [found, setFound] = useState<{ key: string; art: CardArt | null } | null>(null);
+  useEffect(() => {
+    if (key === null || printing === null || name === null) return;
+    let alive = true;
+    void lookupPrinting(printing.set, printing.collector, name).then((art) => {
+      if (alive) setFound({ key, art });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [key, printing, name]);
+  if (key === null) return { pending: false, url: null };
+  if (found?.key !== key) return { pending: true, url: null };
+  return { pending: false, url: found.art?.[version] ?? null };
+}
+
 /** The URL of the special picture of the commander `name`, or null while it is asked for, when there is none, or when `name` is null. */
 export function useCommanderArt(name: string | null, version: ArtVersion): string | null {
   const query = name === null || name === '' ? null : commanderArtQuery(name);
-  const printing = query === null || name === null ? null : printingOfCommander(name);
+  const printing = query === null || name === null ? null : printingOf(name);
   // The key of this commander's lookup: the printing the deck's list names, when it names one, and the search.
   const key = printing === null ? query : `${printing.set}/${printing.collector}\n${query}`;
   const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
