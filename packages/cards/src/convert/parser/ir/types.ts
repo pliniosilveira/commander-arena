@@ -610,6 +610,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedNontokenCreatures'
         | 'destroyedCreaturesOfAffected'
         | 'destroyedValue'
         | 'playersDrew'
@@ -896,6 +897,8 @@ export interface IrCondition extends IrNode {
     // Death Toll deck, group B (CR 205.2a, 608.2c): "two cards that share all their card types were milled this way": the cards the instruction before it milled; lowered only after a mill.
     | { readonly kind: 'movedShareAllCardTypes' }
     | { readonly kind: 'cardLeftYourGraveyard' }
+    // Ahoy Mateys deck, group 5: "you descended this turn".
+    | { readonly kind: 'descendedThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
     | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }

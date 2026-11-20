@@ -2085,6 +2085,8 @@ export interface ThisWayCounts {
   readonly returned?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
+  /** The nontoken creatures a `destroy` destroyed, whoever controlled them (CR 701.8, 608.2h: "for each nontoken creature destroyed this way"). */
+  readonly destroyedNontokenCreatures?: number;
   /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */
   readonly destroyedValue?: number;
   readonly playersDrew?: number;

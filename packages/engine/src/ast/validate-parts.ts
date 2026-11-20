@@ -1659,6 +1659,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
+  destroyedNontokenCreatures: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
   returned: 'a moveToZone effect that chooses cards of a graveyard',
@@ -1690,7 +1691,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
   if (e?.kind === 'destroy')
-    return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
+    return [
+      'destroyed',
+      'destroyedOwnNontoken',
+      'destroyedNontokenCreatures',
+      'destroyedValue',
+      'destroyedCreaturesOfAffected',
+    ];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (
     e?.kind === 'moveToZone' &&
@@ -3189,6 +3196,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'cardLeftYourGraveyard':
+    case 'descendedThisTurn':
     case 'yourMainPhase':
     case 'yourCombatPhase':
     case 'yourTurn':

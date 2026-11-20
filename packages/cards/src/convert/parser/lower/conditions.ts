@@ -693,6 +693,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:cardLeftYourGraveyard']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'cardLeftYourGraveyard' });
     }
+    case 'descendedThisTurn': {
+      // Ahoy Mateys deck, group 5: the turn log of permanent cards put into a graveyard.
+      const blocked = missingFeatures(['condition:descendedThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'descendedThisTurn' });
+    }
     case 'spellTargets': {
       // CR 601.2c, 601.2f (stage P50, D-207): a target the spell chose, read as the cost is determined.
       const blocked = missingFeatures(['condition:spellTargets']);
@@ -901,6 +906,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:yourTurn',
   'condition:manaSpentAtLeast',
   'condition:cardLeftYourGraveyard',
+  'condition:descendedThisTurn',
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',

@@ -935,6 +935,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.card-left-graveyard': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
   ),
+  'condition.descended-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'amount.for-each-nontoken-destroyed': spell(
+    (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
+  ),
   // Stage P67 (D-220): trigger doubling is a line of its own, and so is the equip of a creature type.
   'static.triggers-additional-time': asIs,
   // Issue 25 (D-339): the line of its own, with the card's wording.
