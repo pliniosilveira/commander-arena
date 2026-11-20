@@ -62,6 +62,8 @@ export interface SelectContext {
   readonly costTappedPower?: number;
   /** What `sacrificed` means (D-177): the permanents the earlier `sacrifice` instructions of this resolution sacrificed. */
   readonly sacrificed?: readonly ObjectId[];
+  /** What `chosenPlayer` ("that player" after "choose a player ...") means in this resolution (The Black Gate). */
+  readonly chosenPlayer?: SeatId;
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
   readonly triggerPlayer?: SeatId;
   readonly declinedPlayer?: SeatId;
@@ -964,6 +966,11 @@ export function resolvePlayers(
       const seat = defendingPlayerOf(state, ctx.source);
       return seat === null ? [] : [seat];
     }
+    case 'chosenPlayer':
+      // The Black Gate: the player the `choosePlayer` before it chose; nobody when it has left the game.
+      return ctx.chosenPlayer === undefined || getSeat(state, ctx.chosenPlayer).hasLost
+        ? []
+        : [ctx.chosenPlayer];
     case 'playerToYourRight': {
       const seat = playerToRightOf(state, ctx.controller);
       return seat === null ? [] : [seat];
@@ -1061,6 +1068,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'ownerOf' ||
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'playerToYourRight' ||
+    sel.kind === 'chosenPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||

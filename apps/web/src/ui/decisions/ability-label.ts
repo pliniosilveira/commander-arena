@@ -513,6 +513,8 @@ function recipientText(
       return 'the defending player';
     case 'playerToYourRight':
       return 'the player to your right';
+    case 'chosenPlayer':
+      return 'that player';
     case 'attackedBy':
       // D-139 (CR 508.1b): "the player or planeswalker it's attacking".
       return "the player or planeswalker it's attacking";
@@ -702,6 +704,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'playerToYourRight':
       return { who: 'the player to your right', third: true };
+    case 'chosenPlayer':
+      return { who: 'that player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
     case 'triggerAttackedPlayer':

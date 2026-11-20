@@ -47,6 +47,7 @@ import { conniveInstruction, runConniveNext } from './connive';
 import {
   runBecomeCopy,
   runCantAttackPlaneswalkers,
+  runCantBeBlockedByPlayer,
   runContinuous,
   runDoubleTokens,
   runEntersTappedGroup,
@@ -203,6 +204,34 @@ export function runInstruction(
 ): StepOutcome {
   // D-191: the answers given so far to the replacement questions of the damage this instruction deals (rules/damage-effects.ts).
   const flow = askingFlow(res.damageAnswers);
+  if (instruction.kind === 'choosePlayer') {
+    // CR 608.2d, 119.1 (The Black Gate): the controller of the effect chooses among the players with the most life; with one candidate nothing is asked.
+    if (instruction.chosen !== null) return done(state);
+    const alive = Object.keys(state.seats)
+      .map(Number)
+      .filter((seat) => !getSeat(state, seat).hasLost);
+    const top = Math.max(...alive.map((seat) => getSeat(state, seat).life));
+    const candidates = alive.filter((seat) => getSeat(state, seat).life === top);
+    const [only] = candidates;
+    if (only !== undefined && candidates.length === 1) {
+      return { ...done(state), front: [{ ...instruction, chosen: only }] };
+    }
+    const info = sourceInfo(state, res.source);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'chooseOption',
+        seat: res.controller,
+        purpose: 'playerChoice',
+        options: candidates.map((seat) => `seat:${seat}`),
+        source: res.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+      },
+    };
+  }
   if (instruction.kind === 'chooseCreatureType') {
     if (instruction.chosen !== null) return done(state);
     const info = sourceInfo(state, res.source);
@@ -776,6 +805,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
           },
         }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
+    ...(res.chosenPlayer === undefined ? {} : { chosenPlayer: res.chosenPlayer }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
     x: abilityXOf(state, res),
@@ -3439,6 +3469,14 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'choosePlayer':
+      // CR 608.2d (The Black Gate): the controller chooses a player with the most life; the answer is what "that player" means for the rest of the resolution.
+      return done(state, [], [{ kind: 'choosePlayer', among: effect.among, chosen: null }]);
+
+    case 'cantBeBlockedByPlayer':
+      // CR 509.1b, 611.2a (The Black Gate): the creatures named can't be blocked by creatures a player controls this turn.
+      return runCantBeBlockedByPlayer(state, effect, ctx, targets);
 
     case 'cantAttackPlaneswalkers':
       // CR 508.1a, 611.2a (issue 81): the creatures named can't attack the controller's planeswalkers of a subtype this turn.

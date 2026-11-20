@@ -240,6 +240,17 @@ function evades(state: GameState, blocker: GameObject, attacker: GameObject): bo
   ) {
     return true;
   }
+  // CR 509.1b (The Black Gate): "can't be blocked by creatures that player controls this turn": read as the blockers are declared, so a creature that came under the player's control later is barred too.
+  if (
+    state.continuousEffects.some(
+      (e) =>
+        e.change.kind === 'cantBeBlockedByPlayer' &&
+        e.objects.includes(attacker.id) &&
+        e.change.seat === controllerOf(state, blocker),
+    )
+  ) {
+    return true;
+  }
   const b = derive(state, blocker);
   // CR 509.1b (issue 81, Gingerbrute): "can't be blocked this turn except by creatures with haste", read as the blockers are declared.
   if (

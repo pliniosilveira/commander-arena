@@ -509,3 +509,46 @@ describe('Flare of Malice', () => {
     expect(g.act(0).try.cast(flare.name, { alternative: 'sacrificePermanents' }).ok).toBe(false);
   });
 });
+
+describe('The Black Gate', () => {
+  const gate = real('The Black Gate');
+
+  const board = (opponentLife: number) =>
+    scenario()
+      .define(gate)
+      .seat(0)
+      .life(30)
+      .library(...LIBRARY)
+      .battlefield(gate.name, BEARS)
+      .pool('CB')
+      .seat(1)
+      .life(opponentLife)
+      .library(...LIBRARY)
+      .battlefield(ANGEL)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the player with the most life is chosen, and the target creature cannot be blocked by their creatures this turn (CR 509.1b)', () => {
+    const g = board(40);
+    g.act(0).activate(gate.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    expect(g.state.pending?.kind).not.toBe('chooseOption');
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([BEARS]);
+    g.advanceTo('endOfCombat');
+    g.expect.life(1, 38);
+    g.expect.invariants();
+  });
+
+  test('with a tie the controller chooses between the two players (CR 608.2d)', () => {
+    const g = board(30);
+    g.act(0).activate(gate.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    expect(g.state.pending).toMatchObject({ kind: 'chooseOption', purpose: 'playerChoice' });
+    g.act(0).chooseOption('seat:1');
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([BEARS]);
+    g.advanceTo('endOfCombat');
+    g.expect.life(1, 28);
+  });
+});

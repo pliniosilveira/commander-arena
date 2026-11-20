@@ -270,6 +270,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
   'effect.put-target-exiled-with-battlefield': permanent((e) => `{6}, {T}: ${cap(e)}.`),
+  'effect.choose-player-most-life': permanent(
+    (e) => `{1}{B}, {T}: ${cap(e)}. Target creature can't be blocked this turn.`,
+  ),
+  'effect.cant-be-blocked-by-that-players-creatures': permanent(
+    (e) => `{1}{B}, {T}: Choose a player with the most life or tied for most life. ${cap(e)}.`,
+  ),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.

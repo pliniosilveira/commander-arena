@@ -326,6 +326,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromHandOnBottom',
     // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
     'cantAttackPlaneswalkers',
+    // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
+    'choosePlayer',
+    'cantBeBlockedByPlayer',
     'createToken',
     'search',
     'attach',
@@ -993,6 +996,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'defendingPlayer',
     // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
     'playerToYourRight',
+    // The Black Gate: `PlayerSelector` `chosenPlayer`, "that player" after "Choose a player ...".
+    'chosenPlayer',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
@@ -1904,6 +1909,8 @@ export const SELECTOR_KINDS = [
   'defendingPlayer',
   /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */
   'playerToYourRight',
+  /** "That player" after "Choose a player with the most life" (The Black Gate): the engine's `PlayerSelector` `chosenPlayer`. */
+  'chosenPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
@@ -2715,6 +2722,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   putFromHandOnTop: true,
   putFromHandOnBottom: true,
   cantAttackPlaneswalkers: true,
+  choosePlayer: true,
+  cantBeBlockedByPlayer: true,
   createToken: true,
   search: true,
   attach: true,

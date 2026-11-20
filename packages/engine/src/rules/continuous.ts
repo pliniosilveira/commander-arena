@@ -378,6 +378,36 @@ export function runCantAttackPlaneswalkers(
 }
 
 /**
+ * "Target creature can't be blocked by creatures that player controls this turn" (CR 509.1b, 611.2a, The Black Gate): for each player the effect names as it resolves, one continuous
+ * effect over the creatures the effect names as it begins (CR 611.2c) that bars them from being blocked by a creature that player controls (`rules/combat-legality.ts`) until end of turn.
+ */
+export function runCantBeBlockedByPlayer(
+  state: GameState,
+  node: Extract<Effect, { kind: 'cantBeBlockedByPlayer' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const objects = resolveObjects(state, node.objects, ctx, targets).filter(
+    (id) => state.objects[id]?.zone === 'battlefield',
+  );
+  if (objects.length === 0) return done(state);
+  let next = state;
+  const made: ContinuousEffect[] = [];
+  for (const seat of resolvePlayers(state, node.player, ctx, targets)) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    made.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects,
+      until: 'endOfTurn',
+      change: { kind: 'cantBeBlockedByPlayer', seat },
+    });
+  }
+  return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
+}
+
+/**
  * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d, 611.2a, 611.2c): for each player the effect names, one
  * continuous effect with no set of objects, read where that player declares attackers, for the creatures they control then. It ends with the cleanup step of that player's next
  * turn (`turnEnd`, the one after this moment: a turn of theirs that has begun already is not counted), so it covers the whole turn. It does nothing when the permanent with the

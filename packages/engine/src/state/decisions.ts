@@ -865,7 +865,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'protectionColor'
     | 'protectionCardType'
     | 'counterPick'
-    | 'clashOpponent';
+    | 'clashOpponent'
+    // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life": the options are `seat:<n>`.
+    | 'playerChoice';
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second

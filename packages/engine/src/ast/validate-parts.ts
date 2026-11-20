@@ -1462,6 +1462,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'eachOpponent':
     case 'defendingPlayer':
     case 'playerToYourRight':
+    case 'chosenPlayer':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1602,6 +1603,7 @@ export const PLAYER_ONLY = [
   'ownerOf',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
   'attackedPlayers',
   'combatDamagedByNamed',
@@ -3096,6 +3098,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'eachOpponent':
     case 'defendingPlayer':
     case 'playerToYourRight':
+    case 'chosenPlayer':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -3687,6 +3690,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'target',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
 ];
 
@@ -7495,6 +7499,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'putFromHandOnBottom':
+      break;
+    case 'choosePlayer':
+      // CR 608.2d (The Black Gate): the only rule for the players to choose among is the most life.
+      if (e.among !== 'mostLife') {
+        issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
+      }
+      break;
+    case 'cantBeBlockedByPlayer':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'cantAttackPlaneswalkers':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

@@ -622,6 +622,8 @@ describe('unmatched abilities', () => {
       'effect.exile-instead-when-leaving',
       'effect.put-exiled-with-battlefield',
       'effect.put-target-exiled-with-battlefield',
+      'effect.choose-player-most-life',
+      'effect.cant-be-blocked-by-that-players-creatures',
       'effect.made-tokens-gain-keywords',
       'effect.end-step-made-tokens',
       'effect.leave-made-tokens',

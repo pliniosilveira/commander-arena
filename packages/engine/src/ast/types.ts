@@ -1128,6 +1128,11 @@ export type PlayerSelector =
    */
   | { readonly kind: 'playerToYourRight' }
   /**
+   * "That player" after "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d): the player the `choosePlayer` effect before it in the same resolution
+   * chose. Nobody when no such effect ran, or the chosen player has left the game.
+   */
+  | { readonly kind: 'chosenPlayer' }
+  /**
    * "That player", "that creature's controller", "its controller" in a triggered ability (D-133): the player the
    * event that caused the trigger is about. For `drawn` the player who drew; for `dealsCombatDamage` to a player the
    * player who was damaged; for `castSpell` the player who cast the spell, for `becomesTarget` the controller of the
@@ -4202,6 +4207,20 @@ export type Effect =
    * one) and puts it on the bottom of their library. Only one card: with more, the order they go in would matter and nothing asks it.
    */
   | { readonly kind: 'putFromHandOnBottom' }
+  | {
+      readonly kind: 'choosePlayer';
+      /** `mostLife`: "Choose a player with the most life or tied for most life" (CR 608.2d, 119.1): the controller of the effect chooses among the players with the greatest life total; one candidate is chosen without asking. */
+      readonly among: 'mostLife';
+    }
+  /**
+   * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): until end of turn each object the selector names as the effect begins
+   * can't be blocked by a creature controlled by a player `player` names as it resolves (a creature that enters or changes control later counts, as it is read when blockers are declared).
+   */
+  | {
+      readonly kind: 'cantBeBlockedByPlayer';
+      readonly objects: ObjectSelector;
+      readonly player: PlayerSelector;
+    }
   /**
    * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, Jace, Multiverse Architect, issue 81): the creatures `objects` names (fixed as the effect
    * begins) can't be declared attacking a planeswalker of the subtype `subtype` that the controller of the effect controls, until end of turn. The player and their other

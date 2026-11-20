@@ -33,6 +33,8 @@ import { amountArg, arg, type Effects, eachObject, failure, operand } from './cl
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
+  CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
+  CHOOSE_PLAYER,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
@@ -2546,6 +2548,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_ABILITY,
   GRANT_MANA_ABILITY,
   RESTRICT,
+  CHOOSE_PLAYER,
+  CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
   BECOMES,

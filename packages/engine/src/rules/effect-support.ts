@@ -37,6 +37,7 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'ownerOf',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
   'discardedThisWay',
   'couldntSacrificeThisWay',
