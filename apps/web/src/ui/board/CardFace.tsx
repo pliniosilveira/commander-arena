@@ -35,6 +35,7 @@ import { kickedWords, replicatedWords, typeLine } from '../format';
 import { ManaCost } from '../mana';
 import { useAppIfPresent, useDefinedPt } from '../store-context';
 import { Art, artOf } from './art';
+import { cardTopOf } from './card-top';
 import { FaceDownArt } from './face-down-art';
 import './later.css';
 import {
@@ -324,6 +325,8 @@ export function CardFace({
       : object.oracleText;
   const paragraphs = text === '' ? [] : text.split('\n');
   const colors = down ? object.colors : frameColors(object);
+  // In a hand, a zone viewer and a decision the card is the top of the printed card, as a tile is (`card-top.ts`).
+  const top = variant === 'hand' ? cardTopOf(object) : null;
   return (
     <div
       className={`board-card board-card-${variant}${object.isToken ? ' board-card-token' : ''}${down ? ' board-card-facedown-permanent' : ' has-frame'}`}
@@ -349,6 +352,26 @@ export function CardFace({
             className="board-card-image"
           />
         ))}
+      {top !== null && (
+        <Art
+          name={art.name}
+          back={art.back}
+          isToken={object.isToken}
+          commander={object.isCommander}
+          {...(object.tokenDefinition === undefined
+            ? {}
+            : { tokenDefinition: object.tokenDefinition })}
+          version="normal"
+          className="board-card-image board-card-top"
+        />
+      )}
+      {top !== null && top.cover < 1 && (
+        <span
+          className="board-card-under"
+          style={{ top: `${(top.cover * 100).toFixed(1)}%` }}
+          aria-hidden="true"
+        />
+      )}
       <div className="board-card-head">
         <span className="board-card-name">{stackLabel(object)}</span>
         <CostDisplay object={object} />

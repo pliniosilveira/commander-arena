@@ -1689,8 +1689,8 @@
 
 .board-zone-card > .board-card {
   flex: none;
-  /* A quarter bigger, as the hand (issue 137). */
-  height: 188px;
+  /* The top of the card, as in the hand: 135 wide over the shape of card-top.ts. */
+  height: 123px;
 }
 
 /*
@@ -1814,8 +1814,21 @@
 /* The top of the printed card (card-top.ts): the image is as wide as the tile and the tile cuts it
    under the type line. Once it has loaded, the printed title and type line replace the drawn band,
    name and token line, and the marks keep clear of the title bar and the type line. */
-.board-tile-top {
-  object-position: top;
+/* The printed black border is trimmed off the sides and the top (3.4 percent of the card's width,
+   `BORDER` in card-top.ts): the picture is that much wider than its frame and starts that much
+   above it. A margin in percent is of the frame's width, which is what the trim is a share of. */
+.board-tile-top,
+.board-card-image.board-card-top {
+  inset: 0 auto auto -3.65%;
+  width: 107.3%;
+  height: auto;
+  margin-top: -3.65%;
+  object-fit: fill;
+}
+
+/* The printed frame carries the card's colours, so the tile's own frame thins to a line. */
+.board-tile.has-frame .board-tile-inner:has(> .board-tile-top.is-loaded) {
+  border-width: 1px;
 }
 
 .board-tile-inner:has(> .board-tile-top.is-loaded)
@@ -1841,6 +1854,66 @@
 }
 
 .board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-under {
+  display: block;
+}
+
+/* The same picture on a card in a hand, a zone viewer or a decision (CardFace.tsx, the hand
+   variant). It lies over the drawn frame; the marks and the corner number stay on it, and the
+   cost stays where the printed one does not serve: changed by a tax or a reduction, and in the
+   fanned hand, where the next card lies over the printed cost. */
+.board-card-hand {
+  position: relative;
+}
+
+.board-card-hand.has-frame:has(> .board-card-top.is-loaded) {
+  border-width: 1px;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-foot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  padding: 0 3px 3px;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head {
+  display: none;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head:has(.board-cost-now),
+.board-hand-card .board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head {
+  position: absolute;
+  top: 17%;
+  left: 3px;
+  z-index: 4;
+  display: flex;
+  width: auto;
+  padding: 0;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head .board-card-name {
+  display: none;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head .mana-cost {
+  padding: 0 2px;
+  background: var(--bg-sunken);
+  border-radius: 8px;
+}
+
+.board-card-under {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  display: none;
+  background: var(--bg-raised);
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-under {
   display: block;
 }
 

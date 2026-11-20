@@ -1,6 +1,7 @@
 import type { ArrangeCardsDecision, GameView, ObjectId, ObjectView } from '@commander-arena/engine';
 import { type CSSProperties, type DragEvent, useEffect, useState } from 'react';
 import { CardFace } from '../board/CardFace';
+import { cardTopHeight } from '../board/card-top';
 import {
   type Arrangement,
   arrangeBadge,
@@ -77,7 +78,7 @@ export function ArrangePanel({
   );
   const size = {
     '--hand-w': `${width}px`,
-    '--hand-h': `${Math.round(width * 1.4)}px`,
+    '--hand-h': `${cardTopHeight(width)}px`,
   } as CSSProperties;
   const names: readonly Pile[] = hasOtherPile(decision) ? ['top', 'other'] : ['top'];
   const pileOf = (pile: Pile) => (pile === 'top' ? arrangement.top : arrangement.other);

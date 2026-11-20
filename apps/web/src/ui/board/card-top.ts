@@ -18,9 +18,18 @@ const IMAGE_H = 680;
 const REGULAR_CUT = 0.632;
 /** A planeswalker's type line stands higher (measured on one modern planeswalker). */
 const PLANESWALKER_CUT = 0.55;
+/**
+ * The printed black border, as a share of the card's width: it is trimmed off the sides and the
+ * top, so the frame of the tile is the only border around the picture. `board.css` trims by the
+ * same share (`.board-tile-top`, `.board-card-top`).
+ */
+const BORDER = 0.034;
+
+/** The height of the picture down to a cut, the top border trimmed, in image pixels. */
+const shownHeight = (cut: number): number => IMAGE_H * cut - IMAGE_W * BORDER;
 
 /** Width over height of a tile that shows a regular card down to its type line. */
-export const CARD_TOP_ASPECT = IMAGE_W / (IMAGE_H * REGULAR_CUT);
+export const CARD_TOP_ASPECT = (IMAGE_W * (1 - 2 * BORDER)) / shownHeight(REGULAR_CUT);
 
 export interface CardTop {
   /**
@@ -31,7 +40,9 @@ export interface CardTop {
 }
 
 const REGULAR: CardTop = { cover: 1 };
-const PLANESWALKER: CardTop = { cover: PLANESWALKER_CUT / REGULAR_CUT };
+const PLANESWALKER: CardTop = {
+  cover: shownHeight(PLANESWALKER_CUT) / shownHeight(REGULAR_CUT),
+};
 
 /** Subtypes whose frame has its art at the side, so the top of the card is half rules text. */
 const SIDE_ART: ReadonlySet<string> = new Set(['Saga', 'Class', 'Case']);
@@ -53,7 +64,7 @@ export function cardTopOf(o: ObjectView): CardTop | null {
   return o.types.includes('planeswalker') ? PLANESWALKER : REGULAR;
 }
 
-/** The height of a tile `w` wide that shows a regular card's top. */
+/** The height of a tile, or of a card in a hand or a zone viewer, `w` wide that shows a regular card's top. */
 export function cardTopHeight(w: number): number {
   return Math.round(w / CARD_TOP_ASPECT);
 }
