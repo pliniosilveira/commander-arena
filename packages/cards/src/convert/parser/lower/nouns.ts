@@ -55,6 +55,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   // Stage P28 (D-131): "you and target opponent each" (several players at once), "defending player" (CR 508.5).
   players: 'selector:all',
   defendingPlayer: 'selector:defendingPlayer',
+  // "the player to your right" (Hithlain Rope).
+  playerToRight: 'selector:playerToYourRight',
   // Stage P33 (D-150): "this card".
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
@@ -1307,6 +1309,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     case 'defendingPlayer': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'defendingPlayer' });
+    }
+    case 'playerToRight': {
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'playerToYourRight' });
     }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);

@@ -966,6 +966,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
+    // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
+    'playerToYourRight',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
@@ -1284,6 +1286,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerProtection',
     // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
     'cantHaveCounters',
+    // CR 701.21a, 101.2: "This artifact can't be sacrificed."
+    'cantBeSacrificed',
     // D-220: "If a triggered ability of ... triggers, that ability triggers an additional time" (`doubleTriggers`).
     'doubleTriggers',
     'cantCastThis',
@@ -1839,6 +1843,8 @@ export const SELECTOR_KINDS = [
   'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
+  /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */
+  'playerToYourRight',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
@@ -2208,6 +2214,8 @@ export const STATIC_KINDS = [
   'playerProtection',
   /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */
   'cantHaveCounters',
+  /** "This artifact can't be sacrificed" (CR 701.21a, 101.2): the engine's `cantBeSacrificed`. */
+  'cantBeSacrificed',
   /** "If a triggered ability of a Wizard you control triggers, that ability triggers an additional time" (CR 603.2d, D-220): `doubleTriggers`. */
   'doubleTriggers',
   /** "You can't cast ~ during your first, second, or third turns of the game" (CR 101.2, D-149): `cantCastThis`. */

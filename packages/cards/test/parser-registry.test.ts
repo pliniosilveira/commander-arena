@@ -409,6 +409,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
+  'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
   // Stage P19: the header line of a modal spell, followed by two bullets.
@@ -934,6 +935,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
+  'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.enchanted-player-attacked': whenever,

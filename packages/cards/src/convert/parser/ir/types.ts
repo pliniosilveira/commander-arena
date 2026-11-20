@@ -144,6 +144,7 @@ export interface IrNoun extends IrNode {
     | 'triggerActor' // filled by bind for "it" inside a trigger
     | 'players' // "you and target opponent each": several player nouns acting at once (`members`)
     | 'defendingPlayer' // "defending player" (CR 508.5) body
+    | 'playerToRight' // "the player to your right" (Hithlain Rope)
     | 'sacrificed' // "the sacrificed creature": what the cost of the ability sacrificed (stage P29, D-133)
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
@@ -1802,6 +1803,8 @@ export type IrStaticEffect =
    * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.
    */
   | { readonly kind: 'cantHaveCounters'; readonly counter: string }
+  /** "This artifact can't be sacrificed." (CR 701.21a, 101.2; Hithlain Rope). The subject is `~`. */
+  | { readonly kind: 'cantBeSacrificed' }
   /**
    * "Prevent all combat damage that would be dealt to ~." (stage P33, D-150, CR 615.1): the damage of the kind named that would be dealt to
    * the permanent is prevented. The subject is `~`.

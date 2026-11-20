@@ -1426,6 +1426,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'eachPlayer':
     case 'eachOpponent':
     case 'defendingPlayer':
+    case 'playerToYourRight':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1560,6 +1561,7 @@ export const PLAYER_ONLY = [
   'controllerOf',
   'ownerOf',
   'defendingPlayer',
+  'playerToYourRight',
   'triggerPlayer',
   'attackedPlayers',
   'combatDamagedByNamed',
@@ -3037,6 +3039,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'eachPlayer':
     case 'eachOpponent':
     case 'defendingPlayer':
+    case 'playerToYourRight':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -3595,6 +3598,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'ownerOf',
   'target',
   'defendingPlayer',
+  'playerToYourRight',
   'triggerPlayer',
 ];
 

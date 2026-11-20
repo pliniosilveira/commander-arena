@@ -285,6 +285,9 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         issue(out, `${path}.who`, 'cantGainLife is said of the opponents of the controller');
       }
       return true;
+    case 'cantBeSacrificed':
+      // CR 701.21a: said of the permanent itself, with nothing to check.
+      return true;
     case 'cantHaveCounters':
       // D-380 (CR 122.6): the permanents that can't have the counter: this one, the one this is attached to, or a group on the battlefield.
       if (s.subject?.kind === 'filter') {

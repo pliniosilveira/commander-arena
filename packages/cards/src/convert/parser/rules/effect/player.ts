@@ -422,7 +422,10 @@ const monarchAction: Action = (subject, you, rule) =>
  * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
  */
 const gainControlOfSelfAction: Action = (subject, you, rule) =>
-  you || subject.det !== 'anaphor' || subject.filter.raw.toLowerCase() !== 'that player'
+  you ||
+  (subject.det === 'playerToRight'
+    ? false
+    : subject.det !== 'anaphor' || subject.filter.raw.toLowerCase() !== 'that player')
     ? (ctx, pos) => fail(ctx, pos)
     : map(
         spanned(
@@ -483,6 +486,7 @@ export const PLAYER_SUBJECTS = [
   'noun.any-number-target-players',
   'noun.each-other-player',
   'noun.defending-player',
+  'noun.player-to-your-right',
   'noun.player',
   'noun.its-controller',
   'noun.each-exiled-controller',
@@ -506,7 +510,7 @@ function never(id: string): Parser<IrClause> {
 export const EFFECT_PLAYER = defineRule<Clauses>({
   id: 'effect.player',
   family: 'effect',
-  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any', 'for'],
+  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any', 'for', 'the'],
   cites: [
     'CR 119.3 (Life)',
     'CR 121.1 (Drawing a Card)',
@@ -573,6 +577,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw X cards and lose X life',
     // CR 613.1b: the player of the trigger takes the permanent with the ability.
     'that player draws three cards and gains control of ~',
+    'the player to your right gains control of ~',
+    'The player to your right gains control of ~',
     'you and target opponent each draw two cards',
     'you and target player each discard a card',
     'each player sacrifices a creature of their choice',
@@ -719,6 +725,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'that player gains control of target creature',
     'that player gain control of ~',
     'you gain control of ~',
+    'the player to your right gains control of target creature',
+    'the player to your right gains control of ~ until end of turn',
+    'the player to your right draw a card',
   ],
   parse: chain(
     sequence(family<IrNoun>('noun', { only: PLAYER_SUBJECTS }), literal(' ')),

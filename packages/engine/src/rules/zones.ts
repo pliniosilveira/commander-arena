@@ -99,6 +99,7 @@ import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
 import { createTokens } from './tokens';
@@ -357,7 +358,11 @@ export function sacrificeForDevour(
   // D-283 (CR 603.10a): the creatures sacrificed together keep the last-known information recorded before the first leaves.
   const going = ids.filter((id) => {
     const obj = input.objects[id];
-    return obj?.zone === 'battlefield' && controllerOf(input, obj) === seat;
+    return (
+      obj?.zone === 'battlefield' &&
+      controllerOf(input, obj) === seat &&
+      !cantBeSacrificed(input, id)
+    );
   });
   if (going.length > 1) {
     for (const id of going) {
@@ -368,6 +373,8 @@ export function sacrificeForDevour(
   for (const id of ids) {
     const obj = state.objects[id];
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) continue;
+    // CR 701.21a, 101.2: a permanent that can't be sacrificed stays.
+    if (cantBeSacrificed(state, id)) continue;
     const moved = moveOne(state, {
       object: id,
       to: 'graveyard',
