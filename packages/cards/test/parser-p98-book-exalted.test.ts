@@ -208,9 +208,9 @@ describe('"Activate only as a sorcery" after a sentence that ends with a quote (
       'artifact',
     );
     expect(parsed.abilities[0]).toMatchObject({ timing: 'sorcery' });
-    // "only once each turn" is a restriction the engine does not run on its own: the line stays unread
+    // "only twice each turn" is a restriction the engine does not run on its own (issue 345 reads "only once each turn"): the line stays unread
     const twice = read(
-      `{T}: Put a +1/+1 counter on target Angel. It gains ${QUOTE} Activate only as a sorcery and only once each turn.`,
+      `{T}: Put a +1/+1 counter on target Angel. It gains ${QUOTE} Activate only as a sorcery and only twice each turn.`,
       'artifact',
     );
     expect(twice.unparsed.length).toBeGreaterThan(0);

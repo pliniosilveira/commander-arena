@@ -57,7 +57,7 @@ describe('"Equip commander {3}" (CR 702.6c, 903.3)', () => {
     'Equip commander {X}',
     'Equip your commander {3}',
     'Equip commander creature {3}',
-    'Equip legendary creature {3}',
+    'Equip nonlegendary creature {3}',
   ])('"%s" is not read (SYNTHETIC)', (text) => {
     expect(dropped(text, 'artifact', ['Equipment']).reason).toBeDefined();
   });

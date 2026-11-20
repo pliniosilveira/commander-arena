@@ -36,7 +36,8 @@ export function adjustedAbility(
 ): ActivatedAbility {
   const worked = ability.cost.some((c) => c.kind === 'payLife' && typeof c.amount !== 'number');
   // D-461: the reduction of a permanent's static ability for the activated abilities of cards in a graveyard.
-  const byStatics = objectsReductionFor(state, source);
+  const { by: staticsBy, floor } = objectsReductionFor(state, source);
+  let byStatics = staticsBy;
   if (
     !worked &&
     ability.costReducedIf === undefined &&
@@ -60,6 +61,9 @@ export function adjustedAbility(
     const by = amountOf(state, costReducedBy.amount, ctx, []);
     if (by > 0) cost = reducedCosts(cost, by);
   }
+  // Issue 345 (CR 601.2f): "This effect can't reduce the mana in that cost to less than one mana": the reduction of the static ability stops at the floor.
+  if (byStatics > 0 && floor > 0)
+    byStatics = Math.min(byStatics, Math.max(0, manaInCost(cost) - floor));
   if (byStatics > 0) cost = reducedCosts(cost, byStatics);
   return { ...rest, cost };
 }
@@ -69,15 +73,34 @@ export function adjustedAbility(
  * in a graveyard, goes down, from the permanents with an `abilityCostReduction` of `ofObjects` whose filter matches the card (the permanent that has the static ability is the
  * source and its controller is "you", so `controller: 'you'` is its controller's graveyard). The reductions of several permanents add up. 0 for anything on the battlefield.
  */
-function objectsReductionFor(state: GameState, source: GameObject): number {
-  if (source.zone !== 'graveyard') return 0;
-  let total = 0;
+function objectsReductionFor(
+  state: GameState,
+  source: GameObject,
+): { readonly by: number; readonly floor: number } {
+  // The abilities of cards in a graveyard (D-461) and, with a floor, of creatures on the battlefield (issue 345).
+  if (source.zone !== 'graveyard' && source.zone !== 'battlefield') return { by: 0, floor: 0 };
+  let by = 0;
+  let floor = 0;
   for (const s of abilityReductionSources(state)) {
     if (s.objects === undefined) continue;
+    if (source.zone === 'battlefield' && s.minTotal === undefined) continue;
     const ctx = { controller: controllerOf(state, s.object), source: s.object.id };
-    if (matchesFilter(state, source, s.objects, ctx)) total += amountOf(state, s.amount, ctx, []);
+    if (matchesFilter(state, source, s.objects, ctx)) {
+      by += Math.max(0, amountOf(state, s.amount, ctx, []));
+      floor = Math.max(floor, s.minTotal ?? 0);
+    }
   }
-  return total;
+  return { by, floor };
+}
+
+/** How much mana a cost has (CR 107.4): a generic number counts its value, any other symbol one, X nothing. */
+function manaInCost(costs: readonly Cost[]): number {
+  const mana = costs.find((c) => c.kind === 'mana');
+  if (mana?.kind !== 'mana') return 0;
+  return mana.symbols.reduce(
+    (sum, s) => sum + (/^\d+$/u.test(s) ? Number(s) : s === 'X' ? 0 : 1),
+    0,
+  );
 }
 
 /**

@@ -201,7 +201,90 @@ export const EFFECT_BECOMES_LAND_CREATURE_TRAILING = defineRule<Clauses>({
   },
 });
 
+const IT_ID = 'effect.it-becomes-land-creature-keywords';
+
+/**
+ * `effect.it-becomes-land-creature-keywords`: "It becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land." (issue 345, Silvanus's Invoker; CR
+ * 613.1d, 613.1f, 613.4b, 205.1b, 611.2a): the land the instruction before it named ("Untap target land you control.") is also a creature until the end of the turn, with the base power and
+ * toughness, the creature types and the keywords the text says and its colors unchanged. "It's still a land" says its types are added to, not replaced. Only "it", with no colors. Not
+ * read: another duration, another subject, a color, no creature type, no keyword, no base power and toughness, the second sentence left out, "that's still a land".
+ */
+export const EFFECT_IT_BECOMES_LAND_CREATURE_KEYWORDS = defineRule<Clauses>({
+  id: IT_ID,
+  family: 'effect',
+  leading: ['it'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "it becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land",
+    'It becomes a 3/3 Elemental creature with haste until end of turn. It’s still a land',
+  ],
+  rejects: [
+    'it becomes an 8/8 Elemental creature with trample and haste until end of turn.',
+    "it becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a creature",
+    "it becomes an 8/8 Elemental creature with trample and haste until your next turn. It's still a land",
+    "it becomes an 8/8 green Elemental creature with trample and haste until end of turn. It's still a land",
+    "it becomes an Elemental creature with trample and haste until end of turn. It's still a land",
+    "it becomes an 8/8 creature with trample and haste until end of turn. It's still a land",
+    "it becomes an 8/8 Elemental creature until end of turn. It's still a land",
+    "target land becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land",
+    "it becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land and draws a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.it'] }),
+      pattern(/ becomes an? /iu),
+      spanned(pattern(/(\d+)\/(\d+) /)),
+      spanned(CREATURE_TYPE_LIST),
+      literal(' creature with '),
+      spanned(KEYWORD_WORDS),
+      literal(' '),
+      family<IrDuration>('duration'),
+      pattern(/\. It['’]s still a land(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , pt, types, , keywords, , duration] = r.value;
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: Number(pt.value[1]),
+      toughness: Number(pt.value[2]),
+      span: pt.span,
+      rule: IT_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value,
+      cardTypes: ['creature'],
+      additive: true,
+      span: types.span,
+      rule: IT_ID,
+    };
+    const clauses: IrClause[] = [
+      {
+        ...makeClause(IT_ID, 'becomes', { objects: subject, types: typeList, basePt }, types.span),
+        duration,
+        connector: 'and' as const,
+      },
+    ];
+    keywords.value.forEach((name, i) => {
+      const keyword = { kind: 'keywordName' as const, name, span: keywords.span, rule: IT_ID };
+      clauses.push({
+        ...makeClause(IT_ID, 'grantKeyword', { objects: subject, keyword }, keywords.span),
+        duration,
+        ...(i < keywords.value.length - 1 ? { connector: 'and' as const } : {}),
+      });
+    });
+    return { ok: true, value: clauses, pos: r.pos };
+  },
+});
+
 export const LAND_CREATURE_KEYWORDS_EFFECT_RULES = [
   EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS,
   EFFECT_BECOMES_LAND_CREATURE_TRAILING,
+  EFFECT_IT_BECOMES_LAND_CREATURE_KEYWORDS,
 ];

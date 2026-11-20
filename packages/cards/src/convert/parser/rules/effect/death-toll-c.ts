@@ -4,6 +4,7 @@
  */
 import { literal, optional, type Parser, pattern, satisfy, sequence } from '../../combinators';
 import type { IrArg, IrNoun } from '../../ir/types';
+import { BOUNDARY } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 import { EMBLEM_ABILITY } from './planeswalker';
@@ -255,7 +256,69 @@ export const EFFECT_PUT_ANY_NUMBER_FROM_HAND = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.put-any-number-permanents-from-hand`: "put any number of permanent cards from your hand onto the battlefield" (issue 345, Redshift, Rocketeer Chief; CR 608.2d, 110.2a,
+ * 110.4a: a permanent card is a card that is not an instant or a sorcery; the player chooses none up to every one in their hand and they enter under their control). The same
+ * instruction as `effect.put-any-number-from-hand` for the permanent cards of the hand. Not read: "tapped", a number, "up to", another zone, another kind.
+ */
+export const EFFECT_PUT_ANY_NUMBER_PERMANENTS_FROM_HAND = defineRule<Clauses>({
+  id: 'effect.put-any-number-permanents-from-hand',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 110.2a (Permanents)',
+    'CR 110.4a (Permanents)',
+  ],
+  examples: ['put any number of permanent cards from your hand onto the battlefield'],
+  rejects: [
+    'put any number of permanent cards from your hand onto the battlefield tapped',
+    'put any number of permanent cards from your graveyard onto the battlefield',
+    'put any number of permanent from your hand onto the battlefield',
+    'put up to two permanent cards from your hand onto the battlefield',
+    'put any number of permanent cards from your hand into your graveyard',
+    'put any number of permanents from your hand onto the battlefield',
+  ],
+  parse: single(
+    'effect.put-any-number-permanents-from-hand',
+    spanned(
+      pattern(
+        new RegExp(
+          `put any number of permanent cards from your hand onto the battlefield${BOUNDARY}`,
+          'iu',
+        ),
+      ),
+    ),
+    ({ span }) => {
+      const id = 'effect.put-any-number-permanents-from-hand';
+      return {
+        verb: 'putAnyNumberFromHand',
+        args: {
+          card: {
+            kind: 'noun' as const,
+            det: 'a' as const,
+            filter: {
+              notTypes: ['instant', 'sorcery'],
+              card: true,
+              zone: 'hand' as const,
+              controller: 'you' as const,
+              raw: 'permanent cards',
+            },
+            upTo: false,
+            plural: true,
+            other: false,
+            span,
+            rule: id,
+          },
+          tapped: { kind: 'flag' as const, value: false, span, rule: id },
+        },
+      };
+    },
+  ),
+});
+
 export const DEATH_TOLL_C_EFFECT_RULES = [
+  EFFECT_PUT_ANY_NUMBER_PERMANENTS_FROM_HAND,
   EFFECT_PUT_ANY_NUMBER_FROM_HAND,
   EFFECT_PLAYER_GETS_EMBLEM,
   EFFECT_REPEAT_PROCESS_AGAIN,

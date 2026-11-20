@@ -25,6 +25,7 @@ export type PlayRuleEffect = Extract<
       | 'revealTopOfLibrary'
       | 'playLandsFromTopOfLibrary'
       | 'playLandsFromGraveyard'
+      | 'activateAsThoughHaste'
       | 'attackTax'
       | 'optionalUntap'
       | 'crewSaddleBonus'
@@ -40,6 +41,7 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
     effect.kind === 'revealTopOfLibrary' ||
     effect.kind === 'playLandsFromTopOfLibrary' ||
     effect.kind === 'playLandsFromGraveyard' ||
+    effect.kind === 'activateAsThoughHaste' ||
     effect.kind === 'attackTax' ||
     effect.kind === 'blockTax' ||
     effect.kind === 'optionalUntap' ||
@@ -58,9 +60,13 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
     case 'revealTopOfLibrary':
       return ['static:revealTopOfLibrary'];
     case 'playLandsFromTopOfLibrary':
-      return ['static:playLandsFromTopOfLibrary'];
+      return effect.alsoLook === true
+        ? ['static:lookAtTopOfLibrary', 'static:playLandsFromTopOfLibrary']
+        : ['static:playLandsFromTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
+    case 'activateAsThoughHaste':
+      return ['static:activateAsThoughHaste'];
     case 'attackTax':
       return ['static:attackTax', 'cost:mana'];
     // Stage P33 (D-150): "Creatures can't block unless their controller pays {1} for each of those creatures."
@@ -100,9 +106,6 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
     // "Play with the top card of your library revealed." (Oracle of Mul Daya, CR 401.5).
     case 'revealTopOfLibrary':
       return ok({ kind: 'static', static: { kind: 'revealTopOfLibrary' } });
-    // "You may play lands from the top of your library." (Oracle of Mul Daya, CR 305.1, 401.5): any land card on top.
-    case 'playLandsFromTopOfLibrary':
-      return ok({ kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' } });
     // "You may play Forests from your graveyard." (Death Toll deck, group D, CR 305.1): the land cards of the named basic land type, or any land.
     case 'playLandsFromGraveyard':
       return ok({
@@ -113,6 +116,27 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
             effect.landType === undefined
               ? { types: ['land'] }
               : { types: ['land'], subtypes: [effect.landType] },
+        },
+      });
+    // "You may play lands from the top of your library." (Oracle of Mul Daya, CR 305.1, 401.5): any land card on top; with `alsoLook`, "You may look at the top card of your library any time" is in the same sentence (issue 345).
+    case 'playLandsFromTopOfLibrary': {
+      const play: Ability = { kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' } };
+      return {
+        ok: true,
+        value:
+          effect.alsoLook === true
+            ? [{ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } }, play]
+            : [play],
+        rule: at.rule,
+      };
+    }
+    // "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b): the creatures of the controller.
+    case 'activateAsThoughHaste':
+      return ok({
+        kind: 'static',
+        static: {
+          kind: 'activateAsThoughHaste',
+          creatures: { types: ['creature'], controller: 'you' },
         },
       });
     case 'optionalUntap':
@@ -168,6 +192,7 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:revealTopOfLibrary',
   'static:playLandsFromTopOfLibrary',
   'static:playLandsFromGraveyard',
+  'static:activateAsThoughHaste',
   'static:attackTax',
   'static:blockTax',
   'static:optionalUntap',

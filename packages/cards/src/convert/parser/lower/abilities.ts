@@ -227,7 +227,12 @@ function lowerCostedKeyword(
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
-  if ((ability.quality !== undefined || ability.commanderOnly === true) && name !== 'equip') {
+  if (
+    (ability.quality !== undefined ||
+      ability.commanderOnly === true ||
+      ability.legendaryOnly === true) &&
+    name !== 'equip'
+  ) {
     return failure(ability);
   }
   return {
@@ -243,6 +248,10 @@ function lowerCostedKeyword(
             : { restriction: { subtypes: [ability.quality] } }),
           // "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): a creature that is a commander.
           ...(ability.commanderOnly === true ? { restriction: { commander: true } } : {}),
+          // "Equip legendary creature {3}" (issue 345, CR 702.6c, 205.4): a legendary creature.
+          ...(ability.legendaryOnly === true
+            ? { restriction: { types: ['creature'], supertypes: ['legendary'] } }
+            : {}),
         } as Keyword,
       },
     ],

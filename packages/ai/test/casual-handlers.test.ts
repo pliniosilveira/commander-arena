@@ -111,6 +111,7 @@ function view(spec: ViewSpec = {}): GameView {
     prioritySeat: 0,
     seats: [seat(0, spec.life ?? 20, spec.hand ?? []), seat(1, spec.opponentLife ?? 20, null)],
     monarch: null,
+    dayNight: null,
     battlefield: spec.battlefield ?? [],
     exile: [],
     stack: spec.stack ?? [],

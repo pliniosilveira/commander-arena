@@ -5077,6 +5077,17 @@ export type Keyword =
    */
   | { readonly kind: 'soulbond' }
   /**
+   * CR 702.145b (Daybound): found on the front face of a transforming double-faced card; it stands for three static abilities, run by `rules/day-night.ts` and not expanded by
+   * `derive`: it enters transformed when it is night, it transforms as it becomes night, and it can't transform otherwise. A permanent with it makes it day when the game is
+   * neither (CR 702.145d). Printed only: it cannot be granted, and the layout check refuses it off the front face.
+   */
+  | { readonly kind: 'daybound' }
+  /**
+   * CR 702.145e (Nightbound): found on the back face of a transforming double-faced card; it stands for two static abilities: it transforms as it becomes day, and it can't
+   * transform otherwise. It makes it night when the game is neither and no permanent has daybound (CR 702.145g). Printed only, like Daybound.
+   */
+  | { readonly kind: 'nightbound' }
+  /**
    * CR 702.83a (Exalted): "Whenever a creature you control attacks alone, that creature gets +1/+1 until
    * end of turn." A triggered ability; `derive` expands it (`rules/derive-keywords.ts`), one trigger per
    * instance.
@@ -5819,6 +5830,16 @@ export type Condition =
       readonly kind: 'spellsCastThisTurn';
       readonly atLeast: number;
       readonly ofTypes?: readonly CardType[];
+    }
+  /**
+   * "If no spells were cast last turn", "if a player cast two or more spells last turn" (issue 345, CR 601.2i, 603.4): read from `GameState.lastTurnSpellsCast`, the spells each player cast in
+   * the turn before the current one (a copy is not cast, CR 707.10). `none`: no player cast one. `aPlayerAtLeast`: some player cast at least `atLeast` (two or more). With no turn before
+   * (the first turn) nobody cast any. It does not change during a turn, so it is read as the ability triggers and as it resolves. Not for a static ability.
+   */
+  | {
+      readonly kind: 'spellsCastLastTurn';
+      readonly mode: 'none' | 'aPlayerAtLeast';
+      readonly atLeast?: number;
     }
   /**
    * "If you attacked with three or more creatures this turn" (issue 279, CR 508.1): the controller of the condition declared at least `atLeast` different
@@ -6568,6 +6589,12 @@ export type StaticEffect =
       readonly abilities: 'ofObjects';
       readonly objects: ObjectFilter;
       readonly amount: Amount;
+      /**
+       * "This effect can't reduce the mana in that cost to less than one mana" (issue 345, Agatha of the Vile Cauldron, CR 601.2f, 118.7): the reduction of this static ability leaves
+       * at least this many mana in the cost (a generic number counts its value, any other symbol one, X none). With it `objects` may name creatures on the battlefield
+       * (`zone: 'battlefield'`) as well as cards in a graveyard.
+       */
+      readonly minTotal?: number;
     }
   /**
    * "Lands you control have "{T}: Add one mana of any color."" (D-099): the subject has the mana
@@ -6844,6 +6871,12 @@ export type StaticEffect =
    */
   | { readonly kind: 'playLandsFromGraveyard'; readonly lands?: ObjectFilter }
   /**
+   * "You may activate abilities of creatures you control as though those creatures had haste." (CR 702.10b, 302.6, issue 345): while the permanent has the ability, a creature `creatures`
+   * describes (read for the controller of the permanent: "you" is usual, the source is the permanent) is not held back by summoning sickness from an ability with {T} or {Q} in its
+   * cost. It is no haste: the creature still cannot attack, and it is not shown with the keyword. A creature of another player never gets it.
+   */
+  | { readonly kind: 'activateAsThoughHaste'; readonly creatures: ObjectFilter }
+  /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative
    * to the controller of the permanent: "you" is usual, and a spell of another player never gets it, as the permission is the
@@ -7014,6 +7047,12 @@ export type Ability =
        */
       readonly oncePerTurn?: true;
       /**
+       * "Exhaust — {10}{R}{G}: ..." (issue 345, CR 702.177a): "Activate only once", the whole life of the object: once this ability of this object has been activated it cannot be
+       * activated again, in any turn. It is the object's own count (`GameObject.exhaustUsed`): a permanent that left and came back is a new object (CR 400.7). Counted when the
+       * activation is complete. Only an ordinary activated ability, never a mana ability or a loyalty ability.
+       */
+      readonly exhaust?: true;
+      /**
        * "Activate only if you control five or more lands." (CR 602.5b, D-099): a restriction on
        * activating the ability, read for its controller with the permanent as the source, when it is
        * activated. Not a cost: it is ignored when another ability asks what this permanent could
@@ -7084,6 +7123,11 @@ export interface ManaAbility {
      * with an {X} in it or the activation cost of an ability with an {X} in it. Alone: no `types`, `subtypes` or `chosenType`.
      */
     readonly xCost?: true;
+    /**
+     * "Spend this mana only to activate abilities." (issue 345, Redshift, Rocketeer Chief; CR 106.6): the mana can pay the cost of an activated ability and nothing else, never a
+     * spell. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities` or `xCost`.
+     */
+    readonly abilitiesOnly?: true;
     /**
      * "Spend this mana only to cast monocolored spells of that color." (issue 144, Throne of Eldraine; CR 106.6, 105.2a): the spell has exactly one color, the color the permanent chose
      * as it entered (`GameObject.chosen.color`), read as the mana is made; with no color chosen the mana can be spent on no spell. Alone: no `types`, `subtypes`, `chosenType` or

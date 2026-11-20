@@ -455,6 +455,9 @@ const IF_ITS_CARD_PUT_ONTO = /^if it['’]s an? [^.,]* card, they put it onto th
 const LOOK_AT_TOP_CARD = /^look at the top card of your library\.$/i;
 const IF_ITS_CARD_MAY_TAKE =
   /^if it['’]s an? [^.,]* card(?: of the chosen type)?, you may reveal it and put it into your hand\.$/i;
+/** "If you don't put the card into your hand, put it on the bottom of your library." (Vivien's Grizzly, issue 345): the third sentence of the instruction of `LOOK_AT_TOP_CARD`. */
+const ELSE_BOTTOM_OF_LIBRARY =
+  /^if you don['’]t put the card into your hand, put it on the bottom of your library\.$/i;
 
 /**
  * "Each player exiles a card from their graveyard. When one or more nonland cards are exiled this way, put that many +1/+1 counters on target attacking creature."
@@ -699,6 +702,8 @@ const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
 /** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
 const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [^.]*\.$/i;
 const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
+/** "It becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land." (Silvanus's Invoker, issue 345): the land the sentence before named keeps its types. */
+const IT_BECOMES_LAND_CREATURE = /^it becomes an? \d+\/\d+ [^.]*\.$/i;
 /** "{2}{G}{W}: ~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land." (issue 145, Restless Prairie, CR 205.1b): the same, with the duration at the end. */
 const BECOMES_LAND_CREATURE_TRAILING = /(?:^|: )~ becomes a \d+\/\d+ [^.]* until end of turn\.$/i;
 /**
@@ -912,6 +917,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, LOOK_AT_TOP_CARD) &&
+      said(b, IF_ITS_CARD_MAY_TAKE) &&
+      said(c, ELSE_BOTTOM_OF_LIBRARY)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, EXILE_TOP_CARDS) &&
       said(b, MAY_PUT_FROM_AMONG_ONTO) &&
       said(c, UNTIL_EOT_EACH_TYPE)
@@ -948,6 +962,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, IT_BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, RETURN_IT_FACE_DOWN) && said(b, ITS_A_FOREST_LAND)) ||
         (said(a, BECOMES_LAND_CREATURE_TRAILING) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||

@@ -278,8 +278,8 @@ const EQUIPMENT: readonly Line[] = [
   },
   {
     kind: 'equipment',
-    text: 'Equipped creature gets +1/+1.\nEquip legendary creature {3}',
-    expect: no('legendary creature {3}', 'keyword.equip'),
+    text: 'Equipped creature gets +1/+1.\nEquip nonlegendary creature {3}',
+    expect: no('nonlegendary creature {3}', 'keyword.equip'),
     note: 'backlog: 5 cards; CR 702.6c, not modelled by the engine',
   },
   {

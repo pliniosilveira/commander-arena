@@ -78,7 +78,8 @@ export function checkStaticSubject(
       // Attacking is read from the current combat. Resolution-only source values remain unavailable here.
       if (
         filterSome(s.filter, (f) => {
-          const { attacking: _attacking, ...rest } = f;
+          // `modified` (issue 345, CR 700.9) is read from the counters and attachments, which no layer changes.
+          const { attacking: _attacking, modified: _modified, ...rest } = f;
           return readsCombatOrSourceBesidesCommander(rest);
         })
       ) {

@@ -82,6 +82,20 @@ export function TurnTracker() {
             {view.monarch === view.viewer ? 'You are the monarch' : 'Opponent is the monarch'}
           </span>
         )}
+        {view.dayNight !== null && (
+          <span
+            className="pnl-chip pnl-chip-daynight"
+            title={
+              view.dayNight === 'day'
+                ? 'It is day. It becomes night at the next untap step if the previous turn’s active player cast no spells (CR 731.2).'
+                : 'It is night. It becomes day at the next untap step if the previous turn’s active player cast two or more spells (CR 731.2).'
+            }
+            data-day-night={view.dayNight}
+          >
+            <span aria-hidden="true">{view.dayNight === 'day' ? '☀ ' : '☾ '}</span>
+            {view.dayNight === 'day' ? 'Day' : 'Night'}
+          </span>
+        )}
         {fallbacks > 0 && (
           <span
             className="pnl-chip pnl-chip-warn"

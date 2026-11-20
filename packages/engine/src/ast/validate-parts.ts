@@ -158,6 +158,8 @@ export interface Scope {
   readonly triggerAttacked?: boolean;
   /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
   readonly triggeredAbility?: boolean;
+  /** True in the effect of an activated ability too (issue 345, CR 608.2c): `abilityResolvedTimes` counts the resolutions of a triggered or an activated ability. */
+  readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
@@ -795,7 +797,8 @@ export function declareTargets(
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
-  countXAllowed = false,
+  /** `'slot'` (issue 345): only a slot of as many targets as the X announced (an activated ability whose cost has an X); `true` is a spell's own text, which also lets a division and a filter read X. */
+  countXAllowed: boolean | 'slot' = false,
   /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
@@ -821,7 +824,7 @@ export function declareTargets(
           out,
           undefined,
           undefined,
-          countXAllowed || xFilterAllowed ? { xTarget: true } : {},
+          countXAllowed === true || xFilterAllowed ? { xTarget: true } : {},
         );
         if (
           what.filter.manaValueAtMost !== undefined &&
@@ -1208,7 +1211,7 @@ export function declareTargets(
       if (kindOf(spec.divide.total) === 'x') {
         // CR 107.3a, 601.2b, 601.2d: "Distribute X +1/+1 counters among ...": the X is announced before the targets are chosen and the division, so the total is read as the X
         // announced for the spell (`validateSpell` checks that the spell announces one). Only a spell's own text announces an X before its targets.
-        if (!countXAllowed) {
+        if (countXAllowed !== true) {
           issue(
             out,
             `${p}.divide.total`,
@@ -3271,6 +3274,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, path, 'the gained-and-lost-life condition has no extra fields');
       }
       break;
+    case 'spellsCastLastTurn':
+      // Issue 345 (CR 601.2i): `none`, or `aPlayerAtLeast` with a positive count.
+      if (c.mode !== 'none' && c.mode !== 'aPlayerAtLeast') {
+        issue(out, `${path}.mode`, 'mode is none or aPlayerAtLeast');
+      } else if (c.mode === 'none' && c.atLeast !== undefined) {
+        issue(out, `${path}.atLeast`, 'none takes no count');
+      } else if (c.mode === 'aPlayerAtLeast' && (!isCount(c.atLeast) || c.atLeast < 1)) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
@@ -4316,6 +4329,8 @@ export const MAY_EFFECT_KINDS = [
   'removeCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
+  'addMana',
 ];
 
 /**
@@ -4432,11 +4447,11 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'abilityResolvedTimes':
       // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
-      if (scope.triggeredAbility !== true) {
+      if (scope.triggeredAbility !== true && scope.activatedAbility !== true) {
         issue(
           out,
           path,
-          'abilityResolvedTimes counts the resolutions of a triggered ability: it is only valid in the effect of one',
+          'abilityResolvedTimes counts the resolutions of a triggered or an activated ability: it is only valid in the effect of one',
         );
       }
       if (!isCount(c.times) || c.times < 1) {

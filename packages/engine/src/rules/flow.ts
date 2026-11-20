@@ -31,6 +31,7 @@ import {
   expireUntapStepEffects,
 } from './continuous';
 import { controllerOf } from './control';
+import { settleDayNight, untapStepDayNight } from './day-night';
 import { derive } from './derive';
 import { drawCard } from './effect-support';
 import { discardOne } from './madness';
@@ -112,6 +113,13 @@ export function startTurn(state: GameState, seat: SeatId): Outcome {
   // CR 121.1: "each turn" counts of draws start over for every player (the `drawn` trigger's `nth`, D-111),
   // and so does the life each player lost (Spectacle, CR 702.137a, D-124) and the count of spells each cast (Storm,
   // CR 702.40a, D-129).
+  // Issue 345: what each player cast in the turn that has just ended, kept for "last turn" conditions.
+  next = {
+    ...next,
+    lastTurnSpellsCast: next.seats.map((s) => s.spellsCastThisTurn),
+    // CR 502.2, 731.2: whose turn it was, for the day and night check of the untap step.
+    lastTurnActiveSeat: state.turn.activeSeat,
+  };
   for (const s of next.seats) {
     next = patchSeat(next, s.id, {
       landsPlayedThisTurn: 0,
@@ -165,6 +173,17 @@ export function beginStep(input: GameState, step: StepId): Outcome {
     case 'untap': {
       // CR 702.26a (D-234): the permanents that phased out under the active player's control phase in first, before anything untaps.
       state = phaseInFor(state, active);
+      // CR 502.2, 731.2: second, the game checks the previous turn to see if it becomes day or night (no stack), and the permanents with daybound or nightbound transform at once.
+      const changed = untapStepDayNight(state);
+      if (changed !== null) {
+        state = changed.state;
+        events.push(...changed.events);
+        const settled = settleDayNight(state);
+        if (settled !== null) {
+          state = settled.state;
+          events.push(...settled.events);
+        }
+      }
       // CR 502.3: the active player untaps all their permanents, except the ones an effect keeps
       // from untapping ("doesn't untap during your untap step", D-094). No one receives priority
       // (CR 502.4).

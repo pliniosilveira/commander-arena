@@ -1592,6 +1592,15 @@ export function describeEvent(
         [event.object],
         'CR 114.1',
       );
+    case 'dayNightChanged':
+      // CR 731.1, 502.2, 702.145d: the game became day or night.
+      return line(
+        'major',
+        event.to === 'day' ? 'It becomes day.' : 'It becomes night.',
+        null,
+        [],
+        'CR 731.1',
+      );
     case 'citysBlessingGained':
       // CR 702.131b (D-264): Ascend gave the player the designation, for the rest of the game.
       return line(

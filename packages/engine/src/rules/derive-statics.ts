@@ -150,6 +150,8 @@ export interface AbilityReductionSource {
   readonly targeting?: ObjectFilter;
   /** The objects whose activated abilities cost less, cards in a graveyard (D-461); absent for an Equip reduction. */
   readonly objects?: ObjectFilter;
+  /** `abilityCostReduction` `minTotal` (issue 345): the mana the cost keeps at least. */
+  readonly minTotal?: number;
   readonly amount: Amount;
 }
 
@@ -172,6 +174,12 @@ export interface LibraryCastSource {
   readonly gainsHaste: boolean;
   /** The permanent sacrificed as an additional cost of a spell cast this way ("by sacrificing a nonland permanent"); absent for none. */
   readonly sacrifice?: ObjectFilter;
+}
+
+/** A static ability of a permanent that lets its controller activate the abilities of some creatures as though they had haste (`activateAsThoughHaste`, issue 345). */
+export interface HasteActivationSource {
+  readonly object: GameObject;
+  readonly creatures: ObjectFilter;
 }
 
 /**
@@ -240,6 +248,8 @@ interface BoardIndex {
   readonly flashes: readonly FlashPermissionSource[];
   /** Permanents with a `castFromTopOfLibrary` static ability, in battlefield order (D-151). */
   readonly libraryCasts: readonly LibraryCastSource[];
+  /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
+  readonly hasteActivations: readonly HasteActivationSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
@@ -330,7 +340,12 @@ function abilityReductionsOf(
     if (a.kind === 'static' && a.static.kind === 'abilityCostReduction') {
       out.push(
         a.static.abilities === 'ofObjects'
-          ? { object, objects: a.static.objects, amount: a.static.amount }
+          ? {
+              object,
+              objects: a.static.objects,
+              amount: a.static.amount,
+              ...(a.static.minTotal === undefined ? {} : { minTotal: a.static.minTotal }),
+            }
           : { object, targeting: a.static.targeting, amount: a.static.amount },
       );
     }
@@ -472,6 +487,7 @@ function buildIndex(state: GameState): BoardIndex {
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
+  const hasteActivations: HasteActivationSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
@@ -490,6 +506,11 @@ function buildIndex(state: GameState): BoardIndex {
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
     libraryCasts.push(...libraryCastsOf(object, printed));
+    for (const a of printed) {
+      if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
+        hasteActivations.push({ object, creatures: a.static.creatures });
+      }
+    }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
@@ -564,6 +585,7 @@ function buildIndex(state: GameState): BoardIndex {
     abilityReductions,
     flashes,
     libraryCasts,
+    hasteActivations,
     graveyardPlays,
     handGrants,
     spellGrants,
@@ -614,6 +636,11 @@ export function abilityReductionSources(state: GameState): readonly AbilityReduc
 }
 
 /** The permission "You may cast creature spells ... from the top of your library" of the permanents on the battlefield (D-151). */
+/** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
+export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
+  return indexOf(state).hasteActivations;
+}
+
 export function libraryCastSources(state: GameState): readonly LibraryCastSource[] {
   return indexOf(state).libraryCasts;
 }
