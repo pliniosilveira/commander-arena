@@ -316,6 +316,8 @@ export interface ChosenValues {
   readonly cardType?: CardType;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
+  /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */
+  readonly lifePaid?: number;
 }
 
 export interface TokenData {
@@ -937,7 +939,8 @@ export interface CastingContext {
     | 'crew'
     | 'tap'
     | 'bounce'
-    | 'blight';
+    | 'blight'
+    | 'untap';
   /**
    * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.

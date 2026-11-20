@@ -134,8 +134,8 @@ export function createCasualHandlers(
                           ? chooseDevourSacrifice(view, d) // CR 702.82a, D-185: the tokens given up for counters, often none
                           : d.purpose === 'crew'
                             ? chooseCrewCreatures(view, d)
-                            : d.purpose === 'untapChoice'
-                              ? chooseUntap(view, d) // CR 701.26a, D-216: "Untap up to three lands", the agent's own
+                            : d.purpose === 'untapChoice' || d.purpose === 'untapCost'
+                              ? chooseUntap(view, d) // CR 701.26a, D-216: "Untap up to three lands", the agent's own; CR 701.26b: the creatures untapped for a cost, the ones it values most
                               : d.purpose === 'spare'
                                 ? chooseSparedPermanent(view, d) // D-231: the permanents Tragic Arrogance keeps
                                 : d.purpose === 'effect'

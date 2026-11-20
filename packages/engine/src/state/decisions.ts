@@ -154,6 +154,8 @@ export interface TargetChoiceSpec {
    * `share` of at least 1 and the shares add up to this number. Absent for a slot that divides nothing. `max` is never more than it.
    */
   readonly divide?: number;
+  /** With `divide`: "up to" that many (CR 601.2d): the shares may add up to less than `divide`, and no target may be chosen. */
+  readonly divideUpTo?: true;
   /**
    * For a slot of a copy of a spell that divides something (`forCopy`, D-149, CR 707.10, 115.7f): the original division cannot be changed, so the
    * answer holds as many targets as the copy has now (`min` = `max`) and names no share (`divide` is absent). A target left as it is keeps its
@@ -425,7 +427,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * `'untapChoice'` (D-216, CR 701.26a: "Untap up to three lands"): an effect untaps permanents the controller chooses; `legal` are the tapped
    * permanents on the battlefield that match, of any player, `min` is 0 and `max` the most that may be untapped. `'blight'` (D-407, CR 701.68a): the cost of
    * an activated ability that puts -1/-1 counters on a creature the player controls ("Blight 1"), always `forCost`: `legal` are the creatures they control that can
-   * have the counters put on them, `min` and `max` are 1.
+   * have the counters put on them, `min` and `max` are 1. `'untapCost'` (CR 701.26b): the cost of an activated ability that untaps tapped permanents ("Untap two
+   * tapped creatures you control"), always `forCost`: `legal` are the tapped permanents the player controls that match, `min` and `max` the number to untap.
    */
   readonly purpose:
     | 'sacrifice'
@@ -450,7 +453,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'conniveOrder'
     | 'spare'
     | 'soulbond'
-    | 'blight';
+    | 'blight'
+    | 'untapCost';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):
@@ -830,7 +834,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
  * permanent that is about to enter chooses one of `options` before it enters. `purpose` says what is
  * chosen. `options` is the full list, in a fixed order that the legal actions follow: for
  * `'creatureType'` every creature type of CR 205.3m (spelled as `CREATURE_TYPES` lists them, "Time
- * Lord" included), for `'color'` the five colors as `W`, `U`, `B`, `R`, `G`, for `'cardType'` (D-376, "choose a card type") the card types of `CARD_TYPES`. `source` is the object
+ * Lord" included), for `'color'` the five colors as `W`, `U`, `B`, `R`, `G`, for `'cardType'` (D-376, "choose a card type") the card types of `CARD_TYPES`, for `'lifePaid'` (CR 119.4, 614.12, "pay any amount of life") the whole numbers `"0"` to the player's life total, in ascending order; the answer is the life lost as the permanent enters. `source` is the object
  * about to enter: the card in a hand, in a zone an effect moves it from, or the spell on the stack that
  * is resolving; for a token (nothing exists yet) it is the spell or ability that creates it. `sourceName`
  * and `sourceOracleText` name what is entering. The answer is a `chooseOption` action; the question
@@ -842,6 +846,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'creatureType'
     | 'color'
     | 'cardType'
+    | 'lifePaid'
     | 'option'
     | 'attackTarget'
     | 'assignOpponent'

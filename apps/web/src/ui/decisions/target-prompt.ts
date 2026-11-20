@@ -130,6 +130,9 @@ export function targetsPrompt(
   if (slot.spec.specId === ENCHANT_SPEC) return 'Choose what to enchant.';
   if (isEquipActivation(decision, index)) return 'Choose a creature you control to equip.';
   // D-145 (CR 601.2d): the targets and the division are announced together.
+  if (slot.spec.divide !== undefined && slot.spec.divideUpTo === true) {
+    return `Choose targets for ${source}, then divide up to ${slot.spec.divide} among them.`;
+  }
   if (slot.spec.divide !== undefined) {
     return `Choose targets for ${source}, then divide ${slot.spec.divide} damage among them.`;
   }

@@ -85,7 +85,12 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     }
     // The IR says where the cards are (the library); the engine's filter must not (CR 401.1). "That share a land type" (D-262, CR 205.3i) is about the cards found
     // together, so it is an option of the search and not of the filter: the engine's `search.sharedLandType`.
-    const { sharedLandType, anyNumberTotalManaValue: totalMV, ...single } = cards.filter;
+    const {
+      sharedLandType,
+      anyNumberTotalManaValue: totalMV,
+      manaValueAtMostX: atMostX,
+      ...single
+    } = cards.filter;
     const shared = sharedLandType === true;
     const sharing = shared ? missingFeatures(['selector:sharedLandType']) : [];
     if (sharing.length > 0) return { ok: false, needs: sharing, at: cards.span, rule: cards.rule };
@@ -96,6 +101,20 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       return { ok: false, needs: totaling, at: cards.span, rule: cards.rule };
     const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
+    // "a creature card with mana value X or less" (Finale of Devastation, CR 107.3a, 202.3): the X announced for the spell, so only the text of a spell with an X of its own
+    // reads it; a card in a library or a graveyard counts an {X} in its own cost as 0 (CR 202.3e).
+    let limit: Amount | undefined;
+    if (atMostX === true) {
+      if (ctx.owner !== 'spell' || ctx.xIs !== null || totalMV !== undefined) {
+        return failure(clause);
+      }
+      const missing = missingFeatures(['selector:manaValueAtMost']);
+      if (missing.length > 0)
+        return { ok: false, needs: missing, at: cards.span, rule: cards.rule };
+      const amount = lowerAmount({ kind: 'x', span: cards.span }, ctx, clause.rule);
+      if (!amount.ok) return amount;
+      limit = amount.value;
+    }
     // D-626: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
     const xCount = cards.count?.kind === 'x';
     const maxAmount = arg(clause, 'maxAmount');
@@ -172,7 +191,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
           kind: 'search',
           player,
           ...(who === undefined ? {} : { optional: true as const }),
-          filter: filter.value,
+          filter: limit === undefined ? filter.value : { ...filter.value, manaValueAtMost: limit },
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),
           ...(totalMV === undefined ? {} : { totalManaValue: totalMV }),

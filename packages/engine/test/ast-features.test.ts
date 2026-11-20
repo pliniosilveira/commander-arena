@@ -66,6 +66,7 @@ describe('the dimensions', () => {
       'tapPermanents',
       // D-407: "Blight 1" as the cost of an activated ability.
       'blight',
+      'untapPermanents',
       // D-139: "Put a page counter on this artifact", "Return an artifact you control to its owner's hand".
       'putCounters',
       'returnToHand',
@@ -192,6 +193,8 @@ describe('the dimensions', () => {
       'allCreatureTypes',
       // Issue 104: "Each creature card in your hand has cycling {1}{U}."
       'grantKeywordToHandCards',
+      // Issue 145: "Creature spells you cast have demonstrate."
+      'grantKeywordToSpells',
       // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
       'grantFlashbackToGraveyardCards',
       'noMaximumHandSize',

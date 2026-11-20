@@ -76,7 +76,7 @@ import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
-import { GRANT_ABILITY } from './granted-ability';
+import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
@@ -134,6 +134,7 @@ import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
+import { WIN_GAME_LOWERINGS } from './win-game';
 
 /**
  * "Untap ~", "exile ~", "return ~ to its owner's hand": the effect acts on the permanent the
@@ -961,6 +962,8 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
         : { kind: 'chosenColor', or: spec.what.or };
     case 'thatColor':
     case 'anyOneColorX':
+    case 'producedType':
+      // Only the effect of a triggered mana ability, which `lowerTappedForMana` builds itself.
       return null;
     case 'devotionToChosenColor':
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
@@ -1926,6 +1929,29 @@ function ownTokenName(named: string, ctx: LowerContext): string | null {
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
+  // "Create a tapped and attacking X/X ... creature token" (CR 508.4, Ghalta and Mavren): the tokens are created tapped, then the engine's `enterAttacking` of what was just made
+  // puts them in the combat, never declared as attackers. A custom creature token only; whether the ability is one of an attack is the engine's check (`validateCard`).
+  if (token.attacking === true) {
+    const { attacking: _attacking, ...plain } = token;
+    const inner = lowerCreateToken({ ...clause, args: { ...clause.args, token: plain } }, ctx);
+    if (!inner.ok) return inner;
+    const [made, ...rest] = inner.value;
+    if (
+      made?.kind !== 'createToken' ||
+      rest.length > 0 ||
+      made.token.kind !== 'custom' ||
+      made.tapped !== true
+    ) {
+      return failure(clause);
+    }
+    const blocked = missingFeatures(['effect:enterAttacking']);
+    if (blocked.length > 0) return failure(clause, blocked);
+    return {
+      ok: true,
+      value: [made, { kind: 'enterAttacking', objects: { kind: 'moved' } }],
+      rule: clause.rule,
+    };
+  }
   // "For each opponent, create two 3/3 ... tokens with flying that attack that opponent this turn if able." (Prismari deck group 2, D-652, CR 111.2, 508.1d): the same tokens, made for
   // each opponent and required to attack it. A custom creature token only, with no controller of its own.
   const perOpponent = arg(clause, 'perOpponentAttack');
@@ -1974,13 +2000,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   const who = arg(clause, 'player');
   let by: { controller?: PlayerSelector } = {};
   if (who !== undefined) {
-    if (who.kind !== 'noun' || token.copyOf !== undefined) return failure(clause);
+    if (who.kind !== 'noun') return failure(clause);
     const selector = playerSelectorOf(who, ctx);
     if (!selector.ok) return selector;
     // "You create ..." is the controller of the ability, which is who creates a token unless the node says otherwise.
     if (selector.value.kind !== 'you') by = { controller: selector.value };
   }
-  if (token.copyOf !== undefined) return lowerCopyToken(token, token.copyOf, clause, ctx);
+  if (token.copyOf !== undefined) return lowerCopyToken(token, token.copyOf, clause, ctx, by);
   if (token.predefined !== undefined) {
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
@@ -2239,6 +2265,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PUMP,
   GRANT_KEYWORD,
   GRANT_ABILITY,
+  GRANT_MANA_ABILITY,
   RESTRICT,
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
@@ -2349,6 +2376,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
+  ...WIN_GAME_LOWERINGS,
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   GAIN_CONTROL,

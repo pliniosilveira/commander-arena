@@ -112,7 +112,14 @@ export function divisionComplete(
 ): boolean {
   return dividedSpecs(specs).every((spec) => {
     const chosen = picks.filter((p) => p.specId === spec.specId);
-    return chosen.length === 0 || sharesGiven(picks, spec.specId) === spec.divide;
+    const given = sharesGiven(picks, spec.specId);
+    // CR 601.2d: "up to that many" may give out fewer than the total.
+    return (
+      chosen.length === 0 ||
+      (spec.divideUpTo === true && spec.divide !== undefined
+        ? given <= spec.divide
+        : given === spec.divide)
+    );
   });
 }
 
@@ -123,7 +130,7 @@ export function divisionHint(
 ): string | null {
   for (const spec of dividedSpecs(specs)) {
     const left = sharesLeft(specs, picks, spec.specId);
-    if (picks.some((p) => p.specId === spec.specId) && left > 0) {
+    if (spec.divideUpTo !== true && picks.some((p) => p.specId === spec.specId) && left > 0) {
       return `${left} damage left to assign`;
     }
   }
@@ -131,6 +138,8 @@ export function divisionHint(
 }
 
 /** "3 left to assign", "All 5 damage assigned": the line under the steppers. */
-export function divisionLine(total: number, left: number): string {
+export function divisionLine(total: number, left: number, upTo = false): string {
+  // CR 601.2d: "up to that many": what is not given out is simply not given.
+  if (upTo) return `Up to ${total} to divide: ${left} not yet given.`;
   return left === 0 ? `All ${total} damage assigned.` : `${left} left to assign.`;
 }

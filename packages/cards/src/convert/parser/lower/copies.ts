@@ -12,6 +12,7 @@ import {
   type CardType,
   type Color,
   type ObjectRef,
+  type PlayerSelector,
 } from '@commander-arena/engine';
 import type { IrClause, IrNoun, IrToken } from '../ir/types';
 import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
@@ -43,6 +44,8 @@ export function lowerCopyToken(
   copyOf: IrNoun,
   clause: IrClause,
   ctx: LowerContext,
+  /** "Its controller creates a token that's a copy of it" (issue 145, CR 111.2): the player who creates the token, when it is not the controller of the ability. */
+  by: { controller?: PlayerSelector } = {},
 ): LowerResult<Effects> {
   const at = { at: token.span, rule: token.rule };
   const blocked = missingFeatures(['token:copyOf']);
@@ -114,6 +117,7 @@ export function lowerCopyToken(
         token: { kind: 'copyOf', object: object.value, ...exceptions },
         count: count.value,
         ...(token.tapped === true ? { tapped: true as const } : {}),
+        ...by,
       },
     ],
     rule: clause.rule,

@@ -438,6 +438,8 @@ export type IrAmount =
   | { readonly kind: 'powerOf'; readonly of: IrNoun; readonly span: Span }
   // "equal to that card's mana value" (CR 202.3), stage P11
   | { readonly kind: 'manaValueOf'; readonly of: IrNoun; readonly span: Span }
+  // "for each of that spell's colors" (issue 145, CR 105.2): how many colors the object has
+  | { readonly kind: 'colorsOf'; readonly of: IrNoun; readonly span: Span }
   // "for each color among permanents you control" (stage P37, D-180, CR 105.2): the colors the permanents have between them, each once
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
   // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
@@ -583,6 +585,8 @@ export type IrAmount =
   | { readonly kind: 'triggerDamage'; readonly span: Span }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
+  // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"
+  | { readonly kind: 'lifePaidAsEntered'; readonly span: Span }
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
   | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
@@ -855,6 +859,12 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
+    | {
+        readonly kind: 'untapPermanents';
+        readonly what: IrNoun;
+        readonly count: number;
+      }
     | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
     | { readonly kind: 'blight'; readonly count: number }
@@ -934,6 +944,8 @@ export interface IrManaSpec extends IrNode {
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }
+    // "one mana of any type that land produced" (CR 106.12a, 605.4a): a type the permanent tapped for mana produced; `noun` is the permanent word the text used
+    | { readonly kind: 'producedType'; readonly noun: string }
     /**
      * "one mana of any color that a land an opponent controls could produce" (stage P14, CR 106.7):
      * one mana of a type that a land `whose` could produce; `anyType` says "any type", which keeps
@@ -1082,6 +1094,7 @@ export interface IrToken extends IrNode {
     | 'Map'
     | 'Gingerbrute'
     | 'Lander'
+    | 'Junk'
     | 'Blood';
   readonly power?: number;
   readonly toughness?: number;
@@ -1131,6 +1144,8 @@ export interface IrToken extends IrNode {
   readonly copyStartingLoyalty?: number;
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
+  /** "create a tapped and attacking X/X ... creature token" (CR 508.4): the tokens enter tapped and attacking, never declared as attackers; with `tapped`. */
+  readonly attacking?: true;
   /** "The token has enchant creature" (issue 89, CR 702.5a): an Aura token that enchants a creature. */
   readonly enchantsCreature?: true;
   readonly count: IrAmount;
@@ -1157,7 +1172,7 @@ export interface IrRestrictionArg extends IrNode {
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
   /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
-  readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
+  readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
   /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */
@@ -1298,8 +1313,8 @@ export interface IrTrigger extends IrNode {
   readonly firstOfKind?: true;
   /** 'classLevel': the level a Class became (CR 716.2). */
   readonly level?: number;
-  /** 'cast': only while the active player is an opponent of this ability's controller. */
-  readonly duringTurn?: 'opponent';
+  /** 'cast': only while the active player is an opponent of this ability's controller (`opponent`) or is the controller (`you`, "during your turn"). */
+  readonly duringTurn?: 'you' | 'opponent';
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
@@ -1650,6 +1665,11 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
   /**
+   * "Creature spells you cast have demonstrate." (issue 145, CR 702.144a, 702.51a, 613.1f): the spells the controller casts that the subject names (a noun with `det: 'each'` and the
+   * controller `you`) have the keyword `keyword`, a keyword with no parameter.
+   */
+  | { readonly kind: 'spellKeyword'; readonly keyword: 'demonstrate' | 'convoke' }
+  /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
    */
@@ -1939,6 +1959,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'countOf',
   'powerOf',
   'manaValueOf',
+  'colorsOf',
   'cardTypesAmong',
   'timesKicked',
   'lifeLostThisWay',
@@ -1969,6 +1990,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'thisWay',
   'triggerDamage',
   'dieResult',
+  'lifePaidAsEntered',
   'triggerTargetCount',
   'triggerAttackerCount',
   'cardTypesAmongThoseCards',

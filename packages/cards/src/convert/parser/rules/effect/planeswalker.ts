@@ -3,7 +3,7 @@
  * get an emblem with ..." (CR 114.1, 114.2), the ultimate of many planeswalkers. The engine runs `empowerJace` (`rules/empower.ts`) and `createEmblem`
  * (`rules/emblem.ts`).
  */
-import { literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
+import { fail, literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
 import type {
   IrAmount,
   IrArg,
@@ -13,6 +13,7 @@ import type {
   IrNoun,
   IrQuotedAbility,
 } from '../../ir/types';
+import { counted } from '../amount/count';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, spanned } from '../registry';
 import { readQuotedAbility } from '../static/quoted';
@@ -246,9 +247,72 @@ export const EFFECT_LIFE_TOTAL_BECOMES = defineRule<Clauses>({
   ),
 });
 
+const ID = 'effect.count-library-life-total';
+
+/**
+ * `effect.count-library-life-total`: "Count the number of cards in your library. Your life total becomes that number." (issue 145, Invincible Hymn; CR 119.5, 401.1): the two
+ * sentences are one instruction (`segment.ts` joins them), which sets your life total to the number of cards in your library at that moment. Not read: another zone, another
+ * player, "that number" without the first sentence, a number that is not the count of the library.
+ */
+export const EFFECT_COUNT_LIBRARY_LIFE_TOTAL = defineRule<Clauses>({
+  id: ID,
+  family: 'effect',
+  leading: ['count'],
+  cites: ['CR 119.5 (Life)', 'CR 401.1 (Library)'],
+  examples: [
+    'Count the number of cards in your library. Your life total becomes that number',
+    'count the number of cards in your library. your life total becomes that number',
+  ],
+  rejects: [
+    'Count the number of cards in your hand. Your life total becomes that number',
+    'Count the number of cards in your library',
+    'Count the number of cards in your library. Target player\u2019s life total becomes that number',
+    'Count the number of cards in your library. Your life total becomes 5',
+    'Count the number of lands in your library. Your life total becomes that number',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      sequence(
+        literal('count the number of '),
+        counted(ID, true),
+        pattern(/\. your life total becomes that number(?![\p{L}\p{N}])/iu),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const of = r.value.value[1];
+    // Only "cards in your library": the zone and the owner are the filter's, and no card type narrows the count.
+    if (
+      of.filter.zone !== 'library' ||
+      of.filter.controller !== 'you' ||
+      (of.filter.types?.length ?? 0) > 0 ||
+      (of.filter.subtypes?.length ?? 0) > 0
+    ) {
+      return fail(ctx, pos);
+    }
+    const span = r.value.span;
+    const you: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'your' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: ID,
+    };
+    const amount: IrAmount = { kind: 'countOf', of, span };
+    return {
+      ok: true,
+      value: [makeClause(ID, 'setLifeTotal', { player: you, amount }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 export const PLANESWALKER_EFFECT_RULES = [
   EFFECT_DOUBLE_LIFE_TOTAL,
   EFFECT_LIFE_TOTAL_BECOMES,
+  EFFECT_COUNT_LIBRARY_LIFE_TOTAL,
   EFFECT_EMPOWER_JACE,
   EFFECT_GET_EMBLEM,
   EFFECT_LEAD_BECOMES_CREATURE,

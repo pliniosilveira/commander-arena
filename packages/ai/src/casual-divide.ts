@@ -12,7 +12,7 @@ import type {
   TargetsDecision,
 } from '@commander-arena/engine';
 import { chooseTargets } from './casual-choices';
-import { findObject, isCreature, toughnessOf } from './casual-view';
+import { findObject, isCreature, powerOf, toughnessOf } from './casual-view';
 
 /** What it takes to kill the target: the damage left before lethal for a creature, the life of a player, a little for anything else. */
 function toKill(view: GameView, t: ChosenTarget): number {
@@ -32,6 +32,17 @@ const hostile = (view: GameView, t: ChosenTarget): boolean => {
 function divideSlot(view: GameView, spec: TargetChoiceSpec): ChosenTarget[] {
   const total = spec.divide ?? 0;
   if (total <= 0 || spec.max <= 0) return [];
+  // "Up to that many" (CR 601.2d) is a gift of counters: all of it on the strongest creature of its own, or nothing when it has none.
+  if (spec.divideUpTo === true && spec.min === 0) {
+    const mine = spec.legal
+      .flatMap((t) => {
+        const o = t.kind === 'object' ? findObject(view, t.id) : undefined;
+        return o !== undefined && o.controller === view.viewer && isCreature(o) ? [{ t, o }] : [];
+      })
+      .sort((x, y) => powerOf(y.o) - powerOf(x.o));
+    const best = mine[0];
+    return best === undefined ? [] : [{ ...best.t, share: total }];
+  }
   const ranked = spec.legal
     .map((t, index) => ({ t, index, need: toKill(view, t), foe: hostile(view, t) }))
     .filter((r) => r.foe)
@@ -45,7 +56,7 @@ function divideSlot(view: GameView, spec: TargetChoiceSpec): ChosenTarget[] {
     left -= share;
   }
   const last = picked[picked.length - 1];
-  if (last !== undefined) {
+  if (last !== undefined && spec.divideUpTo !== true) {
     // What is left goes on the last target: all of the division is given out (CR 601.2d).
     picked[picked.length - 1] = { ...last, share: (last.share ?? 0) + left };
     return picked;

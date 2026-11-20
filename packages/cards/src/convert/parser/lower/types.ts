@@ -62,6 +62,8 @@ export interface LowerContext {
   castTriggerX: boolean;
   /** The triggers are all "When you cycle this card": an X in the body is the X announced for the cycling cost (issue 81, Shark Typhoon, CR 702.29a, 107.3). */
   cycleTriggerX: boolean;
+  /** The one intervening "if" of the triggered ability is "if you gained life this turn" (CR 603.4): "that many" in its body is the life gained this turn (Lathiel). */
+  lifeGainedIf: boolean;
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
@@ -342,6 +344,7 @@ export function newContext(
     castTrigger: false,
     castTriggerX: false,
     cycleTriggerX: false,
+    lifeGainedIf: false,
     activateTrigger: false,
     removed: new Set(),
     madeAToken: false,

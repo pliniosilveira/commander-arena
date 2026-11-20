@@ -998,6 +998,9 @@ function matches(
       // D-565: "during each opponent's turn" is relative to the controller of this ability.
       if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
         return false;
+      // CR 603.2: "during your turn": the active player is the controller of this ability.
+      if (trigger.duringTurn === 'you' && state.turn.activeSeat !== candidate.controller)
+        return false;
       return matchesFilter(state, subject, trigger.filter, ctx);
     case 'step':
       // CR 503 to 514: whose turn it is, relative to the controller of the ability.

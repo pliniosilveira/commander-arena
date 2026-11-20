@@ -19,6 +19,7 @@ import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
+import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
 /** The number words of Oracle text: one to twenty (stage P28: "thirteen tapped Zombie tokens"). */
@@ -467,6 +468,7 @@ export const AMOUNT_RULES = [
   ...HAND_OF_THAT_PLAYER_AMOUNT_RULES,
   // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
   ...FEATHER_G1_AMOUNT_RULES,
+  ...SPELLS_CAST_EACH_AMOUNT_RULES,
   // Lock and Load (issue 121): "for each other instant and sorcery spell you've cast this turn".
   AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
   // Meren of Clan Nel Toth: "the number of experience counters you have".

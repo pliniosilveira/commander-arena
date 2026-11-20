@@ -273,9 +273,9 @@ describe('"Its controller creates ..." (CR 111.2): a token for the controller of
 
   test.each([
     [
-      'Destroy target creature. Its controller creates a token that’s a copy of it.',
-      'token that’s a copy of it.',
-      'token.predefined',
+      'Destroy target creature. Its controller creates a token that’s a copy of it, except it has haste.',
+      'except it has haste.',
+      'spell.effect',
     ],
     [
       'Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flash.',

@@ -176,6 +176,17 @@ export function lowerAmount(
       }
       return { ok: true, value: { kind: 'manaValueOf', of: of.value }, rule };
     }
+    case 'colorsOf': {
+      // Issue 145 (Ancient Cornucopia, CR 105.2, 601.2i): the colors of the spell whose cast caused the trigger, or of a target.
+      const of = objectRefOf(amount.of, ctx, { triggerSubject: true });
+      if (!of.ok) return of;
+      const blocked = needs('colorsOf');
+      if (blocked !== null) return blocked;
+      if (of.value.kind !== 'target' && of.value.kind !== 'triggerSubject') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      return { ok: true, value: { kind: 'colorsOf', of: of.value }, rule };
+    }
     case 'dieResult': {
       // "Scry X, where X is the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before, read by the instructions after the roll in
       // the same sequence; a result with no roll before it in the text is refused, as `validateCard` does.
@@ -183,6 +194,11 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'dieResult' }, rule };
+    }
+    case 'lifePaidAsEntered': {
+      // "where X is the life paid as ~ entered" (Phyrexian Processor, CR 119.4, 614.12): the amount the permanent paid as it entered; `validateCard` checks the card pays life as it enters.
+      const blocked = needs('lifePaidAsEntered');
+      return blocked ?? { ok: true, value: { kind: 'lifePaidAsEntered' }, rule };
     }
     case 'triggerDamage': {
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
@@ -877,6 +893,20 @@ export function lowerDefinedPt(
     }
     return { ok: true, value: lowered.value, rule };
   }
+  // Issue 145 (Soul of Eternity, CR 604.3, 119.1): "equal to your life total", the engine's `lifeTotalOf` of you.
+  if (count.kind === 'lifeTotalOf') {
+    const lowered = lowerAmount(count, ctx, rule);
+    if (!lowered.ok) return lowered;
+    if (
+      lowered.value === null ||
+      typeof lowered.value !== 'object' ||
+      lowered.value.kind !== 'lifeTotalOf' ||
+      lowered.value.player.kind !== 'you'
+    ) {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    return { ok: true, value: { kind: 'lifeTotalOf', player: { kind: 'you' } }, rule };
+  }
   return count.kind === 'sum' ? sumInStatic(count, ctx, rule) : countInStatic(count, ctx, rule);
 }
 
@@ -886,8 +916,10 @@ export const AMOUNT_NEEDS = [
   'amount:enteredX',
   'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
+  'amount:lifePaidAsEntered',
   'amount:powerOf',
   'amount:manaValueOf',
+  'amount:colorsOf',
   'amount:countOf',
   'amount:timesKicked',
   'amount:manaSpent',

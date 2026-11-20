@@ -252,6 +252,11 @@ export function amountOf(
     const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
     return source?.castX ?? 0;
   }
+  if (amount.kind === 'lifePaidAsEntered') {
+    // CR 119.4, 614.12, 400.7: the life the permanent paid as it entered, which it remembers (`GameObject.chosen`), or last-known information when it has left.
+    const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+    return source?.chosen?.lifePaid ?? 0;
+  }
   // CR 706.2 (Galadriel group 3): "where X is the result": the natural result of the die rolled earlier in this resolution (0 when none was: `validateCard` forbids that).
   if (amount.kind === 'dieResult') return ctx.dieResult ?? 0;
   if (amount.kind === 'x') {
@@ -374,6 +379,11 @@ export function amountOf(
   if (amount.kind === 'powerOf') {
     if (live) return derive(state, live).power ?? 0;
     return state.lki[id]?.power ?? 0;
+  }
+  // CR 105.2 (issue 145): the colors the object has now, or last had.
+  if (amount.kind === 'colorsOf') {
+    if (live) return derive(state, live).colors.length;
+    return state.lki[id]?.characteristics.colors.length ?? 0;
   }
   // manaValueOf: CR 202.3. An {X} counts as the number announced while the object is a spell on the
   // stack and as 0 anywhere else (CR 202.3e); a spell that left the stack counts it from its

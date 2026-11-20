@@ -113,4 +113,95 @@ export const EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS = defineRule<Clauses>({
   },
 });
 
-export const LAND_CREATURE_KEYWORDS_EFFECT_RULES = [EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS];
+const TRAILING_ID = 'effect.becomes-land-creature-trailing';
+
+/**
+ * `effect.becomes-land-creature-trailing`: "~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land." (CR 613.1d, 613.1e, 613.4b, 205.1b, 611.2a): the
+ * same land creature as `effect.lead-becomes-land-creature-keywords`, with the duration after the creature, no keyword and no quoted ability. Only `~` itself, only "until end of turn".
+ * Not read: another duration, another subject, no colors, no creature type, a keyword, "that's still a land", the second sentence left out.
+ */
+export const EFFECT_BECOMES_LAND_CREATURE_TRAILING = defineRule<Clauses>({
+  id: TRAILING_ID,
+  family: 'effect',
+  leading: ['~'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1e (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land",
+    '~ becomes a 3/3 green and white Llama creature until end of turn. It’s still a land',
+    "~ becomes a 2/2 blue Elemental creature until end of turn. It's still a land",
+  ],
+  rejects: [
+    '~ becomes a 3/3 green and white Llama creature until end of turn.',
+    "~ becomes a 3/3 green and white Llama creature until your next turn. It's still a land",
+    "target land becomes a 3/3 green and white Llama creature until end of turn. It's still a land",
+    "~ becomes a green and white Llama creature until end of turn. It's still a land",
+    "~ becomes a 3/3 Llama creature until end of turn. It's still a land",
+    "~ becomes a 3/3 green and white creature until end of turn. It's still a land",
+    "~ becomes a 3/3 green and white Llama creature with flying until end of turn. It's still a land",
+    "~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land and you draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      literal(' becomes a '),
+      spanned(pattern(/(\d+)\/(\d+) /)),
+      spanned(
+        pattern(
+          /(white|blue|black|red|green)(?: and (white|blue|black|red|green))?(?![\p{L}\p{N}]) /iu,
+        ),
+      ),
+      spanned(CREATURE_TYPE_LIST),
+      literal(' creature '),
+      family<IrDuration>('duration'),
+      pattern(/\. It['’]s still a land(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , pt, colorWords, types, , duration] = r.value;
+    const colors = [colorWords.value[1], colorWords.value[2]]
+      .filter((c): c is string => c !== undefined)
+      .map((c) => c.toLowerCase());
+    if (new Set(colors).size !== colors.length) return fail(ctx, pos);
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: Number(pt.value[1]),
+      toughness: Number(pt.value[2]),
+      span: pt.span,
+      rule: TRAILING_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value,
+      cardTypes: ['creature'],
+      additive: true,
+      span: types.span,
+      rule: TRAILING_ID,
+    };
+    const colorSpec: IrColorSpec = {
+      kind: 'colorSpec',
+      colors,
+      span: colorWords.span,
+      rule: TRAILING_ID,
+    };
+    const clause: IrClause = {
+      ...makeClause(
+        TRAILING_ID,
+        'becomes',
+        { objects: subject, types: typeList, colors: colorSpec, basePt },
+        types.span,
+      ),
+      duration,
+    };
+    return { ok: true, value: [clause], pos: r.pos };
+  },
+});
+
+export const LAND_CREATURE_KEYWORDS_EFFECT_RULES = [
+  EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS,
+  EFFECT_BECOMES_LAND_CREATURE_TRAILING,
+];

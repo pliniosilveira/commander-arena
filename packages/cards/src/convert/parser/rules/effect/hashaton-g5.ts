@@ -84,4 +84,67 @@ export const EFFECT_COPY_EACH_TOKEN = defineRule<Clauses>({
   },
 });
 
-export const HASHATON_G5_EFFECT_RULES = [EFFECT_COPY_EACH_TOKEN];
+/**
+ * `effect.copy-each-creature-token`: "for each creature token you control, create a token that's a copy of that creature" (issue 145, Rhys the Redeemed; CR 707.2, 111.4: a token for
+ * each creature token of the group, with its copiable values; CR 608.2c). The engine's `createCopies` with no exception, as `effect.copy-each-token`. Not read: a token of an opponent,
+ * a permanent that is not a creature token ("each token"), another way to say "that creature" ("it", "that token"), an exception of the copy, a number of copies.
+ */
+export const EFFECT_COPY_EACH_CREATURE_TOKEN = defineRule<Clauses>({
+  id: 'effect.copy-each-creature-token',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 707.2 (Copying Objects)',
+    'CR 111.4 (Tokens)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'for each creature token you control, create a token that’s a copy of that creature',
+    "for each creature token you control, create a token that's a copy of that creature",
+  ],
+  rejects: [
+    'for each creature token you control, create a token that’s a copy of it',
+    'for each creature token you control, create a token that’s a copy of that token',
+    'for each creature token an opponent controls, create a token that’s a copy of that creature',
+    'for each creature you control, create a token that’s a copy of that creature',
+    'for each token you control, create a token that’s a copy of that creature',
+    'for each creature tokens you control, create a token that’s a copy of that creature',
+    'for each creature token you control, create two tokens that are copies of that creature',
+    'for each creature token you control, create a token that’s a copy of that creature, except it has haste',
+    'for each creature token you control that entered this turn, create a token that’s a copy of that creature',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.copy-each-creature-token';
+    const r = sequence(
+      literal('for each creature token you control'),
+      spanned(
+        pattern(new RegExp(`, create a token that['’]s a copy of that creature${BOUNDARY}`, 'iu')),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const end = r.pos;
+    const filter: IrFilter = {
+      types: ['creature'],
+      token: true,
+      controller: 'you',
+      raw: 'creature token you control',
+    };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [makeClause(id, 'createCopiesOfTokens', { objects }, { start: pos, end })],
+      pos: end,
+    };
+  },
+});
+
+export const HASHATON_G5_EFFECT_RULES = [EFFECT_COPY_EACH_TOKEN, EFFECT_COPY_EACH_CREATURE_TOKEN];

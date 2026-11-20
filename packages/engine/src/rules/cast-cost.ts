@@ -680,7 +680,7 @@ export function canPaySpellCost(
   const paid = cost.life > 0 ? patchSeat(state, seat, { life: life - cost.life }) : state;
   // D-120: Convoke, Improvise and Delve pay part of the total cost with creatures, artifacts and graveyard
   // cards, so they count as sources of the payment here (the caster chooses them as the cost is paid).
-  const mechanisms = payMechanismsOf(faceOfSpell(state, spell));
+  const mechanisms = payMechanismsOf(state, spell, faceOfSpell(state, spell));
   const extra = mechanisms.length === 0 ? undefined : payOptionSources(state, seat, mechanisms);
   return (
     castManaPlan(
