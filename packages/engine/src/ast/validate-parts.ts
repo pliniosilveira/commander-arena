@@ -3700,6 +3700,13 @@ function checkSacrificeSelector(
       );
     }
   }
+  if (choose.dealtCombatDamageToYou !== undefined && choose.dealtCombatDamageToYou !== true) {
+    issue(
+      out,
+      `${path}.dealtCombatDamageToYou`,
+      'dealtCombatDamageToYou must be true when present',
+    );
+  }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
   });
@@ -3752,7 +3759,12 @@ function checkSacrificeSelector(
  */
 function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
-  if (sel.greatest !== undefined || sel.least !== undefined || sel.optional !== undefined) {
+  if (
+    sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
+    sel.optional !== undefined
+  ) {
     issue(out, path, 'greatest, least and optional do not belong to a tap choice');
   }
   if (sel.filter?.controller !== 'you') {
@@ -3816,6 +3828,7 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
     sel.atLeastOne !== undefined ||
     sel.greatest !== undefined ||
     sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
     sel.optional !== undefined
   ) {
     issue(
@@ -3862,6 +3875,7 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (
     sel.greatest !== undefined ||
     sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
     (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
   ) {
     issue(
@@ -6488,6 +6502,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           choose.atLeastOne !== undefined ||
           choose.greatest !== undefined ||
           choose.least !== undefined ||
+          choose.dealtCombatDamageToYou !== undefined ||
           choose.optional !== undefined
         ) {
           issue(

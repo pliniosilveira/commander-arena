@@ -1739,6 +1739,9 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       ...(what.atLeastOne === true ? (['selector:atLeastOne'] as const) : []),
       ...(what.greatest !== undefined ? (['selector:greatest'] as const) : []),
       ...(what.least !== undefined ? (['selector:least'] as const) : []),
+      ...(what.dealtCombatDamageToYou === true
+        ? (['selector:chooseDealtCombatDamageToYou'] as const)
+        : []),
     ]);
     if (blocked.length > 0) return failure(clause, blocked);
     const filter = lowerFilter(what);
@@ -1765,6 +1768,7 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
       ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
       ...(what.least === undefined ? {} : { least: what.least }),
+      ...(what.dealtCombatDamageToYou === true ? { dealtCombatDamageToYou: true as const } : {}),
       ...(xCount !== undefined ? { count: xCount } : {}),
       ...(count > 1 && what.anyNumber !== true ? { count } : {}),
     };

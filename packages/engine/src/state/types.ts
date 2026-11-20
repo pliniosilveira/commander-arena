@@ -1115,6 +1115,8 @@ export type Instruction =
       readonly least?: 'power' | 'toughness' | 'manaValue';
       /** "Sacrifice one of them" (`ChooseSelector.fromTriggerSources`): only the permanents that dealt the combat damage of the batch trigger. */
       readonly fromTriggerSources?: true;
+      /** "That dealt combat damage to you this turn" (`ChooseSelector.dealtCombatDamageToYou`): only the permanents that dealt combat damage to the controller of the ability this turn. */
+      readonly dealtCombatDamageToYou?: true;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;

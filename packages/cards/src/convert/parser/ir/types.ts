@@ -205,6 +205,11 @@ export interface IrNoun extends IrNode {
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /** "a creature with the least power among creatures they control" (CR 701.21a): as `greatest`, the permanents with the smallest value of the stat. */
   readonly least?: 'power' | 'toughness' | 'manaValue';
+  /**
+   * "a creature of their choice that dealt combat damage to you this turn" (Witch-king of Angmar, CR 510.2, 701.21a): the chosen permanent is among those that dealt combat damage this turn
+   * to the controller of the ability (the engine's `ChooseSelector.dealtCombatDamageToYou`).
+   */
+  readonly dealtCombatDamageToYou?: true;
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
   /**

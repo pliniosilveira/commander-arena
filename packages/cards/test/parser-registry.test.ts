@@ -1058,6 +1058,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, you may sacrifice a creature. If you do, each opponent may sacrifice ${e}.`,
   ),
+  // Witch-king of Angmar: what an opponent sacrifices after combat damage to the controller.
+  'noun.a-creature-that-dealt-damage-to-you': permanent(
+    (e) =>
+      `Whenever one or more creatures deal combat damage to you, each opponent sacrifices ${e}.`,
+  ),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,

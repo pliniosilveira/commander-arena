@@ -280,6 +280,7 @@ describe('unmatched abilities', () => {
   test('rule ids are stable and unique', () => {
     expect(DEFAULT_RULES.map((r) => r.id)).toEqual([
       'keyword.partner-with',
+      'keyword.deck-limit',
       'keyword.line',
       'keyword.cycling',
       'keyword.typecycling',
@@ -955,6 +956,7 @@ describe('unmatched abilities', () => {
       'effect.discard',
       'effect.life',
       'effect.player-lock',
+      'effect.player-protection',
       'effect.manifest',
       'effect.mill',
       'effect.shuffle',
@@ -1152,6 +1154,7 @@ describe('unmatched abilities', () => {
       'noun.self',
       'noun.a-greatest-permanent',
       'noun.a-permanent-sharing-type',
+      'noun.a-creature-that-dealt-damage-to-you',
       'noun.a-permanent',
       'noun.a-token',
       'noun.any-number-permanents',

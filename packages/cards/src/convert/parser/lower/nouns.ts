@@ -112,6 +112,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:countX',
   'selector:greatest',
   'selector:least',
+  'selector:chooseDealtCombatDamageToYou',
   'selector:giftRecipient',
   'selector:attacking',
   'selector:colorCount',
@@ -782,6 +783,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         noun.atLeastOne === true ||
         noun.greatest !== undefined ||
         noun.least !== undefined ||
+        noun.dealtCombatDamageToYou === true ||
         noun.filter.manaValueAtMostX === true ||
         noun.filter.manaValueAtMostAmount !== undefined ||
         noun.upTo !== true

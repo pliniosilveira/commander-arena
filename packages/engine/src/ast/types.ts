@@ -1907,6 +1907,12 @@ export interface ChooseSelector {
    * (`triggerSources`) that are still the same permanent on the battlefield under the chooser's control. Only for `sacrifice`, in the effect of such a trigger.
    */
   readonly fromTriggerSources?: true;
+  /**
+   * "Each opponent sacrifices a creature of their choice that dealt combat damage to you this turn" (Witch-king of Angmar, CR 510.2, 701.21a, 608.2d): the candidates are only the permanents that
+   * dealt combat damage this turn to the controller of the ability (`TurnLog.combatDamaged`, kept as the damage is dealt, so every damage step of the turn counts), that are still the same
+   * permanent on the battlefield. Only for `sacrifice`.
+   */
+  readonly dealtCombatDamageToYou?: true;
 }
 
 /**

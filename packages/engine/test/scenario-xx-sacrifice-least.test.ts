@@ -57,3 +57,42 @@ describe('a creature with the least power (CR 701.21a, 608.2d)', () => {
     g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
   });
 });
+
+describe('a creature that dealt combat damage to you this turn (CR 510.2, 701.21a)', () => {
+  const EDICT_DAMAGED = 'SYNTHETIC Damaged You Edict';
+  const CARD = singleFaceCard({
+    name: EDICT_DAMAGED,
+    manaCost: ['B'],
+    types: ['instant'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText: 'Each opponent sacrifices a creature that dealt combat damage to you this turn.',
+    spell: {
+      effect: {
+        kind: 'sacrifice',
+        objects: { kind: 'choose', filter: { types: ['creature'] }, dealtCombatDamageToYou: true },
+        player: { kind: 'eachOpponent' },
+      },
+    },
+  });
+
+  test('only the creature that dealt combat damage to the caster this turn can be chosen', () => {
+    const g = scenario()
+      .define(CARD)
+      .seat(0)
+      .hand(EDICT_DAMAGED)
+      .battlefield('Swamp')
+      .seat(1)
+      .battlefield(ANGEL, BEARS)
+      .at('precombatMain', { active: 1 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(1).attack([BEARS]);
+    g.advanceTo('combatDamage');
+    g.act(1).pass();
+    g.act(0).cast(EDICT_DAMAGED, { pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+  });
+});

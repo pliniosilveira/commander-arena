@@ -115,10 +115,17 @@ export function runChooseSacrifice(
     res.sacrificed,
   );
   // CR 603.2c, 400.7 (Descendants' Fury): "sacrifice one of them" is one of the creatures that dealt the damage, as long as each is still the permanent that did.
-  const named =
+  const namedByTrigger =
     instruction.fromTriggerSources === true
       ? candidates.filter((id) => res.triggerCards?.includes(id) === true)
       : candidates;
+  // CR 510.2 (Witch-king of Angmar): "that dealt combat damage to you this turn": the turn log says which sources dealt combat damage to the controller of the ability.
+  const named =
+    instruction.dealtCombatDamageToYou === true
+      ? namedByTrigger.filter((id) =>
+          state.turnLog.combatDamaged.some((d) => d.source === id && d.player === res.controller),
+        )
+      : namedByTrigger;
   const legal =
     instruction.greatest !== undefined
       ? greatestAmong(state, named, instruction.greatest)

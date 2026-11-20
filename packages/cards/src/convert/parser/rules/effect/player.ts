@@ -373,7 +373,13 @@ const sacrificeAction: Action = (subject, you, rule) =>
               // Stage P30 (D-135): "a creature with the greatest power among creatures they control" is read too.
               // Stage P31 (D-140): "all permanents they control that are one or more colors" (each permanent by its controller).
               family<IrNoun>('noun', {
-                only: ['noun.a-greatest-permanent', 'noun.a-permanent', 'noun.all-they-control'],
+                only: [
+                  'noun.a-greatest-permanent',
+                  // Witch-king of Angmar (CR 510.2): "a creature of their choice that dealt combat damage to you this turn", before the plain noun, of which it is a longer reading.
+                  'noun.a-creature-that-dealt-damage-to-you',
+                  'noun.a-permanent',
+                  'noun.all-they-control',
+                ],
               }),
               // Nobody chooses when every permanent of the kind goes ("all ... they control").
               optional(literal(' of their choice'), null),

@@ -224,3 +224,44 @@ describe('Stitch Together', () => {
     g.expect.invariants();
   });
 });
+
+describe('Witch-king of Angmar', () => {
+  const king = real('Witch-king of Angmar');
+
+  const attacked = (attackers: readonly string[], theirs: readonly string[]) => {
+    const g = scenario()
+      .define(king)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(king.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(...theirs)
+      .at('precombatMain', { active: 1 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(1).attack(attackers);
+    g.advanceTo('combatDamage');
+    return g;
+  };
+
+  test('whenever creatures deal combat damage to you, each opponent sacrifices one of the creatures that dealt it, of their choice (CR 603.2c, 701.21a, 608.2d)', () => {
+    const g = attacked([ANGEL, BEARS], [ANGEL, BEARS, ELVES]);
+    g.passAll();
+    expect(g.state.pending).toMatchObject({ kind: 'choosePermanent', seat: 1 });
+    // The Elves did not attack and dealt no damage: they are not offered.
+    g.act(1).choosePermanents(BEARS);
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+    g.expect.zone(ELVES, 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('a single creature that dealt the damage is sacrificed without asking', () => {
+    const g = attacked([ANGEL], [ANGEL, ELVES]);
+    g.passAll();
+    g.expect.zone(ANGEL, 'graveyard', { seat: 1 });
+    g.expect.zone(ELVES, 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+});

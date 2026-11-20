@@ -949,6 +949,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharesCreatureTypeWithSacrificed',
     // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
     'chooseFromTriggerSources',
+    // CR 510.2 (Witch-king of Angmar): `ChooseSelector.dealtCombatDamageToYou`.
+    'chooseDealtCombatDamageToYou',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
@@ -1841,6 +1843,8 @@ export const SELECTOR_KINDS = [
   'sharesCreatureTypeWithSacrificed',
   /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
   'chooseFromTriggerSources',
+  /** "A creature that dealt combat damage to you this turn" (CR 510.2, 701.21a, Witch-king of Angmar): the engine's `ChooseSelector.dealtCombatDamageToYou`. */
+  'chooseDealtCombatDamageToYou',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */

@@ -970,6 +970,9 @@ function runEffect(
               ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
               ...(what.least === undefined ? {} : { least: what.least }),
               ...(what.fromTriggerSources === true ? { fromTriggerSources: true as const } : {}),
+              ...(what.dealtCombatDamageToYou === true
+                ? { dealtCombatDamageToYou: true as const }
+                : {}),
               ...(first === undefined ? {} : { seat: first }),
               // CR 101.4: with several players, they all choose (active player first) before any sacrifice happens.
               ...(later.length === 0 ? {} : { together: { later, held: [] } }),
