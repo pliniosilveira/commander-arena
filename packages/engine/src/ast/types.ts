@@ -1083,6 +1083,12 @@ export type PlayerSelector =
    */
   | { readonly kind: 'defendingPlayer' }
   /**
+   * "The player to your right" (Hithlain Rope): the player who comes before the controller of the ability in turn order among the players still in the game
+   * (turn order passes to the left, so the player to the right is the previous one). With two players that is the opponent; nobody when the controller is
+   * the only player left.
+   */
+  | { readonly kind: 'playerToYourRight' }
+  /**
    * "That player", "that creature's controller", "its controller" in a triggered ability (D-133): the player the
    * event that caused the trigger is about. For `drawn` the player who drew; for `dealsCombatDamage` to a player the
    * player who was damaged; for `castSpell` the player who cast the spell, for `becomesTarget` the controller of the
@@ -6845,6 +6851,13 @@ export type StaticEffect =
    * time counters) are not read. `counter` is the name of the kind (`-1/-1`, `+1/+1`, `loyalty`...). The ability of the permanent: lost with "loses all abilities".
    */
   | { readonly kind: 'cantHaveCounters'; readonly subject: StaticSubject; readonly counter: string }
+  /**
+   * "This artifact can't be sacrificed." (CR 701.21a, 101.2, 604.1; Hithlain Rope): while the permanent has the ability, no player can sacrifice it. A sacrifice
+   * that names it does nothing (CR 101.2: a "can't" effect makes the instruction do nothing) and a cost that sacrifices it can't be paid; it is also no choice for a
+   * cost or an effect that sacrifices a permanent of a kind (`rules/sacrifice-prevention.ts`), so such a cost is not paid without a sacrifice. Said of the permanent
+   * itself. The ability of the permanent: lost with "loses all abilities".
+   */
+  | { readonly kind: 'cantBeSacrificed' }
   /**
    * "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time." and "If a triggered ability of
    * equipped creature triggers, that ability triggers an additional time." (D-220, CR 603.2d): each time a triggered ability of a permanent `subject` names

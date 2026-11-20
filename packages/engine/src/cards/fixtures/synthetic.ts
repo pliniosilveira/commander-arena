@@ -29,6 +29,7 @@ import { SYNTHETIC_BLOCK_POWER_LIST } from './synthetic-block-power';
 import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
 import { SYNTHETIC_BRAIDS_LIST } from './synthetic-braids';
 import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
+import { SYNTHETIC_CANT_SACRIFICE_LIST } from './synthetic-cant-sacrifice';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
@@ -462,6 +463,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
+  ...SYNTHETIC_CANT_SACRIFICE_LIST,
   ...SYNTHETIC_COUNTERS_PLUS_LIST,
   ...SYNTHETIC_MANA_GROUP_F_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
