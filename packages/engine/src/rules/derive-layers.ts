@@ -197,8 +197,8 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'cascade',
 ];
 
-/** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability). */
-const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed', 'cycling'];
+/** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability; CR 702.56a: a Replicate given to a spell, with its trigger). */
+const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed', 'cycling', 'replicate'];
 
 function keywordKindOf(ability: Ability): string | null {
   return ability.kind === 'keyword' ? ability.keyword.kind : null;

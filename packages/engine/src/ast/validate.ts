@@ -460,8 +460,16 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'grantKeywordToSpells':
       // Issue 145 (CR 702.144a, 702.51a): "Creature spells you cast have demonstrate": only the keywords the engine reads from a spell as it is cast, for the spells of the permanent's
       // controller a filter names, as the spells they are on the stack (a spell the controller casts: `controller` is 'you', and nothing else says where or whose it is).
-      if (s.keyword?.kind !== 'demonstrate' && s.keyword?.kind !== 'convoke') {
-        issue(out, `${path}.keyword`, 'only demonstrate and convoke can be given to spells');
+      if (
+        s.keyword?.kind !== 'demonstrate' &&
+        s.keyword?.kind !== 'convoke' &&
+        s.keyword?.kind !== 'replicateAtManaCost'
+      ) {
+        issue(
+          out,
+          `${path}.keyword`,
+          'only demonstrate and convoke (and replicateAtManaCost) can be given to spells',
+        );
       }
       checkFilter(s.what, `${path}.what`, out);
       if (

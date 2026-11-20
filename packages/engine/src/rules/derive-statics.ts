@@ -210,7 +210,9 @@ interface HandGrantSource {
 interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
-  readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
+  readonly keyword:
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>
+    | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;
 }
@@ -826,10 +828,18 @@ function spellGrantsOn(state: GameState, target: GameObject, base: StaticBase): 
     ) {
       continue;
     }
-    grants.push({
-      ability: { kind: 'keyword', keyword: source.keyword },
-      timestamp: source.object.timestamp,
-    });
+    let keyword: Keyword;
+    if (source.keyword.kind === 'replicateAtManaCost') {
+      // CR 702.56a, 118.9: a Replicate cost equal to the mana cost of the spell as it is on the stack. Nothing to pay for a spell with no mana cost; {X} is announced later than
+      // the replicate count is asked (CR 601.2b), so a cost with {X} is not given one.
+      const symbols = base.manaCost;
+      if (symbols === undefined || symbols === null || symbols.length === 0) continue;
+      if (symbols.includes('X')) continue;
+      keyword = { kind: 'replicate', cost: [{ kind: 'mana', symbols: [...symbols] }] };
+    } else {
+      keyword = source.keyword;
+    }
+    grants.push({ ability: { kind: 'keyword', keyword }, timestamp: source.object.timestamp });
   }
   return grants;
 }

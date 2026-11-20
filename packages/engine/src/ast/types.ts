@@ -6202,11 +6202,17 @@ export type StaticEffect =
    * triggers on its own); Convoke instances are redundant (CR 702.51d). A copy of a spell is not cast (CR 707.10) and gets nothing, nor does an ability on the stack. `what` is a filter of
    * the spell as it is on the stack (its types, colors, mana value and the like after layers 4 and 5) with `controller: 'you'` (the permanent's controller, "spells you cast"), and no zone,
    * owner, stack kind, keyword, combat or source test. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   *
+   * `replicateAtManaCost` ("Each Sliver spell you cast has replicate. The replicate cost is equal to its mana cost.", CR 702.56a, 118.9): the spell has a Replicate ability whose cost is
+   * the mana cost of that spell as it is on the stack (after copy effects), asked as its other Replicate is, with the count the caster chooses as the spell is cast (`StackData.replicated`).
+   * A spell with no mana cost or with {X} in it gets none. A spell that has a replicate cost of its own keeps that one (CR 702.56b: more than one replicate ability is redundant).
    */
   | {
       readonly kind: 'grantKeywordToSpells';
       readonly what: ObjectFilter;
-      readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
+      readonly keyword:
+        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>
+        | { readonly kind: 'replicateAtManaCost' };
     }
   /**
    * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 613.1f, 604.3, 611.3a): a static ability of a permanent

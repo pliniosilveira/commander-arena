@@ -1699,7 +1699,10 @@ export type IrStaticEffect =
    * "Creature spells you cast have demonstrate." (issue 145, CR 702.144a, 702.51a, 613.1f): the spells the controller casts that the subject names (a noun with `det: 'each'` and the
    * controller `you`) have the keyword `keyword`, a keyword with no parameter.
    */
-  | { readonly kind: 'spellKeyword'; readonly keyword: 'demonstrate' | 'convoke' }
+  | {
+      readonly kind: 'spellKeyword';
+      readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
+    }
   /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.

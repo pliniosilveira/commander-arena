@@ -794,6 +794,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
+  'static.each-spell-you-cast-has-replicate': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.graveyard-cards-have-flashback': asIs,
