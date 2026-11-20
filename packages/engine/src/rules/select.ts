@@ -324,6 +324,9 @@ export function matchesFilter(
     ...(filter.controllerDealtDamageBySource === true
       ? { damagedPlayers: damagedBy(state, ctx.source) }
       : {}),
+    ...(filter.controllerDealtCombatDamageByAtLeast !== undefined
+      ? { combatDamaged: state.turnLog.combatDamaged }
+      : {}),
     ...(filter.putFromBattlefieldThisTurn === true
       ? { graveyarded: state.turnLog.graveyarded }
       : {}),
@@ -365,6 +368,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.powerLessThanSource === true ||
     f.manaValueX === true ||
     f.controllerDealtDamageBySource === true ||
+    f.controllerDealtCombatDamageByAtLeast !== undefined ||
     f.putFromBattlefieldThisTurn === true ||
     f.enteredThisTurn === true ||
     f.exiledWithSource === true ||

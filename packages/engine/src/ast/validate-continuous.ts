@@ -411,12 +411,12 @@ export function checkContinuousEffect(
         }
       }
       if (e.restriction === 'doesntUntap') {
-        // D-517: only with the duration that ends at the next untap step.
-        if (e.duration !== 'untilNextUntapStep') {
+        // D-517: the duration that ends at the next untap step; Ahoy Mateys group 7 (CR 611.2b): "for as long as you control this creature" in the ability of a permanent.
+        if (e.duration !== 'untilNextUntapStep' && e.duration !== 'forAsLongAsYouControlThis') {
           issue(
             out,
             `${path}.duration`,
-            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep, not doesntUntap with ${JSON.stringify(e.duration)}`,
+            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep or forAsLongAsYouControlThis, not doesntUntap with ${JSON.stringify(e.duration)}`,
           );
         }
       } else if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {

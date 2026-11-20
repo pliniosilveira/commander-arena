@@ -1180,6 +1180,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  // Ahoy Mateys deck, group 7.
+  'noun.target-permanent-controller-dealt-damage-by': spell((e) => `Gain control of ${e}.`),
   // Ahoy Mateys deck, group 4.
   'noun.each-creature-that-is-subtype-or-subtype': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,

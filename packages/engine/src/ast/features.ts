@@ -935,6 +935,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
+    // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (`ObjectFilter.controllerDealtCombatDamageByAtLeast`).
+    'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
@@ -1838,6 +1840,8 @@ export const SELECTOR_KINDS = [
   'controllerRef',
   /** "That was put there from the battlefield this turn" (CR 700.4, D-179): the engine's `ObjectFilter.putFromBattlefieldThisTurn`. */
   'putFromBattlefieldThisTurn',
+  /** "Controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2, Ahoy Mateys group 7): the engine's `ObjectFilter.controllerDealtCombatDamageByAtLeast`. */
+  'controllerDealtCombatDamageByAtLeast',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
