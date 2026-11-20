@@ -114,6 +114,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyChosenType',
     // Quandrix Unlimited group E: "Spend this mana only on costs that contain {X}." (`ManaAbility.spendOnly.xCost`) and "Add {C} for each charge counter on this artifact." (`times` of a fixed production).
     'manaSpendOnlyXCost',
+    // Issue 144 (Throne of Eldraine): "Spend this mana only to cast monocolored spells of that color." (`ManaAbility.spendOnly.monocoloredChosen`) and "Spend only mana of the chosen color to activate this ability." (`Cost` `mana` with `onlyChosenColor`).
+    'manaSpendOnlyMonocolored',
+    'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
@@ -232,6 +235,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainEnergy',
     // CR 122.1: "You get an experience counter" (`gainExperience`).
     'gainExperience',
+    // CR 702.179c: "Increase your speed by 1" (`increaseSpeed`).
+    'increaseSpeed',
     // "You have no maximum hand size for the rest of the game" (CR 402.2).
     'noMaxHandSizeForGame',
     'connive',
@@ -353,6 +358,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileTopAnyNumber',
     // D-662: "whenever a creature you control deals combat damage to a player this turn, ..." (CR 603.7).
     'delayedCombatDamageTurn',
+    // Issue 144: "whenever a creature you control deals combat damage to that player this turn, ..." (CR 603.7c).
+    'delayedCombatDamageToPlayer',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -607,6 +614,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'canBeCommander',
     // D-264: Ascend on a permanent (CR 702.131b).
     'ascend',
+    // CR 702.179a: Start your engines!, the speed of a player (`rules/speed.ts`).
+    'startYourEngines',
     // D-286: soulbond (CR 702.95a): two triggered abilities the engine builds for a creature; printed only.
     'soulbond',
     'exalted',
@@ -731,6 +740,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
     'removeCounters',
+    // Issue 144 (Arena of Glory): "{R}, {T}, Exert this land: Add {R}{R}." (CR 701.43a).
+    'exert',
   ],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
@@ -766,6 +777,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Gingerbrute',
     'Incubator',
     'Lander',
+    'Wicked Role',
     'Junk',
   ],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
@@ -910,6 +922,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'isSource',
     // D-438: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
     'copyForEach',
+    // Issue 144: "copy that spell. The copy targets that token" (`copySpell.newTarget`, CR 707.10e).
+    'copyNewTarget',
     // D-489, D-656: "creatures named ~" (`ObjectFilter.named`).
     'named',
     // D-652: "for each opponent, create two 3/3 tokens that attack that opponent this turn if able" (`createToken.forEachOpponent`).
@@ -1060,6 +1074,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'amountIsPrime',
     // D-131: "if you're the monarch" (CR 725): a player has a designation.
     'playerHasDesignation',
+    // CR 702.179e, 702.178a: "Max speed -- [ability]", "if you have max speed".
+    'maxSpeed',
     // D-235: "Activate only if this Class is level N".
     'classLevelIs',
     // D-133: "as long as you have 30 or more life", "as long as it's untapped" (also "if you control your commander").
@@ -1085,6 +1101,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'duringStep',
     // D-187: "if it's your main phase" (`yourMainPhase`).
     'yourMainPhase',
+    // Issue 144: "If it's your combat phase" (`yourCombatPhase`).
+    'yourCombatPhase',
     // D-206: "during your turn" (`yourTurn`), "if a card left your graveyard this turn", "if at least four mana was spent to cast it", "if this spell was cast from a graveyard".
     'yourTurn',
     'cardLeftYourGraveyard',
@@ -1121,6 +1139,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastThisTurn',
     // Issue 279: "if you attacked with three or more creatures this turn".
     'attackedWithCreaturesThisTurn',
+    // CR 702.142a: "Boast" ("Activate only if this creature attacked this turn").
+    'thisAttackedThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     // "If X is 10 or more" (CR 107.3, 608.2c).
@@ -1152,6 +1172,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
     'untilNextUntapStep',
+    'thisCombat',
   ],
   // CR 611.3, 613.1f, 613.4c: "+N/+N" in layer 7c and keyword grants in layer 6, from `derive`.
   // D-094: `restriction` ("can't block", "can't be blocked", "attacks each combat if able",
@@ -1210,6 +1231,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'setPt',
     'cantBeBlockedBy',
     'takeFromLinkedExile',
+    // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
+    'grantActivatedAbilitiesOfTopCard',
     'castAsThoughFlash',
     // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
     'creatureOffBattlefield',
@@ -1266,6 +1289,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Gingerbrute',
     'Incubator',
     'Lander',
+    'Wicked Role',
     'Junk',
     'custom',
     'copyOf',
@@ -1533,6 +1557,10 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyChosenType',
   /** "Spend this mana only on costs that contain {X}" (CR 106.6, 107.3): `ManaAbility.spendOnly.xCost`. */
   'manaSpendOnlyXCost',
+  /** "Spend this mana only to cast monocolored spells of that color" (issue 144, CR 106.6, 105.2a): `ManaAbility.spendOnly.monocoloredChosen`. */
+  'manaSpendOnlyMonocolored',
+  /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
+  'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
   'manaCountOwnCounters',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
@@ -1713,6 +1741,8 @@ export const SELECTOR_KINDS = [
   'isSource',
   /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-438): the engine's `copySpell.forEach` and `copier`. */
   'copyForEach',
+  /** "The copy targets that token" (CR 707.10e, Frontline Heroism): the engine's `copySpell.newTarget`. */
+  'copyNewTarget',
   /** "Creatures named Leitmotif Composer" (CR 201.2, D-489, D-656): the engine's `ObjectFilter.named`, the name of the objects as they are now. */
   'named',
   /** "For each opponent, create two 3/3 tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, D-652): the engine's `createToken.forEachOpponent`. */
@@ -1889,6 +1919,8 @@ export const CONDITION_KINDS = [
   'amountIsPrime',
   /** "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the engine's `playerHasDesignation`. */
   'playerHasDesignation',
+  /** "Max speed -- [ability]" (CR 702.178a, 702.179e): the engine's `maxSpeed`. */
+  'maxSpeed',
   /** "Activate only if this Class is level N" (CR 716.2a, D-235): the engine's `classLevelIs`. */
   'classLevelIs',
   /** "As long as you have 30 or more life", "7 life more than your starting life total" (CR 119.1, D-133): the engine's `lifeTotal`. */
@@ -1915,6 +1947,8 @@ export const CONDITION_KINDS = [
   'controlsGreatest',
   /** "If it's your main phase" (CR 505.1, D-187): the engine's `yourMainPhase`. */
   'yourMainPhase',
+  /** "If it's your combat phase" (CR 506.1, issue 144): the engine's `yourCombatPhase`. */
+  'yourCombatPhase',
   /** "During your turn" (CR 611.3a, D-206): the engine's `yourTurn`. */
   'yourTurn',
   /** "If a card left your graveyard this turn" (D-206): the engine's `cardLeftYourGraveyard`. */
@@ -1961,6 +1995,8 @@ export const CONDITION_KINDS = [
   'spellsCastThisTurn',
   /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
   'attackedWithCreaturesThisTurn',
+  /** "Boast —" (CR 702.142a): "Activate only if this creature attacked this turn", the engine's `thisAttackedThisTurn`. */
+  'thisAttackedThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
@@ -2006,6 +2042,8 @@ export const DURATION_KINDS = [
   'forAsLongAsThisRemains',
   /** "Doesn't untap during its controller's next untap step" (CR 502.3, D-517): the duration of a `restrict` of `doesntUntap`. */
   'untilNextUntapStep',
+  /** "Attacks this combat if able" (CR 506.1, 508.1d, 611.2a): the duration of a `restrict` of `attacksEachCombat` that ends with the combat. */
+  'thisCombat',
 ] as const;
 export type DurationKind = (typeof DURATION_KINDS)[number];
 
@@ -2072,6 +2110,8 @@ export const STATIC_KINDS = [
   'cantBeBlockedBy',
   /** "... has the power, toughness, and creature types of the last creature card exiled with it" (CR 607.2a, D-139). */
   'takeFromLinkedExile',
+  /** "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card" (CR 613.1f, issue 144): the engine's `grantActivatedAbilitiesOfTopCard`. */
+  'grantActivatedAbilitiesOfTopCard',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
   /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */
@@ -2140,6 +2180,7 @@ export const TOKEN_KINDS = [
   'Gingerbrute',
   'Incubator',
   'Lander',
+  'Wicked Role',
   'Junk',
   'Blood',
   'custom',
@@ -2356,6 +2397,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
   manaSpendOnlyXCost: true,
+  manaSpendOnlyMonocolored: true,
+  spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
@@ -2443,6 +2486,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeAllPlayerCounters: true,
   gainEnergy: true,
   gainExperience: true,
+  increaseSpeed: true,
   noMaxHandSizeForGame: true,
   connive: true,
   createCopies: true,
@@ -2511,6 +2555,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exilePiles: true,
   exileTopAnyNumber: true,
   delayedCombatDamageTurn: true,
+  delayedCombatDamageToPlayer: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
@@ -2673,6 +2718,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   chooseBackground: true,
   canBeCommander: true,
   ascend: true,
+  startYourEngines: true,
   soulbond: true,
   exalted: true,
   annihilator: true,
@@ -2763,6 +2809,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,
   tap: true,
   untap: true,
+  exert: true,
   payLife: true,
   payXLife: true,
   discardX: true,

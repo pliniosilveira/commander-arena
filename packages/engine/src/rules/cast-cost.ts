@@ -62,6 +62,7 @@ import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { nextSpellReduction } from './next-spell';
 import { payMechanismsOf, payOptionSources } from './pay-options';
+import { playPermissionAnyColor } from './play-permission-color';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
@@ -107,6 +108,8 @@ export interface SpellCost {
   readonly tap: TapRequirement | null;
   /** D-351 (CR 609.4b): mana of any type can be spent on the spell, so any mana pays any symbol of `symbols`. */
   readonly anyType?: true;
+  /** Issue 144 (CR 609.4b): mana can be spent as though it were mana of any color, so a mana of a color pays any colored symbol of `symbols`. */
+  readonly anyColor?: true;
 }
 
 /** "Tap four untapped creatures you control with flying" (D-149): how many permanents matching the filter are tapped. */
@@ -501,6 +504,12 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     sacrificeCount = flashbackSacrifice.count ?? 1;
   }
   const anyType = request.anyType === true || spell.stack?.anyManaType === true;
+  // Issue 144 (CR 609.4b): the card still in exile is read as the permission that lets it be cast says; once on the stack, the spell says it.
+  const anyColor =
+    spell.stack?.anyManaColor === true ||
+    (request.excluded !== undefined &&
+      zone === 'exile' &&
+      playPermissionAnyColor(state, seat, request.excluded));
   return {
     symbols: reduced,
     tax,
@@ -516,6 +525,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     exileFromHand,
     tap,
     ...(anyType ? { anyType: true as const } : {}),
+    ...(anyColor ? { anyColor: true as const } : {}),
   };
 }
 
@@ -597,9 +607,11 @@ export function castManaPlan(
   /** D-351 (CR 609.4b): mana of any type can be spent on the spell: left out, what the spell on the stack says. */
   anyType: boolean = spell.stack?.anyManaType === true,
   sacrificeCount = 1,
+  /** Issue 144 (CR 609.4b): mana can be spent as though it were mana of any color: left out, what the spell on the stack says. */
+  anyColor: boolean = spell.stack?.anyManaColor === true,
 ): PaymentPlan | null {
   // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes; CR 106.6: or its mana value and {X}.
-  const target = spellSpendTarget(state, spell, anyType);
+  const target = spellSpendTarget(state, spell, anyType, anyColor);
   const options = extraSources === undefined ? {} : { extraSources };
   const reserve = handReserve(state, seat, spell);
   const plan = planFor(state, seat, symbols, target, reserve, options);
@@ -696,6 +708,7 @@ export function canPaySpellCost(
       cost.tap,
       cost.anyType === true,
       cost.sacrificeCount ?? 1,
+      cost.anyColor === true,
     ) !== null
   );
 }

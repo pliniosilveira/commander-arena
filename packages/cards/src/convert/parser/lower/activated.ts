@@ -79,6 +79,11 @@ const plainClause = (clause: IrClause) =>
  * color, a quality or a mix of the two kinds in one choice says more than the engine's restriction and is not lowered.
  */
 function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
+  // "Spend this mana only to cast monocolored spells of that color." (issue 144, Throne of Eldraine, CR 106.6, 105.2a): the color the permanent chose; the caller checks the mana is of it.
+  const mono = clause.args.monocoloredChosen;
+  if (mono?.kind === 'flag' && mono.value) {
+    return plainClause(clause) ? { monocoloredChosen: true } : null;
+  }
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
@@ -348,6 +353,10 @@ function lowerManaAbility(
   ) {
     return failure(ability);
   }
+  // Issue 144: "that color" of "monocolored spells of that color" is the chosen color, so the mana the ability adds must be of it.
+  if (spendOnly?.monocoloredChosen === true && production.kind !== 'chosenColor') {
+    return failure(spendClause ?? ability);
+  }
   const needs: FeatureRef[] = [
     'ability:mana',
     ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
@@ -359,6 +368,9 @@ function lowerManaAbility(
     ...(spendClause === undefined ? [] : (['ability:manaSpendOnly'] as const)),
     ...(restrictions.value.oncePerTurn === true ? (['ability:oncePerTurn'] as const) : []),
     ...(spendOnly?.chosenType === true ? (['ability:manaSpendOnlyChosenType'] as const) : []),
+    ...(spendOnly?.monocoloredChosen === true
+      ? (['ability:manaSpendOnlyMonocolored'] as const)
+      : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -391,6 +403,8 @@ function lowerManaAbility(
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
   // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
   const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
+  // Issue 144 (Arena of Glory, CR 701.43a): "Exert ~", the permanent itself, once.
+  const exerts = costs.value.filter((c) => c.kind === 'exert').length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
   // D-625 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
   const tapsOther = costs.value.filter((c) => c.kind === 'tapPermanents');
@@ -405,12 +419,13 @@ function lowerManaAbility(
     lives <= 1 &&
     mills <= 1 &&
     removals <= 1 &&
+    exerts <= 1 &&
     sacrifices.length <= 1 &&
     tapsOther.length <= 1 &&
     (tapsOther.length === 0 ||
       (sacrifices.length === 0 && tapsOther.every((c) => c.count === 1))) &&
     selfOnly &&
-    taps + manas + lives + mills + removals + sacrifices.length + tapsOther.length ===
+    taps + manas + lives + mills + removals + exerts + sacrifices.length + tapsOther.length ===
       costs.value.length &&
     effects.every(isAlso) &&
     rest.every(plainClause);
@@ -584,6 +599,18 @@ function restrictionsOf(
   let costReducedIf: Restrictions['costReducedIf'];
   let costReducedBy: Restrictions['costReducedBy'];
   let oncePerTurn = false;
+  // CR 702.142a (Boast): "Boast — [Cost]: [Effect]" means "[Cost]: [Effect]. Activate only if this creature attacked this turn and only once each turn."
+  if (ability.boast === true) {
+    if (!allowOnce) return failure(ability);
+    const blocked = gate(ability, [
+      'ability:oncePerTurn',
+      'ability:activateOnlyIf',
+      'condition:thisAttackedThisTurn',
+    ]);
+    if (blocked !== null) return blocked;
+    activateOnlyIf = { kind: 'thisAttackedThisTurn' };
+    oncePerTurn = true;
+  }
   for (const restriction of ability.restrictions) {
     // "This ability costs {1} less to activate for each other artifact you control." (stage P31, D-140, CR 601.2f): an amount read as
     // the ability is activated, for its controller, off the generic part of an ordinary activation's mana cost.
@@ -746,11 +773,42 @@ function restrictionFields(restrictions: Restrictions) {
   };
 }
 
+/**
+ * The ability without its last sentence when that sentence is "Spend only mana of the chosen color to activate this ability." (issue 144), and whether it had it. The sentence is read
+ * nowhere else: any other place it stands in is left for the sentence lowering, which refuses it.
+ */
+function withoutChosenColorOnly(ability: Activated): [Activated, boolean] {
+  const sentences = ability.body.sentences;
+  const last = sentences[sentences.length - 1];
+  const only = last?.clauses[0];
+  if (
+    sentences.length < 2 ||
+    last === undefined ||
+    last.clauses.length !== 1 ||
+    only?.verb !== 'spendOnlyChosenColor' ||
+    !plainClause(only) ||
+    last.condition !== undefined
+  ) {
+    return [ability, false];
+  }
+  return [{ ...ability, body: { ...ability.body, sentences: sentences.slice(0, -1) } }, true];
+}
+
 /** An ordinary activated ability: costs, then an effect on the stack (CR 602.2). */
-function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<readonly Ability[]> {
-  const prepared = prepare(ability, ctx, []);
+function lowerOrdinary(written: Activated, ctx: LowerContext): LowerResult<readonly Ability[]> {
+  // Issue 144 (Throne of Eldraine, CR 602.2b): the last sentence "Spend only mana of the chosen color to activate this ability." restricts the mana cost, not the effect.
+  const [ability, onlyChosenColor] = withoutChosenColorOnly(written);
+  const prepared = prepare(ability, ctx, onlyChosenColor ? ['ability:spendOnlyChosenColor'] : []);
   if (!prepared.ok) return prepared;
-  const { costs, hasX, restrictions } = prepared.value;
+  const { hasX, restrictions } = prepared.value;
+  if (onlyChosenColor && !prepared.value.costs.some((c) => c.kind === 'mana')) {
+    return failure(written);
+  }
+  const costs = onlyChosenColor
+    ? prepared.value.costs.map(
+        (c): Cost => (c.kind === 'mana' ? { ...c, onlyChosenColor: true } : c),
+      )
+    : prepared.value.costs;
   const previousGraveyardSource = ctx.usedGraveyardSource;
   if (ability.costs.some((cost) => cost.kind === 'exileThisFromGraveyard')) {
     ctx.usedGraveyardSource = true;
@@ -911,6 +969,9 @@ function lowerManaWithDelayedCast(
 /** Features the activated and mana ability lowerings can name, for the dimension test. */
 export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:mana',
+  'manaCost:exert',
+  'ability:manaSpendOnlyMonocolored',
+  'ability:spendOnlyChosenColor',
   'manaCost:tap',
   'manaCost:mana',
   'manaCost:sacrifice',

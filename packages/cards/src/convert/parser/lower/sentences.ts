@@ -1721,6 +1721,8 @@ function countsWhatHappened(
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
       return earlier.verb === 'removeAllCounters';
+    case 'excessDamageDealt':
+    // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';
@@ -1869,6 +1871,54 @@ function lowerNextCast(
   return { last: i };
 }
 
+/** What "Whenever a creature you control deals combat damage to that player this turn, ..." needs of the engine (issue 144). */
+export const COMBAT_DAMAGE_TO_PLAYER_NEEDS: readonly FeatureRef[] = [
+  'effect:delayedCombatDamageToPlayer',
+  'selector:target',
+];
+
+/**
+ * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (issue 144, CR 603.7, 603.7c, 510.3a): the
+ * sentence is what a delayed triggered ability does, for damage to the one player the target slot before it chose, which the engine's `delayedCombatDamageToPlayer` fixes as it is made.
+ * The sentence names no target of its own, and a test, a "you may" or a "where X" in it is not read inside it.
+ */
+function lowerCombatDamageToThatPlayer(
+  sentence: IrSentence,
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  const blocked = missingFeatures(COMBAT_DAMAGE_TO_PLAYER_NEEDS);
+  if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+  if (
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return stop(refuse(sentence));
+  }
+  // "That player" is the one player a target slot of this text names: with none, or two, there is nobody to say it of.
+  const players = ctx.targets.filter((t) => t.what.kind === 'player');
+  const [slot] = players;
+  if (players.length !== 1 || slot === undefined) return stop(refuse(sentence));
+  const before = ctx.targets.length;
+  const inner = lowerClauses(sentence.clauses, ctx);
+  if (!inner.ok) return stop(inner);
+  // What the ability does reads nothing the spell chose (CR 603.7c): no target of its own.
+  if (ctx.targets.length !== before) return stop(refuse(sentence));
+  const effect: Effect = {
+    kind: 'delayedCombatDamageToPlayer',
+    filter: { types: ['creature'], controller: 'you' },
+    player: { kind: 'target', id: slot.id },
+    effect: oneEffect(inner.value),
+  };
+  steps.push({ effects: [effect], replaceable: false });
+  return { last: i };
+}
+
 /**
  * The `delayedCast` of a "When you next cast ..." sentence (D-336, Quandrix Unlimited group E): what it does is copying the spell that was cast, or the controller's own
  * instructions (draw, gain life) with an X that is the X of the spell cast ("a spell with {X} in its mana cost": "gain half X life, rounded down"). Also the extra effect of a mana ability.
@@ -2010,6 +2060,8 @@ function lowerStep(
     if (step === 'thatCombat') return lowerAtThatCombat(sentence, i, steps, ctx);
     // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7, 603.7a): the engine's `delayedCast`.
     if (step === 'nextCast') return lowerNextCast(sentence, i, steps, ctx);
+    if (step === 'combatDamageToThatPlayer')
+      return lowerCombatDamageToThatPlayer(sentence, i, steps, ctx);
     const blocked = missingFeatures(['effect:delayedTrigger']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
     // A test or a "you may" of the sentence is not read inside what a delayed ability does.

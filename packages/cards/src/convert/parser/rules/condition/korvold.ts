@@ -204,9 +204,49 @@ export const CONDITION_MILLED_THIS_WAY = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.your-combat-phase`: "it's your combat phase" (CR 506.1: the combat phase has the beginning of combat, declare attackers, declare blockers, combat damage and end of
+ * combat steps; it is your combat phase when it is the combat phase of a turn of yours; issue 144, Great Train Heist). The engine's `yourCombatPhase`, read as the instruction
+ * runs. Not read: another phase ("it's your main phase" is `condition.your-main-phase`), another turn ("it's not your combat phase"), "a combat phase", a step ("it's your declare
+ * attackers step").
+ */
+export const CONDITION_YOUR_COMBAT_PHASE = defineRule<IrCondition>({
+  id: 'condition.your-combat-phase',
+  family: 'condition',
+  leading: ["it's", 'it’s', 'it'],
+  cites: ['CR 506.1 (Combat Phase)', 'CR 500.1 (General)'],
+  examples: ["it's your combat phase", 'it’s your combat phase', 'it is your combat phase'],
+  rejects: [
+    "it's your combat phase.",
+    "it's your first combat phase",
+    "it's not your combat phase",
+    "it's a combat phase",
+    "it's an opponent's combat phase",
+    "it's your turn",
+    "it's your combat phase or",
+    "that's your combat phase",
+    "it's your main phase",
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/it(?:['’]s| is) your combat phase(?![\p{L}\p{N}])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'yourCombatPhase' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.your-combat-phase',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const KORVOLD_CONDITION_RULES = [
   CONDITION_PUT_THIS_WAY,
   CONDITION_MILLED_THIS_WAY,
   CONDITION_YOUR_MAIN_PHASE,
+  CONDITION_YOUR_COMBAT_PHASE,
   CONDITION_RING_BEARER,
 ];

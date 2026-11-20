@@ -351,6 +351,20 @@ function lowerCanBeCommander(ability: IrKeyword): LowerResult<readonly Ability[]
 }
 
 /**
+ * "Start your engines!" (issue 144, CR 702.179a, 704.5aa): the keyword, a static ability the engine runs as a state-based action. It is not granted (the engine's GRANTABLE_KEYWORDS leaves it out).
+ */
+function lowerStartYourEngines(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  if (ability.params.length > 0 || (ability.cost ?? []).length > 0) return failure(ability);
+  const blocked = gate(ability, ['ability:keyword', 'keyword:startYourEngines']);
+  if (blocked !== null) return blocked;
+  return {
+    ok: true,
+    value: [{ kind: 'keyword', keyword: { kind: 'startYourEngines' } }],
+    rule: 'keyword.start-your-engines',
+  };
+}
+
+/**
  * "Crew 3" (CR 702.122a): the keyword with its number; the engine expands it into the activated
  * ability. Only a Vehicle has it (CR 301.7), so another face is read and refused with no gap named.
  */
@@ -527,6 +541,7 @@ export function lowerKeyword(
     return lowerLivingWeapon(ability, ctx);
   }
   if (ability.name === 'canBeCommander') return lowerCanBeCommander(ability);
+  if (ability.name === 'startYourEngines') return lowerStartYourEngines(ability);
   if (ability.name === 'crew') return lowerCrew(ability, ctx);
   if (ability.name === 'station') return lowerStation(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
@@ -607,7 +622,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (event.condition === undefined) return built({ kind: 'entersTapped' });
     // The IR says "applies when X is false"; the engine's `unless` is X itself (CR 614.12).
     const { test } = event.condition;
-    if (test.kind !== 'not') return failure(ability);
+    if (test.kind !== 'not') {
+      // "If you control two or more other lands, ~ enters tapped." (CR 614.1c): it enters tapped when X holds, so it enters untapped (`unless`) when X does not.
+      const applies = lowerCondition(event.condition, true);
+      if (!applies.ok) return applies;
+      return built({ kind: 'entersTapped', unless: { kind: 'not', term: applies.value } });
+    }
     const unless = lowerCondition(test.term, true);
     if (!unless.ok) return unless;
     return built({ kind: 'entersTapped', unless: unless.value });
@@ -1095,6 +1115,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:livingWeapon',
   'keyword:jobSelect',
   'keyword:canBeCommander',
+  'keyword:startYourEngines',
   'keyword:hideaway',
   'keyword:escalate',
   'keyword:replicate',

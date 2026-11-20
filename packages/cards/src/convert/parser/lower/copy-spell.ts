@@ -66,6 +66,25 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       const by = arg(clause, 'copier');
       if (by?.kind === 'flag' && by.value) copier = 'triggerPlayer';
     }
+    // "The copy targets that token." (Frontline Heroism, CR 707.10e): one copy of the spell of the trigger, aimed at what the instruction before made.
+    let newTarget: Extract<ObjectRef, { kind: 'moved' }> | undefined;
+    if (arg(clause, 'newTarget') !== undefined) {
+      if (
+        spell.kind !== 'triggerSubject' ||
+        count !== undefined ||
+        forEach !== undefined ||
+        flag.value
+      ) {
+        return failure(clause);
+      }
+      const missing = missingFeatures([
+        'effect:copySpell',
+        'selector:copyNewTarget',
+        'selector:moved',
+      ]);
+      if (missing.length > 0) return failure(clause, missing);
+      newTarget = { kind: 'moved' };
+    }
     // "..., then return it to its owner's hand" (Narset's Reversal, CR 400.3): after the copy the target spell leaves the stack for its owner's hand.
     const returnIt = arg(clause, 'returnIt');
     if (returnIt !== undefined && (spell.kind !== 'target' || count !== undefined)) {
@@ -123,6 +142,7 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
           ...(count === undefined ? {} : { count }),
           ...(forEach === undefined ? {} : { forEach }),
           ...(copier === undefined ? {} : { copier }),
+          ...(newTarget === undefined ? {} : { newTarget }),
         },
         ...(returnIt === undefined
           ? []

@@ -496,6 +496,11 @@ export interface StackData {
    */
   readonly anyManaType?: true;
   /**
+   * True when an effect lets mana be spent as though it were mana of any color to cast this spell (issue 144, CR 609.4b: "you may spend mana as though it were mana of any color to cast
+   * that spell"): a mana of a color pays any colored symbol of its cost; colorless mana still pays only generic mana and {C}. Absent otherwise, and for an ability.
+   */
+  readonly anyManaColor?: true;
+  /**
    * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
    * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
    * (CR 400.7). Absent otherwise, and for an ability.
@@ -653,6 +658,11 @@ export interface SeatState {
    */
   readonly citysBlessing?: true;
   /**
+   * The player's speed (CR 702.179b, 702.179c): a number from 1 to 4 once a rule or effect sets it, kept for the rest of the game (`rules/speed.ts`). Absent until then: a player
+   * has no speed (CR 702.179b), which reads as 0 for an effect that refers to speed (CR 702.179f). Public.
+   */
+  readonly speed?: number;
+  /**
    * The energy counters the player has (CR 107.14, 122.1, D-209), kept for the rest of the game; paid by removing them. Absent until the first time
    * (a player has none). Public.
    */
@@ -787,7 +797,7 @@ export interface LastKnownInfo {
  * (CR 603.3a).
  */
 /**
- * The inherent triggered abilities that belong to no object: the two of the monarch (CR 725.2, D-127: the end-step draw, and the steal) and the
+ * The inherent triggered abilities that belong to no object: the speed of a player (CR 702.179d, `speedUp`), the two of the monarch (CR 725.2, D-127: the end-step draw, and the steal) and the
  * three of the Ring that turn on as it tempts a player more often (CR 701.54c, D-196: the loot when the Ring-bearer attacks, the sacrifice of the
  * creature that blocks it, the life loss when it deals combat damage to a player).
  */
@@ -796,7 +806,8 @@ export type InherentAbility =
   | 'monarchSteal'
   | 'ringLoot'
   | 'ringBlocked'
-  | 'ringDamage';
+  | 'ringDamage'
+  | 'speedUp';
 
 export interface PendingTrigger {
   /**
@@ -866,6 +877,8 @@ export interface DelayedTrigger {
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
   readonly watched?: ObjectId;
+  /** "Whenever a creature you control deals combat damage to that player this turn" (issue 144, CR 603.7c): the ability triggers only for damage dealt to this player, fixed as it was created. */
+  readonly damagedPlayer?: SeatId;
   /**
    * "When you cast it this turn" (`mayCast.whenCast`, issue 159, CR 603.7): the ability triggers only for a spell cast from this card (`GameObject.card`: the card is a new
    * object on the stack, CR 400.7, but it is the same card).
@@ -1675,6 +1688,11 @@ export type Instruction =
        * the copies belong to when it is not the controller of the resolving ability ("that player copies that spell").
        */
       readonly forEach?: ObjectFilter;
+      /**
+       * Issue 144 (CR 707.10e, Frontline Heroism: "The copy targets that token."): the stage `each` makes one copy that targets the first of these objects that is a legal target for
+       * every instance of the word "target" in the spell, or none. Instead of `forEach`.
+       */
+      readonly among?: readonly ObjectId[];
       readonly controller?: SeatId;
       readonly retarget?: ObjectId;
     }
@@ -2016,6 +2034,8 @@ export interface ThisWayCounts {
   readonly discardedMost?: number;
   /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
   readonly damageDealt?: number;
+  /** The excess damage (CR 120.10) `dealDamage` effects dealt to creatures and planeswalkers, for "the amount of excess damage dealt to that creature this way" (issue 144). */
+  readonly excessDamageDealt?: number;
   /** The counters of every kind that `removeAllCounters` effects took off, for "for each counter removed this way" (CR 122.1). */
   readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
@@ -2122,6 +2142,11 @@ export type ContinuousChange =
        * this permission carries `StackData.bottomInstead` (`rules/cast.ts`, `beginCast`).
        */
       readonly bottomInstead?: true;
+      /**
+       * "Until end of turn, you may cast that card and you may spend mana as though it were mana of any color to cast that spell" (`mayPlay.anyManaColor`, issue 144, CR 609.4b): the spell
+       * cast with this permission carries `StackData.anyManaColor` (`rules/cast.ts`, `beginCast`), and the cost of the card is read that way while it is still in exile.
+       */
+      readonly anyManaColor?: true;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,
@@ -2408,6 +2433,11 @@ export interface TurnLog {
   readonly lifeGainedTotal: readonly number[];
   /** Each triggered ability that has triggered this turn (D-149): "this ability triggers only once each turn" (CR 603.2). */
   readonly triggered: readonly { readonly object: ObjectId; readonly abilityIndex: number }[];
+  /**
+   * The players whose inherent speed ability (CR 702.179d: "This ability triggers only once each turn") has triggered this turn. Absent until one did, so the state of a game with no
+   * speed is as it was.
+   */
+  readonly speedTriggered?: readonly SeatId[];
   /**
    * Each triggered ability whose controller has taken the action it represents this turn (D-256): "Do this only once each turn" (CR 603.2h): the
    * source permanent, the ability on it and the player who took the action (the source's controller as the ability resolved).

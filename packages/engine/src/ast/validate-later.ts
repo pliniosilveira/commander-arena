@@ -148,6 +148,27 @@ export function checkDelayedTrigger(
   }
   // Issue 81 (Synthetic Destiny, CR 603.7c, 701.20, 701.24): "At the beginning of the next end step, reveal cards ... until you reveal that many creature cards, put all creature cards
   // revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library": a reveal of that many, the rest left for the shuffle that follows.
+  // Issue 144 (Glimpse the Impossible, CR 603.7c, 400.7, 608.2c): "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a
+  // token for each card put into your graveyard this way": the cards an effect before it exiled (`moved`, bound as the ability is created), then tokens, as many as cards were moved.
+  if (kind === 'sequence') {
+    const [move, make, ...extra] = (inner as Extract<Effect, { kind: 'sequence' }>).effects ?? [];
+    if (move?.kind === 'moveToZone' && move.to === 'graveyard') {
+      if (
+        !exiledAvailable ||
+        kindOf(move.objects) !== 'moved' ||
+        make?.kind !== 'createToken' ||
+        kindOf(make.count) !== 'movedCount' ||
+        extra.length > 0
+      ) {
+        issue(
+          out,
+          `${path}.effect`,
+          'a delayed move to the graveyard puts the cards an effect before it exiled there, then creates tokens, one for each card moved',
+        );
+      }
+      return;
+    }
+  }
   if (kind === 'sequence') {
     const parts = (inner as Extract<Effect, { kind: 'sequence' }>).effects ?? [];
     const [reveal, shuffle, ...more] = parts;

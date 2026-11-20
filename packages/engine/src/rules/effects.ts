@@ -161,6 +161,7 @@ import { recordTogether } from './simultaneous';
 import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
+import { increaseSpeed } from './speed';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
 import { TIME_COUNTER } from './time-counter';
@@ -1279,6 +1280,26 @@ function runEffect(
       const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
       // D-438 (CR 707.10, 707.10e): "copy that spell for each other creature you control that the spell could target": the stack finds the permanents and makes a copy for each
       // (`rules/copy-spell.ts`, which reads the legal targets of the spell); "that player copies" is the copy of the player the event is about.
+      // Issue 144 (CR 707.10e): "The copy targets that token.": one copy per spell, aimed at the object the earlier instruction made (`rules/copy-spell.ts` checks that it is a legal target).
+      if (effect.newTarget !== undefined) {
+        const among = resolveObjects(state, effect.newTarget, ctx, targets);
+        return {
+          ...done(
+            state,
+            [],
+            spells.map((id) => ({
+              kind: 'copySpell' as const,
+              spell: id,
+              count: 0,
+              newTargets: 'no' as const,
+              stage: 'each' as const,
+              copy: null,
+              among,
+            })),
+          ),
+          performed: spells.length,
+        };
+      }
       if (effect.forEach !== undefined) {
         const copier = effect.copier === 'triggerPlayer' ? ctx.triggerPlayer : undefined;
         if (effect.copier === 'triggerPlayer' && copier === undefined) return done(state);
@@ -1499,6 +1520,34 @@ function runEffect(
         ],
       });
     }
+    case 'delayedCombatDamageToPlayer': {
+      // CR 603.7, 603.7c, 510.3a, 514.2 (issue 144): "Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token": a delayed
+      // ability of the controller, for damage to the player the spell targeted, which is fixed as it is made. A player that is not there (not a legal target any more) gets none.
+      const [damaged] = resolvePlayers(state, effect.player, ctx, targets);
+      if (damaged === undefined) return done(state);
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            damagedPlayer: damaged,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: {
+                kind: 'dealsCombatDamage' as const,
+                what: effect.filter,
+                to: 'player' as const,
+              },
+              effect: effect.effect,
+            },
+          },
+        ],
+      });
+    }
     case 'delayedTrigger': {
       // CR 603.7, 603.7d, 603.7e (D-128): a delayed triggered ability, created as the spell or ability resolves. It
       // belongs to its controller and refers to the source only as the thing that created it (CR 603.7c: the source
@@ -1601,6 +1650,22 @@ function runEffect(
         // CR 603.7c (issue 81, Synthetic Destiny): "reveal cards ... until you reveal that many creature cards" at the next end step: how many is what the effect before it did as it
         // resolved (`thisWay`), fixed now, when the delayed ability is created.
         baked = bindThisWay(inner, ctx.thisWay);
+        // Issue 144 (Glimpse the Impossible, CR 603.7c, 400.7): "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a
+        // token for each card put into your graveyard this way": the cards are the ones the effect before it exiled, bound as they are now (`boundObjects` in exile: a card that left
+        // exile since is a new object and is not found). With none in exile there is nothing to wait for.
+        const [first, ...rest] = inner.effects;
+        if (
+          first?.kind === 'moveToZone' &&
+          first.to === 'graveyard' &&
+          first.objects.kind === 'moved'
+        ) {
+          const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+          if (ids.length === 0) return done(state);
+          baked = {
+            ...inner,
+            effects: [{ ...first, objects: { kind: 'boundObjects', ids, zone: 'exile' } }, ...rest],
+          };
+        }
       }
       const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: baked };
       return done({
@@ -2477,6 +2542,18 @@ function runEffect(
         const had = getSeat(next, seat).experience ?? 0;
         next = patchSeat(next, seat, { experience: had + amount });
         events.push({ kind: 'experienceChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
+    case 'increaseSpeed': {
+      // CR 702.179c: no speed becomes that value; otherwise it goes up by the amount (rules/speed.ts).
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const raised = increaseSpeed(next, seat, amount);
+        next = raised.state;
+        events.push(...raised.events);
       }
       return done(next, events);
     }

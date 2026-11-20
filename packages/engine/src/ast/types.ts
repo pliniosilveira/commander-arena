@@ -456,6 +456,9 @@ export type ThisWayKind =
   | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
   | 'damageDealt'
+  // Issue 144 (CR 120.10, 608.2c): "the amount of excess damage dealt to that creature this way": the damage the `dealDamage` effects of this resolution dealt to creatures
+  // (and planeswalkers) beyond lethal damage (beyond the loyalty, for a planeswalker), read as each was dealt.
+  | 'excessDamageDealt'
   // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
   // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
   | 'exiledPowerOwn'
@@ -1077,7 +1080,8 @@ export type PlayerSelector =
   | { readonly kind: 'triggerPlayer' }
   /**
    * "That opponent" in a `playerAttacksOpponent` trigger (CR 508.6, D-648): the player the declaration attacked that made the ability trigger. Valid only in the effect or the
-   * intervening "if" of such a trigger (`validateCard`); nobody once that player has left the game.
+   * intervening "if" of such a trigger, or of an `attackBatch` trigger (issue 144, General Kreat: a token "that's tapped and attacking" attacks the first player the declaration
+   * attacked; CR 508.4 lets the controller choose, `docs/ROADMAP.md`) (`validateCard`); nobody once that player has left the game.
    */
   | { readonly kind: 'triggerAttackedPlayer' }
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
@@ -1262,9 +1266,23 @@ export interface TargetSpec {
 // ---- Costs (CR 118)
 
 export type Cost =
-  | { readonly kind: 'mana'; readonly symbols: readonly ManaSymbol[] }
+  | {
+      readonly kind: 'mana';
+      readonly symbols: readonly ManaSymbol[];
+      /**
+       * "Spend only mana of the chosen color to activate this ability." (issue 144, Throne of Eldraine; CR 602.2b): every mana that pays this cost is of the color the permanent chose as it
+       * entered (an `asEntersChoose` of `color` on the same face); with no color chosen none can pay it. Only the mana cost of an ordinary activated ability.
+       */
+      readonly onlyChosenColor?: true;
+    }
   | { readonly kind: 'tap' }
   | { readonly kind: 'untap' }
+  /**
+   * "Exert ~" (issue 144, CR 701.43a, 701.43b): as the cost of a mana ability, the permanent itself does not untap during its controller's next untap step (the `restrict` of
+   * `doesntUntap` of the exert of an attacker, `rules/exert.ts`). It may be exerted whether or not it is tapped and whether or not it was already exerted. No `exerted` event is
+   * made: that event is of an exerted attacker, for the abilities linked to "You may exert ~ as it attacks". Only the cost of a mana ability, with the permanent itself.
+   */
+  | { readonly kind: 'exert' }
   /**
    * "Pay 2 life" (CR 119.4, 118.3), or (D-135) "Pay life equal to the number of colors in your commanders' color identity": an
    * `Amount` that reads the game as the ability is activated, once (the validator allows what an `amountIs` condition does:
@@ -1638,6 +1656,7 @@ export type TokenPreset =
   | 'Gingerbrute'
   | 'Incubator'
   | 'Lander'
+  | 'Wicked Role'
   | 'Junk';
 
 export type TokenSpec =
@@ -2353,8 +2372,9 @@ export type Effect =
    * "After this phase, there is an additional combat phase" (CR 500.8, 500.10, D-151): when the phase that is now going on is over, one more combat
    * phase follows it (beginning of combat, declare attackers, ... end of combat), then the turn goes on as it would have. Several of them add up, the
    * most recently created occurring first (CR 500.8); the phase is added to the turn state (`TurnState.addedPhases`) and may follow a main phase as well
-   * as a combat phase (D-187: "there's an additional combat phase after this phase"). Only in a triggered ability of an attack (`attacks`) or one whose
-   * intervening "if" is `yourMainPhase`, which are the places the phase that is going on is known to be a main phase or a combat phase.
+   * as a combat phase (D-187: "there's an additional combat phase after this phase"). Only in a triggered ability of an attack (`attacks`), one whose
+   * intervening "if" is `yourMainPhase`, or the effect of a `conditional` whose condition is `yourCombatPhase` (issue 144): the places the phase that is going on is known
+   * to be a main phase or a combat phase.
    * `atBeginning` (D-187): "At the beginning of that combat, untap all creatures you control": an effect that a delayed triggered ability of the same
    * controller runs as the beginning of combat step of that added phase begins (CR 603.7); it names no target.
    */
@@ -2501,6 +2521,11 @@ export type Effect =
        * no longer applies). Needs cards exiled face down.
        */
       readonly lookAt?: true;
+      /**
+       * "Until end of turn, you may cast that card and you may spend mana as though it were mana of any color to cast that spell" (issue 144, CR 609.4b): the spell cast with this permission
+       * can be paid with mana of any color for any colored symbol of its cost (colorless mana still pays generic mana only). Needs `castOnly`: the rider is about casting a spell.
+       */
+      readonly anyManaColor?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -2628,6 +2653,20 @@ export type Effect =
       readonly effect: Effect;
     }
   /**
+   * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (CR 603.7, 603.7c, 510.3a, 514.2, issue 144,
+   * Great Train Heist): a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the
+   * controller controls, as it is when the damage is dealt) deals combat damage to the one player `player` names, until the end of the turn (CR 514.2), once for each such creature
+   * (CR 603.2c). The player is fixed as the ability is created (CR 603.7c: nothing of the spell is left to name later), and is a target of the spell or ability; one who is no longer a
+   * legal target as it resolves, or who has left the game, makes none (CR 608.2b). `effect` runs each time, with the controller of the spell or ability as "you"; it names no target,
+   * and reads nothing of the spell.
+   */
+  | {
+      readonly kind: 'delayedCombatDamageToPlayer';
+      readonly filter: ObjectFilter;
+      readonly player: Extract<PlayerSelector, { readonly kind: 'target' }>;
+      readonly effect: Effect;
+    }
+  /**
    * CR 707.10, 707.10c (D-129): "Copy target instant or sorcery spell. You may choose new targets for the copy." Puts
    * a copy of the spell `spell` names onto the stack (also, with `triggerSubject` of an `activatesAbility` trigger, a copy of the activated ability on the stack, "copy that spell or ability":
    * it has the ability's text, targets and X, is controlled by the player who has it put on the stack and is not a spell, CR 707.10, 113.7a) under the control of the effect's controller. A copy of a spell
@@ -2669,6 +2708,13 @@ export type Effect =
        * their control and, with `newTargets` `may`, is the one who chooses its new targets.
        */
       readonly copier?: 'triggerPlayer' | 'opponent';
+      /**
+       * "The copy targets that token." (CR 707.10e, 115.3, Frontline Heroism): the object the one copy has as the target of every instance of the word "target" (the `moved` of the
+       * `createToken` before it). Nobody chooses (`newTargets` is `no`, no `count`, no `forEach`). If the object is not a legal target for each instance of the word "target", the copy is
+       * not created (CR 707.10e); when the effect before it made several objects (a replacement effect doubled the tokens), the first that is a legal target is the one (the choice
+       * CR 707.10e gives the controller is not asked, see docs/ROADMAP.md).
+       */
+      readonly newTarget?: Extract<ObjectRef, { readonly kind: 'moved' }>;
     }
   /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,
@@ -3139,6 +3185,11 @@ export type Effect =
    */
   | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "Increase your speed by 1" (CR 702.179c, 702.179d): each player the selector names has `amount` more speed; a player with no speed gets that value (CR 702.179c). Speed does not
+   * go past 4, the speed of max speed (CR 702.179e; the repository's CR text does not state a cap: unverified). One `speedChanged` event for each. Nothing for an amount of 0 or less.
+   */
+  | { readonly kind: 'increaseSpeed'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
    * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): the controller of the effect has no maximum hand size from now on, so a cleanup step makes them
    * discard nothing. Not a static ability: it works for the player, not a permanent, and does not end when a permanent leaves. No event; it stays in `SeatState.noMaximumHandSize`.
    */
@@ -3312,7 +3363,9 @@ export type Effect =
    * ends, whether or not it was tapped. "Can't be countered" is about a spell, so it is not accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
    * block for as long as you control this Saga", CR 611.2b): as for `gainControl`, the effect does nothing when the permanent with the ability is not
    * on the battlefield under its controller's control as it would begin, and otherwise ends, for good, as that stops being so. Only in the ability
-   * of a permanent, with `cantBlock`, `cantBeBlocked` or `attacksEachCombat`.
+   * of a permanent, with `cantBlock`, `cantBeBlocked` or `attacksEachCombat`. "That token attacks this combat if able" (CR 508.1d, 506.1, 611.2a) is `attacksEachCombat` with
+   * `duration: 'thisCombat'`, the only pair for that duration: the requirement lasts until the end of combat step ends (`expireEndOfCombatEffects`), and binds the objects the effect
+   * named, as it began (CR 611.2c), at the declare attackers step of the combat it is made in or of a later one before it ends.
    */
   | {
       readonly kind: 'restrict';
@@ -3322,7 +3375,8 @@ export type Effect =
         | Duration
         | 'forAsLongAsYouControlThis'
         | 'forAsLongAsThisRemains'
-        | 'untilNextUntapStep';
+        | 'untilNextUntapStep'
+        | 'thisCombat';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -4092,6 +4146,10 @@ export type ManaProduction =
    */
   | {
       readonly kind: 'chosenColor';
+      /**
+       * "{T}: Add four mana of the chosen color." (issue 144, Throne of Eldraine; CR 106.1, 614.12, 607.2d): this many mana (2 or more) of the chosen color instead of one. Not with `or`.
+       */
+      readonly count?: number;
       /**
        * "{T}: Add {U} or one mana of the chosen color." (issue 184, Thriving Isle; CR 106.1, 605.3b, 607.2d): the ability adds one mana of this color or of the
        * chosen one, chosen as it resolves (so the activation names it). Left out, the mana is of the chosen color alone.
@@ -5007,6 +5065,11 @@ export type Keyword =
    */
   | { readonly kind: 'ascend' }
   /**
+   * CR 702.179a (Start your engines!): a static ability, "If a player controls a permanent with start your engines! and that player has no speed, their speed becomes 1"
+   * (a state-based action, CR 704.5aa, `rules/speed.ts`). The speed itself is the designation `SeatState.speed`. Printed only: it cannot be granted.
+   */
+  | { readonly kind: 'startYourEngines' }
+  /**
    * CR 702.95a (Soulbond, D-286): "Soulbond is a keyword that represents two triggered abilities": when this creature enters, if you control both it and
    * another creature and both are unpaired, you may pair them; and whenever another creature you control enters, if you control both it and this one and
    * both are unpaired, you may pair them. `derive` expands it into those two abilities (`rules/derive-keywords.ts`); the pair is the designation
@@ -5498,6 +5561,11 @@ export type Condition =
       readonly designation: Designation;
     }
   /**
+   * "Max speed -- [ability]", "if you have max speed" (CR 702.178a, 702.179e): one of the players `player` names has max speed (speed 4, `SeatState.speed`). A player with no speed
+   * does not (CR 702.179b). A static ability may use it (a designation-like read that no layer changes) and so may an activated or a mana ability (`activateOnlyIf`).
+   */
+  | { readonly kind: 'maxSpeed'; readonly player: PlayerSelector }
+  /**
    * "Activate only if this Class is level 1" (CR 716.2a, 716.2d, D-235): the source permanent is at level `level` now; a permanent with no level is at level 1.
    * Read for the permanent the ability belongs to (an activated ability's `activateOnlyIf`).
    */
@@ -5642,6 +5710,11 @@ export type Condition =
    */
   | { readonly kind: 'yourMainPhase' }
   /**
+   * "If it's your combat phase, there is an additional combat phase after this phase." (issue 144, CR 506.1, 500.8): true while the game is in the combat phase of a turn of
+   * the condition's controller. Read where the condition is read; the stack empties before a phase ends (CR 117.4), so a spell resolving in a combat step is read in that phase.
+   */
+  | { readonly kind: 'yourCombatPhase' }
+  /**
    * "During your turn, equipped creature has flying." (CR 611.3a, 613.8, D-206): true while the active player is the controller of the ability
    * or static ability. The active player is no characteristic and no layer changes it, so a static ability may read it. Read where the condition is
    * read (a static ability's `condition` each time its effect is looked at; an `interveningIf` as the event happens and as the ability resolves).
@@ -5753,6 +5826,11 @@ export type Condition =
    * since still counts. Reads the turn log only, so it is read as the ability is activated or resolves. Not for a static ability.
    */
   | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
+  /**
+   * "Activate only if this creature attacked this turn" (CR 702.142a, Boast): the permanent the condition belongs to was declared as an attacker this turn, in any combat
+   * phase, from `TurnLog.attacked` (kept by the id the creature has now: a permanent that left and came back is a new object, CR 400.7). Reads the turn log only.
+   */
+  | { readonly kind: 'thisAttackedThisTurn' }
   /**
    * "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2, 603.4): the controller of the condition has
    * cast a spell from a graveyard this turn, or activated an ability of a card that was in a graveyard as it was activated (`TurnLog.castSpells` and `TurnLog.activated`, the
@@ -6608,6 +6686,18 @@ export type StaticEffect =
       readonly alsoSubtypes?: readonly Subtype[];
     }
   /**
+   * "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card." (issue 144, Conspicuous Snoop; CR 613.1f, 113.6, 604.1, 401.5):
+   * while the top card of its controller's library matches `card` (a filter describing the card as it is printed: its card types, subtypes, colors; no zone, owner or controller), the
+   * permanent, which must be the subject (`this`), has every activated and mana ability of that card, in layer 6 with the permanent's timestamp, after its own abilities; with no card
+   * on top, or one that does not match, it has none. The words "as long as" are this: there is no separate condition. Read from the card as printed (it is in a library: no layer but a copy
+   * effect changes it there), each time the permanent's abilities are looked at, so a new top card changes them at once. Only `this`.
+   */
+  | {
+      readonly kind: 'grantActivatedAbilitiesOfTopCard';
+      readonly subject: { readonly kind: 'this' };
+      readonly card: ObjectFilter;
+    }
+  /**
    * "You have hexproof." (CR 702.11b, 113.6, D-149): the controller of the permanent with the ability can't be the target of spells or
    * abilities their opponents control, while the permanent has the ability (the same as hexproof of a permanent, for the player). A player's
    * own spells and abilities can still target them. Read where targets are chosen and again as the spell or ability resolves (CR 608.2b).
@@ -6994,6 +7084,12 @@ export interface ManaAbility {
      * with an {X} in it or the activation cost of an ability with an {X} in it. Alone: no `types`, `subtypes` or `chosenType`.
      */
     readonly xCost?: true;
+    /**
+     * "Spend this mana only to cast monocolored spells of that color." (issue 144, Throne of Eldraine; CR 106.6, 105.2a): the spell has exactly one color, the color the permanent chose
+     * as it entered (`GameObject.chosen.color`), read as the mana is made; with no color chosen the mana can be spent on no spell. Alone: no `types`, `subtypes`, `chosenType` or
+     * `qualities`.
+     */
+    readonly monocoloredChosen?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

@@ -252,6 +252,62 @@ export const EFFECT_RESTRICT_SELF = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.restrict-combat`: "That token attacks this combat if able." (issue 144, CR 508.1d, 506.1, 611.2a): the requirement of one combat phase for the permanent the instruction
+ * before it named (the token a "create" made, "it", or the source): the engine's `restrict` of `attacksEachCombat` with the duration `thisCombat`, which ends with the combat. One creature:
+ * "those tokens attack this combat if able" is another line and stays unread.
+ */
+export const EFFECT_RESTRICT_COMBAT = defineRule<Clauses>({
+  id: `${RULE}-combat`,
+  family: 'effect',
+  leading: ['that', '~', 'it'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 506.1 (General)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    'That token attacks this combat if able',
+    'that token attacks this combat if able',
+    '~ attacks this combat if able',
+    'It attacks this combat if able',
+  ],
+  rejects: [
+    'That token attacks this combat',
+    'That token attack this combat if able',
+    'That token attacks this turn if able',
+    'That token attacks each combat if able',
+    'That token blocks this combat if able',
+    'That token can’t block this combat',
+    'Those tokens attack this combat if able',
+    'That creature attacks this combat if able',
+    'Its attacks this combat if able',
+    'That token attacks this combat if able and draws a card',
+  ],
+  parse: single(
+    `${RULE}-combat`,
+    sequence(
+      family<IrNoun>('noun', { only: ['noun.that-token', 'noun.self', 'noun.it'] }),
+      spanned(pattern(/ attacks this combat if able(?![\p{L}\p{N}])/iu)),
+    ),
+    ([objects, { span }]) => {
+      const kind: IrArg = {
+        kind: 'restrictionKind',
+        restriction: 'attacksEachCombat',
+        span,
+        rule: `${RULE}-combat`,
+      };
+      const duration: IrDuration = {
+        kind: 'duration',
+        scope: 'thisCombat',
+        span,
+        rule: `${RULE}-combat`,
+      };
+      return { verb: 'restrict', args: { objects, restriction: kind }, duration };
+    },
+  ),
+});
+
 /** `effect.restrict-those`: "They block this turn if able" binds to the plural creature group the prior instruction named. */
 export const EFFECT_RESTRICT_THOSE = defineRule<Clauses>({
   id: `${RULE}-those`,
@@ -361,5 +417,6 @@ export const RESTRICT_RULES = [
   EFFECT_RESTRICT_ALL,
   EFFECT_RESTRICT_SELF,
   EFFECT_RESTRICT_THOSE,
+  EFFECT_RESTRICT_COMBAT,
   EFFECT_RESTRICT_WHILE_CONTROLLING,
 ];

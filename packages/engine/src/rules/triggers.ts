@@ -52,6 +52,7 @@ import { findRingTriggers } from './ring';
 import { chaptersReached, loreChange, readAheadBlocks } from './saga';
 import { matchesFilter, type SelectContext } from './select';
 import { objectOrLki } from './source-info';
+import { findSpeedTriggers } from './speed';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
 import { readsTriggerDamage, readsTriggerPlayer } from './trigger-subject';
@@ -1657,6 +1658,9 @@ function findDelayedTriggers(
       .filter(
         (occ) =>
           (delayed.watched === undefined || occ.subject === delayed.watched) &&
+          // Issue 144: "deals combat damage to that player this turn": only damage dealt to the player the ability was made for.
+          (delayed.damagedPlayer === undefined ||
+            (occ.damaged?.kind === 'player' && occ.damaged.seat === delayed.damagedPlayer)) &&
           // Issue 159: "When you cast it this turn": only a spell cast from that card.
           (delayed.watchedCard === undefined ||
             (occ.subject !== null && state.objects[occ.subject]?.card === delayed.watchedCard)) &&
@@ -1724,7 +1728,10 @@ function limitOncePerTurn(
 /** Adds the triggers the events cause to the pending list (CR 603.2, 603.3). */
 export function collectTriggers(input: GameState, events: readonly GameEvent[]): GameState {
   const limited = limitOncePerTurn(input, findTriggers(input, events));
-  const state = limited.state;
+  // CR 702.179d: the inherent speed ability, which belongs to no object; its once-each-turn count is in the turn log.
+  const speeding = findSpeedTriggers(limited.state, events);
+  const state = speeding.state;
+  const speed = speeding.found;
   // D-220 (CR 603.2d): "If a triggered ability of ... triggers, that ability triggers an additional time."
   const own = [...withDoubledTriggers(state, limited.found, events)];
   const delayed = findDelayedTriggers(state, events);
@@ -1745,6 +1752,7 @@ export function collectTriggers(input: GameState, events: readonly GameEvent[]):
     delayed.found.length === 0 &&
     monarch.length === 0 &&
     ring.length === 0 &&
+    speed.length === 0 &&
     later.length === 0 &&
     stateful.length === 0
   ) {
@@ -1758,6 +1766,7 @@ export function collectTriggers(input: GameState, events: readonly GameEvent[]):
       ...delayed.found,
       ...monarch,
       ...ring,
+      ...speed,
       ...later,
       ...stateful,
     ],

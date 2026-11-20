@@ -277,6 +277,8 @@ export interface IrFilter {
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
   readonly targets?: IrFilter;
+  /** "that targets only a single creature you control" (issue 144, CR 115.9c): a spell whose chosen targets are one object of this kind, however many times it was chosen. */
+  readonly targetsOnly?: IrFilter;
   /** "that targets ~" (Feather group 3, D-437, CR 115.1): a spell with a chosen target that is the source of the ability. */
   readonly targetsSelf?: true;
   /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
@@ -576,6 +578,7 @@ export type IrAmount =
         | 'discardedTypeCount'
         | 'exiledCreatures'
         | 'damageDealt'
+        | 'excessDamageDealt'
         | 'countersRemoved'
         | 'returned';
       readonly words: readonly string[];
@@ -611,6 +614,8 @@ export type IrAmount =
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
   | { readonly kind: 'exiledStillThere'; readonly span: Span }
+  // Issue 144 (CR 608.2c): "for each card put into your graveyard this way", the cards the instruction before it moved
+  | { readonly kind: 'movedCount'; readonly span: Span }
   // D-654 (CR 603.10a, 113.7a): "for each Aura you controlled that was attached to it": the Auras of the controller that were attached to the permanent the trigger is about
   | { readonly kind: 'aurasAttachedToIt'; readonly span: Span }
   /** Number of cards selected for the spell's optional additional exile cost (D-575). */
@@ -631,7 +636,9 @@ export interface IrDuration extends IrNode {
     // "for as long as ~ remains on the battlefield" (stage P50, D-207, CR 611.2b): the effect of an ability of a permanent ends as that permanent leaves
     | 'whileSelfRemains'
     | 'asLongAs'
-    | 'thisTurn';
+    | 'thisTurn'
+    // "attacks this combat if able" (issue 144, CR 506.1, 508.1d, 611.2a): the requirement ends with the combat phase
+    | 'thisCombat';
   /** "for as long as you control a Dragon" */
   readonly condition?: IrCondition;
 }
@@ -804,6 +811,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'attackersTotalPower'; readonly atLeast: number }
     // Stage P41 (D-188): "it's your main phase" (CR 505.1): the precombat or the postcombat main phase of a turn of the controller
     | { readonly kind: 'yourMainPhase' }
+    // Issue 144 (CR 506.1): "it's your combat phase"
+    | { readonly kind: 'yourCombatPhase' }
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
@@ -902,6 +911,8 @@ export type IrCost = IrNode &
     // "{E}{E}" (stage P51, D-209, CR 107.14): energy counters paid by the player that an "unless you pay" asks
     | { readonly kind: 'energy'; readonly count: number }
     | { readonly kind: 'removeCounters'; readonly counter: string; readonly amount: IrAmount }
+    // "Exert ~" (issue 144, CR 701.43a): the permanent itself, as a cost
+    | { readonly kind: 'exert' }
     // "Put a page counter on ~" (stage P31, CR 118.3, 122.1): counters put on the permanent itself as a cost
     | { readonly kind: 'putCounters'; readonly counter: string; readonly count: number }
     // "Return an artifact you control to its owner's hand", "Return ~ to its owner's hand" (stage P31, CR 118.3): `count` of them
@@ -934,7 +945,12 @@ export interface IrManaSpec extends IrNode {
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
-    | { readonly kind: 'chosenColor'; readonly or?: 'W' | 'U' | 'B' | 'R' | 'G' }
+    // issue 144 (Throne of Eldraine): "four mana of the chosen color" has `count` 4
+    | {
+        readonly kind: 'chosenColor';
+        readonly or?: 'W' | 'U' | 'B' | 'R' | 'G';
+        readonly count?: number;
+      }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
@@ -1097,6 +1113,7 @@ export interface IrToken extends IrNode {
     | 'Map'
     | 'Gingerbrute'
     | 'Lander'
+    | 'Wicked Role'
     | 'Junk'
     | 'Blood';
   readonly power?: number;
@@ -1114,6 +1131,11 @@ export interface IrToken extends IrNode {
   readonly named?: string;
   /** "... token with flying that's attacking that opponent" (D-648, CR 508.4): the token is created attacking the player a trigger about a player attacking one of your opponents attacked. */
   readonly attackingThatOpponent?: true;
+  /**
+   * "... token that's tapped and attacking" (CR 508.4, 110.5b): the token enters tapped and attacking a player the declaration of an attack batch trigger attacked, never declared as
+   * an attacker. Only in the effect of "whenever one or more ... you control attack".
+   */
+  readonly tappedAndAttacking?: true;
   /** "Smaug, a legendary 6/6 red Dragon creature token" (stage P45, D-197, CR 205.4): the token has the supertype legendary. */
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
@@ -1265,7 +1287,11 @@ export interface IrSentence extends IrNode {
      * `thatCombat` (stage P41, D-188, CR 603.7, 500.8): "At the beginning of that combat, untap all creatures you control": the combat phase the
      * sentence before it added, which the lowering folds into the engine's `extraCombat` as what happens at its beginning.
      */
-    readonly step: 'endStep' | 'thatCombat' | 'nextCast';
+    readonly step: 'endStep' | 'thatCombat' | 'nextCast' | 'combatDamageToThatPlayer';
+    /**
+     * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
+     * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
+     */
     readonly whose: 'you' | 'each';
     /**
      * `nextCast` (D-336, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
@@ -1633,6 +1659,11 @@ export type IrStaticEffect =
       readonly alsoSubtypes: readonly string[];
     }
   /**
+   * "As long as the top card of your library is a Goblin card, ~ has all activated abilities of that card." (issue 144, CR 613.1f, 401.5): the activated abilities of the card on top of the
+   * library, while it is `card`. The subject is `~`.
+   */
+  | { readonly kind: 'grantActivatedAbilitiesOfTopCard'; readonly card: IrFilter }
+  /**
    * "~ can't attack or block unless you control another creature with power 4 or greater" (stage P32, D-147, CR 508.1a, 509.1a): the
    * restrictions (`cantAttack`, `cantBlock` or both) that hold unless the condition does. The subject is `~`.
    */
@@ -1941,6 +1972,8 @@ export type IrAbility =
       /** Empty (no sentences) when the ability is modal: its effects are in `modal`. */
       readonly body: IrBody;
       readonly restrictions: readonly IrRestriction[];
+      /** "Boast — {cost}: ..." (CR 702.142a): activate only if this creature attacked this turn, and only once each turn. */
+      readonly boast?: true;
       /** "{2}, {T}: Choose one —" and its bullets (stage P19, CR 700.2a). */
       readonly modal?: IrModes;
     })
@@ -2000,6 +2033,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'cardTypesAmongThoseCards',
   'shortfall',
   'exiledStillThere',
+  'movedCount',
   'aurasAttachedToIt',
   'manaSpent',
   'votesFor',

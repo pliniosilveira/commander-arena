@@ -24,6 +24,8 @@ export const EFFECT_GOAD = defineRule<Clauses>({
     'Goad target creature',
     'goad each creature target player controls',
     'goad each creature target opponent controls',
+    // Issue 144 (Grenzo, Havoc Raiser): the creature of the player the trigger is about.
+    'goad target creature that player controls',
   ],
   rejects: [
     'goad each creature',
@@ -39,7 +41,12 @@ export const EFFECT_GOAD = defineRule<Clauses>({
     sequence(
       literal('goad '),
       operands(
-        ['noun.target-permanent', 'noun.it', 'noun.each-permanent-of-target-player'],
+        [
+          'noun.target-permanent-of-that-player',
+          'noun.target-permanent',
+          'noun.it',
+          'noun.each-permanent-of-target-player',
+        ],
         'effect.goad',
       ),
     ),

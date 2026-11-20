@@ -16,9 +16,12 @@ export const MONARCH_NAME = 'The monarch';
 /** The name the engine gives the abilities of the Ring (`ObjectView.name`, CR 701.54c, D-196). */
 export const RING_NAME = 'The Ring';
 
-/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, else "The monarch". */
+/** The name the engine gives the inherent ability of speed (`ObjectView.name`, CR 702.179d). */
+export const SPEED_NAME = 'Speed';
+
+/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, else "The monarch". */
 export const inherentNameOf = (inherent: string): string =>
-  inherent.startsWith('ring') ? RING_NAME : MONARCH_NAME;
+  inherent.startsWith('ring') ? RING_NAME : inherent === 'speedUp' ? SPEED_NAME : MONARCH_NAME;
 
 /** True for an ability on the stack that has no source: the monarch's (CR 725.2). */
 export function isInherentAbility(o: Pick<ObjectView, 'ability' | 'abilitySource'>): boolean {
@@ -31,6 +34,12 @@ export function isInherentAbility(o: Pick<ObjectView, 'ability' | 'abilitySource
  */
 export function inherentTriggerWording(trigger: Trigger, mine: boolean): string | null {
   const bearer = mine ? 'your Ring-bearer' : "the opponent's Ring-bearer";
+  // CR 702.179d (issue 144): the inherent ability of speed.
+  if (trigger.kind === 'lifeLost') {
+    return mine
+      ? 'Whenever one or more opponents lose life during your turn, if your speed is less than 4, your speed increases by 1.'
+      : 'Whenever one or more of your opponents lose life during their turn, if their speed is less than 4, their speed increases by 1.';
+  }
   // CR 701.54c (D-196): the Ring's abilities.
   if (trigger.kind === 'attacks') {
     return `Whenever ${bearer} attacks, ${mine ? 'draw a card, then discard a card' : 'they draw a card, then discard a card'}.`;

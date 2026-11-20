@@ -112,7 +112,54 @@ export const REPLACEMENT_ENTERS_TAPPED_UNLESS_PAYS = defineRule<IrAbility>({
   },
 });
 
+/**
+ * `replacement.enters-tapped-if`: "If you control two or more other lands, ~ enters tapped." (CR 614.1c, 614.12): the same replacement effect as the
+ * "unless" wording with the condition said the other way round, so the clause's condition is the condition as written, not its negation.
+ */
+export const REPLACEMENT_ENTERS_TAPPED_IF = defineRule<IrAbility>({
+  id: 'replacement.enters-tapped-if',
+  family: 'replacement',
+  leading: ['if'],
+  cites: ['CR 614.1c (Replacement Effects)', 'CR 614.12 (Replacement Effects)', 'CR 603.6d'],
+  examples: [
+    'If you control two or more other lands, ~ enters tapped.',
+    'If you control two or more other lands, ~ enters the battlefield tapped.',
+    'If you control a Dragon, ~ enters tapped.',
+  ],
+  rejects: [
+    '~ enters tapped.',
+    'If you control two or more other lands, ~ enters tapped',
+    'If you control two or more other lands, ~ enters untapped.',
+    'If you control two or more other lands, ~ enters tapped and you gain 1 life.',
+    'If you control a Dragon and you have two or more opponents, ~ enters tapped.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('if '),
+      spanned(family<IrCondition>('condition')),
+      literal(', '),
+      ENTERS,
+      literal(' tapped.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, ifTrue] = r.value;
+    const id = 'replacement.enters-tapped-if';
+    const span = { start: pos, end: r.pos };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersTapped',
+      args: {},
+      optional: false,
+      condition: { kind: 'condition', test: ifTrue.value.test, span: ifTrue.span, rule: id },
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: r.pos };
+  },
+});
+
 export const UNLESS_RULES = [
   REPLACEMENT_ENTERS_TAPPED_UNLESS,
+  REPLACEMENT_ENTERS_TAPPED_IF,
   REPLACEMENT_ENTERS_TAPPED_UNLESS_PAYS,
 ];

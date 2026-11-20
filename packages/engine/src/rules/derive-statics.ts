@@ -32,7 +32,7 @@ import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { characteristicPtOf, staticAmountOf } from './derive-count';
-import { linkedCardOf } from './derive-group-types';
+import { linkedCardOf, topCardOf } from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
@@ -53,6 +53,7 @@ type Modifier = Extract<
       | 'setPt'
       | 'cantBeBlockedBy'
       | 'takeFromLinkedExile'
+      | 'grantActivatedAbilitiesOfTopCard'
       | 'loseAllAbilities';
   }
 > & {
@@ -270,6 +271,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
       a.static.kind === 'setPt' ||
       a.static.kind === 'cantBeBlockedBy' ||
       a.static.kind === 'takeFromLinkedExile' ||
+      a.static.kind === 'grantActivatedAbilitiesOfTopCard' ||
       a.static.kind === 'loseAllAbilities')
   );
 }
@@ -913,6 +915,17 @@ export function staticEffectsOn(
         controller: controllerOf(state, source.object),
         source: source.object.id,
       });
+    } else if (mod.kind === 'grantActivatedAbilitiesOfTopCard') {
+      // CR 613.1f, 401.5 (issue 144): the activated and mana abilities of the top card of the controller's library, while it matches the filter, given in layer 6 with the
+      // permanent's timestamp (read from the card as printed: it is in a library, so no layer but a copy effect changes it).
+      const card = topCardOf(state, source.object, mod.card);
+      if (card !== null) {
+        for (const ability of printedAbilities(state, card)) {
+          if (ability.kind === 'activated' || ability.kind === 'mana') {
+            grants.push({ ability, timestamp: source.object.timestamp });
+          }
+        }
+      }
     } else if (mod.kind === 'takeFromLinkedExile') {
       // CR 607.2a, 613.4b (D-139): the power and toughness of the last card exiled with it that the filter names (its types are
       // layer 4: `derive-group-types.ts`), a characteristic-defining '*' read as that card has it in exile.

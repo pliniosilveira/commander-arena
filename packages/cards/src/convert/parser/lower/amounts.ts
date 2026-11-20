@@ -163,7 +163,7 @@ export function lowerAmount(
       };
     }
     case 'manaValueOf': {
-      const of = objectRefOf(amount.of, ctx, { triggerSubject: true });
+      const of = objectRefOf(amount.of, ctx, { triggerSubject: true, sacrificed: true });
       if (!of.ok) return of;
       const blocked = needs('manaValueOf');
       if (blocked !== null) return blocked;
@@ -171,7 +171,13 @@ export function lowerAmount(
       // value of a target that stays, one that moved and one that was countered (CR 202.3,
       // 608.2h); or (stage P37, D-180, CR 202.3, 601.2i) the object whose event caused the trigger, "that spell's mana value" of a cast
       // trigger, which `validateCard` accepts for a spell on the stack. The mana value of `~` itself is not something a rule reads.
-      if (of.value.kind !== 'target' && of.value.kind !== 'triggerSubject') {
+      // Issue 144 (Boast, CR 202.3, 602.2c, 113.7a): or the permanent the cost of the activated ability sacrificed, as it last was.
+      if (
+        of.value.kind !== 'target' &&
+        of.value.kind !== 'triggerSubject' &&
+        of.value.kind !== 'sacrificedCost' &&
+        of.value.kind !== 'sacrificed'
+      ) {
         return { ok: false, needs: [], at: amount.span, rule };
       }
       return { ok: true, value: { kind: 'manaValueOf', of: of.value }, rule };
@@ -629,6 +635,14 @@ export function lowerAmount(
         value: { kind: 'shortfall', limit: amount.limit, of: { kind: 'moved' } },
         rule,
       };
+    }
+    case 'movedCount': {
+      // CR 608.2c (issue 144): "for each card put into your graveyard this way": the cards the move to the graveyard before it moved.
+      const blocked = needs('movedCount');
+      if (blocked !== null) return blocked;
+      if (ctx.lastEffectKind !== 'moveToZone')
+        return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'movedCount' }, rule };
     }
     case 'exiledStillThere': {
       // CR 400.7 (stage P34, D-152): the cards the instruction before it exiled, counted when a delayed trigger resolves.
