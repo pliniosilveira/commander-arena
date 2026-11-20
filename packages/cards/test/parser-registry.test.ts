@@ -928,6 +928,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P68 (D-229): the Hofri Ghostforge deck. The triggers follow "Whenever"; the conditions follow a trigger or "As long as"; the costs are costs of an
   // activated ability; the rider follows the "Add" sentence; the amount follows a pump; the static is a line of its own.
   'trigger.cards-leave-graveyard': whenever,
+  'trigger.graveyard-events': whenever,
   // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
   'trigger.put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
