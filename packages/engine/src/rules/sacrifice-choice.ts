@@ -112,10 +112,13 @@ export function runChooseSacrifice(
     instruction.filter,
     res.sacrificed,
   );
+  // CR 603.2c, 400.7 (Descendants' Fury): "sacrifice one of them" is one of the creatures that dealt the damage, as long as each is still the permanent that did.
+  const named =
+    instruction.fromTriggerSources === true
+      ? candidates.filter((id) => res.triggerCards?.includes(id) === true)
+      : candidates;
   const legal =
-    instruction.greatest === undefined
-      ? candidates
-      : greatestAmong(state, candidates, instruction.greatest);
+    instruction.greatest === undefined ? named : greatestAmong(state, named, instruction.greatest);
   if (legal.length === 0) return proceed([], [], true);
   // D-135: "any number": the player chooses none, some or all of the candidates, even when there is only one.
   // D-187: "one or more": at least one of them.

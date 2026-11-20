@@ -178,6 +178,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -1192,6 +1193,8 @@ export const EFFECT_RULES = [
   ...POPULATE_EFFECT_RULES,
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
   ...COPY_ONE_OF_THEM_EFFECT_RULES,
+  // Sliver Swarm deck, group D (issue 133): "Each player chooses a creature type."
+  ...SLIVER_D_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
   ...RAMP_LANDS_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,

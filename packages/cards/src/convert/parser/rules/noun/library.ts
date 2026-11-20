@@ -73,7 +73,9 @@ const CARD_WORD = (plural: boolean, spaced = true) =>
  */
 function sharedSuffix(
   plural: boolean,
-): Parser<Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharedLandType'>> {
+): Parser<
+  Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharesCreatureTypeWithSacrificed' | 'sharedLandType'>
+> {
   return (ctx, pos) => {
     // Quiet: the words are optional, so their absence is no failure of the line (the diagnostics keep the position they had).
     const r = quiet(
@@ -81,7 +83,8 @@ function sharedSuffix(
         new RegExp(
           plural
             ? ` that share a land type${BOUNDARY}`
-            : ` that shares a creature type with it${BOUNDARY}`,
+            : // Descendants' Fury (CR 701.21a): "with the sacrificed creature", the permanent an earlier sacrifice of the text sacrificed.
+              ` that shares a creature type with (it|the sacrificed creature)${BOUNDARY}`,
           'u',
         ),
       ),
@@ -91,7 +94,9 @@ function sharedSuffix(
       ok: true,
       value: plural
         ? { sharedLandType: true as const }
-        : { sharesCreatureTypeWithIt: true as const },
+        : r.value[1] === 'it'
+          ? { sharesCreatureTypeWithIt: true as const }
+          : { sharesCreatureTypeWithSacrificed: true as const },
       pos: r.pos,
     };
   };
@@ -151,9 +156,11 @@ export function libraryPhrase(plural: boolean): Parser<IrFilter> {
     const shared = sharedSuffix(plural)(ctx, word.pos);
     if (!shared.ok) return shared;
     const sharing = shared.value;
-    const sharesWhat = sharing.sharesCreatureTypeWithIt === true ? 'creature' : 'land';
+    const sharesWhat = sharing.sharedLandType === true ? 'land' : 'creature';
     if (
-      (sharing.sharesCreatureTypeWithIt === true || sharing.sharedLandType === true) &&
+      (sharing.sharesCreatureTypeWithIt === true ||
+        sharing.sharesCreatureTypeWithSacrificed === true ||
+        sharing.sharedLandType === true) &&
       (!('types' in kinds) || !kinds.types.includes(sharesWhat))
     ) {
       return fail(ctx, pos);

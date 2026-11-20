@@ -32,6 +32,7 @@ import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
 import { lowerMayInstead, lowerSentences } from './sentences';
+import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type Triggered = Extract<IrAbility, { kind: 'triggered' }>;
@@ -1409,6 +1410,16 @@ function lowerTriggeredAbility(
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
+  ctx.selfEntersOrAttacksTrigger =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) =>
+        (t.kind === 'attacks' || t.kind === 'entersBattlefield') &&
+        'kind' in t.what &&
+        t.what.kind === 'this',
+    );
+  // Titan of Littjara: "shares a creature type with it" is read only where "it" is the card itself.
+  if (!ctx.selfEntersOrAttacksTrigger && usesSharesWithSource(written)) return failure(written);
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

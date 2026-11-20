@@ -311,6 +311,8 @@ export type FaceDownBy = 'manifest' | 'morph';
 export interface ChosenValues {
   /** A creature type of CR 205.3m, spelled as `CREATURE_TYPES` lists it. */
   readonly creatureType?: Subtype;
+  /** Every creature type a resolving "each player chooses a creature type" chose (CR 101.4); `creatureType` is the last of them. */
+  readonly creatureTypes?: readonly Subtype[];
   readonly color?: Color;
   /** A card type of CR 205.2a that the engine models (`CARD_TYPES`): "choose a card type" (D-376, Serra's Emissary). */
   readonly cardType?: CardType;
@@ -1041,7 +1043,12 @@ export type Instruction =
       readonly exactly?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
-  | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
+  | {
+      readonly kind: 'chooseCreatureType';
+      readonly chosen: string | null;
+      /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
+      readonly seat?: SeatId;
+    }
   /** Run one effect node of the resolving spell or ability. */
   | {
       readonly kind: 'effect';
@@ -1087,6 +1094,8 @@ export type Instruction =
       readonly atLeastOne?: true;
       /** "A creature with the greatest power among creatures they control" (`ChooseSelector.greatest`, D-135). */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      /** "Sacrifice one of them" (`ChooseSelector.fromTriggerSources`): only the permanents that dealt the combat damage of the batch trigger. */
+      readonly fromTriggerSources?: true;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1894,6 +1903,8 @@ export interface ResolutionContext {
   readonly controller: SeatId;
   /** Creature type chosen by a resolving instruction such as "choose a creature type". */
   readonly chosenCreatureType?: string;
+  /** Every creature type chosen by a resolving "each player chooses a creature type" (CR 101.4), in the order they were chosen; `chosenCreatureType` is the last. */
+  readonly chosenCreatureTypes?: readonly string[];
   /** Objects chosen by resolving instructions, keyed by their bound text reference. */
   readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   readonly queue: readonly Instruction[];

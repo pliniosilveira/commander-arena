@@ -131,6 +131,9 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
+  'selector:sharesCreatureTypeWithSource',
+  'selector:sharesCreatureTypeWithSacrificed',
+  'selector:chooseFromTriggerSources',
   'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
@@ -348,6 +351,15 @@ function lowerFilterAt(
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
+  if (filter.sharesCreatureTypeWithSacrificed === true) {
+    parts.push('selector:sharesCreatureTypeWithSacrificed');
+  }
+  // CR 205.3m (Titan of Littjara): "that shares a creature type with it" of a count, the creature types of the source of the ability.
+  if (filter.sharesCreatureTypeWithSource === true) {
+    if (inner) return bad([]);
+    parts.push('selector:sharesCreatureTypeWithSource');
+  }
   // CR 205.2a, 701.21a (Braids): "shares a card type with it", the permanent an earlier sacrifice sacrificed.
   if (filter.sharesCardTypeWithSacrificed === true) parts.push('selector:sharesCardTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
@@ -534,6 +546,12 @@ function lowerFilterAt(
       : {}),
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
+      : {}),
+    ...(filter.sharesCreatureTypeWithSacrificed === true
+      ? { sharesCreatureTypeWith: 'sacrificed' as const }
+      : {}),
+    ...(filter.sharesCreatureTypeWithSource === true
+      ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),

@@ -848,8 +848,12 @@ export interface ObjectFilter {
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
    * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
    * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
+   * `source` (Titan of Littjara: "each other creature you control that shares a creature type with it", CR 205.3m, 702.73a): the creature types of the source of the ability, as it is or as it
+   * last was (CR 113.7a); read anywhere a filter is matched against the game. `sacrificed` (Descendants' Fury: "a creature card that shares a creature type with the sacrificed creature",
+   * CR 701.21a, 113.7a): the creature types the first permanent an earlier `sacrifice` of this resolution sacrificed last had on the battlefield, in the filter of a `revealUntil` that
+   * follows that sacrifice (or the `may` of one) in the same sequence.
    */
-  readonly sharesCreatureTypeWith?: 'triggerSubject';
+  readonly sharesCreatureTypeWith?: 'triggerSubject' | 'source' | 'sacrificed';
   /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
@@ -1812,6 +1816,11 @@ export interface ChooseSelector {
   readonly minCardTypes?: number;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
+  /**
+   * "You may sacrifice one of them" (Descendants' Fury, CR 603.2c, 701.21a, 400.7): the candidates are only the creatures that dealt the combat damage of a `combatDamageBatch` trigger
+   * (`triggerSources`) that are still the same permanent on the battlefield under the chooser's control. Only for `sacrifice`, in the effect of such a trigger.
+   */
+  readonly fromTriggerSources?: true;
 }
 
 /**
@@ -1863,7 +1872,12 @@ export type Effect =
       /** "Put two +1/+1 counters on a creature you control" (D-653): the controller must choose `count` permanents (or all there are when fewer), not up to that many. */
       readonly exactly?: true;
     }
-  | { readonly kind: 'chooseCreatureType' }
+  /**
+   * "Choose a creature type" as the effect resolves (CR 205.3m, 608.2d): the controller chooses. With `players` (Harsh Mercy: "Each player chooses a creature type", CR 101.4): each player the
+   * selector names chooses one, one after the other in turn order (the active player first), and the creature types chosen are what `notChosenType` and `chosenType` read afterwards (an
+   * object matches `chosenType` with any of them; `notChosenType` with none of them).
+   */
+  | { readonly kind: 'chooseCreatureType'; readonly players?: PlayerSelector }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   /**
