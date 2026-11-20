@@ -585,7 +585,8 @@ export type IrAmount =
       readonly span: Span;
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
-  | { readonly kind: 'triggerDamage'; readonly span: Span }
+  // `life`: "where X is the amount of life you gained" (Field-Tested Frying Pan), read only where the trigger is life being gained.
+  | { readonly kind: 'triggerDamage'; readonly life?: true; readonly span: Span }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"

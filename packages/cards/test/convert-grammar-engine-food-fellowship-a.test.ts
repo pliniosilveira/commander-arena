@@ -55,7 +55,7 @@ describe('Assemble the Entmoot', () => {
 
   test('sacrificed after gaining 3 life: three tapped 3/3 Treefolk, each with a reach counter', () => {
     const g = start([SIP.name]);
-    g.act(0).cast(SIP.name).pay();
+    g.act(0).cast({ name: SIP.name, nth: 0 }).pay();
     g.passAll();
     g.expect.life(0, 43);
     g.act(0).activate(entmoot.name);
@@ -74,7 +74,7 @@ describe('Assemble the Entmoot', () => {
 
   test('life lost the same turn does not reduce the count (ruling 2023-06-16)', () => {
     const g = start([SIP.name, NICK.name]);
-    g.act(0).cast(SIP.name).pay();
+    g.act(0).cast({ name: SIP.name, nth: 0 }).pay();
     g.passAll();
     g.act(0).cast(NICK.name).pay();
     g.passAll();
@@ -93,5 +93,67 @@ describe('Assemble the Entmoot', () => {
     g.passAll();
     expect(treefolk(g)).toHaveLength(0);
     g.expect.invariants();
+  });
+});
+
+describe('Field-Tested Frying Pan', () => {
+  const pan = real('Field-Tested Frying Pan');
+  const start = () =>
+    scenario()
+      .define(pan)
+      .define(SIP)
+      .seat(0)
+      .hand(pan.name, SIP.name, SIP.name)
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Grizzly Bears')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  const permanents = (g: ReturnType<typeof start>, name: string) =>
+    g.state.battlefield
+      .map((id) => g.state.objects[id])
+      .filter((o) => o?.token?.characteristics.name === name);
+
+  test('the card is valid', () => {
+    expect(validateCard(pan)).toEqual([]);
+  });
+
+  test('enters with a Food and an attached 1/1 Halfling that grows by the life gained', () => {
+    const g = start();
+    g.act(0).cast(pan.name).pay();
+    g.passAll();
+    expect(permanents(g, 'Food')).toHaveLength(1);
+    expect(permanents(g, 'Halfling')).toHaveLength(1);
+    g.expect.attached(pan.name, 'Halfling');
+    g.expect.pt('Halfling', 1, 1);
+    g.act(0).cast({ name: SIP.name, nth: 0 }).pay();
+    g.passAll();
+    g.expect.life(0, 43);
+    g.expect.pt('Halfling', 4, 4);
+    g.expect.pt('Grizzly Bears', 2, 2);
+    g.expect.invariants();
+  });
+
+  test('each gain is its own trigger with its own amount (CR 603.2c)', () => {
+    const g = start();
+    g.act(0).cast(pan.name).pay();
+    g.passAll();
+    g.act(0).cast({ name: SIP.name, nth: 0 }).pay();
+    g.passAll();
+    g.act(0).cast({ name: SIP.name, nth: 0 }).pay();
+    g.passAll();
+    g.expect.pt('Halfling', 7, 7);
+  });
+
+  test('the bonus lasts until end of turn only', () => {
+    const g = start();
+    g.act(0).cast(pan.name).pay();
+    g.passAll();
+    g.act(0).cast({ name: SIP.name, nth: 0 }).pay();
+    g.passAll();
+    g.expect.pt('Halfling', 4, 4);
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.pt('Halfling', 1, 1);
   });
 });

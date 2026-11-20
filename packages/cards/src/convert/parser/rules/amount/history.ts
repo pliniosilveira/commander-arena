@@ -12,6 +12,16 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: gain.pos,
     };
   }
+  // Field-Tested Frying Pan (CR 119.9, 603.2): "whenever you gain life, ... where X is the amount of life you gained": the life of the event that caused the trigger (`triggerDamage`,
+  // read only in the body of a life gain trigger, which the lowering checks), as opposed to the life gained over the whole turn above.
+  const event = pattern(/the amount of life you gained(?! this turn)(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (event.ok) {
+    return {
+      ok: true,
+      value: { kind: 'triggerDamage', life: true, span: { start: pos, end: event.pos } },
+      pos: event.pos,
+    };
+  }
   // D-638 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
   const spells = pattern(
     /the number of (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
