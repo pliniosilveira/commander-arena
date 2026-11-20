@@ -3968,6 +3968,17 @@ function checkSearch(
     issue(out, `${path}.filter`, 'a search needs a filter (use {} for "a card")');
   } else {
     checkFilter(filter, `${path}.filter`, out);
+    // CR 107.3a: "a creature card with mana value X or less" reads the X announced for the spell that is resolving.
+    if (
+      (filter.manaValueAtMost as { kind?: string } | undefined)?.kind === 'x' &&
+      !scope.xAllowed
+    ) {
+      issue(
+        out,
+        `${path}.filter.manaValueAtMost`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
+      );
+    }
     // The searched zone is the searcher's own library; naming another zone or controller is wrong.
     if (filterSome(filter, (f) => f.zone !== undefined)) {
       issue(out, `${path}.filter.zone`, "a search looks in the searcher's library: leave zone out");

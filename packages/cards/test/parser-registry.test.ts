@@ -279,6 +279,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.library-cards-counted': spell(
     (e) => `Search your library for ${e}, put them into your hand, then shuffle.`,
   ),
+  'noun.library-card-mana-value-x': spell(
+    (e) => `Search your library for ${e} and put it onto the battlefield.`,
+  ),
   'trigger.enters': whenever,
   'trigger.dies': whenever,
   'trigger.attacks': whenever,

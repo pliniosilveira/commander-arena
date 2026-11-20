@@ -1048,6 +1048,7 @@ describe('unmatched abilities', () => {
       'noun.each-permanent-they-control',
       'noun.library-card',
       'noun.library-cards-counted',
+      'noun.library-card-mana-value-x',
       'amount.for-each-died',
       'amount.for-each-color',
       'amount.for-each-card-type',

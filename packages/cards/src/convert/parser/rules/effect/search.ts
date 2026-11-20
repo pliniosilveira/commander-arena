@@ -15,6 +15,7 @@ import {
   optional,
   type Parser,
   pattern,
+  quiet,
   satisfy,
   sequence,
 } from '../../combinators';
@@ -25,6 +26,8 @@ import { type Clauses, single } from './operands';
 const NOUN = 'noun.library-card';
 /** CR 701.23b: "four basic land cards", a count with a stated quality, is read for the search only. */
 const COUNTED = 'noun.library-cards-counted';
+/** Finale of Devastation: "a creature card with mana value X or less", tried first: the plain noun would read "a creature card" and leave the rest. */
+const MV_X = 'noun.library-card-mana-value-x';
 
 type Place = Pick<IrZoneSpec, 'zone' | 'whose' | 'tapped'>;
 
@@ -239,6 +242,8 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     'search your hand and/or library for a creature card and put it onto the battlefield',
     'search your graveyard, hand, and/or library for a creature card and put it into your hand',
+    // Finale of Devastation (CR 107.3a, 202.3): the mana value is at most the X of the spell.
+    'search your library and/or graveyard for a creature card with mana value X or less and put it onto the battlefield',
   ],
   rejects: [
     'search your library for a basic land card, put them onto the battlefield tapped, then shuffle',
@@ -271,6 +276,8 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     "search your hand, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     "search your graveyard, hand, and/or library for up to two cards named God-Pharaoh's Gift and put them onto the battlefield",
     "search their graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
+    'search your library and/or graveyard for creature cards with mana value X or less and put them onto the battlefield',
+    'search your library and/or graveyard for a creature card with mana value X or less, reveal it, and put it onto the battlefield',
   ],
   parse: single(
     RULE,
@@ -280,7 +287,10 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
       if (!where.ok) return where;
       const zones = zonesOf(where.value[1] ?? '', { start: pos, end: where.pos });
       if (zones === 'bad') return fail(ctx, pos);
-      const noun = family<IrNoun>('noun', { only: [NOUN, COUNTED] })(ctx, where.pos);
+      const noun = choice(
+        quiet(family<IrNoun>('noun', { only: [MV_X] })),
+        family<IrNoun>('noun', { only: [NOUN, COUNTED] }),
+      )(ctx, where.pos);
       if (!noun.ok) return noun;
       const cards = noun.value;
       // Issue 160 (D-626, CR 107.3c): "up to X ... cards, where X is the number of tapped creatures you control": the definition comes right after the noun.
