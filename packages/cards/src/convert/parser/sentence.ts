@@ -385,9 +385,10 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
  */
 const PLAYER_MAY: Parser<NonNullable<IrSentence['mayBy']>> = quiet((ctx, pos) => {
   // Looked at first, so that a sentence about a player that does not say "may" stops where it always did. "Its controller may search ..." stays with `effect.search-by` (White Orchid
-  // Phantom, CR 701.23a), which reads the search of that controller's own library.
+  // Phantom, CR 701.23a), which reads the search of that controller's own library; "Its controller may pay 1 life. If they do, they draw a card." is one instruction of its own (Gix,
+  // Yawgmoth Praetor, `effect.its-controller-may-pay-draw`).
   const ahead = pattern(
-    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may |(?:its|that (?:creature|permanent|land|artifact|enchantment|planeswalker)['’]s) controller may (?!search ))/iu,
+    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may |(?:its|that (?:creature|permanent|land|artifact|enchantment|planeswalker)['’]s) controller may (?!search |pay [^.]*\. if they do, they draw ))/iu,
   )(ctx, pos);
   if (!ahead.ok) return ahead;
   return map(

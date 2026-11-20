@@ -1,5 +1,5 @@
 {
-  "parserVersion": 176,
+  "parserVersion": 177,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -172,6 +172,14 @@
         "Unknown mana symbol \"G/U/P\" (hybrid Phyrexian symbols (CR 107.4f) are not representable in ManaCost yet)"
       ],
       "ast": "c808457c"
+    },
+    "028dcef2-3de9-4dde-ba17-f9e077b3190d": {
+      "name": "Mindblade Render",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "80b51581"
     },
     "02be0b99-d40b-4287-989b-12eb2701115c": {
       "name": "Pest Rescuer",
@@ -639,6 +647,14 @@
       "reasons": [],
       "ast": "dc66dcae"
     },
+    "0ccb9af3-6902-4130-a59c-4c882dc3a2fd": {
+      "name": "Legion Warboss",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9cc2d400"
+    },
     "0d2fa39a-9cac-4a1f-bb1e-b6162e6d5169": {
       "name": "Lazotep Quarry",
       "group": "acceptance",
@@ -696,6 +712,14 @@
       "reasons": [],
       "ast": "c6593ee5"
     },
+    "0ee41ef9-0b39-4d00-a68e-7914839a7175": {
+      "name": "Bone Devourer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "99fbee83"
+    },
     "0efb0d7e-dea0-4817-a243-15066e9ef333": {
       "name": "Grist, the Hunger Tide",
       "group": "acceptance",
@@ -727,6 +751,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1d774bab"
+    },
+    "0f93d88c-9d2e-416d-a10b-99483360b1fb": {
+      "name": "Zurgo Stormrender",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "880f778a"
     },
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
@@ -1514,6 +1546,14 @@
       "reasons": [],
       "ast": "83eaa363"
     },
+    "24e39d26-6a2b-461e-b194-bda575bcf898": {
+      "name": "Legion Loyalty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9c03261b"
+    },
     "24f7143c-d43a-4120-baa0-0235b15d8186": {
       "name": "Wave of Reckoning",
       "group": "acceptance",
@@ -1665,6 +1705,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f272f45d"
+    },
+    "28c7f2b6-ba67-4ccf-9e1b-99c89a9d1f72": {
+      "name": "Angel of Invention",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cd758de8"
     },
     "2962fe4c-bf48-454b-8a6b-0f8253352ae8": {
       "name": "Spelunking",
@@ -2358,6 +2406,14 @@
       "reasons": [],
       "ast": "09871086"
     },
+    "38515f89-348b-4cf3-b7bd-1f6fe4ce2fba": {
+      "name": "Adeline, Resplendent Cathar",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "50e2a7db"
+    },
     "386a6fa7-db5b-4e82-bd25-fd86d910ed0c": {
       "name": "Baral and Kari Zev",
       "group": "acceptance",
@@ -2831,6 +2887,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b9761e6"
+    },
+    "454a8902-8120-4373-96ee-bbf352b04e8d": {
+      "name": "Hero of Bladehold",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "979d925c"
     },
     "457af74a-02b3-4659-846d-63e482667f34": {
       "name": "Deadly Dispute",
@@ -3561,6 +3625,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9ea5d0c6"
+    },
+    "5917216f-5b42-41fa-8976-401bdbeb782e": {
+      "name": "Divine Visitation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "79bf0bbd"
     },
     "594f6881-c059-46f8-aa4e-7151d502de73": {
       "name": "Jace, Vryn's Prodigy // Jace, Telepath Unbound",
@@ -4624,6 +4696,14 @@
       "reasons": [],
       "ast": "698098a4"
     },
+    "71c68002-1489-4858-a8fb-1f575641983e": {
+      "name": "Infantry Shield",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a184196"
+    },
     "71cb48e2-2328-471c-a04a-7b6461f378f4": {
       "name": "Sarkhan, Dragon Ascendant",
       "group": "training",
@@ -4841,6 +4921,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "11c50930"
+    },
+    "77cf4fb1-593f-4240-96d9-6ae9084baeac": {
+      "name": "Thalisse, Reverent Medium",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4fc6c11a"
     },
     "78124cd1-2658-43f3-a339-0755d84154d2": {
       "name": "Stonecoil Serpent",
@@ -5642,6 +5730,14 @@
       "reasons": [],
       "ast": "2035ebb0"
     },
+    "8c1fda45-09f1-4b58-a487-e11c868e1357": {
+      "name": "Ainok Strike Leader",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "40091da4"
+    },
     "8c31fec9-e4b3-4761-990e-7be38eb05604": {
       "name": "Karmic Guide",
       "group": "acceptance",
@@ -5763,6 +5859,14 @@
       "reasons": [],
       "ast": "81cf60e8"
     },
+    "8e356df5-ca92-4be2-871e-8965c2510fbe": {
+      "name": "Tempt with Vengeance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "16b50d86"
+    },
     "8e589dca-d31e-4d2f-81b1-18e5f9198795": {
       "name": "Timely Ward",
       "group": "acceptance",
@@ -5882,6 +5986,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5ad01c7e"
+    },
+    "928d977e-cff0-4e0e-83bb-16d73a754f35": {
+      "name": "Gix, Yawgmoth Praetor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fea77e87"
     },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
@@ -6234,6 +6346,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "45765c0c"
+    },
+    "9c329f3d-4d0a-4012-8aa6-92afdd120a52": {
+      "name": "Blade of Selves",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9683c69d"
     },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
@@ -7977,6 +8097,14 @@
       "reasons": [],
       "ast": "eb9e48cf"
     },
+    "c8f827d7-4740-43c8-b494-c9e0479e0bf7": {
+      "name": "Neriv, Crackling Vanguard",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f4d9f743"
+    },
     "c912a43b-8994-434e-84c0-f4cf58abbd42": {
       "name": "Mechanized Warfare",
       "group": "acceptance",
@@ -8138,6 +8266,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "649f0ddb"
+    },
+    "cc8c1e21-4540-4e74-a513-eb6c17372de1": {
+      "name": "Within Range",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "671845ef"
     },
     "cca33482-0bc5-4fe4-89dc-ba33b2e93831": {
       "name": "Feasting Hobbit",
@@ -8900,6 +9036,14 @@
       "reasons": [],
       "ast": "2257864b"
     },
+    "e0edb2fc-2533-407c-85e5-4337f4233f05": {
+      "name": "Kaya, Geist Hunter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5418059a"
+    },
     "e110ee80-37af-4989-a5fb-95d51dc7f102": {
       "name": "Shimmer Myr",
       "group": "training",
@@ -9404,6 +9548,14 @@
       ],
       "reasons": [],
       "ast": "ea59a6f1"
+    },
+    "eee99fdc-b116-4f06-9f9f-7b7dda5743c1": {
+      "name": "Ironwill Forger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b139009b"
     },
     "eefe2d53-4856-465d-a900-77836ef9ae07": {
       "name": "Prophet of the Scarab",
@@ -10084,8 +10236,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 942,
-      "total": 962
+      "supported": 961,
+      "total": 981
     }
   }
 }
