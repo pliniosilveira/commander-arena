@@ -787,6 +787,7 @@ describe('unmatched abilities', () => {
       'effect.return-exiled-cards-to-hand',
       'effect.roll-die',
       'effect.gain-static-ability',
+      'effect.becomes-creature-gains-static',
       'effect.choose-graveyard-pair',
       'effect.gain-class-level',
       'effect.exile-random-and-play',
