@@ -3760,19 +3760,10 @@
     "591fe685-767e-4e6e-905e-cc8b423caa19": {
       "name": "Echoing Return",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Return target creature card and all other cards with the same name as that card from your graveyard to your hand.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-graveyard-card"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1b0bc7e0"
+      "ast": "46456774"
     },
     "594f6881-c059-46f8-aa4e-7151d502de73": {
       "name": "Jace, Vryn's Prodigy // Jace, Telepath Unbound",
@@ -10611,7 +10602,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 994,
+      "supported": 995,
       "total": 1022
     }
   }
