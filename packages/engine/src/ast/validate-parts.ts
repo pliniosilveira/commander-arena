@@ -4227,6 +4227,13 @@ function checkCopyExceptions(
       issue(out, `${path}.setPt`, 'setPt is a whole power and a whole toughness');
     }
   }
+  // CR 707.9b, 107.1a (Saw in Half): "except their power is half that creature's power and their toughness is half ... Round up each time".
+  if (spec.halfPt !== undefined) {
+    if (spec.halfPt !== true) issue(out, `${path}.halfPt`, 'halfPt must be true when present');
+    if (spec.setPt !== undefined) {
+      issue(out, `${path}.halfPt`, 'halfPt and setPt both give the power and toughness: only one');
+    }
+  }
   if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
     issue(out, `${path}.noManaCost`, 'noManaCost must be true when present');
   }
@@ -4768,6 +4775,13 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       if (!isCount(c.count) || c.count < 1) {
         issue(out, `${path}.count`, 'a count of one or more');
+      }
+      break;
+    case 'diedThisWay':
+      // CR 700.4, 608.2h (Saw in Half): the creature a reference names went to a graveyard because of a `destroy` earlier in the same sequence.
+      checkRef(c.of, 'object', `${path}.of`, scope, out);
+      if (!(scope.thisWay ?? []).includes('destroyed')) {
+        issue(out, path, 'diedThisWay needs a destroy before it in the same sequence');
       }
       break;
     case 'clashWon':

@@ -14,6 +14,7 @@ import { amountOf } from './amounts';
 import { copiableValues } from './copiable';
 import { withCopyExceptions } from './copy-exceptions';
 import type { OrderFlow } from './damage-order';
+import { derive } from './derive';
 import { replacementSources } from './die-replacement';
 import { isFirstDrawOfDrawStep } from './draw-replace';
 import { drawSkippedBy } from './draw-skip';
@@ -237,8 +238,21 @@ export function tokenDefinitionOf(
   const id = resolveObjects(state, token.object, ctx, targets)[0];
   const original = id === undefined ? undefined : (state.objects[id] ?? state.lki[id]?.object);
   if (original === undefined) return null;
+  // CR 707.9b, 107.1a, 608.2h (Saw in Half): "except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time": the numbers
+  // the original had as it last was, with every effect and counter, halved and rounded up; they are part of the copiable values like any other exception.
+  const known = state.objects[id as ObjectId] === undefined ? state.lki[id as ObjectId] : undefined;
+  const halved =
+    token.halfPt === true
+      ? (() => {
+          const live = state.objects[id as ObjectId];
+          const power = live === undefined ? (known?.power ?? 0) : (derive(state, live).power ?? 0);
+          const toughness =
+            live === undefined ? (known?.toughness ?? 0) : (derive(state, live).toughness ?? 0);
+          return { setPt: { power: Math.ceil(power / 2), toughness: Math.ceil(toughness / 2) } };
+        })()
+      : {};
   // CR 707.9b, 707.9d (D-230, D-382): the exceptions ("a Spirit in addition to its other types", "a 4/4 black Zombie with no mana cost", "it has ...") are part of the copiable values.
-  const values = withCopyExceptions(copiableValues(state, original), token);
+  const values = withCopyExceptions(copiableValues(state, original), { ...token, ...halved });
   // CR 722.2b (D-225): the prepare spell of a preparation card is part of its copiable values.
   const prepareOf = prepareCardOf(state, original);
   return {

@@ -710,6 +710,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'searchedThisWay' }
     // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
     | { readonly kind: 'destroyedThisWay' }
+    // "If that creature dies this way" (Saw in Half, CR 700.4, 608.2c): the creature a destroy before it in the same text named went to a graveyard; `who` is that creature
+    | { readonly kind: 'diesThisWay'; readonly who: IrNoun }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
@@ -1221,6 +1223,11 @@ export interface IrToken extends IrNode {
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
   readonly copyOf?: IrNoun;
+  /**
+   * "..., except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time." (Saw in Half, CR 707.9b, 107.1a): with `copyOf`, the
+   * copy has half the power and toughness the original had, rounded up (the engine's `copyOf.halfPt`).
+   */
+  readonly copyHalfPt?: true;
   /**
    * "..., except it's a 4/4 black Zombie" (Hashaton deck group 5, D-382, CR 707.9b): what the copy is instead of what it copies, with `copyOf`: its power and toughness, its colors
    * (as color words; empty for colorless) and its creature types (instead of its own, CR 205.3d).

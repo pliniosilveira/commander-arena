@@ -468,6 +468,8 @@ const createAction: Action = (subject, you, rule) =>
           'token.predefined',
           'token.custom',
           'token.number-of',
+          // Saw in Half: "its controller creates two tokens that are copies of that creature, except their power is half ...", before the plain copy.
+          'token.copies-half-pt',
           'token.copy',
           'token.copy-that-creature',
         ]),

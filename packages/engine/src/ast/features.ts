@@ -1163,6 +1163,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaValueAtMostAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
+    // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
+    'diedThisWay',
     'objectMatches',
     'giftPromised',
     'opponentControlsAtLeast',
@@ -2030,6 +2032,8 @@ export const SELECTOR_KINDS = [
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
 export const CONDITION_KINDS = [
+  /** "If that creature dies this way" (CR 700.4, 608.2h, Saw in Half): the engine's `diedThisWay`. */
+  'diedThisWay',
   /** "You control two or more basic lands" (CR 614.12): the engine's `controlsAtLeast`. */
   'controlsAtLeast',
   /** "You have two or more opponents": the engine's `opponentsAtLeast`. */

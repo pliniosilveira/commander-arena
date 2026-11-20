@@ -1797,6 +1797,12 @@ export type TokenSpec =
       readonly setCreatureTypes?: readonly Subtype[];
       /** "..., except it's black" (D-382, CR 707.9b, 707.9d): the copy is exactly these colors; a color-defining ability (devoid) is not copied. */
       readonly setColors?: readonly Color[];
+      /**
+       * "..., except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time." (Saw in Half, CR 707.9b, 107.1a, 608.2h): the
+       * copy has half the power and half the toughness the copied object had, rounded up, as it was (its last-known information when it has left the battlefield: power and toughness with
+       * every effect and counter on it). Part of the copiable values. Not with `setPt`.
+       */
+      readonly halfPt?: true;
       /** "..., except it's 4/4" (D-382, CR 707.9b, 707.9d): the copy has this power and toughness; a characteristic-defining ability that defines either is not copied. */
       readonly setPt?: { readonly power: number; readonly toughness: number };
       /** "..., except it has no mana cost" (D-382, CR 707.9b, 202.1b): the copy's mana cost is nothing, so its mana value is 0. */
@@ -5989,6 +5995,12 @@ export type Condition =
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).
    */
   | { readonly kind: 'thisWayAtLeast'; readonly what: ThisWayKind; readonly count: number }
+  /**
+   * "If that creature dies this way" (Saw in Half, CR 700.4, 608.2c, 608.2h): the object `of` names (a target of the spell) was destroyed by a `destroy` effect earlier in this
+   * resolution and went to a graveyard as a result, as it last existed (a token, which goes to the graveyard and then ceases to exist, counts). It is false when the destroy did nothing
+   * (indestructible, regenerated) or the creature was exiled or otherwise moved instead of dying. Only in a `conditional` effect after a `destroy` of the same sequence.
+   */
+  | { readonly kind: 'diedThisWay'; readonly of: ObjectRef }
   /**
    * "If the gift was promised" (CR 702.174k, D-135): the spell was cast with its gift cost paid (an opponent chosen), or the
    * permanent came from such a spell. Read from the spell on the stack, from the permanent that remembers it, or from last-known

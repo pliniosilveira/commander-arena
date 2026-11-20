@@ -270,6 +270,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
   'effect.put-target-exiled-with-battlefield': permanent((e) => `{6}, {T}: ${cap(e)}.`),
+  // Saw in Half.
+  'condition.dies-this-way': spell(
+    (e) => `Destroy target creature. If ${e}, its controller gains 1 life.`,
+  ),
+  'token.copies-half-pt': spell(
+    (e) => `Destroy target creature. If that creature dies this way, its controller creates ${e}.`,
+  ),
   'effect.choose-player-most-life': permanent(
     (e) => `{1}{B}, {T}: ${cap(e)}. Target creature can't be blocked this turn.`,
   ),

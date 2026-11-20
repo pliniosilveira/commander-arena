@@ -552,3 +552,47 @@ describe('The Black Gate', () => {
     g.expect.life(1, 28);
   });
 });
+
+describe('Saw in Half', () => {
+  const saw = real('Saw in Half');
+
+  const board = (theirs: string) =>
+    scenario()
+      .define(saw)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(saw.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(theirs)
+      .at('precombatMain', { active: 0 })
+      .build();
+  const tokens = (g: ReturnType<typeof board>, name: string) =>
+    g
+      .view(1)
+      .battlefield.filter((o) => o.name === name && o.controller === 1)
+      .map((o) => [o.power, o.toughness]);
+
+  test('destroy target creature; if it dies, its controller creates two tokens that are copies with half its power and toughness, rounded up (CR 707.9b, 107.1a)', () => {
+    const g = board(ANGEL);
+    g.act(0).cast(saw.name, { targets: [ANGEL], pay: true });
+    g.passAll();
+    g.expect.zone(ANGEL, 'graveyard', { seat: 1 });
+    expect(tokens(g, ANGEL)).toEqual([
+      [2, 2],
+      [2, 2],
+    ]);
+    g.expect.invariants();
+  });
+
+  test('half of an odd number is rounded up: a 1/1 gives 1/1 tokens', () => {
+    const g = board(ELVES);
+    g.act(0).cast(saw.name, { targets: [ELVES], pay: true });
+    g.passAll();
+    expect(tokens(g, ELVES)).toEqual([
+      [1, 1],
+      [1, 1],
+    ]);
+  });
+});

@@ -657,6 +657,7 @@ class Binder {
     const condition =
       clause.condition !== undefined &&
       (test?.kind === 'unlessPays' ||
+        test?.kind === 'diesThisWay' ||
         test?.kind === 'objectMatches' ||
         test?.kind === 'controlsThat' ||
         test?.kind === 'manaValueAtMostAmount')
@@ -732,6 +733,7 @@ class Binder {
         const condition =
           s.condition !== undefined &&
           (test?.kind === 'objectMatches' ||
+            test?.kind === 'diesThisWay' ||
             test?.kind === 'controlsThat' ||
             test?.kind === 'manaValueAtMostAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }

@@ -104,6 +104,12 @@ export function lowerCopyToken(
         : { startingLoyalty: token.copyStartingLoyalty }),
     };
   }
+  // "..., except their power is half that creature's power and their toughness is half ... Round up each time" (Saw in Half, CR 707.9b, 107.1a).
+  if (token.copyHalfPt === true) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    exceptions = { ...exceptions, halfPt: true };
+  }
   // "Create a tapped token that's a copy of ...": the token enters tapped (CR 110.5b).
   if (token.tapped === true) {
     const missing = missingFeatures(['token:tapped']);
