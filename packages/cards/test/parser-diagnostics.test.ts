@@ -139,14 +139,14 @@ describe('reason: unrecognised', () => {
   test('a trigger read only as far as its subject stops where the event should be', () => {
     // Damage that is not combat damage is not an event the engine's trigger reads (stage P18).
     const [u] = parseFaceText(
-      'Whenever ~ deals damage to a player, draw a card.',
+      'Whenever ~ deals damage to a creature, draw a card.',
       OPTS,
       0,
     ).unparsed;
     expect(u).toMatchObject({
       reason: 'unrecognised',
       slot: 'trigger',
-      stoppedAt: 'deals damage to a player, draw a card.',
+      stoppedAt: 'a creature, draw a card.',
     });
   });
 

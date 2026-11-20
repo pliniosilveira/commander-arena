@@ -217,10 +217,7 @@ describe('combat damage dealt (CR 120.2a, 510.2, 603.2)', () => {
   });
 
   test.each([
-    [
-      'Whenever ~ deals damage to a player, you gain 1 life.',
-      'deals damage to a player, you gain 1 life.',
-    ],
+    ['Whenever ~ deals damage to a creature, you gain 1 life.', 'a creature, you gain 1 life.'],
     // D-373: "to a player or planeswalker" is read (parser-hashaton-g1.test.ts); a creature in its place is not.
     [
       'Whenever ~ deals combat damage to a creature or planeswalker, you gain 1 life.',
@@ -228,8 +225,8 @@ describe('combat damage dealt (CR 120.2a, 510.2, 603.2)', () => {
     ],
     ['Whenever ~ deals combat damage to you, you gain 1 life.', 'to you, you gain 1 life.'],
     [
-      'Whenever enchanted creature deals damage to an opponent, you gain 1 life.',
-      'deals damage to an opponent, you gain 1 life.',
+      'Whenever enchanted creature deals damage to a creature, you gain 1 life.',
+      'a creature, you gain 1 life.',
     ],
   ])('%s stays unread', (text, stoppedAt) => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'unrecognised', stoppedAt });
