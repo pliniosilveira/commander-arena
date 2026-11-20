@@ -422,6 +422,14 @@ export function checkFilter(
         'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
       );
     }
+    // CR 107.3a: "each nonland permanent with mana value X or less" reads the X announced for the spell or ability that has the selector.
+    if (a?.kind === 'x' && ownerScope !== undefined && !ownerScope.xAllowed) {
+      issue(
+        out,
+        `${path}.${limitKey}`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
+      );
+    }
     if (f.manaValue !== undefined) {
       issue(
         out,
