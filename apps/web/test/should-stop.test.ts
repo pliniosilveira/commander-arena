@@ -79,6 +79,7 @@ interface Setup {
   graveyard?: readonly ObjectView[];
   options?: readonly PriorityOption[];
   stack?: readonly ObjectView[];
+  battlefield?: readonly ObjectView[];
   turn?: number;
 }
 
@@ -94,7 +95,7 @@ function view(setup: Setup = {}): GameView {
     prioritySeat: 0,
     seats: [seat(0, hand, setup.graveyard), seat(1, null)],
     monarch: null,
-    battlefield: [],
+    battlefield: setup.battlefield ?? [],
     exile: [],
     stack: setup.stack ?? [],
     combat: null,
@@ -278,6 +279,67 @@ describe('the stack', () => {
       options: [{ kind: 'pass' }, cast(bolt)],
     });
     expect(shouldStop(v, DEFAULT_STOPS)).toBe(false);
+  });
+
+  describe('an ability that targets your own spell on the stack (Stella Lee, Wild Card)', () => {
+    const stella: ObjectView = {
+      ...card(20, ['creature']),
+      zone: 'battlefield',
+      name: 'Stella Lee, Wild Card',
+      oracleText:
+        "Whenever you cast your second spell each turn, exile the top card of your library. Until the end of your next turn, you may play that card.\n{T}: Copy target instant or sorcery spell you control. You may choose new targets for the copy. Activate only if you've cast three or more spells this turn.",
+    };
+    const grizzly: ObjectView = {
+      ...card(21, ['creature']),
+      zone: 'battlefield',
+      oracleText: '{T}: Add {G}.',
+    };
+    const activate = (o: ObjectView): PriorityOption => ({
+      kind: 'activate',
+      object: o.id,
+      abilityIndex: 1,
+    });
+    const mine = { ...mySpell, types: ['instant'] as ObjectView['types'] };
+
+    test('stops, so the spell is not resolved before the player can copy it', () => {
+      const v = view({
+        step: 'precombatMain',
+        stack: [mine],
+        battlefield: [stella],
+        options: [{ kind: 'pass' }, activate(stella)],
+      });
+      expect(shouldStop(v, DEFAULT_STOPS)).toBe(true);
+    });
+
+    test('does not stop for a creature spell, which cannot be copied', () => {
+      const v = view({
+        step: 'precombatMain',
+        stack: [{ ...mySpell, types: ['creature'] }],
+        battlefield: [stella],
+        options: [{ kind: 'pass' }, activate(stella)],
+      });
+      expect(shouldStop(v, DEFAULT_STOPS)).toBe(false);
+    });
+
+    test('does not stop for an unrelated activated ability', () => {
+      const v = view({
+        step: 'precombatMain',
+        stack: [mine],
+        battlefield: [grizzly],
+        options: [{ kind: 'pass' }, activate(grizzly)],
+      });
+      expect(shouldStop(v, DEFAULT_STOPS)).toBe(false);
+    });
+
+    test('does not stop when the ability is not on offer (fewer than three spells cast)', () => {
+      const v = view({
+        step: 'precombatMain',
+        stack: [mine],
+        battlefield: [stella],
+        options: [{ kind: 'pass' }],
+      });
+      expect(shouldStop(v, DEFAULT_STOPS)).toBe(false);
+    });
   });
 
   test('a main-phase stop does not fire while the stack is non-empty and you have no response', () => {
