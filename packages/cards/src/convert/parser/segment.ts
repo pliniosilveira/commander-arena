@@ -655,6 +655,9 @@ const BECOMES_LAND_CREATURE_TRAILING = /(?:^|: )~ becomes a \d+\/\d+ [^.]* until
 const DRAW_AND_REVEAL = /(?:^[+\-−]?\d+: |^|, )draw a card and reveal it\.$/i;
 const REMOVE_COUNTERS_MANA_VALUE =
   /^remove a number of [^.]* counters equal to that card['’]s mana value from [^.]*\.$/i;
+/** "Count the number of cards in your library. Your life total becomes that number." (issue 145, Invincible Hymn, CR 119.5): the second sentence reads the count of the first. */
+const COUNT_LIBRARY = /^count the number of cards in your library\.$/i;
+const LIFE_TOTAL_BECOMES_THAT_NUMBER = /^your life total becomes that number\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 /**
@@ -838,6 +841,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, BECOMES_LAND_CREATURE_TRAILING) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||

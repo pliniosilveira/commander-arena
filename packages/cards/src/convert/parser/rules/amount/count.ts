@@ -258,7 +258,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     return { ok: true, value: { zone: 'graveyard', controller: { noun: controller } }, pos: r.pos };
   };
   const where = choice<{
-    zone: 'hand' | 'graveyard';
+    zone: 'hand' | 'graveyard' | 'library';
     controller?:
       | 'you'
       | 'opponent'
@@ -267,6 +267,11 @@ function cards(plural: boolean): Parser<IrFilter> {
     map(literal(' in your hand'), () => ({ zone: 'hand' as const, controller: 'you' as const })),
     map(literal(' in your graveyard'), () => ({
       zone: 'graveyard' as const,
+      controller: 'you' as const,
+    })),
+    // Issue 145 (Invincible Hymn, CR 401.1): "the number of cards in your library".
+    map(literal(' in your library'), () => ({
+      zone: 'library' as const,
       controller: 'you' as const,
     })),
     map(literal(' in all graveyards'), () => ({ zone: 'graveyard' as const })),

@@ -751,6 +751,7 @@ describe('unmatched abilities', () => {
       'effect.ring-tempts',
       'effect.double-life-total',
       'effect.life-total-becomes',
+      'effect.count-library-life-total',
       'effect.empower-jace',
       'effect.get-emblem',
       'effect.lead-becomes-creature',
