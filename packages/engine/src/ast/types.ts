@@ -1395,6 +1395,12 @@ export type Cost =
        * nothing to discard. Only in a cost of an activated ability.
        */
       readonly hand?: true;
+      /**
+       * "Discard X cards" in the cost of an activated ability (issue 101, Gix, Yawgmoth Praetor; CR 107.3a, 602.2b, 701.9, 118.3): as many cards of the hand as the X announced as the
+       * ability is activated, the player's choice (all of the hand when it holds exactly that many); X is offered only up to the number of cards in the hand. `count` is 0 and
+       * unread, with no filter, name or `hand`. The ability's effect reads that X. Not an additional cost of a spell (that is `discardX`).
+       */
+      readonly countX?: true;
     }
   /**
    * "Behold a Jace" (CR 701.4, D-151): as an additional cost to cast a spell, reveal a matching
@@ -2058,7 +2064,16 @@ export type Effect =
    * resolves, `triggerDamage` ("Whenever you gain life, you may pay that much life. If you do, draw that many cards."): it is worked out once, when the
    * player is asked, and the player can pay only when their life total is at least that high (CR 119.4); a payment of 0 life is no question and does nothing.
    */
-  | { readonly kind: 'mayPay'; readonly cost: readonly Cost[]; readonly effect: Effect }
+  | {
+      readonly kind: 'mayPay';
+      readonly cost: readonly Cost[];
+      readonly effect: Effect;
+      /**
+       * "Its controller may pay 1 life. If they do, they draw a card." (issue 101, Gix, Yawgmoth Praetor; CR 118.3, 608.2d): the player asked, and who pays, is the one this selector names
+       * (the first it names), not the controller of the ability; the effect names the player who benefits itself. Not with a reflexive effect.
+       */
+      readonly by?: PlayerSelector;
+    }
   /**
    * "You may [do something]" inside an effect (D-135, CR 608.2d): the controller is asked, as this instruction comes up,
    * whether to do `effect`; declining does nothing and the rest of the spell or ability goes on. What was done is
@@ -2489,6 +2504,12 @@ export type Effect =
        * is. Without it ("you may play that card") a land card is played as a land (a land drop, CR 305.2) and a spell is cast.
        */
       readonly castOnly?: true;
+      /**
+       * "You may play lands and cast spells from among cards exiled this way without paying their mana costs" (issue 101, Gix, Yawgmoth Praetor; CR 601.2, 305.1, 118.9): a land among the
+       * cards is played as a land (a land drop, CR 305.2) and a spell is cast for no mana cost (X is 0, CR 107.3b; additional costs are paid, CR 118.9d), the one way to cast it with this
+       * permission. Not with `castOnly` (the cards stay hidden or not as `lookAt` says).
+       */
+      readonly free?: true;
       /** How long the permission lasts. Named `lasts`, not `until`: `exile` has an `until` of another kind, which would make it a discriminant of the union. */
       readonly lasts: PlayUntil;
       /**

@@ -115,6 +115,8 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),
           // Issue 144 (Grenzo): "you may spend mana as though it were mana of any color to cast that spell".
           ...(arg(clause, 'anyManaColor')?.kind === 'flag' ? { anyManaColor: true as const } : {}),
+          // Issue 101 (Gix): "you may play lands and cast spells from among cards exiled this way without paying their mana costs".
+          ...(arg(clause, 'free')?.kind === 'flag' ? { free: true as const } : {}),
         },
       ],
       rule: clause.rule,

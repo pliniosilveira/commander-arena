@@ -103,6 +103,29 @@ export function runMayPlay(
         next = patchObject(next, id, { lookers: [...lookers, res.controller] });
       }
     }
+    // Issue 101 (Gix, CR 118.9, 305.1): "play lands and cast spells ... without paying their mana costs" is two permissions on each card: to cast it for free, and to play it as a land.
+    if (effect.free === true) {
+      const [castStamp, s1] = allocateTimestamp(next);
+      const [landStamp, s2] = allocateTimestamp(s1);
+      next = s2;
+      created.push(
+        {
+          id: `ce${castStamp}`,
+          timestamp: castStamp,
+          objects: [id],
+          until,
+          change: { kind: 'playPermission', seat: res.controller, castOnly: true, free: true },
+        },
+        {
+          id: `ce${landStamp}`,
+          timestamp: landStamp,
+          objects: [id],
+          until,
+          change: { kind: 'playPermission', seat: res.controller, landOnly: true },
+        },
+      );
+      continue;
+    }
     const [timestamp, stamped] = allocateTimestamp(next);
     next = stamped;
     created.push({

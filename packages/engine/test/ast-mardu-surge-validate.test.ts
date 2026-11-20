@@ -149,3 +149,55 @@ describe('tokens created twice over until end of turn (CR 614.1a, 614.5)', () =>
     }
   });
 });
+
+describe('Gix: a payment by another player, discard X, a free play (CR 118.3, 107.3a, 118.9)', () => {
+  const exileOpp: Effect = { kind: 'exileTop', count: 2, from: { kind: 'triggerPlayer' } };
+  const triggeredBy = (effect: Effect): Ability => ({
+    kind: 'triggered',
+    trigger: { kind: 'dealsCombatDamage', what: { kind: 'any' }, to: 'opponent' } as never,
+    effect,
+  });
+
+  test('mayPay by names the player who pays', () => {
+    const who = { kind: 'controllerOf', of: { kind: 'triggerSubject' } } as const;
+    const pay: Effect = {
+      kind: 'mayPay',
+      by: who,
+      cost: [{ kind: 'payLife', amount: 1 }],
+      effect: { kind: 'draw', player: who, count: 1 },
+    };
+    expect(validateCard(creature([triggeredBy(pay)]))).toEqual([]);
+  });
+
+  test('discard with countX has a count of 0 and nothing that narrows the cards', () => {
+    const activated = (cost: unknown): Ability => ({
+      kind: 'activated',
+      cost: [cost as never],
+      effect: { kind: 'draw', player: { kind: 'you' }, count: { kind: 'x' } },
+    });
+    expect(
+      validateCard(creature([activated({ kind: 'discard', count: 0, countX: true })])),
+    ).toEqual([]);
+    expect(messages(creature([activated({ kind: 'discard', count: 2, countX: true })]))).toContain(
+      'countX is true, with a count of 0',
+    );
+    expect(
+      messages(creature([activated({ kind: 'discard', count: 0, countX: true, hand: true })])),
+    ).toContain('countX is true, with a count of 0');
+  });
+
+  test('mayPlay free is not castOnly', () => {
+    const play = (extra: object): Ability =>
+      triggeredBy({
+        kind: 'sequence',
+        effects: [
+          exileOpp,
+          { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'whileExiled', ...extra },
+        ],
+      });
+    expect(validateCard(creature([play({ free: true })]))).toEqual([]);
+    expect(messages(creature([play({ free: true, castOnly: true })]))).toContain(
+      'a free play is neither castOnly',
+    );
+  });
+});

@@ -206,7 +206,9 @@ export function mayPlayFromExile(
         e.objects.includes(obj.id) &&
         (e.change.free === true) === free &&
         // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
-        !(asLand && e.change.castOnly === true),
+        !(asLand && e.change.castOnly === true) &&
+        // Issue 101: the land half of "play lands and cast spells ... without paying" is no permission to cast.
+        (asLand || e.change.landOnly !== true),
     )
   );
 }
@@ -1059,7 +1061,9 @@ export function flashbackObjects(state: GameState, seat: SeatId): ObjectId[] {
 
 /** Every land the seat could play now, one entry per land face of a card with several (CR 712.12). */
 export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
-  const fromExile = state.exile.filter((id) => mayPlayFromExile(state, seat, getObject(state, id)));
+  const fromExile = state.exile.filter((id) =>
+    mayPlayFromExile(state, seat, getObject(state, id), true),
+  );
   const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
     (id) =>
       mayPlayFromGraveyard(state, seat, getObject(state, id)) ||

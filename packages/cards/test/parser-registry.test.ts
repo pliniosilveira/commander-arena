@@ -550,6 +550,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
   'trigger.attack-with-self-or-commander': whenever,
+  'effect.its-controller-may-pay-draw': permanent(
+    (e) => `Whenever a creature deals combat damage to a player, ${e}.`,
+  ),
+  'effect.exile-top-of-target-library': permanent((e) => `{T}: ${cap(e)}.`),
+  'effect.may-play-lands-cast-spells-free': permanent(
+    (e) => `{T}: Exile the top two cards of your library. ${cap(e)}.`,
+  ),
   'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
   'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
   'trigger.opponents-dealt-combat-damage': whenever,

@@ -87,6 +87,17 @@ export function checkDragonsEffect(
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
       }
+      // Issue 101 (CR 118.9): "play lands and cast spells ... without paying their mana costs": not with castOnly (a land is played), nor with the any-color rider (no mana is spent).
+      if (e.free !== undefined) {
+        if (e.free !== true) issue(out, `${path}.free`, 'free must be true when present');
+        if (e.castOnly !== undefined || e.anyManaColor !== undefined) {
+          issue(
+            out,
+            `${path}.free`,
+            'a free play is neither castOnly nor spends mana as though of any color',
+          );
+        }
+      }
       // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" is about casting a spell.
       if (e.anyManaColor !== undefined) {
         if (e.anyManaColor !== true) {

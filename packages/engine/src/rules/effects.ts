@@ -1940,13 +1940,19 @@ function runEffect(
       // D-364 (CR 119.4, 608.2c): a payment of life by an amount ("pay that much life") is worked out now; one of 0 life is no offer.
       const cost = resolveMayPayCost(state, effect.cost, ctx);
       if (cost === null) return done(state);
+      // Issue 101 (Gix): "its controller may pay 1 life": the player named is asked and pays, nobody when the selector names none.
+      const payer =
+        effect.by === undefined
+          ? res.controller
+          : resolvePlayers(state, effect.by, ctx, targets)[0];
+      if (payer === undefined) return done(state);
       return done(
         state,
         [],
         [
           {
             kind: 'unlessPays' as const,
-            seat: res.controller,
+            seat: payer,
             cost,
             stage: 'ask' as const,
             effect: effect.effect,

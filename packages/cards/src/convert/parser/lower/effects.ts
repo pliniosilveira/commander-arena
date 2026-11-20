@@ -2323,6 +2323,31 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
     },
   },
   {
+    // "Its controller may pay 1 life. If they do, they draw a card." (Gix, Yawgmoth Praetor, issue 101, CR 118.3, 608.2c): the controller of the creature the trigger is about is
+    // asked, pays and draws: the engine's `mayPay` with `by`.
+    head: 'controllerMayPayDraw',
+    id: 'lower.controller-may-pay-draw',
+    needs: ['effect:mayPay', 'cost:payLife', 'effect:draw'],
+    lower: (clause) => {
+      const life = arg(clause, 'life');
+      const cards = arg(clause, 'cards');
+      if (life?.kind !== 'number' || cards?.kind !== 'number') return failure(clause);
+      const who = { kind: 'controllerOf', of: { kind: 'triggerSubject' } } as const;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'mayPay',
+            by: who,
+            cost: [{ kind: 'payLife', amount: life.value }],
+            effect: { kind: 'draw', player: who, count: cards.value },
+          },
+        ],
+        rule: clause.rule,
+      };
+    },
+  },
+  {
     head: 'createPerOpponent',
     id: 'lower.create-per-opponent',
     needs: ['effect:forEachPlayer', 'effect:createToken'],

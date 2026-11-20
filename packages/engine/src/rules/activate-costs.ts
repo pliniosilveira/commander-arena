@@ -179,7 +179,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         break;
       case 'discard':
         discards += 1;
-        discard += cost.count;
+        discard += cost.countX === true ? x : cost.count;
         if (cost.hand === true) discardHand = true;
         if (cost.filter !== undefined || cost.named !== undefined) {
           discardOf = {

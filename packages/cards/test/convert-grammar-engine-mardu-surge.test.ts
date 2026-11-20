@@ -654,3 +654,74 @@ describe('Tempt with Vengeance: the tempting offer (CR 101.4, 111.2, 608.2d)', (
     g.expect.zone('Elemental', 'battlefield', { seat: 1, count: 0 });
   });
 });
+
+describe('Gix, Yawgmoth Praetor (CR 118.3, 107.3a, 602.2b, 701.13, 118.9)', () => {
+  const gix = real('Gix, Yawgmoth Praetor');
+
+  test('the card is valid', () => {
+    expect(validateCard(gix)).toEqual([]);
+  });
+
+  test('a creature of yours that damages an opponent: you may pay 1 life to draw a card', () => {
+    const board = () =>
+      scenario()
+        .define(gix)
+        .seat(0)
+        .library(...LIBRARY)
+        .battlefield(gix.name)
+        .battlefield(BEARS)
+        .seat(1)
+        .library(...LIBRARY)
+        .at('precombatMain', { active: 0 })
+        .build();
+    const accepted = board();
+    accepted.playCombat({ attack: [BEARS], until: 'combatDamage' });
+    accepted.passAll();
+    accepted.expect.pending('confirmOptional', 0);
+    accepted.act(0).accept();
+    accepted.passAll();
+    accepted.expect.handSize(0, 1);
+    accepted.expect.life(0, 39);
+
+    const declined = board();
+    declined.playCombat({ attack: [BEARS], until: 'combatDamage' });
+    declined.passAll();
+    declined.act(0).decline();
+    declined.passAll();
+    declined.expect.handSize(0, 0);
+    declined.expect.life(0, 40);
+  });
+
+  test('{4}{B}{B}{B}, Discard X cards: exile the top X cards of an opponent’s library; a land among them may be played and a spell cast for free', () => {
+    const g = scenario()
+      .define(gix)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand('Island', 'Island', 'Island')
+      .battlefield(gix.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .library('Forest', 'Lightning Bolt', ...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    const h = g
+      .act(0)
+      .activate(gix.name, { ability: 1, x: 2, targets: [{ player: 1 }], pay: true });
+    expect(h.stage).toBe('discard');
+    g.act(0).chooseCards('Island[0]', 'Island[1]');
+    g.passAll();
+    g.expect.zone('Island', 'hand', { seat: 0, count: 1 });
+    g.expect.zone('Forest', 'exile', { seat: 1, count: 1 });
+    g.expect.zone('Lightning Bolt', 'exile', { seat: 1, count: 1 });
+    g.act(0).playLand({ name: 'Forest', zone: 'exile', seat: 1 });
+    g.expect.zone('Forest', 'battlefield', { seat: 0, count: 1 });
+    g.act(0).cast(
+      { name: 'Lightning Bolt', zone: 'exile', seat: 1 },
+      { alternative: 'free', targets: [{ player: 1 }] },
+    );
+    g.passAll();
+    g.expect.life(1, 37);
+    g.expect.zone('Lightning Bolt', 'graveyard');
+    g.expect.invariants();
+  });
+});

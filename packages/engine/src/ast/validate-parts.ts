@@ -2781,6 +2781,23 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'discard':
+      // Issue 101: "Discard X cards": the X announced for the ability, with a count of 0 and nothing that narrows the cards.
+      if (cost.countX !== undefined) {
+        if (
+          cost.countX !== true ||
+          cost.count !== 0 ||
+          cost.hand !== undefined ||
+          cost.filter !== undefined ||
+          cost.named !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.countX`,
+            'countX is true, with a count of 0 and no filter, name or hand',
+          );
+        }
+        break;
+      }
       if (cost.hand !== undefined) {
         // D-626: "Discard your hand": the whole hand, so no count, filter or name narrows it.
         if (
@@ -5205,6 +5222,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'mayPay':
       // CR 702.101a: "you may pay [cost]. If you do, [effect]".
+      // Issue 101: the player who pays is named by `by` ("its controller"), a player selector of the ability.
+      if (e.by !== undefined) {
+        checkPlayerSelector(e.by, `${path}.by`, scope, out);
+        if (e.effect?.kind === 'reflexive') {
+          issue(out, `${path}.by`, 'a payment by another player has no reflexive ability');
+        }
+      }
       // D-364 (CR 119.4): the life paid may be the life that caused the trigger (`triggerDamage`, "pay that much life"), which the amount checks against
       // the trigger of the ability; any other amount is held to what a payment of life reads (`checkCost`).
       if (Array.isArray(e.cost)) {

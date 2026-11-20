@@ -705,7 +705,9 @@ function prepare(
       // "−X" of a loyalty ability (stage P47, D-202): X is announced as the ability is activated.
       (c.kind === 'loyalty' && c.change === 'x') ||
       // "Sacrifice X creatures" (D-488, CR 107.3a): the X is announced as the ability is activated.
-      (c.kind === 'sacrifice' && c.countX === true),
+      (c.kind === 'sacrifice' && c.countX === true) ||
+      // Issue 101 (CR 107.3a): "Discard X cards".
+      (c.kind === 'discard' && c.countX === true),
   );
   // CR 606.2 (stage P47, D-202): a loyalty symbol is the cost of an ability of a planeswalker, once, and nothing else is paid with it
   // that the rules of 606 do not know (a loyalty ability has no "Activate only" restriction of its own, CR 606.3).
@@ -723,6 +725,9 @@ function prepare(
     ...(hasX ? (['ability:xCost'] as const) : []),
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.countX === true)
       ? (['ability:sacrificeX'] as const)
+      : []),
+    ...(costs.value.some((c) => c.kind === 'discard' && c.countX === true)
+      ? (['ability:discardCostX'] as const)
       : []),
     // D-583: "Sacrifice one or more artifacts".
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
@@ -1009,6 +1014,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:activated',
   'ability:xCost',
   'ability:sacrificeX',
+  'ability:discardCostX',
   'ability:sacrificeOneOrMore',
   'ability:sacrificeEach',
 ];

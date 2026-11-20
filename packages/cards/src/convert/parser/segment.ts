@@ -376,6 +376,12 @@ const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
  * (`effect.opponents-may-create-tokens`).
  */
 const EACH_OPPONENT_MAY_CREATE = /^each opponent may create [^.]*\.$/i;
+/**
+ * "Its controller may pay 1 life. If they do, they draw a card." (Gix, Yawgmoth Praetor, issue 101, CR 118.3, 608.2c): the offer to another player than the controller of the ability and what
+ * the payment buys, one instruction (`effect.its-controller-may-pay-draw`).
+ */
+const ITS_CONTROLLER_MAY_PAY = /^its controller may pay [^.]*\.$/i;
+const IF_THEY_DO_THEY_DRAW = /^if they do, they draw [^.]*\.$/i;
 const FOR_EACH_OPPONENT_WHO_DOES_CREATE = /^for each opponent who does, create [^.]*\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
 /**
@@ -939,6 +945,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, ITS_CONTROLLER_MAY_PAY) && said(b, IF_THEY_DO_THEY_DRAW)) ||
         (said(a, EACH_OPPONENT_MAY_CREATE) && said(b, FOR_EACH_OPPONENT_WHO_DOES_CREATE)) ||
         (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
         (said(a, COPY_EACH_EXILED_WITH) && said(b, MAY_CAST_ANY_COPIES)) ||

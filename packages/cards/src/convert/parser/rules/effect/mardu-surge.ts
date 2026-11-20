@@ -5,9 +5,10 @@
  *   control." (CR 508.4, 111.2, 101.4). The engine's `createToken` with `forEachOpponent: { attacking: true }`: the tokens made for each opponent enter tapped and attacking that
  *   opponent (the choice of a planeswalker is not offered, `docs/ROADMAP.md`).
  */
-import { fail, literal, pattern } from '../../combinators';
-import type { IrClause, IrToken } from '../../ir/types';
-import { defineRule, family } from '../registry';
+import { choice, fail, literal, map, pattern, satisfy, sequence } from '../../combinators';
+import type { IrAmount, IrClause, IrDuration, IrFlag, IrNoun, IrToken } from '../../ir/types';
+import { positiveCount, quantity } from '../amount/index';
+import { defineRule, family, spanned } from '../registry';
 import { flag } from './dragons';
 import { type Clauses, makeClause } from './operands';
 
@@ -106,6 +107,170 @@ export const EFFECT_OPPONENTS_MAY_CREATE_TOKENS = defineRule<Clauses>({
 });
 
 /**
+ * `effect.its-controller-may-pay-draw`: "Its controller may pay 1 life. If they do, they draw a card." (Gix, Yawgmoth Praetor; CR 118.3, 119.4, 608.2c): the player who controls the creature the
+ * trigger is about is asked, pays the life and draws. The two sentences are one instruction (`segment.ts`). The engine's `mayPay` with `by`. Not read: another cost, another number of
+ * cards, "you", "that player", "they may pay", a second sentence that does something else.
+ */
+export const EFFECT_ITS_CONTROLLER_MAY_PAY_DRAW = defineRule<Clauses>({
+  id: 'effect.its-controller-may-pay-draw',
+  family: 'effect',
+  leading: ['its'],
+  cites: [
+    'CR 118.3 (Costs)',
+    'CR 119.4 (Life)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 121.1 (Drawing a Card)',
+  ],
+  examples: [
+    'its controller may pay 1 life. if they do, they draw a card',
+    'Its controller may pay 2 life. If they do, they draw two cards',
+  ],
+  rejects: [
+    'its controller may pay 1 life',
+    'its controller may pay {1}. if they do, they draw a card',
+    'its controller may pay 1 life. if they do, you draw a card',
+    'you may pay 1 life. if they do, they draw a card',
+    'its controller may pay 1 life. if they do, they draw a card and lose 1 life',
+    'that player may pay 1 life. if they do, they draw a card',
+    'its controller may pay 0 life. if they do, they draw a card',
+    'its controller may pay 1 life. if they do, they discard a card',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.its-controller-may-pay-draw';
+    const r = sequence(
+      literal('its controller may pay '),
+      spanned(positiveCount),
+      pattern(/ life\. if they do, they draw /iu),
+      spanned(positiveCount),
+      pattern(/ cards?(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, life, , cards] = r.value;
+    const span = { start: pos, end: r.pos };
+    const clause: IrClause = makeClause(
+      id,
+      'controllerMayPayDraw',
+      {
+        life: { kind: 'number', value: life.value, span: life.span },
+        cards: { kind: 'number', value: cards.value, span: cards.span },
+      },
+      span,
+    );
+    return { ok: true, value: [clause], pos: r.pos };
+  },
+});
+
+/**
+ * `effect.exile-top-of-target-library`: "Exile the top X cards of target opponent's library." (Gix, Yawgmoth Praetor; CR 701.13, 401.1, 406.3): the cards are exiled one after the other, face
+ * up, from the top of the library of a target player or opponent, and are what "those cards" and "cards exiled this way" name afterwards. The engine's `exileTop` with `from`. Not
+ * read: your own library, each player's, face down (`effect.exile-top-face-down`), a count of 0 or 1 in the plural, a graveyard.
+ */
+export const EFFECT_EXILE_TOP_OF_TARGET_LIBRARY = defineRule<Clauses>({
+  id: 'effect.exile-top-of-target-library',
+  family: 'effect',
+  leading: ['exile'],
+  cites: ['CR 701.13 (Exile)', 'CR 401.1 (Library)', 'CR 115.1 (Targets)'],
+  examples: [
+    "exile the top X cards of target opponent's library",
+    'exile the top card of target player’s library',
+    "exile the top three cards of target opponent's library",
+  ],
+  rejects: [
+    "exile the top X cards of target opponent's library face down",
+    'exile the top X cards of your library',
+    "exile the top X cards of each opponent's library",
+    "exile the top one cards of target opponent's library",
+    "exile the top card of target opponent's graveyard",
+    "exile the top X cards of target opponent's library and draw a card",
+    "exile the top cards of target opponent's library",
+    "exile top X cards of target opponent's library",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.exile-top-of-target-library';
+    const head = literal('exile the top ')(ctx, pos);
+    if (!head.ok) return head;
+    const counted = spanned(
+      choice<number | 'x'>(
+        map(pattern(new RegExp(`card${BOUNDARY}`, 'iu')), () => 1),
+        map(
+          sequence(
+            satisfy(quantity, (n) => n >= 2),
+            pattern(new RegExp(` cards${BOUNDARY}`, 'iu')),
+          ),
+          ([n]) => n,
+        ),
+        map(pattern(new RegExp(`X cards${BOUNDARY}`, 'u')), () => 'x' as const),
+      ),
+    )(ctx, head.pos);
+    if (!counted.ok) return counted;
+    const owner = sequence(
+      literal(' of '),
+      family<IrNoun>('noun', { only: ['noun.player'] }),
+      pattern(/['’]s library(?![\p{L}\p{N}])(?!,| face down| and\b| then\b)/iu),
+    )(ctx, counted.pos);
+    if (!owner.ok) return owner;
+    const [, who] = owner.value;
+    if (who.det !== 'target') return fail(ctx, pos);
+    const { value, span } = counted.value;
+    const count: IrAmount = value === 'x' ? { kind: 'x', span } : { kind: 'number', value, span };
+    return {
+      ok: true,
+      value: [makeClause(id, 'exileTop', { count, from: who }, { start: pos, end: owner.pos })],
+      pos: owner.pos,
+    };
+  },
+});
+
+/**
+ * `effect.may-play-lands-cast-spells-free`: "You may play lands and cast spells from among cards exiled this way without paying their mana costs." (Gix, Yawgmoth Praetor; CR 601.2,
+ * 305.1, 118.9, 611.2a): the cards an earlier instruction of the text exiled may be played as lands and cast for no mana cost for as long as they stay in exile. The engine's `mayPlay`
+ * with `free`. Not read: another length, only lands or only spells, "those cards", paying costs, a trailing instruction.
+ */
+export const EFFECT_MAY_PLAY_LANDS_CAST_SPELLS_FREE = defineRule<Clauses>({
+  id: 'effect.may-play-lands-cast-spells-free',
+  family: 'effect',
+  leading: ['you'],
+  cites: ['CR 601.2 (Casting Spells)', 'CR 305.1 (Lands)', 'CR 118.9 (Alternative Costs)'],
+  examples: [
+    'you may play lands and cast spells from among cards exiled this way without paying their mana costs',
+    'You may play lands and cast spells from among cards exiled this way without paying their mana costs',
+  ],
+  rejects: [
+    'you may play lands from among cards exiled this way',
+    'you may cast spells from among cards exiled this way without paying their mana costs',
+    'you may play lands and cast spells from among cards exiled this way',
+    'you may play lands and cast spells from among cards exiled this way without paying their mana costs this turn',
+    'you may play lands and cast spells from among those cards without paying their mana costs',
+    'you may play lands and cast spells from among cards exiled this way without paying their mana costs and draw a card',
+    'you may play lands and cast spells from among cards exiled this way by paying their mana costs',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.may-play-lands-cast-spells-free';
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `you may play lands and cast spells from among cards exiled this way without paying their mana costs${BOUNDARY}(?!,| and\\b| then\\b| this turn)`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const flag: IrFlag = { kind: 'flag', value: true, span: r.value.span, rule: id };
+    const duration: IrDuration = {
+      kind: 'duration',
+      scope: 'whileExiled',
+      span: r.value.span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [{ ...makeClause(id, 'mayPlay', { free: flag }, r.value.span), duration }],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.double-tokens-this-turn`: "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead." (CR 614.1a,
  * 614.5, 611.2a; Kaya, Geist Hunter): the replacement effect of the doubling permanents, as an effect that lasts until the turn ends. The engine's `doubleTokens`. Not read: another
  * duration, a kind of token, "an opponent's", a different count, no "instead".
@@ -150,5 +315,8 @@ export const EFFECT_DOUBLE_TOKENS_THIS_TURN = defineRule<Clauses>({
 export const MARDU_SURGE_EFFECT_RULES = [
   EFFECT_CREATE_TOKENS_PER_OPPONENT_TAPPED_ATTACKING,
   EFFECT_OPPONENTS_MAY_CREATE_TOKENS,
+  EFFECT_ITS_CONTROLLER_MAY_PAY_DRAW,
+  EFFECT_EXILE_TOP_OF_TARGET_LIBRARY,
+  EFFECT_MAY_PLAY_LANDS_CAST_SPELLS_FREE,
   EFFECT_DOUBLE_TOKENS_THIS_TURN,
 ];
