@@ -1243,6 +1243,13 @@ function lowerTriggeredAbility(
   ctx.castTrigger = triggers.every((t) => t.kind === 'castSpell' && t.self !== true);
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" needs an activation among the events, or there is no ability to copy.
   ctx.activateTrigger = triggers.some((t) => t.kind === 'activatesAbility');
+  // Issue 133 (Diffusion Sliver): "counter that spell or ability unless its controller pays {2}": the triggers are all about becoming a target.
+  ctx.becomesTargetOf =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'becomesTarget')
+      ? triggers.every((t) => t.kind === 'becomesTarget' && t.spellOnly === true)
+        ? 'spell'
+        : 'both'
+      : null;
   // Quandrix Unlimited group E (CR 107.3): "put X +1/+1 counters" of "whenever you cast a spell with {X} in its mana cost" is the X of the spell that was cast.
   ctx.castTriggerX = triggers.every(
     (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
@@ -1408,7 +1415,12 @@ function lowerTriggeredAbility(
   // `triggerSubject`), and the binding pass cannot tell that from the permanent: not read.
   if (
     triggers.some((t) => t.kind === 'becomesTarget') &&
-    clauses.some((c) => nounsOfClause(c).some((n) => n.det === 'triggerSubject'))
+    clauses.some((c) =>
+      nounsOfClause(c).some(
+        // Issue 133: "that spell or ability" of `effect.counter-that-unless` is the spell or ability itself, which the lowering of that clause reads as `triggerSubject`.
+        (n) => n.det === 'triggerSubject' && n.rule !== 'effect.counter-that-unless',
+      ),
+    )
   ) {
     return failure(ability);
   }
