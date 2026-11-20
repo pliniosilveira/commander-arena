@@ -159,6 +159,10 @@ describe('Command Beacon: sacrifice it to put your commander from the command zo
       .build();
     g.act(0).activate(BEACON.name, { pay: true });
     g.passAll();
+    // CR 903.9b (Commander): a commander that would be put into its owner's hand from anywhere may go to the command zone instead, so the owner is asked; declining puts it into the hand.
+    expect(g.state.pending?.kind).toBe('commanderZone');
+    g.act(0).declineCommandZone();
+    g.passAll();
     g.expect.zone(CAPTAIN.name, 'hand', { seat: 0 });
     g.expect.zone(BEACON.name, 'graveyard', { seat: 0 });
     g.expect.invariants();
