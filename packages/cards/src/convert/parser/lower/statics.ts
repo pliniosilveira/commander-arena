@@ -850,6 +850,34 @@ function lowerPlayerProtection(
 }
 
 /**
+ * "You, planeswalkers you control, and other creatures you control have hexproof." (issue 145, Shalai, CR 702.11b): the controller of the permanent has hexproof (the engine's
+ * `playerHexproof`) and each other subject of the statement (`also`) has the keyword. The controller is "you"; the statement has no condition and the effect is the player's
+ * alone, so a statement of another shape is not lowered.
+ */
+function lowerPlayerHexproofGroups(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  if (
+    statement.effects.length !== 1 ||
+    statement.subject.det !== 'you' ||
+    statement.condition !== undefined
+  ) {
+    return failure(ability);
+  }
+  const blocked = missingFeatures(['ability:static', 'static:playerHexproof']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const abilities: Ability[] = [{ kind: 'static', static: { kind: 'playerHexproof' } }];
+  for (const part of statement.also ?? []) {
+    const done = lowerPart(part, ability, undefined, ctx);
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * A static ability statement. It lowers only when the engine runs every effect and the subject:
  * the effects the grammar reads but the engine lacks (a granted ability in quotes) fail naming the
  * missing `static:` feature, and the statement is dropped whole. A statement that applies "as long as" a condition
@@ -963,6 +991,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   }
   // Hashaton deck group 6 (D-377, CR 702.16): "You and creatures you control have protection from the chosen card type."
   if (first.kind === 'playerProtection') return lowerPlayerProtection(ability, ctx);
+  // Issue 145 (Shalai, Voice of Plenty, CR 702.11b): "You, planeswalkers you control, and other creatures you control have hexproof."
+  if (first.kind === 'playerHexproof' && statement.also !== undefined) {
+    return lowerPlayerHexproofGroups(ability, ctx);
+  }
   // Stage P33 (D-150): the protections of a player, damage prevented to ~, a card that can't be cast early, permanents that enter with counters.
   if (isAngelStatic(first)) return lowerAngelStatic(ability, ctx);
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with

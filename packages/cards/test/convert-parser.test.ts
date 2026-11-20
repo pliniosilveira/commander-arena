@@ -1159,6 +1159,7 @@ describe('unmatched abilities', () => {
       'static.graveyard-play-once-each-turn',
       'static.opponents-cant-gain-life',
       'static.you-and-creatures-protection-chosen-type',
+      'static.you-planeswalkers-creatures-hexproof',
       'static.cant-have-counters',
       'static.equip-cost-reduction',
       'static.graveyard-ability-cost-reduction',

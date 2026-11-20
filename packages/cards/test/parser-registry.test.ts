@@ -500,6 +500,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.opponents-cant-gain-life': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
+  'static.you-planeswalkers-creatures-hexproof': asIs,
   'amount.life-lost-this-turn': permanent(
     (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
   ),
