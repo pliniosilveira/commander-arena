@@ -1,4 +1,4 @@
-// A decklist that names its commander's printing: the board draws that printing. Every Scryfall answer here is SYNTHETIC.
+// A decklist that names the printings of its cards: the board draws those printings. Every Scryfall answer here is SYNTHETIC.
 import { expect, test } from 'vitest';
 import {
   commanderArtQuery,
@@ -7,9 +7,9 @@ import {
 } from '../src/ui/board/commander-art';
 import {
   commanderPrintingOf,
-  printingOfCommander,
-  registerCommanderPrinting,
-} from '../src/ui/board/commander-printing';
+  printingOf,
+  registerDeckPrintings,
+} from '../src/ui/board/deck-printings';
 
 const IMG = {
   small: 'https://cards.scryfall.io/small/front/p.jpg',
@@ -27,9 +27,19 @@ test('the commander line that names a printing gives its set and collector numbe
 });
 
 test('a registered printing is found by the commander name, without case or back face', () => {
-  registerCommanderPrinting('Commander\n1x Two Faced (abc) 9\n');
-  expect(printingOfCommander('TWO FACED // Other Side')).toEqual({ set: 'abc', collector: '9' });
-  expect(printingOfCommander('Never Registered')).toBeNull();
+  registerDeckPrintings('Commander\n1x Two Faced (abc) 9\n');
+  expect(printingOf('TWO FACED // Other Side')).toEqual({ set: 'abc', collector: '9' });
+  expect(printingOf('Never Registered')).toBeNull();
+});
+
+test('every card of the commander and main deck that names a printing is registered, and no other', () => {
+  registerDeckPrintings(
+    'Commander\n1x Lead Card (abc) 1\n\nMainboard\n1x Main Card (abc) 2\n1x Plain Card\n\nSideboard\n1x Side Card (abc) 3',
+  );
+  expect(printingOf('Lead Card')).toEqual({ set: 'abc', collector: '1' });
+  expect(printingOf('Main Card')).toEqual({ set: 'abc', collector: '2' });
+  expect(printingOf('Plain Card')).toBeNull();
+  expect(printingOf('Side Card')).toBeNull();
 });
 
 const queueOf = (json: unknown, urls: string[] = []) => ({
@@ -47,13 +57,13 @@ test('the printing lookup asks for the set and number, once, and takes the pictu
   expect(urls).toEqual(['https://api.scryfall.com/cards/fdc/6']);
 });
 
-test('a printing of another card or under another printed name is not used', async () => {
+test('a printing of another card is not used; one under another printed name, which the list chose, is', async () => {
   const other = createPrintingLookup(queueOf({ name: 'Someone Else', image_uris: IMG }));
   expect(await other('fdc', '6', 'Zed the Test')).toBeNull();
   const renamed = createPrintingLookup(
     queueOf({ name: 'Zed the Test', printed_name: 'Renamed', image_uris: IMG }),
   );
-  expect(await renamed('sld', '1', 'Zed the Test')).toBeNull();
+  expect((await renamed('sld', '1', 'Zed the Test'))?.normal).toContain('/p.jpg');
 });
 
 test('the query can be limited to one set', () => {

@@ -8,7 +8,7 @@
 import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
 import { type CSSProperties, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
-import { useCommanderArt } from './commander-art';
+import { useCommanderArt, useListedArt } from './commander-art';
 import type { ArtVersion } from './image-uris';
 import { useTokenArt } from './token-art';
 
@@ -74,6 +74,12 @@ export function Art({
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
   const special = useCommanderArt(commander && !isToken ? name : null, version);
+  // The printing the deck's list names (a precon from Archidekt): the front face only, as the lookup answers it.
+  const listed = useListedArt(
+    !commander && !isToken && tokenDefinition === undefined && !back ? name : null,
+    version,
+  );
+  if (listed.pending) return null;
   // Issue 32: a token that is a copy of a card has the card's mana cost (no real token has one) and no token card of its
   // own on Scryfall, so it is drawn with the art of the card it copies.
   const copiesACard = tokenDefinition !== undefined && tokenDefinition.manaCost !== null;
@@ -83,7 +89,7 @@ export function Art({
       : copiesACard
         ? imageUrl(name, false, version, back)
         : tokenDefinition === undefined
-          ? imageUrl(name, isToken, version, back)
+          ? (listed.url ?? imageUrl(name, isToken, version, back))
           : tokenUrl;
   if (url === null) return null;
   return <LoadedArt key={url} url={url} className={className} style={style} />;
