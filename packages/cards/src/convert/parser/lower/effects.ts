@@ -48,6 +48,7 @@ import {
 import { GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
+import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { DACK_LOWERINGS } from './dack';
@@ -2254,6 +2255,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...COPY_ONE_OF_THEM_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
@@ -2331,6 +2333,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
         kind === 'notDeclaredAttacker' ||
+        kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn'
         ? []

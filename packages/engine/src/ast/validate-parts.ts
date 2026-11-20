@@ -3215,6 +3215,8 @@ function movesObjects(e: Effect): boolean {
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
     e?.kind === 'populate' ||
+    // Twilight Diviner: the token `copyOneOfTriggerCards` made is "it".
+    e?.kind === 'copyOneOfTriggerCards' ||
     // D-145: the card found by a `revealUntil` is "it".
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
@@ -4544,6 +4546,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           path,
           'exileFromTriggerCards needs a trigger about a batch of cards (a batch discarded trigger)',
+        );
+      }
+      break;
+    case 'copyOneOfTriggerCards':
+      // CR 603.2c, 707.2 (Twilight Diviner): the permanents a batch `entersBatch` trigger saw enter, one of which is copied.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          'copyOneOfTriggerCards needs a trigger about a batch of permanents (an entersBatch trigger)',
         );
       }
       break;

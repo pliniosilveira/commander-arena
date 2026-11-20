@@ -228,9 +228,20 @@ function occurrences(
         event.toZone === 'battlefield' &&
         event.component !== true
       ) {
+        // CR 603.4, 601.2a (Twilight Diviner): "if they entered or were cast from a graveyard": the zone this permanent came from, or the zone its spell was cast from.
+        if (
+          trigger.fromGraveyard === true &&
+          event.fromZone !== 'graveyard' &&
+          state.objects[event.to]?.castFrom !== 'graveyard'
+        ) {
+          return [];
+        }
         return [{ subject: event.to, seat: null }];
       }
-      return event.kind === 'tokenCreated' ? [{ subject: event.object, seat: event.seat }] : [];
+      // A token was never in a graveyard, and was not cast.
+      return event.kind === 'tokenCreated' && trigger.fromGraveyard !== true
+        ? [{ subject: event.object, seat: event.seat }]
+        : [];
     case 'dies':
       return event.kind === 'died' ? [{ subject: event.object, seat: null }] : [];
     case 'attacks':
@@ -1245,6 +1256,23 @@ function discardedCards(
   );
 }
 
+/**
+ * The permanents (as the objects they became) that the batch `entersBatch` trigger `trigger` names in these events (CR 603.2c, 603.6a; Twilight Diviner): each permanent that entered
+ * in them that the filter (and `fromGraveyard`) names, in the order they entered, for "a copy of one of them".
+ */
+function enteredBatchCards(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'entersBatch' }>,
+  events: readonly GameEvent[],
+  candidate: Candidate,
+): ObjectId[] {
+  return events.flatMap((e) =>
+    occurrences(state, trigger, e, null).flatMap((occ) =>
+      occ.subject !== null && matches(state, trigger, occ, candidate) ? [occ.subject] : [],
+    ),
+  );
+}
+
 /** Every triggered ability that the events trigger, in event order (CR 603.2). */
 export function findTriggers(state: GameState, events: readonly GameEvent[]): PendingTrigger[] {
   if (!events.some(isRelevant)) return [];
@@ -1338,7 +1366,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ? discardedCards(state, ability.trigger, events, candidate, lore)
             : ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true
               ? putIntoGraveyardCards(state, ability.trigger, events, candidate, lore)
-              : null;
+              : ability.trigger.kind === 'entersBatch'
+                ? enteredBatchCards(state, ability.trigger, events, candidate)
+                : null;
         for (const occ of occurrences(state, ability.trigger, event, lore, {
           events,
           index: eventIndex,

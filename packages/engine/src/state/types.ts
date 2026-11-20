@@ -1157,6 +1157,11 @@ export type Instruction =
    */
   | {
       readonly kind: 'populate';
+      /**
+       * Twilight Diviner (`copyOneOfTriggerCards`, CR 603.2c, 707.2): the creature is chosen among these permanents (the batch that triggered the ability, the ones still on the
+       * battlefield) instead of among the creature tokens the controller controls, and the decision's purpose is 'copyTrigger'.
+       */
+      readonly among?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
     }
   /**

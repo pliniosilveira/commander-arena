@@ -229,6 +229,8 @@ export interface LowerContext {
   didSearch: boolean;
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
   discardBatchTrigger: boolean;
+  /** True in the body of a triggered ability whose every event is a batch of permanents entering (Twilight Diviner, CR 603.2c): "one of them" names the permanents that triggered it. */
+  entersBatchTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -352,6 +354,7 @@ export function newContext(
     scryTrigger: false,
     triggeredBody: false,
     discardBatchTrigger: false,
+    entersBatchTrigger: false,
     didSearch: false,
     searched: null,
     sacrificedRef: null,

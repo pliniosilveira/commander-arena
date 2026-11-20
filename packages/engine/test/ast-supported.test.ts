@@ -397,6 +397,7 @@ describe('supported feature gate', () => {
       'tappedBy',
       'notAsAttacker',
       'tapBatch',
+      'entersFromGraveyard',
       // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}".
       'activatesAbilityX',
     ]);

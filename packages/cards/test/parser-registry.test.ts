@@ -752,6 +752,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
+  // Twilight Diviner: the intervening "if" of a trigger about one or more creatures entering.
+  'condition.entered-from-graveyard': permanent(
+    (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
+  ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".

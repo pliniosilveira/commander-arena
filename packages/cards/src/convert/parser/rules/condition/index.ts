@@ -37,6 +37,7 @@ import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
+import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
@@ -603,6 +604,8 @@ export const CONDITION_RULES = [
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
+  // Twilight Diviner (Meren deck): "they entered or were cast from a graveyard".
+  ...ENTERED_FROM_GRAVEYARD_CONDITION_RULES,
   // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
   ...UNBOUND_I_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".

@@ -43,7 +43,11 @@ export function runPopulate(
   flow: OrderFlow,
 ): StepOutcome {
   const seat = res.controller;
-  const tokens = creatureTokensOf(state, seat);
+  // Twilight Diviner (CR 603.2c): "a copy of one of them": the choice is among the permanents of the batch that triggered the ability, as they are now.
+  const tokens =
+    ins.among === undefined
+      ? creatureTokensOf(state, seat)
+      : ins.among.filter((id) => state.objects[id]?.zone === 'battlefield');
   // CR 701.36b: no creature token to choose, no token created. The tokens `moved` names are none.
   if (tokens.length === 0) return { ...done(state), lastMoved: [] };
   const picked = ins.chosen?.[0] ?? (tokens.length === 1 ? tokens[0] : undefined);
@@ -56,7 +60,7 @@ export function runPopulate(
         kind: 'choosePermanent',
         seat,
         source: res.object,
-        purpose: 'populate',
+        purpose: ins.among === undefined ? 'populate' : 'copyTrigger',
         min: 1,
         max: 1,
         legal: tokens,

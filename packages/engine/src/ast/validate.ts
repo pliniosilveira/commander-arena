@@ -1022,6 +1022,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the permanents that enter are on the battlefield: no zone, stackKind or combat',
         );
       }
+      if (t.fromGraveyard !== undefined && t.fromGraveyard !== true) {
+        issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
+      }
       break;
     case 'leftGraveyard':
     case 'exiledFromLibraryOrGraveyard':
@@ -1651,7 +1654,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
         ...(a.trigger.kind === 'leftGraveyard' ||
         (a.trigger.kind === 'putIntoGraveyard' && a.trigger.batch === true) ||
-        (a.trigger.kind === 'discarded' && a.trigger.batch === true)
+        (a.trigger.kind === 'discarded' && a.trigger.batch === true) ||
+        a.trigger.kind === 'entersBatch'
           ? { triggerCards: true }
           : {}),
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),

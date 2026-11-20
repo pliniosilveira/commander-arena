@@ -120,8 +120,8 @@ export function createCasualHandlers(
             ? { kind: 'choosePermanents', objects: [] } // CR 122.1, issue 230: the AI keeps the counters where they are (it never moves one)
             : d.purpose === 'amass'
               ? chooseAmassArmy(view, d) // CR 701.47a, D-367: the Army with the most power gets the counters
-              : d.purpose === 'populate'
-                ? choosePopulateToken(view, d) // CR 701.36a, D-639: the creature token that makes the best copy
+              : d.purpose === 'populate' || d.purpose === 'copyTrigger'
+                ? choosePopulateToken(view, d) // CR 701.36a, D-639; Twilight Diviner (CR 603.2c): the creature that makes the best copy
                 : d.purpose === 'untap'
                   ? { kind: 'choosePermanents', objects: [...d.legal] } // CR 502.3, D-125: untap everything
                   : d.purpose === 'legendRule'

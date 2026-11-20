@@ -547,7 +547,10 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const base = tokens ? `${kind === null ? '' : `${kind} `}tokens` : core;
       if (base === null) return null;
       const things = `${base.endsWith('s') ? base : `${base}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
-      return `Whenever one or more ${things} enter`;
+      // Twilight Diviner (CR 603.4): "..., if they entered or were cast from a graveyard".
+      return `Whenever one or more ${trigger.what.other === true ? 'other ' : ''}${things} enter${
+        trigger.fromGraveyard === true ? ', if they entered or were cast from a graveyard' : ''
+      }`;
     }
     case 'becomesTarget': {
       const what = subjectPhrase(trigger.what, ctx);

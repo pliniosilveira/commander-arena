@@ -6,16 +6,20 @@
 import type { ChoosePermanentDecision, ObjectId } from '@commander-arena/engine';
 import { type Index, nameOf, stackName } from './lookup';
 
-/** True for the choice of the creature token a populate copies. */
+/** True for the choice of the creature token a populate copies, or of the creature a "copy of one of them" ability copies (Twilight Diviner, `copyTrigger`). */
 export function isPopulate(decision: Pick<ChoosePermanentDecision, 'purpose'>): boolean {
-  return decision.purpose === 'populate';
+  return decision.purpose === 'populate' || decision.purpose === 'copyTrigger';
 }
 
 /** "Populate: choose a creature token you control to copy (Rootborn Defenses)." */
 export function populatePrompt(
-  decision: Pick<ChoosePermanentDecision, 'source'>,
+  decision: Pick<ChoosePermanentDecision, 'source'> &
+    Partial<Pick<ChoosePermanentDecision, 'purpose'>>,
   index: Index,
 ): string {
+  if (decision.purpose === 'copyTrigger') {
+    return `Choose one of the creatures that entered to create a copy of (${stackName(index, decision.source)}).`;
+  }
   return `Populate: choose a creature token you control to copy (${stackName(index, decision.source)}).`;
 }
 
@@ -24,6 +28,9 @@ export const POPULATE_BADGE = 'Copied';
 
 /** The title of its dock panel. */
 export const POPULATE_TITLE = 'Populate: choose a token';
+
+/** The title of its dock panel for "a copy of one of them". */
+export const COPY_TRIGGER_TITLE = 'Choose a creature to copy';
 
 /** The bar's second line: what a click does. */
 export function populateDetail(chosen: readonly ObjectId[], index: Index): string {
