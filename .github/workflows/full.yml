@@ -2,9 +2,11 @@ name: Full
 
 # The complete suite as parallel jobs (the former CI): typecheck, lint, build, all unit tests
 # in four shards (the AI soak tests of 20 games each included) and the browser tests. It runs every
-# night on `main` and by hand (D-250). The scheduled run is skipped when no commit entered `main`
-# since the last scheduled run (the `gate` job); a run started by hand always runs. When a
-# scheduled run fails, the `check` job opens an issue.
+# night on `main` and by hand (D-250). The scheduled run does not test again when no commit entered
+# `main` since the last scheduled run (the `gate` job), and then repeats that run's result: green
+# stays green, and a failure stays a failure (without a second issue), so the badge of the README
+# shows red until a new commit passes. A run started by hand always runs. When a scheduled run
+# that tested something fails, the `check` job opens an issue.
 
 on:
   schedule:
@@ -28,6 +30,7 @@ jobs:
       actions: read
     outputs:
       run: ${{ steps.decide.outputs.run }}
+      last: ${{ steps.decide.outputs.last }}
     steps:
       - id: decide
         env:
@@ -35,14 +38,20 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "last=none" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # The head of the last scheduled run that finished and was not cancelled. A scheduled run
-          # starts from the tip of the default branch, so the same sha means no new commit.
+          # The head and the result of the last scheduled run that finished and was not cancelled, as "<sha> <result>". A scheduled run
+          # starts from the tip of the default branch, so the same sha means no new commit. A run that did not test (nothing new) has the
+          # result of the run before it, so the chain of results is kept.
           last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/full.yml/runs?event=schedule&status=completed&per_page=20" \
-            --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.conclusion == "success" or .conclusion == "failure")][0].head_sha // ""')
-          echo "this run: ${GITHUB_SHA}, last scheduled run: ${last:-none}"
-          if [ "${last}" = "${GITHUB_SHA}" ]; then
+            --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.conclusion == "success" or .conclusion == "failure")][0] | if . == null then "" else "\(.head_sha) \(.conclusion)" end')
+          last_sha="${last%% *}"
+          last_result="${last##* }"
+          if [ -z "${last}" ]; then last_result=none; fi
+          echo "this run: ${GITHUB_SHA}, last scheduled run: ${last_sha:-none} (${last_result})"
+          echo "last=${last_result}" >> "$GITHUB_OUTPUT"
+          if [ -n "${last_sha}" ] && [ "${last_sha}" = "${GITHUB_SHA}" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -135,17 +144,23 @@ jobs:
     steps:
       - name: every job passed (or nothing new to test)
         run: |
-          echo "gate=${{ needs.gate.result }} run=${{ needs.gate.outputs.run }} static=${{ needs.static.result }} test=${{ needs.test.result }} e2e=${{ needs.e2e.result }}"
+          echo "gate=${{ needs.gate.result }} run=${{ needs.gate.outputs.run }} last=${{ needs.gate.outputs.last }} static=${{ needs.static.result }} test=${{ needs.test.result }} e2e=${{ needs.e2e.result }}"
           test "${{ needs.gate.result }}" = success
           if [ "${{ needs.gate.outputs.run }}" = "false" ]; then
-            echo "no new commit since the last scheduled run: nothing to test"
+            # Nothing new was tested, so this run has the result of the last one: a night after a failure on this very commit is still a failure.
+            if [ "${{ needs.gate.outputs.last }}" = "failure" ]; then
+              echo "no new commit since the last scheduled run, and that run failed: still failing (the issue of that run is open already)"
+              exit 1
+            fi
+            echo "no new commit since the last scheduled run, and that run passed: nothing to test"
             exit 0
           fi
           test "${{ needs.static.result }}" = success
           test "${{ needs.test.result }}" = success
           test "${{ needs.e2e.result }}" = success
       - name: Open an issue when the nightly run failed
-        if: ${{ failure() && github.event_name == 'schedule' }}
+        # Not for a night that tested nothing and repeats an earlier failure (`run` is 'false'): that failure has its issue. A failed gate has no `run`, and does open one.
+        if: ${{ failure() && github.event_name == 'schedule' && needs.gate.outputs.run != 'false' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
