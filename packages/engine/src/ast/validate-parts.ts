@@ -6646,8 +6646,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkAmount(e.count, `${path}.count`, scope, out);
         }
       }
-      if (e.rest !== undefined && e.rest !== 'stay' && e.rest !== 'bottomChosen') {
-        issue(out, `${path}.rest`, 'rest is stay or bottomChosen when present');
+      if (
+        e.rest !== undefined &&
+        e.rest !== 'stay' &&
+        e.rest !== 'bottomChosen' &&
+        e.rest !== 'graveyard'
+      ) {
+        issue(out, `${path}.rest`, 'rest is stay, bottomChosen or graveyard when present');
+      }
+      // Issue 102 (Consuming Aberration): "then puts those cards into their graveyard": the cards found and the rest both go to the graveyard.
+      if (e.rest === 'graveyard' && e.put !== 'graveyard') {
+        issue(out, `${path}.rest`, 'rest graveyard goes with put graveyard');
+      }
+      if (
+        e.perPlayer !== undefined &&
+        (e.perPlayer !== true ||
+          e.from === undefined ||
+          e.put !== 'graveyard' ||
+          e.rest !== 'graveyard' ||
+          e.count !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.perPlayer`,
+          'perPlayer is true, only with from, put graveyard, rest graveyard and no count',
+        );
       }
       // Issue 81 (Jhoira, Proteus Staff): whose library is revealed, and who controls the card put onto the battlefield.
       if (e.from !== undefined) {

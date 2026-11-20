@@ -545,3 +545,30 @@ describe('"Whenever one or more creature cards are put into your graveyard from 
     g.expect.zone('Island', 'graveyard', { seat: 0 });
   });
 });
+
+describe('"Whenever you cast a spell, each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard." (CR 701.20, 101.4)', () => {
+  const horror = parsed(
+    'SYNTHETIC Parsed Horror',
+    'Creature — Horror',
+    'Whenever you cast a spell, each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard.',
+    { manaCost: '{3}{U}{B}', power: '1', toughness: '1', colors: ['U', 'B'] },
+  );
+  test('the cards down to and including the first land go to the opponent’s graveyard', () => {
+    const g = scenario()
+      .seat(0)
+      .define(horror)
+      .battlefield(horror.name, 'Mountain')
+      .hand('Lightning Bolt')
+      .library('Island', 'Island')
+      .seat(1)
+      .library('Lightning Bolt', 'Serra Angel', 'Forest', 'Grizzly Bears')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+    g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'graveyard', { seat: 1 });
+    g.expect.zone('Forest', 'graveyard', { seat: 1 });
+    g.expect.zone('Grizzly Bears', 'library', { seat: 1 });
+  });
+});

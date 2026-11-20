@@ -3046,6 +3046,17 @@ function runEffect(
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
       // Issue 81 (Jhoira, Proteus Staff): the library may be another player's (`from`); with none to name nothing is revealed.
+      // Issue 102 (Consuming Aberration): "each opponent reveals ... until they reveal a land card, then puts those cards into their graveyard": every player named reveals from their own library.
+      if (effect.from !== undefined && effect.perPlayer === true) {
+        const outcomes = resolvePlayers(state, effect.from, ctx, targets).map((revealer) =>
+          runRevealUntil(state, res, effect, 1, revealer),
+        );
+        return done(
+          state,
+          outcomes.flatMap((o) => o.events),
+          outcomes.flatMap((o) => o.front),
+        );
+      }
       if (effect.from !== undefined) {
         const revealer = resolvePlayers(state, effect.from, ctx, targets)[0];
         if (revealer === undefined) return done(state);

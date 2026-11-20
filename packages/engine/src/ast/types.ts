@@ -4151,7 +4151,13 @@ export type Effect =
        * `shuffle` effect after it to place. `bottomChosen` (issue 81, Proteus Staff: "the rest on the bottom of their library in any order", CR 401.4): the player whose library it is chooses the order
        * they go on the bottom in (`rules/arrange.ts`). Without it they go to the bottom in a random order (CR 401.5).
        */
-      readonly rest?: 'stay' | 'bottomChosen';
+      readonly rest?: 'stay' | 'bottomChosen' | 'graveyard';
+      /**
+       * "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (issue 102, Consuming Aberration; CR 701.20,
+       * 101.4): the effect is done for every player `from` names, in the order it names them, each with their own library. Only with `from`, `put` `graveyard` and `rest` `graveyard` (no
+       * choice is asked, so each player's cards are moved together).
+       */
+      readonly perPlayer?: true;
     }
   /**
    * "Look at the top N cards of your library, then put them back in any order": the controller
