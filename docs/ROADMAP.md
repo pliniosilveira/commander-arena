@@ -141,11 +141,12 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- "The copy targets that token" (CR 707.10e) takes the first legal of several tokens; no choice is asked.
 - Plot works from the hand with a mana cost; a card an effect makes plotted (CR 702.170c) and a plot ability working from another zone (CR 702.170f) are not built.
 - A land on top of the library (`playLandsFromTopOfLibrary`) is playable unseen, but the web shows no top card then and the agents never play it.
 - "Target spell or creature" is plain text in the web.
 - "If this spell was kicked, choose any number instead" is read as all modes: choosing none is not offered.
-- The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
+- The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is cast by mana value, not by simulation.
 - `putIntoGraveyard` reads your own graveyard only; Hedge Shredder ("put them onto the battlefield tapped") stays unsupported. Effects that unlock or lock a Room half, and "fully unlocks" (CR 709.5f, 709.5g, 709.5i), are not built.
 - `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; three or more players are untested (the scenario DSL has two seats).
 - The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the hand payment that holds mana open skips such sources.
@@ -155,7 +156,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The CasualAgent sometimes casts a spell with "creature with mana value X" that the engine refuses ("No creature has a mana value that X could be"); one refused answer, then the fallback.
 - The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.
 - A station symbol is read only with one ability line each and no power and toughness box (CR 721.2b); a line after a symbol that carries none is left unread, as its striation is not in the text.
-- The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment in the web cannot.
+- The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment cannot.
 - "Total power of creatures they controlled that were exiled this way" (Oversimplify) counts only creatures an `exile` effect exiled, for each player's own tokens; other exiles (`exileTop`, until-leaves) and "you" or opponent phrasings are not read.
 - A card given flashback with the cost equal to its mana cost does not show the keyword in the view, and one that also prints flashback is offered only for its printed cost.
 - "Attached to that token" is read only after a token created in the same ability (Forum Filibuster). An Equipment put onto the battlefield attached to a non-creature enters unattached; that rule's text was not checked.
@@ -166,7 +167,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Two conditions joined by "and" (`condition.and`) are read from a short list of plain conditions only. "That many" after a prime-number condition is that count, and "it" after a created 0/0 token is that token; other uses stay unread.
 - "Enchant creature card in a graveyard" is read for any graveyard only; the swap of the enchant ability, the return of the enchanted card and "that creature's controller sacrifices it" are read in Animate Dead's wording only.
 - Bestow: a copy of a bestowed permanent copies the card, not its Aura form; the rules text of CR 702.103 was not available when it was built, so its subrule letters are unchecked.
-- A land that may reveal a Dragon card "or you control a Dragon" is not asked to reveal when it controls one (`orIf`): nothing but what the opponent learns would change.
+- A land that may reveal a Dragon card "or you control a Dragon" is not asked to reveal when it controls one (`orIf`); only the opponent's knowledge differs.
 - A "+N/+N" that names a keyword is applied after layer 6, so a grant or a power-comparing subject does not see it; a keyword count skips layer 7c (a grant named by power may miscount).
 - A static `costIncrease` taxes spells by what they target, generic mana only; a keyword-named group may be given one, but no other quoted static ability, and an ability that targets the creature is not taxed.
 - Grammar-only import does not read Fandaniel's full may-sacrifice clause, Lord of the Nazgûl's Ring-bearer protection and group base-power clause, Maskwood Nexus's all-creature-types scopes or Sauron's Ransom's hidden-pile clause; these cards use hand-written fixtures.

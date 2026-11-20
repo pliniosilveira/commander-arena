@@ -440,6 +440,9 @@ export type ThisWayKind =
   | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
   | 'damageDealt'
+  // Issue 144 (CR 120.10, 608.2c): "the amount of excess damage dealt to that creature this way": the damage the `dealDamage` effects of this resolution dealt to creatures
+  // (and planeswalkers) beyond lethal damage (beyond the loyalty, for a planeswalker), read as each was dealt.
+  | 'excessDamageDealt'
   // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
   // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
   | 'exiledPowerOwn';
@@ -2598,6 +2601,13 @@ export type Effect =
        * their control and, with `newTargets` `may`, is the one who chooses its new targets.
        */
       readonly copier?: 'triggerPlayer' | 'opponent';
+      /**
+       * "The copy targets that token." (CR 707.10e, 115.3, Frontline Heroism): the object the one copy has as the target of every instance of the word "target" (the `moved` of the
+       * `createToken` before it). Nobody chooses (`newTargets` is `no`, no `count`, no `forEach`). If the object is not a legal target for each instance of the word "target", the copy is
+       * not created (CR 707.10e); when the effect before it made several objects (a replacement effect doubled the tokens), the first that is a legal target is the one (the choice
+       * CR 707.10e gives the controller is not asked, see docs/ROADMAP.md).
+       */
+      readonly newTarget?: Extract<ObjectRef, { readonly kind: 'moved' }>;
     }
   /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,

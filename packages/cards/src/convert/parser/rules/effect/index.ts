@@ -88,6 +88,7 @@ import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
+import { HAVE_DAMAGE_EFFECT_RULES } from './have-damage';
 import { HEXPROOF_LOSS_EFFECT_RULES } from './hexproof-loss';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
@@ -1240,6 +1241,8 @@ export const EFFECT_RULES = [
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".
   ...GISA_G5_EFFECT_RULES,
+  // Issue 144: "you may have ~ deal 1 damage to target player or planeswalker".
+  ...HAVE_DAMAGE_EFFECT_RULES,
   // Feather deck, group 1 (issue 27, D-451, D-457): protection for the turn (before `effect.gain-keyword`, which refuses it) and "Until end of turn, double target creature's power and it gains first strike.".
   ...FEATHER_G1_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).

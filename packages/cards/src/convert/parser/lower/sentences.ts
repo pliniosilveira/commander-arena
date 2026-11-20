@@ -1713,6 +1713,8 @@ function countsWhatHappened(
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
       return earlier.verb === 'removeAllCounters';
+    case 'excessDamageDealt':
+    // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';

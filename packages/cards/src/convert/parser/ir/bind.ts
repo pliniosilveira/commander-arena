@@ -737,6 +737,9 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   // D-448 (CR 603.2): the permanent that became the target of a spell is still on the battlefield, and "it" of "Whenever ~ attacks, blocks, or becomes the target of a spell, it deals
   // damage ..." is that permanent (the spell is "that spell").
   'becomesTarget',
+  // CR 702.29c: "When you cycle this card, it deals X damage ...": the card that was cycled is the card with the ability, which works from the graveyard it was discarded to and has
+  // no other subject, so "it" is `~` (the engine's `cycled` trigger has no subject object).
+  'cycled',
 ]);
 
 /**

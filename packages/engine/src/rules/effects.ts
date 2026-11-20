@@ -1241,6 +1241,26 @@ function runEffect(
       const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
       // D-438 (CR 707.10, 707.10e): "copy that spell for each other creature you control that the spell could target": the stack finds the permanents and makes a copy for each
       // (`rules/copy-spell.ts`, which reads the legal targets of the spell); "that player copies" is the copy of the player the event is about.
+      // Issue 144 (CR 707.10e): "The copy targets that token.": one copy per spell, aimed at the object the earlier instruction made (`rules/copy-spell.ts` checks that it is a legal target).
+      if (effect.newTarget !== undefined) {
+        const among = resolveObjects(state, effect.newTarget, ctx, targets);
+        return {
+          ...done(
+            state,
+            [],
+            spells.map((id) => ({
+              kind: 'copySpell' as const,
+              spell: id,
+              count: 0,
+              newTargets: 'no' as const,
+              stage: 'each' as const,
+              copy: null,
+              among,
+            })),
+          ),
+          performed: spells.length,
+        };
+      }
       if (effect.forEach !== undefined) {
         const copier = effect.copier === 'triggerPlayer' ? ctx.triggerPlayer : undefined;
         if (effect.copier === 'triggerPlayer' && copier === undefined) return done(state);

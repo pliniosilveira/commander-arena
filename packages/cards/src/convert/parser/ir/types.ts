@@ -277,6 +277,8 @@ export interface IrFilter {
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
   readonly targets?: IrFilter;
+  /** "that targets only a single creature you control" (issue 144, CR 115.9c): a spell whose chosen targets are one object of this kind, however many times it was chosen. */
+  readonly targetsOnly?: IrFilter;
   /** "that targets ~" (Feather group 3, D-437, CR 115.1): a spell with a chosen target that is the source of the ability. */
   readonly targetsSelf?: true;
   /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
@@ -572,6 +574,7 @@ export type IrAmount =
         | 'discardedTypeCount'
         | 'exiledCreatures'
         | 'damageDealt'
+        | 'excessDamageDealt'
         | 'countersRemoved';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';

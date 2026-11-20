@@ -292,6 +292,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   out.thisWay.discardedMost ?? 0,
                 ),
                 damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
+                excessDamageDealt:
+                  (res.thisWay?.excessDamageDealt ?? 0) + (out.thisWay.excessDamageDealt ?? 0),
                 countersRemoved:
                   (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
                 ...mergePowerBy(res.thisWay?.exiledPowerBy, out.thisWay.exiledPowerBy),

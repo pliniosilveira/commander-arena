@@ -1670,6 +1670,11 @@ export type Instruction =
        * the copies belong to when it is not the controller of the resolving ability ("that player copies that spell").
        */
       readonly forEach?: ObjectFilter;
+      /**
+       * Issue 144 (CR 707.10e, Frontline Heroism: "The copy targets that token."): the stage `each` makes one copy that targets the first of these objects that is a legal target for
+       * every instance of the word "target" in the spell, or none. Instead of `forEach`.
+       */
+      readonly among?: readonly ObjectId[];
       readonly controller?: SeatId;
       readonly retarget?: ObjectId;
     }
@@ -2005,6 +2010,8 @@ export interface ThisWayCounts {
   readonly discardedMost?: number;
   /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
   readonly damageDealt?: number;
+  /** The excess damage (CR 120.10) `dealDamage` effects dealt to creatures and planeswalkers, for "the amount of excess damage dealt to that creature this way" (issue 144). */
+  readonly excessDamageDealt?: number;
   /** The counters of every kind that `removeAllCounters` effects took off, for "for each counter removed this way" (CR 122.1). */
   readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */

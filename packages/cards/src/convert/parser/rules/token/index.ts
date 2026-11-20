@@ -679,6 +679,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
     'a number of Food tokens equal to that creature\u2019s power',
     'a number of Gold tokens equal to its power',
     'a number of 1/1 white Soldier creature tokens equal to its power',
+    'a number of 1/1 red Goblin creature tokens equal to the amount of excess damage dealt to that creature this way',
   ],
   rejects: [
     'a number of Treasure token equal to its power',
@@ -698,7 +699,10 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
           (token) => token.abilities === undefined,
         ),
         literal(' '),
-        family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
+        // Issue 144 (Goblin Negotiation, CR 120.10): "a number of 1/1 red Goblin creature tokens equal to the amount of excess damage dealt to that creature this way".
+        family<IrAmount>('amount', {
+          only: [...EQUAL_AMOUNTS, 'amount.excess-damage-dealt-this-way'],
+        }),
       ),
       ([token, , count]): Bare => ({ ...token, count }),
     ),

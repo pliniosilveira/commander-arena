@@ -494,6 +494,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
+  // Issue 144 (Goblin Negotiation): the number of tokens follows "create a number of ... tokens".
+  'amount.excess-damage-dealt-this-way': spell(
+    (e) =>
+      `~ deals 3 damage to target creature. Create a number of 1/1 red Goblin creature tokens ${e}.`,
+  ),
   'amount.damage-dealt-this-way': spell(
     (e) => `~ deals 3 damage to target creature. You gain life ${e}.`,
   ),
