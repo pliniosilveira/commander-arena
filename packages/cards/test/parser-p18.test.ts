@@ -751,8 +751,8 @@ describe('"unless that player pays {1}" (CR 118.12a)', () => {
       'condition.unless-pays',
     ],
     [
-      'Whenever an opponent casts a spell, draw a card unless that player pays 2 life.',
-      '2 life.',
+      'Whenever an opponent casts a spell, draw a card unless that player pays X life.',
+      'X life.',
       'condition.unless-pays',
     ],
     [

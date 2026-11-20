@@ -728,7 +728,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'sacrifice': {
       // "you sacrifice" is the controller of this ability, "a player sacrifices" any player.
-      const by = t.actor?.det === 'you' ? 'you' : t.actor?.det === 'eachPlayer' ? 'any' : null;
+      const by =
+        t.actor?.det === 'you'
+          ? 'you'
+          : t.actor?.det === 'eachPlayer'
+            ? 'any'
+            : t.actor?.det === 'eachOpponent'
+              ? 'opponent'
+              : null;
       if (by === null) return failure(t);
       if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by });
       const filter = lowerFilter(t.subject);

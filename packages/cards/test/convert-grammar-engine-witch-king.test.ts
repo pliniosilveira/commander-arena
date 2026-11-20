@@ -383,3 +383,49 @@ describe('Minas Morgul, Dark Fortress', () => {
     g.expect.invariants();
   });
 });
+
+describe('Nazgûl Battle-Mace', () => {
+  const mace = real('Nazgûl Battle-Mace');
+
+  const attacked = () => {
+    const g = scenario()
+      .define(mace)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(BEARS)
+      .battlefield(mace.name, { attachedTo: BEARS })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(ELVES)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([BEARS]);
+    g.passAll();
+    return g;
+  };
+
+  test('the equipped creature has menace, deathtouch and annihilator 1 (CR 702.86a)', () => {
+    const g = attacked();
+    g.expect.derived(BEARS, { keywords: ['menace', 'deathtouch', 'annihilator'] });
+  });
+
+  test('an opponent who sacrifices a nontoken permanent to annihilator is asked to pay 3 life; if they do not, its controller puts the card onto the battlefield (CR 118.12a)', () => {
+    const g = attacked();
+    g.expect.zone(ELVES, 'graveyard', { seat: 1 });
+    g.act(1).decline();
+    g.passAll();
+    g.expect.zone(ELVES, 'battlefield', { seat: 0 });
+    g.expect.life(1, 40);
+    g.expect.invariants();
+  });
+
+  test('if they pay 3 life the card stays in their graveyard', () => {
+    const g = attacked();
+    g.act(1).accept();
+    g.passAll();
+    g.expect.zone(ELVES, 'graveyard', { seat: 1 });
+    g.expect.life(1, 37);
+    g.expect.invariants();
+  });
+});

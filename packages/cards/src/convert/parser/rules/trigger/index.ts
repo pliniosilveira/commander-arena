@@ -959,13 +959,12 @@ export const TRIGGER_LANDFALL = defineRule<IrTrigger>({
 /**
  * `trigger.sacrifice`: "you sacrifice a permanent", "you sacrifice a creature", "a player
  * sacrifices a permanent" (CR 701.21: the event is a permanent being sacrificed, by you or by any
- * player; it is judged as it was on the battlefield, CR 603.10a). "An opponent sacrifices" is not
- * read: the engine's trigger knows only you and any player.
+ * player; it is judged as it was on the battlefield, CR 603.10a), and "an opponent sacrifices" (Nazgûl Battle-Mace: a player who is not the controller).
  */
 export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
   id: 'trigger.sacrifice',
   family: 'trigger',
-  leading: ['you', 'a'],
+  leading: ['you', 'a', 'an'],
   cites: ['CR 701.21 (Sacrifice)', 'CR 603.10a (Handling Triggered Abilities)'],
   examples: [
     'you sacrifice a permanent',
@@ -973,6 +972,8 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'you sacrifice an artifact',
     'a player sacrifices a permanent',
     'a player sacrifices a creature',
+    'an opponent sacrifices a permanent',
+    'an opponent sacrifices a nontoken permanent',
   ],
   rejects: [
     'you sacrifice ~',
@@ -983,7 +984,8 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'a player sacrifices',
     'a player sacrifices ~',
     'a player sacrifices a creature you control',
-    'an opponent sacrifices a permanent',
+    'an opponent sacrifices a creature you control',
+    'an opponent sacrifice a permanent',
     'a player sacrifice a permanent',
   ],
   parse: (ctx, pos) => {
@@ -998,6 +1000,14 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
             { raw: 'a player' },
           ),
         ),
+        map(spanned(literal('an opponent sacrifices ')), ({ span }) =>
+          makeNoun(
+            'trigger.sacrifice',
+            { start: span.start, end: span.start + 'an opponent'.length },
+            'eachOpponent',
+            { raw: 'an opponent' },
+          ),
+        ),
       ),
       satisfy(objectSubject('trigger.sacrifice'), (n) => n.filter.controller !== 'opponent'),
     )(ctx, pos);
@@ -1005,8 +1015,7 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     const [actor, subject] = r.value;
     // Whoever sacrifices, the permanent is theirs, so "a player sacrifices a creature you control"
     // says something else.
-    if (actor.det === 'eachPlayer' && subject.filter.controller !== undefined)
-      return fail(ctx, pos);
+    if (actor.det !== 'you' && subject.filter.controller !== undefined) return fail(ctx, pos);
     return {
       ok: true,
       value: trigger('trigger.sacrifice', { start: pos, end: r.pos }, 'sacrifice', {

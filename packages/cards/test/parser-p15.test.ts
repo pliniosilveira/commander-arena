@@ -662,8 +662,14 @@ describe('triggers: "put into a graveyard from the battlefield", "a player sacri
     ]);
   });
 
+  test('"an opponent sacrifices" is by a player who is not the controller (Nazgûl Battle-Mace)', () => {
+    expect(abilities('Whenever an opponent sacrifices a permanent, draw a card.')).toMatchObject([
+      { kind: 'triggered', trigger: { kind: 'permanentSacrificed', by: 'opponent' } },
+    ]);
+  });
+
   test.each([
-    'Whenever an opponent sacrifices a permanent, draw a card.',
+    'Whenever an opponent sacrifices a creature you control, draw a card.',
     'Whenever a player sacrifices a creature you control, draw a card.',
     'Whenever a player sacrifices ~, draw a card.',
     'Whenever a player sacrificed a permanent, draw a card.',

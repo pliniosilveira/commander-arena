@@ -1262,7 +1262,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       break;
     case 'permanentSacrificed':
-      if (!isOneOf(t.by, ['you', 'any'])) {
+      if (!isOneOf(t.by, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.by`, `unknown sacrificing player ${String(t.by)}`);
       }
       if (t.filter !== undefined) checkFilter(t.filter, `${path}.filter`, out);

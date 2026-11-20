@@ -4730,7 +4730,8 @@ export type Trigger =
    */
   | {
       readonly kind: 'permanentSacrificed';
-      readonly by: 'you' | 'any';
+      /** `opponent` ("Whenever an opponent sacrifices a nontoken permanent", CR 701.21, Nazgûl Battle-Mace): a player who is not the controller of this ability. */
+      readonly by: 'you' | 'opponent' | 'any';
       readonly filter?: ObjectFilter;
     }
   /**

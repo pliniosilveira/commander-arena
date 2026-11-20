@@ -1102,6 +1102,7 @@ function matches(
       return subject !== null && matchesFilter(state, subject, trigger.what, ctx);
     case 'permanentSacrificed': {
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       if (trigger.filter === undefined) return true;
       return subject !== null && matchesFilter(state, subject, trigger.filter, ctx);
     }
