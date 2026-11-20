@@ -396,6 +396,10 @@ export interface StackData {
   /** True when a kicker cost was paid at least once (CR 702.33d). Always false for an ability. */
   readonly kicked: boolean;
   /**
+   * The creatures that were tapped to pay for this spell with Convoke (CR 702.51a, issue 102): "Each creature that convoked this spell connives" names them. Absent when none was.
+   */
+  readonly convokedBy?: readonly ObjectId[];
+  /**
    * How many times the multikicker cost was paid (CR 702.33c, D-110), at least 1 when present. Absent for
    * a spell that has no multikicker, and for one whose caster paid it no times (`kicked` is false then).
    */

@@ -897,6 +897,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   selectorKinds: [
     'this',
     'thisSpell',
+    // Issue 102 (Lethal Scheme): "each creature that convoked this spell" (`ObjectRef` `convokers`).
+    'convokers',
     'target',
     'chosen',
     'anyTarget',
@@ -1791,6 +1793,7 @@ export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 export const SELECTOR_KINDS = [
   'this',
   'thisSpell',
+  'convokers',
   'target',
   'chosen',
   'anyTarget',

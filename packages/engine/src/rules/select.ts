@@ -765,6 +765,11 @@ export function resolveObjects(
     case 'this':
     case 'thisSpell':
       return ctx.source === null ? [] : [ctx.source];
+    case 'convokers':
+      // CR 702.51a (issue 102): the creatures that convoked the spell that is resolving, those still on the battlefield.
+      return (
+        ctx.source === null ? [] : (state.objects[ctx.source]?.stack?.convokedBy ?? [])
+      ).filter((id) => state.objects[id]?.zone === 'battlefield');
     case 'target':
       return targetObjects(selector.id, targets);
     case 'chosen':

@@ -72,6 +72,18 @@ const CONNIVE: Lowering<IrClause, Effects> = {
     eachObject(clause, ctx, (objects) => ({ kind: 'connive', objects }), 'objects'),
 };
 
+/** "Each creature that convoked this spell connives" (issue 102, CR 702.51a, 701.50a): the engine's `connive` of the creatures the spell remembers as its convokers. */
+const CONNIVE_CONVOKERS: Lowering<IrClause, Effects> = {
+  head: 'conniveConvokers',
+  id: 'lower.connive-convokers',
+  needs: ['effect:connive', 'selector:convokers'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'connive', objects: { kind: 'convokers' } }],
+    rule: clause.rule,
+  }),
+};
+
 /**
  * "Have ~ become a copy of another target creature you control until end of turn, except its name is ~" (CR 707.2, 707.9a): the engine's `becomeCopy` of this
  * permanent, of the target, for the turn, keeping its name.
@@ -161,6 +173,7 @@ export const VRASKA_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   CREATE_COPIES,
   BECOME_COPY,
   CONNIVE,
+  CONNIVE_CONVOKERS,
   REMOVE_ALL_COUNTERS,
   PUT_EXILED_WITH,
   CHOOSE_TARGET,

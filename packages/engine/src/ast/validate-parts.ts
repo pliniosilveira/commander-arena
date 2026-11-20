@@ -1306,6 +1306,11 @@ export function checkRef(
         issue(out, path, "'thisSpell' is only valid in spell text; abilities use 'this'");
       }
       break;
+    case 'convokers':
+      if (scope.owner === 'ability') {
+        issue(out, path, "'convokers' is only valid in spell text");
+      }
+      break;
     case 'target':
       checkTargetRef(ref.id, expect, path, scope, out);
       break;

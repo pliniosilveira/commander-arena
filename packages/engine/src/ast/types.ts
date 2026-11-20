@@ -989,6 +989,11 @@ export type PlayerFilter = 'any' | 'opponent';
 export type ObjectRef =
   | { readonly kind: 'this' }
   | { readonly kind: 'thisSpell' }
+  /**
+   * "Each creature that convoked this spell connives" (issue 102, Lethal Scheme; CR 702.51a, 608.2c): the creatures tapped to pay for the spell that is resolving with Convoke that are
+   * still on the battlefield. Only in spell text.
+   */
+  | { readonly kind: 'convokers' }
   | { readonly kind: 'target'; readonly id: string }
   /** "It" for the object chosen by an earlier resolving instruction (CR 608.2d). */
   | { readonly kind: 'chosen'; readonly id: string }

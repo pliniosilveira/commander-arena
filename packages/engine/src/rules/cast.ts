@@ -1097,9 +1097,23 @@ function settlePayOptions(
 ): { state: GameState; events: GameEvent[]; cost: string[] } | null {
   const casting = state.casting;
   if (!casting || !payOptionsAnswerOk(base, objects)) return null;
-  const used =
+  const tapped =
     objects.length === 0 ? { state, events: [] } : usePayOptions(state, base.mechanism, objects);
-  if (used === null) return null;
+  if (tapped === null) return null;
+  // CR 702.51a (issue 102): the creatures that convoked the spell are remembered by it, for "each creature that convoked this spell".
+  const spellObject = tapped.state.objects[casting.object];
+  const used =
+    base.mechanism === 'convoke' && objects.length > 0 && spellObject?.stack != null
+      ? {
+          ...tapped,
+          state: patchObject(tapped.state, casting.object, {
+            stack: {
+              ...spellObject.stack,
+              convokedBy: [...(spellObject.stack.convokedBy ?? []), ...objects],
+            },
+          }),
+        }
+      : tapped;
   const spell = getObject(used.state, casting.object);
   const options =
     objects.length === 0 ? [[...base.cost]] : remainders(base.cost, colorsOfChoice(base, objects));

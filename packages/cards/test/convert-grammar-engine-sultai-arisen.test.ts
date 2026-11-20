@@ -439,3 +439,41 @@ describe('"{X}, {T}, Exile X cards from your graveyard: Target creature gets -X/
     expect(g.state.exile).toHaveLength(2);
   });
 });
+
+describe('"Convoke. Destroy target creature or planeswalker. Each creature that convoked ~ connives." (CR 702.51a, 701.50a)', () => {
+  const scheme = parsed(
+    'SYNTHETIC Parsed Scheme',
+    'Instant',
+    "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nDestroy target creature or planeswalker. Each creature that convoked ~ connives.",
+    { manaCost: '{2}{B}{B}', colors: ['B'] },
+  );
+  const build = () =>
+    scenario()
+      .seat(0)
+      .define(scheme)
+      .hand(scheme.name)
+      .battlefield('Grizzly Bears', 'Grizzly Bears', 'Swamp', 'Swamp')
+      .library('Island', 'Island', 'Island', 'Island')
+      .seat(1)
+      .battlefield('Serra Angel')
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+
+  test('the creatures that were tapped for convoke connive, the others do not', () => {
+    const g = build();
+    g.act(0)
+      .cast(scheme.name, { targets: ['Serra Angel'] })
+      .payOptions('Grizzly Bears[0]', 'Grizzly Bears[1]')
+      .pay();
+    g.passAll();
+    g.expect.zone('Serra Angel', 'graveyard', { seat: 1 });
+    // CR 701.50d: with two creatures conniving the controller chooses which one goes first.
+    g.expect.pending('choosePermanent', 0);
+    g.act(0).choosePermanents('Grizzly Bears[0]');
+    // Each draws a card and discards it (the only card in hand: no choice to make).
+    g.expect.handSize(0, 0);
+    g.expect.zone('Island', 'graveyard', { seat: 0 });
+  });
+});
