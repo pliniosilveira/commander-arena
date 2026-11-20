@@ -848,6 +848,7 @@ describe('unmatched abilities', () => {
       'effect.shuffle',
       'effect.sacrifice',
       'effect.player-add-counters',
+      'effect.add-counters-self-and-other',
       'effect.add-counters',
       'effect.double-counters',
       'effect.add-counters-number-of',

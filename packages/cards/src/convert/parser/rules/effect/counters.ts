@@ -311,6 +311,70 @@ export const EFFECT_ADD_COUNTERS_KINDS = defineRule<Clauses>({
 });
 
 /**
+ * `effect.add-counters-self-and-other`: "Put a +1/+1 counter on ~ and a +1/+1 counter on up to one target commander creature you control" (issue 345, Drillworks Mole; CR 122.6,
+ * 608.2c, 115.1): two instructions of one sentence, a counter on the permanent itself and then one on a target (or on up to one target, which may be none, CR 601.2c). Only "a"
+ * before each counter and "~" first. Not read: another first object, a count of two, a list of three, a trailing clause.
+ */
+export const EFFECT_ADD_COUNTERS_SELF_AND_OTHER = defineRule<Clauses>({
+  id: 'effect.add-counters-self-and-other',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 115.1 (Targets)',
+  ],
+  examples: [
+    'put a +1/+1 counter on ~ and a +1/+1 counter on target creature you control',
+    'put a +1/+1 counter on ~ and a +1/+1 counter on up to one target creature you control',
+    'put a +1/+1 counter on ~ and a charge counter on up to one target commander creature you control',
+  ],
+  rejects: [
+    'put a +1/+1 counter on ~ and a +1/+1 counter on',
+    'put a +1/+1 counter on ~ and a +1/+1 counter on ~',
+    'put a +1/+1 counter on it and a +1/+1 counter on target creature you control',
+    'put two +1/+1 counters on ~ and a +1/+1 counter on target creature you control',
+    'put a +1/+1 counter on ~ and two +1/+1 counters on target creature you control',
+    'put a +1/+1 counter on ~ and a +1/+1 counter on target creature you control and draw a card',
+    'put a +1/+1 counter on ~ and a +1/+1 counter on each creature you control',
+  ],
+  parse: (ctx, pos) => {
+    const item = (rule: string) =>
+      map(
+        spanned(pattern(COUNTER_NAME)),
+        ({ value, span }): IrCounterSpec => ({
+          kind: 'counterSpec',
+          name: value[0].toLowerCase(),
+          span,
+          rule,
+        }),
+      );
+    const id = 'effect.add-counters-self-and-other';
+    const r = sequence(
+      literal('put a '),
+      item(id),
+      literal(' counter on '),
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      literal(' and a '),
+      item(id),
+      literal(' counter on '),
+      family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.up-to-one-permanent'] }),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, first, , self, , second, , other] = r.value;
+    const span = { start: pos, end: r.pos };
+    const one = (counter: IrCounterSpec, objects: IrNoun) =>
+      makeClause(
+        id,
+        'addCounters',
+        { count: { kind: 'number', value: 1, span: counter.span }, counter, objects },
+        span,
+      );
+    return { ok: true, value: [one(first, self), one(second, other)], pos: r.pos };
+  },
+});
+
+/**
  * `effect.player-add-counters`: "Target player puts a +1/+1 counter on each creature they control" (CR 122.6, 109.4, 608.2c, 115.1): a chosen player puts counters on every permanent
  * of a kind they control. The player is a target noun of its own, numbered with the other targets of the text; the permanents are the engine's `each` selector with `controlledBy`
  * that player. Not read: "you" and the other subjects (`effect.add-counters`), a plural subject, "puts" with a number of counters that is not a number or "a", other objects, a
@@ -372,6 +436,8 @@ export const EFFECT_PLAYER_ADD_COUNTERS = defineRule<Clauses>({
 
 export const COUNTER_RULES = [
   EFFECT_PLAYER_ADD_COUNTERS,
+  // Before the plain rule, which would read the first half and leave " and a +1/+1 counter on ..." unread.
+  EFFECT_ADD_COUNTERS_SELF_AND_OTHER,
   EFFECT_ADD_COUNTERS,
   EFFECT_DOUBLE_COUNTERS,
   EFFECT_ADD_COUNTERS_NUMBER_OF,
