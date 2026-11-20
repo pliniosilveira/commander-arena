@@ -33,6 +33,7 @@ import {
   smallGameConfig,
   stylesFor,
 } from './helpers';
+import { poolOfSeatIn, quotedStringsOfStack } from './hidden-info-audit';
 
 const LIMITS = { maxTurns: 150, maxActions: 5000 };
 
@@ -90,7 +91,11 @@ function secretsFor(state: GameState, viewer: SeatId): Secrets {
     if (seat.id === viewer) visible.push(...seat.hand);
     else hidden.push(...seat.hand);
   }
-  const visibleNames = new Set(visible.map((id) => nameOf(state, id)));
+  // CR 113.7a: the text of an ability on the stack is public, so a string in its AST (a land type in a search filter) is no secret.
+  const visibleNames = new Set([
+    ...visible.map((id) => nameOf(state, id)),
+    ...quotedStringsOfStack(state.stack, (id) => state.objects[id as ObjectId]?.stack?.ability),
+  ]);
   const objectIds = new Set<string>(hidden);
   const cardIds = new Set<string>();
   for (const id of [...hidden, ...faceDown]) {
@@ -575,7 +580,8 @@ describe('the sample handed to an agent (A31, D-161)', () => {
           expect(got.library.length, at).toBe(real.library.length);
           const realCards = [...cardIdsOf(state, real.hand), ...cardIdsOf(state, real.library)];
           const sampleCards = [...cardIdsOf(sample, got.hand), ...cardIdsOf(sample, got.library)];
-          expect([...sampleCards].sort(), at).toEqual([...realCards].sort());
+          // CR 708.5 (D-312): a face-down permanent of the other seat and its foretold cards are dealt as one pool with its hand and library.
+          expect(poolOfSeatIn(sample, 1, 0), at).toEqual(poolOfSeatIn(state, 1, 0));
           if (realCards.length >= 8) {
             checked += 1;
             expect(sampleCards, at).not.toEqual(realCards);
