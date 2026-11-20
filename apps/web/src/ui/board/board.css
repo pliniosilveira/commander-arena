@@ -1875,22 +1875,24 @@
   margin-bottom: calc(var(--h) * 0.13);
 }
 
-/* "Token" in the top left corner of a token drawn as a card top (the drawn frame says it in its
-   second line). A tapped token has its tapped mark under the stripe. */
+/* "Token": a thin blue band across the top left corner of a token drawn as a card top (the drawn
+   frame says it in its second line). A tapped token has its tapped mark under the band. */
 .board-tile-inner > .board-tile-token-mark {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: calc(8px * var(--text-scale));
+  left: calc(-17px * var(--text-scale));
   display: none;
-  padding: 0 4px 0 3px;
-  font-size: calc(8px * var(--text-scale));
+  width: calc(56px * var(--text-scale));
+  padding: 0;
+  font-size: calc(6px * var(--text-scale));
   font-weight: 700;
-  line-height: 1.45;
-  letter-spacing: 0.06em;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-align: center;
   text-transform: uppercase;
-  color: var(--accent-text);
-  background: var(--accent);
-  border-bottom-right-radius: 5px;
+  color: var(--bg-sunken);
+  background: var(--mana-u);
+  transform: rotate(-45deg);
 }
 
 .board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-token-mark {
@@ -1898,7 +1900,7 @@
 }
 
 .board-tile.is-token.is-tapped::after {
-  top: calc(13px * var(--text-scale));
+  top: calc(22px * var(--text-scale));
 }
 
 .board-tile-inner > .board-tile-under {
