@@ -72,6 +72,7 @@ function CardPicture({ card }: { card: ObjectView }) {
         name={art.name}
         back={art.back}
         isToken={card.isToken || card.emblem === true}
+        commander={card.isCommander}
         {...(card.tokenDefinition === undefined ? {} : { tokenDefinition: card.tokenDefinition })}
         version="normal"
         className="dec-card-img"
