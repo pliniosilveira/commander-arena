@@ -1,5 +1,5 @@
 {
-  "parserVersion": 166,
+  "parserVersion": 167,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -157,6 +157,14 @@
       "reasons": [],
       "ast": "b344ce6e"
     },
+    "0310dfdb-0498-488d-9f1a-279f8239e024": {
+      "name": "Meren of Clan Nel Toth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "284f9695"
+    },
     "03dee43b-6377-4f7b-956b-a384160322e4": {
       "name": "Drumbellower",
       "group": "acceptance",
@@ -260,6 +268,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ed661185"
+    },
+    "05d7222b-cc08-4f1f-8e35-6058599572ba": {
+      "name": "Twilight Diviner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c0951d6"
     },
     "05e6b243-48a6-4a42-bc5f-413441de9c33": {
       "name": "Elspeth, Sun's Champion",
@@ -640,6 +656,14 @@
       "reasons": [],
       "ast": "3fe6da9a"
     },
+    "10180e2f-90c5-4d41-ba44-16b14948f923": {
+      "name": "Protean Hulk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a2c3cc4"
+    },
     "10389ff7-2ea4-4413-90cc-0e3ca268c64d": {
       "name": "Striding Shotcaller // Run the Play",
       "group": "acceptance",
@@ -760,6 +784,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6bc6222f"
+    },
+    "14c3ff84-1e82-4606-a433-869fc52cc382": {
+      "name": "Syr Konrad, the Grim",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e54ec7d5"
     },
     "15276d3b-a117-44bf-87c3-c17e032e4a26": {
       "name": "Thunderclap Wyvern",
@@ -1579,6 +1611,14 @@
       "reasons": [],
       "ast": "75f9eadf"
     },
+    "2e3ee458-fa3f-4452-ab95-5a7fb5a0483b": {
+      "name": "Plaguecrafter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5fc04fb6"
+    },
     "2e69537c-c898-4e13-a72d-ce3957a90304": {
       "name": "Jungle Shrine",
       "group": "training",
@@ -1884,6 +1924,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2a5c6a70"
+    },
+    "352b64d2-2ae5-44ee-a64f-94932ef545d3": {
+      "name": "Dread Return",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "35b6e209"
     },
     "354affb3-1be7-4a9e-91da-2989eb54f62d": {
       "name": "Hyena Umbra",
@@ -4219,6 +4267,14 @@
       "reasons": [],
       "ast": "4a6635c5"
     },
+    "78a48f4e-ba4c-4d8d-938a-9ddb342a885b": {
+      "name": "Junji, the Midnight Sky",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "78742b32"
+    },
     "79085dea-8daa-41c0-a975-61e3e6da2e26": {
       "name": "Shielded by Faith",
       "group": "acceptance",
@@ -4777,6 +4833,14 @@
       "reasons": [],
       "ast": "7b6fbc9c"
     },
+    "87e65e36-9483-49fe-b644-2caca092107f": {
+      "name": "Jarad, Golgari Lich Lord",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ca74f1c1"
+    },
     "88d0a394-79e2-42ac-9a37-1a7b78231941": {
       "name": "Thunderclap Drake",
       "group": "acceptance",
@@ -5075,6 +5139,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "907586e9"
+    },
+    "93cf50cf-0ecc-4d3e-abea-778c1ebacec4": {
+      "name": "Massacre Wurm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "476b9795"
     },
     "93df61b5-6abe-4603-9a6e-cba90a834173": {
       "name": "Cloud's Limit Break",
@@ -5451,6 +5523,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "49f61e6e"
+    },
+    "9e6a3df4-67a3-452e-a6ef-f04dbadb21ef": {
+      "name": "Living Death",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fabfc96a"
     },
     "9e769a65-7aa5-484d-9493-badb485b5964": {
       "name": "Plargg and Nassari",
@@ -7244,6 +7324,14 @@
       "reasons": [],
       "ast": "8f45de5d"
     },
+    "d75b2b8e-05c9-47da-b359-a867256d78ea": {
+      "name": "Insidious Roots",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5c3f87e3"
+    },
     "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b": {
       "name": "Cyclonic Rift",
       "group": "training",
@@ -7556,6 +7644,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "76ac9b2b"
+    },
+    "e0445c80-fa53-4c3e-881e-940e9fce7f57": {
+      "name": "Braids, Arisen Nightmare",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9c74f522"
     },
     "e05abb6b-e9f4-4d9e-ad1e-7805ebc09914": {
       "name": "Fists of Flame",
@@ -8613,8 +8709,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 755,
-      "total": 774
+      "supported": 767,
+      "total": 786
     }
   }
 }
