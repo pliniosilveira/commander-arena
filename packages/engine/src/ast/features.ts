@@ -713,6 +713,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
     'removeCounters',
+    // Molten Slagheap: "Remove X storage counters from this land" (CR 107.3, 118.3, 122.1), with the production `countersCombination`.
+    'removeCountersX',
   ],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
@@ -730,6 +732,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // Molten Slagheap: "Remove X storage counters from this land: Add X mana in any combination of {B} and/or {R}." (`countersCombination`)
+    'countersCombination',
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
@@ -2684,6 +2688,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  countersCombination: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,
@@ -2704,6 +2709,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   blight: true,
   exileFromGraveyard: true,
   removeCounters: true,
+  removeCountersX: true,
   loyalty: true,
   putCounters: true,
   mill: true,

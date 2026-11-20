@@ -1362,6 +1362,12 @@ export type Cost =
   | { readonly kind: 'exileFromGraveyard'; readonly filter: ObjectFilter; readonly count: number }
   | { readonly kind: 'removeCounters'; readonly counter: string; readonly count: number }
   /**
+   * "Remove X storage counters from this land" as the cost of a mana ability whose production is `countersCombination` of the same counter (Molten Slagheap, CR 107.3, 118.3, 122.1,
+   * 605.3b): X is the number of mana the player chooses to add, so the activation names X by naming the combination (a mana ability uses no stack to announce it). The cost removes X
+   * counters from the permanent; it cannot be paid with fewer, and the ability makes no mana for X = 0. Only in a mana ability.
+   */
+  | { readonly kind: 'removeCountersX'; readonly counter: string }
+  /**
    * The loyalty symbol of a loyalty ability (CR 606.2, 606.4, 606.5, D-200): `change` is the number of loyalty counters the permanent
    * the ability belongs to gets (positive, "[+1]") or loses (negative, "[-2]"), 0 for "[0]", and the string `'x'` for "[-X]" (X is announced
    * as the ability is activated, CR 107.3a, and is at most the permanent's loyalty). An activated ability with this cost is a loyalty ability
@@ -3938,6 +3944,16 @@ export type ManaProduction =
    * colors of the five (ten pairs for two mana; colorless is not a color, CR 105.1, 106.1b, so never one of them). At most 4 mana still.
    */
   | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+  /**
+   * "Add X mana in any combination of {B} and/or {R}", with "Remove X storage counters from this land" in the cost (Molten Slagheap, CR 106.1b, 107.3, 605.3b): the player chooses X (1 to the
+   * `counter` counters the permanent has) mana, each of one of `colors`, and the cost removes X counters. The activation names the combination, so it names X. The cost is
+   * `removeCountersX` of the same counter, which a mana ability with this production must have.
+   */
+  | {
+      readonly kind: 'countersCombination';
+      readonly counter: string;
+      readonly colors: readonly ManaColor[];
+    }
   | {
       readonly kind: 'anyColor';
       /**

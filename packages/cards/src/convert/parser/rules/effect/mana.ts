@@ -150,6 +150,7 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add an amount of mana of that color equal to your devotion to that color',
     // Kami of Whispered Hopes, Astral Cornucopia: a mana ability's count of mana of one chosen color.
     'add x mana of any one color',
+    'add x mana in any combination of {B} and/or {R}',
     'add one mana of that color for each charge counter on ~',
   ],
   rejects: [
@@ -194,6 +195,11 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add x mana of any one color for each creature you control',
     'add x mana of any color',
     'add two mana of that color for each charge counter on ~',
+    // A color twice, or a combination that is not "and/or" of two colors.
+    'add x mana in any combination of {B} and/or {B}',
+    'add x mana in any combination of {B} or {R}',
+    'add x mana in any combination of {B}',
+    'add two mana in any combination of {B} and/or {R}',
   ],
   parse: single(
     'effect.add-mana',
@@ -252,6 +258,25 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
                 kind: 'anyCombination' as const,
                 count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
               }),
+            ),
+            // Molten Slagheap (CR 106.1b, 107.3, 605.3b): "X mana in any combination of {B} and/or {R}", X the counters the cost of the ability removes; lowered only by a mana ability that has that cost.
+            satisfy(
+              map(
+                pattern(
+                  /x mana in any combination of \{([WUBRG])\} and\/or \{([WUBRG])\}(?![\p{L}\p{N}])/iu,
+                ),
+                (m) => ({
+                  kind: 'countersCombination' as const,
+                  colors: [(m[1] ?? 'W').toUpperCase(), (m[2] ?? 'W').toUpperCase()] as (
+                    | 'W'
+                    | 'U'
+                    | 'B'
+                    | 'R'
+                    | 'G'
+                  )[],
+                }),
+              ),
+              (what) => new Set(what.colors).size === what.colors.length,
             ),
             // Issue 25 (D-319, CR 106.1b, 605.3b): "two mana of different colors": each a color chosen on its own, no color twice (colorless is not a color).
             map(pattern(/(two|three) mana of different colors(?![\p{L}\p{N}])/iu), (m) => ({

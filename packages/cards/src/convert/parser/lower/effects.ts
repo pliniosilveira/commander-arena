@@ -958,6 +958,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
     case 'thatColor':
     case 'anyOneColorX':
       return null;
+    case 'countersCombination':
+      // Molten Slagheap: the counters it takes are the cost's, so only a mana ability that has that cost lowers it (`lowerManaAbility`).
+      return null;
     case 'devotionToChosenColor':
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };

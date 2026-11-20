@@ -361,3 +361,72 @@ describe('Llanowar Reborn: Graft 1 on a land', () => {
     g.expect.counters(REBORN.name, {});
   });
 });
+
+// ---- Molten Slagheap: "{T}: Add {C}. {1}, {T}: Put a storage counter on this land. {1}, Remove X storage counters from this land: Add X mana in any combination of {B} and/or {R}."
+// (CR 106.1b, 107.3, 118.3, 122.1, 605.3b): X is the number of mana the player chooses, and the cost removes that many counters.
+
+const SLAGHEAP = parsed(
+  'SYNTHETIC Parsed Slagheap',
+  'Land',
+  '{T}: Add {C}.\n{1}, {T}: Put a storage counter on this land.\n{1}, Remove X storage counters from this land: Add X mana in any combination of {B} and/or {R}.',
+);
+
+test('the real Molten Slagheap is supported and lowers to a counters combination', () => {
+  const imported = real('Molten Slagheap');
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
+  expect(imported.definition.faces[0]?.abilities[2]).toEqual({
+    kind: 'mana',
+    cost: [
+      { kind: 'mana', symbols: ['1'] },
+      { kind: 'removeCountersX', counter: 'storage' },
+    ],
+    production: { kind: 'countersCombination', counter: 'storage', colors: ['B', 'R'] },
+  });
+});
+
+describe('Molten Slagheap: remove X storage counters, add X mana of black and/or red', () => {
+  const start = (counters: number) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(SLAGHEAP)
+      .battlefield(SLAGHEAP.name, counters === 0 ? {} : { counters: { storage: counters } })
+      .battlefield('Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('X = 2 removes two counters and adds the two mana chosen', () => {
+    const g = start(3);
+    g.act(0).tapForMana('Plains');
+    g.act(0).tapForMana(SLAGHEAP.name, { ability: 2, combination: 'BR' });
+    g.expect.counters(SLAGHEAP.name, { storage: 1 });
+    g.expect.pool(0, 'BR');
+    g.expect.invariants();
+  });
+
+  test('X = 1 removes one counter and adds one mana', () => {
+    const g = start(3);
+    g.act(0).tapForMana('Plains');
+    g.act(0).tapForMana(SLAGHEAP.name, { ability: 2, combination: 'R' });
+    g.expect.counters(SLAGHEAP.name, { storage: 2 });
+    g.expect.pool(0, 'R');
+  });
+
+  test('a color that is not black or red is not offered, and X can not exceed the counters', () => {
+    const g = start(1);
+    expect(g.act(0).try.tapForMana(SLAGHEAP.name, { ability: 2, combination: 'G' }).ok).toBe(false);
+    expect(g.act(0).try.tapForMana(SLAGHEAP.name, { ability: 2, combination: 'BR' }).ok).toBe(
+      false,
+    );
+  });
+
+  test('with no counter the ability can not be activated', () => {
+    const g = start(0);
+    expect(g.act(0).try.tapForMana(SLAGHEAP.name, { ability: 2, combination: 'B' }).ok).toBe(false);
+  });
+});

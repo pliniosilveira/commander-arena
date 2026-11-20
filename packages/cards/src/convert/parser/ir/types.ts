@@ -885,6 +885,8 @@ export type IrCost = IrNode &
     // "{E}{E}" (stage P51, D-209, CR 107.14): energy counters paid by the player that an "unless you pay" asks
     | { readonly kind: 'energy'; readonly count: number }
     | { readonly kind: 'removeCounters'; readonly counter: string; readonly amount: IrAmount }
+    // "Remove X storage counters from ~" (Molten Slagheap, CR 107.3, 118.3, 122.1): X counters of the kind from the permanent itself, X the mana the ability adds
+    | { readonly kind: 'removeCountersX'; readonly counter: string }
     // "Put a page counter on ~" (stage P31, CR 118.3, 122.1): counters put on the permanent itself as a cost
     | { readonly kind: 'putCounters'; readonly counter: string; readonly count: number }
     // "Return an artifact you control to its owner's hand", "Return ~ to its owner's hand" (stage P31, CR 118.3): `count` of them
@@ -921,6 +923,11 @@ export interface IrManaSpec extends IrNode {
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+    // "X mana in any combination of {B} and/or {R}" (Molten Slagheap, CR 106.1b, 107.3): X mana, each of one of the colors, X the counters the cost removes
+    | {
+        readonly kind: 'countersCombination';
+        readonly colors: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+      }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
     // "one mana of that color for each charge counter on ~" (CR 605.3b, 106.1b): after "Choose a color.", as many mana of it as the `times` amount of the clause

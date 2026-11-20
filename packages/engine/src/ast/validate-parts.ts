@@ -2727,6 +2727,12 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         issue(out, `${path}.count`, 'count must be a positive integer');
       }
       break;
+    case 'removeCountersX':
+      // Molten Slagheap (CR 107.3, 122.1): a kind of counter; X is chosen with the mana of the ability, which `checkManaAbility` ties to it.
+      if (typeof cost.counter !== 'string' || cost.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      break;
     case 'returnToHand':
       // D-139: "Return an artifact you control to its owner's hand": this permanent, or a choice among the player's own.
       if (cost.count !== undefined) {

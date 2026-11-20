@@ -121,7 +121,30 @@ function riderSpells(
 
 /** Whether the production is chosen as a combination of mana (a filter land, "any combination of colors"): the activation names the mana (D-099, D-151). */
 export function isCombinationProduction(production: ManaProduction): boolean {
-  return production.kind === 'combination' || production.kind === 'anyCombination';
+  return (
+    production.kind === 'combination' ||
+    production.kind === 'anyCombination' ||
+    production.kind === 'countersCombination'
+  );
+}
+
+/** Every multiset of `count` mana from `colors` (each color may repeat), as combinations in `TYPE_ORDER`, no two alike. */
+function multisetsOf(colors: readonly ManaColor[], count: number): ManaColor[][] {
+  const unique = [...new Set(colors)];
+  const out: ManaColor[][] = [];
+  const build = (from: number, picked: ManaColor[]): void => {
+    if (picked.length === count) {
+      out.push(canonicalCombination(picked));
+      return;
+    }
+    for (let i = from; i < unique.length; i += 1) {
+      picked.push(unique[i] as ManaColor);
+      build(i, picked);
+      picked.pop();
+    }
+  };
+  build(0, []);
+  return out;
 }
 
 /**
@@ -176,6 +199,12 @@ function plainOutcomes(
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
       return colorMultisets(p.count, p.distinct === true);
+    case 'countersCombination': {
+      // Molten Slagheap (CR 107.3, 605.3b): "Add X mana in any combination of {B} and/or {R}" with "Remove X storage counters" paid: X from 1 to the counters on the permanent
+      // (X = 0 makes no mana, so there is nothing to choose), one outcome for each multiset of X of the colors.
+      const have = Math.max(0, obj.counters[p.counter] ?? 0);
+      return Array.from({ length: have }, (_, i) => multisetsOf(p.colors, i + 1)).flat();
+    }
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));

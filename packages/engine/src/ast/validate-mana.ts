@@ -53,6 +53,24 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
         }
       }
       break;
+    case 'countersCombination':
+      // Molten Slagheap (CR 106.1b, 107.3): a kind of counter, and at least one color to choose among (a color listed twice would offer the same mana twice).
+      if (typeof mp.counter !== 'string' || mp.counter === '') {
+        issue(out, `${path}.counter`, 'countersCombination names a kind of counter');
+      }
+      if (!Array.isArray(mp.colors) || mp.colors.length === 0) {
+        issue(out, `${path}.colors`, 'countersCombination lists at least one color');
+      } else {
+        mp.colors.forEach((m, i) => {
+          if (!isOneOf(m, MANA_COLORS)) {
+            issue(out, `${path}.colors[${i}]`, `unknown mana color ${JSON.stringify(m)}`);
+          }
+        });
+        if (new Set(mp.colors).size !== mp.colors.length) {
+          issue(out, `${path}.colors`, 'countersCombination lists a color twice');
+        }
+      }
+      break;
     case 'anyColor':
       // D-145: "two mana of any one color": a count of 2 or more (one mana is the plain production).
       if (mp.count !== undefined && (!Number.isSafeInteger(mp.count) || mp.count < 2)) {

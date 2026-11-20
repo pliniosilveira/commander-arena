@@ -315,6 +315,16 @@ function lowerManaAbility(
       return failure(ability);
     }
     production = { kind: 'anyColorAmount', amount: amount.value };
+  } else if (spec.what.kind === 'countersCombination') {
+    // Molten Slagheap (CR 106.1b, 107.3, 605.3b): "Remove X storage counters from ~: Add X mana in any combination of {B} and/or {R}", the one cost that says what X is.
+    const removal = costs.value.find((c) => c.kind === 'removeCountersX');
+    if (removal?.kind !== 'removeCountersX' || add.args.times !== undefined)
+      return failure(ability);
+    production = {
+      kind: 'countersCombination',
+      counter: removal.counter,
+      colors: [...spec.what.colors],
+    };
   } else {
     const plain = lowerMana(spec);
     if (plain === null) return failure(ability);
@@ -379,7 +389,9 @@ function lowerManaAbility(
   const lives = costs.value.filter((c) => c.kind === 'payLife').length;
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
   // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
-  const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
+  const removals = costs.value.filter(
+    (c) => c.kind === 'removeCounters' || c.kind === 'removeCountersX',
+  ).length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
   // D-625 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
   const tapsOther = costs.value.filter((c) => c.kind === 'tapPermanents');

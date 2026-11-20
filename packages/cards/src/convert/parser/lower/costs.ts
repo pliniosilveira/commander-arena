@@ -98,6 +98,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
         : failure(cost);
+    case 'removeCountersX':
+      // Molten Slagheap (CR 107.3, 118.3): X is the mana the mana ability adds, so only the cost of a mana ability has it.
+      return options.mana === true
+        ? ok({ kind: 'removeCountersX', counter: cost.counter })
+        : failure(cost);
     case 'sacrifice': {
       const { what } = cost;
       if (what.det === 'self' && cost.also === undefined) {
