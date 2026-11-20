@@ -34,8 +34,18 @@ const LIMITS = { maxTurns: 150, maxActions: 5000 };
 const COMBAT_KINDS = ['declareAttackers', 'declareBlockers', 'assignDamage'];
 const fullTierDescribe = process.env.TEST_TIER === 'pr' ? describe.skip : describe;
 
+// Every fifth game is played on the 'combat' deck style: decks of creatures with trample, menace, first strike or double strike only (see COVERAGE_KEYWORDS in helpers). The
+// generic pools grow with every slice of creature fixtures, so whether a seeded draw casts and attacks with a trampler is luck of the seed; these games make the
+// keyword assertions below depend on the deck construction instead.
 const creatureConfig = (game: number): GameConfig =>
-  smallGameConfig(game, game % 3 === 0 ? ['creatures', 'creatures'] : ['brawl', 'brawl']);
+  smallGameConfig(
+    game,
+    game % 5 === 0
+      ? ['combat', 'combat']
+      : game % 3 === 0
+        ? ['creatures', 'creatures']
+        : ['brawl', 'brawl'],
+  );
 
 const agentPair = (seed: number) =>
   [

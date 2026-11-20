@@ -31,6 +31,7 @@ import {
   CREATURES,
   newTally,
   noteDecision,
+  OPTION_CREATURES,
   POOL_KEYWORDS,
   smallGameConfig,
   stylesFor,
@@ -49,6 +50,10 @@ const GAMES = 100;
 // on the deck construction instead. They count only toward the keyword assertions: the distribution
 // of the 100 games and its decision kinds stay exactly those of the generic styles.
 const COVERAGE_GAMES = 30;
+// Extra games after those, played on the 'option' deck style (see OPTION_CREATURES in helpers): decks of the creatures that ask a question as they enter, so that `chooseOption` is
+// asked by construction. In the 100 generic games only one card of the pool asks it, and whether a seed draws and casts it was luck. These games count only toward the set of
+// decision kinds below.
+const OPTION_GAMES = 6;
 const t = process.env.TEST_TIER === 'pr' ? test.skip : test;
 vi.setConfig({ testTimeout: 180_000 });
 
@@ -82,17 +87,25 @@ t('100 random-vs-random games all finish with a result and no faults', async () 
   // The same count over the combat-style coverage games only.
   const coverageGamesWith: Record<keyof CombatTally, number> = { ...newTally() };
 
-  for (let g = 1; g <= GAMES + COVERAGE_GAMES; g += 1) {
-    const isCoverage = g > GAMES;
+  // The decision kinds asked in the option games only (see OPTION_GAMES).
+  const optionKinds = new Set<DecisionKind>();
+
+  for (let g = 1; g <= GAMES + COVERAGE_GAMES + OPTION_GAMES; g += 1) {
+    const isOption = g > GAMES + COVERAGE_GAMES;
+    const isCoverage = g > GAMES && !isOption;
     const inner = [
       new RandomLegalAgent({ seed: 1000 + 2 * g }),
       new RandomLegalAgent({ seed: 1001 + 2 * g }),
     ] as const;
     const tally = newTally();
-    const kinds = isCoverage ? new Set<DecisionKind>() : decisionKinds;
+    const kinds = isOption ? optionKinds : isCoverage ? new Set<DecisionKind>() : decisionKinds;
     const agents = [recording(inner[0], kinds, tally), recording(inner[1], kinds, tally)] as const;
     // Deck styles rotate: spell mirror, creature mirror, and both mixed ways (see stylesFor).
-    const styles = isCoverage ? (['combat', 'combat'] as const) : stylesFor(g);
+    const styles = isOption
+      ? (['option', 'option'] as const)
+      : isCoverage
+        ? (['combat', 'combat'] as const)
+        : stylesFor(g);
     const run = await runGame(smallGameConfig(g, styles), agents, {
       maxTurns: MAX_TURNS,
       maxActions: MAX_ACTIONS,
@@ -107,6 +120,10 @@ t('100 random-vs-random games all finish with a result and no faults', async () 
     expect(inner[0].fallbacks, tag).toHaveLength(0);
     expect(inner[1].fallbacks, tag).toHaveLength(0);
 
+    if (isOption) {
+      expect(tally.concedes, tag).toBe(0);
+      continue;
+    }
     if (isCoverage) {
       for (const key of Object.keys(tally) as (keyof CombatTally)[]) {
         if (tally[key] > 0) coverageGamesWith[key] += 1;
@@ -137,7 +154,9 @@ t('100 random-vs-random games all finish with a result and no faults', async () 
   // ability (D-114; modal-games.test.ts). The same holds for the pay options of Convoke, Improvise and
   // Delve (D-120; keyword-batch2-games.test.ts).
   const askedElsewhere: readonly DecisionKind[] = ['chooseX', 'chooseModes', 'choosePayOptions'];
-  expect([...decisionKinds].sort()).toEqual(
+  // By construction, not by the seed of the generic games: every deck of the option style plays a creature that asks as it enters.
+  if (OPTION_CREATURES.length > 0) expect([...optionKinds]).toContain('chooseOption');
+  expect([...new Set([...decisionKinds, ...optionKinds])].sort()).toEqual(
     [...DECISION_KINDS].filter((kind) => !askedElsewhere.includes(kind)).sort(),
   );
 
