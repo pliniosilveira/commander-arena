@@ -1345,6 +1345,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedAsCostPower',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // CR 119.4, 614.12: "where X is the life paid as this artifact entered".
+    'lifePaidAsEntered',
     // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
     'aurasAttachedToTriggerSubject',
     // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
@@ -2233,6 +2235,8 @@ export const AMOUNT_KINDS = [
   'tappedAsCostPower',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "Where X is the life paid as this artifact entered" (CR 119.4, 614.12): the engine's `lifePaidAsEntered`, the amount a permanent paid for "pay any amount of life". */
+  'lifePaidAsEntered',
   /** "For each Aura you controlled that was attached to it" (D-654, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
   'aurasAttachedToTriggerSubject',
   /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */

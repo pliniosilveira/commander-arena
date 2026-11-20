@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "Create an X/X token, where X is the life paid as this artifact entered" (CR 119.4, 614.12, 400.7): the life the permanent paid as it entered (`asEntersChoose` of
+   * `lifePaid` on the same face), which the permanent remembers (`GameObject.chosen.lifePaid`), read from last-known information once it has left (CR 113.7a). Needs
+   * that choice on the face; nothing was paid (0) for a permanent that made no choice.
+   */
+  | { readonly kind: 'lifePaidAsEntered' }
+  /**
    * "Draw a card for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-654): the Auras `controlledBy` ("you": the controller of the ability) controlled that
    * were attached to the permanent the trigger is about as it left the battlefield, from its last-known information. Valid only in a triggered ability whose trigger has a permanent
    * as its subject (`dies`, `leavesBattlefield`).
@@ -5756,8 +5762,12 @@ export type Replacement =
    */
   | {
       readonly kind: 'asEntersChoose';
-      /** `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`. */
-      readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
+      /**
+       * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
+       * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
+       * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
+       */
+      readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition

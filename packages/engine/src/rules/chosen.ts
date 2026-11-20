@@ -9,14 +9,19 @@ import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId } from '../ids';
 import type { ChosenValues, GameState } from '../state/types';
 
-export type ChoiceKind = 'creatureType' | 'color' | 'option' | 'cardType';
+export type ChoiceKind = 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
 
 /** The options of a question, in the fixed order its legal actions follow. */
 export function optionsFor(
   what: ChoiceKind,
   named: readonly string[] = [],
   except: string | undefined = undefined,
+  /** The life total of the player who pays, for `lifePaid`. */
+  life = 0,
 ): readonly string[] {
+  // CR 119.4, 119.4b: "pay any amount of life": 0 can always be paid, and no more than the life total.
+  if (what === 'lifePaid')
+    return Array.from({ length: Math.max(life, 0) + 1 }, (_, i) => String(i));
   if (what === 'cardType') return CARD_TYPES;
   // Issue 184: "choose a color other than blue" leaves that color out.
   if (what === 'color') return COLORS.filter((c) => c !== except);
@@ -38,6 +43,8 @@ export function chosenFromOption(
   named: readonly string[] = [],
 ): ChosenValues | null {
   if (what === 'option') return named.includes(option) ? { option } : null;
+  // CR 119.4 (pay any amount of life): the amount is one of the options the question offered (0 to the life total).
+  if (what === 'lifePaid') return named.includes(option) ? { lifePaid: Number(option) } : null;
   if (what === 'creatureType')
     return CREATURE_TYPES.includes(option) ? { creatureType: option } : null;
   // D-376 (CR 205.2a): "choose a card type" is one of the card types the engine models (`CARD_TYPES`).

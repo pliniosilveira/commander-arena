@@ -581,6 +581,8 @@ export type IrAmount =
   | { readonly kind: 'triggerDamage'; readonly span: Span }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
+  // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"
+  | { readonly kind: 'lifePaidAsEntered'; readonly span: Span }
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
   | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
@@ -1166,7 +1168,7 @@ export interface IrRestrictionArg extends IrNode {
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
   /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
-  readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
+  readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
   /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */
@@ -1982,6 +1984,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'thisWay',
   'triggerDamage',
   'dieResult',
+  'lifePaidAsEntered',
   'triggerTargetCount',
   'triggerAttackerCount',
   'cardTypesAmongThoseCards',

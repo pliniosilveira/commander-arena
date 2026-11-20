@@ -752,6 +752,7 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'x',
   'enteredX',
+  'lifePaidAsEntered',
   'powerOf',
   'manaValueOf',
   'toughnessOf',
@@ -1811,6 +1812,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           "'enteredX' needs a triggered ability whose trigger is this permanent entering the battlefield",
         );
       }
+      break;
+    case 'lifePaidAsEntered':
+      // CR 119.4, 614.12: the face must pay life as it enters (`chosenIssues` checks it with the other entry-time choices).
       break;
     case 'attackersGreatestPower':
       // CR 508.1: the creatures of the attack event of an `attackBatch` trigger (`scope.triggerAttacked` is set only there).

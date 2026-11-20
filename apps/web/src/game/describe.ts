@@ -1117,6 +1117,20 @@ export function describeEvent(
           'CR 702.16a',
         );
       }
+      // CR 119.4, 614.12: "You choose to pay 4 life for Phyrexian Processor." The payment is public; the life lost is logged by its own line.
+      if (event.purpose === 'lifePaid') {
+        const subject =
+          asked?.kind === 'chooseOption' && asked.source === event.source
+            ? asked.sourceName
+            : label(event.source);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} to pay ${event.option} life for ${subject}.`,
+          event.seat,
+          [],
+          'CR 119.4',
+        );
+      }
       // CR 702.136a (D-185): "You choose a +1/+1 counter for Riot Goblin (riot)." or "... haste ...".
       if (event.purpose === 'riot') {
         const subject =

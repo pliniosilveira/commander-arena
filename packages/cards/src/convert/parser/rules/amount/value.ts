@@ -204,6 +204,17 @@ const DIE_RESULT: Parser<IrAmount> = (ctx, pos) => {
   return r.ok ? { ok: true, value: { kind: 'dieResult', span: r.value.span }, pos: r.pos } : r;
 };
 
+/**
+ * "the life paid as ~ entered" (Phyrexian Processor, CR 119.4, 614.12): the life the permanent paid as it entered, which it remembers. Only the words themselves; that the card
+ * pays life as it enters is the lowering's and `validateCard`'s check.
+ */
+const LIFE_PAID_AS_ENTERED: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the life paid as ~ entered(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  return r.ok
+    ? { ok: true, value: { kind: 'lifePaidAsEntered', span: r.value.span }, pos: r.pos }
+    : r;
+};
+
 const STAT_OF_HEAD =
   /(its|that (?:creature|permanent)['’]s|the sacrificed (?:creature|permanent)['’]s|the exiled card['’]s|~['’]s) (power|toughness)(?![\p{L}\p{N}])/iu;
 
@@ -323,6 +334,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     DAMAGE_DEALT_AMOUNT,
     // Galadriel deck group 3 (CR 706.2): "the result" of a die rolled earlier in the text.
     DIE_RESULT,
+    // Phyrexian Processor (CR 119.4, 614.12): "the life paid as ~ entered".
+    LIFE_PAID_AS_ENTERED,
     // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way".
     DESTROYED_VALUE_AMOUNT,
   );
