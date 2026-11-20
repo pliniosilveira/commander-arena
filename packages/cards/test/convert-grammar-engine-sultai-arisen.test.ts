@@ -251,3 +251,38 @@ describe('"Return a nonland card from your graveyard to your hand." (CR 205.2a, 
     g.expect.zone('Swamp', 'graveyard', { seat: 0 });
   });
 });
+
+describe('"{T}: Create a 2/2 black Zombie Druid creature token. Activate only during your turn and only if a card left your graveyard this turn." (CR 602.5b)', () => {
+  const anchor = parsed(
+    'SYNTHETIC Parsed Anchor',
+    'Artifact',
+    '{T}: Create a 2/2 black Zombie Druid creature token. Activate only during your turn and only if a card left your graveyard this turn.',
+    { manaCost: '{2}{U}', colors: ['U'] },
+  );
+  const regrowth = parsed(
+    'SYNTHETIC Parsed Anchor Regrowth',
+    'Sorcery',
+    'Return target card from your graveyard to your hand.',
+    { manaCost: '{G}', colors: ['G'] },
+  );
+  const build = () =>
+    base()
+      .define(anchor)
+      .define(regrowth)
+      .battlefield(anchor.name, 'Forest')
+      .hand(regrowth.name)
+      .graveyard('Swamp')
+      .at('precombatMain')
+      .build();
+
+  test('it can be activated only once a card has left the graveyard this turn', () => {
+    const g = build();
+    g.expect.illegal(0, { activate: anchor.name });
+    g.act(0).cast(regrowth.name, { targets: ['Swamp'], pay: true });
+    g.passAll();
+    g.expect.legal(0, { activate: anchor.name });
+    g.act(0).activate(anchor.name);
+    g.passAll();
+    g.expect.zone('Zombie Druid', 'battlefield', { seat: 0 });
+  });
+});
