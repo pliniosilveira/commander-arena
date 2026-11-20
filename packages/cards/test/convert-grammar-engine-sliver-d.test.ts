@@ -267,3 +267,156 @@ describe('Titan of Littjara', () => {
     ).toBe('supported');
   });
 });
+
+describe("Descendants' Fury", () => {
+  const FURY = real("Descendants' Fury");
+  const GOBLIN_WARRIOR = creature('SYNTHETIC D Goblin Warrior', 'Goblin Warrior', '3', '3');
+  const ELF_DRUID = creature('SYNTHETIC D Elf Druid', 'Elf Druid', '2', '2');
+  const ORC_WARRIOR = creature('SYNTHETIC D Orc Warrior', 'Orc Warrior', '2', '2');
+  const HUMAN_CLERIC = creature('SYNTHETIC D Human Cleric', 'Human Cleric', '1', '1');
+  const SPECTATOR = creature('SYNTHETIC D Spectator', 'Goblin', '1', '1');
+  const NAMELESS = creature('SYNTHETIC D Nameless', '', '1', '1');
+  const library = (...cards: string[]) => [...cards, ...FILLER];
+
+  const build = (top: readonly string[], attackers: readonly string[]) =>
+    scenario()
+      .define(FURY)
+      .define(GOBLIN_WARRIOR)
+      .define(ELF_DRUID)
+      .define(ORC_WARRIOR)
+      .define(HUMAN_CLERIC)
+      .define(SPECTATOR)
+      .define(SHAPESHIFTER)
+      .define(BEAR)
+      .seat(0)
+      .battlefield(FURY.name)
+      .battlefield(...attackers)
+      .battlefield(SPECTATOR.name)
+      .library(...library(...top))
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  /** The attackers connect; the trigger of the Fury is on the stack and the controller is asked whether to sacrifice. */
+  const connect = (g: ReturnType<typeof build>, attackers: readonly string[]) => {
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([...attackers]);
+    g.advanceTo('declareBlockers');
+    g.passAll();
+    g.passAll();
+  };
+
+  test('you sacrifice one of the creatures that dealt damage and put the first creature card sharing a type onto the battlefield', () => {
+    const attackers = [GOBLIN_WARRIOR.name, ELF_DRUID.name];
+    const g = build([BEAR.name, HUMAN_CLERIC.name, ORC_WARRIOR.name, 'Plains'], attackers);
+    connect(g, attackers);
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.pending('choosePermanent', 0);
+    // Only the creatures that dealt the damage are offered, not the Goblin that stayed home.
+    const offered = g.state.pending?.kind === 'choosePermanent' ? g.state.pending.legal.length : 0;
+    expect(offered).toBe(2);
+    g.act(0).choosePermanents({ name: GOBLIN_WARRIOR.name, zone: 'battlefield', seat: 0 });
+    g.expect.zone(GOBLIN_WARRIOR.name, 'graveyard', { seat: 0 });
+    // The Orc Warrior shares Warrior with the sacrificed Goblin Warrior; the Bear and the Human Cleric share nothing and go to the bottom.
+    g.expect.zone(ORC_WARRIOR.name, 'battlefield', { seat: 0 });
+    g.expect.zone(BEAR.name, 'library', { seat: 0 });
+    g.expect.zone(HUMAN_CLERIC.name, 'library', { seat: 0 });
+    const reveal = g.eventsSince(0).find((e) => e.kind === 'cardsRevealed');
+    expect(reveal?.kind === 'cardsRevealed' ? reveal.names : []).toEqual([
+      BEAR.name,
+      HUMAN_CLERIC.name,
+      ORC_WARRIOR.name,
+    ]);
+    g.expect.invariants();
+  });
+
+  test('declining the sacrifice reveals nothing', () => {
+    const attackers = [GOBLIN_WARRIOR.name];
+    const g = build([ORC_WARRIOR.name], attackers);
+    connect(g, attackers);
+    g.act(0).decline();
+    g.expect.zone(GOBLIN_WARRIOR.name, 'battlefield', { seat: 0 });
+    g.expect.zone(ORC_WARRIOR.name, 'library', { seat: 0 });
+    expect(g.eventsSince(0).some((e) => e.kind === 'cardsRevealed')).toBe(false);
+  });
+
+  test('with no creature card that shares a type the whole library is revealed and put on the bottom', () => {
+    const attackers = [ELF_DRUID.name];
+    const g = build([BEAR.name, ORC_WARRIOR.name], attackers);
+    connect(g, attackers);
+    g.act(0).accept();
+    // The one creature that dealt the damage is the only candidate, so it is sacrificed without a question.
+    g.expect.zone(ELF_DRUID.name, 'graveyard', { seat: 0 });
+    g.expect.zone(BEAR.name, 'library', { seat: 0 });
+    g.expect.zone(ORC_WARRIOR.name, 'library', { seat: 0 });
+    const reveal = g.eventsSince(0).find((e) => e.kind === 'cardsRevealed');
+    expect(reveal?.kind === 'cardsRevealed' ? reveal.names.length : 0).toBe(FILLER.length + 2);
+    g.expect.invariants();
+  });
+
+  test('a sacrificed changeling shares a creature type with every creature card (CR 702.73a)', () => {
+    const attackers = [SHAPESHIFTER.name];
+    const g = build([HUMAN_CLERIC.name, 'Plains'], attackers);
+    connect(g, attackers);
+    g.act(0).accept();
+    g.expect.zone(SHAPESHIFTER.name, 'graveyard', { seat: 0 });
+    g.expect.zone(HUMAN_CLERIC.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a sacrificed creature with no creature type shares one with no card', () => {
+    const attackers = [NAMELESS.name];
+    const g = scenario()
+      .define(FURY)
+      .define(NAMELESS)
+      .define(HUMAN_CLERIC)
+      .seat(0)
+      .battlefield(FURY.name)
+      .battlefield(...attackers)
+      .library(...library(HUMAN_CLERIC.name))
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    connect(g, attackers);
+    g.act(0).accept();
+    g.expect.zone(NAMELESS.name, 'graveyard', { seat: 0 });
+    g.expect.zone(HUMAN_CLERIC.name, 'library', { seat: 0 });
+  });
+
+  test('"one of them" and "the sacrificed creature" are read only where they have an antecedent', () => {
+    const probe = (text: string) =>
+      parseOnly(
+        storedCard({
+          name: 'SYNTHETIC D Probe Fury',
+          typeLine: 'Enchantment',
+          manaCost: '{3}{R}',
+          oracleText: text,
+        }),
+      ).support.status;
+    const reveal =
+      'reveal cards from the top of your library until you reveal a creature card that shares a creature type with the sacrificed creature. Put that card onto the battlefield and the rest on the bottom of your library in a random order.';
+    expect(
+      probe(
+        `Whenever a creature you control attacks, you may sacrifice one of them. If you do, ${reveal}`,
+      ),
+    ).toBe('unsupported');
+    expect(
+      probe(
+        `Whenever one or more creatures you control deal combat damage to a player, you may sacrifice two of them. If you do, ${reveal}`,
+      ),
+    ).toBe('unsupported');
+    expect(
+      probe(
+        `Whenever one or more creatures you control deal combat damage to a player, you may draw a card. If you do, ${reveal}`,
+      ),
+    ).toBe('unsupported');
+    expect(
+      probe(
+        `Whenever one or more creatures you control deal combat damage to a player, you may sacrifice one of them. If you do, ${reveal}`,
+      ),
+    ).toBe('supported');
+  });
+});

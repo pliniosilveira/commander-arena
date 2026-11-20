@@ -899,6 +899,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 205.3m (Titan of Littjara, Descendants' Fury): `sharesCreatureTypeWith` of the source of the ability, or of the creature an earlier sacrifice sacrificed.
     'sharesCreatureTypeWithSource',
     'sharesCreatureTypeWithSacrificed',
+    // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
+    'chooseFromTriggerSources',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
@@ -1723,6 +1725,8 @@ export const SELECTOR_KINDS = [
   'sharesCreatureTypeWithSource',
   /** "A creature card that shares a creature type with the sacrificed creature" (CR 205.3m, 701.21a, Descendants' Fury): `ObjectFilter.sharesCreatureTypeWith: 'sacrificed'`. */
   'sharesCreatureTypeWithSacrificed',
+  /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
+  'chooseFromTriggerSources',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */

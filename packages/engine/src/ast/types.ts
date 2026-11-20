@@ -1816,6 +1816,11 @@ export interface ChooseSelector {
   readonly minCardTypes?: number;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
+  /**
+   * "You may sacrifice one of them" (Descendants' Fury, CR 603.2c, 701.21a, 400.7): the candidates are only the creatures that dealt the combat damage of a `combatDamageBatch` trigger
+   * (`triggerSources`) that are still the same permanent on the battlefield under the chooser's control. Only for `sacrifice`, in the effect of such a trigger.
+   */
+  readonly fromTriggerSources?: true;
 }
 
 /**

@@ -409,7 +409,7 @@ const FOR_EACH_EXILED_COPY_IT =
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
  */
 const REVEAL_UNTIL =
-  /^(?:then if this is the (?:first|second|third|fourth) time this ability has resolved this turn, )?(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
+  /^(?:then if this is the (?:first|second|third|fourth) time this ability has resolved this turn, |if you do, )?(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD =
   /^put (?:that card|those [\p{L}]+ cards|all [\p{L}]+ cards revealed this way) [^.]*\.$/iu;
 /**

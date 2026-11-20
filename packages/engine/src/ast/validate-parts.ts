@@ -3460,6 +3460,18 @@ function checkSacrificeSelector(
     return;
   }
   const choose = sel as ChooseSelector;
+  // CR 603.2c (Descendants' Fury): "sacrifice one of them" names the creatures that dealt the combat damage of the batch trigger.
+  if (choose.fromTriggerSources !== undefined) {
+    if (choose.fromTriggerSources !== true) {
+      issue(out, `${path}.fromTriggerSources`, 'fromTriggerSources must be true when present');
+    } else if (scope.triggerSources !== true) {
+      issue(
+        out,
+        `${path}.fromTriggerSources`,
+        "fromTriggerSources needs a triggered ability of a combatDamageBatch trigger: 'them' are the creatures that dealt the damage",
+      );
+    }
+  }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
   });

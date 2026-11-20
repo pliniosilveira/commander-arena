@@ -1094,6 +1094,8 @@ export type Instruction =
       readonly atLeastOne?: true;
       /** "A creature with the greatest power among creatures they control" (`ChooseSelector.greatest`, D-135). */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      /** "Sacrifice one of them" (`ChooseSelector.fromTriggerSources`): only the permanents that dealt the combat damage of the batch trigger. */
+      readonly fromTriggerSources?: true;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;

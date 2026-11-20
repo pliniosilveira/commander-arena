@@ -2,7 +2,7 @@
  * Lowerings of the Sliver Swarm deck, group D (issue 133). Same contract as effects.ts: each declares the engine features it needs and is checked before it runs.
  */
 import type { IrClause } from '../ir/types';
-import type { Effects } from './clauses';
+import { type Effects, failure } from './clauses';
 import type { Lowering } from './types';
 
 /** "Each player chooses a creature type." (CR 101.4, 205.3m): the engine's `chooseCreatureType` of every player, in turn order. */
@@ -17,8 +17,33 @@ const EACH_PLAYER_CHOOSES_CREATURE_TYPE: Lowering<IrClause, Effects> = {
   }),
 };
 
+/**
+ * "Sacrifice one of them." (CR 603.2c, 701.21a): the engine's `sacrifice` of a `choose` among the creatures that dealt the combat damage of the batch trigger (`fromTriggerSources`). Refused in
+ * any other ability: "them" has nothing to read.
+ */
+const SACRIFICE_ONE_OF_THEM: Lowering<IrClause, Effects> = {
+  head: 'sacrificeOneOfThem',
+  id: 'lower.sacrifice-one-of-them',
+  needs: ['effect:sacrifice', 'selector:choose', 'selector:chooseFromTriggerSources'],
+  lower(clause, ctx) {
+    if (!ctx.damageBatchTrigger) return failure(clause);
+    ctx.thisWay = 'sacrificed';
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'sacrifice',
+          objects: { kind: 'choose', filter: {}, fromTriggerSources: true },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const SLIVER_D_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EACH_PLAYER_CHOOSES_CREATURE_TYPE,
+  SACRIFICE_ONE_OF_THEM,
 ];
 
 /**
