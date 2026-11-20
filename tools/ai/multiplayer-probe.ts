@@ -8,12 +8,20 @@
 //            the engine, not the quality of play)
 // --games    how many games (default 10); game i uses seed S + i
 // --seed     the first game seed (default 1)
+// --precons  play the real precons of apps/web/src/precons/snapshots (seat i gets precon (game + i) mod n)
+//            instead of the arena decks; the investigation of docs/MORE_OPPONENTS_INVESTIGATION.md used them
+// --max-turns, --max-actions  the limits of one game (default 100 and 8000 with --precons, else MATCH_LIMITS)
 // --verbose  print one line per game
+//
+// Besides how each game ended, the probe counts what the agents' views show about a player who has lost
+// (CR 800.4a): permanents still under them, them being the active seat, a decision asked of them, a
+// stack object they control. Decisions counted, not games.
 //
 // Not part of any test tier. Games run with `allowMoreThanTwoSeats` on, which the app never sets.
 
 import '../corpus/register.ts';
 import { parseArgs } from 'node:util';
+import type { Agent } from '@commander-arena/ai';
 
 const KINDS = ['random', 'casual', 'greedy', 'heuristic'] as const;
 
@@ -24,6 +32,9 @@ const { values } = parseArgs({
     agent: { type: 'string', default: 'random' },
     seed: { type: 'string', default: '1' },
     verbose: { type: 'boolean', default: false },
+    precons: { type: 'boolean', default: false },
+    'max-turns': { type: 'string' },
+    'max-actions': { type: 'string' },
   },
 });
 const players = Number(values.players);
@@ -42,28 +53,84 @@ function fail(message: string): never {
 }
 
 const { AGENT_FACTORIES, ARENA_DECKS, MATCH_LIMITS, runGame } = await import('@commander-arena/ai');
+const limitOf = (text: string | undefined, fallback: number, name: string): number => {
+  if (text === undefined) return fallback;
+  const n = Number(text);
+  if (!Number.isInteger(n) || n < 1) fail(`--${name} must be a positive whole number`);
+  return n;
+};
+const limits = {
+  maxTurns: limitOf(values['max-turns'], values.precons ? 100 : MATCH_LIMITS.maxTurns, 'max-turns'),
+  maxActions: limitOf(
+    values['max-actions'],
+    values.precons ? 8000 : MATCH_LIMITS.maxActions,
+    'max-actions',
+  ),
+};
+let pool: readonly (typeof ARENA_DECKS)[number][] = ARENA_DECKS;
+if (values.precons) {
+  const { loadPreconDecks } = await import('./precons.ts');
+  const loaded = await loadPreconDecks();
+  for (const problem of loaded.problems) process.stderr.write(`${problem}\n`);
+  pool = loaded.decks.map((d) => d.deck);
+  if (pool.length < players) fail('--precons needs at least as many playable precons as players');
+}
+
+const anomalies = {
+  permanentsOfLostPlayer: 0,
+  activeSeatLost: 0,
+  lostSeatAsked: 0,
+  stackOfLostPlayer: 0,
+};
+/** Counts what the view of each decision shows about players who have lost; plays like the inner agent. */
+function watched(inner: Agent): Agent {
+  const wrapper: Agent = {
+    get name() {
+      return inner.name;
+    },
+    async decide(view, decision, ctx) {
+      const lost = new Set(view.seats.filter((s) => s.hasLost).map((s) => s.id));
+      if (lost.size > 0) {
+        if (view.battlefield.some((o) => lost.has(o.controller))) {
+          anomalies.permanentsOfLostPlayer += 1;
+        }
+        if (lost.has(view.activeSeat)) anomalies.activeSeatLost += 1;
+        if (lost.has(view.viewer)) anomalies.lostSeatAsked += 1;
+        if (view.stack.some((o) => lost.has(o.controller))) anomalies.stackOfLostPlayer += 1;
+      }
+      return inner.decide(view, decision, ctx);
+    },
+  };
+  if (inner.fallbacks !== undefined) {
+    Object.defineProperty(wrapper, 'fallbacks', { get: () => inner.fallbacks });
+  }
+  return wrapper;
+}
 const factory = AGENT_FACTORIES[kind as (typeof KINDS)[number]];
 
+const totals = { rejected: 0, fallbacks: 0, turns: 0 };
+const rejections = new Set<string>();
 const outcomes = new Map<string, number[]>();
 const note = (key: string, seed: number) => outcomes.set(key, [...(outcomes.get(key) ?? []), seed]);
 
 for (let i = 0; i < games; i += 1) {
   const seed = baseSeed + i;
-  const decks = Array.from(
-    { length: players },
-    (_, s) => ARENA_DECKS[(i + s) % ARENA_DECKS.length],
-  );
+  const decks = Array.from({ length: players }, (_, s) => pool[(i + s) % pool.length]);
   const config = {
     seed,
     decks: decks.filter((d): d is NonNullable<typeof d> => d !== undefined),
     allowMoreThanTwoSeats: true,
   };
-  const agents = Array.from({ length: players }, (_, s) => factory.create(seed * 10 + s));
+  const agents = Array.from({ length: players }, (_, s) => watched(factory.create(seed * 10 + s)));
   let key: string;
   try {
-    const run = await runGame(config, agents, MATCH_LIMITS);
+    const run = await runGame(config, agents, limits);
     key = run.reason === 'result' ? `result (${run.result?.kind ?? 'none'})` : run.reason;
     if (run.agentErrors.length > 0) key += `; ${run.agentErrors[0]}`;
+    totals.rejected += run.rejected.length;
+    totals.fallbacks += run.counters.fallbacks;
+    totals.turns += run.state.turn.number;
+    for (const r of run.rejected.slice(0, 2)) rejections.add(r.error);
     if (values.verbose) {
       process.stdout.write(
         `seed ${seed}: ${key}, turn ${run.state.turn.number}, ${run.log.length} actions\n`,
@@ -82,3 +149,9 @@ for (const [key, seeds] of outcomes) {
     `${String(seeds.length).padStart(5)}  ${key}  (seeds ${seeds.join(', ')})\n`,
   );
 }
+process.stdout.write(
+  `rejected actions ${totals.rejected}, fallbacks ${totals.fallbacks}, average final turn ${(totals.turns / games).toFixed(1)}, limits ${limits.maxTurns} turns / ${limits.maxActions} actions\n`,
+);
+if (rejections.size > 0)
+  process.stdout.write(`rejections sampled: ${[...rejections].join(' | ')}\n`);
+process.stdout.write(`views of players who have lost (decisions): ${JSON.stringify(anomalies)}\n`);
