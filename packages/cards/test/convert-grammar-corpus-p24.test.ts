@@ -150,9 +150,9 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'enchantment',
-    text: 'Play with the top card of your library revealed.',
-    expect: no('Play with the top card of your library revealed.', NONE),
-    note: 'the real line (12 cards): a different ability, everyone sees the card',
+    text: "Play with the top card of each player's library revealed.",
+    expect: no("Play with the top card of each player's library revealed.", NONE),
+    note: 'SYNTHETIC: every library revealed is not built (the line of the controller alone is read since Oracle of Mul Daya)',
   },
   {
     kind: 'enchantment',
@@ -174,8 +174,8 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'artifact',
-    text: 'You may look at the top card of your library any time.\nYou may play lands from the top of your library.',
-    expect: no('You may play lands from the top of your library.', NONE),
+    text: "You may look at the top card of your library any time.\nYou may play lands from the top of each player's library.",
+    expect: no("You may play lands from the top of each player's library.", NONE),
     note: "SYNTHETIC second line (Bolas's Citadel-shaped): the look is read, the other line is the reason",
   },
 ];

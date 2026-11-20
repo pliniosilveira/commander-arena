@@ -99,6 +99,41 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
     abilities: [{ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } }],
   }),
   singleFace({
+    name: 'SYNTHETIC Open Library',
+    manaCost: ['1', 'U'],
+    types: ['enchantment'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'Play with the top card of your library revealed.',
+    abilities: [{ kind: 'static', static: { kind: 'revealTopOfLibrary' } }],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Top Lands',
+    manaCost: ['1', 'G'],
+    types: ['enchantment'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You may play lands from the top of your library.',
+    abilities: [{ kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' } }],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Top Forests',
+    manaCost: ['1', 'G'],
+    types: ['enchantment'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You may play Forests from the top of your library.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'playLandsFromTopOfLibrary',
+          lands: { types: ['land'], subtypes: ['Forest'] },
+        },
+      },
+    ],
+  }),
+  singleFace({
     name: 'SYNTHETIC Seer Scout',
     manaCost: ['1', 'U'],
     types: ['creature'],

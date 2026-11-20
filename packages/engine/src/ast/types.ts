@@ -3225,6 +3225,16 @@ export type Effect =
       readonly player: PlayerSelector;
       readonly duration: 'untilNextTurn';
     }
+  /**
+   * "You can't cast additional spells this turn" and "Target player can't cast spells this turn" (CR 101.2, 601.2, 611.2a): until end of turn the players `player` names (as the effect
+   * resolves) can't cast spells: a spell they cast earlier this turn is not affected, and no way of casting asks (a cast from a hand, a graveyard, with an alternative cost, for free
+   * as an effect resolves): "can't" beats "can" (CR 101.2). Playing a land and activating abilities are not casting a spell. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'playerCantCastSpells';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
   /** "Target player's life total can't change until their next turn" (D-607): blocks every life-total increase and decrease. */
   | {
       readonly kind: 'preventPlayerLifeTotalChange';
@@ -6032,6 +6042,19 @@ export type StaticEffect =
    * is a different ability and is not this one.
    */
   | { readonly kind: 'lookAtTopOfLibrary' }
+  /**
+   * "Play with the top card of your library revealed." (CR 401.5, 701.20, Oracle of Mul Daya): while the permanent is on the battlefield with the ability, the top card of its
+   * controller's library is revealed: every player sees it (`SeatView.libraryTop` in each view), not only the controller. A new top card that appears while a spell is being
+   * cast or an ability activated stays hidden until that is done (CR 401.5). It says nothing about what may be played from there (`playLandsFromTopOfLibrary`).
+   */
+  | { readonly kind: 'revealTopOfLibrary' }
+  /**
+   * "You may play lands from the top of your library." (CR 305.1, 401.5, 604.1, Oracle of Mul Daya): while the permanent has the ability, its controller may play the top card of their
+   * library as a land play if it is a land card `lands` matches (any land when absent; as the card it is: its types and subtypes, `zone`, `owner` and `controller` are not read). When
+   * a land may be played, and how many, are those of the turn (CR 305.2, 505.6b): the permission only adds where the land may come from, and it is not used up. The player sees the
+   * card only through another ability (`lookAtTopOfLibrary`, `revealTopOfLibrary`), as with `castFromTopOfLibrary`.
+   */
+  | { readonly kind: 'playLandsFromTopOfLibrary'; readonly lands?: ObjectFilter }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's
    * attacking you." (CR 508.1d, 508.1h, D-125): while the permanent is on the battlefield, each creature

@@ -465,7 +465,8 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       }
       return true;
     case 'playLandsFromGraveyard':
-      // CR 305.1: the land cards that may be played from the graveyard, as the card in the graveyard is.
+    case 'playLandsFromTopOfLibrary':
+      // CR 305.1: the land cards that may be played from the graveyard or the top of the library, as the card there is.
       if (s.lands !== undefined) {
         checkFilter(s.lands, `${path}.lands`, out);
         if (
@@ -482,7 +483,7 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
           issue(
             out,
             `${path}.lands`,
-            'the land is a card in your graveyard: no zone, owner, controller, stackKind, or anything read from the game',
+            'the land is a card in your graveyard or library: no zone, owner, controller, stackKind, or anything read from the game',
           );
         }
       }

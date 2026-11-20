@@ -240,3 +240,38 @@ describe('the optional untap (CR 502.3)', () => {
     g.expect.tapped('SYNTHETIC Drowsy Rod', false);
   });
 });
+
+describe('lands from the top of the library (CR 305.1, 401.5)', () => {
+  const TOP_LANDS = 'SYNTHETIC Top Lands';
+  const OPEN = 'SYNTHETIC Open Library';
+
+  test('it plays the land on top of its library as its land play (it sees the card: the library is revealed)', async () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(TOP_LANDS, OPEN)
+      .library('Forest', { label: 'top' })
+      .library('Island', { count: 6 })
+      .seat(1)
+      .library('Island', { count: 6 })
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    expect(await answer(g)).toEqual({ kind: 'playLand', object: g.id('top') });
+  });
+
+  test('a library revealed to both players shows the agent only the top card', () => {
+    const g = scenario()
+      .seat(0)
+      .library('Forest', { label: 'a' })
+      .library('Island', { label: 'b' })
+      .seat(1)
+      .battlefield(OPEN)
+      .library('Mountain', { label: 'x' })
+      .library('Plains', { label: 'y' })
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    const view = g.view(0);
+    expect(view.seats[1]?.libraryTop?.id).toBe(g.id('x'));
+    expect(JSON.stringify(view)).not.toContain(g.id('y'));
+    expect(view.seats[0]?.libraryTop).toBeUndefined();
+  });
+});

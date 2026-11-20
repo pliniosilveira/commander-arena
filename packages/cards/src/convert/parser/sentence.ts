@@ -113,6 +113,8 @@ const TURN_CONDITIONS = [
   'condition.life-above-starting',
   // Issue 159 (Laboratory Drudge): "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
   'condition.cast-from-graveyard-this-turn',
+  // Conduit of Worlds: "If you haven't cast a spell this turn, you may cast that card."
+  'condition.no-spell-cast-this-turn',
 ] as const;
 
 /**
@@ -625,6 +627,9 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
 export const ACTIVATED_SENTENCE: Parser<IrSentence> = sentenceParser({
   may: false,
   conditional: true,
+  // Conduit of Worlds: "If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn." (CR 608.2c): the lowering
+  // reads an "If you do" only after an instruction it can tell was done, and refuses it anywhere else.
+  ifYouDo: true,
   delayed: true,
 });
 

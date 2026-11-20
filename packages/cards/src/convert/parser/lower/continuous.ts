@@ -81,7 +81,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         ctx,
         (objects) => ({ kind: 'grantKeyword', objects, keyword, duration: END }),
         'objects',
-        { ...TRIGGER_SUBJECT, token: true, eachMention: true },
+        { ...TRIGGER_SUBJECT, token: true, eachMention: true, moved: true },
       );
     }
     // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
@@ -106,7 +106,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
             : END,
       }),
       'objects',
-      { ...TRIGGER_SUBJECT, token: true, eachMention: true },
+      { ...TRIGGER_SUBJECT, token: true, eachMention: true, moved: true },
     );
   },
 };

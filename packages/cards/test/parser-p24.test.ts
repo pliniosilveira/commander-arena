@@ -183,7 +183,7 @@ describe('what stays unread (never half-executed)', () => {
     ['You may look at the top two cards of your library any time.', 'two cards'],
     ['You may look at the bottom card of your library any time.', 'the bottom'],
     ['You may look at the top card of your library any time you could cast a spell.', 'a limit'],
-    ['Play with the top card of your library revealed.', 'a different ability: everyone sees it'],
+    ["Play with the top card of each player's library revealed.", 'every library, not the look'],
     ['Look at the top card of your library any time.', 'no "You may"'],
     // The attack tax.
     [
@@ -326,22 +326,24 @@ describe('the support of a card with these lines (validateCard is the last gate,
     // Bolas's Citadel-shaped: the look is read, the rest of the card is not (SYNTHETIC second line).
     const imported = card(
       'Artifact',
-      `${LOOK_AT_TOP}\nYou may play lands from the top of your library.`,
+      `${LOOK_AT_TOP}\nYou may play lands from the top of each player's library.`,
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed.map((u) => u.text)).toEqual([
-      'You may play lands from the top of your library.',
+      "You may play lands from the top of each player's library.",
     ]);
   });
 
-  test('"Play with the top card revealed" beside the look is not read (a different ability)', () => {
+  test('"Play with the top card revealed" is a different ability from the look: read for the controller\'s own library only (CR 401.5)', () => {
     const imported = card(
       'Enchantment',
       `${LOOK_AT_TOP}\nPlay with the top card of your library revealed.`,
     );
-    expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.unparsed.map((u) => u.text)).toEqual([
-      'Play with the top card of your library revealed.',
+    expect(imported.support.status).toBe('supported');
+    const each = card('Enchantment', "Play with the top card of each player's library revealed.");
+    expect(each.support.status).toBe('unsupported');
+    expect(each.support.unparsed.map((u) => u.text)).toEqual([
+      "Play with the top card of each player's library revealed.",
     ]);
   });
 

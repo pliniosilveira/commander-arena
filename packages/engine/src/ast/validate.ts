@@ -490,6 +490,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':
+    case 'revealTopOfLibrary':
     case 'optionalUntap':
     case 'exertOnAttack':
       break;
@@ -1981,7 +1982,18 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
       }
       // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
-      const targets = declareTargets(a.targets, `${path}.targets`, out, true);
+      const targets = declareTargets(
+        a.targets,
+        `${path}.targets`,
+        out,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        Array.isArray(a.cost) && hasXCost(a.cost),
+      );
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,

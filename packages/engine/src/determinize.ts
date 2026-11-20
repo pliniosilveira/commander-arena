@@ -43,8 +43,10 @@ function whatViewerKnows(
 ): { known: Set<ObjectId>; placed: Set<ObjectId> } {
   const known = new Set<ObjectId>();
   const placed = new Set<ObjectId>();
-  const top = topCardVisibleTo(state, viewer);
-  if (top !== null) {
+  // CR 401.5: the viewer's own top card when they may look at it, and the top card of any library revealed to them.
+  for (const seat of state.seats) {
+    const top = topCardVisibleTo(state, seat.id, viewer);
+    if (top === null) continue;
     known.add(top);
     placed.add(top);
   }

@@ -260,6 +260,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'goad',
     'grantPlayerProtectionEverything',
     'preventPlayerLifeTotalChange',
+    // CR 101.2: "You can't cast additional spells this turn."
+    'playerCantCastSpells',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
     // CR 508.1d, 701.26a: "choose an opponent at random that this creature didn't attack during your last combat ... attacks that player this combat if able".
@@ -1135,6 +1137,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDrops',
     // D-125: "You may look at the top card of your library any time."
     'lookAtTopOfLibrary',
+    // CR 401.5: "Play with the top card of your library revealed." and "You may play lands from the top of your library."
+    'revealTopOfLibrary',
+    'playLandsFromTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
     // D-647: "Inklings can't attack you or planeswalkers you control."
@@ -1975,6 +1980,10 @@ export const STATIC_KINDS = [
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */
   'lookAtTopOfLibrary',
+  /** "Play with the top card of your library revealed." (CR 401.5): the engine's `revealTopOfLibrary`. */
+  'revealTopOfLibrary',
+  /** "You may play lands from the top of your library." (CR 305.1, 401.5): the engine's `playLandsFromTopOfLibrary`. */
+  'playLandsFromTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
   /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): the engine's `cantAttackYou`. */
@@ -2330,6 +2339,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantPlayerManaAbility: true,
   grantPlayerProtectionEverything: true,
   preventPlayerLifeTotalChange: true,
+  playerCantCastSpells: true,
   mill: true,
   manifest: true,
   dealDamage: true,

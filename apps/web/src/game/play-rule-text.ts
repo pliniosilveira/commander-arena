@@ -24,6 +24,12 @@ export function staticWording(effect: StaticEffect): string | null {
         : `You may play ${additionalLands(effect.count)} on each of your turns`;
     case 'lookAtTopOfLibrary':
       return 'You may look at the top card of your library any time';
+    case 'revealTopOfLibrary':
+      return 'Play with the top card of your library revealed';
+    case 'playLandsFromTopOfLibrary':
+      return effect.lands === undefined
+        ? 'You may play lands from the top of your library'
+        : 'You may play some lands from the top of your library';
     case 'attackTax': {
       const cost = activationCostText(effect.cost);
       return effect.planeswalkers === true

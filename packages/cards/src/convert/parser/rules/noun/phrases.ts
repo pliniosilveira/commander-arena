@@ -1260,6 +1260,8 @@ export function graveyardPhrase(
       optional(quiet(comparisonSuffix(ALL_COMPARABLE)), undefined),
       // "with mana value X or less" (stage P68, D-230): at most the X a "where X is ..." says.
       optional(quiet(MANA_VALUE_X_OR_LESS), false),
+      // "Saga card with mana value X from your graveyard" (CR 107.3a, 202.3): the mana value is the X announced for the ability.
+      optional(quiet(MANA_VALUE_X), false),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), false),
@@ -1270,6 +1272,7 @@ export function graveyardPhrase(
       ,
       compared,
       atMostX,
+      equalsX,
       controller,
       putThere,
     ] = r.value;
@@ -1294,6 +1297,7 @@ export function graveyardPhrase(
               : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
           ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
+          ...(equalsX ? { manaValueX: true as const } : {}),
           card: true,
         },
         compared,

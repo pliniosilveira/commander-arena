@@ -784,6 +784,8 @@ export function declareTargets(
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
   upToAmountAllowed = false,
+  /** CR 107.3a, 602.2b: the targets of an activated ability whose cost has an {X} can name "mana value X": the X is announced before the targets are chosen. */
+  xFilterAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -803,7 +805,7 @@ export function declareTargets(
           out,
           undefined,
           undefined,
-          countXAllowed ? { xTarget: true } : {},
+          countXAllowed || xFilterAllowed ? { xTarget: true } : {},
         );
         if (
           what.filter.manaValueAtMost !== undefined &&
@@ -4504,6 +4506,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               child?.kind === 'exileFromTriggerCards' ||
               // Issue 100 (CR 608.2g): "you may cast a spell ... without paying its mana cost. If you don't, ...": whether a spell was cast is something done (`performed`).
               (child?.kind === 'castFree' && child.max === undefined) ||
+              // CR 608.2c, 608.2g: "you may cast that card. If you do, ...": the card was cast when the question of `castCard` was accepted (`performed`).
+              child?.kind === 'castCard' ||
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
               child?.kind === 'createToken') &&
             after.mayAvailable !== true
@@ -4868,6 +4872,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.duration`,
           "this player effect lasts until the named player's next turn",
         );
+      }
+      break;
+    case 'playerCantCastSpells':
+      // CR 101.2, 601.2: the players named can't cast spells for the rest of the turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'this player effect lasts until end of turn');
       }
       break;
     case 'requireAttackSource':

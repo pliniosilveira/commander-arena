@@ -158,11 +158,14 @@ function CommanderChip({ object }: { object: ObjectView }) {
 }
 
 /**
- * The top card of the viewer's library, shown beside the library count while a permanent lets them look at
- * it (CR 401.5, D-125). `SeatView.libraryTop` exists only in the viewer's own view, so the opponent's
- * strip never gets one. Hover shows the card in the preview panel like any other.
+ * The top card of a library, shown beside the library count while a permanent lets the viewer look at
+ * it (CR 401.5, D-125) or while it is revealed to every player ("Play with the top card of your library
+ * revealed"). `SeatView.libraryTop` is in the viewer's own view when they may look at it, and in every
+ * view while it is revealed, so an opponent's strip gets one only then. Hover shows the card in the
+ * preview panel like any other.
  */
-function LibraryTop({ object }: { object: ObjectView }) {
+function LibraryTop({ object, mine }: { object: ObjectView; mine: boolean }) {
+  const owner = mine ? 'your' : "the opponent's";
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   // D-151 (CR 601.3): a permission to cast the top card of the library makes it clickable, like a card of the hand.
@@ -174,8 +177,8 @@ function LibraryTop({ object }: { object: ObjectView }) {
       className={`board-cmdr board-top-card${clickable ? ' is-clickable' : ''}`}
       data-library-top={object.id}
       data-object-id={object.id}
-      aria-label={`Top card of your library: ${object.name}${clickable ? ', can be cast' : ''}`}
-      title={`Top card of your library: ${object.name}`}
+      aria-label={`Top card of ${owner} library: ${object.name}${clickable ? (object.types.includes('land') ? ', can be played' : ', can be cast') : ''}`}
+      title={`Top card of ${owner} library: ${object.name}`}
       onClick={() => {
         if (clickable) ix.onObject(object.id);
       }}
@@ -369,7 +372,7 @@ export function PlayerStrip({
         <span className="board-count-item" title="Cards in library">
           <span className="board-stat-label">Library</span>
           <b>{seat.libraryCount}</b>
-          {seat.libraryTop !== undefined && mine && <LibraryTop object={seat.libraryTop} />}
+          {seat.libraryTop !== undefined && <LibraryTop object={seat.libraryTop} mine={mine} />}
         </span>
         {mine && seat.hand?.some((o) => o.keywords.includes('storm')) === true && (
           <span
