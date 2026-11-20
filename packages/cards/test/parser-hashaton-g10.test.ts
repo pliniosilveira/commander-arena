@@ -84,7 +84,7 @@ describe('Restless Dreams: "As an additional cost to cast this spell, discard X 
   });
 
   test('"X target ..." in a place where the engine has no X announced is dropped (SYNTHETIC)', () => {
-    // A permanent has no X announced for its triggered ability (CR 107.3j), and an activated ability's cost never says "discard X cards".
+    // A permanent has no X announced for its triggered ability (CR 107.3j). (An activated ability's cost may say "discard X cards" since the Mardu Surge deck: see below.)
     const trigger = read(
       'Whenever ~ enters, return X target creature cards from your graveyard to your hand.',
       'creature',
@@ -97,9 +97,13 @@ describe('Restless Dreams: "As an additional cost to cast this spell, discard X 
     );
     expect(returning.abilities).toEqual([]);
     expect(returning.unparsed).toHaveLength(1);
+    // Issue 101 (Gix, Yawgmoth Praetor; CR 107.3a, 602.2b): the X of an activated ability is announced as it is activated, so "Discard X cards" is its `discard` cost with `countX`.
     const activated = read('Discard X cards: Draw X cards.', 'creature');
-    expect(activated.abilities).toEqual([]);
-    expect(activated.unparsed).toHaveLength(1);
+    expect(activated.unparsed).toEqual([]);
+    expect(activated.abilities[0]).toMatchObject({
+      kind: 'activated',
+      cost: [{ kind: 'discard', count: 0, countX: true }],
+    });
     // Two X costs of one spell are one X: "pay X life and discard X cards" is read (the engine pays both for the one X announced), and "discard X cards" with a discard of
     // a fixed number is not (the engine has one discard cost).
     const both = readAll(
