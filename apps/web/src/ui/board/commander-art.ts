@@ -1,22 +1,16 @@
 /**
  * Issue 366: the picture of a commander. Scryfall's name lookup gives the default printing; a commander is the face of the deck, so
- * a nicer one is asked for first: a non-foil printing with a special frame (borderless, extended art, showcase or full art). When
+ * a nicer one is asked for first: a printing with a special frame (borderless, extended art, showcase or full art). When
  * Scryfall has none, or cannot be reached, the card is drawn as before, by name.
  */
 import { createRequestQueue, type RequestQueue } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
 
-const SPECIAL = '(is:borderless or is:extendedart or is:showcase or is:fullart)';
-
-/**
- * The search for the special printings of one commander (a double-faced card is asked by its front face). A non-foil printing is
- * asked for first; `anyFinish` also accepts a foil-only one, whose picture on Scryfall is a plain scan (a borderless commander of a
- * Commander set is often foil-only).
- */
-export function commanderArtQuery(name: string, anyFinish = false): string {
+/** The search for the special printings of one commander (a double-faced card is asked by its front face). Foil or not: the picture is the same scan. */
+export function commanderArtQuery(name: string): string {
   const front = (name.split(' // ')[0] ?? name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `!"${front}" game:paper ${anyFinish ? '' : 'is:nonfoil '}${SPECIAL}`;
+  return `!"${front}" game:paper (is:borderless or is:extendedart or is:showcase or is:fullart)`;
 }
 
 /**
@@ -70,16 +64,14 @@ export function useCommanderArt(name: string | null, version: ArtVersion): strin
   const query = name === null || name === '' ? null : commanderArtQuery(name);
   const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
   useEffect(() => {
-    if (query === null || name === null) return;
+    if (query === null) return;
     let alive = true;
-    void lookup(query)
-      .then((art) => art ?? lookup(commanderArtQuery(name, true)))
-      .then((art) => {
-        if (alive) setFound({ query, art });
-      });
+    void lookup(query).then((art) => {
+      if (alive) setFound({ query, art });
+    });
     return () => {
       alive = false;
     };
-  }, [query, name]);
+  }, [query]);
   return found?.query === query ? (found?.art?.[version] ?? null) : null;
 }

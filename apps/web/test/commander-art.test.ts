@@ -13,20 +13,14 @@ const IMG = (id: string) => ({
   art_crop: `https://cards.scryfall.io/art_crop/front/${id}.jpg`,
 });
 
-test('the query asks for one commander by exact name, paper, non-foil, and a special frame', () => {
+test('the query asks for one commander by exact name, paper, and a special frame', () => {
   const q = commanderArtQuery('Giada, Font of Hope');
   expect(q).toContain('!"Giada, Font of Hope"');
   expect(q).toContain('game:paper');
-  expect(q).toContain('is:nonfoil');
+  expect(q).not.toContain('nonfoil');
   for (const frame of ['is:borderless', 'is:extendedart', 'is:showcase', 'is:fullart']) {
     expect(q).toContain(frame);
   }
-});
-
-test('the second search also accepts a foil-only printing', () => {
-  expect(commanderArtQuery('Ghoulcaller Gisa')).toContain('is:nonfoil');
-  expect(commanderArtQuery('Ghoulcaller Gisa', true)).not.toContain('is:nonfoil');
-  expect(commanderArtQuery('Ghoulcaller Gisa', true)).toContain('is:borderless');
 });
 
 test('a double-faced name is asked by its front face and a quote in a name is escaped', () => {
