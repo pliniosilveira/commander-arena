@@ -22,6 +22,7 @@ import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
+import { AHOY_G7_LOWERINGS } from './ahoy-g7';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
@@ -2569,6 +2570,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GISA_G4_LOWERINGS,
   // Ahoy Mateys deck, group 3: "Exile that token at end of combat.", "Look at defending player's hand. You may put a creature card from it onto the battlefield ... tapped and attacking ...", "Return that creature to its owner's hand at the beginning of the next end step.".
   ...AHOY_G3_LOWERINGS,
+  // Ahoy Mateys deck, group 7: "That creature doesn't untap during its controller's untap step for as long as you control ~."
+  ...AHOY_G7_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.

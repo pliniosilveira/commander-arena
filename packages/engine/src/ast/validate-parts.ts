@@ -528,6 +528,28 @@ export function checkFilter(
       'only a permanent on the battlefield was put onto the battlefield with another',
     );
   }
+  if (f.controllerDealtCombatDamageByAtLeast !== undefined) {
+    const spec = f.controllerDealtCombatDamageByAtLeast;
+    if (
+      !Number.isInteger(spec.atLeast) ||
+      spec.atLeast < 1 ||
+      !Array.isArray(spec.subtypes) ||
+      spec.subtypes.length === 0
+    ) {
+      issue(
+        out,
+        `${path}.controllerDealtCombatDamageByAtLeast`,
+        'a count of one or more and at least one subtype',
+      );
+    }
+    if (f.zone !== undefined && f.zone !== 'battlefield') {
+      issue(
+        out,
+        `${path}.controllerDealtCombatDamageByAtLeast`,
+        'only a permanent on the battlefield has a controller to ask',
+      );
+    }
+  }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(
       out,
@@ -786,6 +808,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.powerGreaterThan !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
+  f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||

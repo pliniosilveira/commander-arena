@@ -120,6 +120,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:controllerDealtCombatDamageByAtLeast',
   'selector:modified',
   // CR 701.15b: "a goaded creature".
   'selector:goaded',
@@ -324,6 +325,11 @@ function lowerFilterAt(
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
+  }
+  // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2), read where the filter is matched against the game (a target slot, an `each` selector); never a member of a choice.
+  if (filter.controllerDealtCombatDamageBy !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:controllerDealtCombatDamageByAtLeast');
   }
   // Lorehold group 2: "target card exiled with ~" (CR 607.2a), read where the filter is matched against the game with the source (a target slot); never a member of a choice, and a card in exile.
   if (filter.exiledWithSelf === true) {
@@ -549,6 +555,14 @@ function lowerFilterAt(
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.controllerDealtCombatDamageBy === undefined
+      ? {}
+      : {
+          controllerDealtCombatDamageByAtLeast: {
+            atLeast: filter.controllerDealtCombatDamageBy.atLeast,
+            subtypes: [filter.controllerDealtCombatDamageBy.subtype],
+          },
+        }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),

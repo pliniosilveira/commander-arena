@@ -415,6 +415,8 @@ export interface IrFilter {
   readonly firstXSpellThisTurn?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /** "controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck group 7, CR 510.2): the engine's `controllerDealtCombatDamageByAtLeast`. */
+  readonly controllerDealtCombatDamageBy?: { readonly atLeast: number; readonly subtype: string };
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
   readonly exiledWithSelf?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */

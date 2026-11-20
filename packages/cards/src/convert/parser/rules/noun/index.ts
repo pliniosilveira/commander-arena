@@ -19,6 +19,7 @@ import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
 import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
+import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
@@ -946,6 +947,8 @@ export const NOUN_RULES = [
   ...ATTACKING_YOU_NOUN_RULES,
   // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
   ...QUANDRIX_G_TARGET_NOUN_RULES,
+  // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
+  ...AHOY_G7_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

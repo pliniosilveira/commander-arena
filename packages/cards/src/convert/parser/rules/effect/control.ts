@@ -55,6 +55,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature an opponent controls until end of turn',
     'gain control of ~',
     'gain control of ~ until end of turn',
+    'gain control of target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn',
   ],
   rejects: [
     'gain control of target creature until your next turn',
@@ -81,7 +82,14 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
       // One permanent: a target, or "that artifact" and "it" for what the text named before. A plural, "up to" and a player are other nouns.
       refuseAt(
         family<IrNoun>('noun', {
-          only: ['noun.target-permanent', 'noun.that-object', 'noun.it', 'noun.self'],
+          only: [
+            'noun.target-permanent',
+            // Ahoy Mateys group 7 (Admiral Beckett Brass): "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn".
+            'noun.target-permanent-controller-dealt-damage-by',
+            'noun.that-object',
+            'noun.it',
+            'noun.self',
+          ],
         }),
         (n) => !n.plural && !n.upTo && n.filter.player === undefined,
         (_n, _ctx, start) => start,

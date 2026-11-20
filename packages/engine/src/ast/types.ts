@@ -664,6 +664,16 @@ export interface ObjectFilter {
    */
   readonly controllerDealtDamageBySource?: true;
   /**
+   * "Controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck, group 7, CR 510.2, 120.2a): the object's controller is a player who
+   * was dealt combat damage this turn by at least `atLeast` different sources, each of which had all of these `subtypes` as it dealt the damage (read from the turn log, so a source that
+   * has left still counts as it was; the same source dealing damage twice, as with double strike, counts once). Read where the filter is matched against the game (a target slot, an
+   * `each` selector); refused in a static ability, as `enteredThisTurn` is.
+   */
+  readonly controllerDealtCombatDamageByAtLeast?: {
+    readonly atLeast: number;
+    readonly subtypes: readonly Subtype[];
+  };
+  /**
    * "That was put there from the battlefield this turn" (D-179, CR 700.4): the card is in a graveyard and was put into it from the battlefield
    * during this turn (a creature that died, an artifact that was destroyed; not a token, not a card discarded or milled). Read from the turn
    * log where the filter is matched against the game; refused in a static ability, as `attacking` is.
@@ -3547,7 +3557,7 @@ export type Effect =
    * restriction until the duration ends. It is not an ability, so "loses all abilities" does not
    * remove it (CR 613.11 applies it after the layers); the set is fixed when it begins (CR 611.2c).
    * `cantBlock`, `cantBeBlocked` and `attacksEachCombat` run with `untilEndOfTurn`. "Doesn't untap during its controller's next untap step"
-   * (D-517, CR 502.3, 611.2a) is `restriction: 'doesntUntap'` with `duration: 'untilNextUntapStep'`, the only pair for that restriction: each
+   * (D-517, CR 502.3, 611.2a) is `restriction: 'doesntUntap'` with `duration: 'untilNextUntapStep'` (or, in the ability of a permanent, `forAsLongAsYouControlThis`, CR 611.2b: "for as long as you control this creature", Merchant Raiders), the only pairs for that restriction: each
    * permanent the effect named keeps the restriction until the next untap step of its controller (as it is then) has come, and is let go as that step
    * ends, whether or not it was tapped. "Can't be countered" is about a spell, so it is not accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
    * block for as long as you control this Saga", CR 611.2b): as for `gainControl`, the effect does nothing when the permanent with the ability is not

@@ -134,6 +134,12 @@ export interface FilterContext {
    * log by the caller; without it the flag matches nothing.
    */
   readonly damagedPlayers?: readonly SeatId[];
+  /** The combat damage events of this turn (`controllerDealtCombatDamageByAtLeast`, group 7 of the Ahoy Mateys deck): the turn log, read by the caller; absent fails the flag closed. */
+  readonly combatDamaged?: readonly {
+    readonly source: ObjectId;
+    readonly player: SeatId;
+    readonly subtypes: readonly Subtype[];
+  }[];
   /** The cards put into a graveyard from the battlefield this turn (`putFromBattlefieldThisTurn`, D-179): the turn log, read by the caller; absent fails the flag closed. */
   readonly graveyarded?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
@@ -368,6 +374,16 @@ export function matchesFilterWith(
     !(ctx.damagedPlayers ?? []).includes(controllerOf(state, obj))
   ) {
     return false;
+  }
+  // CR 510.2, 120.2a (Ahoy Mateys group 7): "controlled by a player who was dealt combat damage by three or more Pirates this turn": different sources, as each was.
+  if (filter.controllerDealtCombatDamageByAtLeast !== undefined) {
+    const { atLeast, subtypes } = filter.controllerDealtCombatDamageByAtLeast;
+    const who = controllerOf(state, obj);
+    const sources = new Set<ObjectId>();
+    for (const d of ctx.combatDamaged ?? []) {
+      if (d.player === who && subtypes.every((t) => d.subtypes.includes(t))) sources.add(d.source);
+    }
+    if (sources.size < atLeast) return false;
   }
   // CR 700.4 (D-179): "that was put there from the battlefield this turn".
   if (filter.putFromBattlefieldThisTurn === true && !(ctx.graveyarded ?? []).includes(obj.id)) {

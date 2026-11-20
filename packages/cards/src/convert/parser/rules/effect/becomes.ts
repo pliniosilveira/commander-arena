@@ -274,7 +274,7 @@ const LOSES = spanned(literal(' loses all abilities'));
  * `effect.loses-abilities`: "target creature loses all abilities until end of turn" and, in the
  * words of Turn to Frog, "... and becomes a blue Frog with base power and toughness 1/1 until end
  * of turn" (CR 613.1f: abilities it has at that moment are gone, abilities granted later still
- * apply, CR 613.7).
+ * apply, CR 613.7), or "... and has base power and toughness 0/1 until end of turn" (Warkite Marauder, CR 613.4b).
  */
 export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
   id: 'effect.loses-abilities',
@@ -293,6 +293,9 @@ export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
     'target creature loses all abilities and becomes a blue Frog with base power and toughness 1/1 until end of turn',
     'target creature loses all abilities and becomes a Frog until end of turn',
     'target creature you control loses all abilities and becomes red until end of turn',
+    // Ahoy Mateys group 7 (Warkite Marauder, CR 613.4b): the base power and toughness alone.
+    'target creature loses all abilities and has base power and toughness 0/1 until end of turn',
+    'target creature defending player controls loses all abilities and has base power and toughness 0/1 until end of turn',
   ],
   rejects: [
     'target creature loses all abilities',
@@ -300,7 +303,10 @@ export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
     'target creature loses flying until end of turn',
     'target creature lose all abilities until end of turn',
     'target creatures lose all abilities until end of turn',
-    'target creature loses all abilities and has base power and toughness 1/1 until end of turn',
+    'target creature loses all abilities and has base power and toughness +1/+1 until end of turn',
+    'target creature loses all abilities and has base power 0 until end of turn',
+    'target creature loses all abilities and has base power and toughness 0/1',
+    'target creature loses all abilities and has flying until end of turn',
     'target creature loses all abilities and becomes an artifact creature until end of turn',
     'target creature loses all abilities and becomes a Frog in addition to its other types until end of turn',
     'target creature loses all other abilities until end of turn',
@@ -310,8 +316,16 @@ export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
     const head = sequence(family<IrNoun>('noun', { only: SINGLE_SUBJECTS }), LOSES)(ctx, pos);
     if (!head.ok) return head;
     const [subject, loses] = head.value;
+    // "and has base power and toughness 0/1" (Ahoy Mateys group 7, Warkite Marauder, CR 613.4b): the layer 7b setting alone, with no type or color.
+    const alsoHas = map(
+      sequence(literal(' and has '), BASE_PT(rule)),
+      ([, pt]): Becoming => ({ colors: null, types: null, basePt: pt, span: pt.span }),
+    );
     const also = optional(
-      map(sequence(literal(' and becomes '), becoming(rule)), ([, what]) => what),
+      choice(
+        map(sequence(literal(' and becomes '), becoming(rule)), ([, what]) => what),
+        alsoHas,
+      ),
       null,
     )(ctx, head.pos);
     if (!also.ok) return also;
