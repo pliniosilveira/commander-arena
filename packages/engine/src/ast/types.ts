@@ -147,6 +147,11 @@ export type Amount =
   | { readonly kind: 'cardsInHandOfAffected' }
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
+  /**
+   * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
+   * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
+   */
+  | { readonly kind: 'lifeGainedOrLostThisTurn' }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
   | {
       readonly kind: 'enteredThisTurn';
@@ -428,7 +433,10 @@ export type ThisWayKind =
   | 'damageDealt'
   // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
   // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
-  | 'exiledPowerOwn';
+  | 'exiledPowerOwn'
+  // Deadly Tempest (CR 608.2c, 608.2h): "each player loses life equal to the number of creatures they controlled that were destroyed this way": the whole amount of a `loseLife`, read for
+  // each player it affects as the number of creatures that player controlled (as they were just before they died) that the `destroy` effects of this resolution destroyed.
+  | 'destroyedCreaturesOfAffected';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:

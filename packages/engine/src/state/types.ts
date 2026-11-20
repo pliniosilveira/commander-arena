@@ -2000,6 +2000,10 @@ export interface ThisWayCounts {
   readonly searched?: number;
   /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */
   readonly exiledPowerBy?: Readonly<Record<number, number>>;
+  /** The creatures each player controlled, by seat, that `destroy` effects destroyed, as they were just before they died (Deadly Tempest: "the number of creatures they controlled that were destroyed this way"). */
+  readonly destroyedCreaturesBy?: Readonly<Record<number, number>>;
+  /** Never set: each player's own number is read from `destroyedCreaturesBy` (`rules/life-amounts.ts`); the key only lets the `thisWay` readers index every `ThisWayKind`. */
+  readonly destroyedCreaturesOfAffected?: number;
   /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
   readonly exiledPowerOwn?: number;
 }

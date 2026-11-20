@@ -1257,6 +1257,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
+    'lifeGainedOrLostThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
@@ -2120,6 +2121,8 @@ export const AMOUNT_KINDS = [
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
+  'lifeGainedOrLostThisTurn',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',

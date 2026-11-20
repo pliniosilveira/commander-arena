@@ -287,6 +287,7 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
     }
+    case 'lifeGainedOrLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -871,6 +872,7 @@ export const AMOUNT_NEEDS = [
   'amount:lifeLostThisWay',
   'amount:lifeLostThisTurn',
   'amount:lifeGainedThisTurn',
+  'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
