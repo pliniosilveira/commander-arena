@@ -13,12 +13,20 @@ export function commanderArtQuery(name: string): string {
   return `!"${front}" game:paper is:nonfoil (is:borderless or is:extendedart or is:showcase or is:fullart)`;
 }
 
-/** The pictures of the first printing of the answer that has some, or null. */
+/**
+ * The pictures of the first printing of the answer that has some, or null. A printing that shows another name than the card's own
+ * (a Universes Beyond reprint, `printed_name`) is skipped: the board would show a different card.
+ */
 export function parseCommanderSearch(answer: unknown): CardArt | null {
   if (typeof answer !== 'object' || answer === null) return null;
   const data = (answer as { data?: unknown }).data;
   if (!Array.isArray(data)) return null;
   for (const card of data) {
+    const { name, printed_name: printed } = (card ?? {}) as {
+      name?: unknown;
+      printed_name?: unknown;
+    };
+    if (typeof printed === 'string' && printed !== name) continue;
     const art = parseCardArt(card);
     if (art !== null) return art;
   }
