@@ -127,6 +127,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:attachedTo',
   'selector:enchanted',
   'selector:enchantedByYou',
+  'selector:notOwnedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
@@ -429,6 +430,8 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
+  // CR 108.3: "you don't own", read where the filter is matched against an object.
+  if (filter.notOwnedByYou === true) parts.push('selector:notOwnedByYou');
   // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
   if (filter.enchantedByYou === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -572,6 +575,7 @@ function lowerFilterAt(
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
+    ...(filter.notOwnedByYou === true ? { notOwnedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),

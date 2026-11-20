@@ -922,6 +922,12 @@ export interface ObjectFilter {
    */
   readonly otherThanTriggerSubject?: true;
   /**
+   * "Each creature you control but don't own", "a noncreature spell you don't own" (CR 108.3): the object's owner (the player whose deck it started in, or who
+   * created it as a token) is not the controller of the ability that reads the filter. Unlike `owner`, which names a player of an effect, this needs no target, so a static
+   * ability, a trigger and a count may use it.
+   */
+  readonly notOwnedByYou?: true;
+  /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
    * `sacrificed` (CR 205.2a, 701.21a, 113.7a; Braids, Arisen Nightmare): the permanent an earlier `sacrifice` of this resolution sacrificed (the first one), with the card types it

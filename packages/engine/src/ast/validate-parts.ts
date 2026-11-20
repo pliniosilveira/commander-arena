@@ -401,6 +401,9 @@ export function checkFilter(
       'enchanted must be a boolean (true: has an Aura, false: has none)',
     );
   }
+  if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
+    issue(out, `${path}.notOwnedByYou`, 'notOwnedByYou must be true');
+  }
   if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
     issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
   }

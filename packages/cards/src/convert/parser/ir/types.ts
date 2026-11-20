@@ -434,6 +434,8 @@ export interface IrFilter {
   readonly enchanted?: boolean;
   /** "enchanted by an Aura you control" (D-647, CR 303.4e): the engine's `enchantedByYou`. */
   readonly enchantedByYou?: true;
+  /** "but don't own", "you don't own" (CR 108.3): the engine's `notOwnedByYou`. */
+  readonly notOwnedByYou?: true;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
   /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */

@@ -18,6 +18,7 @@ import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
+import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
@@ -957,6 +958,8 @@ export const NOUN_RULES = [
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
+  // Ahoy Mateys deck, group 4: "each other creature you control that's a Skeleton or Pirate" and "each creature you control but don't own", which `noun.each-permanent` would stop in the middle of.
+  ...AHOY_G4_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
