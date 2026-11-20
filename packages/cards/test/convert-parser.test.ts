@@ -1175,6 +1175,7 @@ describe('unmatched abilities', () => {
       'static.cost-per-extra-target',
       'static.spells-cost-increase-targeting-self',
       'static.crew-saddle-bonus',
+      'static.spells-you-cast-have-keyword',
       'modal.choose',
       'modal.choose-commander',
       'modal.choose-widen',

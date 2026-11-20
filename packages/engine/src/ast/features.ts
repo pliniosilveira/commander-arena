@@ -1142,6 +1142,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'allCreatureTypes',
     // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
     'grantKeywordToHandCards',
+    // Issue 145: "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a).
+    'grantKeywordToSpells',
     // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
     'grantFlashbackToGraveyardCards',
     'noMaximumHandSize',
@@ -1989,6 +1991,8 @@ export const STATIC_KINDS = [
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
   'grantKeywordToHandCards',
+  /** "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, issue 145). */
+  'grantKeywordToSpells',
   /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
   'grantFlashbackToGraveyardCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */

@@ -6006,6 +6006,20 @@ export type StaticEffect =
       readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
     }
   /**
+   * "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, 613.1f, 604.2, 611.3a): a static ability of a permanent on the battlefield that gives the keyword `keyword` to the
+   * spells its controller casts that `what` matches, in layer 6 with the permanent's timestamp, from the moment the spell is on the stack (CR 601.2a: it is cast from there), so that the
+   * keyword is there as the spell is cast (the triggered ability of Demonstrate, "When you cast this spell", is found once the spell is on the stack, CR 601.2i, 603.2) and when its total
+   * cost is determined (Convoke, CR 702.51b). Only Demonstrate and Convoke, the keywords the engine reads from a spell as it is cast. Each grant of Demonstrate is one more instance (each
+   * triggers on its own); Convoke instances are redundant (CR 702.51d). A copy of a spell is not cast (CR 707.10) and gets nothing, nor does an ability on the stack. `what` is a filter of
+   * the spell as it is on the stack (its types, colors, mana value and the like after layers 4 and 5) with `controller: 'you'` (the permanent's controller, "spells you cast"), and no zone,
+   * owner, stack kind, keyword, combat or source test. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantKeywordToSpells';
+      readonly what: ObjectFilter;
+      readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
+    }
+  /**
    * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 613.1f, 604.3, 611.3a): a static ability of a permanent
    * on the battlefield that gives the instant and sorcery cards in its controller's graveyard that `what` matches flashback, with the cost equal to the card's own mana cost (CR 118.9: an
    * alternative cost). Read where casting is decided (`rules/flashback-grant.ts`); the card is cast from the graveyard and exiled when it leaves the stack, as with a printed flashback. A card
