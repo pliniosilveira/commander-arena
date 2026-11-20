@@ -275,6 +275,8 @@ function lowerFilterAt(
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
   if (filter.blocking === true) parts.push('selector:blocking');
   if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
+  // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
+  if (filter.controller === 'monarch') parts.push('selector:monarchController');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.

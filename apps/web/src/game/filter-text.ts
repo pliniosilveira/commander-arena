@@ -243,13 +243,15 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
             ? ' that opponent controls'
             : who === 'defendingPlayer'
               ? ' defending player controls'
-              : filter.attacking === true ||
-                  filter.attackingYou !== undefined ||
-                  filter.attackingOpponents !== undefined ||
-                  filter.attackingOrBlocking === true ||
-                  filter.blocking === true
-                ? ''
-                : ' on the battlefield';
+              : who === 'monarch'
+                ? ' the monarch controls'
+                : filter.attacking === true ||
+                    filter.attackingYou !== undefined ||
+                    filter.attackingOpponents !== undefined ||
+                    filter.attackingOrBlocking === true ||
+                    filter.blocking === true
+                  ? ''
+                  : ' on the battlefield';
   } else if (zone === 'stack') {
     noun = `${types.length === 0 ? '' : `${types.join(' or ')} `}spell${s}`;
     place = ' on the stack';
@@ -257,7 +259,11 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
     const words = ZONE_WORDS[zone];
     if (words === undefined) return null;
     noun = `${types.length === 0 ? '' : `${types.join(' or ')} `}card${s}`;
-    place = ` ${words[who === 'triggerPlayer' || who === 'defendingPlayer' ? 'opponent' : who]}`;
+    place = ` ${
+      words[
+        who === 'triggerPlayer' || who === 'defendingPlayer' || who === 'monarch' ? 'opponent' : who
+      ]
+    }`;
   }
   // The adjectives of "other creatures" and "white creatures" go before the noun.
   // CR 508.1b (D-131): "creatures attacking you", the attackers whose target is the player.

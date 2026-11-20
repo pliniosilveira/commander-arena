@@ -231,6 +231,8 @@ export function matchesFilterWith(
   // CR 508.5 (D-151): "creature defending player controls": the player the source is attacking; nothing matches when it is not attacking.
   if (filter.controller === 'defendingPlayer' && controllerOf(state, obj) !== ctx.defendingPlayer)
     return false;
+  // CR 725.1 (monarch): "creatures the monarch controls": the controller is the monarch now; with no monarch nothing matches.
+  if (filter.controller === 'monarch' && controllerOf(state, obj) !== state.monarch) return false;
   // CR 108.3: the owner of a card is the player who started the game with it in their deck.
   if (filter.owner !== undefined && !(ctx.owners ?? []).includes(obj.owner)) return false;
   // CR 109.4 (D-179): "each creature that player controls": the permanent's controller is one of the players the selector names.

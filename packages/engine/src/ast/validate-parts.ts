@@ -162,6 +162,8 @@ export interface Scope {
   readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of combat damage (`dealsCombatDamage`): combat damage is dealt in the combat phase, so an `extraCombat` has one to follow (CR 500.8, Port Razer). */
+  readonly combatDamageTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
   readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
@@ -292,7 +294,14 @@ export function checkFilter(
   checkEnumList(out, `${path}.notKeywords`, f.notKeywords, FILTERABLE_KEYWORDS, 'keyword');
   if (
     f.controller !== undefined &&
-    !isOneOf(f.controller, ['you', 'opponent', 'any', 'triggerPlayer', 'defendingPlayer'])
+    !isOneOf(f.controller, [
+      'you',
+      'opponent',
+      'any',
+      'triggerPlayer',
+      'defendingPlayer',
+      'monarch',
+    ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);
   }
