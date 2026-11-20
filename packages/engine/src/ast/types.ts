@@ -205,6 +205,12 @@ export type Amount =
    */
   | { readonly kind: 'cardTypesAmong'; readonly filter: ObjectFilter }
   /**
+   * "The number of different mana values among instant and sorcery cards in your graveyard" (Eris, Roar of the Storm, issue 121, CR 202.3): how many distinct mana values the objects
+   * `filter` matches have between them, each counted once however many cards have it (a card with no mana cost has mana value 0, CR 202.1b). The filter names a zone other than the
+   * battlefield and the stack and reads no power, toughness, combat or source, as `cardTypesAmong`'s does; the values are those of the cards as they are there.
+   */
+  | { readonly kind: 'differentManaValuesAmong'; readonly filter: ObjectFilter }
+  /**
    * "Your devotion to black", "your devotion to white and blue" (CR 700.5, D-131): the number of mana symbols that
    * are one of the `colors` (a hybrid symbol counts for each of its colors, once; a symbol that is generic or
    * colorless counts for none) among the mana costs of the permanents the controller of the ability controls. The

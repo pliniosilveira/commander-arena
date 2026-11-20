@@ -86,4 +86,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-card-type',
   // CR 205.2a, 603.2c: the card types among the cards of a batch trigger ("those cards").
   'amount.for-each-card-type-among-those-cards',
+  // Eris, Roar of the Storm (issue 121, CR 202.3): the distinct mana values among the cards of a zone.
+  'amount.for-each-different-mana-value',
 ] as const;

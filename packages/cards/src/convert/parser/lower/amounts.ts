@@ -418,6 +418,21 @@ export function lowerAmount(
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'cardTypesAmong', filter: filter.value }, rule };
     }
+    case 'differentManaValuesAmong': {
+      // "For each different mana value among instant and sorcery cards in your graveyard" (issue 121, CR 202.3): the engine's `differentManaValuesAmong`, of a zone outside the battlefield.
+      const blocked = needs('differentManaValuesAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone === undefined || amount.of.filter.zone === 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return {
+        ok: true,
+        value: { kind: 'differentManaValuesAmong', filter: filter.value },
+        rule,
+      };
+    }
     case 'aggregate': {
       const blocked = needs('aggregate');
       if (blocked !== null) return blocked;
@@ -892,6 +907,7 @@ export const AMOUNT_NEEDS = [
   'amount:colorsAmong',
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
+  'amount:differentManaValuesAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',

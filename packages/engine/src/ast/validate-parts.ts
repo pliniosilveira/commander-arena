@@ -1705,6 +1705,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderManaValue':
     case 'commanderCasts':
     case 'cardTypesAmong':
+    case 'differentManaValuesAmong':
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
@@ -1903,6 +1904,36 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'differentManaValuesAmong':
+      // Issue 121 (CR 202.3): the distinct mana values among the cards a filter matches in a zone outside the battlefield and the stack.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'differentManaValuesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (
+          a.filter.zone === undefined ||
+          filterSome(a.filter, (f) => f.zone === 'battlefield' || f.zone === 'stack')
+        ) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'differentManaValuesAmong counts the mana values of cards in a zone (a graveyard, exile, the hand or the library)',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'differentManaValuesAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }

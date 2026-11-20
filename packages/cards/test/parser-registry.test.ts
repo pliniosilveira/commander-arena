@@ -683,6 +683,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.player-or-planeswalker': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),
   'amount.for-each-card-type': spell((e) => `Target creature gets +1/+1 until end of turn ${e}.`),
+  // Eris (issue 121): the count of distinct mana values among the cards of a zone.
+  'amount.for-each-different-mana-value': spell(
+    (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.for-each-card-type-among-those-cards': permanent(
     (e) =>
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
@@ -1138,6 +1142,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.where-x-exiled-creatures': spell((e) => `Exile all creatures. Incubate X, ${e}.`),
   'effect.incubate': spell((e) => `Exile all creatures. ${cap(e)}.`),
+  // Adapt (issue 121): the keyword action stands as an instruction.
+  'effect.adapt': permanent((e) => `When ~ enters, ${e}.`),
   // Issue 81 (Jace, Multiverse Architect): the payer is the player whose combat it is.
   'effect.pay-or-cant-attack-planeswalkers': permanent(
     (e) => `At the beginning of combat on each opponent's turn, ${e}.`,

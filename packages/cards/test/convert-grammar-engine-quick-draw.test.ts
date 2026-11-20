@@ -1,6 +1,7 @@
 // The Quick Draw deck (issue 121): the REAL Oracle text of its cards (the corpus's golden.jsonl) goes through the grammar as a card with no override, reads as supported, and is played
 // through the engine: what the text says is what happens. One section for each group of the deck.
 import { readFileSync } from 'node:fs';
+import { getLegalActions } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
@@ -91,4 +92,97 @@ test('Pyretic Charge: discard the hand, draw four, and creatures you control get
   expect(g.state.seats[0]?.hand).toHaveLength(4);
   g.expect.pt('Grizzly Bears', 5, 2);
   g.expect.invariants();
+});
+
+// ---- Costs less
+
+const castableFromHand = (
+  g: ReturnType<ReturnType<typeof scenario>['build']>,
+  name: string,
+): boolean => {
+  const card = g.find({ name, zone: 'hand', seat: 0 })[0];
+  return getLegalActions(g.state, 0).some(
+    (a) => a.kind === 'castSpell' && a.object === card?.id && a.alternative === undefined,
+  );
+};
+
+test('Octavia, Living Thesis costs {8} less with eight or more instant and sorcery cards in the graveyard', () => {
+  const octavia = load('Octavia, Living Thesis');
+  const build = (spells: number, pool: string) => {
+    const b = scenario()
+      .define(octavia)
+      .seat(0)
+      .library(...FILLER)
+      .hand(octavia.name)
+      .pool(pool);
+    for (let i = 0; i < spells; i += 1) b.graveyard(i % 2 === 0 ? 'Lightning Bolt' : 'Divination');
+    return b
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+  // {8}{U}{U} less {8}: {U}{U}.
+  expect(castableFromHand(build(8, 'UU'), octavia.name)).toBe(true);
+  expect(castableFromHand(build(7, 'UU'), octavia.name)).toBe(false);
+  expect(castableFromHand(build(7, 'UUUUUUUUUU'), octavia.name)).toBe(true);
+});
+
+test('Eris, Roar of the Storm costs {2} less for each different mana value among the instants and sorceries in the graveyard', () => {
+  const eris = load('Eris, Roar of the Storm');
+  const build = (graveyard: readonly string[], pool: string) => {
+    const b = scenario()
+      .define(eris)
+      .seat(0)
+      .library(...FILLER)
+      .hand(eris.name)
+      .pool(pool);
+    for (const card of graveyard) b.graveyard(card);
+    return b
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+  // Lightning Bolt has mana value 1 and Divination 3: two values, {4}{U}{R} of {8}{U}{R}.
+  expect(castableFromHand(build(['Lightning Bolt', 'Divination'], 'UUUURR'), eris.name)).toBe(true);
+  expect(castableFromHand(build(['Lightning Bolt', 'Divination'], 'UUURR'), eris.name)).toBe(false);
+  // Two cards of one value are one value.
+  expect(castableFromHand(build(['Lightning Bolt', 'Lightning Bolt'], 'UUUURR'), eris.name)).toBe(
+    false,
+  );
+  expect(castableFromHand(build(['Lightning Bolt', 'Lightning Bolt'], 'UUUUUURR'), eris.name)).toBe(
+    true,
+  );
+});
+
+test('Pteramander: Adapt 4 puts four counters on it only once, and the ability costs {1} less for each instant and sorcery in the graveyard', () => {
+  const pteramander = load('Pteramander');
+  const build = (spells: number, pool: string) => {
+    const b = scenario()
+      .define(pteramander)
+      .seat(0)
+      .library(...FILLER)
+      .battlefield(pteramander.name)
+      .pool(pool);
+    for (let i = 0; i < spells; i += 1) b.graveyard(i % 2 === 0 ? 'Lightning Bolt' : 'Divination');
+    return b
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+  const g = build(7, 'UU');
+  g.act(0).activate(pteramander.name, { pay: true });
+  g.passAll();
+  // 1/1 with four +1/+1 counters.
+  g.expect.pt(pteramander.name, 5, 5);
+  // A second activation does nothing: it has counters now.
+  g.act(0).activate(pteramander.name, { pay: true });
+  g.passAll();
+  g.expect.pt(pteramander.name, 5, 5);
+  g.expect.invariants();
+  // With six cards the ability needs {1}{U}.
+  const poor = build(6, 'U');
+  poor.expect.illegal(0, { activate: pteramander.name });
 });
