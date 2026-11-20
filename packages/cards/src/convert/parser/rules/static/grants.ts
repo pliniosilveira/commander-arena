@@ -458,6 +458,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control have vigilance.',
     'Other creatures you control get +1/+1 and have flying.',
     'Other Elves you control get +1/+1.',
+    'Other Wolves and Werewolves you control have trample.',
     'Creatures your opponents control get -1/-1.',
     'Legendary creatures you control get +1/+1.',
     'Elves you control get +1/+1.',
@@ -508,6 +509,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.other-permanents',
       'noun.other-subtype-permanents',
       'noun.subtype-union',
+      // Issue 345 (Hound Tamer // Untamed Pup): "Other Wolves and Werewolves you control have trample."
+      'noun.other-subtype-pair',
       // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control get +1/+1 and have menace."
       'noun.subtype-pair',
       // Issue 104 (Eternal Might deck): "Creatures you control that are Zombies and/or tokens get +1/+1 and have flying."

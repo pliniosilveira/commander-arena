@@ -53,6 +53,7 @@ import { NOUN_LIBRARY_CARD_MANA_VALUE_X } from './library-mv-x';
 import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
+import { NOUN_OTHER_SUBTYPE_PAIR } from './other-subtype-pair';
 import { PAIR_NOUN_RULES } from './pair';
 import {
   graveyardPhrase,
@@ -884,6 +885,8 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
+  NOUN_OTHER_SUBTYPE_PAIR,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.
   ...GISA_G2_NOUN_RULES,
   // Issue 347: "Treefolk and Forests you control".

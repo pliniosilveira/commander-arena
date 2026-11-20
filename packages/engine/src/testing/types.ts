@@ -181,6 +181,8 @@ export interface AtOptions {
   readonly extraLandDrops?: number;
   /** The player who is the monarch at the start (CR 725.1, D-127). Default: nobody. */
   readonly monarch?: SeatId;
+  /** The day or night designation the game has at the start (CR 731.1). Default: neither. */
+  readonly dayNight?: 'day' | 'night';
 }
 
 export interface BuildOptions {
@@ -615,6 +617,8 @@ export interface Expectations {
   hasLost(seat: SeatId, lost?: boolean): void;
   /** `seat` is the monarch (CR 725), or nobody is when `seat` is null (D-127). */
   monarch(seat: SeatId | null): void;
+  /** The game is `'day'`, `'night'`, or neither when `designation` is null (CR 731.1). */
+  dayNight(designation: 'day' | 'night' | null): void;
   /** The Ring has tempted `seat` this many times (CR 701.54c, D-196); 0 means it has not, and the seat has no emblem. */
   ringLevel(seat: SeatId, tempted: number): void;
   /** `seat` has the city's blessing (CR 702.131c, D-264), or does not when `has` is false. */

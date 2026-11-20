@@ -4958,6 +4958,17 @@ export type Keyword =
    */
   | { readonly kind: 'soulbond' }
   /**
+   * CR 702.145b (Daybound): found on the front face of a transforming double-faced card; it stands for three static abilities, run by `rules/day-night.ts` and not expanded by
+   * `derive`: it enters transformed when it is night, it transforms as it becomes night, and it can't transform otherwise. A permanent with it makes it day when the game is
+   * neither (CR 702.145d). Printed only: it cannot be granted, and the layout check refuses it off the front face.
+   */
+  | { readonly kind: 'daybound' }
+  /**
+   * CR 702.145e (Nightbound): found on the back face of a transforming double-faced card; it stands for two static abilities: it transforms as it becomes day, and it can't
+   * transform otherwise. It makes it night when the game is neither and no permanent has daybound (CR 702.145g). Printed only, like Daybound.
+   */
+  | { readonly kind: 'nightbound' }
+  /**
    * CR 702.83a (Exalted): "Whenever a creature you control attacks alone, that creature gets +1/+1 until
    * end of turn." A triggered ability; `derive` expands it (`rules/derive-keywords.ts`), one trigger per
    * instance.

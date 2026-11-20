@@ -2536,6 +2536,13 @@ export interface GameState {
    * "if a player cast two or more spells last turn" (issue 345). Absent before the second turn of the game, when there is no turn before.
    */
   readonly lastTurnSpellsCast?: readonly number[];
+  /** The active player of the turn before the current one (CR 502.2, 731.2): the seat whose count in `lastTurnSpellsCast` the day and night check reads. Written with it. */
+  readonly lastTurnActiveSeat?: SeatId;
+  /**
+   * The day or night designation the game has (CR 731.1): absent while it is neither, as the game starts. Once set it is always one of the two (CR 731.1), changed at each untap
+   * step by the spells the previous turn's active player cast (CR 502.2, 731.2) and by Daybound and Nightbound permanents (CR 702.145d, 702.145g), see `rules/day-night.ts`.
+   */
+  readonly dayNight?: 'day' | 'night';
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
   /**

@@ -53,6 +53,7 @@ import { SYNTHETIC_DANITHA_G5_LIST } from './synthetic-danitha-g5';
 import { SYNTHETIC_DANITHA_G6_LIST } from './synthetic-danitha-g6';
 import { SYNTHETIC_DANITHA_G7_LIST } from './synthetic-danitha-g7';
 import { SYNTHETIC_DAWNBREAK_LIST } from './synthetic-dawnbreak';
+import { SYNTHETIC_DAYNIGHT_LIST } from './synthetic-daynight';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
 import { SYNTHETIC_DESTROY_PER_OPPONENT_LIST } from './synthetic-destroy-per-opponent';
 import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
@@ -578,6 +579,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PRISMARI_G3_LIST,
   ...SYNTHETIC_JUMP_START_LIST,
   ...SYNTHETIC_QUICK_DRAW_LIST,
+  ...SYNTHETIC_DAYNIGHT_LIST,
 ];
 
 export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(

@@ -724,6 +724,12 @@ export type GameEvent =
       readonly from: SeatId | null;
       readonly to: SeatId | null;
     }
+  /** The game became day or night (CR 731.1, 502.2, 702.145d, 702.145g): `from` is what it was (null while it was neither), `to` what it is now. */
+  | {
+      readonly kind: 'dayNightChanged';
+      readonly from: 'day' | 'night' | null;
+      readonly to: 'day' | 'night';
+    }
   /** `seat` got the city's blessing (CR 702.131b, D-264): they controlled ten or more permanents, one of them with Ascend. Once per player. */
   | { readonly kind: 'citysBlessingGained'; readonly seat: SeatId }
   /**

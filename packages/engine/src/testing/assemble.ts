@@ -385,6 +385,7 @@ export function assemble(
     lki: {},
     commanderWatch: [],
     monarch: spec.at.monarch ?? null,
+    ...(spec.at.dayNight === undefined ? {} : { dayNight: spec.at.dayNight }),
     turnLog: EMPTY_TURN_LOG,
     pendingTriggers: [],
     delayedTriggers: [],

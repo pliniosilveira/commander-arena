@@ -605,6 +605,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'ascend',
     // D-286: soulbond (CR 702.95a): two triggered abilities the engine builds for a creature; printed only.
     'soulbond',
+    // CR 702.145: Daybound and Nightbound (day and night, `rules/day-night.ts`).
+    'daybound',
+    'nightbound',
     'exalted',
     'annihilator',
     // D-472: Afflict N (CR 702.130).
@@ -2673,6 +2676,8 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   canBeCommander: true,
   ascend: true,
   soulbond: true,
+  daybound: true,
+  nightbound: true,
   exalted: true,
   annihilator: true,
   afflict: true,
