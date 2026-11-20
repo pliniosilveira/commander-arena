@@ -2002,6 +2002,20 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (!own.ok) return own;
     abilities.push(own.value);
   }
+  // CR 305.6 (Verdant Kraken): a land token that has a basic land type has its intrinsic "{T}: Add [mana symbol]", as a land card that prints the type has it as an ability of its
+  // definition (the engine adds the ability only for a type a land gains, `landTypeAbilities`). Listed after the abilities of the token's own text, in the order of the subtypes.
+  if (types.includes('land')) {
+    for (const subtype of subtypes) {
+      const mana = Object.hasOwn(BASIC_LAND_MANA, subtype) ? BASIC_LAND_MANA[subtype] : undefined;
+      if (mana !== undefined) {
+        abilities.push({
+          kind: 'mana',
+          cost: [{ kind: 'tap' }],
+          production: { kind: 'fixed', mana: [mana] },
+        });
+      }
+    }
+  }
   const defines = abilities.filter(
     (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
   );
@@ -2047,6 +2061,15 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     rule: clause.rule,
   };
 }
+
+/** The mana of the intrinsic ability of each basic land type (CR 305.6). */
+const BASIC_LAND_MANA: Readonly<Record<string, ManaColor | undefined>> = {
+  Plains: 'W',
+  Island: 'U',
+  Swamp: 'B',
+  Mountain: 'R',
+  Forest: 'G',
+};
 
 const PLAYER_LOCK: Lowering<IrClause, Effects> = {
   head: 'playerLock',
