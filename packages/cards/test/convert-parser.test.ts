@@ -571,6 +571,7 @@ describe('unmatched abilities', () => {
       'condition.unless-pays',
       'condition.unless-escaped',
       'condition.if-you-do',
+      'effect.cast-instant-and-sorcery-from-graveyard-x',
       'effect.aura-swaps-enchant',
       'effect.return-enchanted-card-attach',
       'effect.controller-sacrifices-linked',

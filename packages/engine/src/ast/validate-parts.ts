@@ -3332,6 +3332,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'mill' ||
     // Lorehold group 1: the card `exileFromTriggerCards` exiled is "it" ("If you do, you may cast it this turn").
     e?.kind === 'exileFromTriggerCards' ||
+    // Issue 121 (Finale of Promise): the spells a `castCard` with `remember` cast are "those spells" ("If X is 10 or more, copy each of those spells twice").
+    (e?.kind === 'castCard' && e.remember === true) ||
     // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
     (e?.kind === 'draw' && e.reveal === true)
   );
@@ -5256,6 +5258,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
       } else if (kindOf(e.spell) === 'target') {
         checkRef(e.spell, 'object', `${path}.spell`, scope, out);
+      } else if (kindOf(e.spell) === 'moved') {
+        // Issue 121 (Finale of Promise): "copy each of those spells": the spells a `castCard` with `remember` cast.
+        checkRef(e.spell, 'object', `${path}.spell`, scope, out);
       } else if (kindOf(e.spell) === 'thisSpell') {
         // D-230: "you may copy this spell" (Sevinne's Reclamation): the spell that is resolving, so a spell's own text.
         if (scope.owner !== 'spell') {
@@ -6024,6 +6029,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.free`,
           'a spell cast without paying its mana cost has no mana to spend',
         );
+      }
+      if (e.remember !== undefined && e.remember !== true) {
+        issue(out, `${path}.remember`, 'remember must be true when present');
       }
       break;
     case 'fight':

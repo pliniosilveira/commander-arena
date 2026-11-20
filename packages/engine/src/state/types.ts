@@ -1706,6 +1706,8 @@ export type Instruction =
       readonly exileInstead: boolean;
       /** "... without paying its mana cost" (`castCard.free`, CR 118.9): the spell is cast with no mana cost to pay. */
       readonly free?: boolean;
+      /** Issue 121 (`castCard.remember`): the spell cast is what `moved` names afterwards. */
+      readonly remember?: boolean;
     }
   /**
    * "You may [effect]" inside an effect (D-111): the controller of the resolving spell or ability is asked

@@ -70,11 +70,22 @@ export function acceptCastCard(state: GameState): Result {
     source: res.source,
     accepted: true,
   };
+  // Issue 121 (CR 608.2g): "copy each of those spells": the spell cast is what `moved` names, with those cast before it by the same effect.
+  const cast = begun.state.casting?.object;
+  const remembered =
+    a.head.remember === true && cast !== undefined
+      ? { lastMoved: [...(resolving.lastMoved ?? []), cast] }
+      : {};
   // CR 608.2c: a spell was cast, which "if you do" reads (`performed`), as for `castFree`.
   return ok(
     {
       ...begun.state,
-      resolution: { ...resolving, queue: a.rest, performed: (resolving.performed ?? 0) + 1 },
+      resolution: {
+        ...resolving,
+        ...remembered,
+        queue: a.rest,
+        performed: (resolving.performed ?? 0) + 1,
+      },
     },
     [accepted, ...begun.events],
   );

@@ -474,3 +474,36 @@ test('Bloodthirsty Adversary: pay {2}{R} any number of times for counters, and e
   g.expect.zone('Lightning Bolt', 'exile');
   g.expect.invariants();
 });
+
+test('Finale of Promise: cast an instant and a sorcery with mana value X or less from the graveyard for free, and they are exiled afterwards', () => {
+  const finale = load('Finale of Promise');
+  const g = scenario()
+    .define(finale)
+    .seat(0)
+    .library(...FILLER)
+    .hand(finale.name)
+    .graveyard('Lightning Bolt', 'Divination')
+    .pool('RRRRR')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  g.act(0).cast(finale.name, {
+    x: 3,
+    pay: true,
+    targets: [
+      { name: 'Lightning Bolt', zone: 'graveyard' },
+      { name: 'Divination', zone: 'graveyard' },
+    ],
+  });
+  g.passAll();
+  g.act(0).accept();
+  g.act(0).chooseTargets({ player: 1 });
+  g.passAll();
+  g.act(0).accept();
+  g.passAll();
+  g.expect.life(1, 37);
+  g.expect.zone('Lightning Bolt', 'exile');
+  g.expect.zone('Divination', 'exile');
+  g.expect.invariants();
+});

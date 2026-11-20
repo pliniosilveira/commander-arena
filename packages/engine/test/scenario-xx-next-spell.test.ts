@@ -214,3 +214,59 @@ describe('"You may pay {2}{R} any number of times. When you pay this cost one or
     none.expect.pt(ADVERSARY, 2, 2);
   });
 });
+
+describe('"You may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value X or less" (Finale of Promise, CR 608.2g)', () => {
+  const FINALE = 'SYNTHETIC Promise Finale';
+  const build = (pool: string) =>
+    scenario()
+      .seat(0)
+      .library(...FILLER)
+      .hand(FINALE)
+      .graveyard('Lightning Bolt', 'Divination')
+      .pool(pool)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(syntheticCard(FINALE))).toEqual([]);
+  });
+
+  test('X is 1: only the Bolt (mana value 1) can be targeted; it is cast free and exiled afterwards', () => {
+    const g = build('RRR');
+    g.act(0).cast(FINALE, {
+      x: 1,
+      pay: true,
+      targets: [{ name: 'Lightning Bolt', zone: 'graveyard' }],
+    });
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.expect.life(1, 37);
+    g.expect.zone('Lightning Bolt', 'exile');
+    g.expect.zone('Divination', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('X is 10: each spell cast this way is copied twice', () => {
+    const g = build('RRRRRRRRRRRR');
+    g.act(0).cast(FINALE, {
+      x: 10,
+      pay: true,
+      targets: [{ name: 'Lightning Bolt', zone: 'graveyard' }],
+    });
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    for (let i = 0; i < 2 && g.state.pending?.kind === 'targets'; i += 1) {
+      g.act(0).chooseTargets({ player: 1 });
+      g.passAll();
+    }
+    // The Bolt and its two copies: 3 damage each.
+    g.expect.life(1, 31);
+    g.expect.invariants();
+  });
+});

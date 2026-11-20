@@ -213,4 +213,77 @@ export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "You may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value X or less without paying their mana costs. If a spell cast this way
+  // would be put into your graveyard, exile it instead. If X is 10 or more, copy each of those spells twice. You may choose new targets for the copies." ({X}{R}{R} sorcery)
+  singleFace({
+    name: 'SYNTHETIC Promise Finale',
+    manaCost: ['X', 'R', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'You may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value X or less without paying their mana costs. If a spell cast this way would be put into your graveyard, exile it instead. If X is 10 or more, copy each of those spells twice. You may choose new targets for the copies.',
+    spell: {
+      x: true,
+      targets: [
+        {
+          id: 't1',
+          what: {
+            kind: 'object',
+            filter: {
+              zone: 'graveyard',
+              controller: 'you',
+              types: ['instant'],
+              manaValueAtMost: { kind: 'x' },
+            },
+          },
+          min: 0,
+          max: 1,
+        },
+        {
+          id: 't2',
+          what: {
+            kind: 'object',
+            filter: {
+              zone: 'graveyard',
+              controller: 'you',
+              types: ['sorcery'],
+              manaValueAtMost: { kind: 'x' },
+            },
+          },
+          min: 0,
+          max: 1,
+        },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'castCard',
+            object: { kind: 'target', id: 't1' },
+            free: true,
+            exileInstead: true,
+            remember: true,
+          },
+          {
+            kind: 'castCard',
+            object: { kind: 'target', id: 't2' },
+            free: true,
+            exileInstead: true,
+            remember: true,
+          },
+          {
+            kind: 'conditional',
+            condition: { kind: 'xAtLeast', value: 10 },
+            effect: {
+              kind: 'copySpell',
+              spell: { kind: 'moved' },
+              newTargets: 'may',
+              count: 2,
+            },
+          },
+        ],
+      },
+    },
+  }),
 ];

@@ -2732,6 +2732,7 @@ function runEffect(
           anyManaType: effect.anyManaType === true,
           exileInstead: effect.exileInstead === true,
           ...(effect.free === true ? { free: true } : {}),
+          ...(effect.remember === true ? { remember: true } : {}),
         })),
       );
     }

@@ -376,6 +376,17 @@ const COPY_EACH_EXILED_WITH = /^(?:then )?copy each card exiled with ~\.$/i;
  */
 const PAY_REFLEXIVE_AND_COPY_THEM =
   /^when you pay this cost one or more times, [^.]* and copy them\.$/i;
+/**
+ * "You may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value X or less without paying their mana costs. If a spell cast this way would
+ * be put into your graveyard, exile it instead. If X is 10 or more, copy each of those spells twice. You may choose new targets for the copies." (Finale of Promise, issue 121): the four sentences
+ * of one instruction, kept together for `effect.cast-instant-and-sorcery-from-graveyard-x`.
+ */
+const FINALE_CAST =
+  /^you may cast up to one target instant card and\/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs\.$/i;
+const FINALE_EXILE_INSTEAD =
+  /^if a spell cast this way would be put into your graveyard, exile it instead\.$/i;
+const FINALE_COPY_TWICE = /^if x is 10 or more, copy each of those spells twice\.$/i;
+const FINALE_NEW_TARGETS = /^you may choose new targets for the copies\.$/i;
 const MAY_CAST_ANY_COPIES =
   /^you may cast any number of the copies without paying their mana costs\.$/i;
 const EXILE_CARD_SENTENCE = /^exile [^.]* from your graveyard\.$/i;
@@ -732,7 +743,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 1;
       continue;
     }
+    // Finale of Promise (issue 121): the four sentences of one instruction.
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, FINALE_CAST) &&
+      said(b, FINALE_EXILE_INSTEAD) &&
+      said(c, FINALE_COPY_TWICE) &&
+      said(d, FINALE_NEW_TARGETS)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       d !== undefined &&
       said(a, LOOK_AT_TOP) &&
@@ -1255,6 +1277,12 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     const colon = costColon(text);
     if (colon > 0) return activatedSkeleton(text, colon, base);
     // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  // Finale of Promise (issue 121): "If a spell cast this way would be put into your graveyard, exile it instead." belongs to the permission the first sentence gives, not to a replacement
+  // effect of a permanent: the text is a spell of four sentences.
+  if (FINALE_CAST.test(text.split(/(?<=\.) /u)[0] ?? '')) {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 

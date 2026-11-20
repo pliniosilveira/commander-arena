@@ -289,6 +289,56 @@ export const EFFECT_EXILE_UP_TO_THAT_MANY_AND_COPY = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.cast-instant-and-sorcery-from-graveyard-x`: "You may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value X or less without
+ * paying their mana costs. If a spell cast this way would be put into your graveyard, exile it instead. If X is 10 or more, copy each of those spells twice. You may choose new targets for the
+ * copies." (Finale of Promise, CR 115.1, 601.2c, 608.2g, 118.9, 614.1a, 707.10, 707.10c): the four sentences of one instruction (`segment.ts` keeps them together). The engine's two target slots of
+ * cards in the graveyard (the mana value at most the X of the spell), a free `castCard` of each with its spell exiled in place of a graveyard, and, for an X of 10 or more, `copySpell` twice
+ * of each spell cast. Not read: another number of cards, another X, another count of copies, other words between the sentences.
+ */
+export const EFFECT_CAST_INSTANT_AND_SORCERY_FROM_GRAVEYARD_X = defineRule<Clauses>({
+  id: 'effect.cast-instant-and-sorcery-from-graveyard-x',
+  family: 'effect',
+  leading: ['you', 'cast'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 614.1a (Replacement Effects)',
+    'CR 707.10 (Copying Objects)',
+  ],
+  examples: [
+    'you may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs. if a spell cast this way would be put into your graveyard, exile it instead. if x is 10 or more, copy each of those spells twice. you may choose new targets for the copies',
+  ],
+  rejects: [
+    'you may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs',
+    'you may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs. if a spell cast this way would be put into your graveyard, exile it instead',
+    'you may cast up to two target instant cards and/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs. if a spell cast this way would be put into your graveyard, exile it instead. if x is 10 or more, copy each of those spells twice. you may choose new targets for the copies',
+    'you may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs. if a spell cast this way would be put into your graveyard, exile it instead. if x is 9 or more, copy each of those spells twice. you may choose new targets for the copies',
+    'you may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs. if a spell cast this way would be put into your graveyard, exile it instead. if x is 10 or more, copy each of those spells three times. you may choose new targets for the copies',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.cast-instant-and-sorcery-from-graveyard-x';
+    const r = pattern(
+      new RegExp(
+        `(?:you may )?cast up to one target instant card and\\/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs\\. if a spell cast this way would be put into your graveyard, exile it instead\\. if x is 10 or more, copy each of those spells twice\\. you may choose new targets for the copies${BOUNDARY}`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [
+        makeClause(id, 'castInstantAndSorceryFromGraveyardX', {}, { start: pos, end: r.pos }),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/** Tried first: it starts like a plain "you may cast" and the rules for that would read its first words and stop. */
+export const QUICK_DRAW_FIRST_EFFECT_RULES = [EFFECT_CAST_INSTANT_AND_SORCERY_FROM_GRAVEYARD_X];
+
 export const QUICK_DRAW_EFFECT_RULES = [
   EFFECT_PAY_ANY_NUMBER_OF_TIMES,
   EFFECT_EXILE_UP_TO_THAT_MANY_AND_COPY,

@@ -90,7 +90,73 @@ const EXILE_THAT_MANY_AND_COPY: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * Finale of Promise (issue 121): two slots of up to one card each in the graveyard of the controller, an instant and a sorcery, each with a mana value no more than the X of the spell; a free cast
+ * of each (`castCard` with `free`, the spell exiled in place of a graveyard) and, when X is 10 or more, two copies of each spell cast. The spell announces an X (`usesX`).
+ */
+const CAST_INSTANT_AND_SORCERY_FROM_GRAVEYARD_X: Lowering<IrClause, Effects> = {
+  head: 'castInstantAndSorceryFromGraveyardX',
+  id: 'lower.cast-instant-and-sorcery-from-graveyard-x',
+  acceptsOptional: true,
+  needs: [
+    'effect:castCard',
+    'effect:copySpell',
+    'effect:conditional',
+    'condition:xAtLeast',
+    'selector:target',
+    'selector:moved',
+    'amount:x',
+  ],
+  lower(clause, ctx) {
+    if (ctx.owner !== 'spell') return { ok: false, needs: [], at: clause.span, rule: clause.rule };
+    const slot = (type: 'instant' | 'sorcery', n: number) => ({
+      id: `t${ctx.targets.length + n}`,
+      what: {
+        kind: 'object' as const,
+        filter: {
+          zone: 'graveyard' as const,
+          controller: 'you' as const,
+          types: [type],
+          manaValueAtMost: { kind: 'x' as const },
+        },
+      },
+      min: 0,
+      max: 1,
+    });
+    const instant = slot('instant', 1);
+    const sorcery = slot('sorcery', 2);
+    ctx.targets.push(instant, sorcery);
+    ctx.usesX = true;
+    const cast = (id: string) => ({
+      kind: 'castCard' as const,
+      object: { kind: 'target' as const, id },
+      free: true as const,
+      exileInstead: true as const,
+      remember: true as const,
+    });
+    return {
+      ok: true,
+      value: [
+        cast(instant.id),
+        cast(sorcery.id),
+        {
+          kind: 'conditional',
+          condition: { kind: 'xAtLeast', value: 10 },
+          effect: {
+            kind: 'copySpell',
+            spell: { kind: 'moved' },
+            newTargets: 'may',
+            count: 2,
+          },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const QUICK_DRAW_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  CAST_INSTANT_AND_SORCERY_FROM_GRAVEYARD_X,
   EXILE_THAT_MANY_AND_COPY,
   EXILE_AT_RANDOM,
   COPY_LINKED_EXILED_AND_CAST,
