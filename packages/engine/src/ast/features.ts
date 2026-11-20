@@ -148,6 +148,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseMinCardTypes',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
+    // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
+    'chooseFromDefendersHand',
     // Yedora, Grave Gardener (CR 708.2, 708.3): "return it to the battlefield face down ... It's a Forest land" (`moveToZone.faceDownAs`).
     'moveFaceDownLand',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
@@ -162,6 +164,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeAll',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
     'delayedReturnToCommandZone',
+    // Ahoy Mateys deck, group 3 (Zara): "Return that creature to its owner's hand at the beginning of the next end step" (a delayed `moveToZone` to the hand of the `moved` objects).
+    'delayedReturnToHand',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
     // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
@@ -1688,6 +1692,8 @@ export const ABILITY_FEATURES = [
   'chooseMinCardTypes',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
+  /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
+  'chooseFromDefendersHand',
   /** "Return it to the battlefield face down ... It's a Forest land" (Yedora, CR 708.2, 708.3, 613.2b): the engine's `moveToZone.faceDownAs`, a face-down land with the Forest subtype. */
   'moveFaceDownLand',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
@@ -1702,6 +1708,8 @@ export const ABILITY_FEATURES = [
   'lookTakeAll',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
   'delayedReturnToCommandZone',
+  /** "Return that creature to its owner's hand at the beginning of the next end step" (Zara, CR 603.7c, 108.3): a `delayedTrigger` of a `moveToZone` to the hand of the `moved` objects. */
+  'delayedReturnToHand',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
   /** "At the beginning of combat on your turn, you may choose two." (CR 700.2, 700.2b): a triggered ability's `ModeChoice.allOrNone`, no mode or exactly `max` of them. */
@@ -2581,6 +2589,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAlsoGraveyard: true,
   chooseMinCardTypes: true,
   chooseFromCommandZone: true,
+  chooseFromDefendersHand: true,
   moveFaceDownLand: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
@@ -2588,6 +2597,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   copyEntersWithX: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,
+  delayedReturnToHand: true,
   modeCost: true,
   modeAllOrNone: true,
   modeDifferentTargets: true,

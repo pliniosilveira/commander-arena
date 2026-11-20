@@ -1114,6 +1114,18 @@ function runEffect(
                 position: effect.position ?? 'top',
                 ...(effect.objects.optional === true ? { optional: true as const } : {}),
                 ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
+                // "Put a creature card from defending player's hand": the hand of the one player the selector names (nothing to choose when it names none).
+                ...(effect.objects.fromHandOf === undefined
+                  ? {}
+                  : (() => {
+                      const [owner] = resolvePlayers(
+                        state,
+                        effect.objects.fromHandOf,
+                        ctx,
+                        targets,
+                      );
+                      return owner === undefined ? { among: [] } : { handOf: owner };
+                    })()),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
@@ -1641,7 +1653,9 @@ function runEffect(
         (effect.effect.kind === 'exile' ||
           effect.effect.kind === 'sacrifice' ||
           // Issue 103 (CR 903.9, 603.7c): "Return it to the command zone at the beginning of the next end step", bound to the permanent as it is now.
-          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command')) &&
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command') ||
+          // CR 603.7c, 400.7j (Zara): "Return that creature to its owner's hand at the beginning of the next end step", bound to the permanent as it is now.
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'hand')) &&
         effect.effect.objects.kind === 'moved'
       ) {
         const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');

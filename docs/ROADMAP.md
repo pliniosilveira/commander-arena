@@ -493,6 +493,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Goad with three or more players is not tested (the test DSL has two seats).
 - Myriad does nothing with two players and is not built for a table.
 - Redoubled Stormsinger, General Kreat, Adeline, Mobilize: the controller does not choose the player or planeswalker the tapped and attacking tokens attack (CR 508.4).
+- Zara, Renegade Recruiter: "look at defending player's hand" shows only the creature cards that can be put onto the battlefield, not the whole hand, and the planeswalker to attack is not chosen.
 - `spellsCastThisTurn` counts the spells of the effect's controller only; "each player", "an opponent" and "other than the first" counts are not built.
 - Strive supports mana costs only, on an instant or sorcery face; the question "may this be cast at all?" assumes no target.
 - A copy "except it has <keyword>" works for keywords the engine implements as abilities; it is not combined with "except it is a <type>" or "except its power is" in one effect.

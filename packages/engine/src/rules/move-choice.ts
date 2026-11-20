@@ -40,6 +40,7 @@ function cardCandidates(
   alsoGraveyard = false,
   triggerDamage?: number,
   among?: readonly ObjectId[],
+  handOf?: SeatId,
 ): ObjectId[] {
   // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
   const ctx = {
@@ -72,7 +73,8 @@ function cardCandidates(
   const zones: readonly ('hand' | 'graveyard' | 'command')[] =
     alsoGraveyard && zone === 'hand' ? ['hand', 'graveyard'] : [zone];
   return zones.flatMap((z) =>
-    zoneList(state, z, seat).filter((id) => {
+    // CR 402.3 (hands): "from defending player's hand" names the zone of another player (`handOf`); the chooser is still `seat`.
+    zoneList(state, z, z === 'hand' && handOf !== undefined ? handOf : seat).filter((id) => {
       const obj = state.objects[id];
       return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
@@ -175,6 +177,7 @@ export function runChooseMove(
             instruction.alsoGraveyard === true,
             res.triggerDamage,
             instruction.among,
+            instruction.handOf,
           ).filter(
             // D-411: only the cards the effect before it moved.
             (id) => instruction.among === undefined || instruction.among.includes(id),
@@ -243,7 +246,9 @@ export function runChooseMove(
                   ? 'from your hand or graveyard'
                   : zone === 'command'
                     ? 'from your command zone'
-                    : `from your ${zone}`
+                    : instruction.handOf !== undefined
+                      ? 'from their hand'
+                      : `from your ${zone}`
         } to put ${WHERE[instruction.to]}`.replace(
           'from among the cards put into your graveyard',
           instruction.anyOwner === true

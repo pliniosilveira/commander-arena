@@ -87,6 +87,9 @@ export function checkDelayedTrigger(
       }
       return;
     }
+    // CR 603.7c, 400.7j (Zara): "Return that creature to its owner's hand at the beginning of the next end step", about the permanents an earlier effect of the same sequence
+    // put onto the battlefield (`moved`), as they are when the ability is created.
+    if (move.to === 'hand' && exiledAvailable && kindOf(move.objects) === 'moved') return;
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
     // D-657 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
     // that has the ability became in the graveyard (`thisCard`).

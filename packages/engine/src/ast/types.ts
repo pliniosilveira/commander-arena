@@ -1907,6 +1907,12 @@ export interface ChooseSelector {
    * happens. Only with `optional` and `anyNumber`, for a `moveToZone` of cards chosen from the graveyard into exile (`anyNumber` is otherwise a sacrifice's).
    */
   readonly minCardTypes?: number;
+  /**
+   * "Look at defending player's hand. You may put a creature card from it onto the battlefield" (CR 608.2d, 400.1, 402.3): the candidates are the matching cards in the hand of the
+   * player this selector names (one player), not in the hand of the chooser; the chooser still makes the choice. Only for `moveToZone` onto the battlefield, with `filter.zone` `hand`,
+   * and no `fromMoved` or `alsoGraveyard`. The chooser sees only the cards they can choose (`docs/ROADMAP.md`).
+   */
+  readonly fromHandOf?: PlayerSelector;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
   /**
