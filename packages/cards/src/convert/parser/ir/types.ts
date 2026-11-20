@@ -851,6 +851,12 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
+    | {
+        readonly kind: 'untapPermanents';
+        readonly what: IrNoun;
+        readonly count: number;
+      }
     | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
     | { readonly kind: 'blight'; readonly count: number }

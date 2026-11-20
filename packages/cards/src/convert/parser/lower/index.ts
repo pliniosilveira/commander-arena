@@ -42,6 +42,7 @@ import { lowerStatic, STATIC_NEEDS } from './statics';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
 import { TROYAN_G4_NEEDS } from './troyan-g4';
 import type { FaceCosts, LowerContext, LowerResult, SpellParts } from './types';
+import { WIN_GAME_NEEDS } from './win-game';
 
 // The clause that creates a token with an ability in quotes lowers that ability with these two (stage P35, D-176; `late.ts`).
 registerLateLowerers({ triggered: lowerTriggered, activated: lowerActivated, static: lowerStatic });
@@ -162,6 +163,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...REVEAL_TOP_DUEL_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,
+    ...WIN_GAME_NEEDS,
     ...MELD_NEEDS,
     ...EXILED_WITH_NEEDS,
     ...ADAMANTOISE_NEEDS,

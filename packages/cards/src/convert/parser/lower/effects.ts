@@ -130,6 +130,7 @@ import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
+import { WIN_GAME_LOWERINGS } from './win-game';
 
 /**
  * "Untap ~", "exile ~", "return ~ to its owner's hand": the effect acts on the permanent the
@@ -2344,6 +2345,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
+  ...WIN_GAME_LOWERINGS,
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   GAIN_CONTROL,

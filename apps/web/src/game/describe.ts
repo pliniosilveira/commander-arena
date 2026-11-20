@@ -875,6 +875,19 @@ export function describeEvent(
           'CR 602.2b',
         );
       }
+      // CR 701.26b, 602.2b: "Untap two tapped creatures you control" as a cost; the untapped lines follow.
+      if (event.purpose === 'untapCost') {
+        const untapped = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          event.automatic
+            ? `${who(event.seat)} must untap ${untapped} to pay for ${label(event.source)}: no other choice.`
+            : `${who(event.seat)} ${verb(event.seat, 'untap', 'untaps')} ${untapped} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 701.26b',
+        );
+      }
       // D-407 (CR 701.68a, 602.2b): "Blight 1" as a cost; the counter's own line follows.
       if (event.purpose === 'blight') {
         const blighted = joinNames(event.objects.map(name));

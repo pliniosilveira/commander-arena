@@ -16,6 +16,7 @@ import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
+import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
 export const COST_TAP = defineRule<IrCost>({
@@ -918,4 +919,6 @@ export const COST_RULES = [
   COST_PUT_COUNTERS,
   COST_RETURN_TO_HAND,
   COST_LOYALTY,
+  // Hatsune Miku deck (issue 145): "Untap two tapped creatures you control".
+  ...UNTAP_PERMANENTS_COST_RULES,
 ];

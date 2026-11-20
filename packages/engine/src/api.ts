@@ -16,6 +16,7 @@ import {
   answerReturnCost,
   answerSacrificeCost,
   answerTapCost,
+  answerUntapCost,
   beginActivate,
 } from './rules/activate';
 import { activationRefusal } from './rules/activate-legality';
@@ -948,6 +949,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       }
       // D-407 (CR 701.68a): the creature that gets the -1/-1 counters of a blight cost.
       if (d.purpose === 'blight') return answerBlight(state, action.objects);
+      // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
+      if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
       if (d.purpose === 'bounce') return answerReturnCost(state, action.objects);
       if (d.forCost) {

@@ -400,6 +400,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
+  'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
