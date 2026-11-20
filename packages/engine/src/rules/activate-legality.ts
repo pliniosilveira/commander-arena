@@ -106,6 +106,10 @@ export function activationRefusal(
   ) {
     return 'That ability can be activated only once each turn';
   }
+  // CR 702.177a (issue 345): an exhaust ability may be activated only once.
+  if (ability.exhaust === true && obj.exhaustUsed?.includes(abilityIndex) === true) {
+    return 'That exhaust ability was already activated';
+  }
   const ctx = { controller: seat, source: obj.id };
   // CR 602.5b: "Activate only if you control five or more lands" is read as it is activated, for
   // the one who activates it, with the permanent as the source.

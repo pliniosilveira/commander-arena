@@ -166,6 +166,8 @@ export interface GameObject {
    * `rules/rooms.ts`. Absent for every other object and for a Room with both halves locked.
    */
   readonly unlockedDoors?: readonly number[];
+  /** The indices of this object's exhaust abilities that have been activated (issue 345, CR 702.177a: "Activate only once"); a new object after a zone change starts with none. */
+  readonly exhaustUsed?: readonly number[];
   /**
    * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
    * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.

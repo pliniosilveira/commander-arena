@@ -106,6 +106,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'costReducedBy',
     // D-139: "Activate only once each turn."
     'oncePerTurn',
+    // Issue 345 (CR 702.177a): "Exhaust — {cost}: ..." (`ActivatedAbility.exhaust`).
+    'exhaust',
     // D-145: "If you control a creature with power 4 or greater, add two mana of any one color instead" (`ManaAbility.instead`).
     'manaInstead',
     // D-149: "Spend this mana only to cast an Angel spell." (`ManaAbility.spendOnly`)
@@ -114,6 +116,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyChosenType',
     // Quandrix Unlimited group E: "Spend this mana only on costs that contain {X}." (`ManaAbility.spendOnly.xCost`) and "Add {C} for each charge counter on this artifact." (`times` of a fixed production).
     'manaSpendOnlyXCost',
+    // Issue 345: "Spend this mana only to activate abilities." (`ManaAbility.spendOnly.abilitiesOnly`)
+    'manaSpendOnlyAbilities',
     'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
@@ -1458,12 +1462,16 @@ export const ABILITY_FEATURES = [
   'selfCostReducedIf',
   'costReducedBy',
   'oncePerTurn',
+  /** "Exhaust — {cost}: ..." (CR 702.177a, issue 345): `ActivatedAbility.exhaust`, activated only once. */
+  'exhaust',
   'manaInstead',
   'manaSpendOnly',
   /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
   'manaSpendOnlyChosenType',
   /** "Spend this mana only on costs that contain {X}" (CR 106.6, 107.3): `ManaAbility.spendOnly.xCost`. */
   'manaSpendOnlyXCost',
+  /** "Spend this mana only to activate abilities" (CR 106.6, issue 345): `ManaAbility.spendOnly.abilitiesOnly`. */
+  'manaSpendOnlyAbilities',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
   'manaCountOwnCounters',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
@@ -2248,10 +2256,12 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   selfCostReducedIf: true,
   costReducedBy: true,
   oncePerTurn: true,
+  exhaust: true,
   manaInstead: true,
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
   manaSpendOnlyXCost: true,
+  manaSpendOnlyAbilities: true,
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,

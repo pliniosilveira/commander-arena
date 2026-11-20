@@ -47,8 +47,55 @@ export const EFFECT_SPEND_ONLY_X_COST = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.spend-only-abilities`: "Spend this mana only to activate abilities." (issue 345, Redshift, Rocketeer Chief; CR 106.6, 605.1a: the mana can pay the cost of an activated ability and
+ * nothing else, no spell). It says something about the mana ability before it: the lowering of that ability gives the engine's `spendOnly` with `abilitiesOnly`. Not read: an ability
+ * of a kind of permanent, "or cast", a count, another mana than "this mana".
+ */
+export const EFFECT_SPEND_ONLY_ABILITIES = defineRule<Clauses>({
+  id: 'effect.spend-only-abilities',
+  family: 'effect',
+  leading: ['spend'],
+  cites: ['CR 106.6 (Mana)', 'CR 605.1a (Mana Abilities)'],
+  examples: ['spend this mana only to activate abilities'],
+  rejects: [
+    'spend this mana only to activate an ability',
+    'spend this mana only to activate abilities of creatures',
+    'spend this mana only to activate abilities or cast spells',
+    'spend this mana only to activate',
+    'spend this mana only to activate abilities and draw a card',
+    'spend only this mana to activate abilities',
+    'spend this mana only to cast spells',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(new RegExp(`spend this mana only to activate abilities${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          'effect.spend-only-abilities',
+          'spendOnly',
+          {
+            abilitiesOnly: {
+              kind: 'flag' as const,
+              value: true,
+              span: r.value.span,
+              rule: 'effect.spend-only-abilities',
+            },
+          },
+          r.value.span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 function flag(span: { start: number; end: number }) {
   return { kind: 'flag' as const, value: true, span, rule: 'effect.spend-only-x-cost' };
 }
 
-export const QUANDRIX_E_EFFECT_RULES = [EFFECT_SPEND_ONLY_X_COST];
+export const QUANDRIX_E_EFFECT_RULES = [EFFECT_SPEND_ONLY_X_COST, EFFECT_SPEND_ONLY_ABILITIES];

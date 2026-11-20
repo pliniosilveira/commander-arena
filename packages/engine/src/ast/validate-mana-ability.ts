@@ -157,6 +157,20 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       if (only.xCost !== undefined && only.xCost !== true) {
         issue(out, `${path}.spendOnly.xCost`, 'xCost must be true when present');
       }
+      if (only.abilitiesOnly !== undefined && only.abilitiesOnly !== true) {
+        issue(out, `${path}.spendOnly.abilitiesOnly`, 'abilitiesOnly must be true when present');
+      }
+      if (
+        only.abilitiesOnly === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly abilitiesOnly names nothing else');
+      }
       if (
         only.xCost === true &&
         (only.types !== undefined ||
@@ -201,7 +215,8 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         only.subtypes === undefined &&
         only.chosenType !== true &&
         only.qualities === undefined &&
-        only.xCost !== true
+        only.xCost !== true &&
+        only.abilitiesOnly !== true
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }

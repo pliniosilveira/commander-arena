@@ -1899,6 +1899,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       checkActivationCosts(a, path, out);
       checkLoyaltyAbility(a, path, out);
+      // Issue 345 (CR 702.177a): "Exhaust": activated only once; a loyalty ability has its own limit.
+      if (a.exhaust !== undefined) {
+        if (a.exhaust !== true) issue(out, `${path}.exhaust`, 'exhaust must be true when present');
+        if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
+          issue(out, `${path}.exhaust`, 'a loyalty ability is limited by CR 606.3: no exhaust');
+        }
+      }
       // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
         issue(

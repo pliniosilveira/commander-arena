@@ -6618,6 +6618,12 @@ export type Ability =
        */
       readonly oncePerTurn?: true;
       /**
+       * "Exhaust — {10}{R}{G}: ..." (issue 345, CR 702.177a): "Activate only once", the whole life of the object: once this ability of this object has been activated it cannot be
+       * activated again, in any turn. It is the object's own count (`GameObject.exhaustUsed`): a permanent that left and came back is a new object (CR 400.7). Counted when the
+       * activation is complete. Only an ordinary activated ability, never a mana ability or a loyalty ability.
+       */
+      readonly exhaust?: true;
+      /**
        * "Activate only if you control five or more lands." (CR 602.5b, D-099): a restriction on
        * activating the ability, read for its controller with the permanent as the source, when it is
        * activated. Not a cost: it is ignored when another ability asks what this permanent could
@@ -6688,6 +6694,11 @@ export interface ManaAbility {
      * with an {X} in it or the activation cost of an ability with an {X} in it. Alone: no `types`, `subtypes` or `chosenType`.
      */
     readonly xCost?: true;
+    /**
+     * "Spend this mana only to activate abilities." (issue 345, Redshift, Rocketeer Chief; CR 106.6): the mana can pay the cost of an activated ability and nothing else, never a
+     * spell. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities` or `xCost`.
+     */
+    readonly abilitiesOnly?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

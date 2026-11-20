@@ -59,6 +59,8 @@ export function spendRestrictionOf(
   if (only === undefined) return null;
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
+  // CR 106.6 (issue 345): "Spend this mana only to activate abilities".
+  if (only.abilitiesOnly === true) return { kind: 'abilitiesOnly' };
   // Issue 199 (CR 106.6, 607.2d): "of the chosen type" is the creature type the source chose as it entered; none chosen, an empty list (no spell matches it).
   const chosen = source?.chosen?.creatureType;
   const subtypes =

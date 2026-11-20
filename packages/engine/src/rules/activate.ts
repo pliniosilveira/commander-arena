@@ -725,6 +725,14 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
     },
     turn: { ...state.turn, passedInSuccession: [] },
   };
-  const granted = grantPriority(next, casting.seat, events);
+  // CR 702.177a (issue 345): an exhaust ability that has been activated cannot be again; the source may be gone (sacrificed for the cost), and then there is nothing to mark.
+  const source = next.objects[activation.source];
+  const marked =
+    activation.ability.exhaust === true && source !== undefined
+      ? patchObject(next, source.id, {
+          exhaustUsed: [...(source.exhaustUsed ?? []), activation.abilityIndex],
+        })
+      : next;
+  const granted = grantPriority(marked, casting.seat, events);
   return ok(granted.state, [...events, ...granted.events]);
 }
