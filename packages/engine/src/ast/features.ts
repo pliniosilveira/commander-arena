@@ -106,6 +106,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'costReducedBy',
     // D-139: "Activate only once each turn."
     'oncePerTurn',
+    // Issue 345 (CR 702.177a): "Exhaust — {cost}: ..." (`ActivatedAbility.exhaust`).
+    'exhaust',
     // D-145: "If you control a creature with power 4 or greater, add two mana of any one color instead" (`ManaAbility.instead`).
     'manaInstead',
     // D-149: "Spend this mana only to cast an Angel spell." (`ManaAbility.spendOnly`)
@@ -114,6 +116,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyChosenType',
     // Quandrix Unlimited group E: "Spend this mana only on costs that contain {X}." (`ManaAbility.spendOnly.xCost`) and "Add {C} for each charge counter on this artifact." (`times` of a fixed production).
     'manaSpendOnlyXCost',
+    // Issue 345: "Spend this mana only to activate abilities." (`ManaAbility.spendOnly.abilitiesOnly`)
+    'manaSpendOnlyAbilities',
     // Issue 144 (Throne of Eldraine): "Spend this mana only to cast monocolored spells of that color." (`ManaAbility.spendOnly.monocoloredChosen`) and "Spend only mana of the chosen color to activate this ability." (`Cost` `mana` with `onlyChosenColor`).
     'manaSpendOnlyMonocolored',
     'spendOnlyChosenColor',
@@ -618,6 +622,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'startYourEngines',
     // D-286: soulbond (CR 702.95a): two triggered abilities the engine builds for a creature; printed only.
     'soulbond',
+    // CR 702.145: Daybound and Nightbound (day and night, `rules/day-night.ts`).
+    'daybound',
+    'nightbound',
     'exalted',
     'annihilator',
     // D-472: Afflict N (CR 702.130).
@@ -1144,6 +1151,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromGraveyardThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
+    // Issue 345: "if no spells were cast last turn", "if a player cast two or more spells last turn".
+    'spellsCastLastTurn',
     // Issue 279: "if you attacked with three or more creatures this turn".
     'attackedWithCreaturesThisTurn',
     // CR 702.142a: "Boast" ("Activate only if this creature attacked this turn").
@@ -1275,6 +1284,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playFromGraveyardOnceEachTurn',
     // CR 305.1: "You may play Forests from your graveyard."
     'playLandsFromGraveyard',
+    // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
+    'activateAsThoughHaste',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -1563,12 +1574,16 @@ export const ABILITY_FEATURES = [
   'selfCostReducedIf',
   'costReducedBy',
   'oncePerTurn',
+  /** "Exhaust — {cost}: ..." (CR 702.177a, issue 345): `ActivatedAbility.exhaust`, activated only once. */
+  'exhaust',
   'manaInstead',
   'manaSpendOnly',
   /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
   'manaSpendOnlyChosenType',
   /** "Spend this mana only on costs that contain {X}" (CR 106.6, 107.3): `ManaAbility.spendOnly.xCost`. */
   'manaSpendOnlyXCost',
+  /** "Spend this mana only to activate abilities" (CR 106.6, issue 345): `ManaAbility.spendOnly.abilitiesOnly`. */
+  'manaSpendOnlyAbilities',
   /** "Spend this mana only to cast monocolored spells of that color" (issue 144, CR 106.6, 105.2a): `ManaAbility.spendOnly.monocoloredChosen`. */
   'manaSpendOnlyMonocolored',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
@@ -2013,6 +2028,8 @@ export const CONDITION_KINDS = [
   'castFromGraveyardThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
+  /** "If no spells were cast last turn" (CR 601.2i, issue 345): the engine's `spellsCastLastTurn`. */
+  'spellsCastLastTurn',
   /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
   'attackedWithCreaturesThisTurn',
   /** "Boast —" (CR 702.142a): "Activate only if this creature attacked this turn", the engine's `thisAttackedThisTurn`. */
@@ -2177,6 +2194,8 @@ export const STATIC_KINDS = [
   'playFromGraveyardOnceEachTurn',
   /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
   'playLandsFromGraveyard',
+  /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
+  'activateAsThoughHaste',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
   /** "The \"legend rule\" doesn't apply to Slivers you control" (CR 704.5j): the engine's `legendRuleDoesntApply`. */
@@ -2419,10 +2438,12 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   selfCostReducedIf: true,
   costReducedBy: true,
   oncePerTurn: true,
+  exhaust: true,
   manaInstead: true,
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
   manaSpendOnlyXCost: true,
+  manaSpendOnlyAbilities: true,
   manaSpendOnlyMonocolored: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
@@ -2746,6 +2767,8 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   ascend: true,
   startYourEngines: true,
   soulbond: true,
+  daybound: true,
+  nightbound: true,
   exalted: true,
   annihilator: true,
   afflict: true,

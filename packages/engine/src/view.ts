@@ -511,6 +511,8 @@ export interface GameView {
   readonly seats: readonly SeatView[];
   /** The monarch (CR 725.1, D-127): public. Null while nobody has the designation. */
   readonly monarch: SeatId | null;
+  /** The game's day or night designation (CR 731.1): public. Null while it is neither. */
+  readonly dayNight: 'day' | 'night' | null;
   readonly battlefield: readonly ObjectView[];
   readonly exile: readonly ObjectView[];
   /** The permanents that are phased out (CR 702.26, D-234): treated as though they do not exist, but shown to the players. Absent when there are none. */
@@ -1005,6 +1007,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
     prioritySeat: state.turn.prioritySeat,
     seats,
     monarch: state.monarch,
+    dayNight: state.dayNight ?? null,
     battlefield: state.battlefield.map((id) => objectView(state, id, viewer)),
     exile: state.exile.map((id) => objectView(state, id, viewer)),
     ...((state.phased ?? []).length === 0

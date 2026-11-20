@@ -57,9 +57,9 @@ export function resolutionKey(ability: {
 /** What `readsResolutionCount` found for an ability object: the text of an ability is scanned once (every triggered ability that resolves asks). */
 const READS_COUNT = new WeakMap<object, boolean>();
 
-/** Whether the triggered ability reads how often it has resolved this turn (the condition `abilityResolvedTimes`). */
+/** Whether the triggered or activated ability reads how often it has resolved this turn (the condition `abilityResolvedTimes`; issue 345: an activated ability too). */
 export function readsResolutionCount(ability: StackAbility): boolean {
-  if (ability.kind !== 'triggered') return false;
+  if (ability.kind !== 'triggered' && ability.kind !== 'activated') return false;
   const known = READS_COUNT.get(ability);
   if (known !== undefined) return known;
   const reads = JSON.stringify([ability.effect, ability.modes ?? null]).includes(

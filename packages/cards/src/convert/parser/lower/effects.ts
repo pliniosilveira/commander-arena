@@ -78,7 +78,7 @@ import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
-import { GAIN_STATIC_ABILITY } from './granted-static';
+import { BECOMES_FOR_GOOD, GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
@@ -1068,7 +1068,20 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
   head: 'addMana',
   id: 'lower.add-mana',
   needs: ['effect:addMana'],
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...": the offer is the engine's `may` of the mana.
+  acceptsOptional: true,
   lower(clause, ctx) {
+    if (clause.optional) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const added = ADD_MANA.lower({ ...clause, optional: false }, ctx);
+      if (!added.ok) return added;
+      return {
+        ok: true,
+        value: added.value.map((effect) => ({ kind: 'may' as const, effect })),
+        rule: clause.rule,
+      };
+    }
     const spec = arg(clause, 'mana');
     if (spec?.kind !== 'manaSpec') return failure(clause);
     // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
@@ -2127,7 +2140,16 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       : (token.power === undefined) !== (token.toughness === undefined)
         ? null
         : token.power === undefined;
-  if (!creature || definesPt === null) {
+  // Issue 345 (Svella, Ice Shaper, CR 111.4, 205.4): "a colorless snow artifact token named Icy Manalith with \"{T}: Add one mana of any color.\"": a token that is no creature, has no
+  // power or toughness and no keywords, only the abilities in its quotes.
+  const noncreature =
+    !creature &&
+    token.power === undefined &&
+    token.toughness === undefined &&
+    token.ptAmount !== true &&
+    (token.keywords ?? []).length === 0 &&
+    types.length > 0;
+  if (!noncreature && (!creature || definesPt === null)) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -2178,7 +2200,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   const defines = abilities.filter(
     (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
   );
-  if (definesPt ? defines.length !== 1 : defines.length > 0) return { ok: false, needs: [], ...at };
+  if (noncreature ? defines.length > 0 : definesPt ? defines.length !== 1 : defines.length > 0) {
+    return { ok: false, needs: [], ...at };
+  }
   // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (D-266): the card's own short name, which normalization wrote as the tilde;
   // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
   const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
@@ -2187,12 +2211,15 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     // CR 111.4: the name the effect gives the token, or else its creature types.
     name: named ?? subtypes.join(' '),
     manaCost: null,
-    supertypes: token.legendary === true ? ['legendary'] : [],
+    supertypes: [
+      ...(token.legendary === true ? (['legendary'] as const) : []),
+      ...(token.snow === true ? (['snow'] as const) : []),
+    ],
     types,
     subtypes,
     colors,
-    power: token.power ?? (token.ptAmount === true ? 0 : '*'),
-    toughness: token.toughness ?? (token.ptAmount === true ? 0 : '*'),
+    power: noncreature ? null : (token.power ?? (token.ptAmount === true ? 0 : '*')),
+    toughness: noncreature ? null : (token.toughness ?? (token.ptAmount === true ? 0 : '*')),
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -2465,6 +2492,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...WIN_GAME_LOWERINGS,
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
+  BECOMES_FOR_GOOD,
   GAIN_CONTROL,
 ];
 

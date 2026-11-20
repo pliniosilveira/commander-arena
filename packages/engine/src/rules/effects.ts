@@ -2250,7 +2250,10 @@ function runEffect(
       ).flat();
       if (added.length === 0) return done(state);
       next = setSeat(next, { ...seat, manaPool: [...seat.manaPool, ...added] });
-      return done(next, [{ kind: 'manaAdded', seat: adder, count: added.length }]);
+      return {
+        ...done(next, [{ kind: 'manaAdded', seat: adder, count: added.length }]),
+        performed: 1,
+      };
     }
 
     case 'addCounters': {

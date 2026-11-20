@@ -6,6 +6,7 @@
 import { literal, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, family, quietly } from '../registry';
+import { gainParser } from './gain';
 import { type Clauses, single } from './operands';
 import { PUMP_TAIL, pumpArgs } from './pump';
 
@@ -56,5 +57,40 @@ export const EFFECT_PUMP_OTHERS = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.gain-keyword-others`: "other creatures you control get +1/+1 and gain trample and haste until end of turn" (issue 345, Agatha of the Vile Cauldron; CR 611.2a, 611.2c,
+ * 613.1f, 613.4c): the group of `effect.pump-others` gaining keywords, with or without a pump, as `effect.gain-keyword-all` does for a group that includes the source. Which
+ * permanents it means is fixed as the effect resolves. Not read: the singular, "all other", a duration that is not the end of the turn, a verb that does not agree.
+ */
+export const EFFECT_GAIN_KEYWORD_OTHERS = defineRule<Clauses>({
+  id: 'effect.gain-keyword-others',
+  family: 'effect',
+  leading: ['other'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.4c (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'other creatures you control get +1/+1 and gain trample and haste until end of turn',
+    'other creatures you control gain trample until end of turn',
+    'other creatures you control gain trample and get +1/+0 until end of turn',
+  ],
+  rejects: [
+    'other creatures you control gains trample until end of turn',
+    'other creatures you control gain trample',
+    'other creatures you control gain trample until your next turn',
+    'all other creatures you control gain trample until end of turn',
+    'other creature you control gains trample until end of turn',
+    'other creatures you control get +1/+1 until end of turn',
+    'creatures you control gain trample until end of turn',
+  ],
+  parse: gainParser('effect.gain-keyword-others', ['noun.other-permanents'], true),
+});
+
 /** Quiet: a line this rule does not read ("Other creatures you control have vigilance") stops where it always did. */
-export const DANITHA_G4_EFFECT_RULES = [quietly(EFFECT_PUMP_OTHERS)];
+export const DANITHA_G4_EFFECT_RULES = [
+  quietly(EFFECT_PUMP_OTHERS),
+  quietly(EFFECT_GAIN_KEYWORD_OTHERS),
+];

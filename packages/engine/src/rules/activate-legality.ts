@@ -120,6 +120,10 @@ export function activationRefusal(
   ) {
     return 'That ability can be activated only once each turn';
   }
+  // CR 702.177a (issue 345): an exhaust ability may be activated only once.
+  if (ability.exhaust === true && obj.exhaustUsed?.includes(abilityIndex) === true) {
+    return 'That exhaust ability was already activated';
+  }
   // CR 602.2b: the X of an ability is announced before its targets, so whether an X could give it a target is asked with X open.
   const ctx = { controller: seat, source: obj.id, xUnannounced: true as const };
   // CR 602.5b: "Activate only if you control five or more lands" is read as it is activated, for

@@ -166,6 +166,11 @@ export interface IrNoun extends IrNode {
    */
   readonly otherTarget?: true;
   /**
+   * "attach ~ to it" (CR 701.3, 603.2): the word was "it", which names the token the sentence made and, where it made none, the object the trigger is about (Hero's
+   * Blade: "Whenever a legendary creature you control enters, you may attach ~ to it").
+   */
+  readonly itWord?: true;
+  /**
    * "one or two target creatures", "each of one or two targets" (D-295, CR 115.1, 601.2c): at least this many targets, at most `count`. A target noun
    * without it takes none (`upTo`) or exactly `count`.
    */
@@ -715,6 +720,12 @@ export interface IrCondition extends IrNode {
         readonly atLeast: number;
         readonly ofTypes?: readonly string[];
       }
+    // Issue 345 (CR 601.2i): "no spells were cast last turn" (`none`), "a player cast two or more spells last turn" (`aPlayerAtLeast`)
+    | {
+        readonly kind: 'spellsCastLastTurn';
+        readonly mode: 'none' | 'aPlayerAtLeast';
+        readonly atLeast?: number;
+      }
     // Issue 279 (CR 508.1): "you attacked with three or more creatures this turn"
     | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
@@ -1141,6 +1152,8 @@ export interface IrToken extends IrNode {
   readonly named?: string;
   /** "... token with flying that's attacking that opponent" (D-648, CR 508.4): the token is created attacking the player a trigger about a player attacking one of your opponents attacked. */
   readonly attackingThatOpponent?: true;
+  /** "a colorless snow artifact token named Icy Manalith" (issue 345, CR 205.4, 111.4): the token has the supertype snow. */
+  readonly snow?: true;
   /**
    * "... token that's tapped and attacking" (CR 508.4, 110.5b): the token enters tapped and attacking a player the declaration of an attack batch trigger attacked, never declared as
    * an attacker. Only in the effect of "whenever one or more ... you control attack".
@@ -1575,6 +1588,9 @@ export type IrStaticEffect =
       readonly amount: number;
       readonly types: readonly string[];
     }
+  // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana." (Agatha of the
+  // Vile Cauldron, issue 345, CR 601.2f, 118.7): the power of the permanent itself taken off the generic mana, leaving at least one mana.
+  | { readonly kind: 'creatureAbilityCostReductionByPower' }
   /**
    * "As an additional cost to cast ~, sacrifice a creature." (stage P13, CR 118.8): costs paid with
    * the spell's total cost. The statement's subject is `~`.
@@ -1613,10 +1629,15 @@ export type IrStaticEffect =
   | { readonly kind: 'lookAtTopOfLibrary' }
   /** "Play with the top card of your library revealed." (CR 401.5, Oracle of Mul Daya). The subject is `you`. */
   | { readonly kind: 'revealTopOfLibrary' }
-  /** "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. */
-  | { readonly kind: 'playLandsFromTopOfLibrary' }
+  /**
+   * "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. `alsoLook` is the sentence "You may look at the top card of
+   * your library any time, and you may play lands from the top of your library.", which is both abilities (issue 345).
+   */
+  | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
+  /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
+  | { readonly kind: 'activateAsThoughHaste' }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of
@@ -1917,6 +1938,8 @@ export interface IrKeyword extends IrNode {
   readonly quality?: string;
   /** "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */
   readonly commanderOnly?: true;
+  /** "Equip legendary creature {3}" (issue 345, CR 702.6c, 205.4): the equip ability attaches only to a legendary creature. */
+  readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
 }

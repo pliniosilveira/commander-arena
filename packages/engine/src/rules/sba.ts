@@ -31,6 +31,7 @@ import { gainCitysBlessings } from './city-blessing';
 import { controllerOf } from './control';
 import { endLostControlEffects } from './control-effects';
 import { askingFlow } from './damage-order';
+import { settleDayNight } from './day-night';
 import { derive } from './derive';
 import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
@@ -130,6 +131,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const blessed = gainCitysBlessings(state);
   if (blessed !== null) {
     return { state: blessed.state, events: blessed.events, performed: true, decision: null };
+  }
+
+  // CR 702.145c, 702.145d, 702.145f, 702.145g: day and night follow the permanents with daybound and nightbound; the next pass goes on with the new state.
+  const dayNight = settleDayNight(state);
+  if (dayNight !== null) {
+    return { state: dayNight.state, events: dayNight.events, performed: true, decision: null };
   }
 
   // CR 704.5aa, 702.179a: a player with a permanent with start your engines! and no speed gets speed 1.

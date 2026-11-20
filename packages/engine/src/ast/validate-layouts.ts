@@ -296,12 +296,34 @@ function roomStructureIssues(def: CardDefinition, out: AstIssue[]): void {
 }
 
 /** Structural rules of a layout that depend on what the faces are. */
+/**
+ * CR 702.145a, 702.145b, 702.145e: Daybound is found on the front face and Nightbound on the back face of a double-faced card that transforms. On any other
+ * face the keyword would be accepted and its transformation never happen, so the card is refused.
+ */
+function dayNightStructureIssues(def: CardDefinition, out: AstIssue[]): void {
+  for (const [i, face] of def.faces.entries()) {
+    for (const [index, a] of face.abilities.entries()) {
+      if (a?.kind !== 'keyword') continue;
+      const kind = a.keyword?.kind;
+      if (kind !== 'daybound' && kind !== 'nightbound') continue;
+      const wanted = kind === 'daybound' ? 0 : 1;
+      if (def.layout !== 'transform' || def.faces.length !== 2 || i !== wanted) {
+        out.push({
+          path: `faces[${i}].abilities[${index}]`,
+          message: `${kind === 'daybound' ? 'Daybound' : 'Nightbound'} is found on the ${wanted === 0 ? 'front' : 'back'} face of a transforming double-faced card (CR 702.145a)`,
+        });
+      }
+    }
+  }
+}
+
 export function layoutStructureIssues(def: CardDefinition): AstIssue[] {
   const out: AstIssue[] = [];
   sagaStructureIssues(def, out);
   meldStructureIssues(def, out);
   classStructureIssues(def, out);
   roomStructureIssues(def, out);
+  dayNightStructureIssues(def, out);
   // CR 715.2: the Adventure is an instant or sorcery card face; it resolves to exile, never onto
   // the battlefield (CR 715.3d).
   if (def.layout === 'adventure') {

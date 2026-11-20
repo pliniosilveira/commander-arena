@@ -28,6 +28,8 @@ const PLAIN: readonly Keyword['kind'][] = [
   'ascend',
   'startYourEngines',
   'soulbond',
+  'daybound',
+  'nightbound',
   'exalted',
   'persist',
   'undying',

@@ -49,6 +49,7 @@ export function gameView(
       { id: 1, hand: null, graveyard: [], command: [], mulligans: 0, poison: 0, manaPool: [] },
     ],
     monarch: null,
+    dayNight: null,
     battlefield,
     exile: [],
     stack: [],

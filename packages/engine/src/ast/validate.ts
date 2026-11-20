@@ -2093,6 +2093,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       checkActivationCosts(a, path, out);
       checkLoyaltyAbility(a, path, out);
+      // Issue 345 (CR 702.177a): "Exhaust": activated only once; a loyalty ability has its own limit.
+      if (a.exhaust !== undefined) {
+        if (a.exhaust !== true) issue(out, `${path}.exhaust`, 'exhaust must be true when present');
+        if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
+          issue(out, `${path}.exhaust`, 'a loyalty ability is limited by CR 606.3: no exhaust');
+        }
+      }
       // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
         issue(
@@ -2128,6 +2135,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
       }
       // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
+      // Issue 345 (Magus of the Candelabra, CR 601.2b, 602.2b): "{X}, {T}: Untap X target lands": a slot of as many targets as the X announced, for an ability whose cost has an X.
       const targets = declareTargets(
         a.targets,
         `${path}.targets`,
@@ -2135,14 +2143,21 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         true,
         false,
         false,
-        false,
+        'slot',
         false,
         false,
         Array.isArray(a.cost) && hasXCost(a.cost),
       );
+      if (
+        (a.targets ?? []).some((t) => t.countX === true) &&
+        !(Array.isArray(a.cost) && hasXCost(a.cost))
+      ) {
+        issue(out, `${path}.targets`, 'X targets need an X in the cost of the ability');
+      }
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
+        activatedAbility: true,
         xAllowed: Array.isArray(a.cost) && hasXCost(a.cost),
         ...(a.functionsIn === 'graveyard' ? { fromGraveyard: true } : {}),
         // D-133: "the sacrificed creature" is readable where the cost sacrificed something.

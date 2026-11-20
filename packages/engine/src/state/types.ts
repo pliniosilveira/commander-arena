@@ -166,6 +166,8 @@ export interface GameObject {
    * `rules/rooms.ts`. Absent for every other object and for a Room with both halves locked.
    */
   readonly unlockedDoors?: readonly number[];
+  /** The indices of this object's exhaust abilities that have been activated (issue 345, CR 702.177a: "Activate only once"); a new object after a zone change starts with none. */
+  readonly exhaustUsed?: readonly number[];
   /**
    * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
    * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
@@ -2587,6 +2589,18 @@ export interface GameState {
    * ability triggered. Keyed by the seat; a seat that never became the monarch has no entry. Absent in a game saved before D-231.
    */
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
+  /**
+   * How many spells each player cast in the turn before the current one (CR 601.2i), by seat, written as a turn begins from `SeatState.spellsCastThisTurn`: "if no spells were cast last turn",
+   * "if a player cast two or more spells last turn" (issue 345). Absent before the second turn of the game, when there is no turn before.
+   */
+  readonly lastTurnSpellsCast?: readonly number[];
+  /** The active player of the turn before the current one (CR 502.2, 731.2): the seat whose count in `lastTurnSpellsCast` the day and night check reads. Written with it. */
+  readonly lastTurnActiveSeat?: SeatId;
+  /**
+   * The day or night designation the game has (CR 731.1): absent while it is neither, as the game starts. Once set it is always one of the two (CR 731.1), changed at each untap
+   * step by the spells the previous turn's active player cast (CR 502.2, 731.2) and by Daybound and Nightbound permanents (CR 702.145d, 702.145g), see `rules/day-night.ts`.
+   */
+  readonly dayNight?: 'day' | 'night';
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
   /**

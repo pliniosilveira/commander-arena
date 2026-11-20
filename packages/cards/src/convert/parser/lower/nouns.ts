@@ -670,7 +670,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   }
   if (countX) {
     if (
-      ctx.owner !== 'spell' ||
+      // Issue 345 (Magus of the Candelabra, CR 602.2b): an activated ability announces its X before the targets too; a triggered ability has no X to announce.
+      (ctx.owner !== 'spell' && (ctx.owner !== 'ability' || ctx.triggeredBody)) ||
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
       noun.orCard !== undefined ||
