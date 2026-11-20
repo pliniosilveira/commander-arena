@@ -414,6 +414,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-counter-count': permanent(
     (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
   ),
+  'condition.this-is-token': permanent((e) => `When ~ enters, if ${e}, draw a card.`),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
@@ -483,6 +484,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
   // Prismari deck, group 2 (D-656, D-657): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
   'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
+  // Issue 145 (Gruff Triplets): "each creature you control named ~" is the objects of a counters effect.
+  'noun.each-creature-you-control-named-self': permanent(
+    (e) => `When ~ dies, put a +1/+1 counter on ${e}.`,
+  ),
   'noun.any-number-of-targets': spell((e) => `~ deals 4 damage divided as you choose among ${e}.`),
   // Stage P33 (D-149, D-150): the Angels slice. The statements and the replacement are lines of their own; the triggers follow "Whenever";
   // the conditions follow "if" (an intervening "if", a trailing "if" or the "Activate only if" of an ability); the nouns are operands.
