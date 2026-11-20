@@ -52,7 +52,7 @@ export function assemble(
     ['active', active],
     ['priority', priority],
   ] as const) {
-    if (seat !== 0 && seat !== 1)
+    if (!Number.isInteger(seat) || seat < 0 || seat >= spec.seats.length)
       throw new ScenarioError(`The ${what} seat ${seat} does not exist`);
   }
   if (!PRIORITY_STEPS.includes(spec.step)) {
@@ -108,15 +108,16 @@ export function assemble(
 
   const cards: Record<CardId, CardInstance> = {};
   const objects: Record<ObjectId, GameObject> = {};
+  const perSeat = <T>(): T[][] => spec.seats.map(() => []);
   const zones = {
-    library: [[], []] as ObjectId[][],
-    hand: [[], []] as ObjectId[][],
-    graveyard: [[], []] as ObjectId[][],
-    command: [[], []] as ObjectId[][],
+    library: perSeat<ObjectId>(),
+    hand: perSeat<ObjectId>(),
+    graveyard: perSeat<ObjectId>(),
+    command: perSeat<ObjectId>(),
   };
   const battlefield: ObjectId[] = [];
   const exile: ObjectId[] = [];
-  const commanders: CardId[][] = [[], []];
+  const commanders: CardId[][] = perSeat<CardId>();
   const commanderCasts: Record<CardId, number> = {};
   let faceDownCount = 0;
 
@@ -155,7 +156,7 @@ export function assemble(
       timestamp: stamp.get(e.index) ?? 0,
       token: null,
       attachedTo: null,
-      protector: isBattle ? (o.protector ?? (controller + 1) % 2) : null,
+      protector: isBattle ? (o.protector ?? (controller + 1) % spec.seats.length) : null,
       stack: null,
       ...(o.onAdventure === true ? { onAdventure: true as const } : {}),
       ...(onBattlefield && o.ringBearer === true ? { ringBearer: controller } : {}),
