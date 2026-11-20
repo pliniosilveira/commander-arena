@@ -1063,6 +1063,7 @@ describe('unmatched abilities', () => {
       'amount.life-lost-this-turn',
       'amount.cards-in-hand-of-that-player',
       'amount.for-each-card-drawn',
+      'amount.for-each-spell-cast',
       'amount.experience-counters',
       'amount.number',
       'amount.x',
