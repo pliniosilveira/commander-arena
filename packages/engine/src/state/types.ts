@@ -2446,6 +2446,8 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly controller: SeatId;
     readonly types: readonly CardType[];
+    /** Its subtypes as it entered (a Food token, "if a Food entered the battlefield under your control this turn"). */
+    readonly subtypes: readonly string[];
     readonly token: boolean;
   }[];
   /** The damage each player has been dealt this turn, by seat (D-151, CR 120.3): all damage that was dealt after prevention, combat or not. */

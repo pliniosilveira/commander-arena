@@ -180,7 +180,13 @@ export function makeTokens(
         ...state.turnLog,
         entered: [
           ...state.turnLog.entered,
-          { object: id, controller: seat, types: characteristics.types, token: true },
+          {
+            object: id,
+            controller: seat,
+            types: characteristics.types,
+            subtypes: characteristics.subtypes,
+            token: true,
+          },
         ],
       },
     };

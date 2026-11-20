@@ -3165,6 +3165,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       checkEnumList(out, `${path}.types`, c.types, CARD_TYPES, 'card type');
       checkEnumList(out, `${path}.notTypes`, c.notTypes, CARD_TYPES, 'card type');
+      if (
+        c.subtypes !== undefined &&
+        (!Array.isArray(c.subtypes) ||
+          c.subtypes.length === 0 ||
+          c.subtypes.some((s) => typeof s !== 'string' || s === ''))
+      ) {
+        issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list of names when present');
+      }
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }

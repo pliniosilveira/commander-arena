@@ -711,6 +711,7 @@ export function lowerCondition(
         count: test.count,
         ...(test.types === undefined ? {} : { types: [...test.types] as CardType[] }),
         ...(test.notTypes === undefined ? {} : { notTypes: [...test.notTypes] as CardType[] }),
+        ...(test.subtypes === undefined ? {} : { subtypes: [...test.subtypes] }),
         ...(test.token === undefined ? {} : { token: test.token }),
       });
     }

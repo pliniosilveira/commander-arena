@@ -491,11 +491,11 @@ function checkObjectsAbilityReduction(
     issue(out, `${path}.objects`, 'an ability cost reduction needs a filter of the objects');
   } else {
     checkFilter(s.objects, `${path}.objects`, out);
-    if (s.objects.zone !== 'graveyard') {
+    if (s.objects.zone !== 'graveyard' && s.objects.zone !== 'battlefield') {
       issue(
         out,
         `${path}.objects.zone`,
-        'the abilities of cards in a graveyard are the ones named (zone: "graveyard")',
+        'the abilities of cards in a graveyard or of permanents are the ones named (zone: "graveyard" or "battlefield")',
       );
     }
     if (
@@ -508,7 +508,7 @@ function checkObjectsAbilityReduction(
       issue(
         out,
         `${path}.objects`,
-        'the object with the ability is a card in a graveyard: no stackKind, targetsObject or attachedTo',
+        'the object with the ability is a card in a graveyard or a permanent: no stackKind, targetsObject or attachedTo',
       );
     }
   }

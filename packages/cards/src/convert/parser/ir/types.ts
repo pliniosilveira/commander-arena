@@ -840,6 +840,7 @@ export interface IrCondition extends IrNode {
         readonly count: number;
         readonly types?: readonly string[];
         readonly notTypes?: readonly string[];
+        readonly subtypes?: readonly string[];
         readonly token?: boolean;
       }
     // D-063: "if A and B", "if A or B", "if not A"
@@ -1561,6 +1562,13 @@ export type IrStaticEffect =
       readonly kind: 'graveyardAbilityCostReduction';
       readonly amount: number;
       readonly types: readonly string[];
+    }
+  // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7): the generic mana taken off the
+  // abilities of the permanents `objects` names (a plural noun with no determiner), whoever activates them.
+  | {
+      readonly kind: 'permanentAbilityCostReduction';
+      readonly amount: number;
+      readonly objects: IrNoun;
     }
   /**
    * "As an additional cost to cast ~, sacrifice a creature." (stage P13, CR 118.8): costs paid with

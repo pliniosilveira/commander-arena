@@ -5709,6 +5709,8 @@ export type Condition =
       readonly count: number;
       readonly types?: readonly CardType[];
       readonly notTypes?: readonly CardType[];
+      /** "If a Food entered the battlefield under your control this turn": subtypes (all of them) it had as it entered. */
+      readonly subtypes?: readonly string[];
       readonly token?: boolean;
     }
   /**
