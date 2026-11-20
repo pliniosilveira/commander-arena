@@ -236,6 +236,8 @@ export function staticAmountOf(
   // CR 106.4 (issue 81, Omnath): the mana in the pool of the controller.
   if (amount.kind === 'unspentMana')
     return getSeat(state, controllerOf(state, source)).manaPool.length;
+  // CR 122.1, 613.4c (Call for Unity): the counters of the kind on the permanent that has the ability.
+  if (amount.kind === 'countersOnSource') return source.counters[amount.counter] ?? 0;
   if (amount.kind === 'commanderManaValue')
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')

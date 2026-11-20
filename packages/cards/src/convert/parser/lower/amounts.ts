@@ -331,6 +331,9 @@ export function lowerAmount(
           ...(amount.types === undefined ? {} : { types: amount.types as readonly CardType[] }),
           ...(amount.token === undefined ? {} : { token: amount.token }),
           ...(modified ? { modified: true as const } : {}),
+          ...(amount.kind === 'diedThisTurn' && amount.leftBattlefield === true
+            ? { leftBattlefield: true as const }
+            : {}),
         },
         rule,
       };

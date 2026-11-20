@@ -81,6 +81,7 @@ import {
   devourCandidates,
   devourDecision,
   devourOf,
+  devourQualityOf,
   keywordEntryCounters,
   riotDecision,
   riotGivesHaste,
@@ -660,9 +661,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.82a (D-185): "As this object enters, you may sacrifice any number of creatures": the last question, asked only when there is a creature to
   // sacrifice (the permanent is not on the battlefield, so it is not one).
   if (devourOf(faceAbilities) > 0 && request.entersDevour === undefined) {
-    const legal = devourCandidates(before, enterController);
+    const quality = devourQualityOf(faceAbilities);
+    const legal = devourCandidates(before, enterController, quality);
     if (legal.length > 0) {
-      return { kind: 'needsDecision', decision: devourDecision(enterController, old.id, legal) };
+      return {
+        kind: 'needsDecision',
+        decision: devourDecision(enterController, old.id, legal, quality),
+      };
     }
   }
 
@@ -1057,6 +1062,23 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
             controller,
             types: derive(next, getObject(next, newId)).types,
             token: created.token !== null,
+          },
+        ],
+      },
+    };
+  }
+  // CR 400.7, 207.2c (Revolt): a permanent that left the battlefield this turn for any zone, under the control it had as it left.
+  if (old.zone === 'battlefield') {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        left: [
+          ...(next.turnLog.left ?? []),
+          {
+            controller: sourceInfo(next, old.id)?.controller ?? controllerOf(state, old),
+            types: next.lki[old.id]?.characteristics.types ?? derive(state, old).types,
+            token: old.token !== null,
           },
         ],
       },

@@ -83,6 +83,10 @@ function partOf(amount: PtAmount | StaticPtAmount, ctx: AmountContext = {}): Par
     // D-187 (CR 508.1): "+1/+0 for each time it has attacked this turn".
     return { sign: '+', mag: '1', each: 'for each time it has attacked this turn' };
   }
+  if (amount.kind === 'countersOnSource') {
+    // CR 122.1 (Call for Unity): "+1/+1 for each unity counter on this permanent".
+    return { sign: '+', mag: '1', each: `for each ${amount.counter} counter on this permanent` };
+  }
   if (amount.kind === 'unspentMana') {
     // Issue 81 (Omnath, CR 106.4): "+1/+1 for each unspent mana you have".
     return { sign: '+', mag: '1', each: 'for each unspent mana you have' };

@@ -155,6 +155,8 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Devour 1',
     'Devour 2',
     'Flying, devour 2',
+    // CR 702.82c: "Devour Food 3", the variant with a quality.
+    'Devour Food 3',
     'Trample, riot',
     // D-264 (CR 702.131b): Ascend on a permanent.
     'Ascend',
@@ -289,6 +291,10 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Devour 2.',
     'Devour creature 1',
     'Devour artifact 2',
+    'Devour Food',
+    'Devour Food 0',
+    'Devour Food X',
+    'Devour Food Food 3',
     'Ninjutsu {1}{U}',
     'Overload {2}{R}',
     'Flying, storm',

@@ -471,6 +471,8 @@ export type IrAmount =
       readonly controller: 'you' | 'any';
       /** "A modified creature died under your control this turn" (CR 700.9): only the permanents that were modified as they died. */
       readonly modified?: true;
+      /** "A permanent left the battlefield under your control this turn" (Revolt, CR 207.2c): every permanent that left it, for any zone. */
+      readonly leftBattlefield?: true;
       readonly span: Span;
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
@@ -828,6 +830,9 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
+    // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"
+    | { readonly kind: 'thisIsRingBearer' }
+    | { readonly kind: 'ringTemptedAtLeast'; readonly times: number }
     | {
         readonly kind: 'playerDealtDamage';
         readonly who: 'you' | 'opponent';
@@ -1798,6 +1803,16 @@ export type IrStaticEffect =
    * "~ gets +1/+1 for each unspent mana you have." (issue 81, Omnath, CR 106.4, 613.4c): +1 to each stat whose flag is set, for each mana in the controller's pool (the engine's `unspentMana`).
    */
   | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
+  /**
+   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` on the permanent with
+   * the ability (the engine's `countersOnSource`).
+   */
+  | {
+      readonly kind: 'ptCountersOnSource';
+      readonly power: boolean;
+      readonly toughness: boolean;
+      readonly counter: string;
+    }
   /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`

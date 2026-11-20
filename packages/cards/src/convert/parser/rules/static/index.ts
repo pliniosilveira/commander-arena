@@ -40,6 +40,7 @@ import { OMNATH_STATIC_RULES } from './omnath';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
+import { PT_COUNTERS_ON_SOURCE_STATIC_RULES } from './pt-counters-on-source';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
 import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
@@ -101,6 +102,8 @@ export const STATIC_RULES = [
   ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
+  // Call for Unity: "Creatures you control get +1/+1 for each unity counter on ~."
+  ...PT_COUNTERS_ON_SOURCE_STATIC_RULES,
   // CR 702.103: "~ and enchanted creature each get +1/+1 for each creature you control ..." (a bestow card).
   ...BESTOW_PT_STATIC_RULES,
   ...RESTRICTION_STATIC_RULES,

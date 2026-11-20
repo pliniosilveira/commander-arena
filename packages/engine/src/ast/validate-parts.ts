@@ -2007,8 +2007,25 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.kind === 'diedThisTurn' && a.modified !== undefined && a.modified !== true) {
         issue(out, `${path}.modified`, 'history modified filter must be true when present');
       }
+      if (a.kind === 'diedThisTurn' && a.leftBattlefield !== undefined) {
+        if (a.leftBattlefield !== true) {
+          issue(
+            out,
+            `${path}.leftBattlefield`,
+            'history leftBattlefield filter must be true when present',
+          );
+        } else if (a.modified !== undefined) {
+          issue(
+            out,
+            `${path}.modified`,
+            'a permanent that left the battlefield is not read as modified',
+          );
+        }
+      }
       for (const key of Object.keys(a)) {
-        if (!['kind', 'types', 'controller', 'token', 'modified'].includes(key)) {
+        if (
+          !['kind', 'types', 'controller', 'token', 'modified', 'leftBattlefield'].includes(key)
+        ) {
           issue(out, `${path}.${key}`, 'history does not record this property');
         }
       }
@@ -2454,6 +2471,17 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
   if (amount?.kind === 'unspentMana') {
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not unspent mana');
+    }
+    return;
+  }
+  // CR 122.1 (Call for Unity): "for each unity counter on this enchantment": plain (+N/+N) only, the counters of one kind on the permanent that has the ability.
+  if (amount?.kind === 'countersOnSource') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not counters');
+    }
+    const counter = (a as { counter?: unknown }).counter;
+    if (typeof counter !== 'string' || counter.length === 0) {
+      issue(out, `${path}.counter`, 'countersOnSource names the kind of counter');
     }
     return;
   }
@@ -3125,6 +3153,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
+      break;
+    case 'thisIsRingBearer':
+      // CR 701.54e: the permanent the condition belongs to is its controller's Ring-bearer; no operand.
+      break;
+    case 'ringTemptedAtLeast':
+      // CR 701.54c: the times the Ring has tempted the controller, a whole number of 1 or more.
+      if (!isCount(c.times) || c.times < 1) {
+        issue(out, `${path}.times`, 'ringTemptedAtLeast times is a whole number of 1 or more');
+      }
       break;
     case 'thisEnteredThisTurn':
       // D-423 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
