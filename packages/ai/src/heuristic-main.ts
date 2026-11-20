@@ -82,6 +82,7 @@ const castAction = (p: Play): Action => ({
   object: p.obj.id,
   ...(p.free === true ? { alternative: 'free' as const } : {}),
   ...(p.alt === undefined ? {} : { alternative: p.alt }),
+  ...(p.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
   ...withFace(p.face),
 });
 

@@ -163,6 +163,13 @@ export function lowerAmount(
       };
     }
     case 'manaValueOf': {
+      // Issue 345 (Tavern Brawler, CR 202.3, 608.2h): "exile the top card of your library. ~ gets +X/+0 until end of turn, where X is that card's mana value": the card the instruction
+      // before it exiled (`moved`), whose mana value is read as the effect runs.
+      if (amount.of.det === 'anaphor' && ctx.exiled === 'top') {
+        const blockedMoved = needs('manaValueOf');
+        if (blockedMoved !== null) return blockedMoved;
+        return { ok: true, value: { kind: 'manaValueOf', of: { kind: 'moved' } }, rule };
+      }
       const of = objectRefOf(amount.of, ctx, { triggerSubject: true, sacrificed: true });
       if (!of.ok) return of;
       const blocked = needs('manaValueOf');
@@ -312,6 +319,7 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
     }
+    case 'lifeGainedOrLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -952,6 +960,7 @@ export const AMOUNT_NEEDS = [
   'amount:lifeLostThisWay',
   'amount:lifeLostThisTurn',
   'amount:lifeGainedThisTurn',
+  'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',

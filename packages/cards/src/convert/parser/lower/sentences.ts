@@ -1733,6 +1733,11 @@ function countsWhatHappened(
     case 'destroyedValue':
       // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way": every permanent a `destroy` before it destroyed.
       return earlier.verb === 'destroy';
+    case 'destroyedCreaturesOfAffected':
+      // Deadly Tempest (CR 608.2c): "the number of creatures they controlled that were destroyed this way": a `destroy` of creatures before it.
+      return (
+        earlier.verb === 'destroy' && names(earlier.args.objects).every((n) => n === 'creature')
+      );
     case 'destroyedOwnNontoken':
       // Stage P68 (D-230): "for each nontoken creature you controlled that was destroyed this way": a `destroy` of creatures before it.
       return (
@@ -1756,6 +1761,9 @@ function countsWhatHappened(
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
+    case 'returned':
+      // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return of one card per permanent type before it put onto the battlefield.
+      return earlier.verb === 'returnOnePerPermanentType';
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
       return earlier.verb === 'removeAllCounters';

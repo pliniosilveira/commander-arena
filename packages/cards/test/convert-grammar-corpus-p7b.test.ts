@@ -2,7 +2,7 @@
 // a template written after a real shape of the backlog (reports/backlog.md and the templates behind
 // it; the count is in the note, as the report prints it, parser version 4) or marked SYNTHETIC; none
 // is a real card's text and no real card is marked supported here. "Transform target creature" has
-// no line in the backlog, so no rule reads it (it stops at the target); day and night, the
+// no line in the backlog, so no rule reads it (it stops at the target); the conditions on day and night, the
 // "no spells were cast last turn" conditions and "transformed" in a return stay unread. Each line
 // says whether it must import as supported, or where and why it stops. The kinds of expectation are
 // those of convert-grammar-corpus.test.ts.
@@ -52,21 +52,24 @@ const TRANSFORM: readonly Line[] = [
 const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
-    text: 'At the beginning of each upkeep, if no spells were cast last turn, transform ~.',
-    expect: no('no spells were cast last turn, transform ~.', 'ability.triggered'),
-    note: 'backlog: 32 cards; the werewolf shape, no condition reads it (the upkeep trigger is read)',
+    text: 'At the beginning of each upkeep, if an opponent cast two or more spells last turn, transform ~.',
+    expect: no('an opponent cast two or more spells last turn, transform ~.', 'ability.triggered'),
+    note: 'the werewolf shape is read since issue 345 ("no spells were cast last turn", "a player cast two or more"); another subject of the cast is not',
   },
   {
     kind: 'creature',
-    text: 'At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.',
-    expect: no('a player cast two or more spells last turn, transform ~.', 'ability.triggered'),
-    note: 'backlog: 32 cards; the other half of the werewolf shape',
+    text: 'At the beginning of each upkeep, if an opponent cast three or more spells last turn, transform ~.',
+    expect: no(
+      'an opponent cast three or more spells last turn, transform ~.',
+      'ability.triggered',
+    ),
+    note: 'the other half of the werewolf shape, with another subject of the cast',
   },
   {
     kind: 'creature',
     text: 'At the beginning of your upkeep, if it’s night, transform ~.',
     expect: no('it’s night, transform ~.', 'ability.triggered'),
-    note: 'SYNTHETIC; day and night (CR 731) are not in the engine',
+    note: 'SYNTHETIC; the condition "it’s night" is not read (no condition reads the day or night designation)',
   },
   {
     kind: 'creature',
@@ -82,9 +85,9 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: 'Daybound',
-    expect: no('Daybound', NONE),
-    note: 'SYNTHETIC; the keyword of day and night is not read',
+    text: 'Squad {2}',
+    expect: no('Squad {2}', NONE),
+    note: 'SYNTHETIC; a keyword of a mechanic the engine does not have is not read',
   },
   {
     kind: 'creature',

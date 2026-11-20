@@ -39,6 +39,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   sacrificeFromGraveyard: 'Sacrifice creatures',
   // Issue 81 (CR 702.176a): enters with time counters and is not a creature until the last is removed.
   impending: 'Impending',
+  // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (Marshland Bloodcaster).
+  lifeForMana: 'Pay life',
 };
 
 /** True for the alternatives whose cost the card's view carries: overload, evoke, dash, spectacle, escape. */
@@ -55,6 +57,8 @@ export function alternativeLogWords(kind: NamedAlternative): string {
   if (kind === 'sacrificeFromGraveyard') return 'from the graveyard by sacrificing creatures';
   // CR 702.37c, 708.4: the card is the face-down spell; it pays {3}, not its morph cost (that turns it face up).
   if (kind === 'morph') return 'face down';
+  // CR 118.9: the life is the spell's mana value, which the cast event does not carry: the log says how the cost was paid.
+  if (kind === 'lifeForMana') return 'by paying life rather than mana';
   return `for its ${kind} cost`;
 }
 

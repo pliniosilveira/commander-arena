@@ -158,6 +158,8 @@ export interface Scope {
   readonly triggerAttacked?: boolean;
   /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
   readonly triggeredAbility?: boolean;
+  /** True in the effect of an activated ability too (issue 345, CR 608.2c): `abilityResolvedTimes` counts the resolutions of a triggered or an activated ability. */
+  readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
@@ -427,6 +429,14 @@ export function checkFilter(
         out,
         `${path}.${limitKey}`,
         'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
+      );
+    }
+    // CR 107.3a: "each nonland permanent with mana value X or less" reads the X announced for the spell or ability that has the selector.
+    if (a?.kind === 'x' && ownerScope !== undefined && !ownerScope.xAllowed) {
+      issue(
+        out,
+        `${path}.${limitKey}`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
       );
     }
     if (f.manaValue !== undefined) {
@@ -787,7 +797,8 @@ export function declareTargets(
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
-  countXAllowed = false,
+  /** `'slot'` (issue 345): only a slot of as many targets as the X announced (an activated ability whose cost has an X); `true` is a spell's own text, which also lets a division and a filter read X. */
+  countXAllowed: boolean | 'slot' = false,
   /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
@@ -813,7 +824,7 @@ export function declareTargets(
           out,
           undefined,
           undefined,
-          countXAllowed || xFilterAllowed ? { xTarget: true } : {},
+          countXAllowed === true || xFilterAllowed ? { xTarget: true } : {},
         );
         if (
           what.filter.manaValueAtMost !== undefined &&
@@ -1200,7 +1211,7 @@ export function declareTargets(
       if (kindOf(spec.divide.total) === 'x') {
         // CR 107.3a, 601.2b, 601.2d: "Distribute X +1/+1 counters among ...": the X is announced before the targets are chosen and the division, so the total is read as the X
         // announced for the spell (`validateSpell` checks that the spell announces one). Only a spell's own text announces an X before its targets.
-        if (!countXAllowed) {
+        if (countXAllowed !== true) {
           issue(
             out,
             `${p}.divide.total`,
@@ -1591,6 +1602,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   destroyedOwnNontoken: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
+  returned: 'a moveToZone effect that chooses cards of a graveyard',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
   discarded: 'a discard effect',
@@ -1605,6 +1617,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
+  destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
   discardedTypeCount: 'a discard effect',
 };
@@ -1617,8 +1630,17 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
-  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
+  if (e?.kind === 'destroy')
+    return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
+  if (
+    e?.kind === 'moveToZone' &&
+    e.to === 'battlefield' &&
+    e.objects?.kind === 'choose' &&
+    e.objects.filter?.zone === 'graveyard'
+  ) {
+    return ['returned'];
+  }
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
@@ -1725,6 +1747,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
+    case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
       checkAmount(a, path, NO_SCOPE, out);
@@ -1998,6 +2021,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeGainedThisTurn':
+    case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
       }
@@ -2162,6 +2186,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           `thisWay "${a.what}" needs ${THIS_WAY_SOURCES[a.what]} before it in the same sequence`,
+        );
+      } else if (a.what === 'destroyedCreaturesOfAffected') {
+        // Only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
+        issue(
+          out,
+          path,
+          'destroyedCreaturesOfAffected is the whole amount of a loseLife effect, not part of another amount',
         );
       }
       break;
@@ -3295,6 +3326,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, path, 'the gained-and-lost-life condition has no extra fields');
       }
       break;
+    case 'spellsCastLastTurn':
+      // Issue 345 (CR 601.2i): `none`, or `aPlayerAtLeast` with a positive count.
+      if (c.mode !== 'none' && c.mode !== 'aPlayerAtLeast') {
+        issue(out, `${path}.mode`, 'mode is none or aPlayerAtLeast');
+      } else if (c.mode === 'none' && c.atLeast !== undefined) {
+        issue(out, `${path}.atLeast`, 'none takes no count');
+      } else if (c.mode === 'aPlayerAtLeast' && (!isCount(c.atLeast) || c.atLeast < 1)) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
@@ -4361,6 +4402,8 @@ export const MAY_EFFECT_KINDS = [
   'removeCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
+  'addMana',
 ];
 
 /**
@@ -4477,11 +4520,11 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'abilityResolvedTimes':
       // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
-      if (scope.triggeredAbility !== true) {
+      if (scope.triggeredAbility !== true && scope.activatedAbility !== true) {
         issue(
           out,
           path,
-          'abilityResolvedTimes counts the resolutions of a triggered ability: it is only valid in the effect of one',
+          'abilityResolvedTimes counts the resolutions of a triggered or an activated ability: it is only valid in the effect of one',
         );
       }
       if (!isCount(c.times) || c.times < 1) {
@@ -5895,6 +5938,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
         }
       }
+      // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
+      if (e.faceDownAs !== undefined) {
+        if (e.faceDownAs !== 'forestLand') {
+          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' when present");
+        }
+        if (e.to !== 'battlefield') {
+          issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
+        }
+        if (kindOf(e.objects) === 'choose') {
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            'a card chosen as the effect runs does not enter face down',
+          );
+        }
+      }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
       if (e.attachTo !== undefined) {
         if (e.to !== 'battlefield') {
@@ -6217,8 +6276,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     }
     case 'castCard':
       // CR 608.2g (D-350): "you may cast target [card] from a graveyard": the card is a target of the ability (a card in a graveyard when the ability resolves).
-      if (kindOf(e.object) !== 'target') {
-        issue(out, `${path}.object`, 'the card to cast is a target');
+      if (kindOf(e.object) === 'this') {
+        // CR 113.6b (Sproutback Trudge): the card itself, which only an ability that works from its graveyard can name there (`validateCard` checks `functionsIn`).
+        if (scope.owner !== 'ability') {
+          issue(out, `${path}.object`, 'casting this card is the effect of an ability');
+        }
+      } else if (kindOf(e.object) !== 'target') {
+        issue(out, `${path}.object`, 'the card to cast is a target or this card');
       } else {
         checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       }
@@ -6567,6 +6631,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (kindOf(e.amount) === 'lifeLostThisTurn') {
         if (e.kind !== 'loseLife') {
           issue(out, `${path}.amount`, 'lifeLostThisTurn is the amount of a loseLife effect');
+        }
+      } else if (
+        kindOf(e.amount) === 'thisWay' &&
+        (e.amount as { what?: unknown }).what === 'destroyedCreaturesOfAffected'
+      ) {
+        // CR 608.2c: "each player loses life equal to the number of creatures they controlled that were destroyed this way": each player's own number.
+        if (e.kind !== 'loseLife') {
+          issue(
+            out,
+            `${path}.amount`,
+            'destroyedCreaturesOfAffected is the amount of a loseLife effect',
+          );
+        } else if (!(scope.thisWay ?? []).includes('destroyedCreaturesOfAffected')) {
+          issue(
+            out,
+            `${path}.amount`,
+            'destroyedCreaturesOfAffected needs a destroy effect before it',
+          );
         }
       } else {
         checkAmount(e.amount, `${path}.amount`, scope, out);

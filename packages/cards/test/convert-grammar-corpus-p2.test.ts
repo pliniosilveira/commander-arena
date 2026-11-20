@@ -453,7 +453,7 @@ const CHOICES: readonly Line[] = [
       'Other creatures you control get +1/+1 and gain trample until your next turn.',
       NONE,
     ),
-    note: '"other" with a second change and a duration other than end of turn is not read',
+    note: '"other" with a second change and a duration of the end of the turn is read since issue 345 (`effect.gain-keyword-others`); another duration is not',
   },
   {
     kind: 'instant',

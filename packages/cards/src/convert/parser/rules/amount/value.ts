@@ -800,8 +800,12 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
     'for each creature card put into a graveyard this way',
+    'for each card returned this way',
   ],
   rejects: [
+    'for each card returned',
+    'for each creature returned this way',
+    'for each cards returned this way',
     'for each card put into a graveyard this way',
     'for each land card put into a graveyard this way',
     'for each creature put into a graveyard this way',
@@ -855,6 +859,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: removed.pos },
         },
         pos: removed.pos,
+      };
+    }
+    // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return before it put onto the battlefield.
+    const returned = pattern(/for each card returned this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (returned.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'returned',
+          words: ['card'],
+          span: { start: pos, end: returned.pos },
+        },
+        pos: returned.pos,
       };
     }
     // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards the mill before it put there.

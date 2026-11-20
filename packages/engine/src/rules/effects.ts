@@ -119,6 +119,7 @@ import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
 import { runNextSpellModifier } from './next-spell';
+import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
@@ -141,6 +142,7 @@ import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
+import { runRevealTopBranches } from './reveal-top-branches';
 import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
@@ -443,6 +445,10 @@ export function runInstruction(
       tapped: instruction.tapped,
       commanderChoice: instruction.commanderChoice,
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
+      // CR 708.3: "return it to the battlefield face down": it is turned face down before it enters.
+      ...(instruction.entersFaceDown === undefined
+        ? {}
+        : { entersFaceDown: instruction.entersFaceDown }),
       // CR 712.21b (D-279): the controller of the effect is the player who exiles a melded permanent.
       by: res.controller,
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
@@ -581,6 +587,11 @@ export function runInstruction(
       result.newObject !== null &&
       hidden.objects[result.newObject]?.zone === 'exile' &&
       !derive(state, subject).types.includes('land');
+    // CR 608.2c: a card that really went from a graveyard onto the battlefield is counted, for "for each card returned this way".
+    const countedReturned =
+      instruction.countsReturned === true &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'battlefield';
     // Oversimplify (CR 608.2h): a creature that really went to exile adds its power, as it was before any of them left, to what its controller lost "this way".
     const exiledPower =
       instruction.exiledPower !== undefined &&
@@ -599,10 +610,11 @@ export function runInstruction(
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland || exiledPower !== undefined || exiledCreature
+      ...(countedNonland || countedReturned || exiledPower !== undefined || exiledCreature
         ? {
             thisWay: {
               ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(countedReturned ? { returned: 1 } : {}),
               ...(exiledCreature ? { exiledCreatures: 1 } : {}),
               ...(exiledPower === undefined
                 ? {}
@@ -681,6 +693,21 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
 }
 
 /** The X a resolving spell or ability reads: its own, or, for a triggered ability with none, the X of the spell that is its source (`validateCard` allows that only for "When you cast this spell"). */
+/** CR 608.2h: the creatures each player controlled among `ids`, read before they moved: `{ destroyedCreaturesBy: { seat: count } }`, or nothing when there were none. */
+function destroyedCreaturesByPlayer(
+  state: GameState,
+  ids: readonly ObjectId[],
+): { readonly destroyedCreaturesBy?: Readonly<Record<number, number>> } {
+  const by: Record<number, number> = {};
+  for (const id of ids) {
+    const obj = state.objects[id];
+    if (obj === undefined || !derive(state, obj).types.includes('creature')) continue;
+    const seat = controllerOf(state, obj);
+    by[seat] = (by[seat] ?? 0) + 1;
+  }
+  return Object.keys(by).length === 0 ? {} : { destroyedCreaturesBy: by };
+}
+
 function abilityXOf(state: GameState, res: ResolutionContext): number {
   const own = state.objects[res.object]?.stack;
   if (own?.x !== undefined && own.x !== null) return own.x;
@@ -830,6 +857,8 @@ function runEffect(
               ? total
               : total + manaValueOfCost(derive(state, obj).manaCost, obj);
           }, 0),
+          // CR 701.8, 608.2h: the creatures each player controlled that were destroyed, by player, as they were just before they died.
+          ...destroyedCreaturesByPlayer(state, [...destroyed]),
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
           destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
@@ -1084,12 +1113,20 @@ function runEffect(
         effect.withCounters,
       );
       // CR 400.7, 303.4 (Animate Dead): "Return enchanted creature card to the battlefield ... attach this Aura to it": the permanent remembers it was put there with this Aura.
-      const moves =
+      const placed =
         effect.putWithSource === true && effect.to === 'battlefield'
           ? plainMoves.map(
               (m): Instruction => (m.kind === 'move' ? { ...m, putWith: res.source } : m),
             )
           : plainMoves;
+      // CR 708.3: "return it to the battlefield face down. It's a Forest land": each card is put onto the battlefield face down, with that status.
+      const moves =
+        effect.faceDownAs !== undefined && effect.to === 'battlefield'
+          ? placed.map(
+              (m): Instruction =>
+                m.kind === 'move' ? { ...m, entersFaceDown: effect.faceDownAs ?? 'forestLand' } : m,
+            )
+          : placed;
       // CR 303.4f (D-149): an Aura card put onto the battlefield chooses what it enchants as it enters.
       // CR 303.4g, 303.4i (D-207): "attached to target creature ...": the effect names the object, so the Aura does not choose; it enters attached to the target
       // when that is still a legal object to enchant, and stays where it is when the target is gone.
@@ -1884,6 +1921,9 @@ function runEffect(
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);
+    case 'nextSpellPayLife':
+      // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
+      return runNextSpellPayLife(state, res);
     case 'mayCastEachType':
       // CR 601.2, 118.9, 611.2a: "for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (rules/free-cast.ts).
       return runMayCastEachType(state, res, effect);
@@ -2013,7 +2053,7 @@ function runEffect(
       let lost = 0;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
-        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone);
+        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone, ctx.thisWay);
         const r =
           effect.kind === 'gainLife'
             ? gainLifeOf(next, seat, amount, flow, res.source)
@@ -2193,7 +2233,10 @@ function runEffect(
       ).flat();
       if (added.length === 0) return done(state);
       next = setSeat(next, { ...seat, manaPool: [...seat.manaPool, ...added] });
-      return done(next, [{ kind: 'manaAdded', seat: adder, count: added.length }]);
+      return {
+        ...done(next, [{ kind: 'manaAdded', seat: adder, count: added.length }]),
+        performed: 1,
+      };
     }
 
     case 'addCounters': {
@@ -3135,6 +3178,10 @@ function runEffect(
     case 'replaceEnchant':
       // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
       return runReplaceEnchant(state, effect, ctx, targets);
+
+    case 'revealTopBranches':
+      // CR 701.20a, 608.2c: reveal the top card once and do each branch it matches (rules/reveal-top-branches.ts).
+      return runRevealTopBranches(state, res, effect, ctx, targets);
 
     case 'revealTopDuel':
       // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).

@@ -77,10 +77,10 @@ describe('"Enchant modified creature" (CR 700.9, 303.4a): the modified filter of
     });
   });
 
-  test('a static ability cannot name modified creatures in its subject: derive matches it without the attachments (never half read)', () => {
+  test('a static ability may name modified creatures in its subject: the engine reads counters and attachments for it (issue 345)', () => {
     const parsed = read('Modified creatures you control get +1/+1.', 'enchantment');
-    expect(parsed.abilities).toEqual([]);
-    expect(parsed.unparsed).toHaveLength(1);
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toHaveLength(1);
   });
 
   test('"modified" is not a choice member, not a permanent card word and not a spell word', () => {
@@ -189,6 +189,7 @@ describe('Golden-Tail Trainer: "other modified creatures you control get +X/+X u
     "Whenever ~ attacks, another modified creature you control gets +X/+X until end of turn, where X is ~'s power.",
     "Whenever ~ attacks, other modified creatures you control get +X/+X until your next turn, where X is ~'s power.",
     'Whenever ~ attacks, other modified creatures you control get +X/+X until end of turn.',
+    "Whenever ~ attacks, other modified creatures you control get +X/+X and gain trample until your next turn, where X is ~'s power.",
   ])('near misses are not read (never half read): %s', (text) => {
     const parsed = read(text, 'creature');
     expect(parsed.abilities).toEqual([]);

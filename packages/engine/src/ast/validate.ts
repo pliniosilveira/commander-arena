@@ -1228,6 +1228,11 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'dealtDamageToPlayer':
+      if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'noncombatDamageDealt':
       // D-333: whose source it is and which player it damaged; any object can be the source, so there is no subject to check.
       if (!isOneOf(t.by, ['you', 'any'])) {
@@ -1298,6 +1303,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
+    t?.kind === 'dealtDamageToPlayer' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
@@ -1663,6 +1669,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
+      // CR 113.6b (Sproutback Trudge): "cast this card from your graveyard" names the card in the graveyard its ability works from.
+      if (
+        a.functionsIn !== 'graveyard' &&
+        JSON.stringify(a.effect ?? null).includes('"kind":"castCard","object":{"kind":"this"}')
+      ) {
+        issue(
+          out,
+          `${path}.functionsIn`,
+          "casting this card needs a triggered ability with functionsIn: 'graveyard'",
+        );
+      }
       const targets = declareTargets(
         a.targets,
         `${path}.targets`,
@@ -1989,6 +2006,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       checkActivationCosts(a, path, out);
       checkLoyaltyAbility(a, path, out);
+      // Issue 345 (CR 702.177a): "Exhaust": activated only once; a loyalty ability has its own limit.
+      if (a.exhaust !== undefined) {
+        if (a.exhaust !== true) issue(out, `${path}.exhaust`, 'exhaust must be true when present');
+        if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
+          issue(out, `${path}.exhaust`, 'a loyalty ability is limited by CR 606.3: no exhaust');
+        }
+      }
       // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
         issue(
@@ -2024,6 +2048,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
       }
       // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
+      // Issue 345 (Magus of the Candelabra, CR 601.2b, 602.2b): "{X}, {T}: Untap X target lands": a slot of as many targets as the X announced, for an ability whose cost has an X.
       const targets = declareTargets(
         a.targets,
         `${path}.targets`,
@@ -2031,14 +2056,21 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         true,
         false,
         false,
-        false,
+        'slot',
         false,
         false,
         Array.isArray(a.cost) && hasXCost(a.cost),
       );
+      if (
+        (a.targets ?? []).some((t) => t.countX === true) &&
+        !(Array.isArray(a.cost) && hasXCost(a.cost))
+      ) {
+        issue(out, `${path}.targets`, 'X targets need an X in the cost of the ability');
+      }
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
+        activatedAbility: true,
         xAllowed: Array.isArray(a.cost) && hasXCost(a.cost),
         ...(a.functionsIn === 'graveyard' ? { fromGraveyard: true } : {}),
         // D-133: "the sacrificed creature" is readable where the cost sacrificed something.

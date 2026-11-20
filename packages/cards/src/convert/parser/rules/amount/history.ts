@@ -4,6 +4,33 @@ import { defineRule } from '../registry';
 
 /** Counts use event-time characteristics, not objects currently on the battlefield or in a graveyard. */
 export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
+  // CR 119.3 (Willowdusk, Essence Seer): the larger of the two, tried before the plain gain it starts with.
+  const larger = pattern(
+    /the amount of life you gained this turn or the amount of life you lost this turn, whichever is greater(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (larger.ok) {
+    return {
+      ok: true,
+      value: { kind: 'lifeGainedOrLostThisTurn', span: { start: pos, end: larger.pos } },
+      pos: larger.pos,
+    };
+  }
+  // CR 608.2c, 701.8 (Deadly Tempest): "each player loses life equal to the number of creatures they controlled that were destroyed this way": each player's own count.
+  const destroyedOwn = pattern(
+    /the number of creatures they controlled that were destroyed this way(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (destroyedOwn.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'thisWay',
+        what: 'destroyedCreaturesOfAffected',
+        words: ['creature'],
+        span: { start: pos, end: destroyedOwn.pos },
+      },
+      pos: destroyedOwn.pos,
+    };
+  }
   const gain = pattern(/the amount of life you gained this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
   if (gain.ok) {
     return {

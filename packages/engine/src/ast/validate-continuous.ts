@@ -49,7 +49,8 @@ function isOneOf(value: unknown, allowed: readonly string[]): boolean {
 }
 
 /** The static abilities an effect may give for good (D-275): the ones read from the abilities an object has after the layers. */
-const GRANTABLE_STATICS = ['cantLoseGame', 'opponentsCantWin'];
+// Issue 345 (Beorn's Hospitality): and a characteristic-defining ability of power and toughness, which layer 7a reads from the abilities the effect gave.
+const GRANTABLE_STATICS = ['cantLoseGame', 'opponentsCantWin', 'characteristicPt'];
 
 /**
  * CR 613.1f: a resolving effect can grant activated, triggered, or mana abilities until end of turn (Backup is one source). D-275
@@ -104,6 +105,7 @@ function checkGrantAbility(
       );
       return;
     }
+    if (a.static.kind === 'characteristicPt') scope.checkAbility(a, `${path}.abilities[${i}]`, out);
     // The engine reads the given static with no condition (`hasStaticOf`, `derive`): a condition would be dropped, so it is refused.
     if (a.condition !== undefined) {
       issue(

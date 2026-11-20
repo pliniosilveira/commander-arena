@@ -4,11 +4,11 @@
  * layer 6 grant (CR 613.1f). The text in the quotes is read as an ability of its own (`rules/static/quoted.ts`); only a static one is read here, and
  * the lowering gives only the two the engine reads from the abilities an object has after the layers (`cantLoseGame`, `opponentsCantWin`).
  */
-import { literal, type Parser, satisfy, sequence } from '../../combinators';
-import type { IrNoun, IrQuotedAbility } from '../../ir/types';
+import { literal, type Parser, pattern, satisfy, sequence } from '../../combinators';
+import type { IrNoun, IrQuotedAbility, IrTypeList } from '../../ir/types';
 import { defineRule, family, quietly } from '../registry';
 import { readQuotedAbility } from '../static/quoted';
-import { type Clauses, single } from './operands';
+import { type Clauses, makeClause, single } from './operands';
 
 /** What a single object is named by in "gains": a target, or "it" or "that creature" for the one an earlier sentence named. */
 const SUBJECTS: readonly string[] = ['noun.target-permanent', 'noun.it', 'noun.that-object'];
@@ -65,4 +65,70 @@ export const EFFECT_GAIN_STATIC_ABILITY = defineRule<Clauses>({
   ),
 });
 
-export const GRANTED_STATIC_EFFECT_RULES = [EFFECT_GAIN_STATIC_ABILITY].map(quietly);
+/**
+ * `effect.becomes-creature-gains-static`: "~ becomes a Bear creature in addition to its other types and gains \"~'s power and toughness are each equal to the number of lands you control.\"" (issue
+ * 345, Beorn's Hospitality; CR 205.1b, 613.1d, 613.1f, 613.4a, 611.2a: the permanent itself is a creature of the type besides its types and has a characteristic-defining ability, both for
+ * good, since the words say no duration; the reminder "(This effect doesn't end.)" says so). The engine's additive `setTypes` and `grantAbility`, both `permanent`. Not read: a duration, another
+ * subject than `~`, a creature type that is not one word, no "creature", a quoted ability that is not static, a second ability.
+ */
+export const EFFECT_BECOMES_CREATURE_GAINS_STATIC = defineRule<Clauses>({
+  id: 'effect.becomes-creature-gains-static',
+  family: 'effect',
+  leading: ['~'],
+  cites: [
+    'CR 205.1b (Type Line)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.4a (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    '~ becomes a Bear creature in addition to its other types and gains "~\'s power and toughness are each equal to the number of lands you control."',
+  ],
+  rejects: [
+    '~ becomes a Bear creature in addition to its other types and gains "~\'s power and toughness are each equal to the number of lands you control." until end of turn',
+    '~ becomes a Bear creature and gains "~\'s power and toughness are each equal to the number of lands you control."',
+    'target creature becomes a Bear creature in addition to its other types and gains "~\'s power and toughness are each equal to the number of lands you control."',
+    '~ becomes a Bear in addition to its other types and gains "~\'s power and toughness are each equal to the number of lands you control."',
+    '~ becomes a bear creature in addition to its other types and gains "~\'s power and toughness are each equal to the number of lands you control."',
+    '~ becomes a Bear creature in addition to its other types and gains flying',
+    '~ becomes a Bear creature in addition to its other types and gains "{T}: You gain 1 life."',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.becomes-creature-gains-static';
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      literal(' becomes a '),
+      pattern(/[A-Z][a-z]+(?= creature in addition to its other types and gains )/u),
+      literal(' creature in addition to its other types and gains '),
+      QUOTED_STATIC,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , subtype, , ability] = r.value;
+    const span = { start: pos, end: r.pos };
+    const types: IrTypeList = {
+      kind: 'typeList',
+      subtypes: [subtype[0]],
+      cardTypes: ['creature'],
+      additive: true,
+      span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(id, 'becomesForGood', { objects: subject, types }, span),
+          connector: 'and',
+        },
+        makeClause(id, 'gainStaticAbility', { objects: subject, ability }, span),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const GRANTED_STATIC_EFFECT_RULES = [
+  EFFECT_GAIN_STATIC_ABILITY,
+  EFFECT_BECOMES_CREATURE_GAINS_STATIC,
+].map(quietly);

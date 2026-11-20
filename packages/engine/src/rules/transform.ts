@@ -8,6 +8,7 @@
 import type { Effect } from '../ast/types';
 import { allocateTimestamp, definitionOf, patchObject } from '../state/ops';
 import type { ChosenTarget, GameState, ResolutionContext } from '../state/types';
+import { hasDayNightKeyword } from './day-night';
 import { transformedFace } from './layouts';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -29,6 +30,8 @@ export function runTransform(
     // A token is not a double-faced card (CR 712.9) unless it is a double-faced token (CR 701.27a, 111.10i: the Incubator); a card on any other zone is not a permanent.
     if (obj?.zone !== 'battlefield') continue;
     if (obj.card === null && obj.token?.back === undefined) continue;
+    // CR 702.145b, 702.145e: a permanent with daybound or nightbound can't transform except due to that ability (`rules/day-night.ts`).
+    if (hasDayNightKeyword(next, obj)) continue;
     const face =
       obj.card === null
         ? obj.face === 0

@@ -155,6 +155,17 @@ export function lowerCondition(
             ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
           });
     }
+    case 'spellsCastLastTurn': {
+      // CR 601.2i (issue 345): the spells each player cast in the turn before this one, read as the ability triggers and resolves.
+      const blocked = missingFeatures(['condition:spellsCastLastTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({
+            kind: 'spellsCastLastTurn',
+            mode: test.mode,
+            ...(test.atLeast === undefined ? {} : { atLeast: test.atLeast }),
+          });
+    }
     case 'attackedWithCreaturesThisTurn': {
       // CR 508.1 (issue 279): the different creatures the controller declared as attackers this turn, from the turn log.
       const blocked = missingFeatures(['condition:attackedWithCreaturesThisTurn']);
@@ -822,6 +833,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedThisTurn',
   'condition:lifeGainedAndLostThisTurn',
   'condition:spellsCastThisTurn',
+  'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',

@@ -147,6 +147,9 @@ export function checkDragonsEffect(
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       return true;
+    case 'nextSpellPayLife':
+      // CR 118.9, 601.2b: no fields: the controller's next spell this turn may be cast by paying life equal to its mana value.
+      return true;
     case 'nextSpellModifier': {
       // Issue 121 (CR 601.2f, 702.40a, 702.85a): the next spell the controller casts that the filter describes, in this turn: a spell being cast (no zone), a reduction of generic
       // mana read as the effect resolves, and/or Storm or Cascade, the keywords that work as the spell is cast.
@@ -225,6 +228,77 @@ export function checkDragonsEffect(
         );
       }
       return true;
+    case 'revealTopBranches': {
+      // CR 701.20a, 608.2c: the players who reveal, and the branches each described by what the card in the library is.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!Array.isArray(e.branches) || e.branches.length === 0) {
+        issue(out, `${path}.branches`, 'a revealTopBranches has at least one branch');
+        return true;
+      }
+      let moving = 0;
+      for (const [i, branch] of e.branches.entries()) {
+        const at = `${path}.branches[${i}]`;
+        checkFilter(branch.ifMatches, `${at}.ifMatches`, out);
+        if (
+          filterSome(
+            branch.ifMatches,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              f.other !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${at}.ifMatches`,
+            'the card is in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
+          );
+        }
+        if (branch.onMatch === undefined && branch.to === undefined) {
+          issue(out, at, 'a branch does something: it writes onMatch, to, or both');
+        }
+        if (branch.onMatch !== undefined) {
+          // `moved` names the card revealed (still in the library) for what a branch does first; no target of its own and no X.
+          checkEffect(
+            branch.onMatch,
+            `${at}.onMatch`,
+            { ...scope, xAllowed: false, movedAvailable: true },
+            out,
+          );
+        }
+        if (branch.to !== undefined) {
+          moving += 1;
+          if (!isOneOf(branch.to, ['battlefield', 'hand'])) {
+            issue(
+              out,
+              `${at}.to`,
+              `a revealed card is put onto the battlefield or into the hand, not ${JSON.stringify(branch.to)}`,
+            );
+          }
+        }
+        if (
+          branch.tapped !== undefined &&
+          (branch.tapped !== true || branch.to !== 'battlefield')
+        ) {
+          issue(
+            out,
+            `${at}.tapped`,
+            'tapped is true, and only for a card put onto the battlefield',
+          );
+        }
+      }
+      if (moving > 1) {
+        issue(
+          out,
+          `${path}.branches`,
+          'at most one branch puts the card somewhere: the card moves once',
+        );
+      }
+      return true;
+    }
     case 'revealTop':
       // CR 701.20 (D-151): the players who reveal, the cards in the library that go on, and where they go.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -570,6 +644,22 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
             'the permanent sacrificed is one the caster controls: no zone, owner, controller, stackKind, or anything read from the game',
           );
         }
+      }
+      return true;
+    case 'activateAsThoughHaste':
+      // CR 702.10b (issue 345): the creatures are battlefield permanents, read for the controller of the permanent with the permanent as the source.
+      checkFilter(s.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          s.creatures,
+          (f) => f.zone !== undefined || f.stackKind !== undefined || readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'the creatures are battlefield permanents: no zone, stackKind, or anything read from the game',
+        );
       }
       return true;
     case 'playLandsFromGraveyard':

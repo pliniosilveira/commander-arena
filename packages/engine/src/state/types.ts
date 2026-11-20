@@ -166,6 +166,8 @@ export interface GameObject {
    * `rules/rooms.ts`. Absent for every other object and for a Room with both halves locked.
    */
   readonly unlockedDoors?: readonly number[];
+  /** The indices of this object's exhaust abilities that have been activated (issue 345, CR 702.177a: "Activate only once"); a new object after a zone change starts with none. */
+  readonly exhaustUsed?: readonly number[];
   /**
    * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
    * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
@@ -305,7 +307,7 @@ export interface GameObject {
  * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
  * it is turned face up for its morph cost). Megamorph, Disguise and cloak would be more values.
  */
-export type FaceDownBy = 'manifest' | 'morph';
+export type FaceDownBy = 'manifest' | 'morph' | 'forestLand';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {
@@ -408,6 +410,8 @@ export interface StackData {
    * difference to it: a copy is not a card and ceases to exist.
    */
   readonly boughtBack?: true;
+  /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
+  readonly lifeForMana?: true;
   /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
@@ -1822,10 +1826,14 @@ export type Instruction =
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
       readonly withCounters?: { readonly counter: string; readonly count: number };
+      /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
+      readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */
       readonly countsNonland?: true;
+      /** A card that really goes from a graveyard onto the battlefield is counted as `thisWay` `returned` (`moveToZone` of a `choose` selector). */
+      readonly countsReturned?: true;
       /** A creature that really goes to exile adds `power` to the total of `seat` in `thisWay` `exiledPowerBy` (Oversimplify; both read before the creatures left, CR 608.2h). */
       readonly exiledPower?: { readonly seat: SeatId; readonly power: number };
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
@@ -2004,6 +2012,8 @@ export interface ThisWayCounts {
   readonly destroyed?: number;
   /** The nonland cards `exileOwnGraveyardCard` put into exile (D-231). */
   readonly exiledNonland?: number;
+  /** The cards a `moveToZone` of a `choose` selector really put from a graveyard onto the battlefield (CR 608.2c: "for each card returned this way"). */
+  readonly returned?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
   /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */
@@ -2043,6 +2053,10 @@ export interface ThisWayCounts {
   readonly searched?: number;
   /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */
   readonly exiledPowerBy?: Readonly<Record<number, number>>;
+  /** The creatures each player controlled, by seat, that `destroy` effects destroyed, as they were just before they died (Deadly Tempest: "the number of creatures they controlled that were destroyed this way"). */
+  readonly destroyedCreaturesBy?: Readonly<Record<number, number>>;
+  /** Never set: each player's own number is read from `destroyedCreaturesBy` (`rules/life-amounts.ts`); the key only lets the `thisWay` readers index every `ThisWayKind`. */
+  readonly destroyedCreaturesOfAffected?: number;
   /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
   readonly exiledPowerOwn?: number;
 }
@@ -2161,6 +2175,11 @@ export type ContinuousChange =
       readonly lessGeneric: number;
       readonly grants?: 'storm' | 'cascade';
     }
+  /**
+   * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, CR 118.9, 601.2b): `seat` may cast their next
+   * spell by the alternative cost `lifeForMana`. The next spell `seat` casts uses it up, whether or not they pay that way (`rules/next-spell-life.ts`). No layer: read where casting is decided.
+   */
+  | { readonly kind: 'nextSpellLife'; readonly seat: SeatId }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
@@ -2576,6 +2595,18 @@ export interface GameState {
    * ability triggered. Keyed by the seat; a seat that never became the monarch has no entry. Absent in a game saved before D-231.
    */
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
+  /**
+   * How many spells each player cast in the turn before the current one (CR 601.2i), by seat, written as a turn begins from `SeatState.spellsCastThisTurn`: "if no spells were cast last turn",
+   * "if a player cast two or more spells last turn" (issue 345). Absent before the second turn of the game, when there is no turn before.
+   */
+  readonly lastTurnSpellsCast?: readonly number[];
+  /** The active player of the turn before the current one (CR 502.2, 731.2): the seat whose count in `lastTurnSpellsCast` the day and night check reads. Written with it. */
+  readonly lastTurnActiveSeat?: SeatId;
+  /**
+   * The day or night designation the game has (CR 731.1): absent while it is neither, as the game starts. Once set it is always one of the two (CR 731.1), changed at each untap
+   * step by the spells the previous turn's active player cast (CR 502.2, 731.2) and by Daybound and Nightbound permanents (CR 702.145d, 702.145g), see `rules/day-night.ts`.
+   */
+  readonly dayNight?: 'day' | 'night';
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
   /**

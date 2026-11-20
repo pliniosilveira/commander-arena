@@ -71,7 +71,6 @@ import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
-import { GAIN_OTHERS_EFFECT_RULES } from './gain-others';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
 import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
@@ -191,6 +190,8 @@ import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 import { WIN_GAME_EFFECT_RULES } from './win-game';
+import { WITHERBLOOM_A_EFFECT_RULES } from './witherbloom-a';
+import { WITHERBLOOM_C_EARLY_EFFECT_RULES, WITHERBLOOM_C_EFFECT_RULES } from './witherbloom-c';
 import { YOU_MAY_HAVE_EFFECT_RULES } from './you-may-have';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
@@ -794,6 +795,28 @@ const RETURN_FROM_GRAVEYARD: Parser<{
 };
 
 /**
+ * "return target creature or land card from a graveyard to its owner's hand" (Pulse of Murasa, CR 400.3, 404.1): one target card of any graveyard goes to its owner's
+ * hand, wherever it lies. One card only: the plural is "to their owners' hands", read by no rule.
+ */
+const RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+}> = map(
+  sequence(
+    literal('return '),
+    operands(['noun.target-graveyard-card'], 'effect.return', {
+      accept: (noun) => !noun.plural && noun.count === undefined && noun.upTo !== true,
+      locate: (noun) => noun.span.start,
+    }),
+    spanned(pattern(/ to its owner['’]s hand/i)),
+  ),
+  ([, objects, to]) => ({
+    objects,
+    to: zone('effect.return', to.span, 'hand', { whose: 'owner' }),
+  }),
+);
+
+/**
  * `effect.return`: "Return target creature to its owner's hand" and "Return target creature card
  * from a graveyard to the battlefield [tapped] [under your control | under its owner's control]".
  * A card put onto the battlefield enters under the control of the player performing the effect
@@ -817,6 +840,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return X target creature cards from your graveyard to your hand',
     'return all land cards from your graveyard to the battlefield tapped',
     'return target creature card from a graveyard to the battlefield',
+    // Pulse of Murasa (CR 400.3): one card of any graveyard, to its owner's hand.
+    "return target creature or land card from a graveyard to its owner's hand",
+    "return target creature card from an opponent's graveyard to its owner's hand",
     'return target creature card from a graveyard to the battlefield under your control',
     "return target creature card from a graveyard to the battlefield under its owner's control",
     'return target creature card from your graveyard to the battlefield tapped under your control',
@@ -863,6 +889,10 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from a graveyard to your hand',
     'return target creature card from your graveyard to your hand under your control',
     'return X target creature cards from a graveyard to your hand',
+    "return two target creature cards from a graveyard to its owner's hand",
+    "return up to one target creature card from a graveyard to its owner's hand",
+    "return all creature cards from a graveyard to its owner's hand",
+    "return target creature card from a graveyard to its owner's hand tapped",
     'return X target creature cards from your graveyard to your library',
     'return X target creature cards to your hand',
     'return target creature to the battlefield',
@@ -890,6 +920,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_FROM_GRAVEYARD,
+      RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND,
       RETURN_THAT_CARD,
       RETURN_THE_CHOSEN_CARDS,
       RETURN_THIS_CARD,
@@ -1217,6 +1248,8 @@ export const EFFECT_RULES = [
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
   EFFECT_EXILE,
+  // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
+  ...WITHERBLOOM_C_EARLY_EFFECT_RULES,
   EFFECT_RETURN,
   // Before the plain counter: its phrase is a prefix of this one.
   EFFECT_COUNTER_UNLESS,
@@ -1228,6 +1261,7 @@ export const EFFECT_RULES = [
   ...QUANDRIX_D1_EFFECT_RULES,
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
+  ...WITHERBLOOM_A_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
@@ -1252,6 +1286,8 @@ export const EFFECT_RULES = [
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
   // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,
+  // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
+  ...WITHERBLOOM_C_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,
@@ -1262,7 +1298,6 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
-  ...GAIN_OTHERS_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
   ...PUMP_THOSE_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".

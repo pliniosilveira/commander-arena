@@ -570,6 +570,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
     case 'permanentAbilityCostReduction':
+    case 'creatureAbilityCostReductionByPower':
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
       return ['static:costPerExtraTarget'];
@@ -604,6 +605,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'revealTopOfLibrary':
     case 'playLandsFromTopOfLibrary':
     case 'playLandsFromGraveyard':
+    case 'activateAsThoughHaste':
     case 'attackTax':
     case 'optionalUntap':
     case 'crewSaddleBonus':
@@ -673,8 +675,7 @@ function readsCombat(filter: ObjectFilter): boolean {
   return (
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
-    // D-416 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
-    filter.modified === true ||
+    // D-416 (CR 700.9): "modified" is read from the counters and attachments (`subjectAffects`, issue 345), so a subject may name it.
     // CR 701.15b: the designation is read from the game, which `derive` does not have while it matches a subject.
     filter.goaded === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
@@ -1106,6 +1107,31 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7).
   if (first.kind === 'permanentAbilityCostReduction')
     return lowerPermanentAbilityCostReduction(ability, first, more.length);
+  // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. ..." (issue 345, Agatha of the Vile Cauldron, CR 601.2f, 118.7).
+  if (first.kind === 'creatureAbilityCostReductionByPower') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:abilityCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'abilityCostReduction',
+            abilities: 'ofObjects',
+            objects: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+            amount: { kind: 'powerOf', of: { kind: 'this' } },
+            minTotal: 1,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-641, CR 601.2f).
   if (first.kind === 'costPerExtraTarget') {
     if (

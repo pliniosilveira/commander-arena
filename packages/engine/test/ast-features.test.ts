@@ -172,6 +172,8 @@ describe('the dimensions', () => {
       'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
+      // Issue 345: "if no spells were cast last turn".
+      'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
       'thisAttackedThisTurn',
@@ -263,6 +265,8 @@ describe('the dimensions', () => {
       'playFromGraveyardOnceEachTurn',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
+      // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
+      'activateAsThoughHaste',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
       // D-282: "Your opponents can't cast spells with mana value 3 or less."

@@ -270,10 +270,52 @@ export const KEYWORD_EQUIP_COMMANDER = defineRule<readonly IrKeyword[]>({
   ),
 });
 
+/**
+ * `keyword.equip-legendary`: "Equip legendary creature {3}" (CR 702.6c, issue 345: the equip ability attaches only to a legendary creature you control, CR 205.4; the permanent
+ * has "Equip {7}" besides, for any creature). A plain mana cost. Not read: "Equip legendary {3}", another cost, a period.
+ */
+export const KEYWORD_EQUIP_LEGENDARY = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.equip-legendary',
+  family: 'keyword',
+  leading: ['equip'],
+  cites: ['CR 702.6c (Equip)', 'CR 205.4 (Supertypes)'],
+  examples: ['Equip legendary creature {3}', 'equip legendary creature {1}{W}'],
+  rejects: [
+    'Equip legendary creature',
+    'Equip legendary creature {X}',
+    'Equip legendary creature {3}.',
+    'Equip legendary {3}',
+    'Equip legendary creature—Pay 2 life',
+    'Equip commander {3}',
+    'Equip {3}',
+  ],
+  parse: map(
+    node<IrCost, IrKeyword>(
+      'keyword.equip-legendary',
+      map(
+        sequence(
+          literal('equip legendary creature '),
+          family<IrCost>('cost', { only: ['cost.mana'] }),
+        ),
+        ([, cost]) => cost,
+      ),
+      (cost) => ({
+        kind: 'keyword',
+        name: 'equip',
+        params: [],
+        cost: [cost],
+        legendaryOnly: true,
+      }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
 export const ATTACHMENT_KEYWORD_RULES = [
   KEYWORD_ENCHANT,
   KEYWORD_ENCHANT_PLAYER,
   KEYWORD_EQUIP,
   KEYWORD_EQUIP_QUALITY,
   KEYWORD_EQUIP_COMMANDER,
+  KEYWORD_EQUIP_LEGENDARY,
 ];

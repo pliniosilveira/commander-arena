@@ -359,6 +359,15 @@ export function createExpectations(
         );
       }
     },
+    dayNight(designation) {
+      const state = getState();
+      if ((state.dayNight ?? null) !== designation) {
+        fail(
+          `Expected ${designation === null ? 'neither day nor night' : `it to be ${designation}`} but it is ${state.dayNight ?? 'neither day nor night'}`,
+          state,
+        );
+      }
+    },
     citysBlessing(seat, has = true) {
       const state = getState();
       const actual = state.seats[seat]?.citysBlessing === true;

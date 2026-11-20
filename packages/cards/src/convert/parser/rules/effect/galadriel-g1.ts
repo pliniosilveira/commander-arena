@@ -28,7 +28,8 @@ import { type Clauses, makeClause } from './operands';
  * What may follow the end of one of these rules' phrases: nothing that joins another instruction to it ("..., draw a card and gain 1 life", "... then ..."): the instruction the
  * text adds would be done whether or not the card was of the kind, which is not what it says, so the whole line is left unread.
  */
-const MORE_AFTER = /^(?:,| and\b| then\b)/iu;
+// Another "If it's ..." sentence about the same card is a branch of `effect.reveal-top-branches`, not an instruction this rule may leave unread.
+const MORE_AFTER = /^(?:,| and\b| then\b|\.\s+if it['’]s\b)/iu;
 
 /** ". Otherwise, put that card into your hand": the second place of a card that is not of the kind (the two sentences are kept together by the segmenter). */
 const OTHERWISE_INTO_HAND = new RegExp(

@@ -53,4 +53,47 @@ export const RESTRICTION_SORCERY_AND_IF = defineRule<IrRestriction>({
   },
 });
 
-export const FEATHER_G2_RESTRICTION_RULES = [RESTRICTION_SORCERY_AND_IF];
+/**
+ * `restriction.sorcery-once-each-turn`: "Activate only as a sorcery and only once each turn." (issue 345, Invigorating Hot Spring; CR 602.5b, 602.5d: the timing of a sorcery and
+ * a count of activations, both looked at as the ability is activated). One node with both. Not read: the other order, a condition, a third restriction, another count.
+ */
+export const RESTRICTION_SORCERY_ONCE_EACH_TURN = defineRule<IrRestriction>({
+  id: 'restriction.sorcery-once-each-turn',
+  family: 'restriction',
+  leading: ['activate'],
+  cites: [
+    'CR 602.5b (Activating Activated Abilities)',
+    'CR 602.5d (Activating Activated Abilities)',
+    'CR 307.1 (Sorceries)',
+  ],
+  examples: [
+    'Activate only as a sorcery and only once each turn.',
+    'activate only as a sorcery and only once each turn.',
+  ],
+  rejects: [
+    'Activate only as a sorcery and only once each turn',
+    'Activate only once each turn and only as a sorcery.',
+    'Activate only as a sorcery and only twice each turn.',
+    'Activate only as a sorcery and only once.',
+    'Activate only as a sorcery.',
+    'Activate only once each turn.',
+    'Activate only as a sorcery and only once each turn and only if you control a Swamp.',
+  ],
+  parse: (ctx, pos) => {
+    const r = literal('activate only as a sorcery and only once each turn.')(ctx, pos);
+    if (!r.ok) return r;
+    const restriction: IrRestriction = {
+      kind: 'restriction',
+      timing: 'sorcery',
+      perTurn: 1,
+      span: { start: pos, end: r.pos },
+      rule: 'restriction.sorcery-once-each-turn',
+    };
+    return { ok: true, value: restriction, pos: r.pos };
+  },
+});
+
+export const FEATHER_G2_RESTRICTION_RULES = [
+  RESTRICTION_SORCERY_AND_IF,
+  RESTRICTION_SORCERY_ONCE_EACH_TURN,
+];

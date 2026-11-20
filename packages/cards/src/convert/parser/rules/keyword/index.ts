@@ -91,6 +91,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.136a (Riot)',
     'CR 702.131b (Ascend)',
     'CR 702.95a (Soulbond)',
+    'CR 702.145 (Daybound and Nightbound)',
   ],
   examples: [
     'Flying',
@@ -164,6 +165,12 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // D-286 (CR 702.95a): Soulbond, alone and in a list (its reminder text is stripped before the line is read).
     'Soulbond',
     'soulbond',
+    // CR 702.145 (Daybound and Nightbound), alone and in a list.
+    'Daybound',
+    'Nightbound',
+    'daybound',
+    'Trample, daybound',
+    'Nightbound, flying',
     'Flying, soulbond',
     'Soulbond, flying',
     'Affinity for artifacts',
@@ -207,6 +214,10 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Prowessx',
     'Ascendx',
     'Ascend 1',
+    'Daybound.',
+    'Daybound 1',
+    'Nightbound {1}',
+    'Daybounds',
     'Soulbond.',
     'Soulbonds',
     'Soulbond 1',

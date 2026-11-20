@@ -53,6 +53,7 @@ import { NOUN_LIBRARY_CARD_MANA_VALUE_X } from './library-mv-x';
 import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
+import { NOUN_OTHER_SUBTYPE_PAIR } from './other-subtype-pair';
 import { PAIR_NOUN_RULES } from './pair';
 import {
   graveyardPhrase,
@@ -817,7 +818,34 @@ export const NOUN_PLAIN_PERMANENTS = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.commander-creatures-you-own`: "commander creatures you own" (issue 345, Tavern Brawler; CR 903.3, 108.3): the creatures that are cards their owner designated as a commander and
+ * that you own, whoever controls them (the engine's `commander: 'yours'`). A plural group. Not read: "you control" (`noun.plain-permanents`), the singular, "your commanders",
+ * "commander creatures" with no owner, another card type.
+ */
+export const NOUN_COMMANDER_CREATURES_YOU_OWN = defineRule<IrNoun>({
+  id: 'noun.commander-creatures-you-own',
+  family: 'noun',
+  leading: ['commander'],
+  cites: ['CR 903.3 (Commander)', 'CR 108.3 (Owner)'],
+  examples: ['commander creatures you own', 'Commander creatures you own'],
+  rejects: [
+    'commander creature you own',
+    'commander creatures you control',
+    'commander creatures',
+    'commander permanents you own',
+    'commander creatures your opponents own',
+    'creatures you own',
+  ],
+  parse: node<string, IrNoun>(
+    'noun.commander-creatures-you-own',
+    map(pattern(/commander creatures you own(?![\p{L}\p{N}])/iu), (m) => m[0]),
+    (raw) => bare('each', { types: ['creature'], commander: 'yours', raw }, { plural: true }),
+  ),
+});
+
 export const NOUN_RULES = [
+  NOUN_COMMANDER_CREATURES_YOU_OWN,
   NOUN_ANY_TARGET,
   // Stage P37 (D-180): "target player or planeswalker" and "each creature that player controls", whose first words are those of `noun.player`
   // and of `noun.each-permanent`.
@@ -905,6 +933,8 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
+  NOUN_OTHER_SUBTYPE_PAIR,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.
   ...GISA_G2_NOUN_RULES,
   // Issue 347: "Treefolk and Forests you control".

@@ -171,14 +171,21 @@ export function parseFaceText(
     const maxSpeedLine = unlabelled !== null;
     const body = unlabelled ?? labelled;
     if (threshold !== null) afterStationSymbol = true;
-    const asWritten = compileLine(body, lineOptions);
+    // CR 702.177a (issue 345, Redshift): "Exhaust — [Cost]: [Effect]" means "[Cost]: [Effect]. Activate only once." The word is not a flavor word: the ability that follows it
+    // is read without it and is marked `exhaust` below, so that it can be activated once, never read as an unlimited one.
+    const exhaustWord = /^Exhaust\s+[—–-]\s+(?=[{\p{Lu}])/u.exec(body)?.[0];
+    const exhaust = exhaustWord !== undefined;
+    const reading = exhaust ? body.slice(exhaustWord.length) : body;
+    const asWritten = compileLine(reading, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not
     // read as written, and the line is read again without it. A line that reads today never changes; a wrong strip can only turn an unread
     // line into a read one. If the line still does not read, the diagnostic is the one of the line without its label (it says what is
     // really unread), under the text as written.
     const bare =
-      asWritten.ok || asWritten.failure.reason !== 'unrecognised' ? body : stripFlavorWord(body);
-    const result = bare === body ? asWritten : compileLine(bare, lineOptions);
+      asWritten.ok || asWritten.failure.reason !== 'unrecognised'
+        ? reading
+        : stripFlavorWord(reading);
+    const result = bare === reading ? asWritten : compileLine(bare, lineOptions);
     if (!result.ok) {
       unparsed.push(unparsedAbility(faceIndex, index, text, result.failure));
     } else if (maxSpeedLine) {
@@ -217,8 +224,29 @@ export function parseFaceText(
       }
       abilities.push({ kind: 'stationLevel', threshold, abilities: [...result.abilities] });
       lineOf.push({ index, text, ruleId: result.ruleId });
+    } else if (
+      exhaust &&
+      (missingFeatures(['ability:exhaust']).length > 0 ||
+        result.kind !== 'abilities' ||
+        !result.abilities.every((a) => a.kind === 'activated'))
+    ) {
+      // Only an ordinary activated ability can be activated once: a mana ability or any other line after the word is refused as a whole.
+      unparsed.push(
+        unparsedAbility(faceIndex, index, text, {
+          reason: 'notRunnable',
+          stoppedAt: text,
+          closestRule: 'none',
+          recognised: [],
+        }),
+      );
     } else if (result.kind === 'abilities') {
-      abilities.push(...result.abilities);
+      abilities.push(
+        ...(exhaust
+          ? result.abilities.map((a) =>
+              a.kind === 'activated' ? { ...a, exhaust: true as const } : a,
+            )
+          : result.abilities),
+      );
       for (const _ of result.abilities) lineOf.push({ index, text, ruleId: result.ruleId });
     } else if (result.kind === 'faceCosts') {
       // The engine runs one choice between two additional costs: a second one is dropped, never half run.
