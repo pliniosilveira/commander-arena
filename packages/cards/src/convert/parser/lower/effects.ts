@@ -136,6 +136,8 @@ import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types'
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
 import { WIN_GAME_LOWERINGS } from './win-game';
+import { revealTopBranchesLowering, WITHERBLOOM_A_LOWERINGS } from './witherbloom-a';
+import { WITHERBLOOM_C_LOWERINGS } from './witherbloom-c';
 
 /**
  * "Untap ~", "exile ~", "return ~ to its owner's hand": the effect acts on the permanent the
@@ -2363,6 +2365,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
+  ...WITHERBLOOM_A_LOWERINGS,
+  // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
+  revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
@@ -2372,6 +2377,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
+  ...WITHERBLOOM_C_LOWERINGS,
   // Issue 258 (D-585): the sentence after "Choose a color.", reported alone (the pair is lowered by `lowerStep`).
   ...CHOSEN_COLOR_MANA_LOWERINGS,
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".

@@ -146,6 +146,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseMinCardTypes',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
+    // Yedora, Grave Gardener (CR 708.2, 708.3): "return it to the battlefield face down ... It's a Forest land" (`moveToZone.faceDownAs`).
+    'moveFaceDownLand',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
     // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
@@ -447,10 +449,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCastEachType',
     // Issue 121: "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (CR 601.2f, 702.40a).
     'nextSpellModifier',
+    // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b).
+    'nextSpellPayLife',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
     'revealTopDuel',
+    // CR 701.20a, 608.2c: "Reveal the top card of your library. If it's a creature card, ... If it's a land card, ..." (several branches on one revealed card).
+    'revealTopBranches',
     // CR 702.5a, 613.1f: "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (Animate Dead).
     'replaceEnchant',
     // D-151: "you may behold a Dragon" (CR 701.4).
@@ -494,6 +500,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'leavesBattlefield',
     // D-333: "Whenever a source you control deals noncombat damage to an opponent".
     'noncombatDamageDealt',
+    // CR 120.2: "Whenever you're dealt damage" (Sun Droplet).
+    'dealtDamageToPlayer',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -1323,6 +1331,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
+    'lifeGainedOrLostThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
@@ -1593,6 +1602,8 @@ export const ABILITY_FEATURES = [
   'chooseMinCardTypes',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
+  /** "Return it to the battlefield face down ... It's a Forest land" (Yedora, CR 708.2, 708.3, 613.2b): the engine's `moveToZone.faceDownAs`, a face-down land with the Forest subtype. */
+  'moveFaceDownLand',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
   'revealUntilCount',
   /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
@@ -2226,6 +2237,8 @@ export const AMOUNT_KINDS = [
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
+  'lifeGainedOrLostThisTurn',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -2351,6 +2364,8 @@ export const CAST_ALTERNATIVE_KINDS = [
   'jumpStart',
   'sacrificeFromGraveyard',
   'impending',
+  // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
+  'lifeForMana',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 
@@ -2418,6 +2433,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAlsoGraveyard: true,
   chooseMinCardTypes: true,
   chooseFromCommandZone: true,
+  moveFaceDownLand: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
   spellXAtMost: true,
@@ -2608,8 +2624,10 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   revealTopCast: true,
   mayCastEachType: true,
   nextSpellModifier: true,
+  nextSpellPayLife: true,
   revealTop: true,
   revealTopDuel: true,
+  revealTopBranches: true,
   replaceEnchant: true,
   behold: true,
   payAnyAmount: true,
@@ -2640,6 +2658,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   dealsCombatDamage: true,
   dealsDamage: true,
   noncombatDamageDealt: true,
+  dealtDamageToPlayer: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,

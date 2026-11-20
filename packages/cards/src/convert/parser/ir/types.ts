@@ -462,6 +462,7 @@ export type IrAmount =
   // "equal to the number of cards in that player's hand" (CR 402.1): each player the damage is dealt to is hurt for their own hand size
   | { readonly kind: 'cardsInHandOfAffected'; readonly span: Span }
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
+  | { readonly kind: 'lifeGainedOrLostThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
       readonly types?: readonly string[];
@@ -571,6 +572,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedCreaturesOfAffected'
         | 'destroyedValue'
         | 'playersDrew'
         | 'tapped'
@@ -582,7 +584,8 @@ export type IrAmount =
         | 'exiledCreatures'
         | 'damageDealt'
         | 'excessDamageDealt'
-        | 'countersRemoved';
+        | 'countersRemoved'
+        | 'returned';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
       /** "that many" (stage P30): the number of whatever the instruction before it did, whichever words the text uses. */
@@ -2022,6 +2025,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'lifeLostThisTurn',
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  'lifeGainedOrLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',

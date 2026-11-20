@@ -664,6 +664,12 @@ const EACH_PUT_REVEALED_INTO_HAND = /^you each put the card you revealed into yo
 const REVEAL_TOP_CARD = /(?:^|, )(?:then )?(?:you may )?reveal the top card of your library\.$/i;
 const IF_REVEALED_CARD =
   /^if (?:it['’]s an? [^.,]* card|an? [^.,]* card is revealed this way), [^.]*\.$/i;
+/**
+ * "Reveal the top card of your library. If it's a creature card, create a 1/1 green Saproling creature token. If it's a land card, put that card onto the battlefield under your control.
+ * If it's a noncreature, nonland card, you gain 2 life." (Witherbloom Witchcraft, issue 190, CR 701.20a, 608.2c): one reveal and several "if" sentences about the card it shows, kept
+ * together for `effect.reveal-top-branches`. A list of types may hold a comma, which `IF_REVEALED_CARD` does not allow.
+ */
+const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
@@ -700,6 +706,13 @@ const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
 const IT_BECOMES_LAND_CREATURE = /^it becomes an? \d+\/\d+ [^.]*\.$/i;
 /** "{2}{G}{W}: ~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land." (issue 145, Restless Prairie, CR 205.1b): the same, with the duration at the end. */
 const BECOMES_LAND_CREATURE_TRAILING = /(?:^|: )~ becomes a \d+\/\d+ [^.]* until end of turn\.$/i;
+/**
+ * "Whenever another nontoken creature you control dies, you may return it to the battlefield face down under its owner's control. It's a Forest land." (Witherbloom Witchcraft, group C,
+ * CR 708.2, 613.2b): the second sentence says what the face-down permanent is, so the two are read as one instruction (`effect.return-it-face-down-forest-land`).
+ */
+const RETURN_IT_FACE_DOWN =
+  /(?:^|, )(?:you may )?return it to the battlefield face down under its owner['’]s control\.$/i;
+const ITS_A_FOREST_LAND = /^it['’]s a Forest land\.$/i;
 /**
  * "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~." (Galadriel deck, group 3, CR 701.20a, 400.7j): the second sentence
  * reads the card the first one drew and revealed, so the two are read as one instruction (`effect.draw-reveal-remove`; the first may follow a loyalty cost).
@@ -830,6 +843,34 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 3;
     } else if (
       a !== undefined &&
+      d !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_BRANCH) &&
+      said(c, IF_REVEALED_BRANCH) &&
+      said(d, IF_REVEALED_BRANCH)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_BRANCH) &&
+      said(c, IF_REVEALED_BRANCH)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_BRANCH) &&
+      !said(b, IF_REVEALED_CARD)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
       c !== undefined &&
       said(a, REVEAL_TOP_CARD) &&
       said(b, IF_REVEALED_CARD) &&
@@ -922,6 +963,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, IT_BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, RETURN_IT_FACE_DOWN) && said(b, ITS_A_FOREST_LAND)) ||
         (said(a, BECOMES_LAND_CREATURE_TRAILING) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||

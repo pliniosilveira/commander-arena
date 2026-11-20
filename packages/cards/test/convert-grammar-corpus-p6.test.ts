@@ -202,7 +202,7 @@ const RETURNS: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Return target creature card from a graveyard to your hand.',
-    expect: no('from a graveyard to your hand.', 'effect.return'),
+    expect: no('to your hand.', 'effect.return'),
     note: "SYNTHETIC; it would go to its owner's hand",
   },
 ];
