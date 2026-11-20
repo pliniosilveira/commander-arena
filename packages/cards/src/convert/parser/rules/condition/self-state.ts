@@ -430,6 +430,74 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.there-are-counters-on-self`: "there are three or more ribbon counters on ~" (Prize Pig, CR 122.1, 608.2c: the counters of one kind the permanent has now, read as the
+ * sentence is reached, after the counters an instruction before it put on). The engine's `amountIs` of `countersOn` of the permanent itself. Not read: "fewer than", another permanent,
+ * "it", an unnamed kind of counter, a bare number ("there are three counters").
+ */
+export const CONDITION_THERE_ARE_COUNTERS_ON_SELF = defineRule<IrCondition>({
+  id: 'condition.there-are-counters-on-self',
+  family: 'condition',
+  leading: ['there'],
+  cites: ['CR 122.1 (Counters)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'there are three or more ribbon counters on ~',
+    'there are 3 or more charge counters on ~',
+    'there are ten or more +1/+1 counters on ~',
+  ],
+  rejects: [
+    'there are three or more ribbon counters on ~.',
+    'there are three or more counters on ~',
+    'there are three ribbon counters on ~',
+    'there are fewer than three ribbon counters on ~',
+    'there are three or more ribbon counters on it',
+    'there are three or more ribbon counters on target creature',
+    'there are three or more ribbon counters',
+    'there are three or more ribbon counters on ~ and',
+    'there are one or more ribbon counters on ~',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      sequence(
+        literal('there are '),
+        satisfy(quantity, (n) => n >= 2),
+        literal(' or more '),
+        pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
+        literal(' counters on ~'),
+        pattern(/(?![\p{L}\p{N}])/u),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, value, , counter] = r.value.value;
+    const name = counter[0].toLowerCase();
+    if (name === 'no') return fail(ctx, pos);
+    const span = r.value.span;
+    return {
+      ok: true,
+      value: condition('condition.there-are-counters-on-self', pos, r.pos, {
+        kind: 'amountIs',
+        amount: {
+          kind: 'countersOn',
+          of: {
+            kind: 'noun',
+            det: 'self',
+            filter: { raw: '~' },
+            upTo: false,
+            plural: false,
+            other: false,
+            span,
+            rule: 'condition.there-are-counters-on-self',
+          },
+          counter: name,
+          span,
+        },
+        compare: { cmp: 'atLeast', value },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.this-is-token`: "it isn't a token", "it's not a token", "it's a token", "~ is a token" (issue 145, Gruff Triplets; CR 111.1, 603.4: a token is a permanent that is not
  * represented by a card). The engine's `thisMatches` with `token`, read as the ability triggers and as it resolves (the intervening "if" of an enters trigger of the permanent
  * itself). The permanent is the one the ability is on: `~`, or "it" in an ability about itself. Not read: a kind of token ("a Treasure token"), another permanent, a past
@@ -491,5 +559,6 @@ export const SELF_STATE_CONDITION_RULES = [
   CONDITION_PAIRED,
   CONDITION_THIS_HAS_COUNTER,
   CONDITION_THIS_COUNTER_COUNT,
+  CONDITION_THERE_ARE_COUNTERS_ON_SELF,
   CONDITION_THIS_IS_TOKEN,
 ];

@@ -150,6 +150,7 @@ export interface IrNoun extends IrNode {
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
     | 'couldntSacrificeThisWay' // "each player who can't" after a sacrifice (CR 701.21a): the players the sacrifice before it found nothing for
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
+    | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
@@ -353,6 +354,11 @@ export interface IrFilter {
    */
   readonly anyNumberTotalManaValue?: number;
   /**
+   * "any number of creature cards" (CR 701.23, 701.23b; Bilbo, Birthday Celebrant): any number of the cards of a library search, none included, with no limit but the library. Like
+   * `anyNumberTotalManaValue` it is about the cards found together; the search lowering takes it off (the engine's `search.anyNumber`), any other filter that has it is not lowered.
+   */
+  readonly anyNumber?: true;
+  /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
    */
@@ -487,6 +493,8 @@ export type IrAmount =
       readonly controller: 'you' | 'any';
       /** "A modified creature died under your control this turn" (CR 700.9): only the permanents that were modified as they died. */
       readonly modified?: true;
+      /** "A permanent left the battlefield under your control this turn" (Revolt, CR 207.2c): every permanent that left it, for any zone. */
+      readonly leftBattlefield?: true;
       readonly span: Span;
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
@@ -603,7 +611,8 @@ export type IrAmount =
       readonly span: Span;
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
-  | { readonly kind: 'triggerDamage'; readonly span: Span }
+  // `life`: "where X is the amount of life you gained" (Field-Tested Frying Pan), read only where the trigger is life being gained.
+  | { readonly kind: 'triggerDamage'; readonly life?: true; readonly span: Span }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"
@@ -852,6 +861,9 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
+    // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"
+    | { readonly kind: 'thisIsRingBearer' }
+    | { readonly kind: 'ringTemptedAtLeast'; readonly times: number }
     | {
         readonly kind: 'playerDealtDamage';
         readonly who: 'you' | 'opponent';
@@ -864,6 +876,7 @@ export interface IrCondition extends IrNode {
         readonly count: number;
         readonly types?: readonly string[];
         readonly notTypes?: readonly string[];
+        readonly subtypes?: readonly string[];
         readonly token?: boolean;
       }
     // D-063: "if A and B", "if A or B", "if not A"
@@ -1588,6 +1601,13 @@ export type IrStaticEffect =
       readonly amount: number;
       readonly types: readonly string[];
     }
+  // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7): the generic mana taken off the
+  // abilities of the permanents `objects` names (a plural noun with no determiner), whoever activates them.
+  | {
+      readonly kind: 'permanentAbilityCostReduction';
+      readonly amount: number;
+      readonly objects: IrNoun;
+    }
   // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana." (Agatha of the
   // Vile Cauldron, issue 345, CR 601.2f, 118.7): the power of the permanent itself taken off the generic mana, leaving at least one mana.
   | { readonly kind: 'creatureAbilityCostReductionByPower' }
@@ -1835,6 +1855,16 @@ export type IrStaticEffect =
    * "~ gets +1/+1 for each unspent mana you have." (issue 81, Omnath, CR 106.4, 613.4c): +1 to each stat whose flag is set, for each mana in the controller's pool (the engine's `unspentMana`).
    */
   | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
+  /**
+   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` on the permanent with
+   * the ability (the engine's `countersOnSource`).
+   */
+  | {
+      readonly kind: 'ptCountersOnSource';
+      readonly power: boolean;
+      readonly toughness: boolean;
+      readonly counter: string;
+    }
   /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`

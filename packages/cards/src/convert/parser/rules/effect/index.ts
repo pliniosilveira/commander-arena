@@ -69,6 +69,7 @@ import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLICKER_RULES } from './flicker';
+import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
@@ -157,6 +158,7 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
+import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -1132,6 +1134,7 @@ export const EFFECT_RULES = [
   ...EACH_LIBRARY_EFFECT_RULES,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
   ...LOREHOLD_G2_EFFECT_RULES,
+  ...FOOD_D_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
@@ -1301,6 +1304,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
+  ...PUMP_THOSE_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".

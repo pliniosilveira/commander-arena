@@ -1480,6 +1480,12 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, path, "'attackedPlayers' needs an ability of a permanent, not a spell");
       }
       break;
+    case 'combatDamagedByNamed':
+      // CR 120.2a: "each opponent dealt combat damage this game by a creature named X": a non-empty name, read from the game history anywhere.
+      if (typeof sel.name !== 'string' || sel.name === '') {
+        issue(out, `${path}.name`, "'combatDamagedByNamed' needs the name of the creature");
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -1553,6 +1559,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'triggerPlayer',
   'attackedPlayers',
+  'combatDamagedByNamed',
 ];
 
 export function checkDamageRecipient(
@@ -2043,8 +2050,25 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.kind === 'diedThisTurn' && a.modified !== undefined && a.modified !== true) {
         issue(out, `${path}.modified`, 'history modified filter must be true when present');
       }
+      if (a.kind === 'diedThisTurn' && a.leftBattlefield !== undefined) {
+        if (a.leftBattlefield !== true) {
+          issue(
+            out,
+            `${path}.leftBattlefield`,
+            'history leftBattlefield filter must be true when present',
+          );
+        } else if (a.modified !== undefined) {
+          issue(
+            out,
+            `${path}.modified`,
+            'a permanent that left the battlefield is not read as modified',
+          );
+        }
+      }
       for (const key of Object.keys(a)) {
-        if (!['kind', 'types', 'controller', 'token', 'modified'].includes(key)) {
+        if (
+          !['kind', 'types', 'controller', 'token', 'modified', 'leftBattlefield'].includes(key)
+        ) {
           issue(out, `${path}.${key}`, 'history does not record this property');
         }
       }
@@ -2497,6 +2521,17 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
   if (amount?.kind === 'unspentMana') {
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not unspent mana');
+    }
+    return;
+  }
+  // CR 122.1 (Call for Unity): "for each unity counter on this enchantment": plain (+N/+N) only, the counters of one kind on the permanent that has the ability.
+  if (amount?.kind === 'countersOnSource') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not counters');
+    }
+    const counter = (a as { counter?: unknown }).counter;
+    if (typeof counter !== 'string' || counter.length === 0) {
+      issue(out, `${path}.counter`, 'countersOnSource names the kind of counter');
     }
     return;
   }
@@ -3169,6 +3204,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
+    case 'thisIsRingBearer':
+      // CR 701.54e: the permanent the condition belongs to is its controller's Ring-bearer; no operand.
+      break;
+    case 'ringTemptedAtLeast':
+      // CR 701.54c: the times the Ring has tempted the controller, a whole number of 1 or more.
+      if (!isCount(c.times) || c.times < 1) {
+        issue(out, `${path}.times`, 'ringTemptedAtLeast times is a whole number of 1 or more');
+      }
+      break;
     case 'thisEnteredThisTurn':
       // D-423 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
       break;
@@ -3208,6 +3252,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       checkEnumList(out, `${path}.types`, c.types, CARD_TYPES, 'card type');
       checkEnumList(out, `${path}.notTypes`, c.notTypes, CARD_TYPES, 'card type');
+      if (
+        c.subtypes !== undefined &&
+        (!Array.isArray(c.subtypes) ||
+          c.subtypes.length === 0 ||
+          c.subtypes.some((s) => typeof s !== 'string' || s === ''))
+      ) {
+        issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list of names when present');
+      }
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
@@ -4211,6 +4263,27 @@ function checkSearch(
         out,
         `${path}.totalManaValue`,
         "a search with a total mana value has a max of 1 (unread), one destination of 'rest', and no shared land type, zones or maxAmount",
+      );
+    }
+  }
+  // CR 701.23: "any number of creature cards": no limit but the library; one 'rest' destination, nothing else that changes how many are found.
+  if (e.anyNumber !== undefined) {
+    if (e.anyNumber !== true) {
+      issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+    }
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.maxAmount !== undefined ||
+      e.totalManaValue !== undefined ||
+      e.zones !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        "a search for any number of cards has a max of 1 (unread), one destination of 'rest', and no shared land type, zones, maxAmount or totalManaValue",
       );
     }
   }
@@ -5399,6 +5472,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');

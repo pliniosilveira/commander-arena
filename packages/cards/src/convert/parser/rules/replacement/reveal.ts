@@ -16,7 +16,7 @@ const LAND_TYPE = '(?:Plains|Island|Swamp|Mountain|Forest)';
  * `replacement.enters-tapped-unless-reveals`: "As ~ enters, you may reveal a Mountain or Plains card from your hand. If you don't, ~ enters tapped." and
  * "As ~ enters, you may behold a Jace. If you don't, ~ enters tapped." (CR 701.20a: reveal a card from the hand; CR 701.4a: behold a quality is revealing a
  * card of it from the hand or choosing a permanent of it you control). The cards are one or two basic land types, or a planeswalker type for behold. The
- * engine's `entersTappedUnlessReveals`. Not read: another quality ("a Dragon card", "a land card"), three types, another consequence, a cost besides.
+ * engine's `entersTappedUnlessReveals`. Also one creature type ("a Treefolk card"). Not read: another quality ("a land card"), two creature types, three types, another consequence, a cost besides.
  */
 export const REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS = defineRule<IrAbility>({
   id: 'replacement.enters-tapped-unless-reveals',
@@ -33,12 +33,14 @@ export const REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS = defineRule<IrAbility>({
     "As ~ enters, you may reveal a Forest card from your hand. If you don't, ~ enters tapped.",
     'As ~ enters, you may reveal an Island or Swamp card from your hand. If you don’t, ~ enters tapped.',
     "As ~ enters, you may behold a Jace. If you don't, ~ enters tapped.",
+    "As ~ enters, you may reveal a Treefolk card from your hand. If you don't, ~ enters tapped.",
   ],
   rejects: [
     "As ~ enters, you may reveal a Mountain or Plains card from your hand. If you don't, ~ enters tapped",
     "As ~ enters, you may reveal a Mountain, Plains, or Island card from your hand. If you don't, ~ enters tapped.",
     "As ~ enters, you may reveal a land card from your hand. If you don't, ~ enters tapped.",
-    "As ~ enters, you may reveal a Dragon card from your hand. If you don't, ~ enters tapped.",
+    "As ~ enters, you may reveal a Dragon or Elf card from your hand. If you don't, ~ enters tapped.",
+    "As ~ enters, you may reveal a Plains or Elf card from your hand. If you don't, ~ enters tapped.",
     "As ~ enters, you may reveal a Mountain or Plains card from your hand. If you don't, ~ enters tapped and you lose 1 life.",
     "As ~ enters, you may behold a Dragon. If you don't, ~ enters tapped.",
     "As ~ enters, you may behold a Jace or Gideon. If you don't, ~ enters tapped.",
@@ -50,14 +52,7 @@ export const REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS = defineRule<IrAbility>({
     if (!head.ok) return head;
     const reveal = spanned(
       map(
-        sequence(
-          pattern(
-            new RegExp(
-              `reveal (an? )(${LAND_TYPE}(?: or ${LAND_TYPE})?) card from your hand`,
-              'iu',
-            ),
-          ),
-        ),
+        sequence(pattern(/reveal (an? )([A-Z][a-z]+(?: or [A-Z][a-z]+)?) card from your hand/u)),
         ([m]) => ({
           words: `${m[1] ?? 'a '}${m[2] ?? ''} card`,
           types: (m[2] ?? '').split(' or '),
@@ -78,6 +73,12 @@ export const REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS = defineRule<IrAbility>({
     if (what.value.behold && !what.value.types.every((t) => PLANESWALKER_TYPES.has(t))) {
       return fail(ctx, pos);
     }
+    // A reveal names basic land types (one or two) or one creature type ("a Treefolk card", CR 205.3m).
+    const [firstType] = what.value.types;
+    const basicLands = what.value.types.every((t) => new RegExp(`^${LAND_TYPE}$`, 'u').test(t));
+    const oneCreatureType =
+      what.value.types.length === 1 && firstType !== undefined && CREATURE_TYPES.has(firstType);
+    if (!what.value.behold && !basicLands && !oneCreatureType) return fail(ctx, pos);
     const tail = pattern(/\. if you don['’]t, ~ enters tapped\./iu)(ctx, what.pos);
     if (!tail.ok) return tail;
     const id = 'replacement.enters-tapped-unless-reveals';

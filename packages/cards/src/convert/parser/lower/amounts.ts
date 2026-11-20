@@ -214,6 +214,9 @@ export function lowerAmount(
       return blocked ?? { ok: true, value: { kind: 'lifePaidAsEntered' }, rule };
     }
     case 'triggerDamage': {
+      // "The amount of life you gained" is the life of a life gain event, so it means nothing in the body of any other ability (CR 119.9).
+      if (amount.life === true && !ctx.lifeGainTrigger)
+        return { ok: false, needs: [], at: amount.span, rule };
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
       if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {
@@ -339,6 +342,9 @@ export function lowerAmount(
           ...(amount.types === undefined ? {} : { types: amount.types as readonly CardType[] }),
           ...(amount.token === undefined ? {} : { token: amount.token }),
           ...(modified ? { modified: true as const } : {}),
+          ...(amount.kind === 'diedThisTurn' && amount.leftBattlefield === true
+            ? { leftBattlefield: true as const }
+            : {}),
         },
         rule,
       };
@@ -574,6 +580,12 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
     }
     case 'exiledAsCost': {
+      // Crypt Incursion (CR 608.2c): "Exile all creature cards from target player's graveyard. You gain 3 life for each card exiled this way.": after an exile instruction of the same
+      // text, the cards exiled this way are the ones that instruction moved (the engine's `moved`), not cards exiled to pay an additional cost.
+      if (ctx.lastEffectKind === 'exile') {
+        const moved = needs('movedCount');
+        return moved ?? { ok: true, value: { kind: 'movedCount' }, rule };
+      }
       const blocked = needs('exiledAsCost');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'exiledAsCost' }, rule };

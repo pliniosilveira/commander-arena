@@ -71,19 +71,21 @@ export function adjustedAbility(
 /**
  * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-461, CR 601.2f, 118.7): how much the generic mana of an ability of `source`, a card
  * in a graveyard, goes down, from the permanents with an `abilityCostReduction` of `ofObjects` whose filter matches the card (the permanent that has the static ability is the
- * source and its controller is "you", so `controller: 'you'` is its controller's graveyard). The reductions of several permanents add up. 0 for anything on the battlefield.
+ * source and its controller is "you", so `controller: 'you'` is its controller's graveyard), or, with `zone: 'battlefield'`, "Activated abilities of Foods you control cost {1} less to
+ * activate" (CR 602.2b). The reductions of several permanents add up. 0 for an object in any other zone.
  */
 function objectsReductionFor(
   state: GameState,
   source: GameObject,
 ): { readonly by: number; readonly floor: number } {
-  // The abilities of cards in a graveyard (D-461) and, with a floor, of creatures on the battlefield (issue 345).
+  // The abilities of cards in a graveyard (D-461) and of permanents on the battlefield (Foods, CR 602.2b; with a floor, creatures, issue 345).
   if (source.zone !== 'graveyard' && source.zone !== 'battlefield') return { by: 0, floor: 0 };
   let by = 0;
   let floor = 0;
   for (const s of abilityReductionSources(state)) {
     if (s.objects === undefined) continue;
-    if (source.zone === 'battlefield' && s.minTotal === undefined) continue;
+    // A reduction of the permanents' abilities names the battlefield; one of cards in a graveyard does not reach a permanent.
+    if (source.zone === 'battlefield' && s.objects.zone !== 'battlefield') continue;
     const ctx = { controller: controllerOf(state, s.object), source: s.object.id };
     if (matchesFilter(state, source, s.objects, ctx)) {
       by += Math.max(0, amountOf(state, s.amount, ctx, []));

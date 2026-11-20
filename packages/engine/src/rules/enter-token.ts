@@ -31,6 +31,7 @@ import {
   devourCandidates,
   devourDecision,
   devourOf,
+  devourQualityOf,
   keywordEntryCounters,
   riotDecision,
   riotGivesHaste,
@@ -60,7 +61,8 @@ export function tokenAsks(state: GameState, seat: SeatId, definition: TokenDefin
     entersPayment(definition.abilities) !== null ||
     entersReveal(definition.abilities) !== null ||
     riotInstances(state, definition.abilities, hypotheticalToken(seat, definition)) > 0 ||
-    (devourOf(definition.abilities) > 0 && devourCandidates(state, seat).length > 0)
+    (devourOf(definition.abilities) > 0 &&
+      devourCandidates(state, seat, devourQualityOf(definition.abilities)).length > 0)
   );
 }
 
@@ -325,8 +327,9 @@ export function runEnterToken(
   // CR 702.82a (D-185): "you may sacrifice any number of creatures", the last question; none is asked when there is nothing to sacrifice.
   let devoured = instruction.devoured ?? null;
   if (devourOf(definition.abilities) > 0 && devoured === null) {
-    const legal = devourCandidates(state, seat);
-    if (legal.length > 0) return asked(devourDecision(seat, res.object, legal));
+    const quality = devourQualityOf(definition.abilities);
+    const legal = devourCandidates(state, seat, quality);
+    if (legal.length > 0) return asked(devourDecision(seat, res.object, legal, quality));
     devoured = [];
   }
   // CR 119.4, 614.12 (pay any amount of life): the life the token's controller chose to pay is lost as the token enters.

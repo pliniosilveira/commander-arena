@@ -132,9 +132,36 @@ export const CHOOSE_PARITY_RETURN: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Remove those counters" (Prize Pig, CR 122.1, 122.2, 608.2c): the engine's `removeCounters` of every counter of the kind the sentence's condition counted (the binding pass named it),
+ * as many as the permanent has as the effect runs.
+ */
+export const REMOVE_THOSE_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'removeThoseCounters',
+  id: 'lower.remove-those-counters',
+  needs: ['effect:removeCounters', 'amount:countersOn'],
+  lower(clause) {
+    const counter = arg(clause, 'counter');
+    if (counter?.kind !== 'counterSpec') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'removeCounters',
+          objects: { kind: 'this' },
+          counter: counter.name,
+          count: { kind: 'countersOn', of: { kind: 'this' }, counter: counter.name },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const QUANDRIX_G_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DISTRIBUTE_COUNTERS,
   DISTRIBUTE_COUNTERS_UP_TO_THAT_MANY,
   REMOVE_COUNTERS_SELF,
+  REMOVE_THOSE_COUNTERS,
   CHOOSE_PARITY_RETURN,
 ];

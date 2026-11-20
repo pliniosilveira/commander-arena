@@ -30,6 +30,8 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
     'sacrifice an artifact',
     'sacrifice a Dragon',
     'sacrifice it',
+    'sacrifice a token',
+    'sacrifice two tokens',
     'sacrifice any number of other permanents',
     'sacrifice any number of creatures',
     'sacrifice one or more Treasures',
@@ -59,6 +61,8 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
           'noun.self',
           'noun.a-permanent-sharing-type',
           'noun.a-permanent',
+          // Shire Shirriff: "sacrifice a token", a token of any kind.
+          'noun.a-token',
           // CR 107.3a, 701.21a (Nahiri's Lithoforming): "Sacrifice X lands", the X of the spell.
           'noun.x-permanents',
           'noun.any-number-permanents',

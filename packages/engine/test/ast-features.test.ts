@@ -187,6 +187,8 @@ describe('the dimensions', () => {
       'attackersTotalPower',
       // D-196: "if you control your Ring-bearer".
       'controlsRingBearer',
+      'thisIsRingBearer',
+      'ringTemptedAtLeast',
       'ownsAndControlsNamed',
       // D-286: "as long as this creature is paired with another creature", and the engine's own intervening "if" of soulbond.
       'paired',

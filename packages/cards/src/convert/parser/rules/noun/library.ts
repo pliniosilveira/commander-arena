@@ -291,6 +291,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     // CR 701.23, 202.3: any number of cards with a total mana value.
     'any number of creature cards with total mana value 6 or less',
     'any number of nonland permanent cards with total mana value 4 or less',
+    // CR 701.23, 701.23b (Bilbo, Birthday Celebrant): any number of cards, with no limit.
+    'any number of creature cards',
+    'any number of nonland permanent cards',
     // Issue 104 (CR 201.2): a card of a given name.
     "a card named God-Pharaoh's Gift",
     'a card named Regna, the Redeemer',
@@ -338,7 +341,8 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'up to two basic land cards that share a creature type with it',
     'up to two permanent cards that share a land type',
     'up to two Forest cards that share a land type',
-    'any number of creature cards',
+    'any number of creature card',
+    'any number of cards that share a land type',
     'any number of creature cards with total mana value 0 or less',
     'any number of creature cards with mana value 6 or less',
     'any number of creature cards with total mana value 6',
@@ -387,6 +391,18 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           kind: 'noun',
           det: 'a',
           filter: { ...filter, anyNumberTotalManaValue: limit.value },
+          upTo: true,
+          plural: true,
+          other: false,
+        }),
+      ),
+      // CR 701.23, 701.23b: "any number of creature cards": any number (none included) with no limit but the library.
+      map(
+        sequence(literal('any number of '), libraryPhrase(true)),
+        ([, filter]): Bare => ({
+          kind: 'noun',
+          det: 'a',
+          filter: { ...filter, anyNumber: true as const },
           upTo: true,
           plural: true,
           other: false,

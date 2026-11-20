@@ -974,6 +974,16 @@ export function resolvePlayers(
         ].filter((seat) => !getSeat(state, seat).hasLost),
       );
     }
+    case 'combatDamagedByNamed':
+      // CR 120.2a, 510.2: the opponents who have been dealt combat damage this game by a creature with the name, still in the game, in the order of CR 101.4.
+      return apnapOrder(
+        state,
+        opponentsOf(state, ctx.controller).filter(
+          (seat) =>
+            !getSeat(state, seat).hasLost &&
+            (state.combatDamagedByNames?.[seat] ?? []).includes(selector.name),
+        ),
+      );
     case 'giftRecipient': {
       // CR 702.174a (D-135): "the chosen player": the opponent the gift was promised to, read from the spell, from the
       // permanent that came from it, or from last-known information once either has left (CR 113.7a).
@@ -1009,6 +1019,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||
     sel.kind === 'attackedPlayers' ||
+    sel.kind === 'combatDamagedByNamed' ||
     sel.kind === 'giftRecipient'
   );
 }
