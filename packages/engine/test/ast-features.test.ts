@@ -199,6 +199,8 @@ describe('the dimensions', () => {
       'goaded',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
+      'revealTopOfLibrary',
+      'playLandsFromTopOfLibrary',
       'attackTax',
       // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
