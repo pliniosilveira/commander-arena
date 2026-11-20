@@ -315,6 +315,12 @@ class Binder {
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
         );
+        // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
+        if (found === undefined && noun.itWord === true) {
+          found = recent.find(
+            (a) => a.kind === 'object' && a.token !== true && a.noun.ref === 'trig',
+          );
+        }
         break;
       default:
         break;

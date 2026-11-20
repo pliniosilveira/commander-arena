@@ -165,6 +165,11 @@ export interface IrNoun extends IrNode {
    */
   readonly otherTarget?: true;
   /**
+   * "attach ~ to it" (CR 701.3, 603.2): the word was "it", which names the token the sentence made and, where it made none, the object the trigger is about (Hero's
+   * Blade: "Whenever a legendary creature you control enters, you may attach ~ to it").
+   */
+  readonly itWord?: true;
+  /**
    * "one or two target creatures", "each of one or two targets" (D-295, CR 115.1, 601.2c): at least this many targets, at most `count`. A target noun
    * without it takes none (`upTo`) or exactly `count`.
    */
