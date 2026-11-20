@@ -725,3 +725,63 @@ describe('Gix, Yawgmoth Praetor (CR 118.3, 107.3a, 602.2b, 701.13, 118.9)', () =
     g.expect.invariants();
   });
 });
+
+describe('Neriv, Crackling Vanguard (CR 201.2, 903.3, 508.1, 701.13)', () => {
+  const neriv = real('Neriv, Crackling Vanguard');
+  const warboss = real('Legion Warboss');
+
+  test('the card is valid', () => {
+    expect(validateCard(neriv)).toEqual([]);
+  });
+
+  test('attacking exiles a card for each differently named token; the exiled cards may be played in turns a commander attacked', () => {
+    const g = scenario()
+      .define(neriv)
+      .define(warboss)
+      .seat(0)
+      .library('Forest', 'Plains', ...LIBRARY)
+      .battlefield(neriv.name, { commander: true })
+      .battlefield(warboss.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    // Legion Warboss makes one Goblin at the beginning of combat: one differently named token.
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: neriv.name }, { attacker: 'Goblin' }]);
+    g.passAll();
+    g.expect.zone('Forest', 'exile', { seat: 0, count: 1 });
+    g.expect.zone('Plains', 'library', { seat: 0, count: 1 });
+    // The commander attacked this turn: the land is playable at once, in the second main phase.
+    g.advanceTo('postcombatMain');
+    g.act(0).playLand({ name: 'Forest', zone: 'exile' });
+    g.expect.zone('Forest', 'battlefield', { seat: 0, count: 1 });
+    g.expect.invariants();
+  });
+
+  test('in a turn no commander attacked the exiled cards cannot be played', () => {
+    const g = scenario()
+      .define(neriv)
+      .define(warboss)
+      .seat(0)
+      .library('Forest', 'Plains', ...LIBRARY)
+      .battlefield(neriv.name, { commander: true })
+      .battlefield(warboss.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: neriv.name }, { attacker: 'Goblin' }]);
+    g.passAll();
+    g.expect.zone('Forest', 'exile', { seat: 0, count: 1 });
+    // Two turns later it is the controller's turn again and nobody attacked with the commander yet: the card stays exiled and cannot be played.
+    g.advanceTo('precombatMain', { turn: 3 });
+    g.expect.zone('Forest', 'exile', { seat: 0, count: 1 });
+    g.expect.illegal(0, { playLand: { name: 'Forest', zone: 'exile' } });
+  });
+});

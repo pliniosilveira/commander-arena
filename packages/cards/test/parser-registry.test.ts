@@ -557,6 +557,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.may-play-lands-cast-spells-free': permanent(
     (e) => `{T}: Exile the top two cards of your library. ${cap(e)}.`,
   ),
+  'effect.exile-top-equal-to-different-names': permanent((e) => `Whenever ~ attacks, ${e}.`),
+  'effect.may-play-during-commander-attack-turns': permanent(
+    (e) => `Whenever ~ attacks, exile the top two cards of your library. ${cap(e)}.`,
+  ),
   'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
   'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
   'trigger.opponents-dealt-combat-damage': whenever,

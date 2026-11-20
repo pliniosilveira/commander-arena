@@ -271,6 +271,100 @@ export const EFFECT_MAY_PLAY_LANDS_CAST_SPELLS_FREE = defineRule<Clauses>({
 });
 
 /**
+ * `effect.exile-top-equal-to-different-names`: "Exile a number of cards from the top of your library equal to the number of differently named tokens you control." (Neriv, Crackling
+ * Vanguard; CR 701.13, 201.2, 111.4): the controller exiles that many cards from their library, one after the other, face up; they are what "those cards" names afterwards. The
+ * engine's `exileTop` with the amount `differentNamesAmong`. Not read: another count, another group, "creatures", your opponent's library, face down.
+ */
+export const EFFECT_EXILE_TOP_EQUAL_TO_DIFFERENT_NAMES = defineRule<Clauses>({
+  id: 'effect.exile-top-equal-to-different-names',
+  family: 'effect',
+  leading: ['exile'],
+  cites: ['CR 701.13 (Exile)', 'CR 201.2 (Name)', 'CR 111.4 (Tokens)'],
+  examples: [
+    'exile a number of cards from the top of your library equal to the number of differently named tokens you control',
+  ],
+  rejects: [
+    'exile a number of cards from the top of your library equal to the number of tokens you control',
+    'exile a number of cards from the top of your library equal to the number of differently named creatures you control',
+    'exile a number of cards from the top of your library equal to the number of differently named tokens your opponents control',
+    "exile a number of cards from the top of target opponent's library equal to the number of differently named tokens you control",
+    'exile a number of cards from the top of your library equal to the number of differently named tokens you control face down',
+    'exile a number of cards from the top of your library equal to the number of differently named tokens',
+    'exile cards from the top of your library equal to the number of differently named tokens you control',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.exile-top-equal-to-different-names';
+    const head = literal(
+      'exile a number of cards from the top of your library equal to the number of differently named ',
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const group = family<IrNoun>('noun', { only: ['noun.token-permanents'] })(ctx, head.pos);
+    if (!group.ok) return group;
+    const span = { start: head.pos, end: group.pos };
+    const count: IrAmount = { kind: 'differentNamesAmong', of: group.value, span };
+    return {
+      ok: true,
+      value: [makeClause(id, 'exileTop', { count }, { start: pos, end: group.pos })],
+      pos: group.pos,
+    };
+  },
+});
+
+/**
+ * `effect.may-play-during-commander-attack-turns`: "During any turn you attacked with a commander, you may play those cards." (Neriv, Crackling Vanguard; CR 903.3, 508.1, 601.2,
+ * 305.1): the cards an earlier instruction exiled may be played, cast or played as lands, for as long as they stay in exile, in the turns the controller attacked with a commander.
+ * The engine's `mayPlay` with `duringTurnsAttackedWithCommander`. Not read: another turn condition, "a creature", "this turn", "cast", no "any".
+ */
+export const EFFECT_MAY_PLAY_DURING_COMMANDER_ATTACK_TURNS = defineRule<Clauses>({
+  id: 'effect.may-play-during-commander-attack-turns',
+  family: 'effect',
+  leading: ['during'],
+  cites: ['CR 903.3 (Commander)', 'CR 508.1 (Declare Attackers Step)', 'CR 601.2 (Casting Spells)'],
+  examples: [
+    'during any turn you attacked with a commander, you may play those cards',
+    'During any turn you attacked with a commander, you may play those cards',
+  ],
+  rejects: [
+    'during any turn you attacked with a creature, you may play those cards',
+    'during this turn you attacked with a commander, you may play those cards',
+    'during any turn you attacked with a commander, you may cast those cards',
+    'during any turn you attacked with a commander, you may play those cards and draw a card',
+    'during any turn you attacked with a commander, you may play that card',
+    'during any turn you attacked with your commander, you may play those cards',
+    'during any turn you attacked with a commander you may play those cards',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.may-play-during-commander-attack-turns';
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `during any turn you attacked with a commander, you may play those cards${BOUNDARY}(?!,| and\\b| then\\b)`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const flag: IrFlag = { kind: 'flag', value: true, span: r.value.span, rule: id };
+    const duration: IrDuration = {
+      kind: 'duration',
+      scope: 'whileExiled',
+      span: r.value.span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(id, 'mayPlay', { duringCommanderAttackTurns: flag }, r.value.span),
+          duration,
+        },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.double-tokens-this-turn`: "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead." (CR 614.1a,
  * 614.5, 611.2a; Kaya, Geist Hunter): the replacement effect of the doubling permanents, as an effect that lasts until the turn ends. The engine's `doubleTokens`. Not read: another
  * duration, a kind of token, "an opponent's", a different count, no "instead".
@@ -318,5 +412,7 @@ export const MARDU_SURGE_EFFECT_RULES = [
   EFFECT_ITS_CONTROLLER_MAY_PAY_DRAW,
   EFFECT_EXILE_TOP_OF_TARGET_LIBRARY,
   EFFECT_MAY_PLAY_LANDS_CAST_SPELLS_FREE,
+  EFFECT_EXILE_TOP_EQUAL_TO_DIFFERENT_NAMES,
+  EFFECT_MAY_PLAY_DURING_COMMANDER_ATTACK_TURNS,
   EFFECT_DOUBLE_TOKENS_THIS_TURN,
 ];

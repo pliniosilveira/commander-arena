@@ -1718,6 +1718,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderCasts':
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
+    case 'differentNamesAmong':
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
@@ -1920,6 +1921,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'differentNamesAmong':
+      // Issue 101 (CR 201.2): the distinct names among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'differentNamesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'differentNamesAmong counts the names of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'differentNamesAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }

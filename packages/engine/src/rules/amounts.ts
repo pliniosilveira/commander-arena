@@ -56,7 +56,8 @@ type StateAmount = Extract<
       | 'tappedAsCostPower'
       | 'exiledAsCost'
       | 'cardTypesAmong'
-      | 'differentManaValuesAmong';
+      | 'differentManaValuesAmong'
+      | 'differentNamesAmong';
   }
 >;
 
@@ -104,7 +105,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong' ||
-    amount.kind === 'differentManaValuesAmong'
+    amount.kind === 'differentManaValuesAmong' ||
+    amount.kind === 'differentNamesAmong'
   );
 }
 
@@ -181,6 +183,20 @@ function differentManaValuesAmongOf(
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(manaValueOfCost(derive(state, obj).manaCost, obj));
+  }
+  return seen.size;
+}
+
+/**
+ * CR 201.2, 111.4 (Neriv, Crackling Vanguard): "the number of differently named tokens you control": the distinct names of the battlefield permanents the filter matches, each once.
+ */
+function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, filter.zone ?? 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    seen.add(derive(state, obj).name);
   }
   return seen.size;
 }
@@ -440,6 +456,8 @@ export function stateAmountOf(
       return cardTypesAmongOf(state, amount.filter, ctx);
     case 'differentManaValuesAmong':
       return differentManaValuesAmongOf(state, amount.filter, ctx);
+    case 'differentNamesAmong':
+      return differentNamesAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':

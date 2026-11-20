@@ -228,6 +228,12 @@ export type Amount =
    */
   | { readonly kind: 'differentManaValuesAmong'; readonly filter: ObjectFilter }
   /**
+   * "The number of differently named tokens you control" (issue 101, Neriv, Crackling Vanguard; CR 201.2, 111.4): how many distinct names the permanents `filter` matches on the
+   * battlefield have between them, each counted once however many have it (a name as the permanent has it now, after copy effects, CR 201.2). The filter names the battlefield (or
+   * leaves it out) and reads no combat, source power, power or toughness.
+   */
+  | { readonly kind: 'differentNamesAmong'; readonly filter: ObjectFilter }
+  /**
    * "Your devotion to black", "your devotion to white and blue" (CR 700.5, D-131): the number of mana symbols that
    * are one of the `colors` (a hybrid symbol counts for each of its colors, once; a symbol that is generic or
    * colorless counts for none) among the mana costs of the permanents the controller of the ability controls. The
@@ -2510,6 +2516,11 @@ export type Effect =
        * permission. Not with `castOnly` (the cards stay hidden or not as `lookAt` says).
        */
       readonly free?: true;
+      /**
+       * "During any turn you attacked with a commander, you may play those cards." (issue 101, Neriv, Crackling Vanguard; CR 903.3, 508.1, 611.2): the permission can be used only in a
+       * turn in which the controller declared a commander of theirs as an attacker (any combat phase), read from the turn log; it lasts as `lasts` says (`whileExiled`). Not with `castOnly`.
+       */
+      readonly duringTurnsAttackedWithCommander?: true;
       /** How long the permission lasts. Named `lasts`, not `until`: `exile` has an `until` of another kind, which would make it a discriminant of the union. */
       readonly lasts: PlayUntil;
       /**

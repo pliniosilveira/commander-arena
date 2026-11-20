@@ -2122,6 +2122,8 @@ export type ContinuousChange =
       readonly castOnly?: true;
       /** "You may play lands and cast spells ... without paying their mana costs" (`mayPlay.free`, issue 101): the land half of the permission, which plays the card only as a land (the spell half is `free`). */
       readonly landOnly?: true;
+      /** "During any turn you attacked with a commander, you may play those cards" (`mayPlay.duringTurnsAttackedWithCommander`, issue 101): usable only in a turn the seat declared a commander as an attacker. */
+      readonly whenAttackedWithCommander?: true;
       /**
        * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
        * (the plain cast, paying the mana cost, is not allowed by this permission). Only with `castOnly`.

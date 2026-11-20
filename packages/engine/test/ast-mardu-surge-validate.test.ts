@@ -201,3 +201,43 @@ describe('Gix: a payment by another player, discard X, a free play (CR 118.3, 10
     );
   });
 });
+
+describe('Neriv: differently named permanents and the turns of a commander attack (CR 201.2, 903.3)', () => {
+  const exileSome = (count: unknown): Effect => ({ kind: 'exileTop', count: count as never });
+  const named = (filter: unknown) => ({ kind: 'differentNamesAmong', filter });
+  const onAttack = (effect: Effect): Ability => ({
+    kind: 'triggered',
+    trigger: { kind: 'attacks', what: { kind: 'this' } },
+    effect,
+  });
+
+  test('differentNamesAmong counts the names of battlefield permanents', () => {
+    expect(
+      validateCard(creature([onAttack(exileSome(named({ token: true, controller: 'you' })))])),
+    ).toEqual([]);
+  });
+
+  test('it reads no other zone, combat or power', () => {
+    for (const filter of [{ zone: 'graveyard' }, { attacking: true }, { power: { atLeast: 1 } }]) {
+      expect(
+        messages(creature([onAttack(exileSome(named(filter)))])),
+        JSON.stringify(filter),
+      ).toContain('differentNamesAmong');
+    }
+  });
+
+  test('duringTurnsAttackedWithCommander lasts while exiled and is not castOnly', () => {
+    const play = (extra: object): Ability =>
+      onAttack({
+        kind: 'sequence',
+        effects: [
+          exileSome(1),
+          { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'whileExiled', ...extra },
+        ],
+      });
+    expect(validateCard(creature([play({ duringTurnsAttackedWithCommander: true })]))).toEqual([]);
+    expect(
+      messages(creature([play({ duringTurnsAttackedWithCommander: true, castOnly: true })])),
+    ).toContain('a permission for turns of a commander attack');
+  });
+});

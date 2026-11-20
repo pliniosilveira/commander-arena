@@ -117,6 +117,10 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           ...(arg(clause, 'anyManaColor')?.kind === 'flag' ? { anyManaColor: true as const } : {}),
           // Issue 101 (Gix): "you may play lands and cast spells from among cards exiled this way without paying their mana costs".
           ...(arg(clause, 'free')?.kind === 'flag' ? { free: true as const } : {}),
+          // Issue 101 (Neriv): "during any turn you attacked with a commander, you may play those cards".
+          ...(arg(clause, 'duringCommanderAttackTurns')?.kind === 'flag'
+            ? { duringTurnsAttackedWithCommander: true as const }
+            : {}),
         },
       ],
       rule: clause.rule,

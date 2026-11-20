@@ -625,6 +625,8 @@ describe('unmatched abilities', () => {
       'effect.its-controller-may-pay-draw',
       'effect.exile-top-of-target-library',
       'effect.may-play-lands-cast-spells-free',
+      'effect.exile-top-equal-to-different-names',
+      'effect.may-play-during-commander-attack-turns',
       'effect.double-tokens-this-turn',
       'effect.exile-two-piles',
       'effect.cast-from-among',

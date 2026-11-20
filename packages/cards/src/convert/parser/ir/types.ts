@@ -450,6 +450,8 @@ export type IrAmount =
   | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each different mana value among instant and sorcery cards in your graveyard" (Eris, issue 121, CR 202.3): the distinct mana values the cards of the group have, each once
   | { readonly kind: 'differentManaValuesAmong'; readonly of: IrNoun; readonly span: Span }
+  // "equal to the number of differently named tokens you control" (Neriv, issue 101, CR 201.2): the distinct names the permanents of the group have, each once
+  | { readonly kind: 'differentNamesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each time it was kicked" (CR 702.33c), stage P17; `who` is the word that says which object
   | { readonly kind: 'timesKicked'; readonly who: 'self' | 'it'; readonly span: Span }
   // "equal to the total life lost this way" (CR 702.101a), stage P21: what an earlier loss of life in the same text lost
@@ -2000,6 +2002,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'manaValueOf',
   'colorsOf',
   'cardTypesAmong',
+  'differentNamesAmong',
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',

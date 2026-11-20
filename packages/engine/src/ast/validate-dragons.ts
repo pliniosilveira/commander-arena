@@ -87,6 +87,23 @@ export function checkDragonsEffect(
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
       }
+      // Issue 101 (CR 903.3, 508.1): "during any turn you attacked with a commander": the permission is used in some turns only, so it lasts while the cards are exiled, and it is to play.
+      if (e.duringTurnsAttackedWithCommander !== undefined) {
+        if (e.duringTurnsAttackedWithCommander !== true) {
+          issue(
+            out,
+            `${path}.duringTurnsAttackedWithCommander`,
+            'duringTurnsAttackedWithCommander must be true when present',
+          );
+        }
+        if (e.lasts !== 'whileExiled' || e.castOnly !== undefined) {
+          issue(
+            out,
+            `${path}.duringTurnsAttackedWithCommander`,
+            'a permission for turns of a commander attack lasts while exiled and is not castOnly',
+          );
+        }
+      }
       // Issue 101 (CR 118.9): "play lands and cast spells ... without paying their mana costs": not with castOnly (a land is played), nor with the any-color rider (no mana is spent).
       if (e.free !== undefined) {
         if (e.free !== true) issue(out, `${path}.free`, 'free must be true when present');
