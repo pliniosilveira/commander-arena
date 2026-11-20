@@ -120,4 +120,48 @@ export const EFFECT_NEXT_SPELL_MODIFIER = defineRule<Clauses>({
   },
 });
 
-export const NEXT_SPELL_EFFECT_RULES = [EFFECT_NEXT_SPELL_MODIFIER];
+const PAY_LIFE_RULE = 'effect.next-spell-pay-life';
+
+/**
+ * `effect.next-spell-pay-life`: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (Marshland Bloodcaster, CR 118.9,
+ * 601.2b, 202.3e, 119.4, 611.2a). The engine's `nextSpellPayLife`: until end of turn, the next spell of its controller may be cast by paying life equal to its mana value rather than its mana
+ * cost, and the next spell cast uses the permission up. Not read: another kind of spell ("the next creature spell"), a spell that is not the next one, another player's spells, a fixed
+ * amount of life, "this turn" left out, the permission as an obligation ("you pay life").
+ */
+export const EFFECT_NEXT_SPELL_PAY_LIFE = defineRule<Clauses>({
+  id: PAY_LIFE_RULE,
+  family: 'effect',
+  leading: ['rather'],
+  cites: [
+    'CR 118.9 (Alternative Costs)',
+    'CR 601.2b (Casting Spells)',
+    'CR 202.3e (Mana Value)',
+    'CR 119.4 (Life)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    "rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value",
+  ],
+  rejects: [
+    "rather than pay the mana cost of the next creature spell you cast this turn, you may pay life equal to that spell's mana value",
+    "rather than pay the mana cost of the next spell you cast, you may pay life equal to that spell's mana value",
+    "rather than pay the mana cost of the next spell an opponent casts this turn, they may pay life equal to that spell's mana value",
+    'rather than pay the mana cost of the next spell you cast this turn, you may pay 3 life',
+    "rather than pay the mana cost of the next spell you cast this turn, you pay life equal to that spell's mana value",
+  ],
+  parse: (ctx, pos) => {
+    const read = spanned(
+      literal(
+        "rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value",
+      ),
+    )(ctx, pos);
+    if (!read.ok) return read;
+    return {
+      ok: true,
+      value: [makeClause(PAY_LIFE_RULE, 'nextSpellPayLife', {}, read.value.span)],
+      pos: read.pos,
+    };
+  },
+});
+
+export const NEXT_SPELL_EFFECT_RULES = [EFFECT_NEXT_SPELL_MODIFIER, EFFECT_NEXT_SPELL_PAY_LIFE];
