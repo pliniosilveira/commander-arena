@@ -2350,6 +2350,29 @@ const PLAYER_LOCK: Lowering<IrClause, Effects> = {
   },
 };
 
+const PLAYER_PROTECTION: Lowering<IrClause, Effects> = {
+  head: 'playerProtection',
+  id: 'lower.player-protection',
+  needs: ['effect:grantPlayerProtectionEverything'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'player');
+    if (named?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(named, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
   ADD_COUNTERS,
@@ -2485,6 +2508,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainExperience'),
   playerVerb('loseLife'),
   PLAYER_LOCK,
+  PLAYER_PROTECTION,
   playerVerb('mill'),
   MANIFEST,
   playerVerb('shuffle'),

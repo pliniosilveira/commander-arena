@@ -129,3 +129,43 @@ describe('Crypt of Agadeem', () => {
     g.expect.pool(0, 'CC');
   });
 });
+
+describe('The One Ring', () => {
+  const ring = real('The One Ring');
+  const BOLT = 'Lightning Bolt';
+
+  const board = (cast: boolean) => {
+    const g = scenario()
+      .define(ring)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(ring.name)
+      .pool('CCCC')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Mountain', 'Mountain')
+      .hand(BOLT)
+      .at('precombatMain', { active: 0 })
+      .build();
+    if (cast) {
+      g.act(0).cast(ring.name, { pay: true });
+      g.passAll();
+    }
+    return g;
+  };
+
+  test('when it enters and you cast it, you have protection from everything: an opponent cannot target you (CR 702.16)', () => {
+    const g = board(true);
+    g.act(0).pass();
+    expect(() => g.act(1).cast(BOLT, { targets: [{ player: 0 }], pay: true })).toThrow();
+    g.expect.life(0, 40);
+  });
+
+  test('before it enters nothing protects you: the same spell can target you', () => {
+    const g = board(false);
+    g.act(0).pass();
+    g.act(1).cast(BOLT, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.expect.life(0, 37);
+  });
+});

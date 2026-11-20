@@ -1101,6 +1101,44 @@ export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
   },
 });
 
+/**
+ * "You gain protection from everything until your next turn" (The One Ring, CR 702.16 Protection): the controller has protection from everything, as the engine's
+ * `grantPlayerProtectionEverything` has it. Only the controller, and only until their next turn; "until end of turn", another player and a creature are other statements.
+ */
+export const EFFECT_PLAYER_PROTECTION = defineRule<Clauses>({
+  id: 'effect.player-protection',
+  family: 'effect',
+  leading: ['you'],
+  cites: ['CR 702.16 (Protection)', 'CR 611.2 (Continuous Effects from Resolving Effects)'],
+  examples: ['you gain protection from everything until your next turn'],
+  rejects: [
+    'you gain protection from everything',
+    'you gain protection from everything until end of turn',
+    'you gain protection from red until your next turn',
+    'target player gains protection from everything until your next turn',
+    'you gain protection from everything until their next turn',
+    'you gain protection from everything and your life total can’t change',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/you gain protection from everything until your next turn(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          'effect.player-protection',
+          'playerProtection',
+          { player: impliedYou('effect.player-protection', pos) },
+          r.value.span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 /** `effect.shuffle`: "Shuffle your library." and, since stage P63 (D-216), "You may shuffle." (Ponder: the library is the controller's) (CR 701.24). */
 export const EFFECT_SHUFFLE = defineRule<Clauses>({
   id: 'effect.shuffle',
