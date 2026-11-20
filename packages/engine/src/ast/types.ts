@@ -3147,7 +3147,12 @@ export type Effect =
       readonly kind: 'grantAbility';
       readonly objects: ObjectSelector;
       readonly abilities: readonly Ability[];
-      readonly duration: 'untilEndOfTurn' | 'permanent';
+      /**
+       * `untilYourNextTurn` (issue 145, Song of Freyalise, CR 611.2a, 500.1): "Until your next turn, creatures you control gain \"{T}: Add one mana of any color.\"": the permanents
+       * `objects` names as the effect resolves (CR 611.2c) have the abilities until the next turn of the controller of the effect begins (the turn it resolves in not counted).
+       * Only an activated, triggered or mana ability, as for `untilEndOfTurn`.
+       */
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn' | 'permanent';
     }
   /**
    * "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. D-451 (CR 702.16): or a protection, from named colors

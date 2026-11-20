@@ -169,6 +169,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
@@ -1105,6 +1106,7 @@ export const EFFECT_RULES = [
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
+  ...SONG_FREYALISE_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,

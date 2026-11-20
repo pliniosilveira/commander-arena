@@ -233,4 +233,40 @@ describe('abilities granted until end of turn by a spell', () => {
 
     expect(validateCard(card)).toEqual([]);
   });
+  test('a group may gain a mana ability until your next turn (issue 145, CR 611.2a, 500.1); a static ability may not', () => {
+    const grantAbility = (ability: Ability): ReturnType<typeof singleFaceCard> =>
+      singleFaceCard({
+        name: 'SYNTHETIC Until Next Turn Grant',
+        manaCost: ['1'],
+        types: ['sorcery'],
+        colors: [],
+        colorIdentity: [],
+        oracleText: '',
+        spell: {
+          effect: {
+            kind: 'grantAbility',
+            objects: {
+              kind: 'each',
+              filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+            },
+            abilities: [ability],
+            duration: 'untilYourNextTurn',
+          },
+        },
+      });
+    expect(
+      validateCard(
+        grantAbility({
+          kind: 'mana',
+          cost: [{ kind: 'tap' }],
+          production: { kind: 'anyColor' },
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateCard(
+        grantAbility({ kind: 'static', static: { kind: 'cantLoseGame' } } as unknown as Ability),
+      ).map((i) => i.message),
+    ).toContain('a temporary grant gives an activated, triggered or mana ability');
+  });
 });

@@ -654,6 +654,7 @@ describe('unmatched abilities', () => {
       'effect.lead-becomes-land-creature-keywords',
       'effect.becomes-land-creature-trailing',
       'effect.have-player-lose-life',
+      'effect.lead-gain-mana-ability-all',
       'effect.put-any-number-from-hand',
       'effect.player-gets-emblem',
       'effect.repeat-process-again',
