@@ -1,24 +1,9 @@
 // Agatha deck (issue 345), group 1: Hero's Blade, "Whenever a legendary creature you control enters, you may attach ~ to it."
 // Pins: CR 701.3 (attach), CR 603.2 (the trigger), CR 205.4 (legendary supertype), CR 603.5 (the "may" is asked as the ability resolves).
-import { readFileSync } from 'node:fs';
-import type { CardDefinition } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
-
-const cards: readonly GoldenCard[] = parseGolden(
-  readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
-);
-
-export function real(name: string): CardDefinition {
-  const card = cards.find((candidate) => candidate.name === name);
-  if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
-  const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
-  expect(imported.support.status, name).toBe('supported');
-  expect(imported.support.unparsed, name).toEqual([]);
-  return imported.definition;
-}
+import { real } from './agatha-helpers';
+import { parsed } from './convert-grammar-helpers';
 
 const BLADE = real("Hero's Blade");
 const HERO = parsed('SYNTHETIC Legend', 'Legendary Creature — Human', '', {

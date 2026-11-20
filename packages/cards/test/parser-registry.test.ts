@@ -801,6 +801,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-quality': asIs,
   // Stage P70 (D-259): the equip of a commander is a line of its own.
   'keyword.equip-commander': asIs,
+  // Issue 345: the equip of a legendary creature is a line of its own.
+  'keyword.equip-legendary': asIs,
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".

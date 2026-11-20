@@ -1789,6 +1789,8 @@ export interface IrKeyword extends IrNode {
   readonly quality?: string;
   /** "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */
   readonly commanderOnly?: true;
+  /** "Equip legendary creature {3}" (issue 345, CR 702.6c, 205.4): the equip ability attaches only to a legendary creature. */
+  readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
 }
