@@ -323,6 +323,7 @@ export function castAction(
     alternative === 'escape' ||
     alternative === 'harmonize' ||
     alternative === 'retrace' ||
+    alternative === 'jumpStart' ||
     alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
       : ['hand', 'command', 'exile'];
@@ -403,7 +404,7 @@ export function playLandAction(
 export function specialAction(
   ctx: RefContext,
   seat: SeatId,
-  kind: 'suspend' | 'foretell' | 'turnFaceUp',
+  kind: 'suspend' | 'foretell' | 'plot' | 'turnFaceUp',
   card: CardRef,
 ): Action {
   // A face-down permanent is turned up on the battlefield by its controller; the other two special actions are a card in the hand.
@@ -427,6 +428,7 @@ export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): A
   if ('activate' in spec) return activateAction(ctx, seat, spec.activate, spec.ability);
   if ('suspend' in spec) return specialAction(ctx, seat, 'suspend', spec.suspend);
   if ('foretell' in spec) return specialAction(ctx, seat, 'foretell', spec.foretell);
+  if ('plot' in spec) return specialAction(ctx, seat, 'plot', spec.plot);
   if ('turnFaceUp' in spec) return specialAction(ctx, seat, 'turnFaceUp', spec.turnFaceUp);
   if ('unlock' in spec) return unlockAction(ctx, spec.unlock, spec.door);
   if ('tap' in spec) {

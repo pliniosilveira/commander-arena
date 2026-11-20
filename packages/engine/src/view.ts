@@ -35,7 +35,7 @@ import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
 import { finalChapterOf, isSaga } from './rules/saga';
 import { objectOrLki, sourceInfo } from './rules/source-info';
-import { foretellCostOf, isForetold, suspendOf } from './rules/special-legality';
+import { foretellCostOf, isForetold, plotOf, suspendOf } from './rules/special-legality';
 import { landPlaysAllowed, topCardVisibleTo } from './rules/statics';
 import { doorsOf } from './rules/unlock-legality';
 import type { ChosenTarget } from './state/chosen';
@@ -406,8 +406,8 @@ export interface ObjectView {
 
 /** A special action of a card in a hand (`ObjectView.specialActions`, D-128). */
 export interface SpecialActionView {
-  readonly kind: 'suspend' | 'foretell';
-  /** The mana the action costs now: the suspend cost, or {2} for foretell. */
+  readonly kind: 'suspend' | 'foretell' | 'plot';
+  /** The mana the action costs now: the suspend cost, {2} for foretell, or the plot cost. */
   readonly cost: readonly string[];
   /** For suspend: how many time counters the card gets (N). */
   readonly counters?: number;
@@ -662,6 +662,7 @@ function specialActionFields(
   const face = definitionOf(state, obj.card).faces[0] ?? null;
   const suspend = suspendOf(face);
   const foretell = foretellCostOf(face);
+  const plot = plotOf(face);
   const actions: SpecialActionView[] = [];
   if (suspend !== null) {
     actions.push({
@@ -675,6 +676,12 @@ function specialActionFields(
       kind: 'foretell',
       cost: ['2'],
       castCost: foretell.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : [])),
+    });
+  }
+  if (plot !== null) {
+    actions.push({
+      kind: 'plot',
+      cost: plot.cost.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : [])),
     });
   }
   return actions.length === 0 ? {} : { specialActions: actions };

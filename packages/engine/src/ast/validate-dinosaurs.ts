@@ -100,6 +100,8 @@ export function checkDinosaursFace(face: CardFace, path: string, out: AstIssue[]
   const exilesLinked = face.abilities.some(
     (a) =>
       (a?.kind === 'keyword' && a.keyword?.kind === 'hideaway') ||
+      // Issue 121 (Forger's Foundry): the mana ability's rider exiles the spell it was spent on with the permanent.
+      (a?.kind === 'mana' && JSON.stringify(a.spentRider ?? null).includes('"exileLinked":true')) ||
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         (JSON.stringify(a.effect ?? null).includes('"linked":true') ||
           // D-230: a token that copies a creature and remembers the cards the effect before it exiled holds the link itself.

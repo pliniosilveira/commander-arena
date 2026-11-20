@@ -309,12 +309,16 @@ export class GameHost implements GameClient {
     // cancelling it changes nothing, and paying it is not a step to take back (the card was exiled).
     if (
       asked?.kind === 'payMana' &&
-      (asked.purpose === 'suspend' || asked.purpose === 'foretell')
+      (asked.purpose === 'suspend' || asked.purpose === 'foretell' || asked.purpose === 'plot')
     ) {
       if (action.kind !== 'cancel') this.undoStack = [];
       return;
     }
-    if ((action.kind === 'suspend' || action.kind === 'foretell') && events.length === 0) return;
+    if (
+      (action.kind === 'suspend' || action.kind === 'foretell' || action.kind === 'plot') &&
+      events.length === 0
+    )
+      return;
     if (action.kind === 'cancel') {
       // The engine restored the state from before the cast: drop the cast's own point and every
       // point taken inside it, because the game is back exactly where the cast began.

@@ -342,6 +342,7 @@ export function lowerAmount(
           ...(amount.ofTypes === undefined
             ? {}
             : { ofTypes: amount.ofTypes as readonly CardType[] }),
+          ...(amount.otherThanThis === true ? { otherThanThis: true as const } : {}),
         },
         rule,
       };
@@ -416,6 +417,21 @@ export function lowerAmount(
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'cardTypesAmong', filter: filter.value }, rule };
+    }
+    case 'differentManaValuesAmong': {
+      // "For each different mana value among instant and sorcery cards in your graveyard" (issue 121, CR 202.3): the engine's `differentManaValuesAmong`, of a zone outside the battlefield.
+      const blocked = needs('differentManaValuesAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone === undefined || amount.of.filter.zone === 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return {
+        ok: true,
+        value: { kind: 'differentManaValuesAmong', filter: filter.value },
+        rule,
+      };
     }
     case 'aggregate': {
       const blocked = needs('aggregate');
@@ -611,6 +627,13 @@ export function lowerAmount(
         const costBlocked = needs('sacrificedAsCost');
         if (costBlocked !== null) return costBlocked;
         return { ok: true, value: { kind: 'sacrificedAsCost' }, rule };
+      }
+      // Issue 121 (Bloodthirsty Adversary, CR 603.12): in the reflexive ability of "pay {2}{R} any number of times", "that many" is the number of times the cost was paid, which the
+      // ability's event carries (`triggerDamage`).
+      if (amount.thatMany === true && ctx.payReflexive) {
+        const paid = needs('triggerDamage');
+        if (paid !== null) return paid;
+        return { ok: true, value: { kind: 'triggerDamage' }, rule };
       }
       const blocked = needs('thisWay');
       if (blocked !== null) return blocked;
@@ -891,6 +914,7 @@ export const AMOUNT_NEEDS = [
   'amount:colorsAmong',
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
+  'amount:differentManaValuesAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',

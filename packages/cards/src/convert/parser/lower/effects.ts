@@ -19,6 +19,7 @@ import type {
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
@@ -95,6 +96,7 @@ import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
+import { NEXT_SPELL_LOWERINGS } from './next-spell';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
 import {
@@ -116,10 +118,12 @@ import { PREVENT_DAMAGE } from './prevent';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
+import { PUT_MILLED_LOWERINGS } from './put-milled';
 import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
 import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
 import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
+import { QUICK_DRAW_LOWERINGS } from './quick-draw';
 import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
@@ -2313,6 +2317,10 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
+  ...ADAPT_LOWERINGS,
+  ...NEXT_SPELL_LOWERINGS,
+  ...PUT_MILLED_LOWERINGS,
+  ...QUICK_DRAW_LOWERINGS,
   ...DACK_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".

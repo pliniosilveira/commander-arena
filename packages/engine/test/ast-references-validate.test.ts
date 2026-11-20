@@ -99,6 +99,7 @@ describe('amounts that read an object', () => {
       'greatestPowerAmong',
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
+      'differentManaValuesAmong',
       'timesAttacked',
       // Issue 81 (Omnath): "for each unspent mana you have".
       'unspentMana',

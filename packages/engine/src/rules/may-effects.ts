@@ -100,10 +100,16 @@ export function runPaidReflexive(
     return done(withX, [], [{ kind: 'effect', effect: effect.ifPaid }]);
   }
   if (effect.reflexive === undefined) return done(state);
+  // Issue 121 (Bloodthirsty Adversary): "exile up to that many target ...": a slot that takes up to as many targets as were paid is written as the bounds it has this time.
+  const targets = effect.reflexive.targets?.map((spec) => {
+    if (spec.upToTriggerAmount !== true) return spec;
+    const { upToTriggerAmount: _fixed, ...rest } = spec;
+    return { ...rest, min: 0, max: paid };
+  });
   const ability: TriggeredAbility = {
     kind: 'triggered',
     trigger: REFLEXIVE_TRIGGER,
-    ...(effect.reflexive.targets === undefined ? {} : { targets: effect.reflexive.targets }),
+    ...(targets === undefined ? {} : { targets }),
     effect: effect.reflexive.effect,
   };
   const pending: PendingTrigger = {

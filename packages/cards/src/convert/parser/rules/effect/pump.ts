@@ -17,6 +17,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrArg, IrDuration, IrNoun, IrPtChange, IrPtTerm } from '../../ir/types';
+import { FOR_EACH_AMOUNTS } from '../amount/kicked';
 import { FOR_EACH_TAIL } from '../amount/scaled';
 import { TYPE_LEADING_WORDS } from '../noun/creature-types';
 import { defineRule, family, spanned } from '../registry';
@@ -229,6 +230,55 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
 });
 
 /**
+ * `effect.for-each-pump-all`: "for each card discarded this way, creatures you control get +1/+0 until end of turn" (Pyretic Charge, CR 608.2c, 611.2c): the instruction of
+ * `effect.pump-all` with the count said first. The count is taken as the effect resolves and multiplies the change, exactly as "... until end of turn for each card discarded this way".
+ * A change with an X is not read (it would multiply two numbers nobody chose together), and neither is a comma-less count.
+ */
+export const EFFECT_FOR_EACH_PUMP_ALL = defineRule<Clauses>({
+  id: 'effect.for-each-pump-all',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.4c (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'for each card discarded this way, creatures you control get +1/+0 until end of turn',
+    'for each creature you control, creatures you control get +1/+1 until end of turn',
+  ],
+  rejects: [
+    'for each card discarded this way creatures you control get +1/+0 until end of turn',
+    'for each card discarded this way, creatures you control get +X/+0 until end of turn',
+    'for each card discarded this way, creatures you control get +1/+0',
+    'for each card discarded this way, target creature gets +1/+0 until end of turn',
+    'for each card discarded this way, other creatures you control get +1/+0 until end of turn',
+    'for each card discarded this way',
+  ],
+  parse: single(
+    'effect.for-each-pump-all',
+    satisfy(
+      sequence(
+        // Quiet: "For each 1 damage prevented this way, ..." stops where the older rules stop (at "For each").
+        quiet(family<IrAmount>('amount', { only: FOR_EACH_AMOUNTS })),
+        literal(', '),
+        family<IrNoun>('noun', { only: ['noun.plain-permanents'] }),
+        literal(' get '),
+        PT_CHANGE,
+        literal(' '),
+        family<IrDuration>('duration'),
+      ),
+      ([, , , , pt]) => typeof pt.power === 'number' && typeof pt.toughness === 'number',
+    ),
+    ([count, , objects, , pt, , duration]) => ({
+      verb: 'modifyPt',
+      args: pumpArgs(objects, pt, count),
+      duration,
+    }),
+  ),
+});
+
+/**
  * `effect.pump-each`: every permanent of a kind, whoever controls it, gets the change as the effect
  * resolves (CR 611.2a, 611.2c; stage P20): "All creatures get -X/-X until end of turn.", "Each creature
  * gets +1/+1 until end of turn." The verb agrees with the subject: "all creatures get", "each creature
@@ -291,4 +341,9 @@ export const EFFECT_PUMP_EACH = defineRule<Clauses>({
   ),
 });
 
-export const PUMP_RULES = [EFFECT_PUMP, EFFECT_PUMP_ALL, EFFECT_PUMP_EACH];
+export const PUMP_RULES = [
+  EFFECT_PUMP,
+  EFFECT_PUMP_ALL,
+  EFFECT_PUMP_EACH,
+  EFFECT_FOR_EACH_PUMP_ALL,
+];

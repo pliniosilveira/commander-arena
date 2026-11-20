@@ -16,6 +16,7 @@ import {
   flashbackObjects,
   foretellCastObjects,
   harmonizeObjects,
+  jumpStartObjects,
   playableLands,
   retraceObjects,
   sacrificeFromGraveyardObjects,
@@ -25,7 +26,7 @@ import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
 import { activatablePlayerMana, PLAYER_MANA_ABILITY } from './player-mana';
 import { setPending } from './set-pending';
 import { settle } from './settle';
-import { foretellableObjects, suspendableObjects } from './special-legality';
+import { foretellableObjects, plottableObjects, suspendableObjects } from './special-legality';
 import { unlockableDoors } from './unlock-legality';
 
 /** The alternative costs listed on a face, in the order their options are offered (D-121). */
@@ -57,6 +58,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const object of flashbackObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'flashback' });
   }
+  // CR 702.133a (Jump-start): a card with jump-start in the graveyard is cast by discarding a card, one option for each.
+  for (const object of jumpStartObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'jumpStart' });
+  }
   // CR 702.81a (Retrace, D-667): a card with retrace in the graveyard is cast by discarding a land card, one option for each.
   for (const object of retraceObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'retrace' });
@@ -80,6 +85,8 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // CR 116.2f, 116.2h (D-128): the special actions of Suspend and Foretell; they do not use the stack.
   for (const object of suspendableObjects(state, seat)) options.push({ kind: 'suspend', object });
   for (const object of foretellableObjects(state, seat)) options.push({ kind: 'foretell', object });
+  // CR 702.170a-b: Plot, a special action in the owner's main phase with the stack empty.
+  for (const object of plottableObjects(state, seat)) options.push({ kind: 'plot', object });
   // CR 116.2b, 701.40b (D-310): turning a face-down permanent face up is a special action too, with priority and no other timing.
   for (const object of turnableObjects(state, seat)) options.push({ kind: 'turnFaceUp', object });
   // CR 709.5e, 116: unlocking a locked half of a Room you control is a special action in a main phase of your turn with an empty stack.

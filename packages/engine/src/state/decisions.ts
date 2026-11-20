@@ -83,6 +83,8 @@ export type PriorityOption =
   | { readonly kind: 'suspend'; readonly object: ObjectId }
   /** Foretell a card from the hand (CR 702.143a, D-128): a special action, see the `foretell` action. */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
+  /** Plot a card from the hand (CR 702.170a): a special action, see the `plot` action. */
+  | { readonly kind: 'plot'; readonly object: ObjectId }
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): a special action, see the `turnFaceUp` action. */
   | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
   /** Unlock a locked half of a Room you control (CR 709.5e): a special action, see the `unlockDoor` action. */
@@ -256,6 +258,7 @@ export interface PayManaDecision extends DecisionBase {
     | 'blockTax'
     | 'suspend'
     | 'foretell'
+    | 'plot'
     | 'turnFaceUp'
     | 'unlockDoor';
   /** For purpose `'unlockDoor'` (CR 709.5e): the half of the Room `source` that is unlocked once the cost is paid (0 the left half, 1 the right half). */
@@ -291,7 +294,7 @@ export interface PayManaDecision extends DecisionBase {
   readonly blocks?: readonly { readonly blocker: ObjectId; readonly attacker: ObjectId }[];
 }
 /*
- * For `'suspend'` and `'foretell'` (D-128, CR 116.2f, 116.2h, 702.62a, 702.143a): the cost of a special action, paid
+ * For `'suspend'`, `'foretell'` and `'plot'` (D-128, CR 116.2f, 116.2h, 702.62a, 702.143a, 702.170a): the cost of a special action, paid
  * before the card is exiled. `source` is the card in the hand, `seat` its owner, `totalCost` the cost ({M} of the
  * suspend cost, or {2} for foretell). `payAuto` or `payManual` pays it and takes the action; `cancel` takes
  * nothing and gives priority back (nothing has happened).

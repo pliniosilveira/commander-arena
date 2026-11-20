@@ -105,6 +105,7 @@ import { SYNTHETIC_HYLDA_G1_LIST } from './synthetic-hylda-g1';
 import { SYNTHETIC_HYLDA_G2_LIST } from './synthetic-hylda-g2';
 import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
 import { SYNTHETIC_JESKAI_FLASHBACK_LIST } from './synthetic-jeskai-flashback';
+import { SYNTHETIC_JUMP_START_LIST } from './synthetic-jump-start';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
 import { SYNTHETIC_KEYWORD2_LIST } from './synthetic-keywords-2';
 import { SYNTHETIC_KICKER_LIST } from './synthetic-kicker';
@@ -160,6 +161,7 @@ import { SYNTHETIC_PRISMARI_G1_LIST } from './synthetic-prismari-g1';
 import { SYNTHETIC_PRISMARI_G2_LIST } from './synthetic-prismari-g2';
 import { SYNTHETIC_PRISMARI_G3_LIST } from './synthetic-prismari-g3';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
+import { SYNTHETIC_QUICK_DRAW_LIST } from './synthetic-quick-draw';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
 import { SYNTHETIC_REPEATABLE_LIST } from './synthetic-repeatable';
@@ -574,6 +576,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PRISMARI_G1_LIST,
   ...SYNTHETIC_PRISMARI_G2_LIST,
   ...SYNTHETIC_PRISMARI_G3_LIST,
+  ...SYNTHETIC_JUMP_START_LIST,
+  ...SYNTHETIC_QUICK_DRAW_LIST,
 ];
 
 export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(

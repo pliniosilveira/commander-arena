@@ -38,6 +38,7 @@ export function specialActionLabel(
   if (kind === 'foretell') {
     return entry === undefined ? 'Foretell' : `Foretell ${manaText(entry.cost)}`;
   }
+  if (kind === 'plot') return entry === undefined ? 'Plot' : `Plot ${manaText(entry.cost)}`;
   if (entry === undefined) return 'Suspend';
   const counters = entry.counters === undefined ? '' : ` ${entry.counters}`;
   return `Suspend${counters} — ${manaText(entry.cost)}`;
@@ -54,6 +55,9 @@ export function specialActionDetail(
       ? 'Exile it with time counters. Cast it for free when the last is gone.'
       : `Exile it with ${timeCounters(entry.counters)}. Cast it for free when the last is gone.`;
   }
+  if (kind === 'plot') {
+    return 'Exile it face up. From a later turn you may cast it for free in your main phase.';
+  }
   return entry?.castCost === undefined
     ? 'Exile it face down. Cast it later for its foretell cost.'
     : `Exile it face down. Cast it from a later turn for ${manaText(entry.castCost)}.`;
@@ -64,11 +68,12 @@ export function specialActionDetail(
  * "Pay {2} to foretell Name". `name` is the card in the hand (the viewer's own).
  */
 export function specialPayPrompt(
-  purpose: 'suspend' | 'foretell',
+  purpose: 'suspend' | 'foretell' | 'plot',
   cost: readonly string[],
   name: string,
   card: ObjectView | undefined,
 ): string {
+  if (purpose === 'plot') return `Pay ${manaText(cost)} to plot ${name}`;
   if (purpose === 'foretell') return `Pay ${manaText(cost)} to foretell ${name}`;
   const counters = card?.specialActions?.find((a) => a.kind === 'suspend')?.counters;
   return `Pay ${manaText(cost)} to suspend ${name}${counters === undefined ? '' : ` with ${timeCounters(counters)}`}`;
@@ -76,11 +81,14 @@ export function specialPayPrompt(
 
 /** The dock line of the payment: what happens once it is paid, and what Cancel does. */
 export function specialPayDetail(
-  purpose: 'suspend' | 'foretell',
+  purpose: 'suspend' | 'foretell' | 'plot',
   name: string,
   card: ObjectView | undefined,
 ): string {
   const entry = card?.specialActions?.find((a) => a.kind === purpose);
+  if (purpose === 'plot') {
+    return `Once this is paid, ${name} is exiled face up; from a later turn you may cast it for free in your main phase. Cancel keeps it in your hand.`;
+  }
   if (purpose === 'suspend') {
     const counters = entry?.counters === undefined ? '' : ` with ${timeCounters(entry.counters)}`;
     return `Once this is paid, ${name} is exiled${counters}. Cancel keeps it in your hand.`;

@@ -442,6 +442,8 @@ export type IrAmount =
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
   // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
   | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
+  // "for each different mana value among instant and sorcery cards in your graveyard" (Eris, issue 121, CR 202.3): the distinct mana values the cards of the group have, each once
+  | { readonly kind: 'differentManaValuesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each time it was kicked" (CR 702.33c), stage P17; `who` is the word that says which object
   | { readonly kind: 'timesKicked'; readonly who: 'self' | 'it'; readonly span: Span }
   // "equal to the total life lost this way" (CR 702.101a), stage P21: what an earlier loss of life in the same text lost
@@ -475,6 +477,8 @@ export type IrAmount =
   | {
       readonly kind: 'spellsCastThisTurn';
       readonly ofTypes?: readonly string[];
+      // "for each other instant and sorcery spell you've cast this turn" (Lock and Load, issue 121): the spell that is resolving is not counted.
+      readonly otherThanThis?: true;
       readonly span: Span;
     }
   // "the greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck group 2, D-646, CR 202.3, 601.2i): the largest mana value of the spells the controller
@@ -1363,6 +1367,8 @@ export interface IrTrigger extends IrNode {
    */
   readonly counter?: string;
   readonly by?: 'you' | 'any';
+  /** 'countersAdded' "the twelfth hour counter is put on ~" (Midnight Clock, issue 121): the number of counters of the kind the putting reaches. */
+  readonly reaches?: number;
   /**
    * 'attacks' "while you don't control another Dinosaur" (stage P32, D-147, CR 603.2): a condition that is part of the event itself,
    * read once as it happens (not an intervening "if", CR 603.4, which is read again as the ability resolves).

@@ -1,5 +1,5 @@
 /**
- * Taking the special actions of Suspend and Foretell (CR 116.2f, 116.2h, 702.62a, 702.143a, D-128).
+ * Taking the special actions of Suspend, Foretell and Plot (CR 116.2f, 116.2h, 702.62a, 702.143a, 702.170a, D-128).
  *
  * A special action does not use the stack (CR 116.1): the player pays the cost and the card is exiled at once, and
  * the player keeps priority. The cost is mana, so the action asks for it with a `payMana` decision (purpose
@@ -11,6 +11,7 @@
  *   Its upkeep and cast abilities are found from there (`rules/later-triggers.ts`).
  * - Foretell: the card goes to exile face down, and remembers the turn it was foretold in (`GameObject.foretoldTurn`):
  *   it may be cast from there for its foretell cost in a later turn. The `foretold` event says nothing about the card.
+ * - Plot: the card goes to exile face up, and remembers the turn it was plotted in (`GameObject.plottedTurn`): it may be cast from there for free, at sorcery timing, in a later turn.
  */
 import type { ObjectId, SeatId } from '../ids';
 import type { PayManaDecision } from '../state/decisions';
@@ -25,24 +26,28 @@ import { fail, ok, type Result } from './result';
 import { setPending } from './set-pending';
 import {
   canForetell,
+  canPlot,
   canSuspend,
   FORETELL_ACTION_COST,
+  plotSymbols,
   suspendOf,
   suspendSymbols,
 } from './special-legality';
 import { moveObject } from './zones';
 
-export type SpecialKind = 'suspend' | 'foretell';
+export type SpecialKind = 'suspend' | 'foretell' | 'plot';
 
 /** The mana of the action: the suspend cost of the card, or {2} (CR 702.143a). */
 function costOf(state: GameState, kind: SpecialKind, object: ObjectId): readonly string[] {
   if (kind === 'foretell') return FORETELL_ACTION_COST;
+  if (kind === 'plot') return plotSymbols(state, getObject(state, object)) ?? [];
   return suspendSymbols(state, getObject(state, object)) ?? [];
 }
 
 function allowed(state: GameState, seat: SeatId, kind: SpecialKind, object: ObjectId): boolean {
   const obj = state.objects[object];
   if (obj === undefined) return false;
+  if (kind === 'plot') return canPlot(state, seat, obj);
   return kind === 'suspend' ? canSuspend(state, seat, obj) : canForetell(state, seat, obj);
 }
 
@@ -59,7 +64,11 @@ export function beginSpecialAction(
 ): Result {
   if (!allowed(state, seat, kind, object)) {
     return fail(
-      kind === 'suspend' ? 'That card cannot be suspended now' : 'That card cannot be foretold now',
+      kind === 'suspend'
+        ? 'That card cannot be suspended now'
+        : kind === 'plot'
+          ? 'That card cannot be plotted now'
+          : 'That card cannot be foretold now',
     );
   }
   const symbols = costOf(state, kind, object);
@@ -83,7 +92,7 @@ export function beginSpecialAction(
 export function answerSpecialPayment(
   state: GameState,
   seat: SeatId,
-  d: PayManaDecision & { readonly purpose: 'suspend' | 'foretell' },
+  d: PayManaDecision & { readonly purpose: 'suspend' | 'foretell' | 'plot' },
   action:
     | { readonly kind: 'cancel' }
     | { readonly kind: 'payAuto' }
@@ -130,6 +139,10 @@ function takeSpecialAction(
     next = patchObject(next, card, { counters: { time: count } });
     events.push({ kind: 'suspended', seat, object: card, count });
     events.push({ kind: 'counterAdded', object: card, counter: 'time', count });
+  } else if (kind === 'plot') {
+    // CR 702.170a-c: the card is exiled face up and becomes a plotted card.
+    next = patchObject(next, card, { plottedTurn: next.turn.number });
+    events.push({ kind: 'plotted', seat, object: card });
   } else {
     next = patchObject(next, card, { foretoldTurn: next.turn.number });
     events.push({ kind: 'foretold', seat, object: card });

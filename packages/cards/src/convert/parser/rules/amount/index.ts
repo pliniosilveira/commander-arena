@@ -12,7 +12,7 @@ import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
 import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
-import { AMOUNT_FOR_EACH_DIED } from './history';
+import { AMOUNT_FOR_EACH_DIED, AMOUNT_FOR_EACH_OTHER_SPELL_CAST } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
@@ -467,6 +467,8 @@ export const AMOUNT_RULES = [
   ...HAND_OF_THAT_PLAYER_AMOUNT_RULES,
   // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
   ...FEATHER_G1_AMOUNT_RULES,
+  // Lock and Load (issue 121): "for each other instant and sorcery spell you've cast this turn".
+  AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
   // Meren of Clan Nel Toth: "the number of experience counters you have".
   ...EXPERIENCE_AMOUNT_RULES,
   AMOUNT_NUMBER,
