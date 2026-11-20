@@ -192,6 +192,57 @@ export const EFFECT_BECOMES_IN_ADDITION = defineRule<Clauses>({
   },
 });
 
+const SUBTYPE_ONE =
+  /^(?:[Ii]t['’]s|[Ii]t is) an? ([A-Z][a-z]+) in addition to its other types(?![\p{L}\p{N}])/u;
+const SUBTYPE_MANY =
+  /^[Tt]hey['’]re ([A-Z][a-z]+)s in addition to their other types(?![\p{L}\p{N}])/u;
+
+/**
+ * `effect.becomes-subtype-in-addition`: what the permanents an earlier instruction put onto the battlefield are, "in addition to their other types", with a creature type and nothing
+ * else: "It's a Zombie in addition to its other types", "They're Zombies in addition to their other types" (Afterlife from the Loam, issue 102; CR 205.1b, 205.3m, 613.1d, 611.2a: the
+ * creature type is added, and the effect has no end). The engine's additive `setTypes` of what was moved, with no duration. The plural is the creature type and an "s"; the
+ * lowering refuses a word that is not a creature type. Not read: a color, a power and toughness, a keyword, "until end of turn", another subject, a lowercase word.
+ */
+export const EFFECT_BECOMES_SUBTYPE_IN_ADDITION = defineRule<Clauses>({
+  id: 'effect.becomes-subtype-in-addition',
+  family: 'effect',
+  leading: ['it', 'it’s', "it's", 'they', 'they’re', "they're"],
+  cites: [
+    'CR 205.1b (Type Line)',
+    'CR 205.3m (Subtypes)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    "It's a Zombie in addition to its other types",
+    "They're Zombies in addition to their other types",
+    'They’re Zombies in addition to their other types',
+  ],
+  rejects: [
+    "It's a zombie in addition to its other types",
+    "It's a Zombie in addition to its other types until end of turn",
+    "It's a black Zombie in addition to its other types",
+    "It's a 2/2 Zombie in addition to its other types",
+    "They're Zombie in addition to their other types",
+    "They're Zombies in addition to its other types",
+    "It's a Zombie in addition to its other types and draw a card",
+    "It's a Zombie",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.becomes-subtype-in-addition';
+    const rest = ctx.text.slice(pos);
+    const one = SUBTYPE_ONE.exec(rest);
+    const many = one === null ? SUBTYPE_MANY.exec(rest) : null;
+    const found = one ?? many;
+    if (found === null) return fail(ctx, pos);
+    const span = { start: pos, end: pos + found[0].length };
+    const args: Record<string, IrArg> = {
+      types: { kind: 'typeList', subtypes: [found[1] ?? ''], additive: true, span, rule: id },
+    };
+    return { ok: true, value: [makeClause(id, 'becomesInAddition', args, span)], pos: span.end };
+  },
+});
+
 const COLOR_WORDS = '(white|blue|black|red|green)';
 /** "It's a black Zombie in addition to its other colors and types" (singular), "They're black Zombies in addition to their other colors and types" (plural). */
 const BECOMES_COLORED_ONE = new RegExp(
@@ -904,6 +955,7 @@ export const HOFRI_EFFECT_RULES = [
   EFFECT_COPY_THIS_SPELL,
   EFFECT_BECOMES_IN_ADDITION,
   EFFECT_BECOMES_COLORED_IN_ADDITION,
+  EFFECT_BECOMES_SUBTYPE_IN_ADDITION,
   EFFECT_OPPONENTS_ATTACKING_DO_SAME,
   EFFECT_RETURN_DESTROYED_CARD,
 ];

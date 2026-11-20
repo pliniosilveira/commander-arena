@@ -477,3 +477,27 @@ describe('"Convoke. Destroy target creature or planeswalker. Each creature that 
     g.expect.zone('Island', 'graveyard', { seat: 0 });
   });
 });
+
+describe('"Return target creature card from your graveyard to the battlefield. It’s a Zombie in addition to its other types." (CR 205.1b, 205.3m, 611.2a)', () => {
+  const rise = parsed(
+    'SYNTHETIC Parsed Rise',
+    'Sorcery',
+    "Return target creature card from your graveyard to the battlefield. It's a Zombie in addition to its other types.",
+    { manaCost: '{B}', colors: ['B'] },
+  );
+  test('the returned creature keeps its types and is a Zombie for good', () => {
+    const g = base()
+      .define(rise)
+      .hand(rise.name)
+      .battlefield('Swamp')
+      .graveyard('Serra Angel')
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(rise.name, { targets: ['Serra Angel'], pay: true });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    const view = g.view(0);
+    const angel = view.battlefield.find((o) => o.name === 'Serra Angel');
+    expect(angel?.subtypes).toEqual(expect.arrayContaining(['Angel', 'Zombie']));
+  });
+});
