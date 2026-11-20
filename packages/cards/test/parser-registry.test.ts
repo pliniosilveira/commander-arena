@@ -1081,6 +1081,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, draw a card.`,
   ),
   'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
+  'noun.commander-creatures-you-own': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(
     (e) =>

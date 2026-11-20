@@ -503,6 +503,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'static.permanents',
     [
       'noun.plain-permanents',
+      // Issue 345 (Tavern Brawler): "Commander creatures you own have ...".
+      'noun.commander-creatures-you-own',
       'noun.other-permanents',
       'noun.other-subtype-permanents',
       'noun.subtype-union',

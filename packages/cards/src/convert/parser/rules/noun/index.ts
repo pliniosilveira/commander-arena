@@ -763,7 +763,34 @@ export const NOUN_PLAIN_PERMANENTS = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.commander-creatures-you-own`: "commander creatures you own" (issue 345, Tavern Brawler; CR 903.3, 108.3): the creatures that are cards their owner designated as a commander and
+ * that you own, whoever controls them (the engine's `commander: 'yours'`). A plural group. Not read: "you control" (`noun.plain-permanents`), the singular, "your commanders",
+ * "commander creatures" with no owner, another card type.
+ */
+export const NOUN_COMMANDER_CREATURES_YOU_OWN = defineRule<IrNoun>({
+  id: 'noun.commander-creatures-you-own',
+  family: 'noun',
+  leading: ['commander'],
+  cites: ['CR 903.3 (Commander)', 'CR 108.3 (Owner)'],
+  examples: ['commander creatures you own', 'Commander creatures you own'],
+  rejects: [
+    'commander creature you own',
+    'commander creatures you control',
+    'commander creatures',
+    'commander permanents you own',
+    'commander creatures your opponents own',
+    'creatures you own',
+  ],
+  parse: node<string, IrNoun>(
+    'noun.commander-creatures-you-own',
+    map(pattern(/commander creatures you own(?![\p{L}\p{N}])/iu), (m) => m[0]),
+    (raw) => bare('each', { types: ['creature'], commander: 'yours', raw }, { plural: true }),
+  ),
+});
+
 export const NOUN_RULES = [
+  NOUN_COMMANDER_CREATURES_YOU_OWN,
   NOUN_ANY_TARGET,
   // Stage P37 (D-180): "target player or planeswalker" and "each creature that player controls", whose first words are those of `noun.player`
   // and of `noun.each-permanent`.
