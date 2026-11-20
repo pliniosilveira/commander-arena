@@ -375,6 +375,7 @@ describe('unmatched abilities', () => {
       'cost.blight',
       'cost.pay-x-life',
       'cost.remove-counters',
+      'cost.remove-x-counters',
       'cost.put-counters',
       'cost.return-to-hand',
       'cost.loyalty',
