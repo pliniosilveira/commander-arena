@@ -628,6 +628,13 @@ export function lowerAmount(
         if (costBlocked !== null) return costBlocked;
         return { ok: true, value: { kind: 'sacrificedAsCost' }, rule };
       }
+      // Issue 121 (Bloodthirsty Adversary, CR 603.12): in the reflexive ability of "pay {2}{R} any number of times", "that many" is the number of times the cost was paid, which the
+      // ability's event carries (`triggerDamage`).
+      if (amount.thatMany === true && ctx.payReflexive) {
+        const paid = needs('triggerDamage');
+        if (paid !== null) return paid;
+        return { ok: true, value: { kind: 'triggerDamage' }, rule };
+      }
       const blocked = needs('thisWay');
       if (blocked !== null) return blocked;
       // "that many" counts what the last instruction of its kind did: sacrificed permanents or discarded cards (stage P34).

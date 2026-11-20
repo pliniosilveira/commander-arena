@@ -1022,6 +1022,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
   // Forger's Foundry (issue 121): the rider of the mana the ability before it adds.
   'effect.mana-rider-exile': permanent((e) => `{T}: Add {U}. ${cap(e)}.`),
+  // Bloodthirsty Adversary (issue 121): the payment and the ability it buys.
+  'effect.pay-any-number-of-times': permanent(
+    (e) => `When ~ enters, you may ${e}. When you pay this cost one or more times, draw a card.`,
+  ),
+  'effect.exile-up-to-that-many-and-copy': permanent(
+    (e) =>
+      `When ~ enters, you may pay {2}{R} any number of times. When you pay this cost one or more times, ${e}.`,
+  ),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
   // Bruna deck, Ajani (D-268).

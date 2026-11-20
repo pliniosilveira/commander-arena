@@ -180,7 +180,118 @@ export const EFFECT_MANA_RIDER_EXILE = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.pay-any-number-of-times`: "pay {2}{R} any number of times" (Bloodthirsty Adversary, CR 118.1, 603.12): the controller chooses how many times to pay the mana cost, from none to as many as
+ * they can pay. "You may" makes it an offer and "When you pay this cost one or more times, ..." says what it buys: the lowering of the sentences reads the two. Not read: a cost with {X}, a
+ * hybrid or a non-mana part, "any amount of", "any number of times" left out, "a number of times".
+ */
+export const EFFECT_PAY_ANY_NUMBER_OF_TIMES = defineRule<Clauses>({
+  id: 'effect.pay-any-number-of-times',
+  family: 'effect',
+  leading: ['pay'],
+  cites: [
+    'CR 118.1 (Costs)',
+    'CR 603.12 (Handling Triggered Abilities)',
+    'CR 107.4 (Numbers and Symbols)',
+  ],
+  examples: [
+    'pay {2}{R} any number of times',
+    'pay {R} any number of times',
+    'pay {1}{U}{U} any number of times',
+  ],
+  rejects: [
+    'pay {2}{R}',
+    'pay {X}{R} any number of times',
+    'pay {R/G} any number of times',
+    'pay {2}{R} any amount of times',
+    'pay {2}{R} a number of times',
+    'pay 3 life any number of times',
+    'pay any number of times',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.pay-any-number-of-times';
+    const r = spanned(
+      sequence(
+        literal('pay '),
+        pattern(/((?:\{(?:\d+|[WUBRGC])\})+)/u),
+        literal(' any number of times'),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { span } = r.value;
+    const symbols = [...(r.value.value[1][1] ?? '').matchAll(/\{([^}]+)\}/gu)].map(
+      (m) => m[1] ?? '',
+    );
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'payAnyNumberOfTimes',
+          { mana: { kind: 'manaSpec', what: { kind: 'symbols', symbols }, span, rule: id } },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `effect.exile-up-to-that-many-and-copy`: "exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. You may cast any number of the
+ * copies without paying their mana costs." (Bloodthirsty Adversary, CR 115.1, 601.2c, 707.12, 608.2g, 118.9): the targets are as many as the cost was paid, at most (the reflexive ability of
+ * the payment). The engine's `exile` of the target slot and `copyCardAndCast` of the cards exiled. Not read: another zone, another number of targets, a copy that is not cast, a cost, "any number" left out.
+ */
+export const EFFECT_EXILE_UP_TO_THAT_MANY_AND_COPY = defineRule<Clauses>({
+  id: 'effect.exile-up-to-that-many-and-copy',
+  family: 'effect',
+  leading: ['exile'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 707.12 (Copying Objects)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+  ],
+  examples: [
+    'exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. you may cast any number of the copies without paying their mana costs',
+  ],
+  rejects: [
+    'exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them',
+    'exile up to that many target instant and/or sorcery cards from your graveyard and copy them. you may cast any number of the copies without paying their mana costs',
+    'exile up to two target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. you may cast any number of the copies without paying their mana costs',
+    'exile up to that many target instant and/or sorcery cards with mana value 3 or less from your hand and copy them. you may cast any number of the copies without paying their mana costs',
+    'exile up to that many target creature cards with mana value 3 or less from your graveyard and copy them. you may cast any number of the copies without paying their mana costs',
+    'exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. you may cast the copies without paying their mana costs',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.exile-up-to-that-many-and-copy';
+    const r = pattern(
+      new RegExp(
+        `exile up to that many target instant and\\/or sorcery cards with mana value (\\d+) or less from your graveyard and copy them\\. you may cast any number of the copies without paying their mana costs${BOUNDARY}`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'exileThatManyAndCopy',
+          { manaValue: number(Number(r.value[1]), span) },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 export const QUICK_DRAW_EFFECT_RULES = [
+  EFFECT_PAY_ANY_NUMBER_OF_TIMES,
+  EFFECT_EXILE_UP_TO_THAT_MANY_AND_COPY,
   EFFECT_EXILE_AT_RANDOM,
   EFFECT_COPY_LINKED_EXILED_AND_CAST,
   EFFECT_MANA_RIDER_EXILE,

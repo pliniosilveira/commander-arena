@@ -647,6 +647,8 @@ describe('unmatched abilities', () => {
       'effect.adapt',
       'effect.next-spell-modifier',
       'effect.put-milled-into-hand',
+      'effect.pay-any-number-of-times',
+      'effect.exile-up-to-that-many-and-copy',
       'effect.exile-at-random',
       'effect.copy-linked-exiled-and-cast',
       'effect.mana-rider-exile',

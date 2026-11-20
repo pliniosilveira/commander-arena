@@ -446,3 +446,31 @@ test('Forger’s Foundry: its mana pays for a cheap spell that is exiled with it
   expect(g.state.seats[0]?.hand.length).toBeGreaterThanOrEqual(2);
   g.expect.invariants();
 });
+
+test('Bloodthirsty Adversary: pay {2}{R} any number of times for counters, and exile, copy and cast that many cheap spells', () => {
+  const adversary = load('Bloodthirsty Adversary');
+  const g = scenario()
+    .define(adversary)
+    .seat(0)
+    .library(...FILLER)
+    .hand(adversary.name)
+    .graveyard('Lightning Bolt', 'Divination')
+    .pool('RRRRRRRRR')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  g.act(0).cast(adversary.name, { pay: true });
+  g.passAll();
+  g.act(0).chooseX(2);
+  g.act(0).payAuto();
+  g.passAll();
+  g.act(0).chooseTargets(
+    { name: 'Lightning Bolt', zone: 'graveyard' },
+    { name: 'Divination', zone: 'graveyard' },
+  );
+  g.passAll();
+  g.expect.pt(adversary.name, 4, 4);
+  g.expect.zone('Lightning Bolt', 'exile');
+  g.expect.invariants();
+});

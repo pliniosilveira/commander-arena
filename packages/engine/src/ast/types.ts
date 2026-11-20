@@ -2336,7 +2336,12 @@ export type Effect =
    */
   | {
       readonly kind: 'payAnyAmount';
-      readonly symbol: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      readonly symbol?: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      /**
+       * "You may pay {2}{R} any number of times" (Bloodthirsty Adversary, issue 121, CR 118.1, 603.12): what one payment costs, in place of `symbol` (a card names one of them): the mana symbols of
+       * the cost (numbers and colors, no X or hybrid), paid as many times as the controller chooses, from none to as many times as they could pay now.
+       */
+      readonly cost?: readonly string[];
       readonly atMost?: Amount;
       readonly reflexive?: {
         readonly targets?: readonly TargetSpec[];

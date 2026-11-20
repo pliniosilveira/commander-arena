@@ -45,7 +45,53 @@ const COPY_LINKED_EXILED_AND_CAST: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. You may cast any number of the copies" (Bloodthirsty Adversary): the
+ * slot of the reflexive ability of a payment, up to as many targets as were paid (`upToTriggerAmount`), then `exile` of them and `copyCardAndCast` of the cards exiled.
+ */
+const EXILE_THAT_MANY_AND_COPY: Lowering<IrClause, Effects> = {
+  head: 'exileThatManyAndCopy',
+  id: 'lower.exile-that-many-and-copy',
+  needs: [
+    'effect:exile',
+    'effect:copyCardAndCast',
+    'selector:moved',
+    'selector:target',
+    'selector:upToTriggerAmount',
+  ],
+  lower(clause, ctx) {
+    const limit = arg(clause, 'manaValue');
+    // The slot belongs to the reflexive ability of a payment, which is lowered with the sentences (`lowerPayAnyAmount`), and to nothing else.
+    if (limit?.kind !== 'number' || !ctx.payReflexive) {
+      return { ok: false, needs: [], at: clause.span, rule: clause.rule };
+    }
+    const id = `t${ctx.targets.length + 1}`;
+    ctx.targets.push({
+      id,
+      what: {
+        kind: 'object',
+        filter: {
+          zone: 'graveyard',
+          controller: 'you',
+          anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
+          manaValue: { cmp: 'atMost', value: limit.value },
+        },
+      },
+      upToTriggerAmount: true,
+    });
+    return {
+      ok: true,
+      value: [
+        { kind: 'exile', objects: { kind: 'target', id } },
+        { kind: 'copyCardAndCast', objects: { kind: 'moved' } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const QUICK_DRAW_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  EXILE_THAT_MANY_AND_COPY,
   EXILE_AT_RANDOM,
   COPY_LINKED_EXILED_AND_CAST,
 ];

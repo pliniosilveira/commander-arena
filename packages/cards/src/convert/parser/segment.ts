@@ -370,6 +370,12 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
  * done with the copies the first makes, read as one instruction (`effect.copy-linked-exiled-and-cast`).
  */
 const COPY_EACH_EXILED_WITH = /^(?:then )?copy each card exiled with ~\.$/i;
+/**
+ * "When you pay this cost one or more times, put that many +1/+1 counters on this creature, then exile up to that many target instant and/or sorcery cards ... and copy them. You may cast any number
+ * of the copies without paying their mana costs." (Bloodthirsty Adversary, issue 121, CR 603.12, 707.12): the last sentence is what is done with the copies, part of the reflexive ability.
+ */
+const PAY_REFLEXIVE_AND_COPY_THEM =
+  /^when you pay this cost one or more times, [^.]* and copy them\.$/i;
 const MAY_CAST_ANY_COPIES =
   /^you may cast any number of the copies without paying their mana costs\.$/i;
 const EXILE_CARD_SENTENCE = /^exile [^.]* from your graveyard\.$/i;
@@ -873,6 +879,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
         (said(a, COPY_EACH_EXILED_WITH) && said(b, MAY_CAST_ANY_COPIES)) ||
+        (said(a, PAY_REFLEXIVE_AND_COPY_THEM) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||

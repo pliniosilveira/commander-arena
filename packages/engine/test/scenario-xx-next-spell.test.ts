@@ -173,3 +173,44 @@ describe('"When you spend this mana to cast an instant or sorcery spell with man
     expect(g.state.stack).toHaveLength(1);
   });
 });
+
+describe('"You may pay {2}{R} any number of times. When you pay this cost one or more times, ..." (Bloodthirsty Adversary, CR 118.1, 603.12)', () => {
+  const ADVERSARY = 'SYNTHETIC Paying Adversary';
+
+  test('the card is valid', () => {
+    expect(validateCard(syntheticCard(ADVERSARY))).toEqual([]);
+  });
+
+  test('paid twice: two +1/+1 counters, and up to two cards are exiled, copied and cast free', () => {
+    const g = game((b) => b.hand(ADVERSARY).graveyard('Lightning Bolt', 'Divination'), 'RRRRRRRRR');
+    g.act(0).cast(ADVERSARY, { pay: true });
+    g.passAll();
+    // The enters trigger: how many times to pay {2}{R}, up to the {2}{R} that could be paid now.
+    const d = g.state.pending;
+    expect(d?.kind).toBe('chooseX');
+    if (d?.kind !== 'chooseX') return;
+    expect(d).toMatchObject({ purpose: 'payAnyAmount', min: 0, max: 2 });
+    g.act(0).chooseX(2);
+    g.act(0).payAuto();
+    // The reflexive ability: up to two targets, as many as were paid.
+    g.passAll();
+    g.expect.pending('targets', 0);
+    g.act(0).chooseTargets(
+      { name: 'Lightning Bolt', zone: 'graveyard' },
+      { name: 'Divination', zone: 'graveyard' },
+    );
+    g.passAll();
+    g.expect.pt(ADVERSARY, 4, 4);
+    g.expect.zone('Lightning Bolt', 'exile');
+    g.expect.zone('Divination', 'exile');
+    g.expect.invariants();
+  });
+
+  test('paid once there is room for one target only; paid never, nothing happens', () => {
+    const none = game((b) => b.hand(ADVERSARY).graveyard('Lightning Bolt'), 'RR');
+    none.act(0).cast(ADVERSARY, { pay: true });
+    none.passAll();
+    // Nothing could be paid: nobody is asked.
+    none.expect.pt(ADVERSARY, 2, 2);
+  });
+});

@@ -234,7 +234,23 @@ export function checkDragonsEffect(
     case 'payAnyAmount': {
       // CR 603.12 (D-151): one kind of mana, and a reflexive ability of its own whose "that much" is what was paid.
       // D-257: or a generic {1} paid X times, a most (`atMost`), and an "If you do" instruction (`ifPaid`) in place of the reflexive ability, whose X is the number paid.
-      if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
+      if (e.cost !== undefined) {
+        // Issue 121: "pay {2}{R} any number of times": the mana of one payment, in place of one symbol.
+        if (e.symbol !== undefined) {
+          issue(out, `${path}.symbol`, 'a payment is one symbol or a cost, not both');
+        }
+        if (
+          !Array.isArray(e.cost) ||
+          e.cost.length === 0 ||
+          !e.cost.every((s) => typeof s === 'string' && /^(?:\d+|[WUBRGC])$/.test(s))
+        ) {
+          issue(
+            out,
+            `${path}.cost`,
+            'the cost of one payment is mana symbols: numbers and colors, no X or hybrid',
+          );
+        }
+      } else if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
         issue(
           out,
           `${path}.symbol`,
@@ -267,7 +283,17 @@ export function checkDragonsEffect(
         }
         return true;
       }
-      const own = declareTargets(e.reflexive?.targets, `${path}.reflexive.targets`, out);
+      // Issue 121: "exile up to that many target cards": a slot of the reflexive ability may take up to as many targets as were paid (`upToTriggerAmount`).
+      const own = declareTargets(
+        e.reflexive?.targets,
+        `${path}.reflexive.targets`,
+        out,
+        false,
+        false,
+        false,
+        false,
+        true,
+      );
       const inner: Scope = {
         owner: scope.owner,
         targets: own,

@@ -1572,7 +1572,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         self,
         defs,
       );
-      const pay = payAnyAmountText(effect.symbol);
+      // Issue 121 (CR 118.1, 603.12): "You may pay {2}{R} any number of times. When you pay this cost one or more times, ...".
+      if (effect.cost !== undefined) {
+        const times = `You may pay ${effect.cost.map((s) => `{${s}}`).join('')} any number of times`;
+        return inner === ''
+          ? times
+          : `${times}. When you pay this cost one or more times, ${lower(inner)}`;
+      }
+      const pay = payAnyAmountText(effect.symbol ?? '1');
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
     }
     case 'sparePermanents': {
