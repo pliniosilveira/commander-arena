@@ -7465,6 +7465,12 @@ export interface ManaAbility {
      * `qualities`.
      */
     readonly monocoloredChosen?: true;
+    /**
+     * "Spend this mana only to cast a spell from your graveyard." (issue 102, Lord of the Forsaken; CR 106.6, 601.2a): the mana can pay for a spell that is cast from a graveyard, never
+     * for one cast from a hand or another zone, and never for an ability. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities`, `xCost`, `abilitiesOnly` or
+     * `monocoloredChosen`.
+     */
+    readonly fromGraveyard?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

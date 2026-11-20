@@ -302,8 +302,15 @@ function cards(plural: boolean): Parser<IrFilter> {
     inTargetPlayersZone,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
+  // Crypt of Agadeem (CR 105.2, 108.2): a color word before the card, "black creature card in your graveyard"; a card in a graveyard has the colors of its mana cost.
+  const colorWords = many(
+    map(sequence(pattern(/(?:white|blue|black|red|green)(?= )/iu), literal(' ')), ([w]) =>
+      w[0].toLowerCase(),
+    ),
+  );
   const words = map(
     sequence(
+      colorWords,
       many(
         map(
           sequence(
@@ -318,7 +325,7 @@ function cards(plural: boolean): Parser<IrFilter> {
         [] as string[],
       ),
     ),
-    ([subtypes, types]) => ({ subtypes, types }),
+    ([colors, subtypes, types]) => ({ colors, subtypes, types }),
   );
   // D-518 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
   const union: Parser<IrFilter> = (ctx, pos) => {
@@ -361,10 +368,14 @@ function cards(plural: boolean): Parser<IrFilter> {
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [{ subtypes, types }, , place] = r.value;
+    const [{ colors, subtypes, types }, , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
     const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
-    const base = toFilter(place.zone, { ...NO_PARTS, types, controller: simpleController }, raw);
+    const base = toFilter(
+      place.zone,
+      { ...NO_PARTS, types, colors, controller: simpleController },
+      raw,
+    );
     return {
       ok: true,
       value: {

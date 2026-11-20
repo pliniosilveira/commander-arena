@@ -243,9 +243,27 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly monocoloredChosen names nothing else');
       }
+      // Issue 102 (Lord of the Forsaken): "a spell from your graveyard" stands alone.
+      if (only.fromGraveyard !== undefined && only.fromGraveyard !== true) {
+        issue(out, `${path}.spendOnly.fromGraveyard`, 'fromGraveyard must be true when present');
+      }
+      if (
+        only.fromGraveyard === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly fromGraveyard names nothing else');
+      }
       if (
         only.types === undefined &&
         only.subtypes === undefined &&
+        only.fromGraveyard !== true &&
         only.chosenType !== true &&
         only.qualities === undefined &&
         only.xCost !== true &&
