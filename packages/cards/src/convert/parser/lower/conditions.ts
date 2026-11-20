@@ -97,6 +97,13 @@ export function lowerCondition(
       if (ctx?.owner !== 'spell') return failure(c, []);
       return ok({ kind: 'castInOwnMainPhase' });
     }
+    case 'additionalCostPaid': {
+      // CR 118.8, 701.68a: the engine reads it from the spell; the lowering of a spell's sentence only (`validateCard` checks the face has the optional cost).
+      const blocked = missingFeatures(['condition:additionalCostPaid']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      return ok({ kind: 'additionalCostPaid' });
+    }
     case 'escaped': {
       // CR 702.138b: the engine reads it from the permanent the ability belongs to (or its last-known
       // information), so "it" is the source only when the ability is about the source itself.
@@ -798,6 +805,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:opponentPoisonAtLeast',
   'condition:kicked',
   'condition:castInOwnMainPhase',
+  'condition:additionalCostPaid',
   'condition:xAtLeast',
   'condition:controlCommander',
   'condition:lifeTotal',

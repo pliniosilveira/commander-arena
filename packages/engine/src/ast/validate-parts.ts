@@ -2684,6 +2684,9 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           'the number of -1/-1 counters of a blight must be a positive integer',
         );
       }
+      if (cost.optional !== undefined && cost.optional !== true) {
+        issue(out, `${path}.optional`, 'optional must be true when present');
+      }
       break;
     case 'sacrifice':
       if (cost.countX !== undefined) {
@@ -3381,6 +3384,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'kicked':
     case 'castInOwnMainPhase': // issue 244: no parameters; it reads the spell it is asked of
     case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
+    case 'additionalCostPaid': // CR 118.8, 701.68a: the face must list an optional blight additional cost (`checkAdditionalCostPaid`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
@@ -5672,6 +5676,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'populate':
       // CR 701.36 (D-627): no fields.
+      break;
+    case 'blight':
+      // CR 701.68a: "Blight 1" as an instruction: a positive number of -1/-1 counters.
+      if (!isCount(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'blight puts a positive whole number of -1/-1 counters');
+      }
       break;
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): a kind of counter and the permanents it moves onto.

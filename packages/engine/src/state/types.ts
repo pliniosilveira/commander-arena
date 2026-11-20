@@ -582,6 +582,11 @@ export interface StackData {
    */
   readonly exiledAsCost?: readonly ObjectId[];
   /**
+   * For a spell cast with the optional blight of its additional cost paid (CR 118.8, 701.68a): true, which the condition `additionalCostPaid` reads (from last-known information once the
+   * spell has left the stack). Absent when it was not paid and for every other object.
+   */
+  readonly blighted?: true;
+  /**
    * For a reflexive triggered ability (CR 603.12, D-177): the ids of the permanents the resolution that created it had sacrificed, which the
    * `sacrificed` reference reads (from last-known information: they are gone). Absent for every other object.
    */
@@ -999,6 +1004,9 @@ export interface CastingContext {
     readonly exile: number;
     /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
     readonly exileFromHand?: ObjectId[];
+    /** The number of -1/-1 counters of an optional blight additional cost ("you may blight 1"), asked once the mana is paid; absent for none. `blightAsked` is set while the question is pending. */
+    readonly blight?: number;
+    readonly blightAsked?: true;
     /** The untapped permanents to tap as part of the cost (the `tapPermanents` alternative cost, D-149), or null. */
     readonly tap?: { readonly filter: ObjectFilter; readonly count: number } | null;
   };
@@ -1201,6 +1209,15 @@ export type Instruction =
    * "Move any number of +1/+1 counters from this creature onto other creatures" (`moveCountersOnto`, issue 230): one counter at a time, a `choosePermanent` decision of purpose
    * 'moveCounters' (`min` 0, `max` 1) names the permanent it goes onto, or none to stop. `chosen` is the answer, null until then. See rules/move-counters.ts.
    */
+  | {
+      /**
+       * "Blight 1" (`blight`, CR 701.68a): the controller puts `count` -1/-1 counters on a creature they control; a `choosePermanent` decision of purpose 'blight' (not `forCost`) asks which
+       * when more than one can take them. `chosen` is the answer, null until then. See rules/blight-effect.ts.
+       */
+      readonly kind: 'blight';
+      readonly count: number;
+      readonly chosen: readonly ObjectId[] | null;
+    }
   | {
       readonly kind: 'moveCounters';
       readonly counter: string;
@@ -1614,7 +1631,7 @@ export type Instruction =
       readonly kind: 'counterUnlessPays';
       readonly object: ObjectId;
       readonly cost: readonly Cost[];
-      readonly stage: 'ask' | 'discard' | 'pay';
+      readonly stage: 'ask' | 'discard' | 'blight' | 'pay';
       readonly purpose: 'ward' | 'counterUnlessPays';
     }
   /**
@@ -1628,7 +1645,7 @@ export type Instruction =
       readonly kind: 'unlessPays';
       readonly seat: SeatId;
       readonly cost: readonly Cost[];
-      readonly stage: 'ask' | 'discard' | 'pay';
+      readonly stage: 'ask' | 'discard' | 'blight' | 'pay';
       readonly effect: Effect;
       readonly optional: boolean;
       /**

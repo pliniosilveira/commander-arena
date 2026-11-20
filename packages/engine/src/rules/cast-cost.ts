@@ -104,6 +104,8 @@ export interface SpellCost {
   readonly exile: number;
   /** Optional number of cards selected from hand for an additional exile cost, if present. */
   readonly exileFromHand: ObjectFilter | null;
+  /** "You may blight 1" (CR 118.8, 701.68a): the -1/-1 counters of the optional blight additional cost, asked once the mana is paid; absent for none. The spell is castable without paying it. */
+  readonly blight?: number;
   /** The permanents tapped as part of the cost, or null (the `tapPermanents` alternative cost, D-149). */
   readonly tap: TapRequirement | null;
   /** D-351 (CR 609.4b): mana of any type can be spent on the spell, so any mana pays any symbol of `symbols`. */
@@ -436,6 +438,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let discard = 0;
   let behold: ObjectFilter | null = null;
   let exileFromHand: ObjectFilter | null = null;
+  let blight = 0;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
@@ -447,6 +450,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     } else if (c.kind === 'discard') discard += c.count;
     else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
+    // CR 118.8, 701.68a: "you may blight 1" is no requirement for casting the spell: it is asked as the cost is paid.
+    else if (c.kind === 'blight') blight = c.count;
   }
   // CR 702.34a, 118.9: the life of a flashback cost ("Flashback—{1}{U}, Pay 3 life.") is part of the alternative cost.
   const life =
@@ -523,6 +528,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     behold,
     exile,
     exileFromHand,
+    ...(blight === 0 ? {} : { blight }),
     tap,
     ...(anyType ? { anyType: true as const } : {}),
     ...(anyColor ? { anyColor: true as const } : {}),

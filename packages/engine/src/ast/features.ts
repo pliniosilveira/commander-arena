@@ -169,6 +169,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
+    // "As an additional cost to cast this spell, you may blight 1" (`Cost` `blight` with `optional`, CR 118.8, 701.68a), and "Ward—Blight 2" (CR 702.21a).
+    'optionalBlight',
     // D-583: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
     'sacrificeOneOrMore',
     // "Sacrifice a Swamp and a Forest: ..." (`Cost` `sacrifice` with `alongside`, CR 701.21a, 118.3): a different permanent for each part.
@@ -401,6 +403,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'amass',
     // D-627: "Populate" (CR 701.36).
     'populate',
+    // "Blight 1" as an instruction (CR 701.68a).
+    'blight',
     // Issue 208: "You may play an additional land this turn." (CR 305.2).
     'additionalLandDropThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
@@ -1058,6 +1062,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'xAtLeast',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
+    // CR 118.8, 701.68a: "if this spell's additional cost was paid" (the optional blight).
+    'additionalCostPaid',
     // D-491: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
     'sacrificedAsCost',
     'controlCommander',
@@ -1638,6 +1644,8 @@ export const ABILITY_FEATURES = [
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
+  /** "As an additional cost to cast this spell, you may blight 1" (CR 118.8, 701.68a): a `blight` cost with `optional` in a face's `additionalCosts`, chosen as the cost is paid; `additionalCostPaid` reads it. */
+  'optionalBlight',
   /** "{T}, Sacrifice one or more artifacts: ..." (D-583, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
   'sacrificeOneOrMore',
   /** "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3, 602.2b): a `sacrifice` cost with `alongside` in an activated ability, one different permanent for each part, chosen as the cost is paid. */
@@ -1928,6 +1936,8 @@ export const CONDITION_KINDS = [
   'xAtLeast',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
+  /** "If this spell's additional cost was paid" (CR 118.8, 701.68a): the engine's `additionalCostPaid`. */
+  'additionalCostPaid',
   /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "If you control a commander" (CR 903.3d): the engine's `controlCommander`. */
@@ -2470,6 +2480,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeDifferentTargets: true,
   sacrificeX: true,
   optionalSacrifice: true,
+  optionalBlight: true,
   sacrificeOneOrMore: true,
   sacrificeEach: true,
   reflexiveModal: true,
@@ -2634,6 +2645,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   empowerJace: true,
   amass: true,
   populate: true,
+  blight: true,
   additionalLandDropThisTurn: true,
   moveCountersOnto: true,
   createEmblem: true,

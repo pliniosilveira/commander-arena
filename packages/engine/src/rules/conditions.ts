@@ -168,6 +168,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.replicated ?? 0) > 0;
     }
+    case 'additionalCostPaid': {
+      // CR 118.8, 701.68a: "if this spell's additional cost was paid" (the optional blight): the spell carries the fact on the stack, or its last-known information does once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source?.stack?.blighted === true;
+    }
     case 'sacrificedAsCost': {
       // CR 118.8, 603.4 (D-491): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
       // does once it has left (CR 113.7a). D-584 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.

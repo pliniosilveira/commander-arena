@@ -23,6 +23,7 @@ export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
   'payXLife',
   'discardX',
   'exileFromHand',
+  'blight',
   'mana',
 ];
 
@@ -42,6 +43,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   let xLife = 0;
   let xDiscard = 0;
   let beholds = 0;
+  let blights = 0;
   costs.forEach((cost, i) => {
     const p = `${path}[${i}]`;
     checkCost(cost, p, out);
@@ -120,6 +122,17 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
           issue(out, `${p}.filter.zone`, 'an additional exile cost selects cards from hand');
         }
         break;
+      case 'blight':
+        blights += 1;
+        // CR 118.8, 701.68a: "you may blight 1" is the one form of a spell's additional blight; a mandatory one is not run.
+        if (cost.optional !== true) {
+          issue(
+            out,
+            p,
+            'a blight as an additional cost of a spell is optional ("you may blight 1")',
+          );
+        }
+        break;
       case 'mana':
         if (Array.isArray(cost.symbols) && cost.symbols.includes('X')) {
           issue(
@@ -137,6 +150,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   if (discards > 1) issue(out, path, 'more than one discard cost is not supported');
   if (xLife > 1) issue(out, path, 'more than one "pay X life" cost is not supported');
   if (beholds > 1) issue(out, path, 'more than one behold cost is not supported');
+  if (blights > 1) issue(out, path, 'more than one blight cost is not supported');
   // D-386: "discard X cards" is the one discard cost of the spell (the discard of N cards pays into the same cards).
   if (xDiscard > 1 || (xDiscard === 1 && discards > 0)) {
     issue(out, path, 'discard X cards is the only discard cost of a spell (D-386)');

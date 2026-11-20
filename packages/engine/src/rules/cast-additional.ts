@@ -26,6 +26,8 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { beholdCandidates } from './behold';
+import { blightCandidates } from './blight-candidates';
+import { blightChosenEvent, putBlightCounters } from './blight-effect';
 import { discardableFor, exilable } from './cast-cost';
 import { derive } from './derive';
 import { discardCostDecision, discardObjects } from './discard-cost';
@@ -367,7 +369,7 @@ function payAdditionalExile(state: GameState, events: GameEvent[], finish: Finis
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const ids = casting.extra?.exileFromHand ?? [];
-  if (ids.length === 0) return finish(state, events);
+  if (ids.length === 0) return payOptionalBlight(state, events, finish);
   let next = state;
   const exiled: ObjectId[] = [];
   const out = [...events];
@@ -386,7 +388,76 @@ function payAdditionalExile(state: GameState, events: GameEvent[], finish: Finis
       stack: { ...spell.stack, exiledAsCost: exiled },
     });
   }
-  return finish(next, out);
+  return payOptionalBlight(next, out, finish);
+}
+
+/**
+ * CR 118.8, 601.2b, 601.2h, 701.68a, 701.68b: "As an additional cost to cast this spell, you may blight 1." The caster chooses a creature they control that can take the counters, or
+ * none, once the mana is paid; a caster with no such creature can't blight and is asked nothing. The spell remembers that it was paid (`StackData.blighted`), which the condition
+ * `additionalCostPaid` reads. `cancel` rewinds the cast (CR 733).
+ */
+function payOptionalBlight(state: GameState, events: GameEvent[], finish: Finish): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  if ((casting.extra?.blight ?? 0) === 0 || casting.extra === undefined) {
+    return finish(state, events);
+  }
+  const legal = blightCandidates(state, casting.seat);
+  if (legal.length === 0) return finish(state, events);
+  return pause(
+    {
+      ...state,
+      casting: {
+        ...casting,
+        stage: 'blight',
+        extra: { ...casting.extra, blightAsked: true },
+      },
+    },
+    events,
+    {
+      kind: 'choosePermanent',
+      seat: casting.seat,
+      source: casting.object,
+      purpose: 'blight',
+      min: 0,
+      max: 1,
+      legal,
+      forCost: true,
+    },
+  );
+}
+
+/** The answer to the question of the optional blight of a spell's additional cost: none declines it; a creature gets the counters and the spell remembers it was paid. */
+export function answerBlightAdditional(
+  state: GameState,
+  chosen: readonly ObjectId[],
+  finish: Finish,
+): Result {
+  const casting = state.casting;
+  if (
+    casting?.stage !== 'blight' ||
+    casting.activation !== null ||
+    casting.extra?.blightAsked !== true
+  ) {
+    return fail('No creature is being chosen to blight for a spell');
+  }
+  const { blight, blightAsked: _asked, ...extra } = casting.extra;
+  let next: GameState = { ...state, pending: null, casting: { ...casting, extra } };
+  const [id] = chosen;
+  if (id === undefined) return finish(next, []);
+  if (blight === undefined || !blightCandidates(next, casting.seat).includes(id)) {
+    return fail('That creature cannot be blighted');
+  }
+  const put = putBlightCounters(next, id, blight, casting.seat);
+  next = put.state;
+  const stack = next.objects[casting.object]?.stack;
+  if (stack !== undefined && stack !== null) {
+    next = patchObject(next, casting.object, { stack: { ...stack, blighted: true } });
+  }
+  return finish(next, [
+    blightChosenEvent(casting.seat, casting.object, [id], false),
+    ...put.events,
+  ]);
 }
 
 /** The answer to the exile question of an escape cost; the caller checked it against the decision. */

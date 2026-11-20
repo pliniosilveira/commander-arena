@@ -349,6 +349,11 @@ function isRecipientless(clause: IrClause): boolean {
   return clause.verb === 'dealDamage' && clause.args.to === undefined;
 }
 
+/** "exile the top three cards instead": an exile of the top cards that names no library (`effect.exile-top-instead`). */
+function isLibraryless(clause: IrClause): boolean {
+  return clause.verb === 'exileTopInstead';
+}
+
 interface Step {
   readonly effects: readonly Effect[];
   /** An unconditional sentence of one instruction: what an "instead" sentence can replace. */
@@ -1656,6 +1661,26 @@ function ellipticalDamage(
   return { ok: true, value: [{ ...base, amount: amount.value }], rule: clause.rule };
 }
 
+/**
+ * The sentence "If this spell's additional cost was paid, exile the top three cards instead.": the earlier exile of the top cards of the controller's library with a new number.
+ * Only after one sentence that is one such exile (CR 701.13), which says whose library the elliptical words mean.
+ */
+function ellipticalExileTop(
+  sentence: IrSentence,
+  clause: IrClause,
+  previous: Step,
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const [base] = previous.effects;
+  if (previous.effects.length !== 1 || base?.kind !== 'exileTop' || base.from !== undefined) {
+    return refuse(sentence);
+  }
+  if (base.faceDown === true || base.linked === true) return refuse(sentence);
+  const count = amountArg(clause, 'count', ctx);
+  if (!count.ok) return count;
+  return { ok: true, value: [{ ...base, count: count.value }], rule: clause.rule };
+}
+
 /** The `thisWay` amounts a clause reads, wherever in its amounts they are (a token's count, a draw's count, ...). */
 function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] {
   const out: Extract<IrAmount, { kind: 'thisWay' }>[] = [];
@@ -2371,7 +2396,9 @@ function lowerStep(
   const replacement =
     sentence.clauses.length === 1 && isRecipientless(first)
       ? ellipticalDamage(sentence, first, previous, ctx)
-      : lowerClauses(sentence.clauses, ctx);
+      : sentence.clauses.length === 1 && isLibraryless(first)
+        ? ellipticalExileTop(sentence, first, previous, ctx)
+        : lowerClauses(sentence.clauses, ctx);
   if (!replacement.ok) return stop(replacement);
   // "If this spell was kicked, exile target nonland permanent instead.": the slots of each way (CR 702.33g, 601.2c).
   if (
