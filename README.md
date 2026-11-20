@@ -10,6 +10,10 @@ That address always runs the latest version of the game.
 
 The picture shows how many Commander cards the game can play today. It is updated every Monday. If it does not load, the report is at <https://pliniosilveira.github.io/commander-arena/>.
 
+[![Nightly tests: the result of the latest full test run on the main branch (open the runs)](https://github.com/pliniosilveira/commander-arena/actions/workflows/full.yml/badge.svg?branch=main&event=schedule)](https://github.com/pliniosilveira/commander-arena/actions/workflows/full.yml?query=event%3Aschedule)
+
+This picture shows the result of the latest full test run. It runs every night when the code has changed since the night before, and it plays far more games and checks far more than the quick checks that run on each change. Green means the latest run passed, red means it failed. Click it to see the runs.
+
 ## Status
 
 Playable and still growing. You can play a full two-player Commander game against a computer opponent in the browser, from **Quick start** with one of the ready-made decks. Their card data ships with the game, so they start without a connection (card pictures load from Scryfall). You can also import your own Commander list from Moxfield, Archidekt, Arena or MTGO: the cards are looked up on Scryfall, checked against the Commander rules, and a report says which cards the game can play and why it cannot play the others. Only decks that follow the Commander rules and use cards the game fully supports can be played.
