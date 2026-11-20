@@ -78,6 +78,8 @@ describe('amounts that read an object', () => {
       'times',
       'lifeLostThisWay',
       'lifeLostThisTurn',
+      // Issue 101: the creatures attacking the player a loseLife affects.
+      'attackersOfAffected',
       // CR 402.1: the cards in that player's hand, read for each player a dealDamage hurts.
       'cardsInHandOfAffected',
       'lifeGainedThisTurn',
