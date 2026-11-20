@@ -1626,7 +1626,9 @@ function lowerTappedForMana(
     clause.duration !== undefined ||
     clause.args.additional === undefined ||
     spec?.kind !== 'manaSpec' ||
-    (spec.what.kind !== 'symbols' && spec.what.kind !== 'anyColor')
+    (spec.what.kind !== 'symbols' &&
+      spec.what.kind !== 'anyColor' &&
+      spec.what.kind !== 'producedType')
   ) {
     return failure(ability);
   }
@@ -1638,12 +1640,31 @@ function lowerTappedForMana(
   if (spec.what.kind === 'anyColor' && (spec.what.count !== undefined || trigger.by !== 'tapper')) {
     return failure(ability);
   }
-  const blocked = missingFeatures(['ability:triggered', 'trigger:tappedForMana', 'effect:addMana']);
+  // CR 106.12a, 605.4a: "one mana of any type that land produced" is for the controller of the ability, and the permanent it names is the kind the trigger names.
+  if (spec.what.kind === 'producedType') {
+    const named = spec.what.noun;
+    const tappedTypes: readonly string[] = trigger.what.types ?? [];
+    if (
+      trigger.by !== 'you' ||
+      trigger.mana !== undefined ||
+      (named !== 'permanent' && !tappedTypes.includes(named))
+    ) {
+      return failure(ability);
+    }
+  }
+  const blocked = missingFeatures([
+    'ability:triggered',
+    'trigger:tappedForMana',
+    'effect:addMana',
+    ...(spec.what.kind === 'producedType' ? (['manaProduction:producedType'] as const) : []),
+  ]);
   if (blocked.length > 0) return failure(ability, blocked);
   const mana: ManaProduction =
     spec.what.kind === 'anyColor'
       ? { kind: 'anyColor' }
-      : { kind: 'fixed', mana: spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[] };
+      : spec.what.kind === 'producedType'
+        ? { kind: 'producedType' }
+        : { kind: 'fixed', mana: spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[] };
   return {
     ok: true,
     value: [{ kind: 'triggered', trigger, effect: { kind: 'addMana', mana } }],

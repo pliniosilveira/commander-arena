@@ -957,6 +957,8 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
         : { kind: 'chosenColor', or: spec.what.or };
     case 'thatColor':
     case 'anyOneColorX':
+    case 'producedType':
+      // Only the effect of a triggered mana ability, which `lowerTappedForMana` builds itself.
       return null;
     case 'devotionToChosenColor':
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.

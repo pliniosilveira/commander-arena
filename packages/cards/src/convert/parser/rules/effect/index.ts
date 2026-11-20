@@ -149,6 +149,7 @@ import { PRIMORDIAL_EFFECT_RULES } from './primordial';
 import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
+import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -1243,6 +1244,8 @@ export const EFFECT_RULES = [
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
+  // Mirari's Wake, Vorinclex: "add one mana of any type that land produced", before `effect.add-mana`.
+  ...PRODUCED_TYPE_MANA_EFFECT_RULES,
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,

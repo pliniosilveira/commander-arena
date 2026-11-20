@@ -930,6 +930,8 @@ export interface IrManaSpec extends IrNode {
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }
+    // "one mana of any type that land produced" (CR 106.12a, 605.4a): a type the permanent tapped for mana produced; `noun` is the permanent word the text used
+    | { readonly kind: 'producedType'; readonly noun: string }
     /**
      * "one mana of any color that a land an opponent controls could produce" (stage P14, CR 106.7):
      * one mana of a type that a land `whose` could produce; `anyType` says "any type", which keeps

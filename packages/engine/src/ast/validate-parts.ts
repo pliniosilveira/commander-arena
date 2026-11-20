@@ -124,6 +124,8 @@ export interface Scope {
    * trigger, a spell, an activated ability).
    */
   readonly triggerSubject?: 'permanent' | 'stack';
+  /** True in the effect of a `tappedForMana` triggered ability, the only place `producedType` mana may stand (CR 605.1b). */
+  readonly triggeredMana?: boolean;
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
@@ -6338,6 +6340,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
+      // CR 106.12a, 605.1b: "add one mana of any type that land produced" reads the mana ability that triggered it: only a triggered mana ability has one.
+      if (e.mana?.kind === 'producedType' && scope.triggeredMana !== true) {
+        issue(
+          out,
+          `${path}.mana`,
+          'one mana of a type the tapped permanent produced is only the effect of a "tapped for mana" triggered mana ability',
+        );
+      }
       if (e.mana?.kind === 'anyColorAmount') {
         issue(
           out,

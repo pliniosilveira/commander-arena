@@ -1682,6 +1682,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           ? { triggerAttacked: true }
           : {}),
         triggeredAbility: true,
+        ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
@@ -1756,7 +1757,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           a.effect?.kind === 'addMana' &&
           (a.effect.mana?.kind === 'fixed' ||
             // CR 106.1b, 605.3b: one mana of any color, named as the mana ability is activated.
-            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1)) &&
+            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
+            // CR 106.12a, 605.4a: one mana of a type the tapped permanent produced.
+            a.effect.mana?.kind === 'producedType') &&
           a.targets === undefined &&
           a.modes === undefined &&
           a.optional !== true &&
