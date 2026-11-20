@@ -3302,6 +3302,19 @@ export type Effect =
    */
   | { readonly kind: 'moveCountersOnto'; readonly counter: string; readonly to: ObjectFilter }
   /**
+   * "Move a counter from target permanent you control onto a second target permanent." / Graft's "you may move a +1/+1 counter from this permanent onto that creature" (CR 122.1, 122.6,
+   * 608.2d; Nesting Grounds, Llanowar Reborn): one counter moves from the permanent `from` names (a reference: a `target`, `this`...) onto the one `to` names. `counter` is its kind;
+   * left out, any kind: the controller chooses one when the source has counters of more than one kind the destination can have (a `chooseOption` decision of purpose 'effect', the
+   * kinds as options), and it is that kind when there is one. Nothing moves when either permanent has left the battlefield, when they are the same permanent, when the source has no
+   * counter of the kind or when the destination can't have it (CR 122.6).
+   */
+  | {
+      readonly kind: 'moveCounter';
+      readonly from: ObjectRef;
+      readonly to: ObjectRef;
+      readonly counter?: string;
+    }
+  /**
    * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
    * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
    * "You may play X additional lands this turn." (Nahiri's Lithoforming, CR 107.3a, 305.2): `count` may be an amount, read as the effect runs; with 0 or less nothing is added.

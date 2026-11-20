@@ -388,6 +388,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDropThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
+    // Nesting Grounds, Graft: "Move a counter from target permanent you control onto a second target permanent" (CR 122.1).
+    'moveCounter',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -2476,6 +2478,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   populate: true,
   additionalLandDropThisTurn: true,
   moveCountersOnto: true,
+  moveCounter: true,
   createEmblem: true,
   delayedSacrifice: true,
   exileIfLeaves: true,

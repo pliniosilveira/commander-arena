@@ -5382,6 +5382,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       checkFilter(e.to, `${path}.to`, out);
       break;
+    case 'moveCounter':
+      // CR 122.1 (Nesting Grounds, Graft): one counter, of the kind named or of a kind the controller chooses, from one permanent onto another.
+      checkAffectedObjects(e.from, `${path}.from`, scope, out);
+      checkAffectedObjects(e.to, `${path}.to`, scope, out);
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'moveCounter names a kind of counter when it names one');
+      }
+      break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
       if (typeof e.count === 'number' ? !isCount(e.count) || e.count < 1 : e.count === undefined) {

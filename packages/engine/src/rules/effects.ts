@@ -116,6 +116,7 @@ import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
+import { runMoveCounter } from './move-counter';
 import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
 import { runOwnerLibraryChoice } from './owner-library-choice';
@@ -1614,6 +1615,10 @@ function runEffect(
         [],
         [{ kind: 'moveCounters', counter: effect.counter, to: effect.to, chosen: null }],
       );
+
+    case 'moveCounter':
+      // CR 122.1 (Nesting Grounds, Graft): one counter from one permanent onto another (rules/move-counter.ts).
+      return runMoveCounter(state, effect, ctx, targets);
 
     case 'copyOneOfTriggerCards':
       // CR 603.2c, 707.2 (Twilight Diviner): the permanents of the batch that are still on the battlefield, one of which the controller copies (rules/populate.ts).
