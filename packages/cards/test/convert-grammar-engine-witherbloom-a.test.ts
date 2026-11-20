@@ -5,7 +5,8 @@ import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parseOnly } from './convert-grammar-helpers';
+import { syntheticCard as storedCard } from './convert-helpers';
 
 const GOLDEN = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -142,5 +143,142 @@ describe('Suffer the Past: X cards of one graveyard exiled, a life drained for e
     g.act(0).cast('Suffer the Past');
     // seat 1 holds three cards, seat 0 one: four in all, but one graveyard has at most three.
     expect(g.state.pending).toMatchObject({ kind: 'chooseX', min: 0, max: 3 });
+  });
+});
+
+describe('Druidic Satchel: one reveal, a branch for each kind of card it shows (CR 701.20a, 608.2c)', () => {
+  const satchel = real('Druidic Satchel');
+  const start = (top: string) =>
+    scenario()
+      .define(satchel)
+      .seat(0)
+      .life(20)
+      .library(top, ...LIBRARY)
+      .battlefield('Druidic Satchel', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  const run = (top: string) => {
+    const g = start(top);
+    g.act(0).activate('Druidic Satchel', { pay: true });
+    g.passAll();
+    return g;
+  };
+  const saprolings = (g: ReturnType<typeof start>) =>
+    g.find({ name: 'Saproling', zone: 'battlefield', seat: 0 });
+
+  test('a creature card: a 1/1 Saproling is created and the card stays on top of the library', () => {
+    const g = run('Serra Angel');
+    expect(saprolings(g)).toHaveLength(1);
+    g.expect.zone('Serra Angel', 'library', { seat: 0 });
+    g.expect.life(0, 20);
+    g.expect.invariants();
+  });
+
+  test('a land card is put onto the battlefield under your control', () => {
+    const g = run('Mountain');
+    g.expect.zone('Mountain', 'battlefield', { seat: 0 });
+    expect(saprolings(g)).toHaveLength(0);
+    g.expect.life(0, 20);
+  });
+
+  test('a noncreature, nonland card: you gain 2 life and it stays on top', () => {
+    const g = run('Lightning Bolt');
+    g.expect.life(0, 22);
+    g.expect.zone('Lightning Bolt', 'library', { seat: 0 });
+    expect(saprolings(g)).toHaveLength(0);
+  });
+
+  test('the card is revealed to the table', () => {
+    const g = run('Lightning Bolt');
+    g.expect.eventLog([
+      { kind: 'cardsRevealed', seat: 0, names: ['Lightning Bolt'], from: 'library' },
+    ]);
+  });
+
+  test('a card of two kinds does both branches in the order written (a land creature: a token, and it enters)', () => {
+    const arbor = parseOnly(
+      storedCard({
+        name: 'SYNTHETIC Dryad Probe',
+        typeLine: 'Land Creature — Forest Dryad',
+        power: '1',
+        toughness: '1',
+        oracleText: '',
+      }),
+    ).definition;
+    const g = scenario()
+      .define(satchel)
+      .define(arbor)
+      .seat(0)
+      .life(20)
+      .library('SYNTHETIC Dryad Probe', ...LIBRARY)
+      .battlefield('Druidic Satchel', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate('Druidic Satchel', { pay: true });
+    g.passAll();
+    expect(saprolings(g)).toHaveLength(1);
+    g.expect.zone('SYNTHETIC Dryad Probe', 'battlefield', { seat: 0 });
+    g.expect.life(0, 20);
+  });
+
+  test('an empty library does nothing', () => {
+    const g = scenario()
+      .define(satchel)
+      .seat(0)
+      .life(20)
+      .battlefield('Druidic Satchel', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate('Druidic Satchel', { pay: true });
+    g.passAll();
+    g.expect.life(0, 20);
+  });
+});
+
+describe('Sapling of Colfenor: a creature card revealed on an attack (CR 701.20a, 119.3, 508.1m)', () => {
+  const sapling = real('Sapling of Colfenor');
+  const start = (top: string) =>
+    scenario()
+      .define(sapling)
+      .seat(0)
+      .life(20)
+      .library(top, ...LIBRARY)
+      .battlefield('Sapling of Colfenor')
+      .seat(1)
+      .life(20)
+      .library(...LIBRARY)
+      .battlefield('Wall of Stone')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  const attackWith = (top: string) => {
+    const g = start(top);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['Sapling of Colfenor']);
+    g.passAll();
+    return g;
+  };
+
+  test('a creature card: gain its toughness, lose its power, and it goes to your hand', () => {
+    const g = attackWith('Giant Spider');
+    g.expect.life(0, 22);
+    g.expect.zone('Giant Spider', 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a creature card with power 0 costs no life', () => {
+    const g = attackWith('Wall of Stone');
+    g.expect.zone('Wall of Stone', 'hand', { seat: 0 });
+  });
+
+  test('a card that is not a creature stays on top and nothing happens', () => {
+    const g = attackWith('Lightning Bolt');
+    g.expect.life(0, 20);
+    g.expect.zone('Lightning Bolt', 'library', { seat: 0 });
   });
 });

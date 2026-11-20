@@ -140,6 +140,7 @@ import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
+import { runRevealTopBranches } from './reveal-top-branches';
 import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
@@ -3016,6 +3017,10 @@ function runEffect(
     case 'replaceEnchant':
       // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
       return runReplaceEnchant(state, effect, ctx, targets);
+
+    case 'revealTopBranches':
+      // CR 701.20a, 608.2c: reveal the top card once and do each branch it matches (rules/reveal-top-branches.ts).
+      return runRevealTopBranches(state, res, effect, ctx, targets);
 
     case 'revealTopDuel':
       // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).

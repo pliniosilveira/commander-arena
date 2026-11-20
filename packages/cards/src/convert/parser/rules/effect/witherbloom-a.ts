@@ -5,6 +5,7 @@ import { literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrAmount, IrNoun } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
+import { EFFECT_REVEAL_TOP_BRANCHES } from './witherbloom-a-reveal';
 
 const EXILE_ID = 'effect.exile-x-cards-of-player';
 
@@ -125,4 +126,5 @@ export const EFFECT_DRAIN_FOR_EACH_EXILED = defineRule<Clauses>({
 export const WITHERBLOOM_A_EFFECT_RULES = [
   EFFECT_EXILE_X_CARDS_OF_PLAYER,
   EFFECT_DRAIN_FOR_EACH_EXILED,
+  EFFECT_REVEAL_TOP_BRANCHES,
 ];
