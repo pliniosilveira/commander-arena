@@ -782,15 +782,7 @@ export function canCast(
   const payments = modePayments(state, seat, spell);
   return kickedWays.some(
     (kicked) =>
-      targetsPossible(
-        state,
-        seat,
-        spell,
-        alternative === 'overload',
-        kicked,
-        timing.onlyTargets,
-        alternative === 'bestow',
-      ) &&
+      // The cost is asked first: it is the cheaper check when the seat has no mana, and both are pure.
       payments.some((modes) => {
         const request = {
           seat,
@@ -809,7 +801,16 @@ export function canCast(
               canPayRequest(way.state, seat, spell, { ...request, harmonizeTap: way.tap }),
             )
           : canPayRequest(state, seat, spell, request);
-      }),
+      }) &&
+      targetsPossible(
+        state,
+        seat,
+        spell,
+        alternative === 'overload',
+        kicked,
+        timing.onlyTargets,
+        alternative === 'bestow',
+      ),
   );
 }
 
