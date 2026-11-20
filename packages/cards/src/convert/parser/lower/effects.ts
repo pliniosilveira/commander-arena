@@ -1966,8 +1966,21 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
     entersAttacking = { attacking: { at: ctx.attackedPlayer.selector } };
   }
+  // CR 508.4, 110.5b: "that's tapped and attacking": only in the effect of an attack batch trigger of the controller, which names the players the declaration attacked.
+  if (token.tappedAndAttacking === true) {
+    if (ctx.attackBatchPlayer === null) return { ok: false, needs: [], ...at };
+    const missing = missingFeatures([
+      ...ctx.attackBatchPlayer.needs,
+      'token:attacking',
+      'token:tapped',
+    ]);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    entersAttacking = { attacking: { at: ctx.attackBatchPlayer.selector } };
+  }
   const entersTapped = {
-    ...(token.tapped === true ? { tapped: true as const } : {}),
+    ...(token.tapped === true || token.tappedAndAttacking === true
+      ? { tapped: true as const }
+      : {}),
     ...entersAttacking,
   };
   // "Its controller creates ...": the token is created under that player's control (CR 111.2).

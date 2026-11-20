@@ -329,6 +329,13 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           ),
           null,
         ),
+        // CR 508.4, 110.5b: "that's tapped and attacking", said of one token.
+        optional(
+          quiet(
+            map(pattern(/ that['’]s tapped and attacking(?![\p{L}\p{N}])/iu), () => true as const),
+          ),
+          null,
+        ),
       ),
       ([amount, , , pt, , , , , plural]) =>
         ((amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural) &&
@@ -347,9 +354,11 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       named,
       { keywords, abilities },
       attackingThatOpponent,
+      tappedAndAttacking,
     ]): Bare => ({
       kind: 'token',
       ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
+      ...(tappedAndAttacking === null ? {} : { tappedAndAttacking }),
       ...(tapped === null ? {} : { tapped }),
       ...(named === null ? {} : { named }),
       ...(pt[1] === 'X'
@@ -419,8 +428,19 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 2/2 blue Shapeshifter creature token with changeling',
     'a 1/1 white Soldier creature token with changeling and flying',
     'a 1/1 white Soldier creature token with flying, changeling, and "{T}: You gain 1 life."',
+    // CR 508.4, 110.5b: a token that enters tapped and attacking (after an attack batch trigger the lowering names the player).
+    "a 1/1 red Goblin creature token that's tapped and attacking",
+    'a 1/1 red Goblin creature token that’s tapped and attacking',
+    "a 1/1 white Soldier creature token with flying that's tapped and attacking",
   ],
   rejects: [
+    "a 1/1 red Goblin creature token that's tapped and attacking and",
+    "a 1/1 red Goblin creature token that's tapped",
+    "a 1/1 red Goblin creature token that's attacking",
+    "a 1/1 red Goblin creature token that's untapped and attacking",
+    "a 1/1 red Goblin creature token that's tapped and attacking a player",
+    "a tapped 1/1 red Goblin creature token that's tapped and attacking that opponent",
+    "a 1/1 red Goblin creature token that's attacking and tapped",
     'a 1/1 red and green Dragon creature token with devour',
     'a 1/1 red and green Dragon creature token with devour 0',
     'a 1/1 red and green Dragon creature token with devour X',

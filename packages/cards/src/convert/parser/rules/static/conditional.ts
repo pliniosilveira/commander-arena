@@ -46,6 +46,8 @@ const STATIC_CONDITIONS = [
   'condition.this-entered-this-turn',
   // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
   'condition.this-has-counter-count',
+  // Quest for the Goblin Lord (CR 122.1, 611.3a): "~ has five or more quest counters on it".
+  'condition.this-counter-count',
 ] as const;
 
 const CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
@@ -224,6 +226,7 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as enchanted creature is white, it gets +1/+1 and has flying.',
     'As long as another Aura is attached to enchanted creature, it has first strike and lifelink.',
     'As long as ~ entered this turn, enchanted creature has hexproof.',
+    'As long as ~ has five or more quest counters on it, creatures you control get +2/+0.',
   ],
   rejects: [
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',

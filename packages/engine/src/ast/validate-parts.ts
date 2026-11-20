@@ -1419,7 +1419,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(
           out,
           path,
-          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents",
+          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents or an attack batch",
         );
       }
       break;
