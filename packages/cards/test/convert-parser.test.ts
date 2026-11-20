@@ -766,6 +766,8 @@ describe('unmatched abilities', () => {
       'effect.amass',
       'effect.populate',
       'effect.copy-one-of-them',
+      'effect.each-player-chooses-creature-type',
+      'effect.sacrifice-one-of-them',
       'effect.additional-land-this-turn',
       'effect.additional-lands-x-this-turn',
       'effect.look-put-lands',
