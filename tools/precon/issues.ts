@@ -33,12 +33,24 @@ export function isOutsideTheDeck(typeLine: string): boolean {
   return types.some((w) => OUTSIDE_TYPES.has(w));
 }
 
-/** The decklist as the files hold it: the commander, then the main deck, one "Nx Name" line each. */
-function decklistOf(lines: readonly { name: string; count: number; section: string }[]): string {
+/** The decklist as the files hold it: the commander, then the main deck, one "Nx Name" line each, with " (set) number" when the list names the printing. */
+function decklistOf(
+  lines: readonly {
+    name: string;
+    count: number;
+    section: string;
+    set?: string;
+    collector?: string;
+  }[],
+): string {
   const render = (section: string) =>
     lines
       .filter((l) => l.section === section)
-      .map((l) => `${l.count}x ${l.name}`)
+      .map((l) => {
+        const printing =
+          l.set !== undefined && l.collector !== undefined ? ` (${l.set}) ${l.collector}` : '';
+        return `${l.count}x ${l.name}${printing}`;
+      })
       .join('\n');
   const commander = render('commander');
   return `${commander === '' ? '' : `Commander\n${commander}\n\n`}Mainboard\n${render('main')}`;

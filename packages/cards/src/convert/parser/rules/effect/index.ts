@@ -43,6 +43,7 @@ import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
+import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DACK_EFFECT_RULES } from './dack';
@@ -117,6 +118,7 @@ import {
   EFFECT_CHOOSE_CREATURE_TYPE,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
+import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
 import { NEXT_SPELL_EFFECT_RULES } from './next-spell';
@@ -184,6 +186,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -1104,6 +1107,8 @@ export const EFFECT_RULES = [
   ...FEATHER_G3_EFFECT_RULES,
   // Quandrix Unlimited deck, group I (Unbound Flourishing): "double the value of X" and "copy that spell or ability" start like a plain double and a plain copy, and are tried first.
   ...UNBOUND_I_EFFECT_RULES,
+  // Issue 133 (Diffusion Sliver): "counter that spell or ability unless its controller pays {2}" starts like the plain counter rules, and is tried first.
+  ...COUNTER_TRIGGER_EFFECT_RULES,
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
@@ -1115,6 +1120,7 @@ export const EFFECT_RULES = [
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
   ...PRISMARI_G2_EFFECT_RULES,
+  ...MARDU_SURGE_EFFECT_RULES,
   // Prismari deck, group 3 (issue 87, D-660 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into
   // your hand", "shuffle your library, then reveal cards ... exile that card ...", "as many times as you choose, you may exile ...", "each player exiles cards ... until they exile a nonland card",
   // "an opponent chooses a nonland card exiled this way" and "whenever a creature you control deals combat damage ... copy the exiled card" start like the plain exile, cast, put, shuffle,
@@ -1239,6 +1245,8 @@ export const EFFECT_RULES = [
   ...EXILE_TOP_INSTEAD_EFFECT_RULES,
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
   ...COPY_ONE_OF_THEM_EFFECT_RULES,
+  // Sliver Swarm deck, group D (issue 133): "Each player chooses a creature type."
+  ...SLIVER_D_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
   ...RAMP_LANDS_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,

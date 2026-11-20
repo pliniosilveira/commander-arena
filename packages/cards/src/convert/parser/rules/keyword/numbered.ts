@@ -19,6 +19,10 @@ export const NUMBERED_KEYWORDS = [
   'bushido',
   'hideaway',
   'devour',
+  // Issue 101 (CR 702.181a): "Mobilize 1".
+  'mobilize',
+  // Issue 101 (CR 702.123a): "Fabricate 2".
+  'fabricate',
   // Stage P68 (D-230, CR 702.165): "Backup 1".
   'backup',
 ] as const;

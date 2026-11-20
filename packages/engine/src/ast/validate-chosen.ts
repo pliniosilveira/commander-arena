@@ -25,6 +25,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   const o = value as Record<string, unknown>;
   if (o.chosenType === true) found.add('creatureType');
   if (o.notChosenType === true) found.add('creatureType');
+  // CR 613.1d: "Slivers you control ... are the chosen type" reads the creature type the permanent chose as it entered.
+  if (o.kind === 'giveChosenCreatureType') found.add('creatureType');
   if (o.chosenColor === true) found.add('color');
   // D-149: "Add one mana of the chosen color" reads the same choice.
   if (o.kind === 'chosenColor') found.add('color');

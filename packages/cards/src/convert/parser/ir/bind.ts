@@ -113,6 +113,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   // Stage P28: "you and target opponent each", "defending player" (CR 508.5)
   'players',
   'defendingPlayer',
+  // "the player to your right": one player the text names, so a later "that player" is bound to it.
+  'playerToRight',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
   // "each opponent dealt combat damage this game by a creature named ~": several players, as above.

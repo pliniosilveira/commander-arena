@@ -169,6 +169,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modeDifferentTargets',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
+    // Issue 101: "{4}{B}{B}{B}, Discard X cards: ..." (`Cost` `discard` with `countX`, CR 107.3a, 602.2b).
+    'discardCostX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
     // "As an additional cost to cast this spell, you may blight 1" (`Cost` `blight` with `optional`, CR 118.8, 701.68a), and "Ward—Blight 2" (CR 702.21a).
@@ -296,6 +298,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttackSource',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
+    // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
+    'doubleTokens',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
@@ -648,6 +652,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'annihilator',
     // D-472: Afflict N (CR 702.130).
     'afflict',
+    // Issue 101: Mobilize N (CR 702.181).
+    'mobilize',
+    // Issue 101: Fabricate N (CR 702.123).
+    'fabricate',
     // D-230: Backup N (CR 702.165).
     'backup',
     'persist',
@@ -934,6 +942,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
+    // CR 205.3m (Titan of Littjara, Descendants' Fury): `sharesCreatureTypeWith` of the source of the ability, or of the creature an earlier sacrifice sacrificed.
+    'sharesCreatureTypeWithSource',
+    'sharesCreatureTypeWithSacrificed',
+    // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
+    'chooseFromTriggerSources',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
@@ -970,8 +983,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenType',
     'notChosenType',
     'chosenColor',
+    // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
+    'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
+    // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
+    'playerToYourRight',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
@@ -1305,6 +1322,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerProtection',
     // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
     'cantHaveCounters',
+    // CR 701.21a, 101.2: "This artifact can't be sacrificed."
+    'cantBeSacrificed',
     // D-220: "If a triggered ability of ... triggers, that ability triggers an additional time" (`doubleTriggers`).
     'doubleTriggers',
     'cantCastThis',
@@ -1330,6 +1349,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCantBeCountered',
     // D-192: "Damage isn't removed from this creature during cleanup steps."
     'keepsDamage',
+    // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
+    'legendRuleDoesntApply',
+    // "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types." (CR 613.1d), "Each Sliver creature card in your graveyard has encore {X}" (CR 702.141a).
+    'giveChosenCreatureType',
+    'grantEncoreToGraveyardCards',
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
@@ -1373,6 +1397,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostThisWay',
     // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
     'lifeLostThisTurn',
+    // Issue 101 (CR 508.1b): "the number of creatures attacking them", read for each player a `loseLife` affects.
+    'attackersOfAffected',
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
@@ -1400,6 +1426,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardTypesAmong',
     // Issue 121: "the number of different mana values among instant and sorcery cards in your graveyard" (Eris).
     'differentManaValuesAmong',
+    // Issue 101: "the number of differently named tokens you control" (CR 201.2).
+    'differentNamesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
@@ -1525,10 +1553,15 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'riot',
   // D-472: Afflict N (CR 702.130): each instance granted is a triggered ability of its own (CR 702.130b), like exalted's.
   'afflict',
+  // Issue 101: Mobilize N (CR 702.181a): each instance granted is a triggered ability of its own, like afflict's.
+  'mobilize',
   // D-638: ward (CR 702.21): "Enchanted creature has ward {2}"; each instance granted is a triggered ability of its own, like afflict's.
   'ward',
   // D-640: annihilator (CR 702.86): "Enchanted creature has annihilator 2"; each instance granted triggers separately (CR 702.86b), like afflict's.
   'annihilator',
+  // CR 702.116a (Myriad): given to a creature by a static ability or an effect ("Creatures you control have myriad"). The engine has two players in a game, so there is never an
+  // opponent other than the defending player and the ability has nothing to do (`docs/ROADMAP.md`); a grant is read as the keyword, which the creature then has.
+  'myriad',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
 ];
@@ -1673,6 +1706,8 @@ export const ABILITY_FEATURES = [
   'modeDifferentTargets',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
+  /** "Discard X cards" in the cost of an activated ability (issue 101, CR 107.3a, 602.2b): a `discard` cost with `countX`. */
+  'discardCostX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
   /** "As an additional cost to cast this spell, you may blight 1" (CR 118.8, 701.68a): a `blight` cost with `optional` in a face's `additionalCosts`, chosen as the cost is paid; `additionalCostPaid` reads it. */
@@ -1797,6 +1832,12 @@ export const SELECTOR_KINDS = [
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
   'sharesCreatureTypeWith',
+  /** "Each other creature you control that shares a creature type with it" of an ability about its own source (CR 205.3m, Titan of Littjara): `ObjectFilter.sharesCreatureTypeWith: 'source'`. */
+  'sharesCreatureTypeWithSource',
+  /** "A creature card that shares a creature type with the sacrificed creature" (CR 205.3m, 701.21a, Descendants' Fury): `ObjectFilter.sharesCreatureTypeWith: 'sacrificed'`. */
+  'sharesCreatureTypeWithSacrificed',
+  /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
+  'chooseFromTriggerSources',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
@@ -1844,8 +1885,12 @@ export const SELECTOR_KINDS = [
   'chosenType',
   'notChosenType',
   'chosenColor',
+  /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
+  'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
+  /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */
+  'playerToYourRight',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
@@ -2232,6 +2277,8 @@ export const STATIC_KINDS = [
   'playerProtection',
   /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */
   'cantHaveCounters',
+  /** "This artifact can't be sacrificed" (CR 701.21a, 101.2): the engine's `cantBeSacrificed`. */
+  'cantBeSacrificed',
   /** "If a triggered ability of a Wizard you control triggers, that ability triggers an additional time" (CR 603.2d, D-220): `doubleTriggers`. */
   'doubleTriggers',
   /** "You can't cast ~ during your first, second, or third turns of the game" (CR 101.2, D-149): `cantCastThis`. */
@@ -2258,6 +2305,12 @@ export const STATIC_KINDS = [
   'activateAsThoughHaste',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
+  /** "The \"legend rule\" doesn't apply to Slivers you control" (CR 704.5j): the engine's `legendRuleDoesntApply`. */
+  'legendRuleDoesntApply',
+  /** "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types" (CR 613.1d): the engine's `giveChosenCreatureType`. */
+  'giveChosenCreatureType',
+  /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
+  'grantEncoreToGraveyardCards',
 ] as const;
 export type StaticKind = (typeof STATIC_KINDS)[number];
 
@@ -2316,6 +2369,8 @@ export const AMOUNT_KINDS = [
   'lifeLostThisWay',
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
+  /** "The number of creatures attacking them" (issue 101, CR 508.1b): the engine's `attackersOfAffected`, the whole amount of a `loseLife`. */
+  'attackersOfAffected',
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
@@ -2352,6 +2407,8 @@ export const AMOUNT_KINDS = [
   'cardTypesAmong',
   /** "The number of different mana values among instant and sorcery cards in your graveyard" (CR 202.3, issue 121): the engine's `differentManaValuesAmong`. */
   'differentManaValuesAmong',
+  /** "The number of differently named tokens you control" (CR 201.2, issue 101): the engine's `differentNamesAmong`. */
+  'differentNamesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
@@ -2529,6 +2586,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeAllOrNone: true,
   modeDifferentTargets: true,
   sacrificeX: true,
+  discardCostX: true,
   optionalSacrifice: true,
   optionalBlight: true,
   sacrificeOneOrMore: true,
@@ -2620,6 +2678,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   attackRandomOpponent: true,
   requireAttackSource: true,
   permanentsEnterTapped: true,
+  doubleTokens: true,
   gainControl: true,
   exchangeControl: true,
   returnControlToOwners: true,
@@ -2840,6 +2899,8 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   exalted: true,
   annihilator: true,
   afflict: true,
+  mobilize: true,
+  fabricate: true,
   backup: true,
   persist: true,
   undying: true,

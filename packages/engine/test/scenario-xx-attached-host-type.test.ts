@@ -175,6 +175,9 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'riot',
         // D-472, D-473: afflict and landwalk carry a number or a land type, checked by `checkGrantedParameter`.
         'afflict',
+        // Issue 101: myriad (no parameter) and mobilize (a number or its power), checked by `checkGrantedParameter`.
+        'myriad',
+        'mobilize',
         'landwalk',
         // D-640: annihilator carries a number, checked by `checkGrantedParameter`; each instance triggers separately.
         'annihilator',

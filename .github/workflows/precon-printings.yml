@@ -1,0 +1,49 @@
+name: Precon printings
+
+# By hand only. Reads Archidekt's list of Commander precons like "Precon issues", and for each precon the app offers (`apps/web/src/precons/snapshots/`) that is the
+# same deck (same cards, same counts), rewrites the `decklist` of its snapshot with the printings Archidekt names (`1x Name (set) number`), so the board can draw the
+# set's own picture of the commander. The stored card data is not touched. A deck with another list, or none on Archidekt, is left alone and listed in the log.
+# It pushes the changes to the branch `precon-printings-<run id>` (nothing is pushed when nothing changed); a pull request from that branch is opened by hand.
+# A push made with the workflow's token does not start the checks of the pull request: push one more real commit to the branch before it is merged.
+# The page is untrusted input: its text goes into files, never into a script, and the set codes and numbers pass the checks of `tools/precon/archidekt.ts`.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: precon-printings
+  cancel-in-progress: false
+
+jobs:
+  precon-printings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Read the precons of Archidekt
+        run: node tools/precon/scan-cli.ts --out precon-work --any-size
+      - name: Rewrite the decklists with their printings
+        run: |
+          node tools/precon/printings-cli.ts --decks precon-work --snapshots apps/web/src/precons/snapshots --report precon-work/printings.md | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Push the changes
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if git diff --quiet -- apps/web/src/precons/snapshots; then echo "nothing changed, nothing pushed"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="precon-printings-${RUN_ID}"
+          git checkout -b "$branch"
+          git add apps/web/src/precons/snapshots
+          git commit -m "Name the printings of the precons of the app" -m "The lists are the same deck as on Archidekt, now with the set and number of each card."
+          git push origin "$branch"
+          echo "Pushed to $branch" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1104,6 +1104,9 @@ export function answerResolutionCreatureType(
       resolution: {
         ...res,
         chosenCreatureType: option,
+        ...(head.seat === undefined
+          ? {}
+          : { chosenCreatureTypes: [...(res.chosenCreatureTypes ?? []), option] }),
         queue: [updated, ...res.queue.slice(1)],
       },
     },

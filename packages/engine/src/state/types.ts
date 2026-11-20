@@ -313,6 +313,8 @@ export type FaceDownBy = 'manifest' | 'morph' | 'forestLand';
 export interface ChosenValues {
   /** A creature type of CR 205.3m, spelled as `CREATURE_TYPES` lists it. */
   readonly creatureType?: Subtype;
+  /** Every creature type a resolving "each player chooses a creature type" chose (CR 101.4); `creatureType` is the last of them. */
+  readonly creatureTypes?: readonly Subtype[];
   readonly color?: Color;
   /** A card type of CR 205.2a that the engine models (`CARD_TYPES`): "choose a card type" (D-376, Serra's Emissary). */
   readonly cardType?: CardType;
@@ -1058,7 +1060,12 @@ export type Instruction =
       readonly exactly?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
-  | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
+  | {
+      readonly kind: 'chooseCreatureType';
+      readonly chosen: string | null;
+      /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
+      readonly seat?: SeatId;
+    }
   /** Run one effect node of the resolving spell or ability. */
   | {
       readonly kind: 'effect';
@@ -1104,6 +1111,8 @@ export type Instruction =
       readonly atLeastOne?: true;
       /** "A creature with the greatest power among creatures they control" (`ChooseSelector.greatest`, D-135). */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      /** "Sacrifice one of them" (`ChooseSelector.fromTriggerSources`): only the permanents that dealt the combat damage of the batch trigger. */
+      readonly fromTriggerSources?: true;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1963,6 +1972,8 @@ export interface ResolutionContext {
   readonly controller: SeatId;
   /** Creature type chosen by a resolving instruction such as "choose a creature type". */
   readonly chosenCreatureType?: string;
+  /** Every creature type chosen by a resolving "each player chooses a creature type" (CR 101.4), in the order they were chosen; `chosenCreatureType` is the last. */
+  readonly chosenCreatureTypes?: readonly string[];
   /** Objects chosen by resolving instructions, keyed by their bound text reference. */
   readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   readonly queue: readonly Instruction[];
@@ -2197,6 +2208,8 @@ export type ContinuousChange =
       readonly seat: SeatId;
       /** "You may cast it this turn" (`mayPlay.castOnly`, Lorehold group 1): the card may be cast, not played as a land. */
       readonly castOnly?: true;
+      /** "During any turn you attacked with a commander, you may play those cards" (`mayPlay.duringTurnsAttackedWithCommander`, issue 101): usable only in a turn the seat declared a commander as an attacker. */
+      readonly whenAttackedWithCommander?: true;
       /**
        * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
        * (the plain cast, paying the mana cost, is not allowed by this permission). With `castOnly` (Lorehold group 2), or without it (`mayPlay.free`, Lobelia, Defender of Bag End: a land card
@@ -2335,6 +2348,17 @@ export type ContinuousChange =
       readonly seat: SeatId;
       /** Jace, Multiverse Architect: only the planeswalkers of this subtype `seat` controls are barred, not the player. */
       readonly planeswalkerSubtype?: string;
+    }
+  /**
+   * "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead" (`doubleTokens`, issue 101, CR 614.1a,
+   * 614.5): no layer and no fixed set (`objects` is empty): read as tokens would be created (`rules/token-replacement.ts`), for the tokens `filter` matches, with `controller` as "you"
+   * and `source` the permanent that made the effect.
+   */
+  | {
+      readonly kind: 'tokensDoubled';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+      readonly source: ObjectId;
     }
   /**
    * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is

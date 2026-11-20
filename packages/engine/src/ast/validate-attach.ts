@@ -133,6 +133,9 @@ export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[])
   if (k?.kind === 'afflict' && (!isCount(k.count) || k.count < 1)) {
     issue(out, `${path}.count`, 'afflict needs a positive integer');
   }
+  if (k?.kind === 'mobilize' && k.count !== 'power' && (!isCount(k.count) || k.count < 1)) {
+    issue(out, `${path}.count`, 'mobilize needs a positive integer or its power');
+  }
   if (k?.kind === 'annihilator' && (!isCount(k.count) || k.count < 1)) {
     // D-640 (CR 702.86a): "annihilator 2", a positive whole number.
     issue(out, `${path}.count`, 'annihilator needs a positive integer');

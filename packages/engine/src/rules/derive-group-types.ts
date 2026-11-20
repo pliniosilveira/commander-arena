@@ -48,10 +48,21 @@ interface AllCreatureTypes {
   readonly scope: 'youControl' | 'youOwn';
 }
 
+interface ChosenCreatureType {
+  readonly kind: 'chosenCreatureType';
+  readonly alsoCardsAndSpells: boolean;
+}
+
 interface TypeSource {
   readonly object: GameObject;
   readonly subject: StaticSubject;
-  readonly what: NamedTypes | NamedColors | LinkedTypes | LostTypes | AllCreatureTypes;
+  readonly what:
+    | NamedTypes
+    | NamedColors
+    | LinkedTypes
+    | LostTypes
+    | AllCreatureTypes
+    | ChosenCreatureType;
   /** "As long as ..." (D-151, Celebration): a condition that reads no characteristic, read each time the effects are looked at (CR 611.3a). */
   readonly condition?: Condition;
 }
@@ -80,6 +91,14 @@ function scan(state: GameState): Index {
           object,
           subject: { kind: 'filter', filter: { types: ['creature'] } },
           what: s,
+          ...condition,
+        });
+      } else if (s.kind === 'giveChosenCreatureType') {
+        // CR 613.1d, 607.2d: "Slivers you control ... are the chosen type": the permanents `what` names, and with `alsoCardsAndSpells` the creature spells and cards outside the battlefield.
+        sources.push({
+          object,
+          subject: { kind: 'filter', filter: s.what },
+          what: { kind: 'chosenCreatureType', alsoCardsAndSpells: s.alsoCardsAndSpells === true },
           ...condition,
         });
       } else if (s.kind === 'setTypes' && s.chosenType === undefined) {
@@ -248,6 +267,22 @@ export function groupTypeEffects(
             controllerOf(state, target) === you
           : target.zone !== 'battlefield' && target.card !== null && target.owner === you;
       if (!applies) continue;
+    } else if (src.what.kind === 'chosenCreatureType') {
+      // CR 607.2d: what the permanent chose as it entered; it chose none: nothing to give.
+      if (src.object.chosen?.creatureType === undefined) continue;
+      const you = controllerOf(state, src.object);
+      const onBattlefield =
+        target.zone === 'battlefield' &&
+        subjectAffects(state, src.object, src.subject, target, view);
+      // CR 205.3m, 702.73a: the creature spells its controller controls and the creature cards it owns outside the battlefield, in every zone (as Changeling works).
+      const elsewhere =
+        src.what.alsoCardsAndSpells &&
+        view.types.includes('creature') &&
+        ((target.zone === 'stack' &&
+          target.stack?.kind === 'spell' &&
+          controllerOf(state, target) === you) ||
+          (target.zone !== 'battlefield' && target.card !== null && target.owner === you));
+      if (!onBattlefield && !elsewhere) continue;
     } else if (
       target.zone !== 'battlefield' ||
       !subjectAffects(state, src.object, src.subject, target, view)
@@ -287,6 +322,12 @@ export function groupTypeEffects(
     }
     if (src.what.kind === 'allCreatureTypes') {
       out.push({ ...base, change: { kind: 'setTypes', subtypes: CREATURE_TYPES, additive: true } });
+      continue;
+    }
+    if (src.what.kind === 'chosenCreatureType') {
+      const chosen = src.object.chosen?.creatureType;
+      if (chosen === undefined) continue;
+      out.push({ ...base, change: { kind: 'setTypes', subtypes: [chosen], additive: true } });
       continue;
     }
     const card = linkedCardOf(state, src.object, src.what.from);

@@ -46,7 +46,7 @@ interface GainParts {
   readonly gains: { readonly start: number; readonly end: number };
   readonly duration: IrDuration;
   /** "... until end of turn and must be blocked this turn if able" (stage P49, D-206): a requirement of the same subject for the turn. */
-  readonly requirement?: { readonly restriction: IrRestrictionKind; readonly span: Span };
+  readonly requirement?: GainRequirement & { readonly span: Span };
 }
 
 /**
@@ -55,16 +55,28 @@ interface GainParts {
  */
 const REQUIREMENT = (plural: boolean) =>
   spanned(
-    map(
-      pattern(
-        plural
-          ? / and (attack|must be blocked) this turn if able(?![\p{L}\p{N}])/iu
-          : / and (attacks|must be blocked) this turn if able(?![\p{L}\p{N}])/iu,
+    satisfy(
+      map(
+        pattern(
+          plural
+            ? / and (attack|must be blocked) this (turn|combat) if able(?![\p{L}\p{N}])/iu
+            : / and (attacks|must be blocked) this (turn|combat) if able(?![\p{L}\p{N}])/iu,
+        ),
+        (m): GainRequirement => ({
+          restriction: /blocked/iu.test(m[1] ?? '') ? 'mustBeBlocked' : 'attacksEachCombat',
+          scope: /combat/iu.test(m[2] ?? '') ? 'thisCombat' : 'thisTurn',
+        }),
       ),
-      (m): IrRestrictionKind =>
-        /blocked/iu.test(m[1] ?? '') ? 'mustBeBlocked' : 'attacksEachCombat',
+      // CR 508.1d, 506.1 (issue 101, Legion Warboss): "attacks this combat if able" is a requirement of one combat; "must be blocked this combat" is not read.
+      (r) => r.scope === 'thisTurn' || r.restriction === 'attacksEachCombat',
     ),
   );
+
+/** The requirement a gain sentence adds after its duration, and how long it lasts: the turn, or one combat (the engine's `thisCombat`). */
+interface GainRequirement {
+  readonly restriction: IrRestrictionKind;
+  readonly scope: 'thisTurn' | 'thisCombat';
+}
 
 /** The clauses of one gain sentence: the pump if there is one, then a grant per keyword. */
 function clausesOf(rule: string, parts: GainParts): Clauses {
@@ -89,7 +101,7 @@ function clausesOf(rule: string, parts: GainParts): Clauses {
     };
     const forTurn: IrDuration = {
       kind: 'duration',
-      scope: 'thisTurn',
+      scope: requirement.scope,
       span: requirement.span,
       rule,
     };
@@ -162,7 +174,13 @@ export function gainParser(
         duration,
         ...(requirement === null
           ? {}
-          : { requirement: { restriction: requirement.value, span: requirement.span } }),
+          : {
+              requirement: {
+                restriction: requirement.value.restriction,
+                scope: requirement.value.scope,
+                span: requirement.span,
+              },
+            }),
       }),
   );
 }
@@ -204,8 +222,11 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
     'that creature gains trample until end of turn',
     'that creature also gains trample until end of turn',
     'target creature also gains trample until end of turn',
+    // Issue 101 (Legion Warboss, CR 508.1d): the requirement of one combat.
+    'that token gains haste until end of turn and attacks this combat if able',
   ],
   rejects: [
+    'that token gains haste until end of turn and must be blocked this combat if able',
     'target creature gains flying',
     'target creature gains flying until your next turn',
     'target creature gains flying until end of turn and draw a card',
@@ -240,7 +261,7 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
 export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   id: 'effect.gain-keyword-all',
   family: 'effect',
-  leading: [...PLURAL_STARTS, 'all'],
+  leading: [...PLURAL_STARTS, 'all', 'tokens'],
   cites: [
     'CR 611.2a (Continuous Effects)',
     'CR 611.2c (Continuous Effects)',
@@ -249,6 +270,9 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   ],
   examples: [
     'All Zombies gain menace until end of turn',
+    // Issue 101 (Ainok Strike Leader): the tokens of the controller.
+    'creature tokens you control gain indestructible until end of turn',
+    'tokens you control gain haste until end of turn',
     'All creatures get +1/+1 and gain trample until end of turn',
     'All Time Lords gain flying until end of turn',
     'Dragons you control gain flying until end of turn',
@@ -274,7 +298,12 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   ],
   parse: gainParser(
     'effect.gain-keyword-all',
-    ['noun.plain-permanents', 'noun.all-permanents', 'noun.creature-land-pair'],
+    [
+      'noun.plain-permanents',
+      'noun.all-permanents',
+      'noun.creature-land-pair',
+      'noun.token-permanents',
+    ],
     true,
   ),
 });

@@ -316,8 +316,14 @@ describe('"exile the top ... face down" and "look at and play" (CR 406.3, 406.3a
     });
   });
 
+  // Read since the Mardu Surge deck (`effect.exile-top-of-target-library`): the same cards, face up.
+  test("Exile the top two cards of target opponent's library. is read, face up", () => {
+    expect(
+      readAll("Exile the top two cards of target opponent's library.", 'instant').spell?.effect,
+    ).toMatchObject({ kind: 'exileTop', from: { kind: 'target' } });
+  });
+
   test.each([
-    "Exile the top two cards of target opponent's library.",
     'Exile the top two cards of your library face down.',
     "Exile the top two cards of each opponent's library face down.",
     "Exile the top one cards of target opponent's library face down.",

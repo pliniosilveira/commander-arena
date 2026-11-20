@@ -57,17 +57,20 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
   let life = 0;
   let loyalty = 0;
   let sacrifice = 0;
+  let discard = 0;
   for (const c of costs) {
     if (c.kind === 'mana') mana += xSymbolCount(c.symbols);
     else if (c.kind === 'payXLife') life += 1;
     else if (c.kind === 'loyalty' && c.change === 'x') loyalty += 1;
     else if (c.kind === 'sacrifice' && c.countX === true) sacrifice += 1;
+    else if (c.kind === 'discard' && c.countX === true) discard += 1;
   }
   return {
     mana,
     life,
     ...(loyalty === 0 ? {} : { loyalty }),
     ...(sacrifice === 0 ? {} : { sacrifice }),
+    ...(discard === 0 ? {} : { discard }),
   };
 }
 

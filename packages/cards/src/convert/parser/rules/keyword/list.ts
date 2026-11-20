@@ -26,6 +26,15 @@ export const KEYWORD_WORD: Parser<string> = choice(
     pattern(new RegExp(`ward\\s+((?:\\{[0-9WUBRGC]\\})+)${BOUNDARY}`, 'iu')),
     (m) => `ward ${m[1]}` as string,
   ),
+  // Issue 101 (CR 702.181a): "mobilize 2", and "mobilize X, where X is its power" (Infantry Shield), kept as "mobilize power".
+  map(
+    pattern(new RegExp(`mobilize\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),
+    (m) => `mobilize ${m[1]}` as string,
+  ),
+  map(
+    pattern(new RegExp(`mobilize x, where x is its power${BOUNDARY}`, 'iu')),
+    () => 'mobilize power' as string,
+  ),
   // D-472 (CR 702.130a): "afflict 3", the number in digits, the word kept with its number ("afflict 3").
   map(
     pattern(new RegExp(`afflict\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),

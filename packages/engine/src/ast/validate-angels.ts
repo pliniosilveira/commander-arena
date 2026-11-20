@@ -88,7 +88,7 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         );
       }
       if (t.what !== undefined) {
-        checkFilter(t.what, `${path}.what`, out);
+        checkFilter(t.what, `${path}.what`, out, undefined, undefined, { sourceOk: true });
         if (
           filterSome(
             t.what,
@@ -296,6 +296,9 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       return true;
     case 'damageCantBePrevented':
     case 'damageAsThoughWither':
+      return true;
+    case 'cantBeSacrificed':
+      // CR 701.21a: said of the permanent itself, with nothing to check.
       return true;
     case 'cantHaveCounters':
       // D-380 (CR 122.6): the permanents that can't have the counter: this one, the one this is attached to, or a group on the battlefield.

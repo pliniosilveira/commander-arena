@@ -22,6 +22,7 @@ import {
   ANNIHILATOR_WORD,
   grantedKeyword,
   landwalkOf,
+  MOBILIZE_WORD,
   WARD_WORD,
 } from '../rules/keyword/vocabulary';
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
@@ -44,6 +45,12 @@ import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
+import {
+  isSliverLordStatic,
+  lowerSliverLordStatic,
+  SLIVER_LORD_NEEDS,
+  sliverLordNeeds,
+} from './sliver-lords';
 import { isSpellKeywordStatic, lowerSpellKeywordStatic } from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -318,6 +325,9 @@ function effectOf(
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
+    case 'cantBeSacrificed':
+      // CR 701.21a, 101.2: said of the permanent itself.
+      return subject.kind === 'this' ? ok({ kind: 'cantBeSacrificed' }) : failure(at);
     case 'cantHaveCounters':
       // CR 122.6, 101.2 (Hashaton deck group 3, D-380): the permanents the subject names can't have counters of the kind put on them: a group, `~` or the attached permanent.
       return subject.kind === 'filter' || subject.kind === 'this' || subject.kind === 'attached'
@@ -522,6 +532,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
       // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
       if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
+      if (MOBILIZE_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:mobilize'];
       // D-640, D-638: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
       if (ANNIHILATOR_WORD.test(effect.keyword)) {
         return ['static:grantKeyword', 'keyword:annihilator'];
@@ -600,6 +611,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantFlashbackToGraveyardCards'];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
+    case 'legendRuleDoesntApply':
+    case 'chosenTypeGroups':
+    case 'graveyardEncore':
+      return [...sliverLordNeeds(effect)];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
@@ -635,6 +650,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:damageAsThoughWither'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
+    case 'cantBeSacrificed':
+      return ['static:cantBeSacrificed'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -941,6 +958,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
+  // Issue 133 (CR 704.5j, 613.1d, 702.141a): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
+  if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
   const parts: IrStaticPart[] = [
@@ -1264,12 +1283,16 @@ function lowerOwnStatic(
     void stackKind;
     const spells = lowerFilter(noun(described));
     if (!spells.ok) return spells;
+    // "Any player may cast ..." (CR 601.3b): every player may, so no controller is named; "You may cast ..." names the controller.
     return {
       ok: true,
       value: [
         {
           kind: 'static',
-          static: { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+          static:
+            effect.anyPlayer === true
+              ? { kind: 'castAsThoughFlash', spells: spells.value, anyPlayer: true }
+              : { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
         },
       ],
       rule: ability.rule,
@@ -1335,6 +1358,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:allCreatureTypes',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
+  ...SLIVER_LORD_NEEDS,
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
   'static:setPt',
@@ -1351,6 +1375,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   // Hashaton deck group 6 (D-377, CR 702.16): "You have protection from the chosen card type."
   'static:playerProtection',
   'static:cantHaveCounters',
+  'static:cantBeSacrificed',
   'ability:functionsInGraveyard',
   'ability:staticCondition',
   'staticSubject:this',

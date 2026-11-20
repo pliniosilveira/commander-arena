@@ -30,14 +30,16 @@ export function graveyardPlayPermission(
   if (obj.zone !== 'graveyard' || obj.owner !== seat || obj.card === null) return null;
   if (state.turn.activeSeat !== seat) return null;
   const used = state.turnLog.graveyardPlays ?? [];
-  const types = derive(state, obj).types;
+  // Read only once a permanent offers a permission at all: most states have none, and deriving every card of a graveyard is the cost.
+  let derived: readonly string[] | undefined;
+  const typesOf = (): readonly string[] => (derived ??= derive(state, obj).types);
   // A permission that is not used up (CR 305.1, "You may play Forests from your graveyard") is preferred to one that is, so the use of a land play keeps the once-each-turn one.
   let limited: GraveyardPlaySource | null = null;
   for (const source of graveyardPlaySources(state)) {
     if (controllerOf(state, source.object) !== seat) continue;
     if (source.unlimited !== true && used.includes(source.object.id)) continue;
     if (asLand) {
-      if (!source.land || !types.includes('land')) continue;
+      if (!source.land || !typesOf().includes('land')) continue;
       if (
         source.lands !== undefined &&
         !matchesFilter(
@@ -53,7 +55,7 @@ export function graveyardPlayPermission(
       limited ??= source;
       continue;
     }
-    if (types.includes('land') || source.cast === undefined) continue;
+    if (source.cast === undefined || typesOf().includes('land')) continue;
     if (
       matchesFilter(
         state,

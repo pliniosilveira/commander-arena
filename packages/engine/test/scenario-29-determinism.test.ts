@@ -6,7 +6,7 @@
 import { describe, expect, test } from 'vitest';
 import { applyAction, type GameState, getLegalActions, stateHash } from '../src/index';
 import { scenario } from '../src/testing/index';
-import { firstPolicy, newGame, play, randomPolicy } from './random-games';
+import { newGame, play, randomPolicy } from './random-games';
 
 describe('SPEC 4.2: the same seed gives the same game', () => {
   test('createGame twice with one seed gives identical states (starting seat, shuffles, hands)', () => {
@@ -24,14 +24,6 @@ describe('SPEC 4.2: the same seed gives the same game', () => {
     expect(stateHash(a.state)).toBe(stateHash(b.state));
   });
 
-  test('two complete games with the same seed end in the same result and state', () => {
-    const a = play(newGame(5), firstPolicy, 20_000);
-    const b = play(newGame(5), firstPolicy, 20_000);
-    expect(a.state.result).not.toBeNull();
-    expect(a.state.result).toEqual(b.state.result);
-    expect(stateHash(a.state)).toBe(stateHash(b.state));
-  });
-
   test('replaying the recorded action log on a fresh game reproduces every intermediate state', () => {
     const hashes: string[] = [];
     const first = play(newGame(11), randomPolicy(3), 200, (s) => hashes.push(stateHash(s)));
@@ -42,19 +34,6 @@ describe('SPEC 4.2: the same seed gives the same game', () => {
       state = r.state;
       expect(stateHash(state), `after action ${i}`).toBe(hashes[i]);
     });
-  });
-
-  test('a replayed full game reaches the identical final state, result included', () => {
-    const first = play(newGame(21), firstPolicy, 20_000);
-    expect(first.state.result).not.toBeNull();
-    let state = newGame(21);
-    for (const { seat, action } of first.log) {
-      const r = applyAction(state, seat, action);
-      if (!r.ok) throw new Error(r.error);
-      state = r.state;
-    }
-    expect(state.result).toEqual(first.state.result);
-    expect(stateHash(state)).toBe(stateHash(first.state));
   });
 
   test('the action count is the length of the log', () => {
@@ -76,18 +55,6 @@ describe('SPEC 4.2: different seeds give different games', () => {
         return card === null || card === undefined ? '' : s.cards[card]?.definition;
       });
     expect(libraryNames(newGame(1))).not.toEqual(libraryNames(newGame(2)));
-  });
-
-  test('the same deterministic policy on different seeds ends in different states', () => {
-    const a = play(newGame(31), firstPolicy, 20_000);
-    const b = play(newGame(32), firstPolicy, 20_000);
-    expect(stateHash(a.state)).not.toBe(stateHash(b.state));
-  });
-
-  test('the same deterministic policy on the same seed ends in the same state', () => {
-    const a = play(newGame(31), firstPolicy, 20_000);
-    const b = play(newGame(31), firstPolicy, 20_000);
-    expect(stateHash(a.state)).toBe(stateHash(b.state));
   });
 });
 

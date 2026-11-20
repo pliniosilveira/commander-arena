@@ -257,6 +257,9 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
 
 const SPELLS = pattern(new RegExp(`spells${BOUNDARY}`, 'iu'));
 
+/** The singular "spell" that closes "Each Sliver spell you cast". */
+export const SPELL = pattern(new RegExp(`spell${BOUNDARY}`, 'iu'));
+
 /** Modifiers a reduction's subject may carry: colors and "non<type>" words (no tapped, no supertype). */
 const SUBJECT_MODIFIERS = satisfy(
   map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
@@ -285,14 +288,14 @@ const isSpellSubtype = (word: string): boolean =>
   CREATURE_TYPES.has(word) || SPELL_SUBTYPES.has(word);
 
 /**
- * The spells a statement is about, as the filter of a spell being cast: "spells", "noncreature
+ * The spells a statement is about (`word` is the noun that closes the phrase: "spells", or "spell" for "Each Sliver spell"), as the filter of a spell being cast: "spells", "noncreature
  * spells", "Artifact spells", "Black creature spells", "Instant and sorcery spells", "Dragon
  * spells", "Aura and Equipment spells", "Blue spells and red spells". A list of types, subtypes or colors is joined with "and" and takes
  * no modifier, as a list of permanent types does for a target (CR 205.2a, 205.3).
  */
-export function spellSubject(): Parser<IrFilter> {
+export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
   const typeList: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(typeChoice(CARD_TYPES, false, 'and'), literal(' '), SPELLS)(ctx, pos);
+    const r = sequence(typeChoice(CARD_TYPES, false, 'and'), literal(' '), word)(ctx, pos);
     if (!r.ok) return r;
     const anyOf = r.value[0].map((t): IrFilter => ({ types: [t], raw: t }));
     return { ok: true, value: { anyOf, raw: ctx.text.slice(pos, r.pos) }, pos: r.pos };
@@ -301,7 +304,7 @@ export function spellSubject(): Parser<IrFilter> {
     const r = sequence(
       satisfy(typeChoice(SUBTYPE_WORD, true, 'and'), (words) => words.every(isSpellSubtype)),
       literal(' '),
-      SPELLS,
+      word,
     )(ctx, pos);
     if (!r.ok) return r;
     const anyOf = r.value[0].map((t): IrFilter => ({ subtypes: [t], raw: t }));
@@ -314,7 +317,7 @@ export function spellSubject(): Parser<IrFilter> {
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([words]) => words),
         [] as string[],
       ),
-      SPELLS,
+      word,
       // CR 702, 601.2f: "Creature spells with flying you cast": the keyword the spell has as it is cast.
       optional(KEYWORD_SUFFIX, undefined),
     )(ctx, pos);
@@ -340,7 +343,7 @@ export function spellSubject(): Parser<IrFilter> {
         isSpellSubtype,
       ),
       literal(' '),
-      SPELLS,
+      word,
     )(ctx, pos);
     if (!r.ok) return r;
     return {
@@ -371,7 +374,7 @@ export function spellSubject(): Parser<IrFilter> {
           ),
         ),
         literal(' '),
-        SPELLS,
+        word,
       )(c, at);
       return r.ok ? { ok: true, value: r.value[0], pos: r.pos } : r;
     };

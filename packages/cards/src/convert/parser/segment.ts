@@ -285,6 +285,9 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/** "You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand." (For the Ancestors): the middle sentence of the same instruction. */
+const TAKE_ANY_OF_CHOSEN_TYPE =
+  /^you may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand\.$/i;
 /** "You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost." (Velomachus Lorehold, CR 608.2g): the middle sentence of the same instruction (`effect.look-cast-free`). */
 const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
 /** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
@@ -372,6 +375,19 @@ const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, crea
  * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
+/**
+ * "Each opponent may create X 1/1 red Elemental creature tokens with haste. For each opponent who does, create X 1/1 red Elemental creature tokens with haste." (Tempt with Vengeance, issue 101,
+ * CR 101.4, 111.2): the second sentence counts the opponents the first offered the tokens to who took them, so the two are read as one instruction
+ * (`effect.opponents-may-create-tokens`).
+ */
+const EACH_OPPONENT_MAY_CREATE = /^each opponent may create [^.]*\.$/i;
+/**
+ * "Its controller may pay 1 life. If they do, they draw a card." (Gix, Yawgmoth Praetor, issue 101, CR 118.3, 608.2c): the offer to another player than the controller of the ability and what
+ * the payment buys, one instruction (`effect.its-controller-may-pay-draw`).
+ */
+const ITS_CONTROLLER_MAY_PAY = /^its controller may pay [^.]*\.$/i;
+const IF_THEY_DO_THEY_DRAW = /^if they do, they draw [^.]*\.$/i;
+const FOR_EACH_OPPONENT_WHO_DOES_CREATE = /^for each opponent who does, create [^.]*\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
 /**
  * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
@@ -411,7 +427,7 @@ const FOR_EACH_EXILED_COPY_IT =
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
  */
 const REVEAL_UNTIL =
-  /^(?:then if this is the (?:first|second|third|fourth) time this ability has resolved this turn, )?(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
+  /^(?:then if this is the (?:first|second|third|fourth) time this ability has resolved this turn, |if you do, )?(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD =
   /^put (?:that card|those [\p{L}]+ cards|all [\p{L}]+ cards revealed this way) [^.]*\.$/iu;
 /**
@@ -991,6 +1007,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, ITS_CONTROLLER_MAY_PAY) && said(b, IF_THEY_DO_THEY_DRAW)) ||
+        (said(a, EACH_OPPONENT_MAY_CREATE) && said(b, FOR_EACH_OPPONENT_WHO_DOES_CREATE)) ||
         (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
         (said(a, COPY_EACH_EXILED_WITH) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, PAY_REFLEXIVE_AND_COPY_THEM) && said(b, MAY_CAST_ANY_COPIES)) ||
@@ -1009,6 +1027,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       c !== undefined &&
       ((said(a, LOOK_AT_TOP) &&
         (said(b, TAKE_FROM_AMONG) ||
+          said(b, TAKE_ANY_OF_CHOSEN_TYPE) ||
           said(b, PUT_ANY_TOTAL) ||
           said(b, PUT_FROM_AMONG_ONTO) ||
           said(b, CAST_FROM_AMONG_FREE))) ||

@@ -1,89 +1,89 @@
 Commander
-1x Dina, Essence Brewer
+1x Dina, Essence Brewer (soc) 1
 
 Mainboard
-1x Arcane Signet
-1x Assassin's Trophy
-1x Awakening Zone
-1x Beledros Witherbloom
-1x Blight Mound
-1x Blood Artist
-1x Bloodghast
-1x Blossoming Bogbeast
-1x Bojuka Bog
-1x Casualties of War
-1x Command Tower
-1x Creakwood Liege
-1x Culling Ritual
-1x Cultivate
-1x Deadly Brew
-1x Defiling Daemogoth
-1x Dina, Soul Steeper
-1x Eccentric Pestfinder // Turn Stones
-1x Elvish Mystic
-1x Exotic Orchard
-1x Fabled Passage
-1x Feral Appetite
-1x Festering Thicket
-1x Final Act
-8x Forest
-1x Gilded Goose
-1x Gorma, the Gullet
-1x Grim Backwoods
-1x Gyome, Master Chef
-1x Haunted Mire
-1x Haywire Mite
-1x High Market
-1x Immoral Bargain
-1x Infernal Grasp
-1x Jadar, Ghoulcaller of Nephalia
-1x Llanowar Wastes
-1x Mazirek, Kraul Death Priest
-1x Merchant of Venom
-1x Moldervine Reclamation
-1x Morbid Opportunist
-1x Mortality Spear
-1x Mycoloth
-1x Necroblossom Snarl
-1x Nether Traitor
-1x Night's Whisper
-1x Ohran Frostfang
-1x Ominous Harvest
-1x Ophiomancer
-1x Path of Ancestry
-1x Pawn of Ulamog
-1x Pest Infestation
-1x Pest Rescuer
-1x Plumb the Forbidden
-1x Priest of Forgotten Gods
-1x Ribtruss Roaster
-1x Sakura-Tribe Elder
-1x Smothering Abomination
-1x Sol Ring
-1x Springbloom Druid
-1x Stensian Sanguinist // Exsanguinate
-1x Study Hall
-8x Swamp
-1x Teacher's Pest
-1x Temple of Malady
-1x Tendershoot Dryad
-1x Terramorphic Expanse
-1x Titan's Grave
-1x Toxic Deluge
-1x Trudge Garden
-1x Turbulent Fen
-1x Twilight Mire
-1x Umbral Collar Zealot
-1x Veinwitch Coven
-1x Vernal Fen
-1x Viridescent Bog
-1x Viscera Seer
-1x Wight of the Reliquary
-1x Witch of the Moors
-1x Witherbloom Campus
-1x Witherbloom Charm
-1x Witherbloom Command
-1x Woe Strider
-1x Woodland Cemetery
-1x Yahenni, Undying Partisan
-1x Zulaport Cutthroat
+1x Arcane Signet (soc) 127
+1x Assassin's Trophy (soc) 294
+1x Awakening Zone (soc) 262
+1x Beledros Witherbloom (soc) 296
+1x Blight Mound (soc) 208
+1x Blood Artist (soc) 209
+1x Bloodghast (soc) 210
+1x Blossoming Bogbeast (soc) 264
+1x Bojuka Bog (soc) 363
+1x Casualties of War (soc) 300
+1x Command Tower (soc) 129
+1x Creakwood Liege (soc) 301
+1x Culling Ritual (soc) 302
+1x Cultivate (soc) 265
+1x Deadly Brew (soc) 303
+1x Defiling Daemogoth (soc) 25
+1x Dina, Soul Steeper (soc) 305
+1x Eccentric Pestfinder // Turn Stones (soc) 46
+1x Elvish Mystic (soc) 266
+1x Exotic Orchard (soc) 369
+1x Fabled Passage (soc) 130
+1x Feral Appetite (soc) 38
+1x Festering Thicket (soc) 371
+1x Final Act (soc) 213
+1x Gilded Goose (soc) 269
+1x Gorma, the Gullet (soc) 3
+1x Grim Backwoods (soc) 377
+1x Gyome, Master Chef (soc) 313
+1x Haunted Mire (soc) 379
+1x Haywire Mite (soc) 349
+1x High Market (soc) 380
+1x Immoral Bargain (soc) 47
+1x Infernal Grasp (soc) 216
+1x Jadar, Ghoulcaller of Nephalia (soc) 217
+1x Llanowar Wastes (soc) 383
+1x Mazirek, Kraul Death Priest (soc) 319
+1x Merchant of Venom (soc) 27
+1x Moldervine Reclamation (soc) 320
+1x Morbid Opportunist (soc) 219
+1x Mortality Spear (soc) 321
+1x Mycoloth (soc) 276
+1x Necroblossom Snarl (soc) 389
+1x Nether Traitor (soc) 220
+1x Night's Whisper (soc) 221
+1x Ohran Frostfang (soc) 279
+1x Ominous Harvest (soc) 28
+1x Ophiomancer (soc) 118
+1x Path of Ancestry (soc) 393
+1x Pawn of Ulamog (soc) 223
+1x Pest Infestation (soc) 282
+1x Pest Rescuer (soc) 42
+1x Plumb the Forbidden (soc) 224
+1x Priest of Forgotten Gods (soc) 225
+1x Ribtruss Roaster (soc) 43
+1x Sakura-Tribe Elder (soc) 285
+1x Smothering Abomination (soc) 226
+1x Sol Ring (soc) 128
+1x Springbloom Druid (soc) 287
+1x Stensian Sanguinist // Exsanguinate (soc) 29
+1x Study Hall (soc) 407
+1x Teacher's Pest (sos) 238
+1x Temple of Malady (soc) 413
+1x Tendershoot Dryad (soc) 125
+1x Terramorphic Expanse (sos) 265
+1x Titan's Grave (sos) 266
+1x Toxic Deluge (soc) 120
+1x Trudge Garden (soc) 290
+1x Turbulent Fen (soc) 55
+1x Twilight Mire (soc) 418
+1x Umbral Collar Zealot (soc) 227
+1x Veinwitch Coven (soc) 228
+1x Vernal Fen (soc) 419
+1x Viridescent Bog (soc) 421
+1x Viscera Seer (soc) 229
+1x Wight of the Reliquary (soc) 338
+1x Witch of the Moors (soc) 230
+1x Witherbloom Campus (soc) 423
+1x Witherbloom Charm (sos) 244
+1x Witherbloom Command (soc) 339
+1x Woe Strider (soc) 231
+1x Woodland Cemetery (soc) 424
+1x Yahenni, Undying Partisan (soc) 232
+1x Zulaport Cutthroat (soc) 233
+8x Forest (sos) 281
+8x Swamp (sos) 277

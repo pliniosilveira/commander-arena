@@ -35,6 +35,7 @@ import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
@@ -179,7 +180,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         break;
       case 'discard':
         discards += 1;
-        discard += cost.count;
+        discard += cost.countX === true ? x : cost.count;
         if (cost.hand === true) discardHand = true;
         if (cost.filter !== undefined || cost.named !== undefined) {
           discardOf = {
@@ -509,6 +510,8 @@ export function costRefusal(
     if (source.zone !== 'battlefield' || controllerOf(state, source) !== seat) {
       return 'you do not control it, so you cannot sacrifice it';
     }
+    // CR 701.21a, 101.2: a permanent that can't be sacrificed can't pay "Sacrifice this".
+    if (cantBeSacrificed(state, source.id)) return "it can't be sacrificed";
   } else if (parts.sacrifice !== null && parts.sacrificeAlongside.length > 0) {
     // CR 701.21a, 118.3: each part of "Sacrifice a Swamp and a Forest" needs a permanent of its own.
     if (!canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))) {

@@ -11,6 +11,7 @@ import { costRefusal } from './activate-costs';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { encoreGrantSources } from './derive-statics';
 import { hasSorceryTiming } from './legality';
 import { isLoyaltyAbility, loyaltyActivatedThisTurn } from './loyalty';
 import { legalModeSets, modalOfAbility } from './modes';
@@ -18,15 +19,28 @@ import { hasRestriction } from './restrictions';
 import { legalTargets, targetBounds } from './select';
 import { splitSecondOnStack } from './split-second';
 
+/** Whether `obj`, a card in a graveyard, has an Encore ability that a permanent gave it: its derived abilities hold an activated one that works from the graveyard. */
+function encoreGrantedTo(state: GameState, obj: GameObject): boolean {
+  return (
+    obj.zone === 'graveyard' &&
+    derive(state, obj).abilities.some(
+      (a) => a.kind === 'activated' && a.functionsIn === 'graveyard',
+    )
+  );
+}
+
 /**
  * Whether the card in a graveyard has a printed ability that functions there (Unearth, D-124; Encore, D-185; Eternalize, D-384). Derived abilities
  * are not computed for every card of a graveyard, which can hold dozens, at every priority: only a card whose
- * face lists the keyword is looked at. (An unearth ability a spell grants to a graveyard card is not supported.)
+ * face lists the keyword is looked at, and, while a permanent gives Encore to graveyard cards (`grantEncoreToGraveyardCards`, CR 702.141a), the cards of its controller's
+ * graveyard too. (An unearth ability a spell grants to a graveyard card is not supported.)
  */
 function hasGraveyardAbility(state: GameState, id: ObjectId): boolean {
   const obj = getObject(state, id);
   if (obj.card === null) return false;
   const face = definitionOf(state, obj.card).faces[0];
+  // CR 702.141a, 613.1f: Encore given to the cards of a graveyard by a permanent on the battlefield.
+  if (encoreGrantSources(state).length > 0 && encoreGrantedTo(state, obj)) return true;
   // D-135: an activated ability of the card that says it functions from the graveyard works there too.
   return (
     face?.abilities.some(

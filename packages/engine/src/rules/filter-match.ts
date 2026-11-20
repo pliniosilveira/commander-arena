@@ -433,13 +433,16 @@ export function matchesFilterWith(
     if (base === null || base === undefined || base !== filter.basePowerIs) return false;
   }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
+  // CR 101.4 (Harsh Mercy): "each player chooses a creature type" chose several; "of a type chosen this way" is any of them, "aren't of a type chosen this way" none.
   if (filter.chosenType === true) {
-    const type = ctx.sourceChosen?.creatureType;
-    if (type === undefined || !d.subtypes.some((s) => sameCreatureType(s, type))) return false;
+    const types = chosenCreatureTypes(ctx.sourceChosen);
+    if (types === undefined || !d.subtypes.some((s) => types.some((t) => sameCreatureType(s, t))))
+      return false;
   }
   if (filter.notChosenType === true) {
-    const type = ctx.sourceChosen?.creatureType;
-    if (type === undefined || d.subtypes.some((s) => sameCreatureType(s, type))) return false;
+    const types = chosenCreatureTypes(ctx.sourceChosen);
+    if (types === undefined || d.subtypes.some((s) => types.some((t) => sameCreatureType(s, t))))
+      return false;
   }
   if (filter.chosenColor === true) {
     const color = ctx.sourceChosen?.color;
@@ -471,4 +474,10 @@ export function matchesFilterWith(
     );
   }
   return true;
+}
+
+/** The creature types a choice made: those of an "each player chooses" (CR 101.4), else the one type of a single choice; undefined when no type was chosen. */
+function chosenCreatureTypes(chosen: ChosenValues | undefined): readonly string[] | undefined {
+  if (chosen?.creatureTypes !== undefined) return chosen.creatureTypes;
+  return chosen?.creatureType === undefined ? undefined : [chosen.creatureType];
 }

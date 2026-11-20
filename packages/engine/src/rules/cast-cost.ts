@@ -308,6 +308,23 @@ export interface CostRequest {
   readonly anyType?: true;
 }
 
+/**
+ * The replicate cost of `spell` (CR 702.56a): the one its face prints, or else the one an effect gives it as it is cast ("Each Sliver spell you cast has replicate. The
+ * replicate cost is equal to its mana cost", `grantKeywordToSpells`, CR 613.1f), read from what `derive` gives the spell. Null for a spell with none.
+ */
+export function replicateCostFor(
+  state: GameState,
+  spell: GameObject,
+  face: CardFace | null,
+): readonly Cost[] | null {
+  const printed = replicateCostOf(face);
+  if (printed !== null) return printed;
+  for (const a of derive(state, spell).abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'replicate') return a.keyword.cost;
+  }
+  return null;
+}
+
 /** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
 function costOptionsOf(face: CardFace | null): readonly (0 | 1 | undefined)[] {
   return face?.additionalCostChoice === undefined ? [undefined] : [0, 1];
@@ -393,7 +410,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 702.33c: a multikicker cost is paid once for each time the spell is kicked.
   if (kicker !== null) for (let i = 0; i < kicks; i += 1) symbols.push(...manaSymbolsOf(kicker));
   // CR 702.56a: a replicate cost is an additional cost, paid once for each time the caster chose (mana only).
-  const replicate = (request.replicas ?? 0) > 0 ? replicateCostOf(face) : null;
+  const replicate = (request.replicas ?? 0) > 0 ? replicateCostFor(state, spell, face) : null;
   if (replicate !== null) {
     for (let i = 0; i < (request.replicas ?? 0); i += 1) symbols.push(...manaSymbolsOf(replicate));
   }
@@ -658,11 +675,30 @@ function handReserve(state: GameState, seat: SeatId, spell: GameObject): readonl
     if (id === spell.id) continue;
     const obj = state.objects[id];
     if (obj === undefined) continue;
+    for (const color of costColorsOf(state, obj)) colors.add(color);
+  }
+  return [...colors];
+}
+
+const costColors = new WeakMap<GameState, Map<ObjectId, readonly ManaColor[]>>();
+
+/** The colors in the mana cost of a card, in order of appearance: kept for the state, since every spell the listing checks asks for the whole hand. */
+function costColorsOf(state: GameState, obj: GameObject): readonly ManaColor[] {
+  let byObject = costColors.get(state);
+  if (byObject === undefined) {
+    byObject = new Map();
+    costColors.set(state, byObject);
+  }
+  let found = byObject.get(obj.id);
+  if (found === undefined) {
+    const colors = new Set<ManaColor>();
     for (const symbol of derive(state, obj).manaCost ?? []) {
       for (const letter of symbol.match(/[WUBRG]/g) ?? []) colors.add(letter as ManaColor);
     }
+    found = [...colors];
+    byObject.set(obj.id, found);
   }
-  return [...colors];
+  return found;
 }
 
 /**

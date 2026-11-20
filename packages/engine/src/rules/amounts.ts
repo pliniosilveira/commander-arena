@@ -57,7 +57,8 @@ type StateAmount = Extract<
       | 'tappedAsCostPower'
       | 'exiledAsCost'
       | 'cardTypesAmong'
-      | 'differentManaValuesAmong';
+      | 'differentManaValuesAmong'
+      | 'differentNamesAmong';
   }
 >;
 
@@ -108,7 +109,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong' ||
-    amount.kind === 'differentManaValuesAmong'
+    amount.kind === 'differentManaValuesAmong' ||
+    amount.kind === 'differentNamesAmong'
   );
 }
 
@@ -187,6 +189,20 @@ function differentManaValuesAmongOf(
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(manaValueOfCost(derive(state, obj).manaCost, obj));
+  }
+  return seen.size;
+}
+
+/**
+ * CR 201.2, 111.4 (Neriv, Crackling Vanguard): "the number of differently named tokens you control": the distinct names of the battlefield permanents the filter matches, each once.
+ */
+function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, filter.zone ?? 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    seen.add(derive(state, obj).name);
   }
   return seen.size;
 }
@@ -302,6 +318,8 @@ export function amountOf(
   // D-365: "the life that player lost this turn" is read for each player the `loseLife` effect affects (`lifeAmountFor`), never here: `validateCard` allows it
   // only as the whole amount of that effect, so this is not reached for a card.
   if (amount.kind === 'lifeLostThisTurn') return 0;
+  // Issue 101: "the number of creatures attacking them" is read for each player the `loseLife` effect affects (`lifeAmountFor`), as `lifeLostThisTurn` is.
+  if (amount.kind === 'attackersOfAffected') return 0;
   // CR 402.1: "the number of cards in that player's hand" is read for each player the `dealDamage` effect hurts (`runDealDamage`), never here: `validateCard` allows it only
   // as the whole amount of that effect.
   if (amount.kind === 'cardsInHandOfAffected') return 0;
@@ -455,6 +473,8 @@ export function stateAmountOf(
       return cardTypesAmongOf(state, amount.filter, ctx);
     case 'differentManaValuesAmong':
       return differentManaValuesAmongOf(state, amount.filter, ctx);
+    case 'differentNamesAmong':
+      return differentNamesAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':

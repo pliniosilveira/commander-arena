@@ -61,6 +61,31 @@ const BLOCKED_BY: Parser<IrStaticEffect> = map(
   ([, blockers]): IrStaticEffect => ({ kind: 'cantBeBlockedBy', blockers }),
 );
 
+/**
+ * "can't be blocked except by Slivers" (Shifting Sliver, CR 509.1b): no creature but those of the kind named can block the subject, which is the engine's `cantBeBlockedBy` of the
+ * creatures that are not of that creature type (`notSubtypes`). Only a plural creature type, with no other quality and no controller: the complement of any other group (colors,
+ * keywords, a controller) is not read.
+ */
+const BLOCKED_EXCEPT_BY: Parser<IrStaticEffect> = map(
+  quietly(
+    sequence(
+      pattern(/can['’]t be blocked except by /iu),
+      satisfy(map(permanentPhrase(true, 'all'), withoutZone), (filter) => {
+        const { raw: _raw, types, subtypes, ...rest } = filter;
+        return (
+          subtypes?.length === 1 &&
+          (types === undefined || (types.length === 1 && types[0] === 'creature')) &&
+          Object.values(rest).every((value) => value === undefined)
+        );
+      }),
+    ),
+  ),
+  ([, kind]): IrStaticEffect => ({
+    kind: 'cantBeBlockedBy',
+    blockers: { notSubtypes: kind.subtypes ?? [], raw: kind.raw },
+  }),
+);
+
 export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticEffect> {
   const common = [
     // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control.", said of a group.
@@ -90,6 +115,7 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
     ...(subject === 'attached' ? [phrase('is goaded', 'goaded')] : []),
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
+    BLOCKED_EXCEPT_BY,
     BLOCKED_BY,
     phrase("can['’]t block", 'cantBlock'),
     phrase("can['’]t be blocked", 'cantBeBlocked'),

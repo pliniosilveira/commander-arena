@@ -168,6 +168,19 @@ export function seatsInOrder(state: GameState, from: SeatId): SeatId[] {
   return order;
 }
 
+/**
+ * The player to the right of `seat`: the seat before it in turn order that is still in the game, or null when `seat` is the only one left. Turn order
+ * goes to the left, so the player to the right is the one whose turn comes just before.
+ */
+export function playerToRightOf(state: GameState, seat: SeatId): SeatId | null {
+  const n = state.seats.length;
+  for (let i = 1; i < n; i += 1) {
+    const id = (seat - i + n) % n;
+    if (!getSeat(state, id).hasLost) return id;
+  }
+  return null;
+}
+
 /** Seats other than `seat` that are still in the game: "each opponent" (CR 102.2 for two seats, general here). */
 export function opponentsOf(state: GameState, seat: SeatId): SeatId[] {
   return state.seats.filter((s) => s.id !== seat && !s.hasLost).map((s) => s.id);

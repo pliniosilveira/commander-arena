@@ -86,7 +86,7 @@ function spellEachPhrase(): Parser<IrFilter> {
 export const STATIC_CAST_AS_THOUGH_FLASH = defineRule<IrStatic>({
   id: 'static.cast-as-though-flash',
   family: 'static',
-  leading: ['you'],
+  leading: ['you', 'any'],
   cites: ['CR 601.3b (Casting Spells)', 'CR 702.8a (Flash)'],
   examples: [
     'You may cast artifact spells as though they had flash.',
@@ -94,9 +94,14 @@ export const STATIC_CAST_AS_THOUGH_FLASH = defineRule<IrStatic>({
     'You may cast spells as though they had flash.',
     'You may cast green creature spells as though they had flash.',
     'You may cast sorcery spells and Dragon spells as though they had flash.',
+    'Any player may cast Sliver spells as though they had flash.',
+    'Any player may cast spells as though they had flash.',
   ],
   rejects: [
     'You may cast artifact spells as though they had flash',
+    'Any player may cast Sliver spells as though they had flash',
+    'Any player may cast Sliver spells as though they had haste.',
+    'Any opponent may cast Sliver spells as though they had flash.',
     'You may cast artifact spells as though they had haste.',
     'You may cast artifact spells this turn as though they had flash.',
     'You may cast artifact spells from your graveyard as though they had flash.',
@@ -108,12 +113,14 @@ export const STATIC_CAST_AS_THOUGH_FLASH = defineRule<IrStatic>({
     // Quiet: "You may cast this card from your hand ..." stops where it always did.
     const r = quiet(
       sequence(
-        literal('you may cast '),
+        choice(literal('you may cast '), literal('any player may cast ')),
         choice(spellEachPhrase(), spellPhrase(true)),
         literal(' as though they had flash.'),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
+    // CR 601.3b: "Any player may cast ..." gives the permission to every player, not to the controller of the permanent alone.
+    const anyPlayer = ctx.text.slice(pos, pos + 3).toLowerCase() === 'any';
     const id = 'static.cast-as-though-flash';
     const spells: IrFilter = r.value[1];
     return {
@@ -121,7 +128,11 @@ export const STATIC_CAST_AS_THOUGH_FLASH = defineRule<IrStatic>({
       value: {
         kind: 'static',
         subject: subjectNoun('you', 'you', { start: pos, end: pos + 3 }, id),
-        effects: [{ kind: 'castAsThoughFlash', spells }],
+        effects: [
+          anyPlayer
+            ? { kind: 'castAsThoughFlash', spells, anyPlayer }
+            : { kind: 'castAsThoughFlash', spells },
+        ],
         span: { start: pos, end: r.pos },
         rule: id,
       },

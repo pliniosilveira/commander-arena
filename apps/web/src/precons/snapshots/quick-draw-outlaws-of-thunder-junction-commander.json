@@ -3,7 +3,7 @@
   "name": "Quick Draw",
   "blurb": "A Commander precon led by Stella Lee, Wild Card.",
   "source": "oracle_cards-2026-11-18T10-01-54-467-00-00.jsonl.gz",
-  "decklist": "Commander\n1x Stella Lee, Wild Card\n\nMainboard\n13x Mountain\n14x Island\n1x Arcane Bombardment\n1x Arcane Denial\n1x Arcane Signet\n1x Archmage Emeritus\n1x Baral's Expertise\n1x Big Score\n1x Bloodthirsty Adversary\n1x Cascade Bluffs\n1x Chaos Warp\n1x Command Tower\n1x Crackling Spellslinger\n1x Curse of the Swine\n1x Cursed Mirror\n1x Deep Analysis\n1x Dig Through Time\n1x Electrostatic Field\n1x Elemental Eruption\n1x Epic Experiment\n1x Eris, Roar of the Storm\n1x Exotic Orchard\n1x Expressive Iteration\n1x Faithless Looting\n1x Ferrous Lake\n1x Finale of Promise\n1x Finale of Revelation\n1x Forger's Foundry\n1x Frostboil Snarl\n1x Galvanic Iteration\n1x Goblin Electromancer\n1x Guttersnipe\n1x Haughty Djinn\n1x Izzet Boilerworks\n1x Izzet Signet\n1x Kaza, Roil Chaser\n1x Leyline Dowser\n1x Lock and Load\n1x Midnight Clock\n1x Mizzix's Mastery\n1x Murmuring Mystic\n1x Niv-Mizzet, Parun\n1x Octavia, Living Thesis\n1x Opt\n1x Ponder\n1x Pongify\n1x Preordain\n1x Propaganda\n1x Pteramander\n1x Pyretic Charge\n1x Radical Idea\n1x Reliquary Tower\n1x Rousing Refrain\n1x Serum Visions\n1x Shark Typhoon\n1x Shivan Reef\n1x Smoldering Stagecoach\n1x Sol Ring\n1x Storm-Kiln Artist\n1x Sulfur Falls\n1x Talrand, Sky Summoner\n1x Temple of Epiphany\n1x Temple of the False God\n1x Tezzeret's Gambit\n1x Think Twice\n1x Third Path Iconoclast\n1x Thunderclap Drake\n1x Treasure Cruise\n1x Vandalblast\n1x Veyran, Voice of Duality\n1x Volcanic Torrent\n1x Windfall\n1x Winged Boots\n1x Young Pyromancer\n",
+  "decklist": "Commander\n1x Stella Lee, Wild Card (otc) 3\n\nMainboard\n13x Mountain (otj) 283\n14x Island (otj) 279\n1x Arcane Bombardment (otc) 154\n1x Arcane Denial (otc) 89\n1x Arcane Signet (otc) 252\n1x Archmage Emeritus (otc) 90\n1x Baral's Expertise (otc) 91\n1x Big Score (otc) 155\n1x Bloodthirsty Adversary (otc) 157\n1x Cascade Bluffs (otc) 276\n1x Chaos Warp (otc) 160\n1x Command Tower (otc) 280\n1x Crackling Spellslinger (otc) 25\n1x Curse of the Swine (otc) 92\n1x Cursed Mirror (otc) 161\n1x Deep Analysis (otc) 94\n1x Dig Through Time (otc) 95\n1x Electrostatic Field (otc) 164\n1x Elemental Eruption (otc) 27\n1x Epic Experiment (otc) 222\n1x Eris, Roar of the Storm (otc) 5\n1x Exotic Orchard (otc) 293\n1x Expressive Iteration (otc) 224\n1x Faithless Looting (otc) 165\n1x Ferrous Lake (otc) 294\n1x Finale of Promise (otc) 166\n1x Finale of Revelation (otc) 97\n1x Forger's Foundry (otc) 14\n1x Frostboil Snarl (otc) 298\n1x Galvanic Iteration (otc) 227\n1x Goblin Electromancer (otc) 228\n1x Guttersnipe (otc) 169\n1x Haughty Djinn (otc) 99\n1x Izzet Boilerworks (otc) 302\n1x Izzet Signet (otc) 259\n1x Kaza, Roil Chaser (otc) 232\n1x Leyline Dowser (otc) 39\n1x Lock and Load (otc) 15\n1x Midnight Clock (otc) 100\n1x Mizzix's Mastery (otc) 175\n1x Murmuring Mystic (otc) 102\n1x Niv-Mizzet, Parun (otc) 235\n1x Octavia, Living Thesis (otc) 103\n1x Opt (otc) 104\n1x Ponder (otc) 105\n1x Pongify (otc) 106\n1x Preordain (otc) 107\n1x Propaganda (otc) 108\n1x Pteramander (otc) 109\n1x Pyretic Charge (otc) 29\n1x Radical Idea (otc) 110\n1x Reliquary Tower (otc) 312\n1x Rousing Refrain (otc) 178\n1x Serum Visions (otc) 112\n1x Shark Typhoon (otc) 113\n1x Shivan Reef (otc) 320\n1x Smoldering Stagecoach (otc) 30\n1x Sol Ring (otc) 267\n1x Storm-Kiln Artist (otc) 181\n1x Sulfur Falls (otc) 322\n1x Talrand, Sky Summoner (otc) 116\n1x Temple of Epiphany (otc) 329\n1x Temple of the False God (otc) 334\n1x Tezzeret's Gambit (otc) 117\n1x Think Twice (otc) 119\n1x Third Path Iconoclast (otc) 244\n1x Thunderclap Drake (otc) 17\n1x Treasure Cruise (otc) 120\n1x Vandalblast (otc) 183\n1x Veyran, Voice of Duality (otc) 248\n1x Volcanic Torrent (otc) 184\n1x Windfall (otc) 123\n1x Winged Boots (otc) 124\n1x Young Pyromancer (otc) 185",
   "set": "Outlaws of Thunder Junction Commander",
   "year": 2024,
   "cards": [
@@ -2362,7 +2362,7 @@
     },
     {
       "oracleId": "8d0da2f9-0e05-4a94-8d42-fd57d06b09ba",
-      "scryfallId": "54820d80-f32e-4e2f-a0e2-4db781444217",
+      "scryfallId": "2a8a7696-b5d9-4378-9d5c-2c9007e4df63",
       "name": "Stella Lee, Wild Card",
       "layout": "normal",
       "faces": [
@@ -2380,11 +2380,11 @@
             "U"
           ],
           "imageUris": {
-            "normal": "https://cards.scryfall.io/normal/front/5/4/54820d80-f32e-4e2f-a0e2-4db781444217.jpg?1793187478",
-            "large": "https://cards.scryfall.io/large/front/5/4/54820d80-f32e-4e2f-a0e2-4db781444217.jpg?1793187478",
-            "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/54820d80-f32e-4e2f-a0e2-4db781444217.jpg?1793187478"
+            "normal": "https://cards.scryfall.io/normal/front/2/a/2a8a7696-b5d9-4378-9d5c-2c9007e4df63.jpg?1783911971",
+            "large": "https://cards.scryfall.io/large/front/2/a/2a8a7696-b5d9-4378-9d5c-2c9007e4df63.jpg?1783911971",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/a/2a8a7696-b5d9-4378-9d5c-2c9007e4df63.jpg?1783911971"
           },
-          "artist": "Oliver Barrett"
+          "artist": "Fajareka Setiawan"
         }
       ],
       "cmc": 3,

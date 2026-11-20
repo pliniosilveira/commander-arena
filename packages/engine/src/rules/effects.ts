@@ -48,6 +48,7 @@ import {
   runBecomeCopy,
   runCantAttackPlaneswalkers,
   runContinuous,
+  runDoubleTokens,
   runEntersTappedGroup,
   runRequireAttack,
   runRequireAttackSource,
@@ -211,7 +212,7 @@ export function runInstruction(
       front: [],
       needs: {
         kind: 'chooseOption',
-        seat: res.controller,
+        seat: instruction.seat ?? res.controller,
         purpose: 'creatureType',
         options: CREATURE_TYPES,
         source: res.object,
@@ -694,6 +695,42 @@ export function runImmediateEffects(
  * CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). CR 712.21c
  * (D-277): a melded permanent that died became two cards, and an effect that finds the new object finds both.
  */
+/**
+ * CR 508.4 (D-648): the creature tokens `created` that are on the battlefield and not attacking yet start attacking `defender` while a combat is on; they were never declared as
+ * attackers, so nothing that triggers on an attack sees them and the turn log does not count them.
+ */
+function enterCombatAttacking(
+  state: GameState,
+  created: readonly ObjectId[],
+  defender: SeatId,
+): GameState {
+  const combat = state.combat;
+  if (combat === null) return state;
+  const entering = created.filter((id) => {
+    const obj = state.objects[id];
+    return (
+      obj !== undefined &&
+      obj.zone === 'battlefield' &&
+      derive(state, obj).types.includes('creature') &&
+      !combat.attackers.some((a) => a.object === id)
+    );
+  });
+  return {
+    ...state,
+    combat: {
+      ...combat,
+      attackers: [
+        ...combat.attackers,
+        ...entering.map((object) => ({
+          object,
+          target: { kind: 'player' as const, seat: defender },
+          blocked: false,
+        })),
+      ],
+    },
+  };
+}
+
 function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[] {
   const found = successorsOf(state, id, (o) => o.zone === 'graveyard');
   return found.length > 0 ? found : [id];
@@ -730,7 +767,14 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     source: res.source,
     ...(res.chosenCreatureType === undefined
       ? {}
-      : { sourceChosen: { creatureType: res.chosenCreatureType } }),
+      : {
+          sourceChosen: {
+            creatureType: res.chosenCreatureType,
+            ...(res.chosenCreatureTypes === undefined
+              ? {}
+              : { creatureTypes: res.chosenCreatureTypes }),
+          },
+        }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
@@ -784,7 +828,18 @@ function runEffect(
         ],
       );
     case 'chooseCreatureType':
-      return done(state, [], [{ kind: 'chooseCreatureType', chosen: null }]);
+      // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
+      return done(
+        state,
+        [],
+        effect.players === undefined
+          ? [{ kind: 'chooseCreatureType', chosen: null }]
+          : resolvePlayers(state, effect.players, ctx, targets).map((seat) => ({
+              kind: 'chooseCreatureType' as const,
+              chosen: null,
+              seat,
+            })),
+      );
     case 'sequence':
       return done(
         state,
@@ -913,6 +968,7 @@ function runEffect(
               ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
               ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
               ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
+              ...(what.fromTriggerSources === true ? { fromTriggerSources: true as const } : {}),
               ...(first === undefined ? {} : { seat: first }),
               // CR 101.4: with several players, they all choose (active player first) before any sacrifice happens.
               ...(later.length === 0 ? {} : { together: { later, held: [] } }),
@@ -1956,13 +2012,19 @@ function runEffect(
       // D-364 (CR 119.4, 608.2c): a payment of life by an amount ("pay that much life") is worked out now; one of 0 life is no offer.
       const cost = resolveMayPayCost(state, effect.cost, ctx);
       if (cost === null) return done(state);
+      // Issue 101 (Gix): "its controller may pay 1 life": the player named is asked and pays, nobody when the selector names none.
+      const payer =
+        effect.by === undefined
+          ? res.controller
+          : resolvePlayers(state, effect.by, ctx, targets)[0];
+      if (payer === undefined) return done(state);
       return done(
         state,
         [],
         [
           {
             kind: 'unlessPays' as const,
-            seat: res.controller,
+            seat: payer,
             cost,
             stage: 'ask' as const,
             effect: effect.effect,
@@ -2410,7 +2472,11 @@ function runEffect(
             flow,
           );
           if (made.kind === 'asked') return asking(state, made);
-          next = requireAttackingPlayer(made.state, made.created, opponent);
+          // CR 508.4 (issue 101): "for each opponent, create a token that's tapped and attacking that player": the opponent's tokens join the combat attacking that opponent.
+          next =
+            'attacking' in effect.forEachOpponent
+              ? enterCombatAttacking(made.state, made.created, opponent)
+              : requireAttackingPlayer(made.state, made.created, opponent);
           events.push(...made.events);
           front.push(...made.front);
           created = [...created, ...made.created];
@@ -2463,32 +2529,7 @@ function runEffect(
       // never declared as attackers.
       if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
         const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
-        const combat = next.combat;
-        if (defender !== undefined) {
-          const entering = created.filter((id) => {
-            const obj = next.objects[id];
-            return (
-              obj !== undefined &&
-              obj.zone === 'battlefield' &&
-              derive(next, obj).types.includes('creature') &&
-              !combat.attackers.some((a) => a.object === id)
-            );
-          });
-          next = {
-            ...next,
-            combat: {
-              ...combat,
-              attackers: [
-                ...combat.attackers,
-                ...entering.map((object) => ({
-                  object,
-                  target: { kind: 'player' as const, seat: defender },
-                  blocked: false,
-                })),
-              ],
-            },
-          };
-        }
+        if (defender !== undefined) next = enterCombatAttacking(next, created, defender);
       }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
@@ -3402,6 +3443,10 @@ function runEffect(
     case 'requireAttackSource':
       // CR 508.1d, 611.2c: creatures of the named player attack this permanent if able, during that player's next turn.
       return runRequireAttackSource(state, effect, ctx, targets);
+
+    case 'doubleTokens':
+      // CR 614.1a, 614.5 (issue 101): "until end of turn, if one or more tokens would be created under your control, twice that many are created instead".
+      return runDoubleTokens(state, effect, ctx);
 
     case 'permanentsEnterTapped':
       // CR 614.1c, 614.12 (D-519): "creatures your opponents control enter tapped", read as a permanent enters.

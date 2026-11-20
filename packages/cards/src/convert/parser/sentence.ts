@@ -265,6 +265,8 @@ const TRAILING_CONDITIONS = [
   ...ATTACKERS_CONDITIONS,
   // Issue 89: "it gets +2/+0 until end of turn if it's attacking one of your opponents" (CR 508.1b).
   'condition.it-attacking-opponents',
+  // Issue 101 (Zurgo Stormrender): "draw a card if it was attacking" (CR 506.4, 603.10a).
+  'condition.it-was-attacking',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -388,14 +390,17 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
  * sentence, and, with "have you", that the controller does them. A player noun and "may"; "you may" is the sentence's own prefix.
  */
 const PLAYER_MAY: Parser<NonNullable<IrSentence['mayBy']>> = quiet((ctx, pos) => {
-  // Looked at first, so that a sentence about a player that does not say "may" stops where it always did.
+  // Looked at first, so that a sentence about a player that does not say "may" stops where it always did. "Its controller may search ..." stays with `effect.search-by` (White Orchid
+  // Phantom, CR 701.23a), which reads the search of that controller's own library; "Its controller may pay 1 life. If they do, they draw a card." is one instruction of its own (Gix,
+  // Yawgmoth Praetor, `effect.its-controller-may-pay-draw`).
   const ahead = pattern(
-    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may )/iu,
+    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may |(?:its|that (?:creature|permanent|land|artifact|enchantment|planeswalker)['’]s) controller may (?!search |pay [^.]*\. if they do, they draw ))/iu,
   )(ctx, pos);
   if (!ahead.ok) return ahead;
   return map(
     sequence(
-      family<IrNoun>('noun', { only: ['noun.player'] }),
+      // "Its controller may draw a card" (Synapse Sliver, CR 109.4, 608.2d): the controller of an object the text named is the player asked.
+      family<IrNoun>('noun', { only: ['noun.player', 'noun.its-controller'] }),
       literal(' may '),
       optional(literal('have you '), null),
     ),

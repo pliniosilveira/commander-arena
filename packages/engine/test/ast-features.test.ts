@@ -264,6 +264,7 @@ describe('the dimensions', () => {
       'damageAsThoughWither',
       'playerProtection',
       'cantHaveCounters',
+      'cantBeSacrificed',
       'doubleTriggers',
       'cantCastThis',
       'blockTax',
@@ -285,6 +286,10 @@ describe('the dimensions', () => {
       'spellsCantBeCountered',
       // D-192: "Damage isn't removed from this creature during cleanup steps."
       'keepsDamage',
+      // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
+      'legendRuleDoesntApply',
+      'giveChosenCreatureType',
+      'grantEncoreToGraveyardCards',
     ]);
     expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.

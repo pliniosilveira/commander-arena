@@ -553,7 +553,9 @@ export function permanentPhrase(
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
     const notChosen = optional(
-      quiet(pattern(/ that aren't of the chosen type(?![\p{L}\p{N}])/iu)),
+      quiet(
+        pattern(/ that aren't of (?:the chosen type|a type chosen this way)(?![\p{L}\p{N}])/iu),
+      ),
       undefined,
     )(ctx, control.pos);
     if (!notChosen.ok) return notChosen;

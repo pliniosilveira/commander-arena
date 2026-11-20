@@ -174,15 +174,15 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(`${id} has mana spent that it cannot have`);
       }
     }
-    // CR 702.56a (D-129): a count of replicate payments belongs to a spell whose face has a replicate cost, and is at
-    // least 1 when present.
+    // CR 702.56a (D-129): a count of replicate payments belongs to a spell that has a replicate cost, and is at least 1 when
+    // present. The face prints it or an effect gave it as the spell was cast (the permanent may have left since, CR 113.7a), and a given cost is a mana cost.
     if (obj.stack?.replicated !== undefined) {
       const n = obj.stack.replicated;
       if (
         !Number.isSafeInteger(n) ||
         n < 1 ||
         obj.stack.kind !== 'spell' ||
-        replicateCostOf(face) === null
+        (replicateCostOf(face) === null && (face?.manaCost ?? null) === null)
       ) {
         problems.push(`${id} was replicated ${n} times, which it cannot be`);
       }
@@ -282,7 +282,7 @@ export function checkInvariants(state: GameState): string[] {
       ) === true;
     if (
       obj.kicked === true &&
-      (obj.zone !== 'battlefield' ||
+      ((obj.zone !== 'battlefield' && obj.zone !== 'phased') ||
         !(faces.some((f) => kickerLikeCostOf(f) !== null) || tokenKicker))
     ) {
       problems.push(`${id} remembers being kicked but is not a permanent with kicker`);
@@ -291,15 +291,17 @@ export function checkInvariants(state: GameState): string[] {
     if (obj.kicks !== undefined && (obj.kicked !== true || !(obj.kicks >= 1))) {
       problems.push(`${id} remembers ${obj.kicks} kicks without having been kicked`);
     }
-    // CR 107.3m (Hylda group 3): the X of the spell a permanent came from is remembered by a permanent only, and only when it was at least 1.
+    // CR 107.3m (Hylda group 3): the X of the spell a permanent came from is remembered by a permanent only (on the battlefield or phased out, CR 702.26b), and only when it was at least 1.
     if (
       obj.castX !== undefined &&
-      (obj.zone !== 'battlefield' || !Number.isSafeInteger(obj.castX) || obj.castX < 1)
+      ((obj.zone !== 'battlefield' && obj.zone !== 'phased') ||
+        !Number.isSafeInteger(obj.castX) ||
+        obj.castX < 1)
     ) {
       problems.push(`${id} remembers the X ${obj.castX} of a spell it cannot have come from`);
     }
-    // CR 601.2a: the zone a permanent's spell was cast from is remembered by a permanent only.
-    if (obj.castFrom !== undefined && obj.zone !== 'battlefield') {
+    // CR 601.2a: the zone a permanent's spell was cast from is remembered by a permanent only (on the battlefield or phased out, CR 702.26b: it stays as it was).
+    if (obj.castFrom !== undefined && obj.zone !== 'battlefield' && obj.zone !== 'phased') {
       problems.push(`${id} remembers a cast but is not a permanent`);
     }
     // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
@@ -488,15 +490,17 @@ export function checkInvariants(state: GameState): string[] {
       }
     }
   }
-  // Every card is exactly one live object, except cards currently represented by a stack object
+  // Every card is exactly one live object, except the cards of a seat that left the game (CR 800.4a), cards currently represented by a stack object
   // that is not a card (none today) or tokens, which have no card.
   const objectsPerCard = new Map<string, number>();
   for (const obj of Object.values(state.objects)) {
     // D-277: a melded permanent is one object that two cards represent; each of them is on it.
     for (const card of cardsOf(obj)) objectsPerCard.set(card, (objectsPerCard.get(card) ?? 0) + 1);
   }
-  for (const card of Object.keys(state.cards)) {
+  for (const [card, instance] of Object.entries(state.cards)) {
     const n = objectsPerCard.get(card) ?? 0;
+    // CR 800.4a (issue 336): the cards of a player who left a game that goes on have left the game with them. A game that has ended keeps its board.
+    if (n === 0 && state.result === null && state.seats[instance.owner]?.hasLost === true) continue;
     if (n !== 1) problems.push(`card ${card} has ${n} objects, expected 1`);
   }
   for (const s of state.seats) {

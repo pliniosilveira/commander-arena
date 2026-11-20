@@ -103,6 +103,7 @@ import { KORVOLD_LOWERINGS } from './korvold';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
+import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
 import { MELD_LOWERINGS } from './meld';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
 import { NEXT_SPELL_LOWERINGS } from './next-spell';
@@ -138,6 +139,7 @@ import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -310,9 +312,28 @@ const COUNTER_UNLESS: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const costs = arg(clause, 'cost');
     if (objects?.kind !== 'noun' || costs?.kind !== 'costList') return failure(clause);
-    const spell = objectRefOf(objects, ctx);
+    // Issue 133 (Diffusion Sliver, CR 702.21a): "counter that spell or ability unless its controller pays {2}" in a trigger about becoming a target: the spell or ability that
+    // targeted, as the engine's Ward counters it. "That spell" is only said of a trigger about spells.
+    let spell: ReturnType<typeof objectRefOf>;
+    if (objects.det === 'triggerSubject') {
+      const wanted = /^that spell or ability$/iu.test(objects.filter.raw.trim()) ? 'both' : 'spell';
+      if (
+        objects.rule !== 'effect.counter-that-unless' ||
+        ctx.becomesTargetOf === null ||
+        (wanted === 'spell' && ctx.becomesTargetOf !== 'spell')
+      ) {
+        return failure(clause);
+      }
+      const missing = missingFeatures(['selector:triggerSubject']);
+      if (missing.length > 0) return failure(clause, missing);
+      spell = { ok: true, value: { kind: 'triggerSubject' }, rule: clause.rule };
+    } else {
+      spell = objectRefOf(objects, ctx);
+    }
     if (!spell.ok) return spell;
-    if (spell.value.kind !== 'target') return failure(clause);
+    if (spell.value.kind !== 'target' && spell.value.kind !== 'triggerSubject') {
+      return failure(clause);
+    }
     const cost: Cost[] = [];
     for (const item of costs.costs) {
       const lowered = lowerCost(item);
@@ -1278,7 +1299,10 @@ function playerVerb(
       if (!amount.ok) return amount;
       // "Each opponent loses life equal to the life that player lost this turn" (D-365, CR 119.3): the amount of another player than "you" (who is "that
       // player"), of a loss of life; each affected player's own number.
-      if (typeof amount.value === 'object' && amount.value.kind === 'lifeLostThisTurn') {
+      if (
+        typeof amount.value === 'object' &&
+        (amount.value.kind === 'lifeLostThisTurn' || amount.value.kind === 'attackersOfAffected')
+      ) {
         if (verb !== 'loseLife' || player.value.kind === 'you') return failure(clause);
       }
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
@@ -1538,12 +1562,18 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (blocked.length > 0) return failure(clause, blocked);
       if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
     }
+    // "You may reveal any number of cards of the chosen type from among them": every card looked at may be taken, so `max` is the number looked at (a number, not an amount read later).
+    const any = arg(clause, 'anyNumber');
+    const anyNumber = any?.kind === 'flag' && any.value;
+    if (anyNumber && (typeof count.value !== 'number' || toBattlefield || castFree)) {
+      return failure(clause);
+    }
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
       take: {
         filter: filter.value,
-        max: 1,
+        max: anyNumber && typeof count.value === 'number' ? count.value : 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
         ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
@@ -2024,6 +2054,34 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       rule: clause.rule,
     };
   }
+  // "For each opponent, create a 1/1 ... token that's tapped and attacking that player" (Mardu Surge deck, CR 508.4, 111.2): the same token, made tapped for each opponent and put in the
+  // combat attacking that opponent. A custom creature token only, with no controller of its own.
+  const perOpponentTapped = arg(clause, 'perOpponentTappedAttacking');
+  if (perOpponentTapped?.kind === 'flag' && perOpponentTapped.value) {
+    const blockedEach = missingFeatures(['selector:tokensPerOpponent', 'token:tapped']);
+    if (blockedEach.length > 0) return failure(clause, blockedEach);
+    const { perOpponentTappedAttacking: _flag, ...args } = clause.args;
+    const { tappedAndAttacking: _attacking, ...plain } = token;
+    const inner = lowerCreateToken(
+      { ...clause, args: { ...args, token: { ...plain, tapped: true } } },
+      ctx,
+    );
+    if (!inner.ok) return inner;
+    const [made, ...rest] = inner.value;
+    if (
+      made?.kind !== 'createToken' ||
+      rest.length > 0 ||
+      made.token.kind !== 'custom' ||
+      made.controller !== undefined
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ ...made, forEachOpponent: { attacking: true } }],
+      rule: clause.rule,
+    };
+  }
   // Issue 144 (CR 508.4, 110.5b): "create a 1/1 red Goblin creature token that's tapped and attacking": the token enters tapped, then the engine's `enterAttacking` puts it in the combat
   // against whom the source attacks, never declared as an attacker. Only where the source is the attacker ("Whenever this creature attacks"): anywhere else the controller chooses whom
   // it attacks (CR 508.4), which the engine does not ask.
@@ -2296,6 +2354,86 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DOUBLE_COUNTERS,
   CREATE_TOKEN,
   {
+    // "Each opponent may create X 1/1 ... tokens. For each opponent who does, create X 1/1 ... tokens." (Tempt with Vengeance, issue 101, CR 101.4, 111.2, 608.2d): each opponent is
+    // asked once; one who accepts creates the first tokens, and the controller of the spell creates the second for them, which is what "for each opponent who does" comes to.
+    head: 'opponentsMayCreateTokens',
+    id: 'lower.opponents-may-create-tokens',
+    needs: ['effect:playersMay', 'effect:createToken'],
+    lower: (clause, ctx) => {
+      const theirs = arg(clause, 'token');
+      const ours = arg(clause, 'bonus');
+      if (theirs?.kind !== 'token' || ours?.kind !== 'token') return failure(clause);
+      const lowered = [theirs, ours].map((token) =>
+        lowerCreateToken({ ...clause, verb: 'createToken', args: { token } }, ctx),
+      );
+      const [a, b] = lowered;
+      if (a === undefined || b === undefined) return failure(clause);
+      if (!a.ok) return a;
+      if (!b.ok) return b;
+      const [offered, ...restA] = a.value;
+      const [given, ...restB] = b.value;
+      if (
+        offered?.kind !== 'createToken' ||
+        given?.kind !== 'createToken' ||
+        restA.length > 0 ||
+        restB.length > 0 ||
+        offered.controller !== undefined ||
+        given.controller !== undefined
+      ) {
+        return failure(clause);
+      }
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'playersMay',
+            players: { kind: 'eachOpponent' },
+            runsAs: 'chooser',
+            effect: {
+              kind: 'sequence',
+              effects: [
+                offered,
+                {
+                  ...given,
+                  controller: {
+                    kind: 'controllerOf',
+                    of: { kind: ctx.owner === 'spell' ? 'thisSpell' : 'this' },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        rule: clause.rule,
+      };
+    },
+  },
+  {
+    // "Its controller may pay 1 life. If they do, they draw a card." (Gix, Yawgmoth Praetor, issue 101, CR 118.3, 608.2c): the controller of the creature the trigger is about is
+    // asked, pays and draws: the engine's `mayPay` with `by`.
+    head: 'controllerMayPayDraw',
+    id: 'lower.controller-may-pay-draw',
+    needs: ['effect:mayPay', 'cost:payLife', 'effect:draw'],
+    lower: (clause) => {
+      const life = arg(clause, 'life');
+      const cards = arg(clause, 'cards');
+      if (life?.kind !== 'number' || cards?.kind !== 'number') return failure(clause);
+      const who = { kind: 'controllerOf', of: { kind: 'triggerSubject' } } as const;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'mayPay',
+            by: who,
+            cost: [{ kind: 'payLife', amount: life.value }],
+            effect: { kind: 'draw', player: who, count: cards.value },
+          },
+        ],
+        rule: clause.rule,
+      };
+    },
+  },
+  {
     head: 'createPerOpponent',
     id: 'lower.create-per-opponent',
     needs: ['effect:forEachPlayer', 'effect:createToken'],
@@ -2486,8 +2624,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...POPULATE_LOWERINGS,
   ...BLIGHT_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
+  // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
+  ...SLIVER_D_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
+  ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
   ...COUNTER_CHOICE_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
@@ -2571,6 +2712,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
         kind === 'notDeclaredAttacker' ||
+        kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||

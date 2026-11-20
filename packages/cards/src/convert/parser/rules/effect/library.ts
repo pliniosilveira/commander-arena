@@ -20,7 +20,13 @@ import {
 } from '../../combinators';
 import type { IrArg, IrFilter, IrNoun } from '../../ir/types';
 import { countAmount } from '../amount/count';
-import { CARD_TYPES, PERMANENT_CARD_TYPES, typeChoice, typeWords } from '../noun/phrases';
+import {
+  CARD_TYPES,
+  CHOSEN_SUFFIX,
+  PERMANENT_CARD_TYPES,
+  typeChoice,
+  typeWords,
+} from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
@@ -335,6 +341,80 @@ export const TAKEN_CARD: Parser<IrNoun> = choice(
   MIXED_TAKEN_CARD,
 );
 
+/** "a creature card of the chosen type": the card of a kind, then the creature type the permanent chose as it entered (CR 607.2d) or the effect chose as it resolves. */
+const TAKEN_CARD_OF_TYPE: Parser<IrNoun> = (ctx, pos) => {
+  const card = TAKEN_CARD(ctx, pos);
+  if (!card.ok) return card;
+  const chosen = CHOSEN_SUFFIX(ctx, card.pos);
+  if (!chosen.ok) return card;
+  if (chosen.value !== 'type') return fail(ctx, pos);
+  const noun: IrNoun = {
+    ...card.value,
+    filter: { ...card.value.filter, chosen: 'type', raw: ctx.text.slice(pos, chosen.pos) },
+    span: { start: pos, end: chosen.pos },
+  };
+  return { ok: true, value: noun, pos: chosen.pos };
+};
+
+type TakeClause = {
+  readonly take: IrNoun;
+  readonly atMost: IrArg | null;
+  readonly where: { readonly value: string; readonly span: { start: number; end: number } };
+  readonly anyNumber: boolean;
+};
+
+/**
+ * What the player takes from among the cards looked at: one card of a kind (optionally of the chosen type, optionally with a mana value limit read as the effect
+ * resolves) into the hand or onto the battlefield, or "any number of cards of the chosen type" into the hand ("put the revealed cards into your hand").
+ */
+const TAKE_CLAUSE: Parser<TakeClause> = choice(
+  (ctx, pos) => {
+    const r = sequence(
+      pattern(
+        /any number of cards of the chosen type from among them and put the revealed cards /iu,
+      ),
+      spanned(literal('into your hand')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const end = pos + 'any number of cards of the chosen type'.length;
+    const take: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { chosen: 'type', card: true, raw: ctx.text.slice(pos, end) },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end },
+      rule: 'effect.look-take',
+    };
+    return {
+      ok: true,
+      value: { take, atMost: null, where: r.value[1], anyNumber: true },
+      pos: r.pos,
+    };
+  },
+  map(
+    sequence(
+      TAKEN_CARD_OF_TYPE,
+      // Stage P32 (D-147): "with mana value less than or equal to the number of lands you control", read as the effect resolves.
+      optional(
+        map(
+          sequence(
+            literal(' with mana value less than or equal to '),
+            countAmount('effect.look-take', literal('the number of '), true),
+          ),
+          ([, amount]) => amount,
+        ),
+        null,
+      ),
+      // "put that card" is the wording of the newer cards (Quandrix Apprentice).
+      pattern(/ from among them and put (?:it|that card) /iu),
+      spanned(choice(literal('into your hand'), literal('onto the battlefield'))),
+    ),
+    ([take, atMost, , where]): TakeClause => ({ take, atMost, where, anyNumber: false }),
+  ),
+);
+
 /**
  * `effect.look-take`: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your
  * hand. Put the rest on the bottom of your library in a random order" (stage P31, D-140, CR 401.2, 701.20a: revealing shows the card,
@@ -360,8 +440,15 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     // Quandrix Unlimited deck, group G (CR 401.4: the order is the player's): "put that card", and the rest on the bottom in any order.
     'look at the top three cards of your library. You may reveal a land card from among them and put that card into your hand. Put the rest on the bottom of your library in any order',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order',
+    // Sliver Swarm deck, group C: the creature type the permanent chose as it entered, or the effect chose as it resolved.
+    'look at the top three cards of your library. You may reveal a creature card of the chosen type from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top four cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in any order',
   ],
   rejects: [
+    'look at the top six cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal any number of cards of the chosen color from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal a creature card of the chosen color from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your library. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an artifact card with mana value less than or equal to 3 from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
@@ -383,21 +470,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
       literal('look at the top '),
       AT_LEAST(2),
       literal(' cards of your library. you may reveal '),
-      TAKEN_CARD,
-      // Stage P32 (D-147): "with mana value less than or equal to the number of lands you control", read as the effect resolves.
-      optional(
-        map(
-          sequence(
-            literal(' with mana value less than or equal to '),
-            countAmount('effect.look-take', literal('the number of '), true),
-          ),
-          ([, amount]) => amount,
-        ),
-        null,
-      ),
-      // "put that card" is the wording of the newer cards (Quandrix Apprentice).
-      pattern(/ from among them and put (?:it|that card) /iu),
-      spanned(choice(literal('into your hand'), literal('onto the battlefield'))),
+      TAKE_CLAUSE,
       literal('. put the rest '),
       spanned(
         choice(
@@ -415,7 +488,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
         ),
       ),
     ),
-    ([, count, , take, atMost, , where, , rest]) => ({
+    ([, count, , { take, atMost, where, anyNumber }, , rest]) => ({
       verb: 'lookTake',
       args: {
         count,
@@ -446,6 +519,17 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
           rule: 'effect.look-take',
         },
         ...(atMost === null ? {} : { manaValueAtMost: atMost }),
+        // "any number of cards of the chosen type ... the revealed cards" (For the Ancestors): every card that matches may be taken.
+        ...(anyNumber
+          ? {
+              anyNumber: {
+                kind: 'flag' as const,
+                value: true,
+                span: take.span,
+                rule: 'effect.look-take',
+              },
+            }
+          : {}),
       },
     }),
   ),

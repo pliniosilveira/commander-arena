@@ -555,11 +555,11 @@ export function checkFilter(
   // D-437: "this creature" is the object a spell targets, in the filter of `targetsObject` or `targetsOnly`: the permanent that has the ability.
   if (f.isSource !== undefined) {
     if (f.isSource !== true) issue(out, `${path}.isSource`, 'isSource must be true');
-    else if (where.inTargets !== true) {
+    else if (where.inTargets !== true && where.sourceOk !== true) {
       issue(
         out,
         `${path}.isSource`,
-        'isSource is read in the filter of what a spell targets (targetsObject, targetsOnly)',
+        'isSource is read in the filter of what a spell targets (targetsObject, targetsOnly) or of the creatures an attackBatch trigger counts',
       );
     }
   }
@@ -600,9 +600,21 @@ export function checkFilter(
   }
   // D-261: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
   if (f.sharesCreatureTypeWith !== undefined) {
-    if (f.sharesCreatureTypeWith !== 'triggerSubject') {
-      issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
-    } else if (sharesWith !== true) {
+    if (!isOneOf(f.sharesCreatureTypeWith, ['triggerSubject', 'source', 'sacrificed'])) {
+      issue(
+        out,
+        `${path}.sharesCreatureTypeWith`,
+        "sharesCreatureTypeWith is 'triggerSubject', 'source' or 'sacrificed'",
+      );
+    } else if (f.sharesCreatureTypeWith === 'sacrificed') {
+      if (where.afterSacrifice !== true) {
+        issue(
+          out,
+          `${path}.sharesCreatureTypeWith`,
+          "sharesCreatureTypeWith 'sacrificed' is read in the filter of a revealUntil that follows a sacrifice (or the offer of one) in the same sequence",
+        );
+      }
+    } else if (f.sharesCreatureTypeWith === 'triggerSubject' && sharesWith !== true) {
       issue(
         out,
         `${path}.sharesCreatureTypeWith`,
@@ -647,6 +659,7 @@ export function checkFilter(
       checkFilter(member, p, out, undefined, sharesWith, {
         onStack: f.zone === 'stack' || f.stackKind !== undefined || where.onStack === true,
         ...(where.inTargets === true ? { inTargets: true } : {}),
+        ...(where.sourceOk === true ? { sourceOk: true } : {}),
         ...(where.afterSacrifice === true ? { afterSacrifice: true } : {}),
       });
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
@@ -669,6 +682,8 @@ export function checkFilter(
 interface FilterWhere {
   readonly onStack?: boolean;
   readonly inTargets?: boolean;
+  /** Issue 101 (CR 508.1): the filter of the creatures an `attackBatch` trigger counts, where "this creature" (`isSource`) is the permanent that has the ability. */
+  readonly sourceOk?: boolean;
   /** CR 107.3a, 202.3: the filter of a target slot of a spell with an {X} in its text: "target creature with mana value X" reads the X announced (D2 group). */
   readonly xTarget?: boolean;
   /** CR 701.21a (Braids): the filter of a `sacrifice` choice that follows a sacrifice of the same resolution, so `sharesCardTypeWith: 'sacrificed'` has a permanent to read. */
@@ -1433,6 +1448,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'eachPlayer':
     case 'eachOpponent':
     case 'defendingPlayer':
+    case 'playerToYourRight':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1572,6 +1588,7 @@ export const PLAYER_ONLY = [
   'controllerOf',
   'ownerOf',
   'defendingPlayer',
+  'playerToYourRight',
   'triggerPlayer',
   'attackedPlayers',
   'combatDamagedByNamed',
@@ -1773,6 +1790,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderCasts':
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
+    case 'differentNamesAmong':
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
@@ -1980,6 +1998,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'differentNamesAmong':
+      // Issue 101 (CR 201.2): the distinct names among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'differentNamesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'differentNamesAmong counts the names of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'differentNamesAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }
@@ -2311,6 +2356,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         out,
         path,
         'cardsInHandOfAffected is the whole amount of a dealDamage to players, not part of another amount',
+      );
+      break;
+    case 'attackersOfAffected':
+      // Issue 101: only as the whole amount of a `loseLife` (checked with the effect).
+      issue(
+        out,
+        path,
+        'attackersOfAffected is the whole amount of a loseLife effect, not part of another amount',
       );
       break;
     case 'lifeLostThisTurn':
@@ -2879,6 +2932,23 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'discard':
+      // Issue 101: "Discard X cards": the X announced for the ability, with a count of 0 and nothing that narrows the cards.
+      if (cost.countX !== undefined) {
+        if (
+          cost.countX !== true ||
+          cost.count !== 0 ||
+          cost.hand !== undefined ||
+          cost.filter !== undefined ||
+          cost.named !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.countX`,
+            'countX is true, with a count of 0 and no filter, name or hand',
+          );
+        }
+        break;
+      }
       if (cost.hand !== undefined) {
         // D-626: "Discard your hand": the whole hand, so no count, filter or name narrows it.
         if (
@@ -3012,6 +3082,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'eachPlayer':
     case 'eachOpponent':
     case 'defendingPlayer':
+    case 'playerToYourRight':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -3602,6 +3673,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'ownerOf',
   'target',
   'defendingPlayer',
+  'playerToYourRight',
   'triggerPlayer',
 ];
 
@@ -3616,6 +3688,18 @@ function checkSacrificeSelector(
     return;
   }
   const choose = sel as ChooseSelector;
+  // CR 603.2c (Descendants' Fury): "sacrifice one of them" names the creatures that dealt the combat damage of the batch trigger.
+  if (choose.fromTriggerSources !== undefined) {
+    if (choose.fromTriggerSources !== true) {
+      issue(out, `${path}.fromTriggerSources`, 'fromTriggerSources must be true when present');
+    } else if (scope.triggerSources !== true) {
+      issue(
+        out,
+        `${path}.fromTriggerSources`,
+        "fromTriggerSources needs a triggered ability of a combatDamageBatch trigger: 'them' are the creatures that dealt the damage",
+      );
+    }
+  }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
   });
@@ -4809,6 +4893,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkFilter(e.filter, `${path}.filter`, out, scope);
       break;
     case 'chooseCreatureType':
+      // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
+      if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
@@ -5055,8 +5141,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-652 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
       // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
       if (e.forEachOpponent !== undefined) {
-        if (e.forEachOpponent?.mustAttack !== true) {
-          issue(out, `${path}.forEachOpponent`, 'forEachOpponent is { mustAttack: true }');
+        const each = e.forEachOpponent as { mustAttack?: unknown; attacking?: unknown };
+        if ((each?.mustAttack === true) === (each?.attacking === true)) {
+          issue(
+            out,
+            `${path}.forEachOpponent`,
+            'forEachOpponent is { mustAttack: true } or { attacking: true }',
+          );
+        }
+        if (each?.attacking === true && e.attacking !== undefined) {
+          issue(out, `${path}.attacking`, 'the tokens made for each opponent attack that opponent');
         }
         if (e.controller !== undefined) {
           issue(
@@ -5409,6 +5503,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'mayPay':
       // CR 702.101a: "you may pay [cost]. If you do, [effect]".
+      // Issue 101: the player who pays is named by `by` ("its controller"), a player selector of the ability.
+      if (e.by !== undefined) {
+        checkPlayerSelector(e.by, `${path}.by`, scope, out);
+        if (e.effect?.kind === 'reflexive') {
+          issue(out, `${path}.by`, 'a payment by another player has no reflexive ability');
+        }
+      }
       // D-364 (CR 119.4): the life paid may be the life that caused the trigger (`triggerDamage`, "pay that much life"), which the amount checks against
       // the trigger of the ability; any other amount is held to what a payment of life reads (`checkCost`).
       if (Array.isArray(e.cost)) {
@@ -6460,7 +6561,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'revealUntil':
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
-      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true);
+      // CR 701.21a (Descendants' Fury): after a sacrifice (or the offer of one) in the same sequence the cards may share a creature type with what was sacrificed.
+      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true, {
+        ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
+      });
       if (
         filterSome(
           e.filter,
@@ -6772,9 +6876,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'increaseSpeed':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
-      if (kindOf(e.amount) === 'lifeLostThisTurn') {
+      if (kindOf(e.amount) === 'lifeLostThisTurn' || kindOf(e.amount) === 'attackersOfAffected') {
         if (e.kind !== 'loseLife') {
-          issue(out, `${path}.amount`, 'lifeLostThisTurn is the amount of a loseLife effect');
+          issue(out, `${path}.amount`, `${kindOf(e.amount)} is the amount of a loseLife effect`);
         }
       } else if (
         kindOf(e.amount) === 'thisWay' &&
@@ -6902,6 +7006,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'restrict':
     case 'preventDamage':
       scope.checkContinuous(e, path, scope, out);
+      break;
+    case 'doubleTokens':
+      // Issue 101: the tokens as they would be on the battlefield, read for the controller: no zone, owner, stack kind, combat, tapped state or trigger player.
+      checkFilter(e.tokens, `${path}.tokens`, out);
+      if (
+        filterSome(
+          e.tokens,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            f.controlledBy !== undefined ||
+            f.tapped !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.tokens`,
+          'the tokens that are created twice over are named by type, color, controller and the like: no zone, owner, stackKind, tapped, combat or trigger player',
+        );
+      }
       break;
     case 'permanentsEnterTapped':
       // D-519: a replacement of the game read as a permanent enters: a filter relative to the controller, with no zone, owner, stack kind, combat or trigger player.

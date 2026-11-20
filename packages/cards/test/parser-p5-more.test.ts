@@ -79,7 +79,7 @@ describe('the vocabulary and the engine agree on what can be granted', () => {
 
   test('the grantable words are exactly the engine list (no copy kept here)', () => {
     // Afflict, landwalk and ward take a number, a land type and a cost: `grantedKeyword` reads them (D-472, D-473, D-638), the words of this table are the others.
-    const withParameter = ['afflict', 'landwalk', 'ward', 'annihilator'];
+    const withParameter = ['afflict', 'landwalk', 'ward', 'annihilator', 'mobilize'];
     expect(GRANTABLE_KEYWORDS.map(([, kind]) => kind).sort()).toEqual(
       [...ENGINE_GRANTABLE].filter((kind) => !withParameter.includes(kind)).sort(),
     );

@@ -55,6 +55,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   // Stage P28 (D-131): "you and target opponent each" (several players at once), "defending player" (CR 508.5).
   players: 'selector:all',
   defendingPlayer: 'selector:defendingPlayer',
+  // "the player to your right" (Hithlain Rope).
+  playerToRight: 'selector:playerToYourRight',
   // Stage P33 (D-150): "this card".
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
@@ -133,6 +135,9 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
+  'selector:sharesCreatureTypeWithSource',
+  'selector:sharesCreatureTypeWithSacrificed',
+  'selector:chooseFromTriggerSources',
   'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
   'selector:eachPlayerExcept',
@@ -285,6 +290,7 @@ function lowerFilterAt(
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
   if (filter.hasCounter !== undefined) parts.push('selector:hasCounter');
   if (filter.commander !== undefined) parts.push('selector:commander');
+  if (filter.isSelf === true) parts.push('selector:isSource');
   // D-180 (stage P37): "that was put there from the battlefield this turn" (CR 700.4), a card of a graveyard (the engine reads it of the filter of
   // a target or an `each` selector, never of a member of a choice).
   if (filter.putFromBattlefieldThisTurn === true) {
@@ -353,6 +359,15 @@ function lowerFilterAt(
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
+  if (filter.sharesCreatureTypeWithSacrificed === true) {
+    parts.push('selector:sharesCreatureTypeWithSacrificed');
+  }
+  // CR 205.3m (Titan of Littjara): "that shares a creature type with it" of a count, the creature types of the source of the ability.
+  if (filter.sharesCreatureTypeWithSource === true) {
+    if (inner) return bad([]);
+    parts.push('selector:sharesCreatureTypeWithSource');
+  }
   // CR 205.2a, 701.21a (Braids): "shares a card type with it", the permanent an earlier sacrifice sacrificed.
   if (filter.sharesCardTypeWithSacrificed === true) parts.push('selector:sharesCardTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
@@ -514,6 +529,7 @@ function lowerFilterAt(
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
     ...(filter.hasCounter === undefined ? {} : { hasCounter: filter.hasCounter }),
     ...(filter.commander === undefined ? {} : { commander: filter.commander }),
+    ...(filter.isSelf === true ? { isSource: true as const } : {}),
     ...(filter.manaValueX === true ? { manaValueX: true as const } : {}),
     ...(filter.controllerDamagedBySource === true
       ? { controllerDealtDamageBySource: true as const }
@@ -539,6 +555,12 @@ function lowerFilterAt(
       : {}),
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
+      : {}),
+    ...(filter.sharesCreatureTypeWithSacrificed === true
+      ? { sharesCreatureTypeWith: 'sacrificed' as const }
+      : {}),
+    ...(filter.sharesCreatureTypeWithSource === true
+      ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
@@ -1334,6 +1356,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     case 'defendingPlayer': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'defendingPlayer' });
+    }
+    case 'playerToRight': {
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'playerToYourRight' });
     }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);

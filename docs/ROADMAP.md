@@ -57,7 +57,7 @@ Rules the engine does not implement and no supported card reaches (refused): sta
 - **Vraska EDHREC deck leftovers (D-216 to D-220).** Every card of the deck is built. Limits: the payment planner uses one activation of a source for each payment (D-216), and auto-pay gives up the Spirit the planner prefers for the player (a token first, then the lowest mana value) where the player pays by hand to choose (D-222); "up to N cards" is drawn only by the controller of a spell the ability targeted (a delayed draw of another player, D-217); a delayed mana ability is added only at a main phase of its controller (D-217); a doubled trigger of a permanent that is gone is made from last-known information, and a "may" of a doubled trigger asks twice (D-220); "Equip legendary creature" and "Equip commander" stay unread (D-220).
 - **Vraska deck leftovers (D-204 to D-211, `docs/proposals/vraska-deck-analysis.md`).** Every card of the deck is built. Limits of the built groups: Magnificent End's cast is offered when its reduction may hold and a cast whose real cost cannot be paid is rewound (CR 601.2, 732: the rules' own way, D-207, D-225; an agent that proposes it keeps being rewound); the web board cannot click a permanent that has left the battlefield to connive it first (D-223); the questions of `playersMay` come one after another (D-210); there is no node for "becomes prepared" or "unprepared" (D-214: a card that says it is not read and is flagged), and the copy of a prepare spell in exile is not a card, so effects that count the cards of exile do not count it (D-214); Face Yourself reads only the exception "has haste and \"ability\"" (D-213).
 
-- **Layers.** Layer 2 is built for effects of resolving spells and abilities (`gainControl`, D-189); not built there: giving control to a player other than the controller of the effect (an exchange, "target opponent gains control of ..."), a static ability that gives control (an Aura "you control enchanted creature": layer 2 can take it as a `control` change with its permanent's timestamp), a move from the battlefield to the battlefield that would keep the stored controller instead of the owner (CR 110.2a; no card of the engine moves so), tests of Evoke, Dash and Unearth with a stolen permanent (they read the derived controller), and CR 800.4a with more than two seats (M10: the objects of a player who left, effects that give a player who left control, CR 800.4c exile of an object whose default controller left). Layer 3 text change; the layer 7d switch; "becomes a [type] artifact creature" (replacing creature types while keeping the card types); setting non-creature subtypes; the `permanent` duration, "until your next turn" and "for as long as" durations; effects on cards outside the battlefield; `loseAllAbilities` for a group (it works for `attached` only). The list of rules to revisit when control changes became possible (the Evoke sacrifice, the Dash return, Echo, Unearth, the legend rule per controller, commander tax, the default controller of an object put onto the battlefield) was gone through in D-189: all read `controllerOf`.
+- **Layers.** Layer 2 is built for effects of resolving spells and abilities (`gainControl`, D-189); not built there: giving control to a player other than the controller of the effect (an exchange, "target opponent gains control of ..."), a static ability that gives control (an Aura "you control enchanted creature": layer 2 can take it as a `control` change with its permanent's timestamp), a move from the battlefield to the battlefield that would keep the stored controller instead of the owner (CR 110.2a; no card of the engine moves so), tests of Evoke, Dash and Unearth with a stolen permanent (they read the derived controller), and CR 800.4c with more than two seats (exile of an object whose control effect ended while its owner had left). Layer 3 text change; the layer 7d switch; "becomes a [type] artifact creature" (replacing creature types while keeping the card types); setting non-creature subtypes; the `permanent` duration, "until your next turn" and "for as long as" durations; effects on cards outside the battlefield; `loseAllAbilities` for a group (it works for `attached` only). The list of rules to revisit when control changes became possible (the Evoke sacrifice, the Dash return, Echo, Unearth, the legend rule per controller, commander tax, the default controller of an object put onto the battlefield) was gone through in D-189: all read `controllerOf`.
 - **Copies.** "Enters as a copy" is built for the one case of `entersAsCopy`; Clone-like copies of any kind, "except" copies (707.9), a copy of a triggered ability or one a target names, "may cast the copy" (707.12), copy of a double-faced permanent as a double-faced token, merged and face-down copies are not; `becomeCopy` lasts until end of turn only. `commanderManaValue` reads the printed card, not a copy.
 - **Replacement effects.** No general library beyond entering, dying, damage prevention, commander zone changes, life gain bonus and "enters with counters". Ordering (616.1) is built for the prevention and redirection effects on a damage event (D-191, D-192); the other replacements stay in fixed orders (D-156), see above.
 - **Prevention.** "Can't be prevented" (615.12), a source of the player's choice (609.7), "the next time a source would deal damage" (615.8), prevention that also does something (615.5), triggers on prevented damage (615.13); a prevention shield that outlasts its source is not in the view.
@@ -138,7 +138,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 ## Unread wordings and small limits
 
-One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules (most Scryfall rulings could not be read from a cloud session); a disagreeing ruling is a bug to report.
+One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
@@ -150,7 +150,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A land on top of the library (`playLandsFromTopOfLibrary`) is playable unseen, but the web shows no top card then and the agents never play it.
 - "Target spell or creature" is plain text in the web.
 - "If this spell was kicked, choose any number instead" is read as all modes: choosing none is not offered.
-- The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is cast by mana value, not by simulation.
+- The HeuristicAgent holds protection mana only when it costs no mana the turn would spend and a commander or creature worth saving is out; a counterspell is cast by mana value.
 - `putIntoGraveyard` reads your own graveyard only; Hedge Shredder ("put them onto the battlefield tapped") stays unsupported. Effects that unlock or lock a Room half, and "fully unlocks" (CR 709.5f, 709.5g, 709.5i), are not built.
 - `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; three or more players are untested (the scenario DSL has two seats).
 - The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the hand payment that holds mana open skips such sources.
@@ -159,7 +159,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A prepared copy of a spell (CR 722.3c) was offered, then the engine refused `payAuto` ("You cannot pay that cost"); cause not traced. The agents cancel it and do not cast it again that turn.
 - The CasualAgent sometimes casts a spell with "creature with mana value X" that the engine refuses ("No creature has a mana value that X could be"); one refused answer, then the fallback.
 - The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.
-- A station symbol is read only with one ability line each and no power and toughness box (CR 721.2b); a line after a symbol that carries none is left unread, as its striation is not in the text.
+- A station symbol is read only with one ability line each and no power and toughness box (CR 721.2b); a line after a symbol with none is left unread.
 - The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment cannot.
 - "Total power of creatures they controlled that were exiled this way" (Oversimplify) counts only creatures an `exile` effect exiled, for each player's own tokens; other exiles (`exileTop`, until-leaves) and "you" or opponent phrasings are not read.
 - A card given flashback with the cost equal to its mana cost does not show the keyword in the view, and one that also prints flashback is offered only for its printed cost.
@@ -183,19 +183,19 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A sentence that follows a quoted ability in the same ability is not read, except an "Activate ..." or "This ability costs ..." restriction.
 - Backup: a creature with a static ability or a keyword with a parameter printed below the Backup keyword is not supported.
 - "Total mana value" look: the AI takes the cards greedily within the limit; it does not search for the best subset.
-- Tragic Arrogance: the same permanent may be chosen for more than one of its types (an artifact creature as the artifact and as the creature); the owner confirmed this reading, with the card's rulings unavailable offline.
+- Tragic Arrogance: the same permanent may be chosen for more than one of its types (an artifact creature as both); the owner confirmed this reading.
 - Tragic Arrogance: the nonland permanents are sacrificed together, in turn order, with no replacement chosen by the player beyond the usual ones.
 - Coin of Fate: "an opponent" is the first opponent in turn order still in the game; with more than two players the controller does not choose which.
 - Spirit of Resilience: the "you may" is asked even when none of the cards can be copied (accepting then does nothing).
-- Phasing: the keyword (a permanent that phases out in each of its controller's untap steps) and "phase in" as an effect are not built; permanents phased out when their controller loses the game stay phased out (CR 702.26k, 702.26n).
+- Phasing: the keyword and "phase in" as an effect are not built; permanents phased out when their controller loses the game stay phased out (CR 702.26k, 702.26n).
 - Turbulent Steppe was read from text the owner pasted, not from a Scryfall extraction; it is not in the golden corpus until the owner extracts it.
 - "Your opponents control N or more lands" counts the lands of all the opponents together; the game has two players today, so the reading does not show.
 - Class cards: no effect other than the level bar changes the level, "when this Class becomes level N" triggers and "gain a Class level" are not read, and an ability's index in the derived list shifts with the level.
-- Battlefield cards cannot be much bigger at 1366x768: the field has six rows in about 420px. One shared row for lands and other permanents (four rows, cards about a third bigger) is not done.
-- A card with a long rules text still shows a vertical bar in the preview box beside the log's; shortening what the preview prints (the keyword reminders) would remove it.
+- Battlefield cards cannot be much bigger at 1366x768 (six rows in about 420px); one shared row for lands and other permanents is not done.
+- A long rules text still shows a vertical bar in the preview box; shortening the keyword reminders would remove it.
 - "You win the game" is not read: no effect makes a player win the game.
 - `loseGame` is not read with a delay or a condition inside its sentence.
-- The permanents of a player who loses in a game of more than two seats stay on the battlefield (CR 800.4a, as for a concession).
+- A player who leaves on their own turn stays the active seat until it ends (CR 800.4j: no active player); CR 800.4e to 800.4h (damage, costs, choices of a player who left) are not built.
 - `attackedPlayers` reads only the permanent of the ability (`this`).
 - Ascend: the city's blessing is checked with the state-based actions, so "create two tokens, then if you have the city's blessing ..." reads the answer from before the tokens (CR 702.131b says "any time").
 - Ascend on an instant or sorcery (CR 702.131a) is not built; a card with it is unsupported.
@@ -213,7 +213,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "For each opponent, destroy up to one target ...": tested with two seats; several opponents are covered only through the answer check.
 - "For each opponent, destroy up to one target ...": only "up to one" is read; "for each opponent, destroy target ... that player controls" and "up to two" are refused.
 - Miracle: the reveal question is asked only for a card that has miracle, so an observer learns that the first card drawn has miracle; harmless against the AI, a leak between two humans.
-- "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards ...": the empty cases follow CR 608.2d, not a published ruling; unverified against the card's rulings.
+- "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards ...": the empty cases follow CR 608.2d, unverified against rulings.
 - The same text: the choice among several opponents' graveyards has no scenario test (the scenario DSL has two seats); the code takes every opponent still in the game.
 - Two cards entering in one event: when the second asks a question as it enters ("as this enters, choose ...", devour, riot, a copy), its own "whenever another creature enters" misses the first.
 - Two cards entering in one event are still two objects created one after the other, with consecutive timestamps.
@@ -222,7 +222,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Meld: the Scryfall `all_parts` component names `meld_part` and `meld_result` are unverified against Scryfall; a relation that is incomplete, ambiguous or disagrees with "(Melds with X.)" makes the card unsupported.
 - Two commander cards melded together: not built. The meld ability does not start for such a pair and the permanents stay on the battlefield, a known deviation from CR 701.42; CR 903.9c is untested.
 - Meld with several same-named candidates ("a creature named Gisela" with two such creatures): the engine prefers a candidate that can meld, then the first it lists; it is not a player decision.
-- Meld: the order question of CR 712.21a and 712.21b is asked at the next state-based-action check, not at the move; a later instruction in the same resolution that reads the library top or graveyard sees the default order.
+- Meld: the order question (CR 712.21a-b) is asked at the next state-based-action check, not at the move; a later instruction in the same resolution that reads the library top or graveyard sees the default order.
 - Meld: a library shuffled so that the two cards are still adjacent is still asked the order question, and the answer then does nothing useful.
 - Meld: when a rule or a cost exiles the melded permanent, the controller of the permanent decides the order of its cards.
 - X spells under Brisela: the least X that passes is read when the spell is cast; a copy of a spell, a spell cast "without paying its mana cost" and an X chosen by another effect are not covered.
@@ -231,9 +231,9 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Meld: only Bruna and Gisela's end-step shape is a real card checked. Pairs using an activated ability, a land that taps, or "if you control ~ and a land named ~" stay unsupported.
 - "If ~ is paired" outside a static ability is not read: in any triggered ability, conditional instruction, activation restriction, replacement, spell or cost. It would need the last-known information of a pair.
 - "Each opponent may return it ... at the beginning of your next upkeep" (a player asked) is not read: the delayed ability would belong to the asked player.
-- A sentence that asks another player and has no "have you" is not read when a clause says opponent, opponents, another player or other players; they would be counted relative to the asked player, not the controller.
+- A sentence that asks another player, with no "have you", is not read when a clause says opponent(s), another player or other players: they would count relative to the asked player.
 - A delayed trigger created in a sentence that asks another player ("each opponent may draw a card at the beginning of the next turn's upkeep") is controlled by the player asked, not the controller (CR 603.7e).
-- A sentence that asks another player and has no "have you" is refused, with its "if they don't" sentence, when its text holds you, your, yours, yourself or a contraction of you, and always inside a quotation.
+- A sentence that asks another player, with no "have you", is refused with its "if they don't" sentence when its text holds you, your, yours, yourself or a contraction, and inside a quotation.
 - "Return it ... at the beginning of your next upkeep" is read only as the first instruction of a dies trigger of `~`; after a token, a Treasure or a discard it is refused.
 - Soulbond (CR 702.95e): whether a paired creature is still a creature is asked with the state-based actions; within one resolution, a creature that lost its types still gives and gets what the pair gives.
 - Soulbond and phasing (unverified reading): the pair survives one creature phasing out and gives nothing while one is phased out; CR 702.95e names no phasing, no ruling was checked, and CR 702.26f and 702.95a argue against.
@@ -285,7 +285,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The end of the game (CR 708.9): face-down permanents should be revealed; the web log does not list them.
 - "Face-down creature N" labels are shared across the table, so the numbers of one player's permanents may skip.
 - The Manifest token picture is looked up on Scryfall at run time; if the card moves there, two constants must change.
-- Turning face up: the agents do it by value only; neither plans to manifest and turn up as a combo, holds mana for a turn-up in the opponent's turn, or turns a creature up to save it.
+- Turning face up: the agents do it by value only; they plan no manifest-and-turn-up combo, hold no mana for the opponent's turn, and never turn a creature up to save it.
 - "Mill a card. You may play that card this turn." is read only for the controller's own mill; "target opponent mills a card. You may play that card" and "each player mills" are not lowered.
 - The copy rider of a mana ability names one color or none and card types: a creature type ("to cast a Dragon spell"), two colors ("a red or blue instant") and the commander are not read.
 - `mayCast` with `exileInstead`: with several permissions to cast a card from the graveyard, the rider applies only when all carry it; the engine does not ask which permission the player uses.
@@ -492,7 +492,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Forgotten Ancient: the AI never moves counters (it keeps them), and the question is asked after the trigger's own "you may".
 - Goad with three or more players is not tested (the test DSL has two seats).
 - Myriad does nothing with two players and is not built for a table.
-- Redoubled Stormsinger, General Kreat: the controller does not choose the player or planeswalker the tapped and attacking copies or token attack (CR 508.4 allows the choice).
+- Redoubled Stormsinger, General Kreat, Adeline, Mobilize: the controller does not choose the player or planeswalker the tapped and attacking tokens attack (CR 508.4).
 - `spellsCastThisTurn` counts the spells of the effect's controller only; "each player", "an opponent" and "other than the first" counts are not built.
 - Strive supports mana costs only, on an instant or sorcery face; the question "may this be cast at all?" assumes no target.
 - A copy "except it has <keyword>" works for keywords the engine implements as abilities; it is not combined with "except it is a <type>" or "except its power is" in one effect.
@@ -566,3 +566,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Target creature with mana value X" is read only in the target of a spell's own text. The web X dialog does not yet grey out the values `ChooseXDecision.values` leaves out; the engine refuses them.
 - "Half X, rounded up/down" is read only for the X of the spell itself (its cast trigger, its enters trigger), not for another amount.
 - "Whenever you cast your first instant or sorcery spell each turn" (`castSpell` `firstOfKind`) counts spells by card type only: "your first Dragon spell each turn" and a first spell by color or mana value are not read.
+- "Can't be blocked except by" is read for one creature type only; "its controller may ..." stays unread when the clause says "you" or "your".
+- Replicate given by Hatchery Sliver is not given to a spell with {X} in its mana cost.
+- Encore given to graveyard cards is skipped for a card with an Encore of its own.

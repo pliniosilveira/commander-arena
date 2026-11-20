@@ -32,6 +32,7 @@ import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
 import { lowerMayInstead, lowerSentences } from './sentences';
+import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type Triggered = Extract<IrAbility, { kind: 'triggered' }>;
@@ -1321,6 +1322,13 @@ function lowerTriggeredAbility(
   ctx.castTrigger = triggers.every((t) => t.kind === 'castSpell' && t.self !== true);
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" needs an activation among the events, or there is no ability to copy.
   ctx.activateTrigger = triggers.some((t) => t.kind === 'activatesAbility');
+  // Issue 133 (Diffusion Sliver): "counter that spell or ability unless its controller pays {2}": the triggers are all about becoming a target.
+  ctx.becomesTargetOf =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'becomesTarget')
+      ? triggers.every((t) => t.kind === 'becomesTarget' && t.spellOnly === true)
+        ? 'spell'
+        : 'both'
+      : null;
   // Quandrix Unlimited group E (CR 107.3): "put X +1/+1 counters" of "whenever you cast a spell with {X} in its mana cost" is the X of the spell that was cast.
   ctx.castTriggerX = triggers.every(
     (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
@@ -1375,6 +1383,15 @@ function lowerTriggeredAbility(
     const blocked = missingFeatures(['trigger:entersFromGraveyard']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers[0] = { ...only, fromGraveyard: true };
+  } else if (ifWritten?.test.kind === 'damageDealtByType') {
+    // "Whenever your opponents are dealt combat damage, if any of that damage was dealt by a Warrior, ..." (issue 101, Mindblade Render, CR 510.2, 603.4): the batch trigger
+    // counts the sources that match its filter, so "if any of that damage was dealt by a [type]" is the type in the filter of the sources, read as the damage is dealt.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'combatDamageBatch') return failure(ifWritten, []);
+    triggers[0] = {
+      ...only,
+      what: { ...only.what, subtypes: [...(only.what.subtypes ?? []), ifWritten.test.subtype] },
+    };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
@@ -1491,13 +1508,28 @@ function lowerTriggeredAbility(
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
+  ctx.selfEntersOrAttacksTrigger =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) =>
+        (t.kind === 'attacks' || t.kind === 'entersBattlefield') &&
+        'kind' in t.what &&
+        t.what.kind === 'this',
+    );
+  // Titan of Littjara: "shares a creature type with it" is read only where "it" is the card itself.
+  if (!ctx.selfEntersOrAttacksTrigger && usesSharesWithSource(written)) return failure(written);
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's
   // `triggerSubject`), and the binding pass cannot tell that from the permanent: not read.
   if (
     triggers.some((t) => t.kind === 'becomesTarget') &&
-    clauses.some((c) => nounsOfClause(c).some((n) => n.det === 'triggerSubject'))
+    clauses.some((c) =>
+      nounsOfClause(c).some(
+        // Issue 133: "that spell or ability" of `effect.counter-that-unless` is the spell or ability itself, which the lowering of that clause reads as `triggerSubject`.
+        (n) => n.det === 'triggerSubject' && n.rule !== 'effect.counter-that-unless',
+      ),
+    )
   ) {
     return failure(ability);
   }

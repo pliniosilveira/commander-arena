@@ -46,6 +46,9 @@ export function playerSubject(
     case 'defendingPlayer':
       // CR 508.5, 702.86a (Annihilator): "defending player sacrifices two permanents".
       return { text: 'the defending player', base: false };
+    case 'playerToYourRight':
+      // Hithlain Rope: the previous player in turn order.
+      return { text: 'the player to your right', base: false };
     case 'triggerPlayer':
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };

@@ -84,6 +84,31 @@ describe('a deck from the API', () => {
     );
   });
 
+  test('writes the printing of a card when the answer names it, and only a clean one', () => {
+    const at = (name: string, editioncode: unknown, collectorNumber: unknown) => ({
+      quantity: 1,
+      categories: ['Main'],
+      card: { oracleCard: { name }, edition: { editioncode }, collectorNumber },
+    });
+    const deck = deckFromApi(5, {
+      name: 'Printed',
+      cards: [
+        at('With Printing', 'FDC', '6'),
+        at('Star Number', 'sld', '1586'),
+        at('Bad Set', 'a b', '6'),
+        at('Bad Number', 'fdc', '6) @x'),
+        { quantity: 1, categories: ['Main'], card: { oracleCard: { name: 'No Printing' } } },
+      ],
+    });
+    if (typeof deck === 'string') throw new Error(deck);
+    expect(deck.text).toContain('1x With Printing (fdc) 6');
+    expect(deck.text).toContain('1x Star Number (sld) 1586');
+    expect(deck.text).toContain('1x Bad Set\n');
+    expect(deck.text).toContain('1x Bad Number\n');
+    expect(deck.text).toContain('1x No Printing');
+    expect(deck.text).not.toContain('@');
+  });
+
   test('says what is wrong with an answer it cannot use', () => {
     expect(deckFromApi(1, null)).toMatch(/not an object/);
     expect(deckFromApi(1, { cards: [] })).toMatch(/no name/);

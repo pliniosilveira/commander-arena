@@ -410,6 +410,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
+  'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
   // Stage P19: the header line of a modal spell, followed by two bullets.
@@ -548,6 +549,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
   'static.you-planeswalkers-creatures-hexproof': asIs,
+  'amount.attackers-of-affected': permanent(
+    (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
+  ),
   'amount.life-lost-this-turn': permanent(
     (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
   ),
@@ -563,6 +567,24 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Midnight Clock (issue 121): the Nth counter of a kind put on the permanent.
   'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
+  'trigger.attack-with-self-or-commander': whenever,
+  'effect.its-controller-may-pay-draw': permanent(
+    (e) => `Whenever a creature deals combat damage to a player, ${e}.`,
+  ),
+  'effect.exile-top-of-target-library': permanent((e) => `{T}: ${cap(e)}.`),
+  'effect.may-play-lands-cast-spells-free': permanent(
+    (e) => `{T}: Exile the top two cards of your library. ${cap(e)}.`,
+  ),
+  'effect.exile-top-equal-to-different-names': permanent((e) => `Whenever ~ attacks, ${e}.`),
+  'effect.may-play-during-commander-attack-turns': permanent(
+    (e) => `Whenever ~ attacks, exile the top two cards of your library. ${cap(e)}.`,
+  ),
+  'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
+  'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
+  'trigger.opponents-dealt-combat-damage': whenever,
+  'condition.damage-dealt-by-type': permanent(
+    (e) => `Whenever your opponents are dealt combat damage, if ${e}, you gain 1 life.`,
+  ),
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,
   'trigger.unblocked-opponent-attackers': whenever,
@@ -702,6 +724,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever ~ attacks, create ${e} attached to target creature. The token has enchant creature.`,
   ),
+  'condition.it-was-attacking': permanent(
+    (e) => `Whenever a creature you control dies, you gain 1 life if ${e}.`,
+  ),
   'condition.it-attacking-opponents': permanent(
     (e) => `Whenever enchanted creature attacks, it gets +2/+0 until end of turn if ${e}.`,
   ),
@@ -826,6 +851,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
+  'static.each-spell-you-cast-has-replicate': asIs,
+  'static.legend-rule-doesnt-apply': asIs,
+  'static.groups-are-the-chosen-type': asIs,
+  'static.graveyard-cards-have-encore': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.graveyard-cards-have-flashback': asIs,
@@ -925,6 +954,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
+  'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.enchanted-player-attacked': whenever,
