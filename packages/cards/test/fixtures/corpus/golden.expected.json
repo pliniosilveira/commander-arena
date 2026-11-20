@@ -1,5 +1,5 @@
 {
-  "parserVersion": 176,
+  "parserVersion": 177,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -4780,35 +4780,10 @@
     "76dfa5c2-1ea6-4f89-9903-26998636845e": {
       "name": "Hithlain Rope",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~ can't be sacrificed.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.self"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{1}, {T}: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. The player to your right gains control of ~.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{2}, {T}: Draw a card. The player to your right gains control of ~.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b5a02da7"
+      "ast": "c45a13d9"
     },
     "77216636-f76d-4c5e-b1ac-ab1844753f05": {
       "name": "Excava, the Risen Past",
@@ -10084,7 +10059,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 942,
+      "supported": 943,
       "total": 962
     }
   }
