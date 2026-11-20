@@ -76,3 +76,34 @@ describe('Blackblade Reforged', () => {
     g.expect.invariants();
   });
 });
+
+// Champion's Helm: "As long as equipped creature is legendary, it has hexproof." (CR 611.3a, 205.4, 702.11)
+const HELM = real("Champion's Helm");
+const helmGame = (creature: string) =>
+  scenario()
+    .define(HELM)
+    .define(HERO)
+    .define(PLAIN)
+    .seat(0)
+    .battlefield(HELM.name, { attachedTo: creature })
+    .battlefield(HERO.name)
+    .battlefield(PLAIN.name)
+    .seat(1)
+    .library('Forest')
+    .build();
+
+describe("Champion's Helm", () => {
+  test('a legendary equipped creature gets +2/+2 and hexproof', () => {
+    const g = helmGame(HERO.name);
+    g.expect.pt(HERO.name, 3, 3);
+    g.expect.derived(HERO.name, { keywords: ['hexproof'] });
+    g.expect.invariants();
+  });
+
+  test('a creature that is not legendary gets +2/+2 and no hexproof', () => {
+    const g = helmGame(PLAIN.name);
+    g.expect.pt(PLAIN.name, 3, 3);
+    g.expect.derived(PLAIN.name, { keywords: [] });
+    g.expect.invariants();
+  });
+});

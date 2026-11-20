@@ -10,6 +10,8 @@ import { BOUNDARY } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 
 const COLORS = 'white|blue|black|red|green';
+// Issue 345 (Champion's Helm, CR 205.4): the supertype word the same condition reads.
+const QUALITIES = `${COLORS}|legendary`;
 
 function condition(
   rule: string,
@@ -47,6 +49,8 @@ export const CONDITION_HOST_IS_COLOR = defineRule<IrCondition>({
     'enchanted creature is white',
     'equipped creature is red',
     'Enchanted creature is blue',
+    // Issue 345 (Champion's Helm, CR 205.4): the host is legendary.
+    'equipped creature is legendary',
   ],
   rejects: [
     'enchanted creature is green.',
@@ -65,7 +69,7 @@ export const CONDITION_HOST_IS_COLOR = defineRule<IrCondition>({
     const r = spanned(
       pattern(
         new RegExp(
-          `(enchanted|equipped) creature is (${COLORS})${BOUNDARY}(?! (?:or|and) (?:${COLORS})${BOUNDARY})`,
+          `(enchanted|equipped) creature is (${QUALITIES})${BOUNDARY}(?! (?:or|and) (?:${QUALITIES})${BOUNDARY})`,
           'iu',
         ),
       ),
@@ -78,7 +82,10 @@ export const CONDITION_HOST_IS_COLOR = defineRule<IrCondition>({
       ok: true,
       value: condition('condition.host-is-color', pos, r.pos, {
         kind: 'attachedTo',
-        filter: { types: ['creature'], colors: [color], raw: `${via} creature is ${color}` },
+        filter:
+          color === 'legendary'
+            ? { types: ['creature'], supertypes: ['legendary'], raw: `${via} creature is ${color}` }
+            : { types: ['creature'], colors: [color], raw: `${via} creature is ${color}` },
         via,
       }),
       pos: r.pos,
