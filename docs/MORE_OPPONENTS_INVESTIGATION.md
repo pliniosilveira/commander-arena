@@ -96,6 +96,21 @@ The crash seeds of the random run were not examined. A game is reproduced from i
 - A player who loses is not removed from the game: their permanents stay on the battlefield, and objects they control were seen on the stack. The next turn does skip a seat that has lost (`seatsInOrder`), so the lost seat seen as the active seat is a player who lost during their own turn. CR 800.4j says that turn goes on to its end without an active player and that the next player in turn order receives the priority the active player would have had; the engine keeps the seat as the active one, which is a difference to check, not yet a known defect. A lost seat that was asked for a decision is also unexplained. The crash is traced to the same gap (above). The turn caps of the random run are not explained.
 - With the random agent the first losses appeared late (turn 41 to 94), so it exercises the leaving-the-game paths little; the casual agent does it earlier (turn 19 to 56).
 
+## Rerun after leaving the game (step 2)
+
+Step 1 (#371) put the probe in the repository and step 2 (#377, CR 800.4a) made a player who loses leave a game that goes on. The three runs were played again with `node tools/ai/multiplayer-probe.ts --players 3|4 --games 10 --agent random|casual|heuristic --precons`, seed 1, 100 turns and 8000 actions as limits.
+
+| Agent, seats | Games ending with a winner | Engine crash | Rejected actions | Average final turn |
+| --- | --- | --- | --- | --- |
+| random, 3 | 9 of 10 (seed 8 at the turn cap) | 0 | 0 | 68 |
+| random, 4 | 7 of 10 (seeds 1, 7, 9 at the turn cap) | 0 | 0 | 89 |
+| casual, 3 | 10 of 10 | 0 | 0 | 30 |
+| casual, 4 | 10 of 10 | 0 | 0 | 46 |
+| heuristic, 3 | 10 of 10 | 0 | 0 | 28 |
+| heuristic, 4 | 10 of 10 | 0 | 0 | 44 |
+
+In all six runs no permanent stayed under a player who had lost, no seat that had lost was asked for a decision and no stack object was controlled by one. The crash is gone (9 of 60 games before, 0 now) and so are the rejected actions, which were probably a result of the broken state. The lost seat as the active seat still appears (random 30 and 42 decisions with 3 and 4 seats, heuristic 24 with 4 seats): a player who leaves on their own turn stays the active seat until it ends and is asked nothing, the smaller option of point 3 of #336. The four games at the turn cap are all with the random agent; seed 8 with 3 seats is new, and none of the four was examined.
+
 ## Limits of this probe
 
 - All three agents were run at 10 games per seat count, which is a small sample: the crash rates (1 to 3 of 10) are not comparable between agents. Decision time was not measured.
