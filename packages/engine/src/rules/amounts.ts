@@ -332,6 +332,8 @@ export function amountOf(
   if (amount.kind === 'triggerCycleX') return ctx.triggerDamage ?? 0;
   // CR 508.1 (issue 81, The Ur-Sphinx): the creatures of the declaration that matched the batch trigger, carried as the number of its event.
   if (amount.kind === 'triggerAttackerCount') return ctx.triggerDamage ?? 0;
+  // CR 603.2c (Malcolm): the opponents the batch's sources dealt damage to, carried as the number of its event.
+  if (amount.kind === 'triggerDamagedPlayerCount') return ctx.triggerDamage ?? 0;
   // CR 205.2a, 603.2c: "for each card type among those cards": the types of the cards of the batch that caused the trigger, each once, as they are or as they last were.
   if (amount.kind === 'cardTypesAmongTriggerCards') {
     const seen = new Set<string>();

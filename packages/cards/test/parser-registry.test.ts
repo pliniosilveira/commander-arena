@@ -392,6 +392,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-spell-cast': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-opponent-dealt-damage': permanent(
+    (e) =>
+      `Whenever one or more Pirates you control deal damage to your opponents, you create a Treasure token ${e}.`,
+  ),
   'amount.for-each-spell-color': permanent(
     (e) => `Whenever you cast a spell, you gain 1 life ${e}.`,
   ),
@@ -488,6 +492,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
   'trigger.combat-damage-batch': whenever,
+  'trigger.damage-batch': whenever,
   'trigger.tapped-for-mana': whenever,
   'trigger.taps-for-mana': whenever,
   'trigger.state': whenever,

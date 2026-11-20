@@ -131,6 +131,7 @@ describe('amounts that read an object', () => {
       // Issue 81 (Shark Typhoon): the X of the cycling cost, in "when you cycle this card".
       'triggerCycleX',
       'triggerAttackerCount',
+      'triggerDamagedPlayerCount',
       // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
       'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).

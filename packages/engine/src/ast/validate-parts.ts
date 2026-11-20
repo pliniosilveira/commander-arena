@@ -152,6 +152,8 @@ export interface Scope {
   readonly triggerCycleX?: boolean;
   /** True in the effect of an `attackBatch` trigger: `triggerAttackerCount` reads the creatures of the declaration that matched (issue 81, The Ur-Sphinx). */
   readonly triggerAttackerCount?: boolean;
+  /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayerCount` reads the opponents dealt damage (CR 603.2c). */
+  readonly triggerDamagedPlayerCount?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -822,6 +824,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerSpellX',
   'triggerCycleX',
   'triggerAttackerCount',
+  'triggerDamagedPlayerCount',
   'cardTypesAmongTriggerCards',
   'dieResult',
   'votesFor',
@@ -2362,6 +2365,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           "'triggerAttackerCount' needs a triggered ability whose trigger is a batch of attackers",
+        );
+      }
+      break;
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: the opponents the sources of the batch dealt damage to.
+      if (scope.triggerDamagedPlayerCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerDamagedPlayerCount' needs a triggered ability whose trigger is damage dealt to your opponents by a group of sources",
         );
       }
       break;

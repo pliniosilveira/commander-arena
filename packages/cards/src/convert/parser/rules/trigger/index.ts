@@ -33,6 +33,7 @@ import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
@@ -1294,5 +1295,7 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
   ...TROYAN2_TRIGGER_RULES,
+  // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
+  ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

@@ -255,6 +255,11 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardTypesAmongTriggerCards' }, rule };
     }
+    case 'triggerDamagedPlayerCount': {
+      const blocked = needs('triggerDamagedPlayerCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'triggerDamagedPlayerCount' }, rule };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -1029,6 +1034,7 @@ export const AMOUNT_NEEDS = [
   'amount:triggerDamage',
   'amount:triggerTargetCount',
   'amount:triggerAttackerCount',
+  'amount:triggerDamagedPlayerCount',
   'amount:cardTypesAmongTriggerCards',
   'amount:triggerSpellX',
   'amount:votesFor',

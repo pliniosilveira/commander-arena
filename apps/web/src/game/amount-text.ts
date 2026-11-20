@@ -366,6 +366,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: "for each opponent dealt damage" of a batch damage trigger.
+      return 'the number of opponents dealt damage';
     case 'shortfall':
       // D-151 (CR 701.57): "the difference" between the limit and the mana value of the card found.
       return `the difference between ${amount.limit} and ${shortfallOf(amount.of)} mana value`;

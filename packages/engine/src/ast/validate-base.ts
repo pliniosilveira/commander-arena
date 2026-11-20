@@ -69,6 +69,9 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'upkeep':
     case 'endStep':
       return true;
+    case 'damageBatch':
+      // CR 603.2c: each player damaged is "that player"; one trigger for several opponents has none.
+      return t.to === 'player';
     case 'dealsCombatDamage':
       // D-373: a planeswalker that is damaged is not a player, so "that player" would have no meaning.
       return t.to !== 'creature' && t.to !== 'playerOrPlaneswalker';

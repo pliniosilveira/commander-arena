@@ -141,6 +141,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- "Pirates you control deal damage to a player" fires once per player damaged; the official ruling for that wording is unverified. A spell's damage to several players is one run of events.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
 - `nextSpellPayLife`: hand, command zone only.

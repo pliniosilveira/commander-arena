@@ -77,6 +77,8 @@ export const FOR_EACH_AMOUNTS = [
   // Issue 145 (Aetherflux Reservoir): the spells the controller has cast this turn.
   'amount.for-each-spell-cast',
   'amount.for-each-spell-color',
+  // Ahoy Mateys deck, group 1 (Malcolm): the opponents a group of sources dealt damage to in one event.
+  'amount.for-each-opponent-dealt-damage',
   // Lock and Load (issue 121): the other instants and sorceries the controller has cast this turn.
   'amount.for-each-other-spell-cast',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.
