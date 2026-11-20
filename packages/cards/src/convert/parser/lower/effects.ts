@@ -168,7 +168,13 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
   if (verb !== 'tap' && verb !== 'untap' && verb !== 'exile') return null;
   const objects = operand(clause, 'objects');
   if (objects === undefined) return null;
-  return itemsOf(objects).some((item) => item.ref !== undefined && ctx.removed.has(item.ref))
+  // CR 400.7: the target an earlier instruction put onto the battlefield is "it" as the new object (`moved`), which "exile it" can name (Puppeteer Clique).
+  return itemsOf(objects).some(
+    (item) =>
+      item.ref !== undefined &&
+      ctx.removed.has(item.ref) &&
+      !(verb === 'exile' && ctx.movedOnto === item.ref),
+  )
     ? failure(clause)
     : null;
 }
@@ -258,7 +264,7 @@ function simple(
         // D-178: "untap that land" and "tap it" after a search name the card it found (the engine's `moved`).
         verb === 'exile'
           ? // D-206: "you may exile that card from your graveyard" names the card a discard trigger is about.
-            { thisCard: true, triggerSubject: true }
+            { thisCard: true, triggerSubject: true, moved: true }
           : verb === 'tap' || verb === 'untap'
             ? { moved: true }
             : {},

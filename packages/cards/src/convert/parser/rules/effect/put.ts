@@ -182,6 +182,8 @@ export const EFFECT_PUT_BATTLEFIELD = defineRule<Clauses>({
     'put target creature card from your graveyard onto the battlefield',
     'put target creature card from a graveyard onto the battlefield tapped under your control',
     "put target creature card from an opponent's graveyard onto the battlefield under your control",
+    // Aberrant Return (CR 115.1, 601.2c): one, two or three cards of any graveyards.
+    'put one, two, or three target creature cards from graveyards onto the battlefield under your control',
     "put target creature card from a graveyard onto the battlefield under its owner's control",
     'put all creature cards from your graveyard onto the battlefield',
   ],

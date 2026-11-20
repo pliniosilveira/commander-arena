@@ -142,6 +142,16 @@ function targetOf(
         plural: true,
       }),
   );
+  // "one, two, or three target creature cards" (Aberrant Return, CR 115.1, 601.2c): at least one target and at most three.
+  const oneToThree: Parser<Bare> = map(
+    sequence(spanned(literal('one, two, or three')), literal(' target '), targetPhrase(true)),
+    ([count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: 3, span: count.span },
+        minTargets: 1,
+        plural: true,
+      }),
+  );
   const upTo: Parser<Bare> = (ctx, pos) => {
     const head = sequence(
       literal('up to '),
@@ -199,6 +209,7 @@ function targetOf(
       ...(allowX ? [xTargets] : []),
       eachOf,
       oneOrTwo,
+      oneToThree,
       upToOneOther,
       upTo,
       upToThatMany,
@@ -356,8 +367,19 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Junji, the Midnight Sky (CR 205.3d): a creature card that has no Dragon type.
     'target non-Dragon creature card from a graveyard',
     "target non-Zombie creature card from an opponent's graveyard",
+    // Persist (CR 205.4): a creature card that is not legendary.
+    'target nonlegendary creature card from your graveyard',
+    // Aberrant Return (CR 115.1, 601.2c): at least one and at most three, from any graveyards.
+    'one, two, or three target creature cards from graveyards',
+    'one, two, or three target creature cards from your graveyard',
   ],
   rejects: [
+    'one, two, or three target creature card from graveyards',
+    'one, two, three target creature cards from graveyards',
+    'one, two, or four target creature cards from graveyards',
+    'target nonlegendary nonlegendary creature card from your graveyard',
+    'target nonlegendary creature or planeswalker card from your graveyard',
+    'target nonlegendary Dragon creature card or Ugin planeswalker card from your graveyard',
     'target creature',
     'target card',
     'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
