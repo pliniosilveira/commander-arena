@@ -1806,10 +1806,17 @@ describe('costs that tap or sacrifice other permanents (CR 118.3, 302.6, 701.21)
       ],
       effect: { kind: 'createToken', count: { kind: 'powerOf', of: { kind: 'sacrificedCost' } } },
     });
-    // Only "where X is ..." names it (the older "equal to its power" rules read no sacrificed creature).
-    expect(
-      drop("{1}, Sacrifice a creature: You gain life equal to the sacrificed creature's power."),
-    ).toMatchObject({ stoppedAt: "equal to the sacrificed creature's power." });
+    // "Equal to the sacrificed creature's power" names it too (the amount reads the sacrificed cost).
+    const [drain] = abilities(
+      "{1}, Sacrifice a creature: You gain life equal to the sacrificed creature's power.",
+    );
+    expect(drain).toMatchObject({
+      cost: [
+        { kind: 'mana', symbols: ['1'] },
+        { kind: 'sacrifice', what: { types: ['creature'] } },
+      ],
+      effect: { kind: 'gainLife', amount: { kind: 'powerOf', of: { kind: 'sacrificedCost' } } },
+    });
   });
 
   test.each([
