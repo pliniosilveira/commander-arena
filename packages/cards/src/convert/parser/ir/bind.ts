@@ -79,6 +79,11 @@ interface Antecedent {
   readonly previousLine?: true;
   /** The token one instruction made (stage P48, D-205): only "that token" may mean it, never "it" or "that creature". */
   readonly token?: true;
+  /**
+   * Several tokens one instruction made (Assemble the Entmoot, "Create three tapped X/X green Treefolk creature tokens ... Put a reach counter on each of them", CR 111.2, 608.2c):
+   * only "each of them" may mean them, never "them" alone, "it" or "that token".
+   */
+  readonly tokens?: true;
   /** The source of "~ deals damage equal to its power" (stage P49, D-206): only "it" and "its" may mean it, never "that creature". */
   readonly selfIt?: true;
   /**
@@ -118,7 +123,7 @@ function isPlayerNoun(noun: IrNoun): boolean {
 
 type Pronoun =
   | { readonly kind: 'player' }
-  | { readonly kind: 'plural' }
+  | { readonly kind: 'plural'; readonly each?: true }
   | { readonly kind: 'other' }
   | { readonly kind: 'single'; readonly type: string | null; readonly youControl?: true };
 
@@ -132,6 +137,7 @@ function classify(raw: string): Pronoun | null {
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
+  if (word === 'each of them') return { kind: 'plural', each: true };
   if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
@@ -306,6 +312,7 @@ class Binder {
         found = recent.find(
           (a) =>
             a.kind === 'object' &&
+            (a.tokens !== true || pronoun.each === true) &&
             (a.noun.plural || (a.noun.det === 'each' && /^those /iu.test(noun.filter.raw.trim()))),
         );
         break;
@@ -499,9 +506,29 @@ class Binder {
         // copy is the token "that token" follows, as any other token of one ("Create a token that's a copy of target creature you control. That token gains haste until end of turn.").
         const copyOf = arg.copyOf === undefined ? undefined : this.noun(arg.copyOf);
         const made = count.kind === 'number' && count.value === 1;
-        if (made) this.tokenCount += 1;
-        const ref = made ? `tk${this.tokenCount}` : undefined;
-        if (ref !== undefined) {
+        // Several tokens: a number above one, or a count read as the effect resolves (X, "a number of"); "each of them" of the sentence after is all of them.
+        const several = !made && !(count.kind === 'number' && count.value < 1);
+        if (made || several) this.tokenCount += 1;
+        const ref = made || several ? `tk${this.tokenCount}` : undefined;
+        if (ref !== undefined && several && arg.copyOf === undefined) {
+          this.antecedents.push({
+            kind: 'object',
+            token: true,
+            tokens: true,
+            noun: {
+              kind: 'noun',
+              det: 'a',
+              filter: { raw: 'tokens' },
+              upTo: false,
+              plural: true,
+              other: false,
+              span: arg.span,
+              rule: arg.rule,
+              ref,
+            },
+          });
+        }
+        if (made && ref !== undefined) {
           // "Create a 2/2 red Dwarf creature token, then attach ~ to it" / "That token gains haste": the token is what "that token" follows.
           this.antecedents.push({
             kind: 'object',
