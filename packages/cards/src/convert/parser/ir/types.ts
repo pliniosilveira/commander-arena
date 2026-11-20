@@ -321,6 +321,11 @@ export interface IrFilter {
    */
   readonly sharesCreatureTypeWithIt?: true;
   /**
+   * "a permanent of their choice that shares a card type with it" (Braids, CR 205.2a, 701.21a, 113.7a): the permanent has a card type the permanent an earlier sacrifice of the same
+   * text sacrificed had, as it last was. Read in the filter of a sacrifice only; the engine's `sharesCardTypeWith: 'sacrificed'`.
+   */
+  readonly sharesCardTypeWithSacrificed?: true;
+  /**
    * "up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found share a land type among them, which is a condition on the whole
    * choice and not on a card. A filter that still has it is not lowered; the search lowering takes it off (the engine's `search.sharedLandType`).
    */

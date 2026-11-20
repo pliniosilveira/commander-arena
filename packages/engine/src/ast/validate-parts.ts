@@ -587,8 +587,22 @@ export function checkFilter(
     }
   }
   // CR 205.2a, 603.3d: "that shares a card type with it" names the spell a cast trigger is about.
-  if (f.sharesCardTypeWith !== undefined && f.sharesCardTypeWith !== 'triggerSubject') {
-    issue(out, `${path}.sharesCardTypeWith`, "sharesCardTypeWith is 'triggerSubject'");
+  if (
+    f.sharesCardTypeWith !== undefined &&
+    f.sharesCardTypeWith !== 'triggerSubject' &&
+    f.sharesCardTypeWith !== 'sacrificed'
+  ) {
+    issue(
+      out,
+      `${path}.sharesCardTypeWith`,
+      "sharesCardTypeWith is 'triggerSubject' or 'sacrificed'",
+    );
+  } else if (f.sharesCardTypeWith === 'sacrificed' && where.afterSacrifice !== true) {
+    issue(
+      out,
+      `${path}.sharesCardTypeWith`,
+      "sharesCardTypeWith 'sacrificed' is read in the filter of a sacrifice that follows another sacrifice (or the offer of one) in the same sequence",
+    );
   }
   if (f.manaValueAtMost !== undefined && f.manaValueBelow !== undefined) {
     issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
@@ -609,6 +623,7 @@ export function checkFilter(
       checkFilter(member, p, out, undefined, sharesWith, {
         onStack: f.zone === 'stack' || f.stackKind !== undefined || where.onStack === true,
         ...(where.inTargets === true ? { inTargets: true } : {}),
+        ...(where.afterSacrifice === true ? { afterSacrifice: true } : {}),
       });
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
@@ -632,6 +647,8 @@ interface FilterWhere {
   readonly inTargets?: boolean;
   /** CR 107.3a, 202.3: the filter of a target slot of a spell with an {X} in its text: "target creature with mana value X" reads the X announced (D2 group). */
   readonly xTarget?: boolean;
+  /** CR 701.21a (Braids): the filter of a `sacrifice` choice that follows a sacrifice of the same resolution, so `sharesCardTypeWith: 'sacrificed'` has a permanent to read. */
+  readonly afterSacrifice?: boolean;
 }
 
 /** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
@@ -3279,7 +3296,9 @@ function checkSacrificeSelector(
     return;
   }
   const choose = sel as ChooseSelector;
-  checkFilter(choose.filter, `${path}.filter`, out);
+  checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
+    ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
+  });
   // CR 701.21a: a player can only sacrifice their own permanents, so the filter may not name others.
   if (filterSome(choose.filter, (f) => f.controller === 'opponent')) {
     issue(out, `${path}.filter.controller`, 'a player can only sacrifice permanents they control');

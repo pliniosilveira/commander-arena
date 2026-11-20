@@ -1035,13 +1035,14 @@ function lowerMay(
   sentences: readonly IrSentence[],
   i: number,
   ctx: LowerContext,
-): LowerResult<Effects> | null {
+): (LowerResult<Effects> & { readonly last?: number }) | null {
   const next = sentences[i + 1];
   // Death Toll deck, group D (CR 608.2c, 701.8): "you may destroy another target creature. If a creature is destroyed this way, ...": the sentence after the offer runs when
   // the destroy really destroyed a permanent.
   const destroyed = next?.condition?.test.kind === 'destroyedThisWay';
   const follows =
     next?.condition?.test.kind === 'didPrevious' || next?.reflexive === true || destroyed;
+  // The sentence after the offer may ask the players itself ("If you do, each opponent may ..."): `lowerPlayersMay` reads it.
   if (next === undefined || !follows) return null;
   if (
     !sentence.clauses.every((c) => c.optional) ||
@@ -1112,6 +1113,26 @@ function lowerMay(
     return refuse(sentence);
   }
   const may: Effect = chooseAny ? only : { kind: 'may', effect: only };
+  if (!reflexive && next.mayBy !== undefined) {
+    // "You may sacrifice a creature. If you do, each opponent may sacrifice a permanent of their choice that shares a card type with it. For each opponent who doesn't, ..." (Meren deck,
+    // Braids; CR 608.2c, 608.2d, 101.4): the sentence after the offer asks the players, in turn order, and what is done for those who decline is the sentence after that.
+    const asking = lowerPlayersMay(next, sentences, i + 1, ctx, true);
+    if (asking === null) return refuse(next);
+    if (!asking.result.ok) return asking.result;
+    return {
+      ok: true,
+      value: [
+        may,
+        {
+          kind: 'conditional',
+          condition: { kind: 'didPrevious' },
+          effect: oneEffect(asking.result.value),
+        },
+      ],
+      rule: sentence.clauses[0]?.rule ?? sentence.rule,
+      last: asking.last,
+    };
+  }
   if (!reflexive) {
     // "Tap X untapped Myr you control. If you do, ~ gets +X/+0 ...": X is the number tapped (the engine's `thisWay` `tapped`).
     const tapX = sentence.clauses.some(
@@ -2022,7 +2043,7 @@ function lowerStep(
   if (asked !== null) {
     if (!asked.ok) return stop(asked);
     steps.push({ effects: asked.value, replaceable: false });
-    return { last: i + 1 };
+    return { last: asked.last ?? i + 1 };
   }
   // "You may shuffle." (stage P63, D-216, CR 608.2d): an offer nothing follows, so nothing asks whether it was done.
   const lone = lowerLoneMay(sentence, ctx);
@@ -2206,6 +2227,8 @@ function lowerPlayersMay(
   sentences: readonly IrSentence[],
   i: number,
   ctx: LowerContext,
+  /** The sentence starts with "If you do," after an offer (`lowerMay`, Braids): that condition is the offer's, and the effect is wrapped by the caller. */
+  afterOffer = false,
 ): { readonly result: LowerResult<Effects>; readonly last: number } | null {
   const by = sentence.mayBy;
   if (by === undefined) return null;
@@ -2213,7 +2236,9 @@ function lowerPlayersMay(
   const blocked = missingFeatures(['effect:playersMay']);
   if (blocked.length > 0) return refused({ ...refuse(sentence), needs: blocked });
   if (
-    sentence.condition !== undefined ||
+    (afterOffer
+      ? sentence.condition?.test.kind !== 'didPrevious'
+      : sentence.condition !== undefined) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -2228,12 +2253,18 @@ function lowerPlayersMay(
   const askedActs = !by.haveYou;
   // A word of the text that says "you" or "your" is the controller (CR 608.2d), which the engine would run as the asked player: the sentence, and the "if they don't" sentence
   // that follows it, are not read then, whatever clause or amount says it. Without the text of the ability (a quotation lowered on its own) it cannot be told, so it is refused.
+  // Braids: the sentence "For each opponent who doesn't, ..." is run by the engine as the controller, with "that player" the opponent who declined (`playerMay`, `declinedBy`), so
+  // its "you" is the controller's and it is read; after an offer ("If you do, each opponent may ...") the words before the clauses are the offer's own condition, not the asked
+  // player's instruction.
   if (askedActs) {
     const next = sentences[i + 1];
+    const declinedAfter =
+      next?.condition?.test.kind === 'declined' &&
+      next.condition.rule !== 'condition.each-opponent-declines';
     const spans = [
-      sentence,
+      ...(afterOffer ? [] : [sentence]),
       ...sentence.clauses,
-      ...(next?.condition?.test.kind === 'declined' ? [next, ...next.clauses] : []),
+      ...(declinedAfter && next !== undefined ? [next, ...next.clauses] : []),
     ];
     const start = Math.min(...spans.map((n) => n.span.start));
     const end = Math.max(...spans.map((n) => n.span.end));
@@ -2255,6 +2286,14 @@ function lowerPlayersMay(
   const next = sentences[i + 1];
   const declines = next?.condition?.test.kind === 'declined';
   let otherwise: Effect | undefined;
+  // "For each opponent who doesn't" (Braids) says something only about a sentence that asked each opponent: for the players of any other sentence it would also run for a player who is no opponent.
+  if (
+    declines &&
+    next?.condition?.rule === 'condition.each-opponent-declines' &&
+    players.value.kind !== 'eachOpponent'
+  ) {
+    return refused(refuse(next));
+  }
   if (declines && next !== undefined) {
     if (
       next.instead === true ||

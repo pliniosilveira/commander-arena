@@ -310,7 +310,13 @@ export function matchesFilter(
       ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
       : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
-    ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
+    // CR 205.2a, 701.21a (Braids): "shares a card type with it" after a sacrifice reads the permanent sacrificed first in this resolution, as it last was.
+    ...(readsSharedType(filter)
+      ? subjectSubtypesOf(
+          state,
+          readsSacrificedType(filter) ? ctx.sacrificed?.[0] : ctx.triggerSubject,
+        )
+      : {}),
   };
   return matchesFilterWith(state, obj, () => describeObject(state, obj), filter, reading);
 }
@@ -346,6 +352,11 @@ function readsSharedType(f: ObjectFilter): boolean {
     f.sharesCardTypeWith !== undefined ||
     (f.anyOf?.some(readsSharedType) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, asks for a card type shared with the permanent an earlier sacrifice sacrificed (Braids). */
+function readsSacrificedType(f: ObjectFilter): boolean {
+  return f.sharesCardTypeWith === 'sacrificed' || (f.anyOf?.some(readsSacrificedType) ?? false);
 }
 
 /** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */

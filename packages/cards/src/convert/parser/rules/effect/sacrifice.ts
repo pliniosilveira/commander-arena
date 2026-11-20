@@ -32,6 +32,7 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
     'sacrifice any number of creatures',
     'sacrifice one or more Treasures',
     'sacrifice one or more other creatures',
+    'sacrifice a permanent of their choice that shares a card type with it',
   ],
   rejects: [
     'sacrifice target creature',
@@ -51,6 +52,7 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
       family<IrNoun>('noun', {
         only: [
           'noun.self',
+          'noun.a-permanent-sharing-type',
           'noun.a-permanent',
           'noun.any-number-permanents',
           'noun.one-or-more-permanents',

@@ -27,6 +27,7 @@ import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
 import { SYNTHETIC_BLOCK_POWER_LIST } from './synthetic-block-power';
 import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
+import { SYNTHETIC_BRAIDS_LIST } from './synthetic-braids';
 import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
@@ -522,6 +523,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PLATE_LIST,
   ...SYNTHETIC_ABILITY_COSTS_LIST,
   ...SYNTHETIC_BATCH_LIST,
+  ...SYNTHETIC_BRAIDS_LIST,
   ...SYNTHETIC_RESELECT_LIST,
   ...SYNTHETIC_CHOOSE_ONE_LIST,
   ...SYNTHETIC_TAP_CHOICE_LIST,
