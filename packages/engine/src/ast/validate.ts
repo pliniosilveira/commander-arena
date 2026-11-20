@@ -824,11 +824,15 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
             'firstOfKind names at least one card type, or one it must not have',
           );
       }
-      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
+      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent' && t.duringTurn !== 'you') {
         issue(out, `${path}.duringTurn`, 'unknown active player condition');
       }
-      if (t.duringTurn !== undefined && (t.nth !== 1 || t.by !== 'you')) {
+      // "your first spell during each opponent's turn" (D-565) is a first spell of the controller; "during your turn" is for any cast trigger.
+      if (t.duringTurn === 'opponent' && (t.nth !== 1 || t.by !== 'you')) {
         issue(out, `${path}.duringTurn`, 'opponent-turn first-spell trigger must be you and nth 1');
+      }
+      if (t.duringTurn !== undefined && t.self !== undefined) {
+        issue(out, `${path}.duringTurn`, 'a self cast trigger has no turn condition');
       }
       break;
     case 'landfall':

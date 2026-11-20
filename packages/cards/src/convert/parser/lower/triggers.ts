@@ -650,6 +650,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         if (missing.length > 0) return failure(t, missing);
         return ok({ kind: 'castSpell', filter: filter.value, by, firstOfKind: true });
       }
+      // "Whenever an opponent casts a spell during your turn" (CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const missing = missingFeatures(['trigger:castDuringYourTurn']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({ kind: 'castSpell', filter: filter.value, by, duringTurn: 'you' });
+      }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
     case 'leftGraveyard': {

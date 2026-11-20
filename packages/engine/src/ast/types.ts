@@ -4095,8 +4095,11 @@ export type Trigger =
        * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
        */
       readonly firstOfKind?: true;
-      /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
-      readonly duringTurn?: 'opponent';
+      /**
+       * Whose turn the spell is cast in, relative to the controller of this ability (CR 603.2: the ability triggers only for an event that fits its words): `opponent` for "during
+       * each opponent's turn", only while the active player is an opponent; `you` for "an opponent casts a spell during your turn", only while the active player is the controller.
+       */
+      readonly duringTurn?: 'you' | 'opponent';
       /**
        * "When you cast this spell" (CR 702.85a Cascade, 603.2, D-120): the ability of a spell that works while
        * the spell is on the stack and triggers only for that very spell (so `by` is 'you' and the filter is
