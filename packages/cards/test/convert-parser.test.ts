@@ -1126,6 +1126,8 @@ describe('unmatched abilities', () => {
       'noun.auras-equipment-modified',
       'noun.all-permanents',
       'noun.each-permanent-that-is',
+      'noun.each-creature-that-is-subtype-or-subtype',
+      'noun.each-creature-you-control-but-dont-own',
       'noun.each-type-union',
       'noun.each-other-attacking-opponent',
       'noun.each-permanent',
