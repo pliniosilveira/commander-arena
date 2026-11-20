@@ -755,6 +755,11 @@ export interface StaticEffects {
   readonly restrictions: readonly Restriction[];
   /** The players that goad this permanent (issue 201, CR 701.15): the controllers of the permanents whose `goaded` static ability applies to it. */
   readonly goadedBy: readonly SeatId[];
+  /**
+   * The other permanents with a static ability that applies to this one now (CR 604.1, 611.3a), in the order they first applied: the lord that
+   * gives it +1/+1, the permanent that gives it an ability or a restriction. For the view, which says where what a permanent has comes from.
+   */
+  readonly affectedBy: readonly ObjectId[];
   /** Permanents on the battlefield attached to this one. */
   readonly attachments: readonly ObjectId[];
   /** The permanent this one is attached to, when it is still on the battlefield. */
@@ -850,6 +855,7 @@ function otherZoneEffects(grants: readonly StaticGrant[]): StaticEffects {
     blockLimits: [],
     restrictions: [],
     goadedBy: [],
+    affectedBy: NONE,
     attachments: NONE,
     attachedTo: null,
   };
@@ -976,6 +982,7 @@ export function staticEffectsOn(
   let toughness = 0;
   const restrictions: Restriction[] = [];
   const goadedBy: SeatId[] = [];
+  const affectedBy: ObjectId[] = [];
   const sets: StaticSet[] = [];
   const blockLimits: BlockLimit[] = [];
   const apply = (source: ModifierSource, mod: Modifier, view: FilterSubject): boolean => {
@@ -988,6 +995,8 @@ export function staticEffectsOn(
     ) {
       return false;
     }
+    if (source.object.id !== target.id && !affectedBy.includes(source.object.id))
+      affectedBy.push(source.object.id);
     if (mod.kind === 'grantKeyword') {
       let keyword: Keyword = mod.keyword;
       if (keyword.kind === 'protection' && keyword.from === 'colorsNotInCommanderIdentity') {
@@ -1122,6 +1131,7 @@ export function staticEffectsOn(
     blockLimits,
     restrictions,
     goadedBy,
+    affectedBy,
     attachments: index.attachments.get(target.id) ?? NONE,
     attachedTo: host?.zone === 'battlefield' ? host.id : null,
   };

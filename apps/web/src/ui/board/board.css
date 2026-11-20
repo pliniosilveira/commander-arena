@@ -1582,6 +1582,16 @@
   margin: 0;
 }
 
+/* "Affected by": one line per permanent, its name and its rules text. */
+.preview-affecting {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 /* Every face of a split, Adventure or double-faced card; the one that is up is marked. */
 .board-preview-faces {
   margin-top: 10px;

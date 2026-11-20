@@ -97,6 +97,13 @@ export interface ObjectView {
    */
   readonly goadedBy?: readonly SeatId[];
   /**
+   * For a permanent on the battlefield: the other permanents with a static ability that applies to it now (CR 604.1), oldest application first: the
+   * lord that gives it +1/+1, the permanent that gives it an ability, a keyword or a restriction. The reader finds their names and rules text in
+   * the battlefield of the same view. Public, since those permanents and their text are. Absent when there are none, and for effects of spells and
+   * abilities that have resolved, which have no permanent to name.
+   */
+  readonly affectedBy?: readonly ObjectId[];
+  /**
    * The creature this one is paired with (CR 702.95b, D-286): the object it is linked to while the pair stands and both are on the battlefield
    * (`partnerOf`: never a stale link, never a creature that is phased out). A melded permanent is one object, so its id is the one of the permanent. Public.
    * Absent otherwise.
@@ -771,6 +778,9 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
     ...(goaders.length === 0 ? {} : { goadedBy: goaders }),
+    ...(obj.zone !== 'battlefield' || d.affectedBy.length === 0
+      ? {}
+      : { affectedBy: d.affectedBy }),
     ...(partner === null ? {} : { pairedWith: partner.id }),
     ...(partner === null && isPaired(state, obj) ? { pairedPhasedOut: true as const } : {}),
     ...(asCreature && wouldBeSummoningSick(state, obj)

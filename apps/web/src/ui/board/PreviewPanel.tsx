@@ -4,10 +4,10 @@
  *
  * Attached Auras and Equipment are listed in the details ("Attached to", "Attached"). A card with
  * more than one face (split, Adventure, double-faced) lists every face with the one that is up
- * marked (`FaceList`); the card above is the face that is up, back face included. Not available
- * from the engine's view yet, so not drawn (do not fake): the "modified" marker against printed
- * P/T and granted and lost abilities as an overlay. They belong in `PreviewDetails` when
- * `ObjectView` carries them.
+ * marked (`FaceList`); the card above is the face that is up, back face included. "Affected by"
+ * lists the permanents whose static abilities apply to it, with their rules text (`affectedBy`).
+ * Not available from the engine's view yet, so not drawn (do not fake): the "modified" marker
+ * against printed P/T and which abilities were lost.
  */
 import type { ObjectView } from '@commander-arena/engine';
 import { useMemo } from 'react';
@@ -150,6 +150,15 @@ function PreviewDetails({ object }: { object: ObjectView }) {
   }
   const host =
     view === null || object.attachedTo === undefined ? null : findObject(view, object.attachedTo);
+  // The permanents whose static abilities apply to it now (a lord, a Sliver that gives the others an ability), with their own rules text:
+  // what the object has that its card does not say comes from one of them.
+  const affecting =
+    view === null
+      ? []
+      : (object.affectedBy ?? []).flatMap((id) => {
+          const found = findObject(view, id);
+          return found === null ? [] : [found];
+        });
   const attached =
     view === null
       ? []
@@ -351,6 +360,21 @@ function PreviewDetails({ object }: { object: ObjectView }) {
         <>
           <dt>Restrictions</dt>
           <dd>{restrictionChips.map((c) => c.full).join(', ')}</dd>
+        </>
+      )}
+      {affecting.length > 0 && (
+        <>
+          <dt>Affected by</dt>
+          <dd data-affected-by>
+            <ul className="preview-affecting">
+              {affecting.map((source) => (
+                <li key={source.id}>
+                  <b>{source.name}</b>
+                  {source.oracleText === '' ? null : `: ${source.oracleText.split('\n').join(' ')}`}
+                </li>
+              ))}
+            </ul>
+          </dd>
         </>
       )}
       <dt>State</dt>
