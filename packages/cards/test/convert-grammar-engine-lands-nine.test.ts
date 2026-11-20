@@ -122,3 +122,65 @@ describe('Shrine of the Forsaken Gods: two colorless mana for colorless spells, 
     g.expect.pool(0, 'C');
   });
 });
+
+// ---- Command Beacon: "{T}, Sacrifice this land: Put your commander into your hand from the command zone." (CR 903.3, 408.3, 608.2d, 701.21).
+
+const BEACON = parsed(
+  'SYNTHETIC Parsed Beacon',
+  'Land',
+  '{T}: Add {C}.\n{T}, Sacrifice this land: Put your commander into your hand from the command zone.',
+);
+const CAPTAIN = parsed('SYNTHETIC Parsed Captain', 'Legendary Creature — Human', '', {
+  manaCost: '{2}',
+  power: '2',
+  toughness: '2',
+});
+
+test('the real Command Beacon is supported', () => {
+  const imported = real('Command Beacon');
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
+});
+
+describe('Command Beacon: sacrifice it to put your commander from the command zone into your hand', () => {
+  test('the commander goes to the hand and the land is sacrificed', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(BEACON)
+      .define(CAPTAIN)
+      .commander(CAPTAIN.name)
+      .battlefield(BEACON.name, { tapped: false })
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(BEACON.name, { pay: true });
+    g.passAll();
+    g.expect.zone(CAPTAIN.name, 'hand', { seat: 0 });
+    g.expect.zone(BEACON.name, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with no commander in the command zone nothing is put into the hand', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(BEACON)
+      .define(CAPTAIN)
+      .battlefield(CAPTAIN.name)
+      .battlefield(BEACON.name, { tapped: false })
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(BEACON.name, { pay: true });
+    g.passAll();
+    g.expect.zone(BEACON.name, 'graveyard', { seat: 0 });
+    g.expect.zone(CAPTAIN.name, 'battlefield', { seat: 0 });
+  });
+});
