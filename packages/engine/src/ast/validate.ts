@@ -1461,6 +1461,30 @@ function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): v
   });
 }
 
+/**
+ * CR 118.8, 701.68a: the condition `additionalCostPaid` reads whether a spell paid the optional blight of its additional cost, so the face lists one and only the spell's own text reads it.
+ */
+function checkAdditionalCostPaid(face: CardFace, path: string, out: AstIssue[]): void {
+  const reads = (node: unknown) => effectHas(node, 'additionalCostPaid');
+  const optional = (face.additionalCosts ?? []).some((c) => c?.kind === 'blight');
+  face.abilities.forEach((a, i) => {
+    if (reads(a)) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'additionalCostPaid is read by the effect of the spell whose additional cost it asks about, not by an ability',
+      );
+    }
+  });
+  if (!optional && reads(face.spell)) {
+    issue(
+      out,
+      path,
+      'additionalCostPaid reads whether the additional cost of a spell was paid: the face needs an optional blight cost (CR 701.68a)',
+    );
+  }
+}
+
 /** The mana cost of the face as a cost and its additional costs: where a spell can have an X. */
 function spellCosts(face: CardFace): readonly Cost[] {
   const mana: readonly Cost[] =
@@ -2349,6 +2373,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAdditionalCosts(face.additionalCosts, `${path}.additionalCosts`, out);
   }
   checkSacrificedAsCost(face, path, out);
+  checkAdditionalCostPaid(face, path, out);
   if (face.additionalCostChoice !== undefined) {
     checkAdditionalCostChoice(
       face.additionalCostChoice,

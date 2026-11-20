@@ -1386,9 +1386,14 @@ export type Cost =
    * player chooses the creature with a `choosePermanent` decision of purpose `blight` and `forCost` (the engine chooses when only one creature can take the
    * counters, and says so). A creature that can't have -1/-1 counters put on it (`cantHaveCounters`) is not a choice, and a player with no creature that can take
    * them can't pay (CR 701.68b). The source itself may be the creature, as it may be sacrificed after it was blighted. Paid with the sacrifice, after the permanents
-   * to tap and before the sacrifice; refused with a crew cost (`tapCreatures`), another blight cost or in a mana ability, a spell's additional cost or an alternative cost.
+   * to tap and before the sacrifice; refused with a crew cost (`tapCreatures`), another blight cost or in a mana ability or an alternative cost.
+   * `optional` ("As an additional cost to cast this spell, you may blight 1", CR 118.8, 601.2b, 701.68a): the one form of a spell's additional cost (`CardFace.additionalCosts`): once the
+   * mana is paid the caster chooses a creature they control that can take the counters, or none (the spell is cast without paying it, and with no creature that can take them nothing is asked).
+   * When it is paid the spell remembers it (`StackData.blighted`), which the condition `additionalCostPaid` reads. Not in the cost of an activated ability or of Ward.
+   * As the cost of Ward (CR 702.21a, 118.12a: "Ward—Blight 2") it is the only cost of the ward ability (`validateCard`): the player who controls the spell or ability chooses a creature they
+   * control as they pay (a `choosePermanent` decision of purpose `blight`), and one who controls none that can take the counters can't pay (CR 701.68b), so it is countered.
    */
-  | { readonly kind: 'blight'; readonly count: number }
+  | { readonly kind: 'blight'; readonly count: number; readonly optional?: true }
   /**
    * "Discard a card", "discard two cards" (CR 701.9, 118.8): the paying player chooses `count` cards
    * from their hand (the whole hand when it holds exactly that many), with a `chooseCards` decision
@@ -3515,6 +3520,13 @@ export type Effect =
    */
   | { readonly kind: 'populate' }
   /**
+   * "Blight 1." as an instruction (CR 701.68a, 701.68b): the controller puts `count` -1/-1 counters on a creature they control (a whole number of at least 1). They choose it with a
+   * `choosePermanent` decision of purpose `blight` (not asked with one candidate, and said by `permanentsChosen` with `automatic`); a creature that can't have -1/-1 counters put on it
+   * (CR 122.6, `cantHaveCounters`) is not offered, and with no creature that can take them the player can't blight and nothing happens. The counters go on as the effect of a spell or ability,
+   * so a replacement effect that changes counters put on a permanent applies (CR 614.1a).
+   */
+  | { readonly kind: 'blight'; readonly count: number }
+  /**
    * "Move any number of +1/+1 counters from this creature onto other creatures." (issue 230, Forgotten Ancient; CR 122.1, 122.6, 608.2d): the controller moves, one at a time, a
    * counter of the kind `counter` from the permanent with the ability onto a permanent `to` matches (the source itself is left out), as many times as they choose, up to the
    * counters on it. Each move is a choice of a permanent among those it may go to or of none (a `choosePermanent` decision of purpose 'moveCounters'), asked again after every
@@ -5481,6 +5493,11 @@ export type Condition =
    * Needs a replicate ability on the card.
    */
   | { readonly kind: 'replicated' }
+  /**
+   * "If this spell's additional cost was paid" (CR 118.8, 601.2b, 608.2c, 701.68a): the spell was cast with the optional additional cost of its face paid (a `blight` cost with `optional`).
+   * Read from the spell as it resolves, or from its last-known information once it has left (CR 113.7a). Only the effect of a spell whose face has such a cost (`validateCard`).
+   */
+  | { readonly kind: 'additionalCostPaid' }
   /**
    * "If you sacrificed one or more creatures to cast it" (CR 118.8, 701.21a, D-491): the spell was cast with at least one permanent sacrificed for its additional cost
    * (`Cost` `sacrifice` with `anyNumber`). Read from the spell, or from its last-known information once it has left (CR 113.7a). The intervening "if" of the spell's own

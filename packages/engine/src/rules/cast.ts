@@ -65,6 +65,7 @@ import { amountOf } from './amounts';
 import { becameTargetEvents } from './becomes-target';
 import {
   answerBehold,
+  answerBlightAdditional,
   answerDiscard,
   answerExile,
   answerSacrifice,
@@ -1040,6 +1041,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         exile: cost.exile,
         ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),
         tap: cost.tap,
+        ...(cost.blight === undefined ? {} : { blight: cost.blight }),
       },
     },
   };
@@ -1350,6 +1352,11 @@ export function answerCastBehold(state: GameState, chosen: readonly ObjectId[]):
 /** The answer to the question of which other cards an escape cost exiles (CR 702.138a, D-124). */
 export function answerCastExile(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerExile(state, chosen, finishCast);
+}
+
+/** The answer to the question of the optional blight of a spell's additional cost (CR 118.8, 701.68a); the caller checked it against the decision. */
+export function answerCastBlight(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerBlightAdditional(state, chosen, finishCast);
 }
 
 /** Pays the optional hand-exile additional cost after the mana payment. */

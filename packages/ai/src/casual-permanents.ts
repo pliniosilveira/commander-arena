@@ -109,7 +109,14 @@ export function chooseBlightCreature(
       };
     })
     .sort((a, b) => a.dies - b.dies || a.value - b.value || a.index - b.index);
-  const chosen = ranked.slice(0, d.min).map((r) => r.id);
+  // CR 118.8, 701.68a: "you may blight 1" as an additional cost of a spell (`min` 0): the agent pays it only with a creature that survives the counters, for the better spell.
+  const best = ranked[0];
+  const chosen =
+    d.min > 0
+      ? ranked.slice(0, d.min).map((r) => r.id)
+      : best !== undefined && best.dies === 0
+        ? [best.id]
+        : [];
   return { kind: 'choosePermanents', objects: d.legal.filter((id) => chosen.includes(id)) };
 }
 

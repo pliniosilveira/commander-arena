@@ -36,6 +36,7 @@ import { attachEntered, attachObject } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
+import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
@@ -281,6 +282,7 @@ export function runInstruction(
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
   if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
+  if (instruction.kind === 'blight') return runBlight(state, res, instruction);
   if (instruction.kind === 'moveCounters') return runMoveCounters(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
@@ -1738,6 +1740,10 @@ function runEffect(
             }
           : state,
       );
+
+    case 'blight':
+      // CR 701.68a (Blight): the controller chooses a creature they control and puts the counters on it as the instruction runs (rules/blight-effect.ts).
+      return done(state, [], [{ kind: 'blight', count: effect.count, chosen: null }]);
 
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): the counters move one at a time, each a choice of the controller, as the instruction runs (rules/move-counters.ts).

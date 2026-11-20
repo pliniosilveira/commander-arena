@@ -966,6 +966,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-in-own-main-phase': spell(
     (e) => `Exile target artifact. If ${e}, exile target enchantment.`,
   ),
+  // Burning Curiosity (CR 118.8, 701.68a): the optional blight of the additional cost is what the condition reads.
+  'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),

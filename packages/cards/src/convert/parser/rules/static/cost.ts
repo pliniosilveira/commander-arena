@@ -688,6 +688,7 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
       'cost.pay-life',
       'cost.pay-x-life',
       'cost.exile-any-hand',
+      'cost.blight',
     ],
   }),
   map(
@@ -733,6 +734,9 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, pay X life.',
     'As an additional cost to cast ~, pay X life and discard a card.',
     'As an additional cost to cast ~, you may exile any number of blue cards from your hand.',
+    // Lorwyn Eclipsed (CR 701.68a, 118.8): the optional blight of a spell's additional cost.
+    'As an additional cost to cast ~, you may blight 1.',
+    'As an additional cost to cast ~, you may blight 2.',
     // Hashaton group 10 (D-386): "discard X cards", announced like "pay X life".
     'As an additional cost to cast ~, discard X cards.',
     // Stage P38 (D-182): a choice of two ways.
@@ -749,6 +753,9 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, pay X.',
     'As an additional cost to cast ~, pay {X}.',
     'As an additional cost to cast ~, you may sacrifice a creature.',
+    'As an additional cost to cast ~, you may blight X.',
+    'As an additional cost to cast ~, you may blight 1 and discard a card.',
+    'As an additional cost to cast ~, you may blight 1',
     'As an additional cost to cast ~, sacrifice a creature and discard a card or pay {2}.',
     'As an additional cost to cast ~, sacrifice a creature or discard a card or pay {2}.',
     'As an additional cost to cast ~, sacrifice an artifact or creature or.',
@@ -769,7 +776,8 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     const optionalAt = pos + prefix.length;
     if (
       ctx.text.startsWith('you may ', optionalAt) &&
-      !ctx.text.startsWith('you may exile any number of ', optionalAt)
+      !ctx.text.startsWith('you may exile any number of ', optionalAt) &&
+      !ctx.text.startsWith('you may blight ', optionalAt)
     ) {
       return fail(ctx, optionalAt);
     }
@@ -786,7 +794,10 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     if (!r.ok) return r;
     const castAt = pos + 'as an additional cost to cast '.length;
     const [, may, costs, other] = r.value;
-    if (may !== undefined && (costs.length !== 1 || costs[0]?.kind !== 'exileFromHand')) {
+    if (
+      may !== undefined &&
+      (costs.length !== 1 || (costs[0]?.kind !== 'exileFromHand' && costs[0]?.kind !== 'blight'))
+    ) {
       return fail(ctx, pos);
     }
     // "A or B" is one cost for each way (stage P38, D-182): a way of several costs ("A and B or C") is not read.

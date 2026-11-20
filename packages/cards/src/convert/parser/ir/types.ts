@@ -685,6 +685,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
+    | { readonly kind: 'additionalCostPaid' }
     // "X is 5 or more" (issue 233, CR 107.3a): the X announced for the spell
     | { readonly kind: 'xAtLeast'; readonly atLeast: number }
     // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included

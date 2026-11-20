@@ -37,6 +37,10 @@ export interface CostOptions {
   readonly discardX?: boolean;
   /** A spell's additional cost (CR 118.8), where Behold is paid; not a cost of an activated ability. */
   readonly additional?: boolean;
+  /** The cost of Ward (CR 702.21a): "Blight 2" is paid as the ward ability resolves (D-407, CR 701.68a), alone. */
+  readonly ward?: boolean;
+  /** "As an additional cost to cast ~, you may blight 1" (CR 118.8, 701.68a): the optional blight of a spell's additional cost; nowhere else. */
+  readonly optionalBlight?: boolean;
   /** The cost of a Flashback keyword (CR 702.34a, 118.9): "Sacrifice three creatures" is paid as the spell is cast, by the engine's alternative cost; nowhere else but an activated ability. */
   readonly flashback?: boolean;
 }
@@ -93,7 +97,17 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return options.discardX === true ? ok({ kind: 'discardX' }) : failure(cost);
     case 'blight':
       // CR 701.68a (D-407): Blight 1 is paid as the cost of an ordinary activated ability: the player chooses the creature as it is activated.
-      return options.ordinary === true ? ok({ kind: 'blight', count: cost.count }) : failure(cost);
+      if (options.optionalBlight === true) {
+        // CR 118.8, 701.68a: "you may blight 1" as an additional cost to cast a spell; the cast is possible without paying it.
+        const blocked = missingFeatures(['cost:blight', 'ability:optionalBlight']);
+        return blocked.length > 0
+          ? failure(cost, blocked)
+          : ok({ kind: 'blight', count: cost.count, optional: true });
+      }
+      // CR 702.21a, 701.68a: "Ward—Blight 2" is paid as the ward ability resolves.
+      return options.ordinary === true || options.ward === true
+        ? ok({ kind: 'blight', count: cost.count })
+        : failure(cost);
     case 'exert':
       // CR 701.43a (issue 144): the cost of a mana ability only; an ordinary activated ability's `costKinds` does not list it, so that reading is refused with its feature.
       return ok({ kind: 'exert' });

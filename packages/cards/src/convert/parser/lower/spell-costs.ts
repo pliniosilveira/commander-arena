@@ -94,10 +94,17 @@ function lowerAdditional(
   optional?: true,
 ): LowerResult<FaceCosts> {
   if (optional === true) {
-    if (orCosts !== undefined || costs.length !== 1 || costs[0]?.kind !== 'exileFromHand') {
-      return failure(ability);
+    const only = costs[0];
+    if (orCosts !== undefined || costs.length !== 1 || only === undefined) return failure(ability);
+    // CR 118.8, 701.68a: "As an additional cost to cast ~, you may blight 1."
+    if (only.kind === 'blight') {
+      const blight = lowerCost(only, { optionalBlight: true });
+      return blight.ok
+        ? { ok: true, value: { ...NONE, additionalCosts: [blight.value] }, rule: ability.rule }
+        : blight;
     }
-    const cost = additional(costs[0]);
+    if (only.kind !== 'exileFromHand') return failure(ability);
+    const cost = additional(only);
     if (!cost.ok) return cost;
     const blocked = missingFeatures(['cost:exileFromHand']);
     return blocked.length > 0

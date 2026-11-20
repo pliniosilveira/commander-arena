@@ -333,7 +333,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Then shuffle and put that card on top" is read for one card only: "put them on top" and other library positions ("on the bottom", "third from the top") are not built.
 - A search of another player's library is not read.
 - Blight: CR 701.68c and 701.68d (the "blighted creature" and "whenever a player blights" triggers) are not implemented.
-- "Blight N" is read as the cost of an ordinary activated ability only, not as an additional or optional cost of a spell, a keyword cost or a mana ability's cost; the agents never activate one by themselves.
+- "Blight N" is read as an instruction, an activated ability's cost, a spell's optional additional cost and Ward's only cost; not as a mandatory additional cost or another keyword's.
 - "Enchanted creature can't attack" and "can't attack or block" are read for the attached permanent only: "~ can't attack", "creatures you control can't attack", "can't attack or block alone" and "can't attack you" with a tax are not.
 - A spell's own conditional flash: with several mandatory target slots only the first is restricted, so a legal cast whose second slot meets "it targets a commander" is not offered; a modal spell's modes are not restricted.
 - A spell's own conditional flash: the grammar reads only "it targets <a kind of permanent or a commander>"; "if you control a Dragon" and the like run in the engine but are not read.

@@ -31,6 +31,7 @@ import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
+import { BLIGHT_EFFECT_RULES } from './blight';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
@@ -60,6 +61,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
+import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
@@ -1222,6 +1224,10 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
+  // Lorwyn Eclipsed (CR 701.68a): "blight 1" as an instruction.
+  ...BLIGHT_EFFECT_RULES,
+  // Burning Curiosity: "exile the top three cards instead".
+  ...EXILE_TOP_INSTEAD_EFFECT_RULES,
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
   ...COPY_ONE_OF_THEM_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,

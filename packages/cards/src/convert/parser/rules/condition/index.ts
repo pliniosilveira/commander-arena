@@ -21,6 +21,7 @@ import type { IrAmount, IrCondition, IrFilter, IrNoun, Span } from '../../ir/typ
 import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
+import { CONDITION_ADDITIONAL_COST_PAID } from './additional-cost-paid';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
@@ -627,6 +628,7 @@ export const CONDITION_RULES = [
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
+  CONDITION_ADDITIONAL_COST_PAID,
   CONDITION_X_AT_LEAST,
   CONDITION_THAT_OBJECT_POWER,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".

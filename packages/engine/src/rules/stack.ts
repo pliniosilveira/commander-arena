@@ -40,6 +40,7 @@ import { runPayAmount } from './pay-amount';
 import type { ManualTap } from './pay-manual';
 import {
   acceptUnless,
+  blightUnless,
   declineUnless,
   discardUnless,
   payUnlessMana,
@@ -585,6 +586,16 @@ export function answerResolutionChoice(
   const res = state.resolution;
   const head = res?.queue[0];
   if (!res || head === undefined) return null;
+  // Ward—Blight 2 (CR 701.68a): the payer chose the creature that gets the -1/-1 counters of the cost they accepted (rules/pay-unless.ts).
+  if (
+    (head.kind === 'counterUnlessPays' || head.kind === 'unlessPays') &&
+    head.stage === 'blight'
+  ) {
+    const d = state.pending;
+    if (d?.kind !== 'choosePermanent') return null;
+    const answer = blightUnless(state, res, head, d.seat, chosen);
+    return answer === null ? null : continueUnless(answer, res);
+  }
   // D-668 (CR 303.4f): the permanent a token that is an Aura enters enchanting.
   if (
     head.kind === 'enterToken' &&
@@ -616,6 +627,7 @@ export function answerResolutionChoice(
     head.kind !== 'amass' &&
     head.kind !== 'populate' &&
     head.kind !== 'moveCounters' &&
+    head.kind !== 'blight' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {

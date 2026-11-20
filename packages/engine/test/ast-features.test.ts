@@ -103,6 +103,8 @@ describe('the dimensions', () => {
       // Issue 233: "If X is 5 or more".
       'xAtLeast',
       'replicated',
+      // CR 118.8, 701.68a: "if this spell's additional cost was paid" (the optional blight).
+      'additionalCostPaid',
       'sacrificedAsCost',
       'controlCommander',
       'sourceHasCounter',
