@@ -20,6 +20,8 @@ export interface BugReportInput {
   readonly log: readonly LogEntry[];
   /** Top item first. */
   readonly stack: readonly StackLine[];
+  /** True when a picture of the board is on the clipboard for the player to paste. */
+  readonly screenshot?: boolean;
 }
 
 export interface BugReport {
@@ -77,6 +79,7 @@ export function bugReportBody(input: BugReportInput): string {
     input.description.trim() === '' ? '(no description)' : input.description.trim(),
     versionLine(input.version),
     input.turn === null ? '' : `Turn ${input.turn}`,
+    input.screenshot === true ? 'Screenshot of the board: paste it here (Ctrl+V).' : '',
   ].filter((p) => p !== '');
   const stack = ['### Stack (top first)', fenced(stackText(input.stack))].join('\n');
   const fixed = [...head, stack].join('\n\n');
@@ -97,6 +100,6 @@ export function bugReport(input: BugReportInput): BugReport {
   const full = issueUrl(title, body);
   if (full.length <= MAX_ISSUE_URL_LENGTH) return { title, body, url: full, fitsInLink: true };
   const short =
-    'The full report (your description, the build, the stack and the game log) was copied to your clipboard when you pressed the button: paste it here, then submit.';
+    'The full report (your description, the build, the stack and the game log) is too long for a link: press "Copy full report" in the report dialog of the game and paste it here, then submit.';
   return { title, body, url: issueUrl(title, short), fitsInLink: false };
 }

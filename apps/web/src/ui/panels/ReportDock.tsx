@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { stackLabel } from '../../game/saga';
-import { bugReport } from '../../import/bug-report';
+import { type BugReport, bugReport } from '../../import/bug-report';
 import { VERSION_INFO } from '../../version';
 import { useApp } from '../store-context';
+import { captureBoard } from './capture-board';
 import { seatName } from './objects';
 
 /**
- * A "Report issue" button at the bottom right that opens a dialog with a text area and a Submit button. Submit opens GitHub's
- * "new issue" page with the description, the build, the game log and the stack already in it (the app has no secret of its own, so
- * the player presses Submit on GitHub; `import/bug-report.ts`). A report too long for a link is copied to the clipboard first.
- * Esc or Cancel closes the dialog.
+ * A "Report issue" button at the bottom right. Pressing it takes a picture of the board first (the browser's screen capture, so the
+ * dialog is not in it), then opens a dialog with a text area and a Submit button. Submit opens GitHub's "new issue" page with the
+ * description, the build, the game log and the stack already in it, and puts the picture on the clipboard to paste into the issue
+ * (a link cannot carry an image, and the app has no secret to create the issue itself; `import/bug-report.ts`). A report too long
+ * for a link stays in the dialog behind a "Copy full report" button. Esc or Cancel closes the dialog.
  */
 export function ReportDock() {
   const [open, setOpen] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [shot, setShot] = useState<Blob | null>(null);
   const [text, setText] = useState('');
   const [note, setNote] = useState<string | null>(null);
+  const [longReport, setLongReport] = useState<BugReport | null>(null);
   const log = useApp((s) => s.log);
   const view = useApp((s) => s.snapshot?.view ?? null);
   const stack = useMemo(
@@ -30,35 +35,95 @@ export function ReportDock() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setLongReport(null);
+        setNote(null);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  const close = () => {
+    setOpen(false);
+    setLongReport(null);
+    setNote(null);
+  };
+
+  const toggle = async () => {
+    if (open) return close();
+    if (capturing) return;
+    // The picture comes first, so the dialog is not in it.
+    setCapturing(true);
+    setShot(await captureBoard());
+    setCapturing(false);
+    setOpen(true);
+  };
+
+  const copyText = async (body: string): Promise<boolean> => {
+    try {
+      await navigator.clipboard.writeText(body);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const copyShot = async (): Promise<boolean> => {
+    if (shot === null) return false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ [shot.type]: shot })]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const submit = async () => {
+    const withShot = shot !== null;
     const report = bugReport({
       description: text,
       version: VERSION_INFO,
       turn: view?.turn ?? null,
       log,
       stack,
+      screenshot: withShot,
     });
     // Open the tab first, in the click's own gesture, then fill the clipboard.
     window.open(report.url, '_blank', 'noopener');
-    if (!report.fitsInLink) {
-      try {
-        await navigator.clipboard.writeText(report.body);
-        setNote('The full report was copied to your clipboard: paste it into the issue.');
-        return;
-      } catch {
-        setNote('The report is too long for a link and could not be copied.');
-        return;
-      }
+    const shotCopied = await copyShot();
+    const lines: string[] = [];
+    if (withShot) {
+      lines.push(
+        shotCopied
+          ? 'The screenshot of the board is on your clipboard: paste it into the issue (Ctrl+V).'
+          : 'The screenshot could not be copied.',
+      );
     }
-    setNote(null);
-    setOpen(false);
+    if (!report.fitsInLink) {
+      setLongReport(report);
+      lines.push(
+        'The report is too long for a link: after pasting the screenshot, copy the full report below.',
+      );
+      setNote(lines.join(' '));
+      return;
+    }
+    if (shotCopied) {
+      setNote(lines.join(' '));
+      return;
+    }
+    close();
     setText('');
+  };
+
+  const copyLong = async () => {
+    if (longReport === null) return;
+    setNote(
+      (await copyText(longReport.body))
+        ? 'The full report was copied: paste it into the issue.'
+        : 'The report could not be copied.',
+    );
   };
 
   return (
@@ -68,7 +133,8 @@ export function ReportDock() {
         className="log-toggle report-toggle"
         aria-expanded={open}
         aria-controls="report-dialog"
-        onClick={() => setOpen(!open)}
+        disabled={capturing}
+        onClick={() => void toggle()}
       >
         Report issue
       </button>
@@ -90,6 +156,9 @@ export function ReportDock() {
             placeholder="Describe the problem. The game log, the stack and the build are added for you."
           />
           <p className="report-hint">
+            {shot === null
+              ? 'No screenshot of the board was taken.'
+              : 'A screenshot of the board was taken (without this dialog).'}{' '}
             This opens a new issue on GitHub; you press Submit there (a GitHub account is needed).
           </p>
           {note !== null && (
@@ -98,8 +167,13 @@ export function ReportDock() {
             </p>
           )}
           <div className="report-actions">
-            <button type="button" onClick={() => setOpen(false)}>
-              Cancel
+            {longReport !== null && (
+              <button type="button" onClick={() => void copyLong()}>
+                Copy full report
+              </button>
+            )}
+            <button type="button" onClick={close}>
+              {note === null ? 'Cancel' : 'Close'}
             </button>
             <button type="button" className="report-submit" onClick={() => void submit()}>
               Submit

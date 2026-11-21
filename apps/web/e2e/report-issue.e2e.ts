@@ -4,7 +4,21 @@ import { settled } from './harness/settle';
 /** The "Report issue" button (bottom right): a dialog with a text area; Submit opens a GitHub "new issue" page with the log and the stack. */
 test('Report issue opens a dialog and Submit opens a prefilled GitHub issue', async ({ page }) => {
   test.setTimeout(120_000);
-  // Capture the address instead of opening GitHub.
+  // A fake screen capture (a canvas stream) and a clipboard that records the image; the address is captured instead of opening GitHub.
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(() => {
+    navigator.mediaDevices.getDisplayMedia = async () => {
+      const c = document.createElement('canvas');
+      c.width = 320;
+      c.height = 200;
+      const g = c.getContext('2d');
+      if (g !== null) {
+        g.fillStyle = '#c33';
+        g.fillRect(0, 0, 320, 200);
+      }
+      return c.captureStream(10);
+    };
+  });
   await page.addInitScript(() => {
     window.open = (u) => {
       (window as unknown as { opened: string }).opened = String(u);
@@ -29,5 +43,11 @@ test('Report issue opens a dialog and Submit opens a prefilled GitHub issue', as
   const body = url.searchParams.get('body') ?? '';
   expect(body).toContain('### Stack (top first)');
   expect(body).toContain('### Game log');
-  await expect(dialog).toBeHidden();
+  const types = await page.evaluate(async () => {
+    const items = await navigator.clipboard.read();
+    return items.flatMap((i) => [...i.types]);
+  });
+  expect(types).toContain('image/png');
+  expect(body).toContain('paste it here');
+  await expect(dialog).toContainText('screenshot of the board is on your clipboard');
 });
