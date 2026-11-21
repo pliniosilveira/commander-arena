@@ -679,6 +679,26 @@ export function evaluateCondition(
       const subject = objectOrLki(state, ctx.triggerSubject);
       return subject !== null && controllerOf(state, subject) === ctx.controller;
     }
+    case 'subjectGreaterThanEach': {
+      // CR 603.10a, 113.7a, 208.1, 608.2c (Selvala): "if its power is greater than each other creature's power": the stat the permanent has now, or had as it left, against every other
+      // battlefield permanent the filter matches, whoever controls it, read as the instruction comes up.
+      if (ctx.triggerSubject === undefined) return false;
+      const pt = ptNow(state, ctx.triggerSubject);
+      if (pt === null) return false;
+      const mine = condition.stat === 'power' ? pt.power : pt.toughness;
+      const filter = {
+        ...condition.filter,
+        zone: 'battlefield' as const,
+        controller: 'any' as const,
+      };
+      for (const id of objectsInZone(state, 'battlefield')) {
+        if (id === ctx.triggerSubject) continue;
+        if (!matchesFilter(state, getObject(state, id), filter, ctx)) continue;
+        const theirs = statOf(state, id, condition.stat);
+        if (theirs !== null && theirs >= mine) return false;
+      }
+      return true;
+    }
     case 'subjectStat': {
       // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.
       if (ctx.triggerSubject === undefined) return false;

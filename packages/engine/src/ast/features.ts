@@ -812,6 +812,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add X mana in any combination of colors, where X is the greatest power among creatures you control." (`anyCombinationAmount`)
+    'anyCombinationAmount',
     // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
     'eachColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
@@ -1159,6 +1161,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
     'subjectControlledByYou',
     'subjectStat',
+    // Selvala: "if its power is greater than each other creature's power".
+    'subjectGreaterThanEach',
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
@@ -2134,6 +2138,8 @@ export const CONDITION_KINDS = [
   'subjectControlledByYou',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
   'subjectStat',
+  /** "If its power is greater than each other creature's power" (CR 603.10a, 208.1, Selvala): the engine's `subjectGreaterThanEach`. */
+  'subjectGreaterThanEach',
   /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
@@ -3102,6 +3108,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  anyCombinationAmount: true,
   eachColorAmong: true,
   producedType: true,
 };

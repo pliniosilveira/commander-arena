@@ -221,3 +221,124 @@ describe('Subterfuge: target creature gains flying and a combat damage draw trig
     g.expect.derived('Grizzly Bears', { keywords: [] });
   });
 });
+
+const selvala = real('Selvala, Heart of the Wilds');
+
+test('Selvala is a valid card', () => {
+  expect(validateCard(selvala)).toEqual([]);
+});
+
+describe("Selvala's first ability: a creature that enters with the greatest power draws its controller a card", () => {
+  // Selvala is 2/3. Serra Angel is 4/4 (Plains x3 + one more to cast {3}{W}); Grizzly Bears is 2/2 ({1}{G}).
+  const play = (
+    active: 0 | 1,
+    card: string,
+    lands: readonly string[],
+    onBattlefield: readonly string[],
+  ) => {
+    const g = scenario()
+      .define(selvala)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(
+        selvala.name,
+        ...(active === 0 ? lands : []),
+        ...(active === 0 ? [] : onBattlefield),
+      )
+      .hand(...(active === 0 ? [card] : []))
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(...(active === 1 ? lands : []), ...(active === 1 ? onBattlefield : []))
+      .hand(...(active === 1 ? [card] : []))
+      .at('precombatMain', { active })
+      .build();
+    g.act(active).cast(card, { pay: true });
+    g.passAll();
+    return g;
+  };
+  const PLAINS4 = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains'];
+
+  test('a creature with more power than every other creature: its controller may draw, and draws on accepting', () => {
+    const g = play(0, 'Serra Angel', PLAINS4, []);
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.handSize(0, 1);
+  });
+
+  test('declining the draw draws nothing', () => {
+    const g = play(0, 'Serra Angel', PLAINS4, []);
+    g.act(0).decline();
+    g.expect.handSize(0, 0);
+  });
+
+  test('a creature whose power only ties the greatest one does not offer a draw (Grizzly Bears 2 and Selvala 2)', () => {
+    const g = play(0, 'Grizzly Bears', ['Forest', 'Forest'], []);
+    g.expect.handSize(0, 0);
+    expect(g.state.pending?.kind).not.toBe('confirmOptional');
+  });
+
+  test("an opponent's creature draws its own controller a card, not Selvala's", () => {
+    const g = play(1, 'Serra Angel', PLAINS4, []);
+    g.expect.pending('confirmOptional', 1);
+    g.act(1).accept();
+    g.expect.handSize(1, 1);
+    g.expect.handSize(0, 0);
+  });
+
+  test('another creature with greater power on the battlefield stops the draw', () => {
+    const g = play(0, 'Serra Angel', PLAINS4, ['Serra Angel']);
+    g.expect.handSize(0, 0);
+  });
+});
+
+describe("Selvala's mana ability: X mana in any combination of colors, X the greatest power among creatures you control", () => {
+  const base = (...others: readonly string[]) =>
+    scenario()
+      .define(selvala)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(selvala.name, 'Forest', ...others)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain')
+      .build();
+
+  test("X is Selvala's own power with nothing greater: two mana, in any combination of the five colors", () => {
+    const g = base();
+    g.act(0).tapForMana('Forest');
+    g.act(0).tapForMana(selvala.name, { combination: 'WU' });
+    g.expect.pool(0, 'WU');
+    g.expect.tapped(selvala.name, true);
+    // The {G} of the cost was paid by the Forest, so it is not left in the pool.
+    g.expect.tapped('Forest', true);
+  });
+
+  test('two mana of the same color are a combination too', () => {
+    const g = base();
+    g.act(0).tapForMana('Forest');
+    g.act(0).tapForMana(selvala.name, { combination: 'RR' });
+    g.expect.pool(0, 'RR');
+  });
+
+  test('X is the greatest power among creatures you control: a 4-power creature makes it four mana', () => {
+    const g = base('Serra Angel');
+    g.act(0).tapForMana('Forest');
+    g.act(0).tapForMana(selvala.name, { combination: 'WWUB' });
+    g.expect.pool(0, 'WWUB');
+  });
+
+  test('a number of mana other than X is not offered', () => {
+    const g = base();
+    g.act(0).tapForMana('Forest');
+    expect(g.act(0).try.tapForMana(selvala.name, { combination: 'WUB' }).ok).toBe(false);
+    const h = base('Serra Angel');
+    h.act(0).tapForMana('Forest');
+    expect(h.act(0).try.tapForMana(selvala.name, { combination: 'WU' }).ok).toBe(false);
+  });
+
+  test('colorless is not a color of the combination', () => {
+    const g = base();
+    g.act(0).tapForMana('Forest');
+    expect(g.act(0).try.tapForMana(selvala.name, { combination: 'CC' }).ok).toBe(false);
+  });
+});

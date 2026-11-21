@@ -3538,6 +3538,21 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'subjectGreaterThanEach':
+      // CR 603.10a, 208.1 (Selvala): the filter describes the other permanents on the battlefield, whoever controls them.
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
+      }
+      if (!isOneOf(c.stat, ['power', 'toughness'])) {
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      break;
     case 'subjectControlledByYou':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
       break;
@@ -4952,6 +4967,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'subjectControlledByYou':
     case 'subjectStat':
+    case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
       if (scope.triggerSubject !== 'permanent') {
         issue(
@@ -7329,7 +7345,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'one mana of a type the tapped permanent produced is only the effect of a "tapped for mana" triggered mana ability',
         );
       }
-      if (e.mana?.kind === 'anyColorAmount') {
+      if (e.mana?.kind === 'anyColorAmount' || e.mana?.kind === 'anyCombinationAmount') {
         issue(
           out,
           `${path}.mana`,

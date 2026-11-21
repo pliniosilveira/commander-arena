@@ -4600,6 +4600,12 @@ export type ManaProduction =
    */
   | { readonly kind: 'anyColorAmount'; readonly amount: Amount }
   /**
+   * "{G}, {T}: Add X mana in any combination of colors, where X is the greatest power among creatures you control." (Selvala, Heart of the Wilds; CR 106.1b, 605.3b, 107.3c): as
+   * `anyCombination` with as many mana as `amount`, read as the ability is activated for its controller with its permanent as "this" (a mana ability resolves at once); each mana is a color of the
+   * five chosen on its own, so the activation names the combination. An amount of 0 or less makes no mana. Only a mana ability, and an amount and costs as for `anyColorAmount`.
+   */
+  | { readonly kind: 'anyCombinationAmount'; readonly amount: Amount }
+  /**
    * "{T}: For each color among permanents you control, add one mana of that color." (Faeburrow Elder; CR 105.2, 106.1b, 605.3b): one mana of each of the colors the permanents
    * `filter` matches on the battlefield have between them (the `colorsAmong` count, colorless is no color), read as the ability is activated for its controller with its permanent as
    * "this" (a mana ability resolves at once). Nothing is chosen: the mana is one fixed list, empty when no permanent has a color. Only a mana ability (`validateCard`), and not with
@@ -6022,6 +6028,17 @@ export type Condition =
    * there is none.
    */
   | { readonly kind: 'subjectControlledByYou' }
+  /**
+   * "If its power is greater than each other creature's power" (Selvala, Heart of the Wilds; CR 603.10a, 113.7a, 208.1, 608.2c): the `stat` of the permanent whose event caused the trigger (as it
+   * is now, or as it last was once it has left) is greater than that of every other battlefield permanent the `filter` matches, whoever controls it. The permanent itself is left
+   * out; one with no such stat (a noncreature has no power) is left out too. With no other such permanent it holds. False where the trigger has no permanent. Where it may stand is as for
+   * `subjectStat`: a conditional effect of a trigger about a permanent. The filter names no zone, controller or owner.
+   */
+  | {
+      readonly kind: 'subjectGreaterThanEach';
+      readonly filter: ObjectFilter;
+      readonly stat: 'power' | 'toughness';
+    }
   /**
    * "If its toughness was less than 1" (Massacre Girl, Known Killer; CR 603.10a, 113.7a, 208.1): the power or toughness of the permanent whose event caused the trigger against a
    * whole number, as it is or as it last was once it has left (a creature put into a graveyard by state-based actions for a toughness of 0 or less is read with that toughness, which

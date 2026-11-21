@@ -434,6 +434,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
+  'condition.its-stat-greater-than-each-other': permanent(
+    (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
+  ),
   'condition.opponent-has-more': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Slithermuse: the player a sentence before it chose, and the difference in the stat it compared.
   'condition.chosen-player-has-more': permanent(

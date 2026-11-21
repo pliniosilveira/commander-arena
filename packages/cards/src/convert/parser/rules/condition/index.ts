@@ -73,6 +73,7 @@ import { REVOLT_CONDITION_RULES } from './revolt';
 import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
+import { SUBJECT_GREATER_CONDITION_RULES } from './subject-greater';
 import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
@@ -622,6 +623,7 @@ export const CONDITION_RULES = [
   ...ATTACKING_OPPONENTS_CONDITION_RULES,
   // Lorwyn Eclipsed (Blight Curse deck): "you control that creature", "its toughness was less than 1", "you put a counter on a creature this turn".
   ...COUNTER_TRIGGER_CONDITION_RULES,
+  ...SUBJECT_GREATER_CONDITION_RULES,
   // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
   ...FEDERATION_D_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".

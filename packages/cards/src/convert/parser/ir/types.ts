@@ -908,6 +908,12 @@ export interface IrCondition extends IrNode {
         readonly stat: 'power' | 'toughness';
         readonly compare: IrComparison;
       }
+    // Selvala, Heart of the Wilds (CR 603.10a, 208.1, 608.2c): "its power is greater than each other creature's power": the stat of the permanent the trigger is about against every other permanent of the types
+    | {
+        readonly kind: 'subjectGreaterThanEach';
+        readonly stat: 'power' | 'toughness';
+        readonly types: readonly string[];
+      }
     // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
     | {
         readonly kind: 'putCountersThisTurn';
@@ -1094,6 +1100,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'thatColor' }
     // "X mana of any one color, where X is ~'s power" (CR 106.1b, 107.3c): `count` mana of one color chosen as the ability resolves, X what the sentence defines
     | { readonly kind: 'anyOneColorX' }
+    // "X mana in any combination of colors, where X is the greatest power among creatures you control" (Selvala, CR 106.1b, 107.3c): `count` mana, each of a color chosen on its own, X what the sentence defines
+    | { readonly kind: 'anyCombinationX' }
     // "For each color among permanents you control, add one mana of that color" (Faeburrow Elder, CR 105.2, 605.3b): one mana of each color the permanents `of` names have between them
     | { readonly kind: 'eachColorAmong'; readonly of: IrNoun }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of

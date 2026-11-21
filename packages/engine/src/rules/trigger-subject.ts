@@ -18,7 +18,12 @@ export function readsTriggerSubject(ability: Ability): boolean {
   if (effects.includes('"notTriggerCard"') || effects.includes('"otherThanTriggerSubject"'))
     return true;
   // CR 603.10a, 608.2h (Auntie Ool): "draw a card if you control that creature" reads the permanent the trigger is about, as the ability resolves.
-  if (effects.includes('"subjectControlledByYou"') || effects.includes('"subjectStat"'))
+  if (
+    effects.includes('"subjectControlledByYou"') ||
+    effects.includes('"subjectStat"') ||
+    // Selvala: "if its power is greater than each other creature's power" reads the creature that entered as the ability resolves.
+    effects.includes('"subjectGreaterThanEach"')
+  )
     return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
   if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;

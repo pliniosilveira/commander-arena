@@ -278,6 +278,8 @@ const TRAILING_CONDITIONS = [
   'condition.it-attacking-opponents',
   // Issue 101 (Zurgo Stormrender): "draw a card if it was attacking" (CR 506.4, 603.10a).
   'condition.it-was-attacking',
+  // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
+  'condition.its-stat-greater-than-each-other',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(

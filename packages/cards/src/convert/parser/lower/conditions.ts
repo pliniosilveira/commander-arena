@@ -282,6 +282,18 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'subjectGreaterThanEach': {
+      // CR 603.10a, 208.1, 608.2c (Selvala, Heart of the Wilds): "its power is greater than each other creature's power" is read as the instruction comes up (a conditional effect, not the
+      // intervening "if"), of the permanent the trigger is about.
+      const blocked = missingFeatures(['condition:subjectGreaterThanEach']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition === true) return failure(c, []);
+      return ok({
+        kind: 'subjectGreaterThanEach',
+        stat: test.stat,
+        filter: { types: test.types as CardType[] },
+      });
+    }
     case 'subjectGreaterPower': {
       // CR 208.1, 603.4, 702.100a (Ensign Harry Kim, Operations): "if it has greater power than ~" is the intervening "if" of a trigger about the creature that entered, read as the ability
       // triggers and again as it resolves. The engine's Evolve test with the toughness left out.
@@ -916,6 +928,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectControllerHasMore',
   'condition:subjectControlledByYou',
   'condition:subjectStat',
+  'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
   'condition:triggerPlayerHasMore',
   'condition:triggerPlayerIsOpponent',

@@ -287,7 +287,9 @@ function lowerManaAbility(
   // A definition of X after the mana would be dropped by this reading, so it is not read (stage P28). Neither is a test on a
   // sentence (stage P32): "If you control a Dragon, add {R}" is not "Add {G}", and only `lowerManaInstead` reads the one that says "instead".
   // "Add X mana of any one color, where X is this creature's power." (CR 107.3c): the one definition of X a mana ability of one sentence may have, read by that production.
-  const defines = spec?.kind === 'manaSpec' && spec.what.kind === 'anyOneColorX';
+  const defines =
+    spec?.kind === 'manaSpec' &&
+    (spec.what.kind === 'anyOneColorX' || spec.what.kind === 'anyCombinationX');
   // Issue 345 (Redshift): the sentence of the mana is the first, and later sentences ("Spend this mana only to activate abilities.") define nothing.
   const whereOf = ability.body.sentences[0]?.where;
   const laterWhere = ability.body.sentences.slice(1).some((s) => s.where !== undefined);
@@ -325,7 +327,11 @@ function lowerManaAbility(
   if (!restrictions.ok) return restrictions;
   // CR 106.1b, 605.3b: the count of mana of the one color chosen as the ability resolves, from the "for each" of the sentence or from the X its ", where X is" defines.
   let production: ManaProduction;
-  if (spec.what.kind === 'thatColor' || spec.what.kind === 'anyOneColorX') {
+  if (
+    spec.what.kind === 'thatColor' ||
+    spec.what.kind === 'anyOneColorX' ||
+    spec.what.kind === 'anyCombinationX'
+  ) {
     const counted = spec.what.kind === 'thatColor' ? add.args.times : whereOf;
     if (counted === undefined || counted.kind === 'flag') return failure(ability);
     const amount = lowerAmount(counted as IrAmount, trial, spec.rule);
@@ -334,7 +340,10 @@ function lowerManaAbility(
     if (costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')) {
       return failure(ability);
     }
-    production = { kind: 'anyColorAmount', amount: amount.value };
+    production =
+      spec.what.kind === 'anyCombinationX'
+        ? { kind: 'anyCombinationAmount', amount: amount.value }
+        : { kind: 'anyColorAmount', amount: amount.value };
   } else {
     const plain = lowerMana(spec);
     if (plain === null) return failure(ability);
@@ -1035,6 +1044,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'manaProduction:anyColorAmount',
+  'manaProduction:anyCombinationAmount',
   'ability:activateOnlyIf',
   'ability:costReducedIf',
   'ability:costReducedBy',
