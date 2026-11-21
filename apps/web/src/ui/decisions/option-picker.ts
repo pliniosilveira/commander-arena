@@ -24,6 +24,8 @@ export function optionPrompt(
   }
   // CR 701.30b: "clash with an opponent".
   if (d.purpose === 'clashOpponent') return `Choose an opponent to clash with (${d.sourceName}).`;
+  // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller chooses which opponent.
+  if (d.purpose === 'chooseOpponent') return `Choose an opponent (${d.sourceName}).`;
   // CR 310.9a: "its controller chooses a player to be its protector".
   if (d.purpose === 'protector') return `Choose a protector for ${d.sourceName}.`;
   // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life".
