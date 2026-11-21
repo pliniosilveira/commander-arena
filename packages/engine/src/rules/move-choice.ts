@@ -116,7 +116,45 @@ export function runChooseMove(
     instruction.among === undefined && instruction.optional !== true
       ? {}
       : { resetPerformed: true as const };
+  // CR 101.4, 701.13 (`together`): the cards a player chose are held until the last player has chosen; then each player's cards move, in the order they chose.
+  const group = instruction.together;
+  const hold = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
+    if (group === undefined) throw new Error('A choice with no group cannot be held');
+    const held = [...group.held, { seat: chooser, cards: objects, automatic }];
+    const next = group.later[0];
+    if (next !== undefined) {
+      return done(
+        state,
+        [],
+        [
+          {
+            ...instruction,
+            seat: next,
+            chosen: null,
+            together: { later: group.later.slice(1), held },
+          },
+        ],
+      );
+    }
+    const { together: _held, ...single } = instruction;
+    return {
+      ...done(
+        state,
+        [],
+        held
+          .filter((h) => h.cards.length > 0)
+          .map((h) => ({
+            ...single,
+            seat: h.seat,
+            chosen: h.cards,
+            ...(h.automatic ? { automatic: true as const } : {}),
+          })),
+      ),
+      lastMoved: [],
+    };
+  };
   const run = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
+    if (group !== undefined) return hold(objects, automatic);
     const event: GameEvent = {
       kind: 'permanentsChosen',
       seat: decider,
@@ -177,7 +215,7 @@ export function runChooseMove(
         : together.instructions;
     return { ...done(together.state, [event], entries), lastMoved: [], ...restart };
   };
-  if (instruction.chosen !== null) return run(instruction.chosen, false);
+  if (instruction.chosen !== null) return run(instruction.chosen, instruction.automatic === true);
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal =
     fromCards && instruction.graveyardOf !== undefined
@@ -235,6 +273,8 @@ export function runChooseMove(
   const looked =
     instruction.handOf === undefined ? [] : zoneList(state, 'hand', instruction.handOf);
   if (legal.length === 0 && looked.length === 0) {
+    // CR 101.4: a player with nothing to choose still lets the next player choose.
+    if (group !== undefined) return hold([], true);
     return { ...done(state), lastMoved: [], ...restart };
   }
   const optional = instruction.optional === true;
