@@ -82,12 +82,12 @@ export function Versus({ view }: { view: GameView }) {
           />
           {emblems.length > 0 && (
             <div className="dec-versus-emblems" data-versus-emblems>
-              {emblems.map((emblem) => (
-                <div className="dec-versus-emblem" key={emblem.id}>
-                  <span className="dec-versus-who">Emblem</span>
-                  <span className="dec-versus-emblem-text">{emblem.oracleText}</span>
-                </div>
-              ))}
+              <h3 className="dec-versus-emblems-title">Opponent's emblems</h3>
+              <ul className="dec-versus-emblem-list">
+                {emblems.map((emblem) => (
+                  <li key={emblem.id}>{emblem.oracleText}</li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

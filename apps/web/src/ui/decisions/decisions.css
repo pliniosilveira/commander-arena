@@ -1477,24 +1477,22 @@
   min-width: 0;
 }
 .dec-versus-emblems {
-  flex: 0 1 210px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex: 0 1 230px;
   min-width: 0;
-}
-.dec-versus-emblem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg-raised);
+  padding: 6px 4px;
   text-align: left;
 }
-.dec-versus-emblem-text {
+.dec-versus-emblems-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.dec-versus-emblem-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   font-size: 12px;
 }
 /* Not enough room beside the deck: the emblems go below it. */
