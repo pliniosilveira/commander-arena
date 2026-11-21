@@ -45,3 +45,58 @@ test('every shipped challenge is a valid, fully supported deck', async () => {
     expect(result.ok, result.ok ? '' : result.reason).toBe(true);
   }
 });
+
+test.each([
+  ['medium', 2],
+  ['hard', 4],
+] as const)('%s gives the opponent %i emblems; Easy gives none', async (level, count) => {
+  const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
+  const challenges = preconsOf(CHALLENGES.snapshots);
+  const base = { seed: 1, humanDeck: 'synthetic-mine', challenge: 'witch-king-of-angmar' };
+  const result = await startChallengeOptions(precons, challenges, { ...base, level });
+  expect(result.ok).toBe(true);
+  if (result.ok) expect(result.options.aiEmblems?.length).toBe(count);
+  const easy = await startChallengeOptions(precons, challenges, base);
+  expect(easy.ok && easy.options.aiEmblems === undefined).toBe(true);
+});
+
+test.each(['medium', 'hard'] as const)(
+  '%s refuses a challenge that has no emblems',
+  async (level) => {
+    const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
+    const challenges = preconsOf([await playableSnapshot('synthetic-challenge')]);
+    const result = await startChallengeOptions(precons, challenges, {
+      seed: 1,
+      humanDeck: 'synthetic-mine',
+      challenge: 'synthetic-challenge',
+      level,
+    });
+    expect(result.ok).toBe(false);
+  },
+);
+
+test.each([
+  ['medium', ['Call of the Ring', 'gain 2 life']],
+  ['hard', ['Call of the Ring', 'gain 2 life', 'basic land', 'card named Nazgûl']],
+] as const)(
+  'a %s game against the real Witch-king deck starts with its emblems in the AI command zone',
+  async (level, texts) => {
+    const { GameHost } = await import('../src/game/host');
+    const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
+    const challenges = preconsOf(CHALLENGES.snapshots);
+    const result = await startChallengeOptions(precons, challenges, {
+      seed: 1,
+      humanDeck: 'synthetic-mine',
+      challenge: 'witch-king-of-angmar',
+      level,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const host = new GameHost({ clock: () => 0 });
+    const { snapshot } = await host.newGame(result.options);
+    const aiCommand = snapshot.view.seats[1]?.command.filter((o) => o.name === 'Emblem') ?? [];
+    expect(aiCommand.map((o) => o.oracleText)).toEqual(
+      texts.map((t) => expect.stringContaining(t)),
+    );
+  },
+);

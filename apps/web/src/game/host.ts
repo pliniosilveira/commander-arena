@@ -233,6 +233,9 @@ export class GameHost implements GameClient {
         options.aiCards ?? (await hiddenDeck(options.aiDeck)),
       ],
       settings: { freeFirstMulligan: options.freeMulligan ?? true },
+      ...(options.aiEmblems === undefined || options.aiEmblems.length === 0
+        ? {}
+        : { startingEmblems: options.aiEmblems.map((e) => ({ ...e, seat: AI_SEAT })) }),
     };
     this.actions = [];
     this.aiFallbacks = 0;

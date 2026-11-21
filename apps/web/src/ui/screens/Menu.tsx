@@ -5,7 +5,7 @@
  * and imports decks.
  */
 import { useMemo, useState } from 'react';
-import { deckChoices, startChallengeOptions } from '../../precons';
+import { type ChallengeLevel, deckChoices, emblemsFor, startChallengeOptions } from '../../precons';
 import { ThemeToggle } from '../panels/ThemeToggle';
 import { useChallenges, usePrecons } from '../precons-context';
 import { useActions } from '../store-context';
@@ -30,7 +30,15 @@ export function Menu() {
   const precons = usePrecons();
   const challenges = useChallenges();
   const { choices } = useDeckChoices();
-  const challengeChoices = useMemo(() => deckChoices(challenges.list, [], []), [challenges.list]);
+  const [level, setLevel] = useState<ChallengeLevel>('easy');
+  // Medium and Hard offer only the challenges that have emblems for them.
+  const challengeChoices = useMemo(
+    () =>
+      deckChoices(challenges.list, [], []).filter(
+        (choice) => level === 'easy' || emblemsFor(level, choice.id).length > 0,
+      ),
+    [challenges.list, level],
+  );
   const [form, setForm] = useState<MenuForm>({
     ...defaultDecks(precons.list.map((p) => p.id)),
     seed: '',
@@ -77,6 +85,7 @@ export function Menu() {
       seed: parsed.seed ?? randomSeed(),
       humanDeck: form.humanDeck,
       challenge: id,
+      level,
       freeMulligan: form.freeMulligan ?? true,
     })
       .then(async (result) => {
@@ -147,14 +156,33 @@ export function Menu() {
             type="button"
             className="scr-btn scr-btn-primary"
             disabled={!seedValid || !installed}
-            onClick={() => setStep('challenge-player')}
+            onClick={() => {
+              setLevel('easy');
+              setStep('challenge-player');
+            }}
           >
             Easy
           </button>
-          <button type="button" className="scr-btn scr-btn-primary" disabled>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => {
+              setLevel('medium');
+              setStep('challenge-player');
+            }}
+          >
             Medium
           </button>
-          <button type="button" className="scr-btn scr-btn-primary" disabled>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => {
+              setLevel('hard');
+              setStep('challenge-player');
+            }}
+          >
             Hard
           </button>
         </div>

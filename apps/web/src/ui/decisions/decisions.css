@@ -1417,12 +1417,18 @@
     align-self: flex-start;
   }
 }
+/* Three columns so the × stays in the middle: your deck on its left, the opponent's deck (and its emblems, which extend to the right) on its right. */
 .dec-versus {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: stretch;
-  justify-content: center;
   gap: 4px;
   width: 100%;
+}
+.dec-versus > .dec-versus-side {
+  width: 100%;
+  max-width: 264px;
+  justify-self: end;
 }
 .dec-versus-side {
   flex: 0 1 264px;
@@ -1467,6 +1473,45 @@
 }
 .dec-versus-colors {
   margin-top: auto;
+}
+/* The opponent's deck with the emblems it starts with, side by side in the same block. */
+.dec-versus-opponent {
+  justify-self: start;
+  max-width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
+.dec-versus-emblems {
+  flex: 0 1 230px;
+  min-width: 0;
+  padding: 6px 4px;
+  text-align: left;
+}
+.dec-versus-emblems-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.dec-versus-emblem-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+/* Not enough room beside the deck: the emblems go below it. */
+@media (max-width: 1000px) {
+  .dec-versus-opponent {
+    width: 100%;
+    max-width: 264px;
+    flex-direction: column;
+  }
+  .dec-versus-emblems {
+    flex-basis: auto;
+  }
 }
 .dec-versus-x {
   align-self: center;

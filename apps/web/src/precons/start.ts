@@ -7,6 +7,7 @@
 
 import type { AiKind, NewGameOptions } from '../game/protocol';
 import type { PreconDeck, Precons } from './build';
+import { type ChallengeLevel, emblemsFor } from './challenges/levels';
 
 export type StartOptions =
   | { readonly ok: true; readonly options: NewGameOptions }
@@ -71,6 +72,8 @@ export interface ChallengeRequest {
   readonly humanDeck: string;
   /** The challenge opponent: an id of the challenge list. */
   readonly challenge: string;
+  /** Easy (the default), Medium or Hard: the opponent also owns its emblems from the start. */
+  readonly level?: ChallengeLevel;
   readonly freeMulligan?: boolean;
 }
 
@@ -87,6 +90,14 @@ export async function startChallengeOptions(
   if (!human.ok) return { ok: false, reason: human.reason };
   const ai = await challenges.prepare(request.challenge);
   if (!ai.ok) return { ok: false, reason: ai.reason };
+  const level = request.level ?? 'easy';
+  const emblems = emblemsFor(level, request.challenge);
+  if (level !== 'easy' && emblems.length === 0) {
+    return {
+      ok: false,
+      reason: `${ai.info.name} has no ${level === 'medium' ? 'Medium' : 'Hard'} level yet.`,
+    };
+  }
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   return {
     ok: true,
@@ -94,6 +105,7 @@ export async function startChallengeOptions(
       seed: request.seed,
       humanDeck: request.humanDeck,
       aiDeck: request.challenge,
+      ...(emblems.length === 0 ? {} : { aiEmblems: emblems }),
       humanCards: human.deck,
       aiCards: ai.deck,
       ...(humanPreconName === undefined ? {} : { humanPreconName }),
