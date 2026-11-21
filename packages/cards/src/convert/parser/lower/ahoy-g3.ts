@@ -6,7 +6,6 @@
  */
 import type { IrClause } from '../ir/types';
 import { type Effects, failure } from './clauses';
-import { missingFeatures } from './features';
 import type { Lowering } from './types';
 
 const MOVED = { kind: 'moved' } as const;
@@ -21,15 +20,10 @@ const LOOK_HAND_PUT_ATTACKING: Lowering<IrClause, Effects> = {
     'selector:defendingPlayer',
     'ability:chooseFromDefendersHand',
     'effect:enterAttacking',
-    'ability:attackTargetChoice',
   ],
   lower(clause, ctx) {
     // CR 508.4: the creature attacks the player the source attacks; only where the source is the attacker, as for a token that enters attacking.
     if (!ctx.selfAttackTrigger) return failure(clause);
-    // CR 508.4, 402.3: the controller chooses the player or planeswalker the creature attacks and looks at the whole hand; the engine does neither, so until it does
-    // (`attackTargetChoice`) the card is not runnable.
-    const blocked = missingFeatures(['effect:enterAttacking', 'ability:attackTargetChoice']);
-    if (blocked.length > 0) return failure(clause, blocked);
     return {
       ok: true,
       value: [
@@ -45,7 +39,8 @@ const LOOK_HAND_PUT_ATTACKING: Lowering<IrClause, Effects> = {
           tapped: true,
           controller: 'you',
         },
-        { kind: 'enterAttacking', objects: MOVED },
+        // CR 508.4: "attacking that player or a planeswalker they control": the controller chooses between the player and their planeswalkers, never a battle.
+        { kind: 'enterAttacking', objects: MOVED, thatPlayerOrTheirPlaneswalkers: true },
       ],
       rule: clause.rule,
     };

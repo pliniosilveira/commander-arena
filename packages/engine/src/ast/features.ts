@@ -1790,11 +1790,6 @@ export const ABILITY_FEATURES = [
   'delayedReturnAttached',
   /** "Return enchanted creature card to the battlefield ... attach this Aura to it" (CR 400.7, 303.4, Animate Dead): `moveToZone` with `putWithSource`. */
   'putWithSource',
-  /**
-   * NOT BUILT. "look at defending player's hand" shows the whole hand (CR 402.3); the engine offers only the creature cards. The name is from before the controller could choose
-   * what a creature put onto the battlefield attacking attacks (CR 508.4, built since): a card that needs the whole hand shown is flagged unsupported (a wrong game is never played).
-   */
-  'attackTargetChoice',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -2706,7 +2701,6 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   attachedToMoved: true,
   delayedReturnAttached: true,
   putWithSource: true,
-  attackTargetChoice: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,

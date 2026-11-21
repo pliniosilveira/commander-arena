@@ -5,21 +5,14 @@
 // CR 110.2a (it enters under the control of the player who put it there), CR 603.7 and 603.7c (a delayed triggered ability about that object), CR 511.2 (end of combat), CR 108.3 (the
 // owner's hand), CR 402.3 (a hand is the player's own zone).
 import { readFileSync } from 'node:fs';
-import { type CardDefinition, validateCard } from '@commander-arena/engine';
+import {
+  type CardDefinition,
+  type GameState,
+  type ObjectId,
+  validateCard,
+} from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
-import { describe, expect, test, vi } from 'vitest';
-
-// Zara is flagged unsupported in the real game (the engine does not offer the choice of the player or planeswalker it attacks, nor the whole hand: CR 508.4, 402.3; see
-// convert-grammar-zara-unsupported.test.ts). The primitives she is made of are kept under test here, with the one missing feature pretended to exist.
-vi.mock('@commander-arena/engine', async (importOriginal) => {
-  const engine = await importOriginal<typeof import('@commander-arena/engine')>();
-  return {
-    ...engine,
-    isFeatureSupported: (ref: string) =>
-      ref === 'ability:attackTargetChoice' ||
-      engine.isFeatureSupported(ref as Parameters<typeof engine.isFeatureSupported>[0]),
-  };
-});
+import { describe, expect, test } from 'vitest';
 
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
@@ -38,6 +31,13 @@ function real(name: string): CardDefinition {
   expect(imported.support.reasons, name).toEqual([]);
   expect(imported.support.status, name).toBe('supported');
   return imported.definition;
+}
+
+/** The name of the card an object is, read from the state the way the web host reads the faces of the cards looked at. */
+function nameOf(state: GameState, id: ObjectId): string | undefined {
+  const card = state.objects[id]?.card;
+  const stored = card === null || card === undefined ? undefined : state.cards[card];
+  return stored === undefined ? undefined : state.definitions[stored.definition]?.faces[0]?.name;
 }
 
 const LIBRARY = Array.from({ length: 8 }, () => 'Island');
@@ -146,11 +146,20 @@ describe("Zara, Renegade Recruiter: a creature from the defending player's hand,
     expect(validateCard(zara)).toEqual([]);
   });
 
-  test('the controller is asked, and only the creature cards of that hand are offered (CR 608.2d, 402.3)', () => {
+  test('the controller is asked, and only the creature cards of that hand can be chosen (CR 608.2d, 402.3)', () => {
     const g = attack(BEARS, BOLT);
     g.expect.pending('chooseCards', 0);
     const shown = g.view(0).pendingCards ?? [];
     expect(shown.map((o) => o.name)).toEqual([BEARS]);
+  });
+
+  test('the whole hand is looked at, not only the creature cards (CR 402.3)', () => {
+    const g = attack(BEARS, BOLT);
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error('expected the choice of a card');
+    const names = (d.looked ?? []).map((id) => nameOf(g.state, id));
+    expect(names.sort()).toEqual([BEARS, BOLT].sort());
+    expect(d.legal).toHaveLength(1);
   });
 
   test('the creature enters under the control of Zara’s controller, tapped and attacking, never declared (CR 508.4, 110.2a, 110.5b)', () => {
@@ -183,11 +192,49 @@ describe("Zara, Renegade Recruiter: a creature from the defending player's hand,
     g.expect.zone(BEARS, 'hand', { seat: 1, count: 1 });
   });
 
-  test('a hand with no creature card asks nothing', () => {
+  test('a hand with no creature card is still shown, and nothing can be chosen (CR 402.3)', () => {
     const g = attack(BOLT);
-    expect(g.view(0).decidingSeat).not.toBe(null);
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error('expected the hand to be shown');
+    expect(d).toMatchObject({ seat: 0, min: 0, max: 0, legal: [] });
+    expect((d.looked ?? []).map((id) => nameOf(g.state, id))).toEqual([BOLT]);
+    g.act(0).chooseCards();
     g.expect.zone(BOLT, 'hand', { seat: 1, count: 1 });
     g.expect.combat({ attackers: [zara.name] });
+    g.advanceTo('end');
+    g.expect.zone(BOLT, 'hand', { seat: 1, count: 1 });
+  });
+
+  test('an empty hand shows nothing and asks nothing', () => {
+    const g = attack();
+    expect(g.state.pending?.kind).not.toBe('chooseCards');
+    g.expect.combat({ attackers: [zara.name] });
+  });
+
+  test('the creature attacks the player or a planeswalker that player controls, as its controller chooses (CR 508.4)', () => {
+    const PW = 'SYNTHETIC Vanilla Planeswalker';
+    const g = scenario()
+      .define(zara)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(zara.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .hand(BEARS)
+      .battlefield(PW)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: zara.name }]);
+    g.passAll();
+    g.act(0).chooseCards({ name: BEARS, seat: 1 });
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseOption') throw new Error('expected the choice of what to attack');
+    expect(d).toMatchObject({ seat: 0, purpose: 'attackTarget' });
+    expect(d.options).toHaveLength(2);
+    g.act(0).chooseOption(`permanent:${g.object(PW).id}`);
+    g.expect.combat({ attackers: [zara.name, BEARS] });
+    g.expect.invariants();
   });
 
   test('the card is on the battlefield only after the choice: Zara’s own hand is not looked at', () => {
