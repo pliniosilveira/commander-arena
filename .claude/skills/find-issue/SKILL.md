@@ -1,6 +1,6 @@
 ---
 name: find-issue
-description: Analyze the rules engine for a possible rules bug, determinism leak or honesty gap, and report one finding as a GitHub issue labelled possible-issue, with evidence and a proposed fix. Read-only on the code. Use when asked to run the find-issue routine, to look for engine issues, or by the scheduled task that fires it.
+description: Analyze the rules engine for a possible rules bug, determinism leak or honesty gap, and report one finding as a GitHub issue labelled possible-issue and rated with a severity label, with evidence and a proposed fix. Read-only on the code. Use when asked to run the find-issue routine, to look for engine issues, or by the scheduled task that fires it.
 ---
 
 # Find issue routine
@@ -21,7 +21,7 @@ A false report costs the owner more than a missed bug. Report only what you chec
 
 ## Time box
 
-A firing has a fixed search budget: **30 minutes of wall-clock time** and **at most 3 candidates verified** in Step 2. At the start of Step 0 run `date +%s` and keep the value; run `date +%s` again before each file you open and before each candidate you verify. Once 30 minutes have passed, or 3 candidates have been dropped as not reproducible, stop searching. Do not extend the budget, do not switch to a second area to keep looking, and do not file an unverified issue just because time ran out. If nothing verified by then, go to Step 4 with "nothing found in <area>" and create no issue. A candidate whose verification is already running when time is up may finish; no new one starts.
+A firing has a fixed search budget: **10 minutes of wall-clock time** and **at most 3 candidates verified** in Step 2. At the start of Step 0 run `date +%s` and keep the value; run `date +%s` again before each file you open and before each candidate you verify. Once 10 minutes have passed, or 3 candidates have been dropped as not reproducible, stop searching. Do not extend the budget, do not switch to a second area to keep looking, and do not file an unverified issue just because time ran out. If nothing verified by then, go to Step 4 with "nothing found in <area>" and create no issue. A candidate whose verification is already running when time is up may finish; no new one starts.
 
 ## Step 1: choose where to look
 
@@ -49,17 +49,33 @@ A suspicion is not a finding. For each candidate, in the scratchpad (never commi
 3. If the test passes, the candidate is not a bug: drop it. If it cannot be reproduced but the code reading is strong, it may still be reported as **unverified**, said plainly, with the reasoning.
 4. Delete the scratch test afterwards: `git status` must show a clean tree.
 
-Rank the verified candidates: wrong game outcome or crash first, then nondeterminism, then dishonest support, then missing coverage. Report the top one. Drop it if it duplicates a Step 0.3 issue, or a limit in `docs/ROADMAP.md`. If nothing survives, or the time box is spent, say "nothing found in <area>" in one line, and create nothing.
+Rank the verified candidates by severity (below), then by: wrong game outcome or crash, nondeterminism, dishonest support, missing coverage. Report the top one. Drop it if it duplicates a Step 0.3 issue, or a limit in `docs/ROADMAP.md`. If nothing survives, or the time box is spent, say "nothing found in <area>" in one line, and create nothing.
+
+## Severity
+
+Rate the finding on four levels, the usual critical, high, medium and low scale. Judge **reachability in the shipped game first**: the web app plays two seats, and `createGame` takes more only behind `allowMoreThanTwoSeats` (`docs/RULES_COVERAGE.md`, row 800.4a). A finding that needs more than two seats, or a card or shape the engine does not support, is capped at **medium**.
+
+| Level | Label | Meaning |
+| --- | --- | --- |
+| Critical | `severity:critical` | In the shipped game, through a common path (a frequent mechanic or card shape): a crash, a hang, a game that cannot continue, a wrong winner, or a determinism break (the same seed and actions give different results). |
+| High | `severity:high` | In the shipped game: a wrong rules outcome on a card or situation the engine marks supported and that appears in real decks. |
+| Medium | `severity:medium` | A wrong outcome in an uncommon interaction, support that is overstated (an honesty gap), or a crash or wrong outcome that needs more than two seats. |
+| Low | `severity:low` | Missing coverage, a wrong log line or view value with no effect on the game, or a theoretical case no supported card or shape reaches. |
+
+When two levels fit, take the lower one and say why in the issue. Never raise a level for an unverified finding: an unverified finding is at most medium.
 
 ## Step 3: file the issue
 
-Create the `possible-issue` label if it is missing (`gh api repos/pliniosilveira/commander-arena/labels -f name=possible-issue -f color=D93F0B -f description='Found by the find-issue routine; not yet confirmed by a human'`). Then create one issue with `gh api repos/pliniosilveira/commander-arena/issues` and the label `possible-issue`. Title: a short imperative-free description of the wrong behavior, for example `Trample damage ignores deathtouch when the blocker is removed`. Body, in this order:
+Create any of these labels that is missing, with `gh api repos/pliniosilveira/commander-arena/labels -f name=<name> -f color=<color> -f description=<text>`: `possible-issue` (D93F0B, "Found by the find-issue routine; not yet confirmed by a human"), `severity:critical` (B60205), `severity:high` (D93F0B), `severity:medium` (FBCA04), `severity:low` (0E8A16), each with a description of its level from the table above. Then create one issue with `gh api repos/pliniosilveira/commander-arena/issues` and two labels: `possible-issue` and the severity label. Title: a short imperative-free description of the wrong behavior, for example `Trample damage ignores deathtouch when the blocker is removed`. Body, in this order:
 
 ```
 <!-- find-issue: area=<area number and name>; fingerprint=<file>:<function or rule> -->
 
 ## Summary
 One or two sentences: what goes wrong and when.
+
+## Severity
+The level, and one sentence of why: is it reachable in the shipped two-seat game, and through a common path?
 
 ## Where
 `path/to/file.ts:line` (the code), the CR rule as `CR 510.1c (Damage Assignment Order)`, and the tests that touch it.
@@ -77,11 +93,11 @@ The general fix, in prose, at the primitive or rule level (no card-name special 
 What you could not verify (CR text not available, a path not read, and so on).
 ```
 
-Do not assign anyone, and do not add labels other than `possible-issue`. Do not paste secrets, personal details or session links. Never invent CR text, card data or rulings; if you could not fetch it, say so in "Not checked".
+Do not assign anyone, and do not add labels other than `possible-issue` and one `severity:*` label. Do not paste secrets, personal details or session links. Never invent CR text, card data or rulings; if you could not fetch it, say so in "Not checked".
 
 ## Step 4: finish
 
-Clean the scratchpad copies, confirm `git status` is clean, and stop with one line: the area, the minutes spent, and the issue number or "nothing found". Do not start a second finding in the same firing.
+Clean the scratchpad copies, confirm `git status` is clean, and stop with one line: the area, the minutes spent, and the issue number with its severity, or "nothing found". Do not start a second finding in the same firing.
 
 ## Always
 
