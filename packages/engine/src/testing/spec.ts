@@ -123,7 +123,7 @@ export function checkCount(label: string, n: number | undefined, min = 0): void 
     throw new ScenarioError(`${label} must be an integer >= ${min}, got ${n}`);
 }
 
-export function validatePlacement(p: Placement, def: CardDefinition): void {
+export function validatePlacement(p: Placement, def: CardDefinition, seatCount = 2): void {
   const o = p.options;
   const where = `${p.name} in seat ${p.seat}'s ${p.zone}`;
   checkCount(`count for ${where}`, o.count, 1);
@@ -227,7 +227,7 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
       if (!types.includes('battle')) {
         throw new ScenarioError(`${where}: only a battle has a protector (CR 310.9)`);
       }
-      if (o.protector !== 0 && o.protector !== 1) {
+      if (!Number.isInteger(o.protector) || o.protector < 0 || o.protector >= seatCount) {
         throw new ScenarioError(`${where}: protector ${o.protector} is not a seat`);
       }
       if (o.protector === (o.controller ?? p.seat)) {

@@ -382,6 +382,11 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
       const { entersCopy: _answered, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
+    // CR 310.9a: and the protector chosen for a battle that entered.
+    if (head.kind === 'move' && state.resolution?.entersProtector !== undefined) {
+      const { entersProtector: _protector, ...rest } = state.resolution;
+      state = { ...state, resolution: rest };
+    }
     // D-225: so does the card revealed for a land's "you may reveal a card".
     if (
       (head.kind === 'move' || head.kind === 'enterToken') &&
@@ -517,6 +522,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
+      ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
@@ -1076,6 +1082,41 @@ export function answerResolutionChoosePlayer(
   };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
+/**
+ * Records the protector the controller chose as a battle entered (CR 310.9a, 310.12a) for the move that asked: the head of the queue when it is a move, or the spell resolving when the
+ * queue is empty, then continues. Null when no such question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionProtector(state: GameState, option: string): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (
+    !res ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'protector' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const head = res.queue[0];
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source) return null;
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, entersProtector: Number(option.slice('seat:'.length)) },
+    },
     [event],
   );
 }

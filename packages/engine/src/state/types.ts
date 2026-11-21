@@ -2043,6 +2043,8 @@ export interface ResolutionContext {
   readonly entersChosen?: ChosenValues | null;
   /** The answer to "you may have it become a copy of any creature" (CR 707.9, D-151) for the move that asked it: the permanent copied, or null for none. Cleared once that move is done. */
   readonly entersCopy?: ObjectId | null;
+  /** The protector the controller of a battle chose as it entered (CR 310.9a), for the move that asked. Absent until answered; cleared once that move is done. */
+  readonly entersProtector?: SeatId;
   /**
    * The answer to "you may sacrifice any number of creatures" of devour (CR 702.82a, D-185) for the move that asked it: the creatures to sacrifice,
    * none being an answer. Absent until answered, and cleared once that move is done.
