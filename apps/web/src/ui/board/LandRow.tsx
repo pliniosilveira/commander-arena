@@ -150,7 +150,6 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
         data-overflow={layout.overflow}
         data-stacked={depth > 1}
       >
-        {objects.length === 0 && <span className="board-row-empty">Lands</span>}
         {columns.map((column) => (
           <LandColumnView
             key={`${column.key}#${column.part}`}

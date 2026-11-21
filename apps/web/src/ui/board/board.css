@@ -512,11 +512,6 @@
   position: relative;
   min-height: 0;
   padding: 0 8px;
-  border-bottom: 1px dashed color-mix(in srgb, var(--line) 55%, transparent);
-}
-
-.board-row:last-child {
-  border-bottom: 0;
 }
 
 .board-row-creature {
@@ -580,15 +575,6 @@
 
 .board-row-scroll::-webkit-scrollbar {
   display: none;
-}
-
-.board-row-empty {
-  color: var(--text-dim);
-  font-size: calc(11px * var(--text-scale));
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.55;
-  user-select: none;
 }
 
 .board-scroll {

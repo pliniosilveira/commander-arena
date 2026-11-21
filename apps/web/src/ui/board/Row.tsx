@@ -182,7 +182,6 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
         data-overflow={layout.overflow}
         data-grouped={layout.grouped}
       >
-        {objects.length === 0 && <span className="board-row-empty">{ROW_LABEL[kind]}</span>}
         {layout.entries.map((e) => {
           if (e.kind === 'group') {
             return (
