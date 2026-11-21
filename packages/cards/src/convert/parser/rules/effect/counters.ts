@@ -29,7 +29,7 @@ import { type Clauses, LIST_SEPARATOR, makeClause, operands, single } from './op
  * The name of a kind of counter: "+1/+1", "-1/-1", the keyword counters of two words (CR 122.1b: first strike, double strike) and any other word ("charge").
  * Read at the lowering, where the names the engine runs as keyword counters (D-430) are told from the ones it cannot run (decayed).
  */
-const COUNTER_NAME = /[+-]\d+\/[+-]\d+|first strike|double strike|[a-z]+/i;
+export const COUNTER_NAME = /[+-]\d+\/[+-]\d+|first strike|double strike|[a-z]+/i;
 
 const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-many'] as const;
 

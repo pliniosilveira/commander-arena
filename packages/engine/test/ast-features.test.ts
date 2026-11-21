@@ -116,6 +116,8 @@ describe('the dimensions', () => {
       'subjectStat',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
+      'triggerPlayerIsOpponent',
+      'triggerPlayerStat',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',

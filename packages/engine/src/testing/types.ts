@@ -227,6 +227,7 @@ export interface CastHandle {
     | 'bounce'
     | 'blight'
     | 'untap'
+    | 'removeCounters'
     | 'cast';
   /**
    * Answer the modes question of a modal spell or ability (CR 601.2b, 700.2a, D-114) when the engine asks it:

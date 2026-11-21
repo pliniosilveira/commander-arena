@@ -119,6 +119,19 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
         : failure(cost);
+    case 'removeCountersAmong': {
+      // "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the engine's `removeCounters` with `among`, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      if (!filter.ok) return filter;
+      if (cost.count < 1) return failure(cost);
+      return ok({
+        kind: 'removeCounters',
+        counter: cost.counter,
+        count: cost.count,
+        among: filter.value,
+      });
+    }
     case 'sacrifice': {
       const { what } = cost;
       if (what.det === 'self' && cost.also === undefined) {

@@ -215,6 +215,8 @@ export function evaluateCondition(
       const subject = ptNow(state, ctx.triggerSubject);
       const source = ptNow(state, ctx.source);
       if (subject === null || source === null) return false;
+      // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
+      if (condition.onlyPower === true) return subject.power > source.power;
       return subject.power > source.power || subject.toughness > source.toughness;
     }
     case 'controlCommander':
@@ -690,6 +692,19 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'triggerPlayerIsOpponent':
+      // CR 603.2b, 102.2: "that player", the player the event is about, is an opponent of the controller of the ability.
+      return (
+        ctx.triggerPlayer !== undefined &&
+        opponentsOf(state, ctx.controller).includes(ctx.triggerPlayer)
+      );
+    case 'triggerPlayerStat': {
+      // CR 402.1, 119.1, 608.2c: "that player" has so many cards in hand (or life, creatures, lands) as the instruction comes up.
+      if (ctx.triggerPlayer === undefined) return false;
+      const n = playerStatOf(state, ctx.triggerPlayer, condition.stat);
+      const { cmp, value } = condition.compare;
+      return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
+    }
     case 'paired': {
       // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature now, both on the battlefield.
       const own = ctx.source === null ? undefined : state.objects[ctx.source];

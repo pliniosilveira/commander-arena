@@ -49,6 +49,7 @@ import {
   runCantAttackPlaneswalkers,
   runCantBeBlockedByPlayer,
   runContinuous,
+  runCreaturesCantAttackYou,
   runDoubleTokens,
   runEntersTappedGroup,
   runRequireAttack,
@@ -1724,6 +1725,37 @@ function runEffect(
           ],
         });
       }
+      // CR 603.7, 603.7c, 400.7j (Temporal Tribulation): "Exile two target permanents you control. Return those cards to the battlefield under their owner's control at the beginning of
+      // the next end step": ONE delayed ability for the whole group, as the text says, so the cards enter together. It is about the cards the exile moved as they are now, in exile
+      // (`boundObjects` with `zone` 'exile': a card that left since is a new object and is not found); a token that was exiled has ceased to exist (CR 111.8). With one card (or none)
+      // the ability of each card below is made, as before.
+      if (
+        effect.effect.kind === 'moveToZone' &&
+        effect.effect.to === 'battlefield' &&
+        effect.effect.objects.kind === 'moved' &&
+        effect.effect.attachTo === undefined
+      ) {
+        const cards = (res.lastMoved ?? []).filter(
+          (id) => state.objects[id]?.zone === 'exile' && state.objects[id]?.token === null,
+        );
+        if (cards.length > 1) {
+          const ability: TriggeredAbility = {
+            kind: 'triggered',
+            trigger,
+            effect: {
+              ...effect.effect,
+              objects: { kind: 'boundObjects', ids: cards, zone: 'exile' },
+            },
+          };
+          return done({
+            ...state,
+            delayedTriggers: [
+              ...state.delayedTriggers,
+              { source: res.source, controller: res.controller, ability },
+            ],
+          });
+        }
+      }
       if (effect.effect.kind === 'moveToZone') {
         // Issue 89 (CR 603.7c, 400.7): "Return this card to the battlefield attached to that creature at the beginning of the next end step": the creature is the object
         // the effect before it returned, bound as it is now (`boundObjects`: found later only if it is still that object on the battlefield, else the Aura stays, CR 303.4g).
@@ -2413,7 +2445,16 @@ function runEffect(
         next = put.state;
         events.push(...put.events);
       }
-      return done(next, events);
+      // Federation Fleet group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way" counts the counters really put (a replacement or a prevention
+      // may change or stop them), one `counterAdded` event for each placement.
+      const putCount = events.reduce(
+        (n, e) => (e.kind === 'counterAdded' && e.counter === effect.counter ? n + e.count : n),
+        0,
+      );
+      return {
+        ...done(next, events),
+        ...(putCount > 0 ? { thisWay: { countersPut: putCount } } : {}),
+      };
     }
 
     case 'distributeCounters': {
@@ -3047,6 +3088,7 @@ function runEffect(
             ...(caster === undefined ? {} : { seat: caster }),
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
+            ...(effect.remember === true ? { remember: true as const } : {}),
             chosen: null,
           },
         ],
@@ -3495,6 +3537,10 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'creaturesCantAttackYou':
+      // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.
+      return runCreaturesCantAttackYou(state, effect, ctx);
 
     case 'choosePlayer':
       // CR 608.2d (The Black Gate): the controller chooses a player with the most life; the answer is what "that player" means for the rest of the resolution.

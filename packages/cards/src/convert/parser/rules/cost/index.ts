@@ -11,6 +11,7 @@ import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
+import { FEDERATION_D_COST_RULES } from './federation-d';
 import { GISA_G4_COST_RULES } from './gisa-g4';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
@@ -953,4 +954,6 @@ export const COST_RULES = [
   COST_LOYALTY,
   // Hatsune Miku deck (issue 145): "Untap two tapped creatures you control".
   ...UNTAP_PERMANENTS_COST_RULES,
+  // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
+  ...FEDERATION_D_COST_RULES,
 ];

@@ -8,6 +8,7 @@
  */
 import {
   choice,
+  fail,
   literal,
   many,
   map,
@@ -28,7 +29,7 @@ import type {
   IrZoneSpec,
 } from '../../ir/types';
 import { PERMANENT_CARD_TYPES, PERMANENT_TYPES, typeWords } from '../noun/phrases';
-import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
+import { OTHER_SUBTYPES, SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import {
   type Clauses,
@@ -250,6 +251,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a creature card with mana value X or less from your hand onto the battlefield',
     // Issue 103 (Selvala's Stampede, CR 701.38b): up to one card for each vote for an option.
     'you may put a permanent card from your hand onto the battlefield for each free vote',
+    // Federation Fleet deck, group E (Unification): a card of an artifact-only subtype.
+    'you may put a Spacecraft card from your hand or graveyard onto the battlefield',
+    'you may put a Vehicle card from your hand onto the battlefield',
   ],
   rejects: [
     'you may put an artifact card from your hand onto the battlefield under your control',
@@ -274,6 +278,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a permanent card with mana value less than or equal to that damage from your library onto the battlefield',
     'you may put a permanent card from your hand onto the battlefield for each vote',
     'you may put a permanent card from your hand onto the battlefield for each free votes',
+    'you may put a Dragon card from your hand onto the battlefield',
+    'you may put a Spacecraft Dragon card from your hand onto the battlefield',
+    'you may put a card from your hand onto the battlefield',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -299,8 +306,14 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
                 choice(
                   map(pattern(/permanent(?![\p{L}\p{N}])/iu), (): string[] => [PERMANENT_MARK]),
                   typeWords(PERMANENT_TYPES, false),
+                  // Federation Fleet deck, group E (Unification): "a Spacecraft card", a card named by one of the artifact-only subtypes alone (never a creature type: "a Dragon card").
+                  map(pattern(/(?=card(?![\p{L}\p{N}]))/u), (): string[] => []),
                 ),
-                literal(' card'),
+                // The space before "card" is the one the subtype words read when there is no type word ("a Spacecraft card").
+                choice(
+                  literal(' card'),
+                  map(pattern(/card(?![\p{L}\p{N}])/u), () => 'card'),
+                ),
                 // CR 107.3a, 202.3: "with mana value X or less", the X of the spell (Mind into Matter); read as the effect resolves.
                 // Issue 103 (CR 202.3, 603.2c): "with mana value less than or equal to that damage", the damage the trigger event carries (`true`).
                 optional(
@@ -351,6 +364,13 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: onto.span.start, end: tapped.span.end },
       };
       const [, subtypes, typeWordsRead, , limit, , zone] = card.value;
+      // No type word: only the subtypes that belong to no creature ("a Spacecraft card"); otherwise the card words stop where they did before.
+      if (
+        typeWordsRead.length === 0 &&
+        !(subtypes.length > 0 && subtypes.every((name) => OTHER_SUBTYPES.has(name)))
+      ) {
+        return fail(ctx, pos);
+      }
       // "a permanent card" (CR 110.1, 400.1): a card of any permanent type, never an instant or a sorcery.
       const anyPermanent = typeWordsRead.includes(PERMANENT_MARK);
       const atMostX = limit === true || limit === null ? null : limit;

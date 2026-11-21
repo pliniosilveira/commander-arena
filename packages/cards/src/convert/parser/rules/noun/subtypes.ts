@@ -30,6 +30,7 @@ export const OTHER_SUBTYPES: ReadonlySet<string> = new Set([
   'Lander',
   'Map',
   'Powerstone',
+  'Spacecraft',
   'Treasure',
   'Vehicle',
   // 205.3h
