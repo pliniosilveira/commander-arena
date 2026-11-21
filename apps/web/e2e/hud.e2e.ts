@@ -84,7 +84,7 @@ test('Text size: Large by default, Normal on request, and it is remembered', asy
     );
 
   expect(await size()).toBeCloseTo(16.8, 1);
-  await page.getByRole('button', { name: /Settings/ }).click();
+  await page.locator('.settings-toggle').click();
   await expect(page.getByRole('button', { name: 'Large', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',

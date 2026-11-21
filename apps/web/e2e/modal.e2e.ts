@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
-import { toggleSetting } from './harness/settings';
+import { showAllLogLines, toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -266,10 +266,7 @@ test('one legal set is chosen without a dialog: "choose two" with only two modes
   await page.locator('.board-life[data-seat="0"]').click();
   await primary(page).click();
   // The log says the choice was made for the player (a detail line).
-  await page
-    .getByRole('group', { name: 'Log detail' })
-    .getByRole('button', { name: 'All' })
-    .click();
+  await showAllLogLines(page);
   await expect(logText(page)).toContainText(
     'You choose: Target player gains 3 life and Draw a card (the only legal choice).',
   );

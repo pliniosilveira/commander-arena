@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { showAllLogLines } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -55,10 +56,7 @@ test("the opponent's spell waits for the player, with its card in the preview, a
   await primary(page).click();
   await settled(page);
   // Issue 105: it resolves when the player passes, and the log says so (detail lines included).
-  await page
-    .getByRole('group', { name: 'Log detail' })
-    .getByRole('button', { name: 'All' })
-    .click();
+  await showAllLogLines(page);
   await expect(page.getByRole('log')).toContainText(`${name} resolves.`);
   expect(errors).toEqual([]);
 });
@@ -66,7 +64,7 @@ test("the opponent's spell waits for the player, with its card in the preview, a
 test('Settings has a switch for it, on by default', async ({ page }) => {
   await page.goto('/?autostart=white-knights,swamp-forest&seed=7');
   await settled(page);
-  await page.getByRole('button', { name: /Settings/ }).click();
+  await page.locator('.settings-toggle').click();
   const box = page.getByLabel('Stop for opponent spells');
   await expect(box).toBeChecked();
   await box.uncheck();
