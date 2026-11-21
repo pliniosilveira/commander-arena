@@ -864,6 +864,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'noun.up-to-one-target-spell': spell(
     (e) =>
