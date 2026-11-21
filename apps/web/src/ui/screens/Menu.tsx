@@ -19,7 +19,7 @@ export const HOW_TO_PLAY: readonly string[] = [
   'Click a card in your hand to play a land or cast a spell. The game pays for it automatically unless you turn on manual mana payment.',
   'Hover a card to read it in the panel on the left. Right-click pins it there; Esc unpins.',
   'Space passes priority or resolves what is on the stack. The game passes for you when you have nothing to do, except at the stops in Settings.',
-  'Click a step in the bar at the top to add or remove a stop there. Full Control stops at every priority.',
+  'Click the current step in the panel at the right to add or remove a stop there. Full Control stops at every priority.',
   'Pass Turn (P) skips the rest of your turn: combat, the later steps and your second main phase. It stops for a question, or for an opponent spell aimed at you or that you can answer; Esc cancels it. Full Control still stops at every step.',
   'Attack and block by clicking creatures and then confirming. Only legal choices can be clicked.',
   'Arrows on the screen point from a spell on the stack to its targets.',

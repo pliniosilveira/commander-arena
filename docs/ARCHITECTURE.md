@@ -282,14 +282,14 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 
 ```
 .game (flex row)
-  .game-main            TurnTracker, DecisionLayer > Board (strips, rows with .board-dock-slot in your own, hand)
-  .pnl-stack            floats at the right edge (StackPanel)
+  .game-main            DecisionLayer > Board (strips, rows, hand)
+  .turn-panel           right edge, scrolls: TurnTracker, .game-dock-slot, StackPanel
   .board-preview        floats at the left edge, only while a card is read (PreviewPanel)
   .log-toggle, .settings-toggle   bottom left; open .log-dialog and .settings-dialog (LogDock, SettingsDock)
 ```
 
-- **No columns.** The board takes the whole width; the stack, the preview, the log and the settings float over it (`styles.css`). Closed, the log stays in the page, out of sight, as a live region.
-- **The dock is portaled.** `DecisionLayer` owns the decision and builds the dock (`.dec-dock`: the panels of the decision, then `ActionBar`), `Board` registers a slot element in the player's own battlefield, at its right edge and bottom, level with the stack at the top of the opponent's (`DockSlotSetContext`, `ui/decisions/dock-slot.ts`; `Game` keeps it in `DockSlotContext`), and `createPortal` draws it there. A modal overlay and the toast stay in the layer. No provider (a render test) draws the dock inside the layer; an unmounted slot draws nothing.
+- **No columns.** The board takes the whole width; the turn panel, the preview, the log and the settings float over it (`styles.css`). The turn panel starts level with the top of the opponent's battlefield, is as wide as the preview and grows down to the bottom of the screen. Closed, the log stays in the page, out of sight, as a live region.
+- **The dock is portaled.** `DecisionLayer` owns the decision and builds the dock (`.dec-dock`: the panels of the decision, then `ActionBar`); `Game` owns the slot in the turn panel (`DockSlotContext`, `ui/decisions/dock-slot.ts`) and `createPortal` draws the dock there, between the current phase and the stack. A modal overlay and the toast stay in the layer. No provider (a render test) draws the dock inside the layer; an unmounted slot draws nothing.
 - **The preview.** A tap closes it (pin, hover and reveal); it lets the pointer through until pinned.
 - **Arrows.** `StackArrows` reads the boxes from the DOM; `facingEdge` starts an arrow at the edge of the stack item that faces the target.
 
