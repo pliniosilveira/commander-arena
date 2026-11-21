@@ -28,6 +28,7 @@ import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
 import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
 import { AHOY_G3_EFFECT_RULES } from './ahoy-g3';
 import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
+import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -1139,6 +1140,7 @@ export const EFFECT_RULES = [
   ...AHOY_G3_EFFECT_RULES,
   // Ahoy Mateys deck, group 7: "Until end of turn, it gains haste and becomes a Pirate in addition to its other types." and "That creature doesn't untap during its controller's untap step for as long as you control ~." start like the plain lead-gain and doesn't-untap rules, and are tried first.
   ...AHOY_G7_EFFECT_RULES,
+  ...AHOY_G8_EFFECT_RULES,
   // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
   // choose and gain rules, and are tried first.

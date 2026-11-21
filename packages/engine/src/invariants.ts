@@ -447,7 +447,10 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(
           `${id} was cast for its ${obj.stack.alt} cost but is not a spell on the stack`,
         );
-      } else if (face?.alternativeCosts?.some((a) => a.kind === obj.stack?.alt) !== true) {
+      } else if (
+        face?.alternativeCosts?.some((a) => a.kind === obj.stack?.alt) !== true &&
+        !(obj.stack.alt === 'escape' && obj.stack.escapeGrant !== undefined)
+      ) {
         problems.push(
           `${id} was cast for its ${obj.stack.alt} cost but has no such alternative cost`,
         );
@@ -467,7 +470,8 @@ export function checkInvariants(state: GameState): string[] {
         obj.token === null &&
         (obj.alt === 'unearth' || obj.alt === 'suspend'
           ? !face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === obj.alt)
-          : face?.alternativeCosts?.some((a) => a.kind === obj.alt) !== true)
+          : face?.alternativeCosts?.some((a) => a.kind === obj.alt) !== true &&
+            !(obj.alt === 'escape' && obj.escapeGranted === true))
       ) {
         problems.push(`${id} remembers its ${obj.alt} cost but has no such alternative cost`);
       }

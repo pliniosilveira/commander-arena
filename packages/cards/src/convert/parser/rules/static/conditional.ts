@@ -17,6 +17,8 @@ import { OPPONENTS_CANT_CAST_UNIT } from './korvold';
 
 /** The conditions a static ability reads: counts of permanents, a commander, the life total, this permanent's tapped status. */
 const STATIC_CONDITIONS = [
+  // Ahoy Mateys deck, group 8: "as long as you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
+  'condition.control-at-least-subtypes',
   'condition.control-at-least',
   'condition.control-a',
   'condition.control-at-most',

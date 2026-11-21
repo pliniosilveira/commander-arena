@@ -1329,6 +1329,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),
+  // Ahoy Mateys deck, group 8: the condition of the card's own permission to be cast from the graveyard, and the noun of the targets the choice names.
+  'condition.control-at-least-subtypes': permanent(
+    (e) => `You may cast this card from your graveyard as long as ${e}.`,
+  ),
+  'noun.target-card-in-a-graveyard-this-turn': spell(
+    (e) => `Choose ${e}. Put that card into its owner's hand.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

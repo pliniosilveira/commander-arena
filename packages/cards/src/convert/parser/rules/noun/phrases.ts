@@ -1020,9 +1020,18 @@ export function spellTypesAndPhrase(): Parser<IrFilter> {
  * " that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4): a card in a graveyard that went there from the battlefield
  * during this turn (a creature that died, an artifact that was destroyed).
  */
-const PUT_THERE_THIS_TURN: Parser<boolean> = map(
-  pattern(new RegExp(` that was put there from the battlefield this turn${BOUNDARY}`, 'iu')),
-  () => true,
+const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice(
+  map(
+    pattern(new RegExp(` that was put there from the battlefield this turn${BOUNDARY}`, 'iu')),
+    () => 'battlefield' as const,
+  ),
+  // Ahoy Mateys deck, Ghost of Ramirez DePietro (CR 701.9, 701.17): "that was discarded or put there from a library this turn".
+  map(
+    pattern(
+      new RegExp(` that was discarded or put there from a library this turn${BOUNDARY}`, 'iu'),
+    ),
+    () => 'discardedOrLibrary' as const,
+  ),
 );
 
 /** What stands before "card" in a graveyard phrase: types, a choice of types, subtypes (stage P15). */
@@ -1298,7 +1307,7 @@ export function graveyardPhrase(
       ),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
-      optional(quiet(PUT_THERE_THIS_TURN), false),
+      optional(quiet(PUT_THERE_THIS_TURN), null),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
@@ -1311,6 +1320,8 @@ export function graveyardPhrase(
       controller,
       putThere,
     ] = r.value;
+    // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
+    if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
     const filter = toFilter(
       'graveyard',
       { ...NO_PARTS, types, controller },
@@ -1331,7 +1342,10 @@ export function graveyardPhrase(
             : subtypeAnyOf === undefined
               ? {}
               : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
-          ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
+          ...(putThere === 'battlefield' ? { putFromBattlefieldThisTurn: true as const } : {}),
+          ...(putThere === 'discardedOrLibrary'
+            ? { discardedOrFromLibraryThisTurn: true as const }
+            : {}),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
           ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),

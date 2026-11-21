@@ -362,6 +362,7 @@ export function checkFilter(
     'powerLessThanSource',
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
+    'discardedOrFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'xInManaCost',
@@ -513,6 +514,13 @@ export function checkFilter(
     issue(
       out,
       `${path}.putFromBattlefieldThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
+  if (f.discardedOrFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.discardedOrFromLibraryThisTurn`,
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
@@ -816,6 +824,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtDamageBySource !== undefined ||
   f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
+  f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.putWithSource !== undefined ||
@@ -7508,6 +7517,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
+      }
+      break;
+    case 'gainEscape':
+      // CR 702.138a: "each creature card in your graveyard gains escape until end of turn": a filter of the cards, the cost (mana only) and how many other cards are exiled.
+      checkFilter(e.what, `${path}.what`, out);
+      if (
+        e.what?.zone !== undefined ||
+        e.what?.controller !== undefined ||
+        e.what?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (
+        !Array.isArray(e.cost) ||
+        e.cost.length === 0 ||
+        !e.cost.every((c) => c.kind === 'mana')
+      ) {
+        issue(out, `${path}.cost`, 'the escape cost is paid with mana only');
+      }
+      if (!Number.isInteger(e.exile) || e.exile < 1) {
+        issue(out, `${path}.exile`, 'escape exiles at least one other card');
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the escape is gained until end of turn');
       }
       break;
     case 'gainFlashbackFromManaCost':

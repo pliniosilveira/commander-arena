@@ -402,6 +402,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainActivatedAbilitiesOf',
     // "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a).
     'gainFlashbackFromManaCost',
+    // Ahoy Mateys deck: "until end of turn, each creature card in your graveyard gains escape" (CR 702.138a).
+    'gainEscape',
     // D-139: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand".
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
@@ -929,6 +931,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'controllerRef',
     // D-179: "that was put there from the battlefield this turn" (`ObjectFilter.putFromBattlefieldThisTurn`).
     'putFromBattlefieldThisTurn',
+    // Ahoy Mateys deck: "that was discarded or put there from a library this turn" (`ObjectFilter.discardedOrFromLibraryThisTurn`).
+    'discardedOrFromLibraryThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
@@ -1849,6 +1853,8 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "Controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2, Ahoy Mateys group 7): the engine's `ObjectFilter.controllerDealtCombatDamageByAtLeast`. */
   'controllerDealtCombatDamageByAtLeast',
+  /** "That was discarded or put there from a library this turn" (CR 701.9, 701.17, Ahoy Mateys deck): the engine's `ObjectFilter.discardedOrFromLibraryThisTurn`. */
+  'discardedOrFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
@@ -2791,6 +2797,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCastSpells: true,
   gainActivatedAbilitiesOf: true,
   gainFlashbackFromManaCost: true,
+  gainEscape: true,
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,

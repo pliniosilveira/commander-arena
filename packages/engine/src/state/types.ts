@@ -193,6 +193,11 @@ export interface GameObject {
    */
   readonly alt?: PermanentAlternativeKind;
   /**
+   * Present on a permanent that entered from a spell cast for an escape cost an effect gave its card (`gainEscape`, CR 702.138a; `StackData.escapeGrant`): its `alt` of `escape` has no
+   * escape cost on its face to show for it. Absent otherwise.
+   */
+  readonly escapeGranted?: true;
+  /**
    * How many times the spell this permanent came from was kicked, when it was kicked with Multikicker (CR
    * 702.33c, D-110): "for each time it was kicked" reads it. Absent for a permanent that was not kicked
    * and for one that came from a spell kicked with plain Kicker (which has `kicked` and counts once).
@@ -440,6 +445,11 @@ export interface StackData {
    * leave the stack." Applied in the zone-change pipeline (`rules/zones.ts`), so resolving, being countered and fizzling are all covered. Absent otherwise, and for an ability.
    */
   readonly aftermath?: true;
+  /**
+   * The escape cost a card was cast for when an effect gave it escape (`gainEscape`, CR 702.138a): the cost and the number of other cards exiled, kept on the spell because the card
+   * is a new object on the stack (CR 400.7) that the effect did not name. Absent for a card with a printed escape cost and for every other spell.
+   */
+  readonly escapeGrant?: { readonly cost: readonly Cost[]; readonly exile: number };
   /**
    * True when cast from the graveyard by its retrace ability (CR 702.81a, D-667): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
    * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
@@ -2212,6 +2222,11 @@ export type ContinuousChange =
    */
   | { readonly kind: 'flashbackFromManaCost' }
   /**
+   * "Until end of turn, each creature card in your graveyard gains the escape ability "Escape, {3}{B}, exile four other cards from your graveyard" (`gainEscape`, CR 702.138a, 611.2a, 611.2c): each card the
+   * effect's `objects` names, in its owner's graveyard, has escape with this cost until the effect ends. No layer: read where casting is decided (`rules/escape-grant.ts`).
+   */
+  | { readonly kind: 'escapeGrant'; readonly cost: readonly Cost[]; readonly exile: number }
+  /**
    * "Gain control of target creature" (`gainControl`, D-189, CR 613.1b): `seat` controls each permanent the effect's `objects` names while the effect
    * lasts. Layer 2: `controllerOf` (`rules/control.ts`) reads it, after the stored controller (the player the permanent entered under, CR 110.2) and
    * before anything else; of several the one with the latest timestamp decides (CR 613.7), and one that ends leaves the others. It never changes the
@@ -2626,6 +2641,11 @@ export interface TurnLog {
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
   readonly graveyarded: readonly ObjectId[];
+  /**
+   * Each card put into a graveyard this turn by being discarded (CR 701.9) or from a library (milled, CR 701.17; or any other move from a library), by the id it has in the
+   * graveyard (Ahoy Mateys deck, Ghost of Ramirez DePietro). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly discardedOrFromLibrary?: readonly ObjectId[];
   /**
    * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
    * whether it is a token. Absent until one left, so the state of a game where none did is as it was.

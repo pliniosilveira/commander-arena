@@ -23,6 +23,7 @@ import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
 import { AHOY_G7_LOWERINGS } from './ahoy-g7';
+import { AHOY_G8_LOWERINGS } from './ahoy-g8';
 import { AHOY_G10_LOWERINGS, revealEachTokenLowering } from './ahoy-g10';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
@@ -2578,6 +2579,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Ahoy Mateys deck, group 10: "Each creature that convoked this spell connives.", "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token."
   ...AHOY_G10_LOWERINGS,
   revealEachTokenLowering(lowerCreateToken),
+  // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
+  ...AHOY_G8_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.

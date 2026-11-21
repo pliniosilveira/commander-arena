@@ -26,6 +26,7 @@ import {
   isIrAmount,
   nounsOfClause,
 } from '../ir/types';
+import { arg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
@@ -1670,7 +1671,25 @@ function lowerTriggeredAbility(
   // The engine's `optional` covers the whole effect, so it cannot sit beside a condition.
   const conditional = sentences.some((s) => s.condition !== undefined && !boughtSentence(s));
   const others = sentences.filter(ownMay).flatMap((s) => s.clauses);
-  if (optional && (others.length !== 1 || conditional)) return failure(ability);
+  // Ahoy Mateys deck, Admiral Brass (CR 608.2d, 608.2c): "you may return target ... to the battlefield. It has base power and toughness 4/4. It gains haste until end of turn.": the one
+  // "you may" is of the return, and every sentence after it is about the card it returned ("it"), which does nothing when the player does not return it; so the ability's own `optional`
+  // asks the one question for the whole chain.
+  const [first, ...rest] = others;
+  const chain =
+    first !== undefined &&
+    first.verb === 'return' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => {
+      const objects = arg(c, 'objects');
+      return (
+        !c.optional &&
+        (c.verb === 'setPt' || c.verb === 'grantKeyword') &&
+        objects?.kind === 'noun' &&
+        objects.det === 'anaphor'
+      );
+    });
+  if (optional && ((others.length !== 1 && !chain) || conditional)) return failure(ability);
   // A "you may" of the whole ability beside an offer would be two questions for one effect.
   if (optional && sentences.some((s, i) => offerSentence(s) || mayOffer(s, i))) {
     return failure(ability);

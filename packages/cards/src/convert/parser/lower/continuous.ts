@@ -275,7 +275,11 @@ export const SET_PT: Lowering<IrClause, Effects> = {
   takesDuration: true,
   lower(clause, ctx) {
     const base = arg(clause, 'basePt');
-    if (base?.kind !== 'basePt' || !endsWithTurn(clause)) return failure(clause);
+    // No duration (Admiral Brass, CR 611.2a): only "it", for as long as the permanent stays; the engine's `permanent`.
+    const noun = arg(clause, 'objects');
+    const lasting =
+      clause.duration === undefined && noun?.kind === 'noun' && noun.det === 'anaphor';
+    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting)) return failure(clause);
     // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
     let power: PtAmount = base.power;
     let toughness: PtAmount = base.toughness;
@@ -297,9 +301,16 @@ export const SET_PT: Lowering<IrClause, Effects> = {
     return eachObject(
       clause,
       ctx,
-      (objects) => ({ kind: 'setPt', objects, power, toughness, duration: END }),
+      (objects) => ({
+        kind: 'setPt',
+        objects,
+        power,
+        toughness,
+        duration: lasting ? 'permanent' : END,
+      }),
       'objects',
-      TRIGGER_SUBJECT,
+      // Ahoy Mateys deck, Admiral Brass (CR 400.7): "it" after "return target ... to the battlefield" is the permanent that came back, a new object, which the engine's `moved` names.
+      { ...TRIGGER_SUBJECT, moved: true },
     );
   },
 };

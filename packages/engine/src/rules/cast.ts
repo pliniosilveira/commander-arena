@@ -90,6 +90,7 @@ import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
 import { derive } from './derive';
+import { escapeGrantData } from './escape-grant';
 import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
 import { freeCastSlotToUse } from './free-cast';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
@@ -269,6 +270,8 @@ export function beginCast(
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
+      // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
+      ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
       freeUse !== null ||
       // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".

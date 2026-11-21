@@ -22,6 +22,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { CONDITION_ADDITIONAL_COST_PAID } from './additional-cost-paid';
+import { AHOY_G8_CONDITION_RULES } from './ahoy-g8';
 import { AHOY_G10_CONDITION_RULES } from './ahoy-g10';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
@@ -554,6 +555,8 @@ export const CONDITION_RULES = [
   ...EXILED_WITH_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
+  // Ahoy Mateys deck, group 8: "you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
+  ...AHOY_G8_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,
   CONDITION_CONTROL_AT_MOST,
