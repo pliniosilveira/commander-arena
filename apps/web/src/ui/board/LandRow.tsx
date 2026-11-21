@@ -7,7 +7,7 @@ import type { ObjectView } from '@commander-arena/engine';
 import { type CSSProperties, useMemo, useRef } from 'react';
 import { useTextScale } from '../panels/text-size';
 import { HostStack } from './Attached';
-import { stripReserve } from './attach';
+import { stripWidth } from './attach';
 import { CARD_TOP_ASPECT } from './card-top';
 import { clusterWidth, groupLands, type LandColumn, type LandSpec, layoutLands } from './lands';
 import { useMeasure } from './measure';
@@ -19,13 +19,14 @@ import { useRowScroll } from './use-row-scroll';
 export const LAND_GAP = GAP + 6;
 
 /** The sizes of the land row for a text size scale: tiles in the shape of a card's top (`card-top.ts`). */
-export function landSpec(scale: number): LandSpec {
+export function landSpec(scale: number, extraW = 0): LandSpec {
   return {
     maxTile: Math.round(88 * scale),
     aspect: CARD_TOP_ASPECT,
     minTile: 40,
     minStep: Math.round(14 * scale),
     gap: LAND_GAP,
+    extraW,
   };
 }
 
@@ -46,10 +47,9 @@ function LandColumnView({
   // A land with an Aura is alone in its column, with the strips of the Aura under its tile.
   const only = column.objects[0];
   const under = count === 1 && only !== undefined ? attachments.get(only.id) : undefined;
-  const reserve = under === undefined ? 0 : stripReserve(under.length);
   const style = {
-    width: clusterWidth(count, width, step),
-    height: tile + reserve,
+    width: clusterWidth(count, width, step) + (under === undefined ? 0 : stripWidth(under.length)),
+    height: tile,
   } as CSSProperties;
   return (
     <span
@@ -87,25 +87,22 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const scale = useTextScale();
-  const reserve = Math.max(
-    0,
-    ...objects.map((o) => stripReserve(attachments.get(o.id)?.length ?? 0)),
-  );
+  const extraW = objects.reduce((n, o) => n + stripWidth(attachments.get(o.id)?.length ?? 0), 0);
   const { columns, layout } = useMemo(() => {
     const alone = (o: ObjectView) => attachments.has(o.id);
     const columns = groupLands(objects, alone);
-    const height = (size?.height ?? 100) - 2 * PAD_Y - reserve;
-    const layout = layoutLands(columns, size === null ? null : size.width, height, landSpec(scale));
+    const height = (size?.height ?? 100) - 2 * PAD_Y;
+    const spec = landSpec(scale, extraW);
+    const layout = layoutLands(columns, size === null ? null : size.width, height, spec);
     return { columns, layout };
-  }, [objects, attachments, size, scale, reserve]);
+  }, [objects, attachments, size, scale, extraW]);
   const { scroller, more, updateMore, scrollBy } = useRowScroll(
     `${columns.length}|${layout.tile}|${size?.width}`,
   );
   // The clusters hang from the top of one band, centred in the row as a whole.
-  const pad = Math.max(0, Math.floor(((size?.height ?? 100) - layout.tile - reserve) / 2));
+  const pad = Math.max(0, Math.floor(((size?.height ?? 100) - layout.tile) / 2));
   const style = {
     '--row-h': `${layout.tile}px`,
-    '--attach-reserve': `${reserve}px`,
     '--land-pad': `${pad}px`,
   } as CSSProperties;
 

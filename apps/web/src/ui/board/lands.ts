@@ -126,6 +126,8 @@ export interface LandSpec {
   /** The least of a card that shows when another lies over it, in pixels. */
   readonly minStep: number;
   readonly gap: number;
+  /** Width the row spends on attachment strips beside its lands, whatever the tile size. */
+  readonly extraW?: number;
 }
 
 export interface LandLayout {
@@ -165,7 +167,7 @@ export function layoutLands(
   }
   for (;;) {
     const w = widthOf(tile);
-    const base = columns.length * w + (columns.length - 1) * spec.gap;
+    const base = columns.length * w + (columns.length - 1) * spec.gap + (spec.extraW ?? 0);
     const room = overlaps === 0 ? Infinity : Math.floor((width + 0.5 - base) / overlaps);
     const step = Math.min(roomyStepOf(w), room);
     if (base <= width + 0.5 && (overlaps === 0 || step >= spec.minStep)) {

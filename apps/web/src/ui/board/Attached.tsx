@@ -8,12 +8,12 @@ import type { ObjectView } from '@commander-arena/engine';
 import type { CSSProperties } from 'react';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
-import { stripStep } from './attach';
+import { stripStep, stripWidth } from './attach';
 import { useHoverPreview } from './hover';
 import { bandBackground, type CombatRole } from './resolve';
 import { Tile } from './Tile';
 
-function AttachStrip({ object: o, host, w }: { object: ObjectView; host: ObjectView; w: number }) {
+function AttachStrip({ object: o, host, h }: { object: ObjectView; host: ObjectView; h: number }) {
   const hover = useHoverPreview(o.id);
   const ix = useInteraction();
   // An Equipment's strip is carried like its tile: dropped on a creature it starts Equip.
@@ -43,7 +43,7 @@ function AttachStrip({ object: o, host, w }: { object: ObjectView; host: ObjectV
       aria-pressed={selected}
       tabIndex={clickable ? 0 : -1}
       title={`${o.name}, attached to ${host.name}`}
-      style={{ width: w }}
+      style={{ height: h }}
       draggable={drag.draggable}
       onDragStart={drag.onDragStart}
       onDragEnd={drag.onDragEnd}
@@ -75,21 +75,26 @@ export function HostStack({
   const step = stripStep(attachments.length);
   // A tapped tile is turned 90 degrees: its visible card is wider and shorter than its box.
   const turn = host.tapped ? Math.max(0, (h - w) / 2) : 0;
-  const style = { '--w': `${w}px`, '--h': `${h}px` } as CSSProperties;
+  const shown = host.tapped ? Math.min(h, w) : h;
+  const style = {
+    '--w': `${w}px`,
+    '--h': `${h}px`,
+    width: w + turn + stripWidth(attachments.length),
+  } as CSSProperties;
   return (
     <span className="board-stack" style={style} data-host-id={host.id}>
       <Tile object={host} w={w} h={h} role={role} />
       <span
         className="board-attach-list"
-        style={{ top: h - turn - 3, left: 0, width: w + 2 * turn }}
+        style={{ top: (h - shown) / 2, left: w + turn - 3, height: shown }}
       >
         {attachments.map((a, i) => (
           <span
             key={a.id}
             className="board-attach-slot"
-            style={{ top: i * step, height: step + 3, zIndex: attachments.length - i }}
+            style={{ left: i * step, width: step + 3, zIndex: attachments.length - i }}
           >
-            <AttachStrip object={a} host={host} w={w} />
+            <AttachStrip object={a} host={host} h={shown} />
           </span>
         ))}
       </span>

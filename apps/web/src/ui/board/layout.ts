@@ -13,6 +13,8 @@ export interface RowSpec {
   /** Narrowest tile worth drawing before the row scrolls. */
   readonly minW: number;
   readonly gap: number;
+  /** Width the row spends on attachment strips beside its tiles (`attach.ts`), whatever the tile size. */
+  readonly extraW?: number;
 }
 
 export interface RowLayout {
@@ -31,9 +33,10 @@ export function fitTiles(
   spec: RowSpec,
 ): { tileW: number; overflow: boolean } {
   if (count === 0) return { tileW: spec.preferredW, overflow: false };
-  const ideal = Math.floor((width - (count - 1) * spec.gap) / count);
+  const extra = spec.extraW ?? 0;
+  const ideal = Math.floor((width - (count - 1) * spec.gap - extra) / count);
   const tileW = Math.max(spec.minW, Math.min(spec.preferredW, ideal));
-  return { tileW, overflow: count * tileW + (count - 1) * spec.gap > width + 0.5 };
+  return { tileW, overflow: count * tileW + (count - 1) * spec.gap + extra > width + 0.5 };
 }
 
 /**
