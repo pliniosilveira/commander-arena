@@ -373,7 +373,51 @@ export function runInstruction(
   }
   if (instruction.kind === 'playerMay') {
     // D-210 (CR 608.2d, 101.4): one player's "may" of a `playersMay` effect. The player asked answers; a player who has lost is never asked.
-    if (getSeat(state, instruction.seat).hasLost) return done(state);
+    // CR 101.4 (`together`): the answer is held until the last player has answered; then each accepted effect, and each "otherwise", runs in the order the players answered.
+    const { together: group, as: _own, ...rest } = instruction;
+    const hold = (answer: boolean | null): StepOutcome => {
+      const held =
+        group === undefined || answer === null
+          ? (group?.held ?? [])
+          : [
+              ...group.held,
+              {
+                seat: instruction.seat,
+                ...(instruction.as === undefined ? {} : { as: instruction.as }),
+                answer,
+              },
+            ];
+      const next = group?.later[0];
+      if (group !== undefined && next !== undefined) {
+        return done(
+          state,
+          [],
+          [
+            {
+              ...rest,
+              seat: next.seat,
+              ...(next.as === undefined ? {} : { as: next.as }),
+              answer: null,
+              together: { later: group.later.slice(1), held },
+            },
+          ],
+        );
+      }
+      return done(
+        state,
+        [],
+        held.map((h) => ({
+          ...rest,
+          seat: h.seat,
+          ...(h.as === undefined ? {} : { as: h.as }),
+          answer: h.answer,
+        })),
+      );
+    };
+    if (getSeat(state, instruction.seat).hasLost) {
+      return group === undefined ? done(state) : hold(null);
+    }
+    if (group !== undefined && instruction.answer !== null) return hold(instruction.answer);
     if (instruction.answer === null) {
       const offered = instruction.effect;
       const player = instruction.as ?? res.controller;
@@ -394,6 +438,8 @@ export function runInstruction(
           offered.anyNumber !== true &&
           getSeat(state, player).hand.length === 0)
       ) {
+        // CR 101.4: with several players this player's "no" is held with the others' answers.
+        if (group !== undefined) return hold(false);
         return instruction.otherwise === undefined
           ? done(state)
           : done(
@@ -2765,17 +2811,38 @@ function runEffect(
 
     case 'playersMay': {
       // D-210 (CR 608.2d, 101.4): each player named, in order, is asked whether to do it.
-      const asked: Instruction[] = resolvePlayers(state, effect.players, ctx, targets).map(
-        (seat) => ({
-          kind: 'playerMay' as const,
-          seat,
-          effect: effect.effect,
-          ...(effect.runsAs === 'chooser' ? { as: seat } : {}),
-          ...(effect.otherwise === undefined ? {} : { otherwise: effect.otherwise }),
-          answer: null,
-        }),
+      const asked: Extract<Instruction, { kind: 'playerMay' }>[] = resolvePlayers(
+        state,
+        effect.players,
+        ctx,
+        targets,
+      ).map((seat) => ({
+        kind: 'playerMay' as const,
+        seat,
+        effect: effect.effect,
+        ...(effect.runsAs === 'chooser' ? { as: seat } : {}),
+        ...(effect.otherwise === undefined ? {} : { otherwise: effect.otherwise }),
+        answer: null,
+      }));
+      // CR 101.4, 608.2d: with several players, all answer (in APNAP order) before anything happens.
+      const [first, ...rest] = asked;
+      if (first === undefined || rest.length === 0) return done(state, [], asked);
+      return done(
+        state,
+        [],
+        [
+          {
+            ...first,
+            together: {
+              later: rest.map((r) => ({
+                seat: r.seat,
+                ...(r.as === undefined ? {} : { as: r.as }),
+              })),
+              held: [],
+            },
+          },
+        ],
       );
-      return done(state, [], asked);
     }
 
     case 'noMaxHandSizeForGame':
@@ -3063,19 +3130,23 @@ function runEffect(
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
       const seats = resolvePlayers(state, effect.players, ctx, targets);
+      // CR 101.4: with several players they choose in APNAP order and the cards go together once the last has chosen.
+      const exile = (seat: SeatId) => ({
+        kind: 'chooseMove' as const,
+        filter: { zone: 'graveyard' as const },
+        count: 1,
+        to: 'exile' as const,
+        position: 'top' as const,
+        seat,
+        countsNonland: true as const,
+        chosen: null,
+      });
+      const [first, ...later] = seats;
+      if (first === undefined) return done(state);
       return done(
         state,
         [],
-        seats.map((seat) => ({
-          kind: 'chooseMove' as const,
-          filter: { zone: 'graveyard' as const },
-          count: 1,
-          to: 'exile' as const,
-          position: 'top' as const,
-          seat,
-          countsNonland: true as const,
-          chosen: null,
-        })),
+        [later.length === 0 ? exile(first) : { ...exile(first), together: { later, held: [] } }],
       );
     }
 
