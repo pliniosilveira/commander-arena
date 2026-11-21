@@ -47,7 +47,7 @@ const LOOK_HAND_PUT_ATTACKING: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     // CR 508.4: the creature attacks the player the source attacks; only where the source is the attacker, as for a token that enters attacking.
     if (!ctx.selfAttackTrigger) return failure(clause);
-    // CR 508.4, 506.3a, 402.3: the controller chooses the player or planeswalker the creature attacks and looks at the whole hand; the engine does neither, so until it does
+    // CR 508.4, 402.3: the controller chooses the player or planeswalker the creature attacks and looks at the whole hand; the engine does neither, so until it does
     // (`attackTargetChoice`) the card is not runnable.
     const blocked = missingFeatures(['effect:enterAttacking', 'ability:attackTargetChoice']);
     if (blocked.length > 0) return failure(clause, blocked);
