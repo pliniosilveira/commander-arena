@@ -4,7 +4,7 @@ import { CombatEffects } from './ui/board/CombatEffects';
 import { PreviewPanel } from './ui/board/PreviewPanel';
 import { DecisionLayer } from './ui/decisions/DecisionLayer';
 import { DockSlotContext } from './ui/decisions/dock-slot';
-import { LogPanel } from './ui/panels/LogPanel';
+import { LogDock } from './ui/panels/LogDock';
 import { SettingsPanel } from './ui/panels/SettingsPanel';
 import { StackPanel } from './ui/panels/StackPanel';
 import { TurnTracker } from './ui/panels/TurnTracker';
@@ -72,7 +72,7 @@ function Game() {
           aria-controls="game-sides"
           onClick={() => setDrawer(!drawer)}
         >
-          {drawer ? 'Hide panels' : 'Stack, controls, card and log'}
+          {drawer ? 'Hide panels' : 'Stack and controls'}
           {!drawer && stackSize > 0 && <span className="pnl-count">{stackSize}</span>}
         </button>
         <div className="game-sides" id="game-sides">
@@ -81,12 +81,10 @@ function Game() {
             <div className="game-dock-slot" ref={setDockSlot} />
             <SettingsPanel />
           </div>
-          <div className="game-side game-side-info" data-testid="game-side-info">
-            <PreviewPanel />
-            <LogPanel />
-          </div>
         </div>
       </DockSlotContext.Provider>
+      <PreviewPanel />
+      <LogDock />
       <HonestyBanner />
       <GameOver />
       <CombatEffects />

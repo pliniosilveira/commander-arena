@@ -163,11 +163,10 @@ describe('Board', () => {
 });
 
 describe('PreviewPanel', () => {
-  test('empty state explains hover, pin and unpin', async () => {
+  test('draws nothing while there is nothing to read', async () => {
     const store = await gameAfter(0);
     const html = render(store, <PreviewPanel />);
-    expect(html).toContain('Hover a card to read it');
-    expect(html).toContain('Right-click pins, Esc unpins');
+    expect(html).not.toContain('Card preview');
   });
 
   test('a hovered card shows in full with its current state', async () => {
@@ -197,10 +196,10 @@ describe('PreviewPanel', () => {
     store.getState().hover(null);
   });
 
-  test('an object that is no longer visible says so', async () => {
+  test('an object that is no longer visible draws nothing', async () => {
     const store = await gameAfter(0);
     store.getState().hover('o999999');
     const html = render(store, <PreviewPanel />);
-    expect(html).toContain('Not visible any more');
+    expect(html).toBe('');
   });
 });

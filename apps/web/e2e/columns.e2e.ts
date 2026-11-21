@@ -42,52 +42,50 @@ const reachable = (page: Page, selector: string, nth = 0) =>
     [selector, nth],
   );
 
-const info = '[data-testid="game-side-info"]';
 const controls = '[data-testid="game-side-controls"]';
 
-test('the card and the log are on the left, the stack and the controls on the right, the battlefield between', async ({
+test('the stack and the controls are on the right and the battlefield takes all the rest, the card and the log float over it', async ({
   page,
 }) => {
   await start(page, { width: 1366, height: 768 });
-  const left = await box(page, info);
   const right = await box(page, controls);
   const board = await box(page, '.board');
-  const preview = await box(page, `${info} [aria-label="Card preview"]`);
-  const log = await box(page, `${info} [role="log"]`);
   const stack = await box(page, `${controls} [aria-label="Stack"]`);
   const dock = await box(page, `${controls} .dec-dock`);
   const settings = await box(page, `${controls} [aria-label="Settings"]`);
 
-  // Left to right: info column, battlefield, controls column, edge to edge.
-  expect(left.x).toBe(0);
-  expect(board.x).toBeGreaterThanOrEqual(left.x + left.width - 1);
+  // The battlefield starts at the left edge; the controls column is at the right edge.
+  expect(board.x).toBe(0);
   expect(right.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
   expect(right.x + right.width).toBeCloseTo(1366, 0);
+  expect(board.width).toBeGreaterThanOrEqual(1366 - right.width - 2);
 
-  // Left column: the card above the log. Right column: the stack at the top, the dock at the bottom
-  // right above the settings (D-146: the buttons do not move with the stack).
-  expect(preview.y + preview.height).toBeLessThanOrEqual(log.y);
-  expect(log.y + log.height).toBeLessThanOrEqual(768);
+  // The stack at the top, the dock at the bottom above the settings (D-146).
   expect(stack.y + stack.height).toBeLessThanOrEqual(dock.y + 0.5);
   expect(stack.y - right.y).toBeLessThanOrEqual(12);
   expect(dock.y + dock.height).toBeLessThanOrEqual(settings.y);
   expect(settings.y - (dock.y + dock.height)).toBeLessThanOrEqual(12);
-  for (const [panel, column] of [
-    [preview, left],
-    [log, left],
-    [stack, right],
-    [dock, right],
-    [settings, right],
-  ] as const) {
-    expect(panel.x).toBeGreaterThanOrEqual(column.x);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(column.x + column.width + 0.5);
-  }
-  // The card has most of its column: the log is the small part.
-  expect(preview.height).toBeGreaterThan(log.height * 3);
 
-  // The battlefield keeps most of the width: it was 1066px with one column, 806 before that.
-  expect(board.width).toBeGreaterThanOrEqual(870);
-  expect(board.width).toBeLessThanOrEqual(900);
+  // The preview is not there until a card is hovered, then floats at the left, centered vertically.
+  await expect(page.locator('.board-preview')).toHaveCount(0);
+  await page.locator('.board-hand .is-clickable').first().hover();
+  const preview = await box(page, '.board-preview');
+  expect(preview.x).toBeLessThanOrEqual(16);
+  expect(Math.abs(preview.y + preview.height / 2 - 768 / 2)).toBeLessThanOrEqual(40);
+  await page.mouse.move(5, 5);
+
+  // The log is a button at the bottom left that opens and closes a dialog.
+  const toggle = page.getByRole('button', { name: 'Log', exact: true });
+  const button = await box(page, '.log-toggle');
+  expect(button.x).toBeLessThanOrEqual(16);
+  expect(button.y + button.height).toBeGreaterThanOrEqual(768 - 16);
+  await expect(page.getByRole('dialog', { name: 'Game log' })).toHaveCount(0);
+  await toggle.click();
+  await expect(page.getByRole('dialog', { name: 'Game log' })).toBeVisible();
+  await expect(page.locator('.log-dialog [role="log"]')).toBeVisible();
+  await toggle.click();
+  await expect(page.getByRole('dialog', { name: 'Game log' })).toHaveCount(0);
+
   // No page scroll.
   expect(
     await page.evaluate(() => [
@@ -165,22 +163,18 @@ for (const size of [
   });
 }
 
-test('hovering a card does not move the log or the stack, and nothing covers the clickable things at 1280x720 with Large text', async ({
+test('hovering a card does not move the stack, and nothing covers the clickable things at 1280x720 with Large text', async ({
   page,
 }) => {
   await start(page, { width: 1280, height: 720 });
   await expect(page.locator('html')).not.toHaveAttribute('data-text-size', 'normal');
   const stackBefore = await box(page, `${controls} [aria-label="Stack"]`);
-  const logBefore = await box(page, `${info} [role="log"]`);
-  const previewBefore = await box(page, `${info} [aria-label="Card preview"]`);
 
   // The preview has the height the column leaves it, whatever it shows: it never pushes the log
   // around, or the log would move under the pointer while it hovers a card name.
   await page.locator('.board-hand .is-clickable').first().hover();
   await expect(page.locator('.board-preview [data-preview-id]')).toHaveCount(1);
   expect(await box(page, `${controls} [aria-label="Stack"]`)).toEqual(stackBefore);
-  expect(await box(page, `${info} [role="log"]`)).toEqual(logBefore);
-  expect(await box(page, `${info} [aria-label="Card preview"]`)).toEqual(previewBefore);
 
   await page.mouse.move(5, 5);
   const cmdrs = await page.locator('.board-cmdr').count();
@@ -224,14 +218,12 @@ test('Settings can swap the columns, and the choice is remembered', async ({ pag
   );
   await swap.getByRole('button', { name: 'Left', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-side-panel', 'left');
-  // The stack and the controls on the left, the card and the log on the right.
-  const right = await box(page, info);
+  // The stack and the controls on the left, the battlefield takes the rest.
   const left = await box(page, controls);
   const board = await box(page, '.board');
   expect(left.x).toBe(0);
   expect(board.x).toBeGreaterThanOrEqual(left.x + left.width - 1);
-  expect(right.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
-  expect(right.x + right.width).toBeCloseTo(1366, 0);
+  expect(board.x + board.width).toBeCloseTo(1366, 0);
   expect(board.width).toBeGreaterThanOrEqual(870);
   const cmdrs = await page.locator('.board-cmdr').count();
   expect(await reachable(page, '.board-cmdr', cmdrs - 1)).toBe(true);
@@ -257,26 +249,21 @@ test('Settings can swap the columns, and the choice is remembered', async ({ pag
   expect(back.x + back.width).toBeCloseTo(1366, 0);
 });
 
-test('below 1100px wide the two columns are one drawer over the board, with the controls in it', async ({
+test('below 1100px wide the controls are a drawer over the board, with the controls in it', async ({
   page,
 }) => {
   await start(page, { width: 1000, height: 720 });
-  const toggle = page.getByRole('button', { name: /Stack, controls, card and log/ });
+  const toggle = page.getByRole('button', { name: /Stack and controls/ });
   await expect(toggle).toBeVisible();
   await expect(page.locator(controls)).toBeHidden();
-  await expect(page.locator(info)).toBeHidden();
   const board = await box(page, '.board');
   expect(board.width).toBeGreaterThanOrEqual(1000 - 2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await toggle.click();
   await expect(page.locator(controls)).toBeVisible();
-  await expect(page.locator(info)).toBeVisible();
   const right = await box(page, controls);
-  const left = await box(page, info);
   expect(right.x + right.width).toBeCloseTo(1000, 0);
-  expect(left.x + left.width).toBeLessThanOrEqual(right.x + 1);
-  await expect(page.locator(`${info} [role="log"]`)).toBeVisible();
   // The button of the turn is in the drawer, at the foot of the controls column.
   expect(await reachable(page, '.dec-bar [data-dec-primary]')).toBe(true);
   await page.getByRole('button', { name: 'Hide panels' }).click();
