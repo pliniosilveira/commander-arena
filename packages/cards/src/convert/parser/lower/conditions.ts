@@ -282,6 +282,29 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'subjectGreaterPower': {
+      // CR 208.1, 603.4, 702.100a (Ensign Harry Kim, Operations): "if it has greater power than ~" is the intervening "if" of a trigger about the creature that entered, read as the ability
+      // triggers and again as it resolves. The engine's Evolve test with the toughness left out.
+      const blocked = missingFeatures(['condition:subjectGreaterPt']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectGreaterPt', onlyPower: true });
+    }
+    case 'putCountersThisWay': {
+      // CR 122.6, 608.2c (Guinan, Ancient Advisor): "If you put two or more +1/+1 counters on creatures this way": the counters of the instructions before it in the same text. The engine counts
+      // every counter its `addCounters` effects put, so the text before it must put counters of this one kind, and only on creatures, or the count would not be the one the words name.
+      const blocked = missingFeatures(['condition:thisWayAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const put = ctx?.putCounters ?? [];
+      if (
+        put.length === 0 ||
+        !put.every((p) => p.counter === test.counter && p.creatures) ||
+        test.atLeast < 1
+      ) {
+        return failure(c, []);
+      }
+      return ok({ kind: 'thisWayAtLeast', what: 'countersPut', count: test.atLeast });
+    }
     case 'putCountersThisTurn': {
       // CR 122.6, 603.4 (Lasting Tarfire): read from the turn log, for the controller of the ability.
       const blocked = missingFeatures(['condition:putCountersThisTurn']);

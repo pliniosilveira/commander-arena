@@ -1482,6 +1482,49 @@ function lowerReflexive(next: IrSentence, ctx: LowerContext): LowerResult<Effect
 }
 
 /**
+ * "Draw a card, then discard a card. When you discard a nonland card this way, put two charge counters on up to one target artifact." (Federation Fleet deck, group D, Seven of Nine,
+ * Tertiary Adjunct; CR 603.12, 608.2c): the engine's `reflexive` ability with `ifThisWay` of `discardedNonland`, created when the discards before it in this resolution discarded a nonland card;
+ * its targets are its own. It is the last sentence of the text and follows a plain instruction of the controller that discards. Any other shape is refused, never guessed.
+ */
+function lowerAfterDiscard(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const refused = (needs?: readonly FeatureRef[]): StepResult => ({
+    stopped: needs === undefined ? refuse(sentence) : { ...refuse(sentence), needs },
+  });
+  if (
+    i !== sentences.length - 1 ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refused();
+  }
+  const discards = steps
+    .flatMap((s) => s.effects)
+    .some((e) => e.kind === 'discard' && e.player.kind === 'you');
+  if (!discards) return refused();
+  const blocked = missingFeatures(['effect:reflexive']);
+  if (blocked.length > 0) return refused(blocked);
+  const effect = lowerReflexive(sentence, ctx);
+  if (!effect.ok) return { stopped: effect };
+  if (effect.value.kind !== 'reflexive') return refused();
+  steps.push({
+    effects: [{ ...effect.value, ifThisWay: 'discardedNonland' }],
+    replaceable: false,
+  });
+  return { last: i };
+}
+
+/**
  * "When this land enters, sacrifice it. When you do, search your library for a basic Forest card, put it onto the battlefield tapped, then
  * shuffle and you gain 1 life." (stage P36, D-178, CR 603.12): the reflexive ability of an instruction that is not an offer. The first sentence is one
  * plain instruction of a kind the engine can tell was done (`sacrifice`, a move, a draw, ...), the first of its body so that nothing earlier is
@@ -2126,6 +2169,9 @@ function lowerStep(
   const [first] = sentence.clauses;
   if (first === undefined) return { stopped: refuse(sentence) };
   const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  // "When you discard a nonland card this way, ..." (Federation Fleet deck, group D, CR 603.12): the reflexive ability of the discards before it.
+  if (sentence.afterDiscard !== undefined)
+    return lowerAfterDiscard(sentence, sentences, i, steps, ctx);
   // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
   // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
   if (

@@ -43,6 +43,7 @@ import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
+import { FEDERATION_D_CONDITION_RULES } from './federation-d';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
@@ -615,6 +616,8 @@ export const CONDITION_RULES = [
   ...ATTACKING_OPPONENTS_CONDITION_RULES,
   // Lorwyn Eclipsed (Blight Curse deck): "you control that creature", "its toughness was less than 1", "you put a counter on a creature this turn".
   ...COUNTER_TRIGGER_CONDITION_RULES,
+  // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
+  ...FEDERATION_D_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".

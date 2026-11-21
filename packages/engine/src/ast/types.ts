@@ -473,6 +473,10 @@ export type ThisWayKind =
   | 'milledCreature'
   | 'discardedCreature'
   | 'discardedNoncreature'
+  // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.
+  | 'discardedNonland'
+  // Federation Fleet deck, group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way": the counters `addCounters` effects of this resolution put on objects.
+  | 'countersPut'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
   | 'discardedInstantOrSorcery'
   // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": the most cards one player discarded to the `discard` effects of this resolution (CR 608.2c).
@@ -1522,7 +1526,19 @@ export type Cost =
    */
   | { readonly kind: 'tapCreatures'; readonly totalPower: number }
   | { readonly kind: 'exileFromGraveyard'; readonly filter: ObjectFilter; readonly count: number }
-  | { readonly kind: 'removeCounters'; readonly counter: string; readonly count: number }
+  | {
+      readonly kind: 'removeCounters';
+      readonly counter: string;
+      readonly count: number;
+      /**
+       * "Remove two +1/+1 counters from among creatures you control" (Federation Fleet deck, group D, CR 118.3, 122.1, 602.2b): the counters come off the permanents on the battlefield the filter
+       * matches (the player's own: `controller` is `you` or left out), the player choosing the permanent for each counter (a `choosePermanent` decision of purpose `removeCountersCost`
+       * and `forCost`, asked once for each counter while more than one permanent could give it; with no choice the engine removes them and says so). The cost can't be paid with fewer than
+       * `count` counters of the kind among them (CR 118.3). Only the cost of an ordinary activated ability of a permanent: no mana ability, no cost next to a crew, blight or untap cost, and
+       * the filter names no zone, owner or stack kind.
+       */
+      readonly among?: ObjectFilter;
+    }
   /**
    * The loyalty symbol of a loyalty ability (CR 606.2, 606.4, 606.5, D-200): `change` is the number of loyalty counters the permanent
    * the ability belongs to gets (positive, "[+1]") or loses (negative, "[-2]"), 0 for "[0]", and the string `'x'` for "[-X]" (X is announced
@@ -5790,7 +5806,14 @@ export type Condition =
    * information if one has left (CR 113.7a); a source with no power or toughness (a noncreature permanent,
    * CR 702.100c) is never exceeded. Only valid as the intervening "if" of an `entersBattlefield` trigger.
    */
-  | { readonly kind: 'subjectGreaterPt' }
+  | {
+      readonly kind: 'subjectGreaterPt';
+      /**
+       * "If it has greater power than ~" (Federation Fleet deck, group D; CR 208.1, 603.4, 702.100a): only the power is compared, not the toughness. Left out, it is Evolve's
+       * "power and/or toughness".
+       */
+      readonly onlyPower?: true;
+    }
   /**
    * "If that player controls more lands than you" (D-229, CR 603.4, 109.4): the controller of the object whose event caused the trigger (the land that
    * entered, `triggerSubject`) has a greater `stat` than the controller of this ability. Read as the ability triggers and again as it resolves (an

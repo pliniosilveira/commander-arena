@@ -44,6 +44,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'spending only mana of the chosen color is a restriction on the cost of an activated ability, not of a mana ability',
       );
     }
+    if (c?.kind === 'removeCounters' && c.among !== undefined) {
+      issue(
+        out,
+        `${path}.cost[${i}].among`,
+        'a mana ability takes counters off its own permanent: no "from among" (Federation Fleet group D)',
+      );
+    }
     if (c?.kind === 'tapPermanents' && c.count !== 1) {
       issue(
         out,

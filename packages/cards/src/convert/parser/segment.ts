@@ -710,6 +710,13 @@ const MAY_CAST_IF_LESSER =
   /^you may cast it without paying its mana cost if it['’]s a spell with lesser mana value\.$/i;
 const ELSE_CAST_INTO_HAND = /^if you don['’]t cast it, put it into your hand\.$/i;
 /**
+ * "Surveil 2, then you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~." (Federation Fleet deck,
+ * group D, B'Elanna Torres, Scrapper; CR 701.20a, 608.2c): three sentences that are one instruction (what is revealed, what is drawn when the card is of a kind, and what happens when nothing
+ * was drawn), kept together for `effect.reveal-top-draw-else-counters`. Only all three in a row (the first may follow the comma of "Surveil 2, then").
+ */
+const DRAW_IF_REVEALED = /^draw a card if it['’]s an? [^.,]* card\.$/i;
+const ELSE_PUT_COUNTERS = /^if you don['’]t draw a card this way, put [^.]* counters? on ~\.$/i;
+/**
  * "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of
  * that type from among the exiled cards without paying its mana cost." (CR 701.13, 608.2d, 611.2a): three sentences that are one instruction ("them" and "the exiled cards" are the
  * cards the first one exiles), kept together so `effect.exile-top-put-cast-each-type` reads them as one. Only all three in a row.
@@ -958,6 +965,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, EXILE_TOP_CARDS) &&
       said(b, MAY_PUT_FROM_AMONG_ONTO) &&
       said(c, UNTIL_EOT_EACH_TYPE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, DRAW_IF_REVEALED) &&
+      said(c, ELSE_PUT_COUNTERS)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

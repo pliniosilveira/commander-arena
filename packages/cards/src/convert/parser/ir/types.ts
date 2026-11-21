@@ -706,6 +706,14 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
     // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c, 701.9): what a discard before it in the same text did
     | { readonly kind: 'discardedSpellThisWay' }
+    // "If it has greater power than ~" (Federation Fleet deck, group D, CR 208.1, 603.4): the power of the creature the trigger is about against the power of the permanent with the ability
+    | { readonly kind: 'subjectGreaterPower' }
+    // "If you put two or more +1/+1 counters on creatures this way" (Federation Fleet deck, group D, CR 122.6, 608.2c): what the counters an instruction before it in the same text put on creatures were
+    | {
+        readonly kind: 'putCountersThisWay';
+        readonly counter: string;
+        readonly atLeast: number;
+      }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
     // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
@@ -964,6 +972,13 @@ export type IrCost = IrNode &
         readonly kind: 'untapPermanents';
         readonly what: IrNoun;
         readonly count: number;
+      }
+    // "Remove two +1/+1 counters from among creatures you control" (Federation Fleet deck, group D, CR 118.3, 122.1): `count` counters of the kind off the permanents `what` names
+    | {
+        readonly kind: 'removeCountersAmong';
+        readonly counter: string;
+        readonly count: number;
+        readonly what: IrNoun;
       }
     | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
@@ -1411,6 +1426,11 @@ export interface IrSentence extends IrNode {
    * when the player did what it offered. Read only in the body of a triggered ability.
    */
   readonly reflexive?: true;
+  /**
+   * "When you discard a nonland card this way, ..." (Federation Fleet deck, group D, CR 603.12, 608.2c): a reflexive triggered ability created when the discards of the instructions before it
+   * in the same text discarded a card of the kind. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no discard came before.
+   */
+  readonly afterDiscard?: 'nonland';
   /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
