@@ -4117,9 +4117,11 @@ export type Effect =
          * cards taken are not revealed. `castFree` ("You may cast an instant or sorcery spell with mana value less than or equal to this creature's power from among
          * them without paying its mana cost", CR 608.2g, 118.9): the controller may cast one card that matches (and that they could cast now) from the library, where
          * it still is, without paying its mana cost; nothing is revealed but the spell. `max` is 1, with no `min`, `tapped`, `totalManaValue` or `hidden`; the cards not
-         * cast are the rest.
+         * cast are the rest. `top` ("Put one of those cards on top of your library and the rest on the bottom of your library in any order", Cream of the Crop, CR 401.2,
+         * 401.4): the card taken stays where it is, in the library, unrevealed, and what is left goes where `rest` says (the bottom), so it is the top card afterwards; with `hidden`,
+         * `min` and `max` of 1, no `tapped`, `totalManaValue`, `all` or `elseAnyToHand`, and `rest` the bottom or the graveyard.
          */
-        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree';
+        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.

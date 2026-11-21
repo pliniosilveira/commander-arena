@@ -321,6 +321,30 @@ const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
 /**
+ * "Reveal the top five cards of your library. Put a land card from among them onto the battlefield and the rest into your graveyard." (Cavalier of Thorns, CR 701.20a, 608.2c): the
+ * second sentence says what is done with the cards the first one reveals, so the two are read as one instruction (`effect.reveal-put-one-battlefield`).
+ */
+const PUT_ONE_AMONG_REST_GRAVEYARD =
+  /^put an? [^.]* card from among them onto the battlefield and the rest into your graveyard\.$/i;
+/**
+ * "Whenever a creature you control enters, you may look at the top X cards of your library, where X is that creature's power. If you do, put one of those cards on top of your
+ * library and the rest on the bottom of your library in any order." (Cream of the Crop, CR 401.2, 401.4): the second sentence says what the first one's look leads to, so the two
+ * are read as one instruction (`effect.look-top-x-one-on-top`; the first may follow the comma of a trigger).
+ */
+const LOOK_TOP_X_WHERE =
+  /(?:^|, )(?:you may )?look at the top X cards of your library, where X is [^.]*\.$/i;
+const IF_YOU_DO_ONE_ON_TOP_REST_BOTTOM =
+  /^if you do, put one of those cards on top of your library and the rest on the bottom of your library in any order\.$/i;
+/**
+ * "Look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped. If you don't put the card onto the battlefield, put it into your hand." (Risen
+ * Reef, CR 608.2c): three sentences that are one instruction (the first may follow the comma of a trigger), kept together for `effect.look-top-land-else-hand`.
+ */
+const IF_ITS_CARD_MAY_PUT_TAPPED =
+  /^if it['’]s an? [^.,]* card, you may put it onto the battlefield tapped\.$/i;
+const IF_NOT_ONTO_BATTLEFIELD_HAND =
+  /^if you don['’]t put the card onto the battlefield, put it into your hand\.$/i;
+
+/**
  * "Choose an opponent at random that ~ didn't attack during your last combat. ~ attacks that player this combat if able. If you can't choose an opponent this way, tap ~." (Territorial
  * Hellkite, CR 508.1d): three sentences that are one instruction (the first may follow the comma of a trigger), kept together for `effect.attack-random-opponent`.
  */
@@ -1001,6 +1025,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, LOOK_AT_TOP_CARD_COST) &&
+      said(b, IF_ITS_CARD_MAY_PUT_TAPPED) &&
+      said(c, IF_NOT_ONTO_BATTLEFIELD_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, LOOK_AT_TOP_CARD) &&
       said(b, IF_ITS_CARD_MAY_TAKE) &&
       said(c, ELSE_BOTTOM_OF_LIBRARY)
@@ -1046,7 +1079,9 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       b !== undefined &&
-      ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
+      ((said(a, REVEAL_THE_TOP) && said(b, PUT_ONE_AMONG_REST_GRAVEYARD)) ||
+        (said(a, LOOK_TOP_X_WHERE) && said(b, IF_YOU_DO_ONE_ON_TOP_REST_BOTTOM)) ||
+        (said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_NAMED_TOKEN) && said(b, NAMED_TOKEN_ENTERS_TAPPED_ATTACKING)) ||
         (said(a, LOOK_AT_DEFENDERS_HAND) && said(b, PUT_CREATURE_FROM_IT_ATTACKING)) ||

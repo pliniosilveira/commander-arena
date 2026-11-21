@@ -6559,12 +6559,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree'])
+        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree', 'top'])
       ) {
         issue(
           out,
           `${path}.take.to`,
-          `the cards taken go to the hand, the battlefield or exile face down, or are cast, not ${JSON.stringify(e.take.to)}`,
+          `the cards taken go to the hand, the battlefield or exile face down, are cast, or stay on top, not ${JSON.stringify(e.take.to)}`,
+        );
+      }
+      // CR 401.2, 401.4: "Put one of those cards on top of your library and the rest on the bottom": one card, unrevealed, left in the library; the rest goes to the bottom or the graveyard.
+      if (
+        e.take?.to === 'top' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.hidden !== true ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.all !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          !isOneOf(e.rest, ['bottomRandom', 'bottomChosen', 'graveyard']))
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a card put on top is one card (min and max 1), hidden, with no tapped, totalManaValue, all, elseAnyToHand or revealAll, and the rest goes to the bottom or the graveyard',
         );
       }
       // CR 608.2g: "You may cast ... from among them without paying its mana cost": one spell, chosen from those that match.

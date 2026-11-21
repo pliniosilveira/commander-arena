@@ -110,6 +110,7 @@ import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -2653,6 +2654,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
   ...LOOK_ELSE_LOWERINGS,
+  ...LIBRARY_TOP_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,

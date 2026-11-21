@@ -118,6 +118,7 @@ import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
+import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -1402,6 +1403,7 @@ export const EFFECT_RULES = [
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
   ...LOOK_ELSE_EFFECT_RULES,
+  ...LIBRARY_TOP_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,
