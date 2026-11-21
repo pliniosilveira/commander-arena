@@ -395,6 +395,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSources':
       // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
       return 'those creatures';
+    case 'convokers':
+      // Lethal Scheme (CR 702.51a): the creatures tapped to cast the spell with Convoke.
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -509,6 +512,8 @@ function recipientText(
       return 'it';
     case 'triggerSources':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'defendingPlayer':
       return 'the defending player';
     case 'playerToYourRight':

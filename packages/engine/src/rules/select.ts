@@ -217,7 +217,9 @@ export function matchesFilter(
     const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
     const aimed =
       (ctx.spellTargetsMayHold === true && unchosen) ||
-      (obj.stack?.chosenTargets ?? []).some((t) => t.kind === 'player');
+      (obj.stack?.chosenTargets ?? []).some(
+        (t) => t.kind === 'player' && (filter.targetsPlayer !== 'you' || t.seat === ctx.controller),
+      );
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
   // CR 115.9c (D-437): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
@@ -839,6 +841,13 @@ export function resolveObjects(
           (filter === undefined || matchesFilter(state, card, { ...filter, zone: 'exile' }, ctx))
         );
       });
+    }
+    case 'convokers': {
+      // CR 702.51a, 400.7: the creatures tapped to cast the resolving spell, only while each is still the creature that was tapped.
+      const spell = ctx.source === null ? undefined : state.objects[ctx.source];
+      return (spell?.stack?.convokedBy ?? []).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
     }
     case 'triggerSources':
       // CR 400.7, 603.2c: the creatures that dealt the damage, only while each is still the permanent that did.

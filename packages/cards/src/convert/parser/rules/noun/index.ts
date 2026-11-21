@@ -20,6 +20,7 @@ import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
 import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
 import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
+import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
@@ -901,6 +902,8 @@ export const NOUN_RULES = [
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
+  // Ahoy Mateys deck, group 10 (Siren Stormtamer): "target spell or ability that targets you or a creature you control" starts like "target spell", which reads a prefix of it: tried first.
+  ...AHOY_G10_NOUN_RULES,
   NOUN_TARGET_SPELL,
   ...SPELL_OR_CREATURE_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".

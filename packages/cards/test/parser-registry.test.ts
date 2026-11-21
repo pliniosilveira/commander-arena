@@ -958,6 +958,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-commander': asIs,
   // Issue 345: the equip of a legendary creature is a line of its own.
   'keyword.equip-legendary': asIs,
+  // Ahoy Mateys deck, group 10 (Siren Stormtamer): the target of a counter, in the activated ability that sacrifices the creature.
+  'noun.target-spell-or-ability-targeting-you': permanent((e) => `{U}, Sacrifice ~: Counter ${e}.`),
+  // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): the equip line with its cost reduction, and the condition of that reduction.
+  'keyword.equip-cost-reduced': asIs,
+  'condition.you-have-few-cards-in-hand': permanent(
+    (e) => `Equip {2}. This ability costs {2} less to activate if ${e}.`,
+  ),
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".

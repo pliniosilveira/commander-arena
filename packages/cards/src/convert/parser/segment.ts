@@ -495,6 +495,14 @@ const WHEN_NONLAND_EXILED =
   /^when one or more nonland cards are exiled this way, put that many [^.]*\.$/i;
 
 /**
+ * "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token." (Storm Fleet Negotiator, CR 701.20a, 608.2c): the second sentence
+ * counts the cards the first one revealed, so the two are read as one instruction.
+ */
+const EACH_PLAYER_REVEALS_TOP = /^each player reveals the top card of their library\.$/i;
+const FOR_EACH_NONLAND_REVEALED_TOKEN =
+  /^for each nonland card revealed this way, you create [^.]*\.$/i;
+
+/**
  * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player sacrifices all other
  * nonland permanents they control." (stage P70, D-231): the sacrifice is of what was not chosen, so the two sentences are read as one instruction.
  */
@@ -1006,6 +1014,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
+        (said(a, EACH_PLAYER_REVEALS_TOP) && said(b, FOR_EACH_NONLAND_REVEALED_TOKEN)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||

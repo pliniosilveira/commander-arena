@@ -596,7 +596,9 @@ export function checkFilter(
   }
   // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
   if (f.targetsPlayer !== undefined) {
-    if (f.targetsPlayer !== true) issue(out, `${path}.targetsPlayer`, 'targetsPlayer must be true');
+    if (f.targetsPlayer !== true && f.targetsPlayer !== 'you') {
+      issue(out, `${path}.targetsPlayer`, "targetsPlayer must be true or 'you'");
+    }
     if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
       issue(
         out,
@@ -1394,6 +1396,12 @@ export function checkRef(
     case 'thisCard':
       // Read only where a node says so: the object of a moveToZone in an ability (Persist's "return it").
       issue(out, path, "'thisCard' is only valid as the object of moveToZone in an ability");
+      break;
+    case 'convokers':
+      // Lethal Scheme: the creatures that convoked the spell, read in the effect of a spell.
+      if (scope.owner !== 'spell') {
+        issue(out, path, "'convokers' is only valid in the effect of a spell");
+      }
       break;
     case 'triggerSources':
       // Tamiyo, Upriser Crowned: the creatures of the batch of combat damage that triggered the ability.

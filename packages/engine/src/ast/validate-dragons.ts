@@ -299,6 +299,16 @@ export function checkDragonsEffect(
             out,
           );
         }
+        if (
+          branch.asController !== undefined &&
+          (branch.asController !== true || branch.onMatch === undefined)
+        ) {
+          issue(
+            out,
+            `${at}.asController`,
+            'asController is true, and only for a branch with onMatch',
+          );
+        }
         if (branch.to !== undefined) {
           moving += 1;
           if (!isOneOf(branch.to, ['battlefield', 'hand'])) {

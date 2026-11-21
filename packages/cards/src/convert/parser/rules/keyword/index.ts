@@ -2,6 +2,7 @@ import { choice, literal, map, optional, pattern, separatedBy1, sequence } from 
 import type { IrCost, IrKeyword } from '../../ir/types';
 import { defineRule, family, node } from '../registry';
 import { affinityKeyword } from './affinity';
+import { AHOY_G10_KEYWORD_RULES } from './ahoy-g10';
 import { ALT_COST_KEYWORD_RULES } from './alt-costs';
 import { ATTACHMENT_KEYWORD_RULES } from './attachments';
 import { CASTING_KEYWORD_RULES } from './casting';
@@ -396,6 +397,8 @@ export const KEYWORD_RULES = [
   KEYWORD_LINE,
   KEYWORD_CYCLING,
   ...TYPECYCLING_RULES,
+  // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "Equip {2}. This ability costs {2} less to activate if ..." starts like the plain equip, which reads a prefix of it: tried first.
+  ...AHOY_G10_KEYWORD_RULES,
   ...ATTACHMENT_KEYWORD_RULES,
   ...CASTING_KEYWORD_RULES,
   ...ALT_COST_KEYWORD_RULES,

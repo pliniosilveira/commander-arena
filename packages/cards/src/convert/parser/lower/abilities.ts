@@ -239,6 +239,19 @@ function lowerCostedKeyword(
   ) {
     return failure(ability);
   }
+  // "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability.
+  let costReducedIf: { generic: number; condition: Condition } | undefined;
+  if (ability.costReducedIf !== undefined) {
+    const { amount, condition } = ability.costReducedIf;
+    if (name !== 'equip' || cost.value.kind !== 'mana' || amount.kind !== 'number') {
+      return failure(ability);
+    }
+    const reduced = gate(ability, ['ability:costReducedIf']);
+    if (reduced !== null) return reduced;
+    const lowered = lowerCondition(condition);
+    if (!lowered.ok) return lowered;
+    costReducedIf = { generic: amount.value, condition: lowered.value };
+  }
   return {
     ok: true,
     value: [
@@ -247,6 +260,7 @@ function lowerCostedKeyword(
         keyword: {
           kind: name,
           cost: [cost.value],
+          ...(costReducedIf === undefined ? {} : { costReducedIf }),
           ...(ability.quality === undefined
             ? {}
             : { restriction: { subtypes: [ability.quality] } }),

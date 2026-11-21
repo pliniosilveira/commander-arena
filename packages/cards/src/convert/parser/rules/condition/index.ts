@@ -22,6 +22,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { CONDITION_ADDITIONAL_COST_PAID } from './additional-cost-paid';
+import { AHOY_G10_CONDITION_RULES } from './ahoy-g10';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
@@ -629,6 +630,8 @@ export const CONDITION_RULES = [
   ...LOREHOLD_G1_CONDITION_RULES,
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
   ...LOREHOLD_G3_CONDITION_RULES,
+  // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "you have one or fewer cards in hand".
+  ...AHOY_G10_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,

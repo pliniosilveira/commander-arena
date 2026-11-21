@@ -399,6 +399,13 @@ function lowerFilterAt(
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
+  // Siren Stormtamer (CR 115.1, 601.2c): "that targets you": a chosen target that is the controller of the ability, a member of the choice that also reads "a creature you control".
+  let targetsPlayer: 'you' | undefined;
+  if (filter.targetsYou === true) {
+    if (!onStack || targetsObject !== undefined) return bad([]);
+    parts.push('selector:targetsYou');
+    targetsPlayer = 'you';
+  }
   // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
   let targetsOnly: ObjectFilter | undefined;
   // Issue 144 (CR 115.9c): "that targets only a single creature you control": the one object the spell's targets are is of this kind.
@@ -588,6 +595,7 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(targetsPlayer === undefined ? {} : { targetsPlayer }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),

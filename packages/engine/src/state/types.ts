@@ -581,6 +581,11 @@ export interface StackData {
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
+   * For a spell cast with Convoke (CR 702.51a): the creatures the caster tapped to help pay for it, in the order chosen, which the `convokers` reference reads ("each creature that
+   * convoked this spell"). Absent when no creature was tapped for it, and for every other object.
+   */
+  readonly convokedBy?: readonly ObjectId[];
+  /**
    * For an activated ability whose cost tapped permanents (`tapPermanents`, CR 702.184a): the power the tapped creatures had as they were tapped, added up, which the amount
    * `tappedAsCostPower` reads when the ability resolves (CR 608.2h). Absent for every other object.
    */

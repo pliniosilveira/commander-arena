@@ -977,6 +977,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'targetsObject',
     // "copy that spell if it targets a permanent or player" (`ObjectFilter.targetsPlayer`).
     'targetsPlayer',
+    // "a spell or ability that targets you" (`ObjectFilter.targetsPlayer` of 'you').
+    'targetsYou',
     // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
     'targetsOnly',
     'isSource',
@@ -1009,6 +1011,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerCard',
     // Issue 81 (Tamiyo): "those creatures" of a combat damage batch trigger.
     'triggerSources',
+    // Lethal Scheme: "each creature that convoked this spell" (`convokers`).
+    'convokers',
     'manaValueAtMost',
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
@@ -1885,6 +1889,8 @@ export const SELECTOR_KINDS = [
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
   'targetsPlayer',
+  /** "That targets you" (Siren Stormtamer, CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer` of `'you'`. */
+  'targetsYou',
   /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
   'targetsOnly',
   /** "This creature" as the object a filter describes, "that targets this creature" (D-437): the engine's `ObjectFilter.isSource`. */
@@ -1932,6 +1938,8 @@ export const SELECTOR_KINDS = [
   'triggerCard',
   /** "Those creatures" of a combat damage batch trigger (CR 603.2c, issue 81): the engine's `triggerSources`. */
   'triggerSources',
+  /** "Each creature that convoked this spell" (CR 702.51a, Lethal Scheme): the engine's `convokers`. */
+  'convokers',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
   /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */

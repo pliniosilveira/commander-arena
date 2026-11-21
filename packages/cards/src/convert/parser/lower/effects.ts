@@ -23,6 +23,7 @@ import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
 import { AHOY_G7_LOWERINGS } from './ahoy-g7';
+import { AHOY_G10_LOWERINGS, revealEachTokenLowering } from './ahoy-g10';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
@@ -2574,6 +2575,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G3_LOWERINGS,
   // Ahoy Mateys deck, group 7: "That creature doesn't untap during its controller's untap step for as long as you control ~."
   ...AHOY_G7_LOWERINGS,
+  // Ahoy Mateys deck, group 10: "Each creature that convoked this spell connives.", "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token."
+  ...AHOY_G10_LOWERINGS,
+  revealEachTokenLowering(lowerCreateToken),
   ...PRISMARI_G1_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.

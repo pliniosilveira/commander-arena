@@ -294,6 +294,8 @@ export interface IrFilter {
   readonly targets?: IrFilter;
   /** "that targets only a single creature you control" (issue 144, CR 115.9c): a spell whose chosen targets are one object of this kind, however many times it was chosen. */
   readonly targetsOnly?: IrFilter;
+  /** "that targets you" (Siren Stormtamer, CR 115.1, 601.2c): a spell or ability with a chosen target that is the player the filter is read for ("you"). Only a member of a choice on the stack. */
+  readonly targetsYou?: true;
   /** "that targets ~" (Feather group 3, D-437, CR 115.1): a spell with a chosen target that is the source of the ability. */
   readonly targetsSelf?: true;
   /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
@@ -2038,6 +2040,8 @@ export interface IrKeyword extends IrNode {
   readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
+  /** "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability, as that of `IrRestriction.costReduction`. */
+  readonly costReducedIf?: { readonly amount: IrAmount; readonly condition: IrCondition };
 }
 
 /**

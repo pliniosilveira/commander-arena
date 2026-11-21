@@ -160,6 +160,17 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
+      // "Equip {2}. This ability costs {2} less to activate if ...": as `costReducedIf` of an activated ability (D-135).
+      if (k.costReducedIf !== undefined) {
+        const reduced = k.costReducedIf;
+        if (!Number.isSafeInteger(reduced.generic) || reduced.generic < 1) {
+          issue(out, `${path}.costReducedIf.generic`, 'the reduction is a positive whole number');
+        }
+        checkCondition(reduced.condition, `${path}.costReducedIf.condition`, out);
+        if (!Array.isArray(k.cost) || !k.cost.some((c) => c?.kind === 'mana')) {
+          issue(out, `${path}.costReducedIf`, 'only a mana cost can be reduced');
+        }
+      }
       // D-220 (CR 702.6c): "Equip Wizard {1}": a filter of the creature to attach to; no zone, no owner, no combat, no tapped state.
       if (k.restriction !== undefined) {
         checkFilter(k.restriction, `${path}.restriction`, out);

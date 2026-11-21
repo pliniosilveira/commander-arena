@@ -1238,7 +1238,18 @@ export function answerPayOptions(state: GameState, objects: readonly ObjectId[])
   const left = casting.optionsLeft ?? [];
   const settled = settlePayOptions(cleared, d, objects, left);
   if (settled === null) return fail('That would leave a cost you cannot pay');
-  const next: GameState = { ...settled.state, casting: { ...casting, totalCost: settled.cost } };
+  const withCasting: GameState = {
+    ...settled.state,
+    casting: { ...casting, totalCost: settled.cost },
+  };
+  // CR 702.51a: the creatures tapped for Convoke are remembered for "each creature that convoked this spell".
+  const stack = state.objects[casting.object]?.stack ?? null;
+  const next: GameState =
+    d.mechanism === 'convoke' && objects.length > 0 && stack !== null
+      ? patchObject(withCasting, casting.object, {
+          stack: { ...stack, convokedBy: [...(stack.convokedBy ?? []), ...objects] },
+        })
+      : withCasting;
   return askPayOptions(next, settled.events, left);
 }
 

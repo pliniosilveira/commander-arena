@@ -28,6 +28,7 @@ import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
 import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
 import { AHOY_G3_EFFECT_RULES } from './ahoy-g3';
 import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
+import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -976,6 +977,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target triggered ability or colorless spell',
     // Issue 100 (Sublime Epiphany): an activated or a triggered ability.
     'counter target activated or triggered ability',
+    // Ahoy Mateys deck, group 10 (Siren Stormtamer): a spell or an ability that targets you or a creature you control.
+    'counter target spell or ability that targets you or a creature you control',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -993,6 +996,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
           'noun.target-activated-or-triggered-ability',
+          // Ahoy Mateys deck, group 10 (Siren Stormtamer).
+          'noun.target-spell-or-ability-targeting-you',
         ],
       }),
     ),
@@ -1115,6 +1120,8 @@ export const EFFECT_RULES = [
   ...AHOY_G2_EFFECT_RULES,
   // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
   ...AHOY_G1B_EFFECT_RULES,
+  // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
+  ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,

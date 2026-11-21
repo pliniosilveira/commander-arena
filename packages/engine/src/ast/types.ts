@@ -978,8 +978,10 @@ export interface ObjectFilter {
   /**
    * "A spell that targets a player" (CR 115.1, 601.2c, Shiko and Narset, Unified: "copy that spell if it targets a permanent or player", read as a disjunction of `targetsObject`
    * of a permanent and this): a spell or ability on the stack with at least one chosen target that is a player. Read as `targetsObject` is, with the same limits.
+   * `'you'` (Siren Stormtamer: "counter target spell or ability that targets you or a creature you control", CR 115.1, 601.2c): the target is the player the filter is read for
+   * ("you": the controller of the ability or spell that reads it), not any player.
    */
-  readonly targetsPlayer?: true;
+  readonly targetsPlayer?: true | 'you';
   /**
    * "A spell that targets only this creature" (CR 115.9c, D-437): a spell or ability on the stack whose chosen targets are one object, whatever
    * the number of times it was chosen (an object chosen for two instances of the word "target" is still one), and that object is one this filter matches
@@ -1053,6 +1055,11 @@ export type ObjectRef =
    * triggered the ability, as long as each is still the same permanent on the battlefield (one that left is a new object, or none, and is skipped).
    */
   | { readonly kind: 'triggerSources' }
+  /**
+   * "Each creature that convoked this spell" (Lethal Scheme, CR 702.51a, 702.51c, 400.7): the creatures the caster tapped to pay for the spell with Convoke (`StackData.convokedBy`), as
+   * long as each is still that creature on the battlefield (one that left is a new object, or none, and is skipped). Only in the effect of a spell: an ability has no cost paid by Convoke.
+   */
+  | { readonly kind: 'convokers' }
   /**
    * "The sacrificed creature", "it" for the permanent or permanents sacrificed to pay the cost of this activated ability
    * (D-133, CR 602.2c, 118.3): the objects as they were on the battlefield, read from last-known information once they are gone
@@ -2621,6 +2628,11 @@ export type Effect =
         readonly onMatch?: Effect;
         readonly to?: 'battlefield' | 'hand';
         readonly tapped?: true;
+        /**
+         * "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token." (Storm Fleet Negotiator, CR 701.20a, 608.2c): `onMatch`
+         * is done by the controller of the ability for each player whose card matched, not by the player who revealed it ("you" is the controller). Needs `onMatch`.
+         */
+        readonly asController?: true;
       }[];
     }
   /**
@@ -5214,6 +5226,12 @@ export type Keyword =
        * a creature that is a card a player designated as a commander (CR 903.3); it is still a creature the activating player controls (CR 702.6c).
        */
       readonly restriction?: ObjectFilter;
+      /**
+       * "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Arm-Mounted Anchor, CR 601.2f, 602.2b, 702.6a): the reduction of the activated
+       * ability the keyword expands to (`Ability.costReducedIf` of it, with the same meaning): when the condition holds as the ability is activated, `generic` is taken off the
+       * generic part of the equip cost.
+       */
+      readonly costReducedIf?: { readonly generic: number; readonly condition: Condition };
     }
   /**
    * CR 702.33a (Kicker): "Kicker [cost]" means "You may pay an additional [cost] as you cast this
