@@ -64,3 +64,41 @@ export async function startOptionsFor(
   };
   return { ok: true, options };
 }
+
+export interface ChallengeRequest {
+  readonly seed: number;
+  /** The player's deck: a precon id or `saved:<deck id>`. */
+  readonly humanDeck: string;
+  /** The challenge opponent: an id of the challenge list. */
+  readonly challenge: string;
+  readonly freeMulligan?: boolean;
+}
+
+/**
+ * Starting a challenge: the player's deck comes from the precons and saved decks, the opponent's
+ * from the challenge list. Both go through the same preparation and refusal rule as any deck.
+ */
+export async function startChallengeOptions(
+  precons: Precons,
+  challenges: Precons,
+  request: ChallengeRequest,
+): Promise<StartOptions> {
+  const human = await precons.prepare(request.humanDeck);
+  if (!human.ok) return { ok: false, reason: human.reason };
+  const ai = await challenges.prepare(request.challenge);
+  if (!ai.ok) return { ok: false, reason: ai.reason };
+  const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
+  return {
+    ok: true,
+    options: {
+      seed: request.seed,
+      humanDeck: request.humanDeck,
+      aiDeck: request.challenge,
+      humanCards: human.deck,
+      aiCards: ai.deck,
+      ...(humanPreconName === undefined ? {} : { humanPreconName }),
+      aiPreconName: ai.info.name,
+      ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
+    },
+  };
+}
