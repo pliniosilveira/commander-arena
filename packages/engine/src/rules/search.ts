@@ -332,9 +332,11 @@ export function runDiscard(
   if (group !== undefined) {
     const held = [...group.held, { seat, cards: chosen }];
     const nextSeat = group.later[0];
+    // CR 701.9b: a card at random is drawn now, so the generator moves on for the next player; the discards themselves wait for the last.
+    const drawn = random === null ? state : { ...state, rng: random.rng };
     if (nextSeat !== undefined) {
       return done(
-        state,
+        drawn,
         [],
         [
           {
@@ -348,7 +350,7 @@ export function runDiscard(
     }
     const { together: _held, ...single } = instruction;
     return done(
-      state,
+      drawn,
       [],
       held.map((h) => ({ ...single, seat: h.seat, chosen: h.cards })),
     );
