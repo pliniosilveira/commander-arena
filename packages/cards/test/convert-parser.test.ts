@@ -972,6 +972,8 @@ describe('unmatched abilities', () => {
       'effect.sacrifice',
       'effect.gain-keyword-targets-each',
       'effect.add-counters-up-to-two-targets',
+      'effect.owner-draws-then-shuffles',
+      'effect.exile-made-token-at-end-of-combat',
       'effect.player-add-counters',
       'effect.add-counters-distinct-targets',
       'effect.add-counters-self-and-other',
