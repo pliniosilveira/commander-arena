@@ -54,6 +54,7 @@ import { expandKeywords } from './derive-keywords';
 import { costReductionSources } from './derive-statics';
 import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
+import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { faceDownSpellFields, isFaceDown } from './face-down';
 import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
@@ -370,7 +371,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const flashback =
     alternative === 'flashback' ? (flashbackCostOf(face) ?? manaCostAsFlashbackCost(face)) : null;
   // D-121: a named alternative cost (overload, ...) is paid instead of the mana cost.
-  const named = isNamedAlternative(alternative) ? namedAlternativeCostOf(face, alternative) : null;
+  // CR 702.138a: an escape cost the card has, or the one an effect gave it (`rules/escape-grant.ts`).
+  const named =
+    alternative === 'escape'
+      ? (escapeOf(state, spell, face)?.cost ?? null)
+      : isNamedAlternative(alternative)
+        ? namedAlternativeCostOf(face, alternative)
+        : null;
   const perX = spellXCost(face, alternative);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
@@ -505,7 +512,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         : 0),
   );
   // CR 702.138a: an escape cost also exiles that many other cards from the caster's graveyard.
-  const exile = alternative === 'escape' ? (alternativeOf(face, 'escape')?.exile ?? 0) : 0;
+  const exile = alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : 0;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
@@ -810,7 +817,10 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
   const face = definitionOf(state, obj.card).faces[0];
   const spell = castAs(obj, obj.owner, 0);
   const out: AlternativeCostInfo[] = [];
-  for (const alt of face?.alternativeCosts ?? []) {
+  // CR 702.138a: the escape an effect gave the card until end of turn is listed as a printed one is.
+  const granted =
+    alternativeOf(face ?? null, 'escape') === null ? grantedEscapeOf(state, obj) : null;
+  for (const alt of [...(face?.alternativeCosts ?? []), ...(granted === null ? [] : [granted])]) {
     // Madness and miracle are cast only as their ability resolves (CR 702.35a, 702.94a), never from a hand: no cast option, so no cost to show.
     if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.

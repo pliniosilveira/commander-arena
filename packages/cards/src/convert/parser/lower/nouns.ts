@@ -301,6 +301,10 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:putFromBattlefieldThisTurn');
   }
+  if (filter.discardedOrFromLibraryThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:discardedOrFromLibraryThisTurn');
+  }
   // D-235: "spells you cast from anywhere other than your hand" (CR 601.2a), a spell on the stack.
   if (filter.notCastFromHand === true) {
     if (inner) return bad([]);
@@ -543,6 +547,9 @@ function lowerFilterAt(
       : {}),
     ...(filter.putFromBattlefieldThisTurn === true
       ? { putFromBattlefieldThisTurn: true as const }
+      : {}),
+    ...(filter.discardedOrFromLibraryThisTurn === true
+      ? { discardedOrFromLibraryThisTurn: true as const }
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),

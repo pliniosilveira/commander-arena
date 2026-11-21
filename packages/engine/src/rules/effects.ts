@@ -89,6 +89,7 @@ import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
 import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
+import { runGainEscape } from './escape-grant';
 import { runExchangeLifeWithPt } from './exchange-life';
 import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
@@ -2023,6 +2024,9 @@ function runEffect(
     case 'gainFlashbackFromManaCost':
       // CR 702.34a, 611.2c: "Each instant and sorcery card in your graveyard gains flashback until end of turn" (rules/flashback-grant.ts).
       return runGainFlashbackFromManaCost(state, res, effect);
+    case 'gainEscape':
+      // CR 702.138a, 611.2c: "Until end of turn, each creature card in your graveyard gains escape" (rules/escape-grant.ts).
+      return runGainEscape(state, res, effect);
     case 'mayCastSpells':
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);

@@ -136,6 +136,8 @@ export interface FilterContext {
   readonly damagedPlayers?: readonly SeatId[];
   /** The cards put into a graveyard from the battlefield this turn (`putFromBattlefieldThisTurn`, D-179): the turn log, read by the caller; absent fails the flag closed. */
   readonly graveyarded?: readonly ObjectId[];
+  /** The cards put into a graveyard this turn by being discarded or from a library (`discardedOrFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
+  readonly discardedOrFromLibrary?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
   /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
@@ -371,6 +373,13 @@ export function matchesFilterWith(
   }
   // CR 700.4 (D-179): "that was put there from the battlefield this turn".
   if (filter.putFromBattlefieldThisTurn === true && !(ctx.graveyarded ?? []).includes(obj.id)) {
+    return false;
+  }
+  // "That was discarded or put there from a library this turn" (Ghost of Ramirez DePietro).
+  if (
+    filter.discardedOrFromLibraryThisTurn === true &&
+    !(ctx.discardedOrFromLibrary ?? []).includes(obj.id)
+  ) {
     return false;
   }
   // CR 601.2a (D-235): "Spells you cast from anywhere other than your hand": a spell on the stack that was cast from another zone.

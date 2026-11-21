@@ -459,6 +459,7 @@ export const EFFECT_BASE_PT = defineRule<Clauses>({
     'target creature has base power and toughness 4/4 until end of turn',
     '~ has base power and toughness 0/1 until end of turn',
     'it has base power and toughness 2/2 until end of turn',
+    'it has base power and toughness 4/4',
   ],
   rejects: [
     'target creature has base power and toughness 4/4',
@@ -478,10 +479,22 @@ export const EFFECT_BASE_PT = defineRule<Clauses>({
       literal(' '),
       family<IrDuration>('duration'),
     )(ctx, pos);
-    if (!r.ok) return r;
-    const [subject, , basePt, , duration] = r.value;
+    if (r.ok) {
+      const [subject, , basePt, , duration] = r.value;
+      const clause = makeClause(rule, 'setPt', { objects: subject, basePt }, basePt.span);
+      return { ok: true, value: [{ ...clause, duration }], pos: r.pos };
+    }
+    // Ahoy Mateys deck, Admiral Brass (CR 611.2a, 613.4b): "It has base power and toughness 4/4." with no duration, said of the card the sentence before put onto the
+    // battlefield: the effect lasts as long as that permanent does. Only "it", so a target named with no duration stays unread.
+    const open = sequence(
+      family<IrNoun>('noun', { only: ['noun.it'] }),
+      literal(' has '),
+      BASE_PT(rule),
+    )(ctx, pos);
+    if (!open.ok) return r;
+    const [subject, , basePt] = open.value;
     const clause = makeClause(rule, 'setPt', { objects: subject, basePt }, basePt.span);
-    return { ok: true, value: [{ ...clause, duration }], pos: r.pos };
+    return { ok: true, value: [clause], pos: open.pos };
   },
 });
 

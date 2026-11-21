@@ -327,6 +327,9 @@ export function matchesFilter(
     ...(filter.putFromBattlefieldThisTurn === true
       ? { graveyarded: state.turnLog.graveyarded }
       : {}),
+    ...(filter.discardedOrFromLibraryThisTurn === true
+      ? { discardedOrFromLibrary: state.turnLog.discardedOrFromLibrary ?? [] }
+      : {}),
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
@@ -366,6 +369,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.manaValueX === true ||
     f.controllerDealtDamageBySource === true ||
     f.putFromBattlefieldThisTurn === true ||
+    f.discardedOrFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
     f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||

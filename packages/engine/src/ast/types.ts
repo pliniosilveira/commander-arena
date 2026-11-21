@@ -670,6 +670,12 @@ export interface ObjectFilter {
    */
   readonly putFromBattlefieldThisTurn?: true;
   /**
+   * "That was discarded or put there from a library this turn" (Ahoy Mateys deck, Ghost of Ramirez DePietro; CR 701.9 discard, CR 701.17 mill, CR 404.1): the card is in a graveyard
+   * and, during this turn, was put into it by being discarded or from a library (milled, or any other move from a library). A card put there from the battlefield or from the stack
+   * is not. Read from the turn log where the filter is matched; refused in a static ability, as `putFromBattlefieldThisTurn` is.
+   */
+  readonly discardedOrFromLibraryThisTurn?: true;
+  /**
    * "Spells you cast from anywhere other than your hand" (CR 601.2a, 601.2f, D-235): the spell on the stack was cast from a zone other than the hand (the graveyard, exile, the command
    * zone, the library). Read from the spell itself as it is cast, so only a spell is matched; in a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -2338,6 +2344,21 @@ export type Effect =
   | {
       readonly kind: 'gainFlashbackFromManaCost';
       readonly what: ObjectFilter;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "Until end of turn, each creature card in your graveyard gains the escape ability "Escape, {3}{B}, exile four other cards from your graveyard" (Ahoy Mateys deck, The Grim Captain's Locker; CR 702.138a,
+   * 611.2a, 611.2c, 613.1f): the cards that `what` describes in the controller's graveyard as the effect resolves have escape until the end of the turn, with the cost `cost` (mana only) and
+   * `exile` other cards of their owner's graveyard exiled as part of it. A card cast that way is cast as one with a printed escape is (`CastAlternative` `escape`). The cards are fixed as
+   * the effect resolves (CR 611.2c), so a card that enters the graveyard later this turn does not get it. A card with an escape ability of its own keeps it. `what` names no zone,
+   * controller or owner. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'gainEscape';
+      readonly what: ObjectFilter;
+      readonly cost: readonly Cost[];
+      /** How many OTHER cards of the graveyard are exiled as part of the cost: at least 1. */
+      readonly exile: number;
       readonly duration: 'untilEndOfTurn';
     }
   /**
