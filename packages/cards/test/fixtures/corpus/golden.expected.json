@@ -1,5 +1,5 @@
 {
-  "parserVersion": 180,
+  "parserVersion": 181,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -317,6 +317,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ed661185"
+    },
+    "05c5f17e-40f9-4259-9b03-03683e1c5ba6": {
+      "name": "Tuvok, Chief Tactical Officer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a9ddadc"
     },
     "05d09c55-f551-4cb4-a8d2-4811dccc848d": {
       "name": "Vraska, Betrayal's Sting",
@@ -978,6 +986,14 @@
       "reasons": [],
       "ast": "2acc5fb4"
     },
+    "1515b0c2-1b55-4cd4-ad81-fb6b1f3e8188": {
+      "name": "Fractured Identity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3e66d376"
+    },
     "15276d3b-a117-44bf-87c3-c17e032e4a26": {
       "name": "Thunderclap Wyvern",
       "group": "acceptance",
@@ -1331,6 +1347,14 @@
       "reasons": [],
       "ast": "34102e76"
     },
+    "1d6f4573-d2f6-4771-a748-291846ef14b9": {
+      "name": "Vic Fontaine, One Night Only",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0d809d8f"
+    },
     "1d85eec2-80db-466c-bd48-d2a12866e8bd": {
       "name": "Old Stickfingers",
       "group": "acceptance",
@@ -1514,6 +1538,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e5dba4ba"
+    },
+    "22c3b484-0f96-4051-807c-fc0fcb7cd1a8": {
+      "name": "Seven of Nine, Tertiary Adjunct",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ed69deee"
     },
     "23467047-6dba-4498-b783-1ebc4f74b8c2": {
       "name": "Ancient Tomb",
@@ -3040,6 +3072,14 @@
       "reasons": [],
       "ast": "79e7b8e9"
     },
+    "488ff0d9-a74c-4ba9-9c10-3aa88230c2bd": {
+      "name": "Captain Janeway, Endgame",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "96ff47c9"
+    },
     "48a62778-7c11-486f-a0e1-020c283a7ef9": {
       "name": "Nazgûl",
       "group": "acceptance",
@@ -4135,6 +4175,14 @@
       "reasons": [],
       "ast": "c879a6c8"
     },
+    "629133e2-af20-4107-bc82-11ba32d5e2a6": {
+      "name": "Chronomantic Escape",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a6a75ba"
+    },
     "63193ad4-bbd2-4cc3-98e2-9f6b985e8ae7": {
       "name": "Oft-Nabbed Goat",
       "group": "acceptance",
@@ -4760,6 +4808,14 @@
       "reasons": [],
       "ast": "330d8a17"
     },
+    "70763549-4b4e-4cb8-8c02-0639ba18bb1a": {
+      "name": "Fevered Visions",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e50941a9"
+    },
     "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
       "name": "Reality Shift",
       "group": "acceptance",
@@ -4783,6 +4839,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8ae2ef43"
+    },
+    "714dcaf0-442b-4849-917a-7e6af2ea0210": {
+      "name": "Kes, Evolving Telepath",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d6b04152"
     },
     "716b3ea2-45b7-4a8f-af72-de7f4e510eff": {
       "name": "Goldspan Dragon",
@@ -5373,6 +5437,14 @@
       "reasons": [],
       "ast": "5c6a268e"
     },
+    "7e8c2a18-e404-40ff-a9e0-ec3eeb6d576e": {
+      "name": "Command Beacon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e7b07d2"
+    },
     "7ea8426a-3b66-4fd0-9863-2b68d379671f": {
       "name": "Soulbright Flamekin",
       "group": "acceptance",
@@ -5735,6 +5807,14 @@
       "reasons": [],
       "ast": "7b6fbc9c"
     },
+    "87b8fef3-f40e-44a9-afd5-31d3917b1d59": {
+      "name": "U.S.S. Defiant, Tough Little Ship",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "814d9d75"
+    },
     "87c43776-dd98-4e12-9b95-82d2b8f4f1ab": {
       "name": "Duskwatch Recruiter // Krallenhorde Howler",
       "group": "acceptance",
@@ -6066,6 +6146,14 @@
       "reasons": [],
       "ast": "8047fe32"
     },
+    "912d6e44-b479-4e07-88a8-9ab5132163f4": {
+      "name": "Temporal Tribulation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9da41b7c"
+    },
     "91320daf-f69c-4350-b0fc-4bb37a6904b1": {
       "name": "Restless Anchorage",
       "group": "acceptance",
@@ -6385,6 +6473,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "219ac0cd"
+    },
+    "9a52cb6b-b0d8-4649-b65a-5f9a9d2a7eb2": {
+      "name": "Cmdr. Troi, Outgoing Empath",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6b2bb81b"
     },
     "9a8f6e5e-6cde-49df-861c-a26cb09c9b12": {
       "name": "Muddle, the Ever-Changing",
@@ -6802,6 +6898,14 @@
       "reasons": [],
       "ast": "36415012"
     },
+    "a2249af3-2e3e-484b-a31a-26432edd13ae": {
+      "name": "Worf, Son of Mogh",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d30969f8"
+    },
     "a242c9bf-dab6-4996-bb3a-b4356f9ed0c9": {
       "name": "Key to the City",
       "group": "acceptance",
@@ -6882,6 +6986,14 @@
       "reasons": [],
       "ast": "63876336"
     },
+    "a494fcee-6885-434c-aad5-6f83640c4472": {
+      "name": "Stonespeaker Crystal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b4f474c7"
+    },
     "a49900b3-cc34-428f-806d-71861dc8059d": {
       "name": "Hit the Mother Lode",
       "group": "holdout",
@@ -6915,9 +7027,8 @@
           "face": 0,
           "ability": 1,
           "text": "−2: You may put an Equipment card from your hand or graveyard onto the battlefield.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.add-counters-distinct-targets"
+          "reason": "notRunnable",
+          "closestRule": "effect.put-from-hand"
         },
         {
           "face": 0,
@@ -6938,6 +7049,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "47885dd2"
+    },
+    "a5b72c5d-4c73-49cd-9fc5-855856807ff2": {
+      "name": "U.S.S. Stargazer, Here and There",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Picard Maneuver — Whenever ~ attacks, create a tapped and attacking 4/3 colorless Spacecraft Illusion artifact creature token with flying. Exile that token at end of combat.",
+          "reason": "notRunnable",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "089fbbb0"
     },
     "a5cbd257-c836-493e-bb1a-76242619dea2": {
       "name": "Big Score",
@@ -7331,6 +7458,22 @@
       "reasons": [],
       "ast": "df2abb2e"
     },
+    "adbef171-3640-4f77-8c92-b50c109ca303": {
+      "name": "Geordi La Forge, Innovator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d723e0db"
+    },
+    "adcf571f-c465-44c6-8941-48313810e732": {
+      "name": "Reg Barclay, Fidgety Fantasist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7f8c0cb8"
+    },
     "add60aad-2532-4f59-bfb9-f0168c2adda6": {
       "name": "Cosmic Rebirth",
       "group": "acceptance",
@@ -7452,6 +7595,14 @@
       "reasons": [],
       "ast": "ec1fcda8"
     },
+    "b0efb6fb-f2d1-4027-90b5-44fb3f5dd538": {
+      "name": "Unification",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ecf7642f"
+    },
     "b133129d-1ffb-4b78-9f5b-852d163cc9b7": {
       "name": "Mass Polymorph",
       "group": "acceptance",
@@ -7526,6 +7677,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5052b74e"
+    },
+    "b3d81980-76f2-44e2-b1c9-01e30c726312": {
+      "name": "Loran of the Third Path",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "96896cbd"
     },
     "b3f3d55c-a3f6-441b-a380-60c0734dc514": {
       "name": "Larval Scoutlander",
@@ -7686,6 +7845,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5cb0396e"
+    },
+    "b93915ac-744b-4b59-8f16-ae68d6d898c6": {
+      "name": "Guinan, Ancient Advisor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6d979b71"
+    },
+    "b95a6001-2773-43c1-a5ad-a37ef7c9f054": {
+      "name": "Jean-Luc Picard, Luminary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f1c4ccfd"
     },
     "b978bdfe-a73e-4e99-90d7-4f99182c45ee": {
       "name": "Formless Genesis",
@@ -8296,6 +8471,14 @@
       "reasons": [],
       "ast": "f4d9f743"
     },
+    "c905227d-b5fe-42e6-a11d-5008b7a7922f": {
+      "name": "B'Elanna Torres, Scrapper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4202d95c"
+    },
     "c912a43b-8994-434e-84c0-f4cf58abbd42": {
       "name": "Mechanized Warfare",
       "group": "acceptance",
@@ -8336,6 +8519,14 @@
       ],
       "reasons": [],
       "ast": "7ac10afa"
+    },
+    "c98d476a-2646-4171-bab7-4a4624fce917": {
+      "name": "Chief Miles O'Brien",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c1b5f96e"
     },
     "ca02cb31-9850-48bf-bc8d-ed86a4d4d4f7": {
       "name": "Giggling Skitterspike",
@@ -8522,6 +8713,14 @@
       "reasons": [],
       "ast": "eb5755f1"
     },
+    "ce60a1a4-1e53-4985-a54f-3627dd35c5f2": {
+      "name": "Ambassador K'Ehleyr",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6875583f"
+    },
     "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
       "name": "Fertile Ground",
       "group": "acceptance",
@@ -8626,6 +8825,14 @@
       "reasons": [],
       "ast": "73120e05"
     },
+    "d19ebe9f-c24d-405c-b8e8-a602274076c3": {
+      "name": "U.S.S. Prometheus, Prototype",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d64490bd"
+    },
     "d1deba03-b26a-4a0d-b242-24bb3a3f9ea6": {
       "name": "Bootleggers' Stash",
       "group": "acceptance",
@@ -8633,6 +8840,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0089b6"
+    },
+    "d26b27db-a567-4631-b4b6-7294222fbdd1": {
+      "name": "Howling Mine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae6ae0a8"
     },
     "d27bb97d-286b-4947-8d7b-443e4df93319": {
       "name": "Nesting Grounds",
@@ -8737,6 +8952,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "127c070a"
+    },
+    "d4fb650a-94fd-4361-9648-45d6ad64b7a2": {
+      "name": "Ezri Dax, Newly Joined",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6ee4c5bb"
     },
     "d55f6c70-321f-4fb4-bd33-0850ae1a7c36": {
       "name": "Narset's Reversal",
@@ -8937,6 +9160,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5454867a"
+    },
+    "d9bc0f83-c522-44c9-baa6-fffdeb02a0f5": {
+      "name": "Ensign Harry Kim, Operations",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0dc1b48"
     },
     "d9c36ed5-629c-4709-bff5-2f10fcde608a": {
       "name": "Orb of Dragonkind",
@@ -9965,6 +10196,14 @@
       "reasons": [],
       "ast": "5a4823ce"
     },
+    "f2768bab-a6a4-490a-a676-fbfbfefdd8b8": {
+      "name": "U.S.S. Enterprise-C, Time-Tossed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a0bb8de5"
+    },
     "f29dc596-2121-4421-8463-15f6c2e8b9b3": {
       "name": "Rogue's Passage",
       "group": "training",
@@ -10319,6 +10558,14 @@
       "reasons": [],
       "ast": "c5371ace"
     },
+    "fa667031-25cf-45c4-97ff-19a73cb30018": {
+      "name": "U.S.S. Enterprise-E, Sovereign",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "871b1016"
+    },
     "fa6d05a1-3df4-4751-b1a0-8d9693faec73": {
       "name": "Tainted Wood",
       "group": "training",
@@ -10539,8 +10786,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1005,
-      "total": 1024
+      "supported": 1034,
+      "total": 1054
     }
   }
 }
