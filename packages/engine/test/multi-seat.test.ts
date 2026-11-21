@@ -72,7 +72,8 @@ describe('a scenario with three seats', () => {
     g.expect.life(2, 40);
     g.advanceTo('declareAttackers', { attack: false });
     g.act(0).declareAttackers([{ attacker: 'Grizzly Bears[0]', target: { player: 2 } }]);
-    g.advanceTo('postcombatMain', { block: false });
+    // Seat 2 is the defending player and declares its blockers (CR 802.4); the walk answers for it with none.
+    g.advanceTo('postcombatMain');
     g.expect.life(2, 38);
     g.expect.life(1, 40);
   });
