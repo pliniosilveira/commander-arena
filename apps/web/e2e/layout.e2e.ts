@@ -54,13 +54,11 @@ for (const [width, height] of [
     expect(await page.locator('.pnl-step').count()).toBe(3);
     await expect(page.locator('.pnl-step-current')).toHaveCount(1);
 
-    // The turn panel holds the action buttons, then the stack.
-    const tops = await page.evaluate(() => {
-      const top = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1;
-      return [top('.turn-panel .dec-bar'), top('.turn-panel [aria-label="Stack"]')];
-    });
-    expect([...tops].sort((a, b) => a - b)).toEqual(tops);
-    expect(tops.every((t) => t > 0)).toBe(true);
+    // The turn panel holds the action buttons; the empty stack is out of sight (1px) but in the page.
+    await expect(page.locator('.turn-panel .dec-bar')).toBeVisible();
+    const stack = await box(page, '.turn-panel [aria-label="Stack"]');
+    expect(stack.width).toBeLessThanOrEqual(1);
+    await expect(page.locator('.turn-panel [aria-label="Stack"]')).toContainText('Stack is empty');
 
     // The old top bar and the action bar toggles are gone.
     for (const name of ['Full Control', 'Manual mana', 'Undo']) {

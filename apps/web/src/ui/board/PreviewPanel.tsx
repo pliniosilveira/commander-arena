@@ -459,22 +459,28 @@ function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
 export function PreviewPanel() {
   const hover = useApp((s) => s.hover);
   const pin = useApp((s) => s.pin);
+  const dismissStackPreview = useApp((s) => s.dismissStackPreview);
+  const dismissedStack = useApp((s) => s.preview.dismissedStack ?? null);
   const view = useApp((s) => s.snapshot?.view ?? null);
   const pinnedId = useApp((s) => s.preview.pinned);
   const hoveredId = useApp((s) => s.preview.hovered);
   const revealed = useApp((s) => s.preview.revealed);
   const { id, source } =
-    view === null ? { id: null, source: 'none' } : previewChoice(view, pinnedId, hoveredId);
+    view === null
+      ? { id: null, source: 'none' }
+      : previewChoice(view, pinnedId, hoveredId, dismissedStack);
   const log = useApp((s) => s.log);
   const activated = useMemo(() => activatedStackIds(log), [log]);
   const object = view !== null && id !== null ? findObject(view, id) : null;
   const pinned = source === 'pinned' && object !== null;
   // The card behind the viewer's own face-down permanent (D-315), or null.
   const real = object === null ? null : realCardOf(object);
-  // A tap on the preview closes it: it drops the pin, the hover and a reveal.
+  // A tap on the preview closes it: it drops the pin, the hover, a reveal and the stack's card.
   const dismiss = () => {
     hover(null);
     pin(null);
+    // The card on top of the stack is shown by itself: the tap closes it until another is on top.
+    if (source === 'stack' && id !== null) dismissStackPreview(id);
   };
   // A reveal is read when the player holds no object (pinned or hovered) and nothing newer than it is on the stack.
   if (revealed.length > 0 && (source === 'none' || source === 'stack')) {
@@ -499,7 +505,7 @@ export function PreviewPanel() {
       className="preview-panel board-preview"
       aria-label="Card preview"
       aria-live="polite"
-      data-pinned={pinned ? 'true' : undefined}
+      data-pinned={pinned || source === 'stack' ? 'true' : undefined}
       onClick={dismiss}
     >
       <div className="board-preview-bar">
