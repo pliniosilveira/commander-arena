@@ -1086,6 +1086,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'thatColor' }
     // "X mana of any one color, where X is ~'s power" (CR 106.1b, 107.3c): `count` mana of one color chosen as the ability resolves, X what the sentence defines
     | { readonly kind: 'anyOneColorX' }
+    // "For each color among permanents you control, add one mana of that color" (Faeburrow Elder, CR 105.2, 605.3b): one mana of each color the permanents `of` names have between them
+    | { readonly kind: 'eachColorAmong'; readonly of: IrNoun }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }

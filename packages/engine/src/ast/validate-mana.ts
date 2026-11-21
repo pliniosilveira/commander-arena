@@ -78,6 +78,8 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
     case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
     case 'commanderIdentity':
       break;
+    case 'eachColorAmong': // the filter is checked with the mana ability (validate-mana-ability.ts)
+      break;
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)
       // Issue 184: "Add {U} or one mana of the chosen color".
       if (mp.or !== undefined && !isOneOf(mp.or, MANA_COLORS)) {

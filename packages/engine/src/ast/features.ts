@@ -812,6 +812,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
+    'eachColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
     'producedType',
   ],
@@ -1468,7 +1470,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
     'lifeTotalOf',
-    // D-179: "for each color among permanents you control" (a static ability's +N/+N).
+    // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
     'greatestPowerAmong',
@@ -2497,7 +2499,7 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** A player's current life total at resolution (CR 119.1). */
   'lifeTotalOf',
-  /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
+  /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
   'greatestPowerAmong',
@@ -3092,6 +3094,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  eachColorAmong: true,
   producedType: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {

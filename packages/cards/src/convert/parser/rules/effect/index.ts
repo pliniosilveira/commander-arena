@@ -43,6 +43,7 @@ import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
+import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
@@ -1373,6 +1374,8 @@ export const EFFECT_RULES = [
   ...HOFRI_EFFECT_RULES,
   // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
+  // CR 105.2, 605.3b (Faeburrow Elder): "for each color among permanents you control, add one mana of that color".
+  ...COLORS_AMONG_MANA_EFFECT_RULES,
   // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,
   // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
