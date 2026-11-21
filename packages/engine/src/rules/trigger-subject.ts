@@ -75,6 +75,14 @@ export function readsTriggerDamage(ability: Ability): boolean {
   );
 }
 
+/** Whether the triggered ability reads the opponents its damage batch dealt damage to (`triggerDamagedPlayers`, CR 603.2c). */
+export function readsTriggerDamaged(ability: Ability): boolean {
+  return (
+    ability.kind === 'triggered' &&
+    JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerDamagedPlayers"')
+  );
+}
+
 /** Whether the triggered ability reads the creatures its attack event declared (`attackersGreatestPower`, CR 508.1). */
 export function readsTriggerAttackers(ability: Ability): boolean {
   return (

@@ -920,6 +920,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'combatDamagedByNamed',
     // D-648: "that opponent" of a `playerAttacksOpponent` trigger.
     'triggerAttackedPlayer',
+    'triggerDamagedPlayers',
     'controllerOf',
     'ownerOf',
     'anyOf',
@@ -1821,6 +1822,8 @@ export const SELECTOR_KINDS = [
   'combatDamagedByNamed',
   /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-648): the engine's `triggerAttackedPlayer`. */
   'triggerAttackedPlayer',
+  /** "Each of those opponents" of a `damageBatch` trigger to your opponents (CR 603.2c): the engine's `triggerDamagedPlayers`. */
+  'triggerDamagedPlayers',
   'controllerOf',
   'ownerOf',
   'anyOf',

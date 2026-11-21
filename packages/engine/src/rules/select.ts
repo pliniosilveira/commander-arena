@@ -66,6 +66,8 @@ export interface SelectContext {
   readonly triggerPlayer?: SeatId;
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** The opponents dealt damage by the batch of this trigger (`triggerDamagedPlayers`, CR 603.2c). */
+  readonly triggerDamaged?: readonly SeatId[];
   readonly triggerTargetCount?: number;
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
   readonly targets?: readonly ChosenTarget[];
@@ -991,6 +993,12 @@ export function resolvePlayers(
         ? [attacker]
         : [];
     }
+    case 'triggerDamagedPlayers':
+      // CR 603.2c, 120.2: "each of those opponents": the opponents the batch of sources damaged, those still in the game, in the order of CR 101.4.
+      return apnapOrder(
+        state,
+        (ctx.triggerDamaged ?? []).filter((seat) => !getSeat(state, seat).hasLost),
+      );
     case 'declinedPlayer':
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []

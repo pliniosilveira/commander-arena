@@ -564,6 +564,8 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** For a `damageBatch` ability to opponents that reads `triggerDamagedPlayers`: the opponents dealt damage, as the ability was put on the stack. */
+  readonly triggerDamaged?: readonly SeatId[];
   /** The target count read by a cast trigger (D-574). */
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
@@ -839,6 +841,8 @@ export interface PendingTrigger {
   /** The player the event is about (`triggerPlayer`, D-133) and the damage it dealt (`triggerDamage`), when it has them. */
   readonly player?: SeatId;
   readonly damage?: number;
+  /** For a `damageBatch` trigger to opponents that reads `triggerDamagedPlayers`: the opponents dealt damage (CR 603.2c). */
+  readonly damaged?: readonly SeatId[];
   readonly targetCount?: number;
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed (`StackData.sacrificedBefore`). */
   readonly sacrificedBefore?: readonly ObjectId[];
@@ -2024,6 +2028,8 @@ export interface ResolutionContext {
   /** The player whose `playersMay` answer declined the current otherwise effect (D-576). */
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** What `triggerDamagedPlayers` reads: `StackData.triggerDamaged`. */
+  readonly triggerDamaged?: readonly SeatId[];
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];

@@ -787,6 +787,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
+    ...(res.triggerDamaged === undefined ? {} : { triggerDamaged: res.triggerDamaged }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),

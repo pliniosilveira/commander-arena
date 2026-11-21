@@ -65,6 +65,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   couldntSacrificeThisWay: 'selector:couldntSacrificeThisWay',
   // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
+  // CR 603.2c: "each of those opponents" of a damage batch trigger to your opponents (Breeches).
+  triggerDamagedPlayers: 'selector:triggerDamagedPlayers',
   // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
   combatDamagedByNamed: 'selector:combatDamagedByNamed',
 };
@@ -97,6 +99,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:keywords',
   'selector:triggerPlayer',
   'selector:triggerAttackedPlayer',
+  'selector:triggerDamagedPlayers',
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
@@ -1399,6 +1402,11 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (ctx.owner !== 'ability') return failure(noun, []);
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
+    }
+    case 'triggerDamagedPlayers': {
+      // CR 603.2c: the opponents a batch trigger damaged; `validateCard` refuses it in any other ability.
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'triggerDamagedPlayers' });
     }
     case 'combatDamagedByNamed': {
       // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.

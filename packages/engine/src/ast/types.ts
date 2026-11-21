@@ -1188,6 +1188,11 @@ export type PlayerSelector =
    */
   | { readonly kind: 'opponentsAttackingTriggerPlayer' }
   /**
+   * "Each of those opponents" in a `damageBatch` trigger to your opponents (Breeches, Brazen Plunderer; CR 603.2c, 120.2): the opponents of the controller that the group of sources dealt
+   * damage to in the one event, in the order of CR 101.4, those still in the game. Valid only in the effect of such a trigger.
+   */
+  | { readonly kind: 'triggerDamagedPlayers' }
+  /**
    * "The chosen player", "they" in the gift ability (CR 702.174a, D-135): the opponent the caster chose when they promised the
    * gift, read from the spell on the stack, from the permanent that remembers it, or from last-known information (CR 113.7a).
    * Nobody when no gift was promised. Valid only where the engine writes the gift ability, and in a card's text that reads
@@ -2690,7 +2695,7 @@ export type Effect =
       readonly lookAt?: true;
       /**
        * "Until end of turn, you may cast that card and you may spend mana as though it were mana of any color to cast that spell" (issue 144, CR 609.4b): the spell cast with this permission
-       * can be paid with mana of any color for any colored symbol of its cost (colorless mana still pays generic mana only). Needs `castOnly`: the rider is about casting a spell.
+       * can be paid with mana of any color for any colored symbol of its cost (colorless mana still pays generic mana only). With `castOnly` or without (Breeches: "play those cards ... to cast those spells"): a land card is then played as usual.
        */
       readonly anyManaColor?: true;
       /**

@@ -524,6 +524,9 @@ function recipientText(
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6).
       return 'each opponent attacking that player';
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: the opponents a batch of sources damaged.
+      return 'each of those opponents';
     case 'declinedPlayer':
       return 'the player who declined';
     case 'giftRecipient':
@@ -706,6 +709,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'that opponent', third: true };
     case 'opponentsAttackingTriggerPlayer':
       return { who: 'they', third: false };
+    case 'triggerDamagedPlayers':
+      return { who: 'each of those opponents', third: true };
     case 'declinedPlayer':
       return { who: 'the player who declined', third: true };
     case 'giftRecipient':
