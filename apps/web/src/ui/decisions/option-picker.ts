@@ -24,10 +24,8 @@ export function optionPrompt(
   }
   // CR 701.30b: "clash with an opponent".
   if (d.purpose === 'clashOpponent') return `Choose an opponent to clash with (${d.sourceName}).`;
-  // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life".
-  if (d.purpose === 'playerChoice') {
-    return `Choose a player with the most life or tied for most life (${d.sourceName}).`;
-  }
+  // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life"; Slithermuse (CR 102.2): "choose an opponent". The options say which players are on offer.
+  if (d.purpose === 'playerChoice') return `Choose a player (${d.sourceName}).`;
   // D-151: a choice among names the card gives, or the chapter a Saga with read ahead starts with.
   if (
     (d.purpose === 'option' ||

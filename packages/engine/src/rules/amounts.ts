@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'commanderCasts'
       | 'thisWay'
       | 'opponentsWithMore'
+      | 'chosenPlayerLead'
       | 'opponentCount'
       | 'movedCount'
       | 'cardsStillExiled'
@@ -99,6 +100,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'commanderCasts' ||
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
+    amount.kind === 'chosenPlayerLead' ||
     amount.kind === 'opponentCount' ||
     amount.kind === 'movedCount' ||
     amount.kind === 'cardsStillExiled' ||
@@ -521,6 +523,15 @@ export function stateAmountOf(
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
       return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
+    case 'chosenPlayerLead': {
+      // CR 608.2c (Slithermuse): the stat of the player the resolution chose, more than the controller's, or 0.
+      if (ctx.chosenPlayer === undefined || getSeat(state, ctx.chosenPlayer).hasLost) return 0;
+      return Math.max(
+        0,
+        playerStatOf(state, ctx.chosenPlayer, amount.stat) -
+          playerStatOf(state, ctx.controller, amount.stat),
+      );
+    }
     case 'opponentCount':
       // CR 102.2, 102.3: the opponents of the controller still in the game.
       return opponentsOf(state, ctx.controller).length;

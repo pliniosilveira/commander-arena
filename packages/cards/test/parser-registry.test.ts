@@ -283,6 +283,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copies-half-pt': spell(
     (e) => `Destroy target creature. If that creature dies this way, its controller creates ${e}.`,
   ),
+  // Subterfuge: one target creature gains a keyword and a triggered ability for the turn.
+  'effect.gain-keyword-and-ability': permanent((e) => `When ~ enters, ${e}.`),
   'effect.choose-player-most-life': permanent(
     (e) => `{1}{B}, {T}: ${cap(e)}. Target creature can't be blocked this turn.`,
   ),
@@ -432,7 +434,19 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
+  'condition.its-stat-greater-than-each-other': permanent(
+    (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
+  ),
   'condition.opponent-has-more': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Slithermuse: the player a sentence before it chose, and the difference in the stat it compared.
+  'condition.chosen-player-has-more': permanent(
+    (e) => `When ~ enters, choose an opponent. If ${e}, you gain 1 life.`,
+  ),
+  'amount.equal-to-the-difference': permanent(
+    (e) =>
+      `When ~ enters, choose an opponent. If that player has more cards in hand than you, draw cards ${e}.`,
+  ),
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
@@ -1135,6 +1149,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // CR 120.2a: the opponents a creature of the card's name has dealt combat damage to this game, as the subject of "loses life".
   'noun.each-opponent-dealt-combat-damage-by-named': permanent(
     (e) => `At the beginning of your end step, ${e} loses 1 life.`,
+  ),
+  // CR 102.1: the players with a creature of power 4 or greater, as the subject of "draws a card".
+  'noun.each-player-who-controls': permanent(
+    (e) => `At the beginning of your end step, ${e} draws a card.`,
   ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,

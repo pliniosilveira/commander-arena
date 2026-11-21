@@ -39,6 +39,7 @@ import { lowerCondition } from './conditions';
 import {
   BECOMES,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
+  CHOOSE_OPPONENT,
   CHOOSE_PLAYER,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
@@ -1024,6 +1025,7 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
         : { kind: 'chosenColor', or: spec.what.or };
     case 'thatColor':
     case 'anyOneColorX':
+    case 'anyCombinationX':
     case 'producedType':
       // Only the effect of a triggered mana ability, which `lowerTappedForMana` builds itself.
       return null;
@@ -2590,6 +2592,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_MANA_ABILITY,
   RESTRICT,
   CHOOSE_PLAYER,
+  CHOOSE_OPPONENT,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,

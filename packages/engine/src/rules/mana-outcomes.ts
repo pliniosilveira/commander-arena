@@ -136,7 +136,11 @@ function riderSpells(
 
 /** Whether the production is chosen as a combination of mana (a filter land, "any combination of colors"): the activation names the mana (D-099, D-151). */
 export function isCombinationProduction(production: ManaProduction): boolean {
-  return production.kind === 'combination' || production.kind === 'anyCombination';
+  return (
+    production.kind === 'combination' ||
+    production.kind === 'anyCombination' ||
+    production.kind === 'anyCombinationAmount'
+  );
 }
 
 /**
@@ -192,6 +196,12 @@ function plainOutcomes(
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
       return colorMultisets(p.count, p.distinct === true);
+    case 'anyCombinationAmount': {
+      // CR 106.1b, 605.3b: "Add X mana in any combination of colors, where X is ...": every multiset of X of the five colors, X read for the controller with the permanent as "this"
+      // (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
+      const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
+      return colorMultisets(n, false);
+    }
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));

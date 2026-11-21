@@ -77,6 +77,8 @@ export interface ConditionContext {
   readonly triggerSubject?: ObjectId;
   /** The player the event of the trigger is about (`triggerPlayerHasMore`): the active player of a step trigger, the player who drew, who cast, ... */
   readonly triggerPlayer?: SeatId;
+  /** The player a `choosePlayer` of this resolution chose, for an `amountIs` of `chosenPlayerLead` (Slithermuse). */
+  readonly chosenPlayer?: SeatId;
   /**
    * What the resolving effect knows (D-135), for `objectMatches` and `didPrevious`: the targets still legal, what the earlier
    * move effect produced (`moved`) and how much the instructions since the last `may` effect did (`performed`). Absent
@@ -411,7 +413,11 @@ export function evaluateCondition(
       const n = amountOf(
         state,
         condition.amount,
-        { controller: ctx.controller, source: ctx.source },
+        {
+          controller: ctx.controller,
+          source: ctx.source,
+          ...(ctx.chosenPlayer === undefined ? {} : { chosenPlayer: ctx.chosenPlayer }),
+        },
         [],
       );
       if (condition.compare.cmp === 'atLeast') return n >= condition.compare.value;
@@ -677,6 +683,26 @@ export function evaluateCondition(
       if (ctx.triggerSubject === undefined) return false;
       const subject = objectOrLki(state, ctx.triggerSubject);
       return subject !== null && controllerOf(state, subject) === ctx.controller;
+    }
+    case 'subjectGreaterThanEach': {
+      // CR 603.10a, 113.7a, 208.1, 608.2c (Selvala): "if its power is greater than each other creature's power": the stat the permanent has now, or had as it left, against every other
+      // battlefield permanent the filter matches, whoever controls it, read as the instruction comes up.
+      if (ctx.triggerSubject === undefined) return false;
+      const pt = ptNow(state, ctx.triggerSubject);
+      if (pt === null) return false;
+      const mine = condition.stat === 'power' ? pt.power : pt.toughness;
+      const filter = {
+        ...condition.filter,
+        zone: 'battlefield' as const,
+        controller: 'any' as const,
+      };
+      for (const id of objectsInZone(state, 'battlefield')) {
+        if (id === ctx.triggerSubject) continue;
+        if (!matchesFilter(state, getObject(state, id), filter, ctx)) continue;
+        const theirs = statOf(state, id, condition.stat);
+        if (theirs !== null && theirs >= mine) return false;
+      }
+      return true;
     }
     case 'subjectStat': {
       // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.

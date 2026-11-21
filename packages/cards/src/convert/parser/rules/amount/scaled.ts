@@ -43,4 +43,6 @@ export const EQUAL_AMOUNTS = [
   'amount.milled-value-this-way',
   // Issue 279 (Windfall): "equal to the greatest number of cards a player discarded this way" after a discard.
   'amount.discarded-most-this-way',
+  // Slithermuse: "draw cards equal to the difference" after "If that player has more cards in hand than you".
+  'amount.equal-to-the-difference',
 ] as const;

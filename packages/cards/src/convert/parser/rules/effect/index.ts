@@ -43,6 +43,7 @@ import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { CONTROL_EFFECT_RULES } from './control';
@@ -58,6 +59,7 @@ import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
+import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -87,6 +89,7 @@ import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
+import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
@@ -1220,6 +1223,9 @@ export const EFFECT_RULES = [
   ...GALADRIEL_G3_EFFECT_RULES,
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
+  ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...CHOOSE_OPPONENT_EFFECT_RULES,
+  ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".

@@ -145,6 +145,20 @@ function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
   }
 }
 
+/** The stat words of "has more ... than you". */
+function statWords(stat: PlayerStat): string {
+  switch (stat) {
+    case 'life':
+      return 'life';
+    case 'cardsInHand':
+      return 'cards in hand';
+    case 'creatures':
+      return 'creatures';
+    case 'lands':
+      return 'lands';
+  }
+}
+
 /** What an earlier instruction of the same resolution did (`thisWay`). */
 function thisWayPhrase(what: ThisWayKind): string {
   switch (what) {
@@ -377,6 +391,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':
       return opponentsWithMore(amount.stat, amount.fewer === true);
+    case 'chosenPlayerLead':
+      // CR 608.2c: how much more of the stat the player chosen earlier has than you.
+      return `the difference by which the chosen player has more ${statWords(amount.stat)} than you`;
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';

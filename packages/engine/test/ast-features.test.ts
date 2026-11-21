@@ -114,6 +114,7 @@ describe('the dimensions', () => {
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
       'subjectStat',
+      'subjectGreaterThanEach',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
       'triggerPlayerIsOpponent',

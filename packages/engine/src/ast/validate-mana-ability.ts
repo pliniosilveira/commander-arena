@@ -110,7 +110,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     );
   }
   // "Add X mana of any one color, where X is this creature's power": an amount the game says now, read for the permanent itself (CR 605.1a: no X, no target).
-  if (a.production?.kind === 'anyColorAmount') {
+  if (a.production?.kind === 'anyColorAmount' || a.production?.kind === 'anyCombinationAmount') {
     const amount = a.production.amount;
     if (typeof amount === 'object' && amount !== null && amount.kind === 'powerOf') {
       if (kindOf(amount.of) !== 'this') {

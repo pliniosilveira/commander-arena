@@ -1546,6 +1546,20 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerControlling':
+      // CR 102.1, 109.4 (Shatter the Sky): "each player who controls a creature with power 4 or greater": the filter reads battlefield permanents, each player as "you".
+      checkFilter(sel.filter, `${path}.filter`, out);
+      if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be counted');
+      }
+      if (sel.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          "'each player who controls' names the controller itself",
+        );
+      }
+      break;
     case 'eachPlayerExcept':
       // CR 102.1 (Oft-Nabbed Goat): "each other player": the players the `except` selector does not name.
       checkPlayerSelector(sel.except, `${path}.except`, scope, out);
@@ -1680,6 +1694,7 @@ export const PLAYER_ONLY = [
   'eachOpponent',
   'eachOtherOpponent',
   'eachPlayerExcept',
+  'eachPlayerControlling',
   'all',
   'controllerOf',
   'ownerOf',
@@ -1905,6 +1920,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'differentNamesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
+    case 'chosenPlayerLead':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
     case 'lifeGainedOrLostThisTurn':
@@ -2338,6 +2354,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       if (a.fewer !== undefined && a.fewer !== true) {
         issue(out, `${path}.fewer`, 'fewer is true when present');
+      }
+      break;
+    case 'chosenPlayerLead':
+      if (!isOneOf(a.stat, PLAYER_STATS)) {
+        issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
       }
       break;
     case 'opponentCount':
@@ -3516,6 +3537,21 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-229: where it may stand (an intervening "if" of a trigger with a permanent as its subject) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+      break;
+    case 'subjectGreaterThanEach':
+      // CR 603.10a, 208.1 (Selvala): the filter describes the other permanents on the battlefield, whoever controls them.
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
+      }
+      if (!isOneOf(c.stat, ['power', 'toughness'])) {
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
       break;
     case 'subjectControlledByYou':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
@@ -4932,6 +4968,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'subjectControlledByYou':
     case 'subjectStat':
+    case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
       if (scope.triggerSubject !== 'permanent') {
         issue(
@@ -7328,7 +7365,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'one mana of a type the tapped permanent produced is only the effect of a "tapped for mana" triggered mana ability',
         );
       }
-      if (e.mana?.kind === 'anyColorAmount') {
+      if (e.mana?.kind === 'anyColorAmount' || e.mana?.kind === 'anyCombinationAmount') {
         issue(
           out,
           `${path}.mana`,
@@ -7885,8 +7922,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putFromHandOnBottom':
       break;
     case 'choosePlayer':
-      // CR 608.2d (The Black Gate): the only rule for the players to choose among is the most life.
-      if (e.among !== 'mostLife') {
+      // CR 608.2d: the players to choose among are those with the most life (The Black Gate) or the opponents (Slithermuse).
+      if (e.among !== 'mostLife' && e.among !== 'opponent') {
         issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
       }
       break;

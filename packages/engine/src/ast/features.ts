@@ -812,6 +812,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add X mana in any combination of colors, where X is the greatest power among creatures you control." (`anyCombinationAmount`)
+    'anyCombinationAmount',
     // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
     'eachColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
@@ -927,6 +929,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachOtherOpponent',
     // Oft-Nabbed Goat: "each other player" besides its owner (`eachPlayerExcept`, CR 102.1).
     'eachPlayerExcept',
+    // Shatter the Sky: "each player who controls a creature with power 4 or greater" (`eachPlayerControlling`, CR 102.1).
+    'eachPlayerControlling',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -1157,6 +1161,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
     'subjectControlledByYou',
     'subjectStat',
+    // Selvala: "if its power is greater than each other creature's power".
+    'subjectGreaterThanEach',
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
@@ -1499,6 +1505,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
     'opponentsWithMore',
+    // Slithermuse: "draw cards equal to the difference" with the player chosen before it (`chosenPlayerLead`).
+    'chosenPlayerLead',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
@@ -1855,6 +1863,8 @@ export const SELECTOR_KINDS = [
   'eachOtherOpponent',
   /** "Each other player" besides the one a selector names (CR 102.1, Oft-Nabbed Goat): the engine's `PlayerSelector` `eachPlayerExcept`. */
   'eachPlayerExcept',
+  /** "Each player who controls a creature with power 4 or greater" (CR 102.1, 109.4, Shatter the Sky): the engine's `PlayerSelector` `eachPlayerControlling`. */
+  'eachPlayerControlling',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
@@ -2130,6 +2140,8 @@ export const CONDITION_KINDS = [
   'subjectControlledByYou',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
   'subjectStat',
+  /** "If its power is greater than each other creature's power" (CR 603.10a, 208.1, Selvala): the engine's `subjectGreaterThanEach`. */
+  'subjectGreaterThanEach',
   /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
@@ -2539,6 +2551,8 @@ export const AMOUNT_KINDS = [
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */
   'opponentsWithMore',
+  /** "If that player has more cards in hand than you, draw cards equal to the difference" (Slithermuse, CR 608.2c): the engine's `chosenPlayerLead`. */
+  'chosenPlayerLead',
   /** "That much" for the damage that caused a trigger (D-133): the engine's `triggerDamage`. */
   'triggerDamage',
   /** Number of targets chosen for a spell in a cast trigger (D-574). */
@@ -3098,6 +3112,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  anyCombinationAmount: true,
   eachColorAmong: true,
   producedType: true,
 };

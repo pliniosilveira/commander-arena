@@ -153,6 +153,7 @@ export interface IrNoun extends IrNode {
     | 'triggerDamagedPlayers' // "each of those opponents" (CR 603.2c): the opponents a damage batch trigger to your opponents hurt
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
+    | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
@@ -617,6 +618,13 @@ export type IrAmount =
       readonly of: readonly IrAmount[];
       readonly span: Span;
     }
+  // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
+  // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
+  | {
+      readonly kind: 'chosenPlayerLead';
+      readonly stat?: 'life' | 'cardsInHand';
+      readonly span: Span;
+    }
   // "for each opponent who has more cards in hand than you"
   | {
       readonly kind: 'opponentsWithMore';
@@ -902,6 +910,12 @@ export interface IrCondition extends IrNode {
         readonly stat: 'power' | 'toughness';
         readonly compare: IrComparison;
       }
+    // Selvala, Heart of the Wilds (CR 603.10a, 208.1, 608.2c): "its power is greater than each other creature's power": the stat of the permanent the trigger is about against every other permanent of the types
+    | {
+        readonly kind: 'subjectGreaterThanEach';
+        readonly stat: 'power' | 'toughness';
+        readonly types: readonly string[];
+      }
     // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
     | {
         readonly kind: 'putCountersThisTurn';
@@ -1088,6 +1102,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'thatColor' }
     // "X mana of any one color, where X is ~'s power" (CR 106.1b, 107.3c): `count` mana of one color chosen as the ability resolves, X what the sentence defines
     | { readonly kind: 'anyOneColorX' }
+    // "X mana in any combination of colors, where X is the greatest power among creatures you control" (Selvala, CR 106.1b, 107.3c): `count` mana, each of a color chosen on its own, X what the sentence defines
+    | { readonly kind: 'anyCombinationX' }
     // "For each color among permanents you control, add one mana of that color" (Faeburrow Elder, CR 105.2, 605.3b): one mana of each color the permanents `of` names have between them
     | { readonly kind: 'eachColorAmong'; readonly of: IrNoun }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
@@ -2253,6 +2269,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'sum',
   'extreme',
   'opponentsWithMore',
+  'chosenPlayerLead',
   'thisWay',
   'triggerDamage',
   'dieResult',

@@ -68,6 +68,7 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
@@ -947,6 +948,7 @@ export const NOUN_RULES = [
   ...VRASKA_EARLY_NOUN_RULES,
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
   ...DESTINY_EARLY_NOUN_RULES,
+  ...PLAYERS_WHO_CONTROL_NOUN_RULES,
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,

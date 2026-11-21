@@ -669,6 +669,16 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'opponentCount' }, rule };
     }
+    case 'chosenPlayerLead': {
+      // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
+      const blocked = needs('chosenPlayerLead');
+      if (blocked !== null) return blocked;
+      if (!ctx.choseAPlayer) return { ok: false, needs: [], at: amount.span, rule };
+      const stat = amount.stat ?? ctx.comparedStat;
+      if (stat === null) return { ok: false, needs: [], at: amount.span, rule };
+      ctx.comparedStat = stat;
+      return { ok: true, value: { kind: 'chosenPlayerLead', stat }, rule };
+    }
     case 'opponentsWithMore': {
       const blocked = needs('opponentsWithMore');
       if (blocked !== null) return blocked;
@@ -1038,6 +1048,7 @@ export const AMOUNT_NEEDS = [
   'amount:extreme',
   'amount:opponentCount',
   'amount:opponentsWithMore',
+  'amount:chosenPlayerLead',
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',

@@ -2556,10 +2556,19 @@ function lowerPlayersMay(
   const refused = (result: LowerResult<Effects>) => ({ result, last: i });
   const blocked = missingFeatures(['effect:playersMay']);
   if (blocked.length > 0) return refused({ ...refuse(sentence), needs: blocked });
+  // CR 608.2c (Selvala, Heart of the Wilds): "Its controller may draw a card if its power is greater than each other creature's power": a test at the end of the sentence is read as the
+  // instruction comes up, before the player is asked, so the offer is the `then` of a `conditional`. A test that reads what was declined or done before it is not one of these.
+  const trailing =
+    !afterOffer &&
+    sentence.condition !== undefined &&
+    sentence.condition.test.kind !== 'declined' &&
+    sentence.condition.test.kind !== 'didPrevious'
+      ? sentence.condition
+      : undefined;
   if (
     (afterOffer
       ? sentence.condition?.test.kind !== 'didPrevious'
-      : sentence.condition !== undefined) ||
+      : sentence.condition !== undefined && trailing === undefined) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -2635,13 +2644,21 @@ function lowerPlayersMay(
     if (!other.ok) return refused(other);
     otherwise = oneEffect(other.value);
   }
-  const effect: Effect = {
+  const asked: Effect = {
     kind: 'playersMay',
     players: players.value,
     effect: oneEffect(body.value),
     ...(by.haveYou ? {} : { runsAs: 'chooser' as const }),
     ...(otherwise === undefined ? {} : { otherwise }),
   };
+  let effect: Effect = asked;
+  if (trailing !== undefined) {
+    const missing = missingFeatures(['effect:conditional']);
+    if (missing.length > 0) return refused({ ...refuse(sentence), needs: missing });
+    const test = lowerCondition(trailing, false, ctx);
+    if (!test.ok) return refused(test);
+    effect = { kind: 'conditional', condition: test.value, effect: asked };
+  }
   return {
     result: { ok: true, value: [effect], rule: sentence.clauses[0]?.rule ?? sentence.rule },
     last: declines ? i + 1 : i,
