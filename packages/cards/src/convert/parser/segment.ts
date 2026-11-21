@@ -793,6 +793,16 @@ const CONTROLLER_REVEALS_UNTIL =
   /^that creature['’]s controller reveals cards from the top of their library until they reveal [^.]*\.$/i;
 const THE_PLAYER_PUTS_ANY_ORDER =
   /^the player puts that card onto the battlefield and the rest on the bottom of their library in any order\.$/i;
+/**
+ * "Target opponent whose turn it is may cast a spell from their hand without paying its mana cost. If they do, you copy that spell. You may choose new targets for the copy. If they don't,
+ * you draw a card." (Federation Fleet deck, group F, Cmdr. Troi; CR 608.2g, 608.2c, 707.10): four sentences that are one instruction, kept together for
+ * `effect.opponent-casts-free-you-copy`. Only all four in a row.
+ */
+const TROI_CAST =
+  /^target opponent whose turn it is may cast a spell from their hand without paying its mana cost\.$/i;
+// "You may choose new targets for the copy." stays with the sentence before it (`splitSentences`).
+const TROI_COPY = /^if they do, you copy that spell\. you may choose new targets for the copy\.$/i;
+const TROI_ELSE_DRAW = /^if they don['’]t, you draw a card\.$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -824,6 +834,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
+      continue;
+    }
+    // Cmdr. Troi, Outgoing Empath (Federation Fleet deck, group F): the four sentences of one instruction (three spans: the copy and its new targets are one).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, TROI_CAST) &&
+      said(b, TROI_COPY) &&
+      said(c, TROI_ELSE_DRAW)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
       continue;
     }
     // Finale of Promise (issue 121): the four sentences of one instruction.

@@ -882,7 +882,7 @@ export function declareTargets(
         }
         break;
       case 'player':
-        if (!isOneOf(what.filter, ['any', 'opponent'])) {
+        if (!isOneOf(what.filter, ['any', 'opponent', 'opponentWhoseTurn'])) {
           issue(out, `${p}.what.filter`, `unknown player filter ${JSON.stringify(what.filter)}`);
         }
         break;
@@ -3706,6 +3706,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileFromTriggerCards' ||
     // Issue 121 (Finale of Promise): the spells a `castCard` with `remember` cast are "those spells" ("If X is 10 or more, copy each of those spells twice").
     (e?.kind === 'castCard' && e.remember === true) ||
+    // Cmdr. Troi (CR 608.2g, 707.10): the spell a `castFree` with `remember` cast is "that spell" ("If they do, you copy that spell").
+    (e?.kind === 'castFree' && e.remember === true) ||
     // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
     (e?.kind === 'draw' && e.reveal === true)
   );
@@ -6191,11 +6193,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         const zone = (e.objects as ChooseSelector).filter?.zone;
         // Issue 103 (Hellkite Courser): "a commander you own from the command zone" is a card chosen from the command zone, only to put onto the battlefield.
         const fromCards = zone === 'hand' || zone === 'graveyard' || zone === 'command';
-        if (zone === 'command' && e.to !== 'battlefield') {
+        // Federation Fleet group F (Command Beacon): or into the hand ("Put your commander into your hand from the command zone").
+        if (zone === 'command' && e.to !== 'battlefield' && e.to !== 'hand') {
           issue(
             out,
             `${path}.to`,
-            'a commander chosen from the command zone is put onto the battlefield',
+            'a commander chosen from the command zone is put onto the battlefield or into the hand',
           );
         }
         if (
@@ -6564,12 +6567,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
-        if (kindOf(objects) !== 'moved' || e.play === true) {
+        // Cmdr. Troi: or a spell of their own hand ("target opponent may cast a spell from their hand without paying its mana cost").
+        if ((kindOf(objects) !== 'moved' && kindOf(objects) !== 'choose') || e.play === true) {
           issue(
             out,
             `${path}.player`,
-            "another player casts the cards an effect before moved ('moved'), and does not play them",
+            "another player casts the cards an effect before moved ('moved') or a spell of their own hand, and does not play them",
           );
+        }
+      }
+      // Cmdr. Troi (CR 608.2g, 707.10): the spell cast is what `moved` names afterwards; one spell only.
+      if (e.remember !== undefined) {
+        if (e.remember !== true || e.max !== undefined || e.perOwner !== undefined) {
+          issue(out, `${path}.remember`, 'remember is true, for one spell (no max, no perOwner)');
         }
       }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
@@ -7214,6 +7224,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.awayFromYou !== undefined && e.awayFromYou !== true) {
         issue(out, `${path}.awayFromYou`, 'awayFromYou is true when present');
+      }
+      break;
+    case 'creaturesCantAttackYou':
+      // CR 508.1a, 611.2c: a group restriction read when attackers are declared: a filter of creatures, as for `requireAttack`.
+      checkFilter(e.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          e.creatures,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'a restriction names creatures by type, color, controller and the like (the battlefield, as they are when attackers are declared): no zone, owner, stackKind, combat or trigger player',
+        );
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
       }
       break;
     case 'attach':

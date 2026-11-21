@@ -72,6 +72,7 @@ import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FEDERATION_D_EFFECT_RULES } from './federation-d';
+import { FEDERATION_F_EFFECT_RULES } from './federation-f';
 import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLEET_E_EFFECT_RULES } from './fleet-e';
@@ -486,6 +487,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     "exile target player's graveyard",
     'exile target opponent’s graveyard',
     'exile all graveyards',
+    "exile any number of target players' graveyards",
     'exile all cards from all graveyards',
     'exile it',
     'exile that card',
@@ -517,6 +519,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile all creatures until ~ leaves the battlefield',
     'exile target tapped artifact or enchantment',
     "exile target player's hand",
+    "exile any number of target players' hands",
     'exile them',
     'exile this card from your hand',
     'exile that card from your hand',
@@ -539,6 +542,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             // Lorehold group 2 (issue 86): "exile target noncreature, nonland card from your graveyard".
             'noun.target-nonmatching-graveyard-card',
             'noun.player-graveyard',
+            // Federation Fleet deck, group F (Stonespeaker Crystal): "exile any number of target players' graveyards".
+            'noun.any-number-target-players-graveyards',
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
@@ -1407,6 +1412,9 @@ export const EFFECT_RULES = [
   ...SEEK_OUT_EFFECT_RULES,
   // Federation Fleet deck, group E (Unification, U.S.S. Stargazer): the owner draws then shuffles the creature in; the delayed exile of a token at end of combat.
   ...FLEET_E_EFFECT_RULES,
+  // Federation Fleet deck, group F: "Until your next turn, creatures can't attack you.", the delayed return of two exiled cards, a commander into the hand, Tuvok's choice of attackers,
+  // Troi's free cast (read quietly, as the rules around them).
+  ...FEDERATION_F_EFFECT_RULES,
   ...COUNTER_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,

@@ -384,6 +384,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.may-cast-any-graveyard': spell((e) => `${cap(e).replace('. when', '. When')}.`),
   'noun.target-card-in-a-graveyard': spell((e) => `You may cast ${e} this turn.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
+  // Federation Fleet deck, group F (Stonespeaker Crystal).
+  'noun.any-number-target-players-graveyards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),

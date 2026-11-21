@@ -475,7 +475,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const companionTo = to;
   const companionToSeat = toSeat;
   // CR 903.9b (Commander): hand or library, from anywhere, becomes command zone at the owner's choice.
-  if (isCommanderCard(state, old) && (to === 'hand' || to === 'library')) {
+  // Command Beacon ("Put your commander into your hand from the command zone"): a commander that is already in the command zone is not asked: the replacement would put it where it is,
+  // and the effect that moves it exists to take it out of that zone.
+  if (
+    isCommanderCard(state, old) &&
+    old.zone !== 'command' &&
+    (to === 'hand' || to === 'library')
+  ) {
     if (request.commanderChoice === undefined || request.commanderChoice === null) {
       const from = old.zone;
       return {

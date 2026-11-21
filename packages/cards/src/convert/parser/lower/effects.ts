@@ -76,6 +76,7 @@ import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FEDERATION_D_LOWERINGS } from './federation-d';
+import { FEDERATION_F_LOWERINGS } from './federation-f';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { FLEET_E_LOWERINGS } from './fleet-e';
@@ -2616,6 +2617,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GISA_G4_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
   ...FLEET_E_LOWERINGS,
+  // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
+  ...FEDERATION_F_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
   ...PRISMARI_G3_LOWERINGS,
