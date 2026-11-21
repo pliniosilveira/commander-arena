@@ -395,6 +395,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSources':
       // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
       return 'those creatures';
+    case 'convokers':
+      // Lethal Scheme (CR 702.51a): the creatures tapped to cast the spell with Convoke.
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -509,6 +512,8 @@ function recipientText(
       return 'it';
     case 'triggerSources':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'defendingPlayer':
       return 'the defending player';
     case 'playerToYourRight':
@@ -526,6 +531,9 @@ function recipientText(
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6).
       return 'each opponent attacking that player';
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: the opponents a batch of sources damaged.
+      return 'each of those opponents';
     case 'declinedPlayer':
       return 'the player who declined';
     case 'giftRecipient':
@@ -580,6 +588,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   cantBeBlocked: "can't be blocked",
   // Issue 81 (CR 509.1b): the Gingerbrute token.
   cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
+  cantAttackPlayersAlreadyAttacked: "can't attack a player it has already attacked this turn",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
@@ -712,6 +721,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'that opponent', third: true };
     case 'opponentsAttackingTriggerPlayer':
       return { who: 'they', third: false };
+    case 'triggerDamagedPlayers':
+      return { who: 'each of those opponents', third: true };
     case 'declinedPlayer':
       return { who: 'the player who declined', third: true };
     case 'giftRecipient':

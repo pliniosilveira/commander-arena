@@ -340,6 +340,7 @@ describe('supported feature gate', () => {
         'dealsDamage',
         'dealtDamage',
         'combatDamageBatch',
+        'damageBatch',
         'countersAdded',
         'crimeCommitted',
         'dies',

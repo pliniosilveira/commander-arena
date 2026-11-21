@@ -152,6 +152,10 @@ export interface Scope {
   readonly triggerCycleX?: boolean;
   /** True in the effect of an `attackBatch` trigger: `triggerAttackerCount` reads the creatures of the declaration that matched (issue 81, The Ur-Sphinx). */
   readonly triggerAttackerCount?: boolean;
+  /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayerCount` reads the opponents dealt damage (CR 603.2c). */
+  readonly triggerDamagedPlayerCount?: boolean;
+  /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayers` names the opponents dealt damage (CR 603.2c). */
+  readonly triggerDamagedPlayers?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -162,6 +166,8 @@ export interface Scope {
   readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of combat damage (`dealsCombatDamage`): combat damage is dealt in the combat phase, so an `extraCombat` has one to follow (CR 500.8, Port Razer). */
+  readonly combatDamageTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
   readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
@@ -304,7 +310,14 @@ export function checkFilter(
   checkEnumList(out, `${path}.notKeywords`, f.notKeywords, FILTERABLE_KEYWORDS, 'keyword');
   if (
     f.controller !== undefined &&
-    !isOneOf(f.controller, ['you', 'opponent', 'any', 'triggerPlayer', 'defendingPlayer'])
+    !isOneOf(f.controller, [
+      'you',
+      'opponent',
+      'any',
+      'triggerPlayer',
+      'defendingPlayer',
+      'monarch',
+    ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);
   }
@@ -328,6 +341,21 @@ export function checkFilter(
   ) {
     issue(out, `${path}.hasCounter`, 'hasCounter must be true or the name of a counter');
   }
+  if (f.otherThanTriggerSubject !== undefined) {
+    if (f.otherThanTriggerSubject !== true) {
+      issue(
+        out,
+        `${path}.otherThanTriggerSubject`,
+        'otherThanTriggerSubject must be true when present',
+      );
+    } else if (sharesWith !== true) {
+      issue(
+        out,
+        `${path}.otherThanTriggerSubject`,
+        'otherThanTriggerSubject is read in a count of a trigger about a permanent (the creature the trigger is about is left out)',
+      );
+    }
+  }
   if (f.notTriggerCard !== undefined && f.notTriggerCard !== true) {
     issue(out, `${path}.notTriggerCard`, 'notTriggerCard must be true when present');
   }
@@ -346,6 +374,7 @@ export function checkFilter(
     'powerLessThanSource',
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
+    'discardedOrFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'xInManaCost',
@@ -388,6 +417,9 @@ export function checkFilter(
       `${path}.enchanted`,
       'enchanted must be a boolean (true: has an Aura, false: has none)',
     );
+  }
+  if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
+    issue(out, `${path}.notOwnedByYou`, 'notOwnedByYou must be true');
   }
   if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
     issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
@@ -497,6 +529,13 @@ export function checkFilter(
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
+  if (f.discardedOrFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.discardedOrFromLibraryThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
   // CR 607.2a (Lorehold group 2): "card exiled with this creature" is a card in exile.
   if (f.exiledWithSource === true && f.zone !== 'exile') {
     issue(
@@ -512,6 +551,28 @@ export function checkFilter(
       `${path}.putWithSource`,
       'only a permanent on the battlefield was put onto the battlefield with another',
     );
+  }
+  if (f.controllerDealtCombatDamageByAtLeast !== undefined) {
+    const spec = f.controllerDealtCombatDamageByAtLeast;
+    if (
+      !Number.isInteger(spec.atLeast) ||
+      spec.atLeast < 1 ||
+      !Array.isArray(spec.subtypes) ||
+      spec.subtypes.length === 0
+    ) {
+      issue(
+        out,
+        `${path}.controllerDealtCombatDamageByAtLeast`,
+        'a count of one or more and at least one subtype',
+      );
+    }
+    if (f.zone !== undefined && f.zone !== 'battlefield') {
+      issue(
+        out,
+        `${path}.controllerDealtCombatDamageByAtLeast`,
+        'only a permanent on the battlefield has a controller to ask',
+      );
+    }
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(
@@ -555,7 +616,9 @@ export function checkFilter(
   }
   // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
   if (f.targetsPlayer !== undefined) {
-    if (f.targetsPlayer !== true) issue(out, `${path}.targetsPlayer`, 'targetsPlayer must be true');
+    if (f.targetsPlayer !== true && f.targetsPlayer !== 'you') {
+      issue(out, `${path}.targetsPlayer`, "targetsPlayer must be true or 'you'");
+    }
     if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
       issue(
         out,
@@ -772,7 +835,9 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.sameNameAs !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
+  f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
+  f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.putWithSource !== undefined ||
@@ -811,6 +876,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerSpellX',
   'triggerCycleX',
   'triggerAttackerCount',
+  'triggerDamagedPlayerCount',
   'cardTypesAmongTriggerCards',
   'dieResult',
   'votesFor',
@@ -1353,6 +1419,12 @@ export function checkRef(
       // Read only where a node says so: the object of a moveToZone in an ability (Persist's "return it").
       issue(out, path, "'thisCard' is only valid as the object of moveToZone in an ability");
       break;
+    case 'convokers':
+      // Lethal Scheme: the creatures that convoked the spell, read in the effect of a spell.
+      if (scope.owner !== 'spell') {
+        issue(out, path, "'convokers' is only valid in the effect of a spell");
+      }
+      break;
     case 'triggerSources':
       // Tamiyo, Upriser Crowned: the creatures of the batch of combat damage that triggered the ability.
       if (scope.triggerSources !== true) {
@@ -1508,6 +1580,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: "each of those opponents": the opponents a batch of sources damaged in one event.
+      if (scope.triggerDamagedPlayers !== true) {
+        issue(
+          out,
+          path,
+          "'triggerDamagedPlayers' needs the effect of a trigger of damage dealt to your opponents by a group of sources (damageBatch to 'opponents')",
+        );
+      }
+      break;
     case 'declinedPlayer':
       if (scope.declinedPlayer !== true) {
         issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
@@ -1605,6 +1687,7 @@ export const PLAYER_ONLY = [
   'playerToYourRight',
   'chosenPlayer',
   'triggerPlayer',
+  'triggerDamagedPlayers',
   'attackedPlayers',
   'combatDamagedByNamed',
 ];
@@ -1659,6 +1742,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
+  destroyedNontokenCreatures: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
   returned: 'a moveToZone effect that chooses cards of a graveyard',
@@ -1692,7 +1776,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
   if (e?.kind === 'destroy')
-    return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
+    return [
+      'destroyed',
+      'destroyedOwnNontoken',
+      'destroyedNontokenCreatures',
+      'destroyedValue',
+      'destroyedCreaturesOfAffected',
+    ];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (
     e?.kind === 'moveToZone' &&
@@ -2175,6 +2265,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
       }
+      if (a.divisor !== undefined && a.divisor !== 3) {
+        issue(out, `${path}.divisor`, 'divisor is 3 ("a third of"), or absent for half');
+      }
       checkAmount(a.of, `${path}.of`, scope, out);
       break;
     case 'minus':
@@ -2353,6 +2446,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: the opponents the sources of the batch dealt damage to.
+      if (scope.triggerDamagedPlayerCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerDamagedPlayerCount' needs a triggered ability whose trigger is damage dealt to your opponents by a group of sources",
+        );
+      }
+      break;
     case 'cardTypesAmongTriggerCards':
       // CR 603.2c: the cards a batch trigger saw put into a graveyard.
       if (scope.triggerCards !== true) {
@@ -2458,7 +2561,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         }
         checkFilter(rest, `${path}.filter`, out);
       } else {
-        checkFilter(a.filter, `${path}.filter`, out);
+        // CR 603.10a, 205.3m (Shared Animosity): "shares a creature type with it" in a count of a trigger about a permanent reads that permanent (`triggerSubject`).
+        checkFilter(
+          a.filter,
+          `${path}.filter`,
+          out,
+          undefined,
+          scope.triggerSubject === 'permanent',
+        );
       }
       break;
     default:
@@ -3208,6 +3318,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'cardLeftYourGraveyard':
+    case 'descendedThisTurn':
     case 'yourMainPhase':
     case 'yourCombatPhase':
     case 'yourTurn':
@@ -4050,6 +4161,25 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
         `${path}.alsoGraveyard`,
         'a choice from the hand or the graveyard (D-544) names the hand as its zone and is not a choice among moved cards',
       );
+    }
+  }
+  // "Put a creature card from defending player's hand onto the battlefield": the hand of one named player, the chooser choosing.
+  if (sel.fromHandOf !== undefined) {
+    checkPlayerSelector(sel.fromHandOf, `${path}.fromHandOf`, scope, out);
+    if (
+      sel.filter?.zone !== 'hand' ||
+      sel.fromMoved === true ||
+      sel.alsoGraveyard !== undefined ||
+      sel.optional !== true
+    ) {
+      issue(
+        out,
+        `${path}.fromHandOf`,
+        'a choice from the hand of another player names the hand as its zone, is optional and is not a choice among moved cards or from the graveyard',
+      );
+    }
+    if (sel.fromHandOf.kind !== 'defendingPlayer') {
+      issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
     }
   }
   if (sel.count !== undefined) {
@@ -5777,6 +5907,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'triggerDamagedPlayers' ||
         e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
@@ -6218,12 +6349,51 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
         }
+        if ((e.objects as ChooseSelector).fromHandOf !== undefined && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            "a card chosen from another player's hand is put onto the battlefield",
+          );
+        }
         if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {
           issue(
             out,
             `${path}.to`,
             'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
           );
+        }
+        // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard", the cards exiled with this permanent.
+        const eachGy = e.objects as ChooseSelector;
+        if (eachGy.eachGraveyard !== undefined) {
+          if (
+            eachGy.eachGraveyard !== true ||
+            e.to !== 'exile' ||
+            zone !== 'graveyard' ||
+            eachGy.optional !== true ||
+            (eachGy.count !== undefined && eachGy.count !== 1) ||
+            eachGy.fromMoved !== undefined ||
+            eachGy.alsoGraveyard !== undefined ||
+            eachGy.minCardTypes !== undefined
+          ) {
+            issue(
+              out,
+              `${path}.objects.eachGraveyard`,
+              "eachGraveyard is true, with an optional choice of one card from the graveyard, to 'exile'",
+            );
+          }
+        }
+        if (e.linked !== undefined) {
+          if (e.linked !== true || e.to !== 'exile') {
+            issue(out, `${path}.linked`, "linked is true, with to 'exile'");
+          }
+          if (scope.owner !== 'ability') {
+            issue(
+              out,
+              `${path}.linked`,
+              'cards exiled with this permanent: an ability of a permanent',
+            );
+          }
         }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand); onto the battlefield from exile too.
         const among = e.objects as ChooseSelector;
@@ -7504,6 +7674,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
+      }
+      break;
+    case 'gainEscape':
+      // CR 702.138a: "each creature card in your graveyard gains escape until end of turn": a filter of the cards, the cost (mana only) and how many other cards are exiled.
+      checkFilter(e.what, `${path}.what`, out);
+      if (
+        e.what?.zone !== undefined ||
+        e.what?.controller !== undefined ||
+        e.what?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (
+        !Array.isArray(e.cost) ||
+        e.cost.length === 0 ||
+        !e.cost.every((c) => c.kind === 'mana')
+      ) {
+        issue(out, `${path}.cost`, 'the escape cost is paid with mana only');
+      }
+      if (!Number.isInteger(e.exile) || e.exile < 1) {
+        issue(out, `${path}.exile`, 'escape exiles at least one other card');
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the escape is gained until end of turn');
       }
       break;
     case 'gainFlashbackFromManaCost':

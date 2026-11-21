@@ -81,6 +81,9 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     // Death Toll deck, Dim Oubliette (CR 400.7, 608.2d, 110.2a): the same choice, put onto the battlefield under your control.
     'return a creature card from your graveyard to the battlefield',
     'you may return a creature card from your graveyard to the battlefield',
+    // Ahoy Mateys deck, Port of Karfell (CR 110.5b, tapped): the same, entering tapped.
+    'return a creature card from your graveyard to the battlefield tapped',
+    'you may return a creature card from your graveyard to the battlefield tapped',
   ],
   rejects: [
     'you may return target creature card from your graveyard to your hand',
@@ -88,7 +91,6 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     'you may return a creature card from a graveyard to your hand',
     'you may return a creature card from an opponent’s graveyard to your hand',
     "you may return a creature card from your graveyard to its owner's hand",
-    'you may return a creature card from your graveyard to the battlefield tapped',
     'you may return a creature card from your graveyard to the battlefield under your control',
     'you may return a creature from your graveyard to your hand',
     'you may return a creature card from your graveyard to your hand tapped',
@@ -109,7 +111,13 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
               satisfy(graveyardPhrase(false), (filter) => filter.controller === 'you'),
             ),
           ),
-          spanned(choice(literal(' to your hand'), literal(' to the battlefield'))),
+          spanned(
+            choice(
+              literal(' to your hand'),
+              literal(' to the battlefield tapped'),
+              literal(' to the battlefield'),
+            ),
+          ),
         ),
       )(ctx, pos);
       if (!head.ok) return head;
@@ -126,12 +134,14 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
         span: at,
         rule: 'effect.return-chosen-card',
       };
-      const toBattlefield =
-        ctx.text.slice(hand.span.start, hand.span.end) === ' to the battlefield';
+      const placed = ctx.text.slice(hand.span.start, hand.span.end);
+      const toBattlefield = placed !== ' to your hand';
+      const tapped = placed === ' to the battlefield tapped';
       const to: IrZoneSpec = {
         kind: 'zoneSpec',
         zone: toBattlefield ? 'battlefield' : 'hand',
         ...(toBattlefield ? {} : { whose: 'you' as const }),
+        ...(tapped ? { tapped: true as const } : {}),
         span: hand.span,
         rule: 'effect.return-chosen-card',
       };

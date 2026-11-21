@@ -136,8 +136,16 @@ export interface FilterContext {
    * log by the caller; without it the flag matches nothing.
    */
   readonly damagedPlayers?: readonly SeatId[];
+  /** The combat damage events of this turn (`controllerDealtCombatDamageByAtLeast`, group 7 of the Ahoy Mateys deck): the turn log, read by the caller; absent fails the flag closed. */
+  readonly combatDamaged?: readonly {
+    readonly source: ObjectId;
+    readonly player: SeatId;
+    readonly subtypes: readonly Subtype[];
+  }[];
   /** The cards put into a graveyard from the battlefield this turn (`putFromBattlefieldThisTurn`, D-179): the turn log, read by the caller; absent fails the flag closed. */
   readonly graveyarded?: readonly ObjectId[];
+  /** The cards put into a graveyard this turn by being discarded or from a library (`discardedOrFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
+  readonly discardedOrFromLibrary?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
   /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
@@ -220,6 +228,9 @@ export function matchesFilterWith(
   if (filter.other && ctx.source !== null && obj.id === ctx.source) return false;
   // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card": not the card the permanent the trigger is about became.
   if (filter.notTriggerCard === true && (ctx.excludedCards ?? []).includes(obj.id)) return false;
+  // CR 508.1 (Shared Animosity): "each other attacking creature": not the creature the trigger is about, which the caller lists in `excludedCards`.
+  if (filter.otherThanTriggerSubject === true && (ctx.excludedCards ?? []).includes(obj.id))
+    return false;
   // D-437: "a spell that targets this creature": the object is the permanent that has the ability.
   if (filter.isSource === true && (ctx.source === null || obj.id !== ctx.source)) return false;
   if (filter.controller === 'you' && controllerOf(state, obj) !== ctx.controller) return false;
@@ -230,6 +241,8 @@ export function matchesFilterWith(
   // CR 508.5 (D-151): "creature defending player controls": the player the source is attacking; nothing matches when it is not attacking.
   if (filter.controller === 'defendingPlayer' && controllerOf(state, obj) !== ctx.defendingPlayer)
     return false;
+  // CR 725.1 (monarch): "creatures the monarch controls": the controller is the monarch now; with no monarch nothing matches.
+  if (filter.controller === 'monarch' && controllerOf(state, obj) !== state.monarch) return false;
   // CR 108.3: the owner of a card is the player who started the game with it in their deck.
   if (filter.owner !== undefined && !(ctx.owners ?? []).includes(obj.owner)) return false;
   // CR 109.4 (D-179): "each creature that player controls": the permanent's controller is one of the players the selector names.
@@ -324,6 +337,8 @@ export function matchesFilterWith(
     return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
+  // CR 108.3 ("you don't own"): the owner of the object is not the player reading the filter.
+  if (filter.notOwnedByYou === true && obj.owner === ctx.controller) return false;
   // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.
@@ -364,8 +379,25 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 510.2, 120.2a (Ahoy Mateys group 7): "controlled by a player who was dealt combat damage by three or more Pirates this turn": different sources, as each was.
+  if (filter.controllerDealtCombatDamageByAtLeast !== undefined) {
+    const { atLeast, subtypes } = filter.controllerDealtCombatDamageByAtLeast;
+    const who = controllerOf(state, obj);
+    const sources = new Set<ObjectId>();
+    for (const d of ctx.combatDamaged ?? []) {
+      if (d.player === who && subtypes.every((t) => d.subtypes.includes(t))) sources.add(d.source);
+    }
+    if (sources.size < atLeast) return false;
+  }
   // CR 700.4 (D-179): "that was put there from the battlefield this turn".
   if (filter.putFromBattlefieldThisTurn === true && !(ctx.graveyarded ?? []).includes(obj.id)) {
+    return false;
+  }
+  // "That was discarded or put there from a library this turn" (Ghost of Ramirez DePietro).
+  if (
+    filter.discardedOrFromLibraryThisTurn === true &&
+    !(ctx.discardedOrFromLibrary ?? []).includes(obj.id)
+  ) {
     return false;
   }
   // CR 601.2a (D-235): "Spells you cast from anywhere other than your hand": a spell on the stack that was cast from another zone.

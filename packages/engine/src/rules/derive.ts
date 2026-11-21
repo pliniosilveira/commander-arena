@@ -296,7 +296,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
     restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
     goadedBy: fx.goadedBy,
     affectedBy: fx.affectedBy,
-    blockLimits: fx.blockLimits,
+    blockLimits: blockLimitsOf(state, obj, fx.blockLimits, effects),
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,
   };
@@ -306,6 +306,27 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
   const pt = ptWith(fx.power, fx.toughness, fx.sets);
   if (pt.power === typed.power && pt.toughness === typed.toughness) return typed;
   return { ...typed, power: pt.power, toughness: pt.toughness };
+}
+
+/**
+ * CR 509.1b, 613.11: the limits on who can block the object: those of the static abilities that reach it and those of the `restrict` effects with `blockers` ("can't be blocked this turn
+ * except by Spirits"), which are not abilities and stay when the object loses its abilities. A limit of an effect is read for the controller of the object, with no source.
+ */
+function blockLimitsOf(
+  state: GameState,
+  obj: GameObject,
+  fromStatics: readonly BlockLimit[],
+  effects: readonly ContinuousEffect[],
+): readonly BlockLimit[] {
+  let out = fromStatics;
+  for (const e of effects) {
+    if (e.change.kind !== 'restrict' || e.change.blockers === undefined) continue;
+    out = [
+      ...out,
+      { filter: e.change.blockers, controller: controllerOf(state, obj), source: obj.id },
+    ];
+  }
+  return out;
 }
 
 /**
@@ -349,6 +370,8 @@ function restrictionsOf(
   }
   let out = own;
   for (const e of effects) {
+    // "Can't be blocked this turn except by Spirits" limits who may block (`blockLimits`); it is not an unconditional restriction.
+    if (e.change.kind === 'restrict' && e.change.blockers !== undefined) continue;
     if (e.change.kind === 'restrict' && !out.includes(e.change.restriction)) {
       out = [...out, e.change.restriction];
     }

@@ -63,6 +63,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'its';
     case 'triggerSources':
+    case 'convokers':
       return 'their';
     case 'sacrificedCost':
       // D-133: the permanent sacrificed to pay the cost ("the sacrificed creature's power").
@@ -101,6 +102,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'it';
     case 'triggerSources':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -172,6 +175,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
+    case 'destroyedNontokenCreatures':
+      // Blood Money: "for each nontoken creature destroyed this way".
+      return 'the number of nontoken creatures destroyed this way';
     case 'playersDrew':
       return 'the number of players who drew a card this way';
     case 'tapped':
@@ -369,6 +375,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: "for each opponent dealt damage" of a batch damage trigger.
+      return 'the number of opponents dealt damage';
     case 'shortfall':
       // D-151 (CR 701.57): "the difference" between the limit and the mana value of the card found.
       return `the difference between ${amount.limit} and ${shortfallOf(amount.of)} mana value`;

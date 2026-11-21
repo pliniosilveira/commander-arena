@@ -40,6 +40,7 @@ function cardCandidates(
   alsoGraveyard = false,
   triggerDamage?: number,
   among?: readonly ObjectId[],
+  handOf?: SeatId,
 ): ObjectId[] {
   // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
   const ctx = {
@@ -72,7 +73,8 @@ function cardCandidates(
   const zones: readonly ('hand' | 'graveyard' | 'command')[] =
     alsoGraveyard && zone === 'hand' ? ['hand', 'graveyard'] : [zone];
   return zones.flatMap((z) =>
-    zoneList(state, z, seat).filter((id) => {
+    // CR 402.3 (hands): "from defending player's hand" names the zone of another player (`handOf`); the chooser is still `seat`.
+    zoneList(state, z, z === 'hand' && handOf !== undefined ? handOf : seat).filter((id) => {
       const obj = state.objects[id];
       return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
@@ -129,6 +131,8 @@ export function runChooseMove(
         instruction.withCounters,
       ).map((i) => {
         if (i.kind !== 'move') return i;
+        // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
+        if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
@@ -147,39 +151,55 @@ export function runChooseMove(
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal =
-    fromCards && instruction.anyOwner === true
-      ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
-        (instruction.among ?? []).filter((id) => {
+    fromCards && instruction.graveyardOf !== undefined
+      ? // King Narfi's Betrayal (CR 404.1): the cards in one player's graveyard that match the filter, whoever chooses.
+        zoneList(state, 'graveyard', instruction.graveyardOf).filter((id) => {
           const obj = state.objects[id];
-          const { controller: _owner, ...described } = instruction.filter;
+          const { controller: _you, ...described } = instruction.filter;
           return (
             obj !== undefined &&
-            obj.zone === 'graveyard' &&
             matchesFilter(
               state,
               obj,
               { ...described, zone: 'graveyard' },
-              {
-                controller: chooser,
-                source: res.source,
-              },
+              { controller: chooser, source: res.source },
             )
           );
         })
-      : fromCards
-        ? cardCandidates(
-            state,
-            chooser,
-            res.source,
-            instruction.filter,
-            instruction.alsoGraveyard === true,
-            res.triggerDamage,
-            instruction.among,
-          ).filter(
-            // D-411: only the cards the effect before it moved.
-            (id) => instruction.among === undefined || instruction.among.includes(id),
-          )
-        : controlledCandidates(state, chooser, res.source, instruction.filter);
+      : fromCards && instruction.anyOwner === true
+        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
+          (instruction.among ?? []).filter((id) => {
+            const obj = state.objects[id];
+            const { controller: _owner, ...described } = instruction.filter;
+            return (
+              obj !== undefined &&
+              obj.zone === 'graveyard' &&
+              matchesFilter(
+                state,
+                obj,
+                { ...described, zone: 'graveyard' },
+                {
+                  controller: chooser,
+                  source: res.source,
+                },
+              )
+            );
+          })
+        : fromCards
+          ? cardCandidates(
+              state,
+              chooser,
+              res.source,
+              instruction.filter,
+              instruction.alsoGraveyard === true,
+              res.triggerDamage,
+              instruction.among,
+              instruction.handOf,
+            ).filter(
+              // D-411: only the cards the effect before it moved.
+              (id) => instruction.among === undefined || instruction.among.includes(id),
+            )
+          : controlledCandidates(state, chooser, res.source, instruction.filter);
   if (legal.length === 0) return { ...done(state), lastMoved: [], ...restart };
   const optional = instruction.optional === true;
   // CR 205.2a: "any number of cards ... with four or more card types among them": with no way to reach that many card types among the candidates nothing can be chosen,
@@ -239,11 +259,17 @@ export function runChooseMove(
               ? 'from among the cards put into your graveyard'
               : zone === 'exile'
                 ? 'exiled with this permanent'
-                : instruction.alsoGraveyard === true
-                  ? 'from your hand or graveyard'
-                  : zone === 'command'
-                    ? 'from your command zone'
-                    : `from your ${zone}`
+                : instruction.graveyardOf !== undefined
+                  ? instruction.graveyardOf === chooser
+                    ? 'from your graveyard'
+                    : "from an opponent's graveyard"
+                  : instruction.alsoGraveyard === true
+                    ? 'from your hand or graveyard'
+                    : zone === 'command'
+                      ? 'from your command zone'
+                      : instruction.handOf !== undefined
+                        ? 'from their hand'
+                        : `from your ${zone}`
         } to put ${WHERE[instruction.to]}`.replace(
           'from among the cards put into your graveyard',
           instruction.anyOwner === true

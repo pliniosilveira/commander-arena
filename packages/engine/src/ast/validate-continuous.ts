@@ -23,7 +23,9 @@ import {
   type AstIssue,
   checkAffectedObjects,
   checkEnumList,
+  checkFilter,
   checkPtAmount,
+  filterSome,
   issue,
   type Scope,
 } from './validate-parts';
@@ -394,13 +396,39 @@ export function checkContinuousEffect(
     case 'restrict':
       // D-094: "can't block", "can't be blocked" and "attacks each combat if able" last until end of
       // turn; "doesn't untap" and "can't be countered" are not effects the engine runs.
+      if (e.blockers !== undefined) {
+        // CR 509.1b: "can't be blocked this turn except by Spirits": the creatures that can't block, only of `cantBeBlocked`, as a filter of creatures as they are (no zone, owner or stack kind).
+        if (e.restriction !== 'cantBeBlocked') {
+          issue(out, `${path}.blockers`, "blockers go with the restriction 'cantBeBlocked'");
+        } else if (typeof e.blockers !== 'object' || e.blockers === null) {
+          issue(
+            out,
+            `${path}.blockers`,
+            'blockers is a filter of the creatures that can not block',
+          );
+        } else {
+          checkFilter(e.blockers, `${path}.blockers`, out);
+          if (
+            filterSome(
+              e.blockers,
+              (m) => m.zone !== undefined || m.stackKind !== undefined || m.owner !== undefined,
+            )
+          ) {
+            issue(
+              out,
+              `${path}.blockers`,
+              'blockers names creatures by what they are: no zone, stackKind or owner',
+            );
+          }
+        }
+      }
       if (e.restriction === 'doesntUntap') {
-        // D-517: only with the duration that ends at the next untap step.
-        if (e.duration !== 'untilNextUntapStep') {
+        // D-517: the duration that ends at the next untap step; Ahoy Mateys group 7 (CR 611.2b): "for as long as you control this creature" in the ability of a permanent.
+        if (e.duration !== 'untilNextUntapStep' && e.duration !== 'forAsLongAsYouControlThis') {
           issue(
             out,
             `${path}.duration`,
-            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep, not doesntUntap with ${JSON.stringify(e.duration)}`,
+            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep or forAsLongAsYouControlThis, not doesntUntap with ${JSON.stringify(e.duration)}`,
           );
         }
       } else if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {

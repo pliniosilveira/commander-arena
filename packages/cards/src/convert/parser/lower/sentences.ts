@@ -1850,6 +1850,7 @@ function countsWhatHappened(
       return (
         earlier.verb === 'destroy' && names(earlier.args.objects).every((n) => n === 'creature')
       );
+    case 'destroyedNontokenCreatures':
     case 'destroyedOwnNontoken':
       // Stage P68 (D-230): "for each nontoken creature you controlled that was destroyed this way": a `destroy` of creatures before it.
       return (

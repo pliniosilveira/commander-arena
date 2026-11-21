@@ -12,6 +12,10 @@
  *   opponent controls, read for the recipient as it is on the battlefield;
  * - the source matches the filter of the effect, read as the source is or as it last was (`damageSourceMatches`), for the controller of the permanent.
  * The source stays the source (CR 120.3): the extra damage is dealt by the creature or spell, not by the permanent with the ability.
+ *
+ * `damageDouble` ("it deals double that damage to that permanent or player instead", CR 614.1a) is the same replacement with a doubled amount and no limit on the
+ * recipient: any player, creature, planeswalker or battle, the controller's own included. Two of them, or one with a `damageBonus`, are ordered by the player
+ * dealt the damage (CR 616.1), and the order changes the result (plus 2 then double is not double then plus 2).
  */
 import type { Replacement } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
@@ -22,7 +26,10 @@ import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { damageSourceMatches } from './prevention';
 
-type Bonus = Extract<Replacement, { kind: 'damageBonus' }>;
+type Bonus = Extract<Replacement, { kind: 'damageBonus' | 'damageDouble' }>;
+
+const isBonus = (r: Replacement): r is Bonus =>
+  r.kind === 'damageBonus' || r.kind === 'damageDouble';
 
 /** An increase that can be applied to a damage event: the permanent that has it and the index of the ability among the abilities it has now. */
 export interface DamageBonus {
@@ -37,7 +44,7 @@ export const bonusKey = (b: DamageBonus): string => `bonus:${b.object}:${b.index
 function mayAdd(state: GameState, obj: GameObject): boolean {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) return false;
   return copiableValues(state, obj).abilities.some(
-    (a) => a.kind === 'replacement' && a.replacement.kind === 'damageBonus',
+    (a) => a.kind === 'replacement' && isBonus(a.replacement),
   );
 }
 
@@ -67,12 +74,12 @@ export function bonusesFor(
     const abilities = derive(state, owner).abilities;
     const controller = controllerOf(state, owner);
     abilities.forEach((a, index) => {
-      if (a.kind !== 'replacement' || a.replacement.kind !== 'damageBonus') return;
+      if (a.kind !== 'replacement' || !isBonus(a.replacement)) return;
       const bonus = { object: id, index };
       if (used.includes(bonusKey(bonus))) return;
       const effect: Bonus = a.replacement;
       if (
-        isOpponentSide(state, controller, event.to) &&
+        (effect.kind === 'damageDouble' || isOpponentSide(state, controller, event.to)) &&
         damageSourceMatches(state, event.source, effect.sources, controller)
       ) {
         found.push({ bonus, timestamp: owner.timestamp });
@@ -90,12 +97,21 @@ export function bonusesFor(
     .map((f) => f.bonus);
 }
 
-/** How much more damage the bonus adds, read from the ability it is now (0 when the permanent no longer has it). */
-export function bonusAmount(state: GameState, bonus: DamageBonus): number {
+/** The damage after the bonus, for an event of `amount` (a bonus adds to it, a doubling doubles it); `amount` itself when the permanent no longer has the ability. */
+export function bonusApplied(state: GameState, bonus: DamageBonus, amount: number): number {
   const owner = state.objects[bonus.object];
-  if (owner === undefined) return 0;
+  if (owner === undefined) return amount;
   const a = derive(state, owner).abilities[bonus.index];
-  return a?.kind === 'replacement' && a.replacement.kind === 'damageBonus'
-    ? a.replacement.amount
-    : 0;
+  if (a?.kind !== 'replacement') return amount;
+  if (a.replacement.kind === 'damageDouble') return amount * 2;
+  return a.replacement.kind === 'damageBonus' ? amount + a.replacement.amount : amount;
+}
+
+/** The words of a card for the bonus, as the player ordering the effects reads them (CR 616.1): how much more damage, or "double". */
+export function bonusWords(state: GameState, bonus: DamageBonus): string {
+  const owner = state.objects[bonus.object];
+  const a = owner === undefined ? undefined : derive(state, owner).abilities[bonus.index];
+  if (a?.kind === 'replacement' && a.replacement.kind === 'damageDouble')
+    return 'Deal double damage';
+  return `Deal ${a?.kind === 'replacement' && a.replacement.kind === 'damageBonus' ? a.replacement.amount : 0} more damage`;
 }

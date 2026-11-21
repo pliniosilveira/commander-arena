@@ -54,6 +54,7 @@ import {
   readsTriggerAttacked,
   readsTriggerAttackers,
   readsTriggerDamage,
+  readsTriggerDamaged,
   readsTriggerPlayer,
   readsTriggerSubject,
 } from './trigger-subject';
@@ -85,6 +86,7 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       (readsTriggerSubject(t.ability) ? `${t.subject}#` : '') +
       (readsTriggerPlayer(t.ability) ? `p${t.player}#` : '') +
       (readsTriggerDamage(t.ability) ? `d${t.damage}#` : '') +
+      (readsTriggerDamaged(t.ability) ? `D${(t.damaged ?? []).join(',')}#` : '') +
       (readsTriggerAttacked(t.ability)
         ? `a${(t.attacked ?? []).join(',')}@${(t.attackedAt ?? []).join(',')}#`
         : '') +
@@ -127,6 +129,9 @@ function pushTrigger(
       : {}),
     ...(trigger.damage !== undefined && readsTriggerDamage(trigger.ability)
       ? { damage: trigger.damage }
+      : {}),
+    ...(trigger.damaged !== undefined && readsTriggerDamaged(trigger.ability)
+      ? { damaged: trigger.damaged }
       : {}),
     ...(trigger.targetCount === undefined ? {} : { targetCount: trigger.targetCount }),
     ...(trigger.attacked !== undefined && readsTriggerAttacked(trigger.ability)
@@ -241,6 +246,7 @@ function runQueue(input: GameState): PutResult {
       source: trigger.source,
       ...(trigger.player === undefined ? {} : { triggerPlayer: trigger.player }),
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
+      ...(trigger.damaged === undefined ? {} : { triggerDamaged: trigger.damaged }),
       ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
       // CR 603.3d: a target filter that reads the object that caused the trigger ("mana value ... that spell's mana value").
       ...(trigger.subject === null || !readsTriggerSubject(trigger.ability)
@@ -502,6 +508,7 @@ export function answerTriggerModes(
     source: stack.source,
     ...(stack.triggerPlayer === undefined ? {} : { triggerPlayer: stack.triggerPlayer }),
     ...(stack.triggerDamage === undefined ? {} : { triggerDamage: stack.triggerDamage }),
+    ...(stack.triggerDamaged === undefined ? {} : { triggerDamaged: stack.triggerDamaged }),
     ...(stack.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: stack.triggerTargetCount }),

@@ -413,6 +413,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-spell-cast': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-opponent-dealt-damage': permanent(
+    (e) =>
+      `Whenever one or more Pirates you control deal damage to your opponents, you create a Treasure token ${e}.`,
+  ),
   'amount.for-each-spell-color': permanent(
     (e) => `Whenever you cast a spell, you gain 1 life ${e}.`,
   ),
@@ -513,6 +517,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
   'trigger.combat-damage-batch': whenever,
+  'trigger.damage-batch': whenever,
   'trigger.tapped-for-mana': whenever,
   'trigger.taps-for-mana': whenever,
   'trigger.state': whenever,
@@ -663,6 +668,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-graveyard': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
+  'replacement.damage-double': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,
   'trigger.attacks-first-time': whenever,
@@ -962,6 +968,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.card-left-graveyard': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
   ),
+  'condition.descended-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'amount.for-each-nontoken-destroyed': spell(
+    (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
+  ),
   // Stage P67 (D-220): trigger doubling is a line of its own, and so is the equip of a creature type.
   'static.triggers-additional-time': asIs,
   // Issue 25 (D-339): the line of its own, with the card's wording.
@@ -974,6 +986,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-commander': asIs,
   // Issue 345: the equip of a legendary creature is a line of its own.
   'keyword.equip-legendary': asIs,
+  // Ahoy Mateys deck, group 10 (Siren Stormtamer): the target of a counter, in the activated ability that sacrifices the creature.
+  'noun.target-spell-or-ability-targeting-you': permanent((e) => `{U}, Sacrifice ~: Counter ${e}.`),
+  // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): the equip line with its cost reduction, and the condition of that reduction.
+  'keyword.equip-cost-reduced': asIs,
+  'condition.you-have-few-cards-in-hand': permanent(
+    (e) => `Equip {2}. This ability costs {2} less to activate if ${e}.`,
+  ),
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
@@ -1203,6 +1222,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  // Ahoy Mateys deck, group 7.
+  'noun.target-permanent-controller-dealt-damage-by': spell((e) => `Gain control of ${e}.`),
+  // Ahoy Mateys deck, group 4.
+  'noun.each-creature-that-is-subtype-or-subtype': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
+  'noun.each-creature-you-control-but-dont-own': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
   // D-270: a target of two zones, read by `exile`.
@@ -1351,6 +1379,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),
+  // Ahoy Mateys deck, group 8: the condition of the card's own permission to be cast from the graveyard, and the noun of the targets the choice names.
+  'condition.control-at-least-subtypes': permanent(
+    (e) => `You may cast this card from your graveyard as long as ${e}.`,
+  ),
+  'noun.target-card-in-a-graveyard-this-turn': spell(
+    (e) => `Choose ${e}. Put that card into its owner's hand.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

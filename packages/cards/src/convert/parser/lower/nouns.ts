@@ -65,6 +65,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   couldntSacrificeThisWay: 'selector:couldntSacrificeThisWay',
   // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
+  // CR 603.2c: "each of those opponents" of a damage batch trigger to your opponents (Breeches).
+  triggerDamagedPlayers: 'selector:triggerDamagedPlayers',
   // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
   combatDamagedByNamed: 'selector:combatDamagedByNamed',
 };
@@ -98,6 +100,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:keywords',
   'selector:triggerPlayer',
   'selector:triggerAttackedPlayer',
+  'selector:triggerDamagedPlayers',
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
@@ -123,6 +126,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:controllerDealtCombatDamageByAtLeast',
   'selector:modified',
   // CR 701.15b: "a goaded creature".
   'selector:goaded',
@@ -130,6 +134,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:attachedTo',
   'selector:enchanted',
   'selector:enchantedByYou',
+  'selector:notOwnedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
@@ -140,6 +145,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:sharesCreatureTypeWith',
   'selector:sharesCreatureTypeWithSource',
   'selector:sharesCreatureTypeWithSacrificed',
+  'selector:otherThanTriggerSubject',
   'selector:chooseFromTriggerSources',
   'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
@@ -278,6 +284,8 @@ function lowerFilterAt(
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
   if (filter.blocking === true) parts.push('selector:blocking');
   if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
+  // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
+  if (filter.controller === 'monarch') parts.push('selector:monarchController');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -300,6 +308,10 @@ function lowerFilterAt(
   if (filter.putFromBattlefieldThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:putFromBattlefieldThisTurn');
+  }
+  if (filter.discardedOrFromLibraryThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:discardedOrFromLibraryThisTurn');
   }
   // D-235: "spells you cast from anywhere other than your hand" (CR 601.2a), a spell on the stack.
   if (filter.notCastFromHand === true) {
@@ -324,6 +336,11 @@ function lowerFilterAt(
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
+  }
+  // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2), read where the filter is matched against the game (a target slot, an `each` selector); never a member of a choice.
+  if (filter.controllerDealtCombatDamageBy !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:controllerDealtCombatDamageByAtLeast');
   }
   // Lorehold group 2: "target card exiled with ~" (CR 607.2a), read where the filter is matched against the game with the source (a target slot); never a member of a choice, and a card in exile.
   if (filter.exiledWithSelf === true) {
@@ -363,6 +380,7 @@ function lowerFilterAt(
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  if (filter.otherThanIt === true) parts.push('selector:otherThanTriggerSubject');
   // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
   if (filter.sharesCreatureTypeWithSacrificed === true) {
     parts.push('selector:sharesCreatureTypeWithSacrificed');
@@ -388,6 +406,13 @@ function lowerFilterAt(
     const aimed = lowerFilterAt(filter.targets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
+  }
+  // Siren Stormtamer (CR 115.1, 601.2c): "that targets you": a chosen target that is the controller of the ability, a member of the choice that also reads "a creature you control".
+  let targetsPlayer: 'you' | undefined;
+  if (filter.targetsYou === true) {
+    if (!onStack || targetsObject !== undefined) return bad([]);
+    parts.push('selector:targetsYou');
+    targetsPlayer = 'you';
   }
   // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
   let targetsOnly: ObjectFilter | undefined;
@@ -429,6 +454,8 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
+  // CR 108.3: "you don't own", read where the filter is matched against an object.
+  if (filter.notOwnedByYou === true) parts.push('selector:notOwnedByYou');
   // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
   if (filter.enchantedByYou === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -541,11 +568,22 @@ function lowerFilterAt(
     ...(filter.putFromBattlefieldThisTurn === true
       ? { putFromBattlefieldThisTurn: true as const }
       : {}),
+    ...(filter.discardedOrFromLibraryThisTurn === true
+      ? { discardedOrFromLibraryThisTurn: true as const }
+      : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.controllerDealtCombatDamageBy === undefined
+      ? {}
+      : {
+          controllerDealtCombatDamageByAtLeast: {
+            atLeast: filter.controllerDealtCombatDamageBy.atLeast,
+            subtypes: [filter.controllerDealtCombatDamageBy.subtype],
+          },
+        }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
@@ -557,6 +595,7 @@ function lowerFilterAt(
     ...(filter.sharesCreatureTypeWithIt === true
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
+    ...(filter.otherThanIt === true ? { otherThanTriggerSubject: true as const } : {}),
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
@@ -567,10 +606,12 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(targetsPlayer === undefined ? {} : { targetsPlayer }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
+    ...(filter.notOwnedByYou === true ? { notOwnedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),
@@ -1408,6 +1449,11 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (ctx.owner !== 'ability') return failure(noun, []);
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
+    }
+    case 'triggerDamagedPlayers': {
+      // CR 603.2c: the opponents a batch trigger damaged; `validateCard` refuses it in any other ability.
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'triggerDamagedPlayers' });
     }
     case 'combatDamagedByNamed': {
       // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.

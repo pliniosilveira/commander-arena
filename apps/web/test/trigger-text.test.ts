@@ -234,6 +234,11 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
     what: { types: ['creature'], controller: 'you' },
     to: 'player',
   },
+  damageBatch: {
+    kind: 'damageBatch',
+    what: { subtypes: ['Pirate'], controller: 'you' },
+    to: 'opponents',
+  },
   lifeGained: { kind: 'lifeGained', who: 'you', firstEachTurn: true },
   lifeLost: { kind: 'lifeLost', who: 'you', firstEachTurn: true },
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },

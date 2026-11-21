@@ -9,6 +9,7 @@ import type {
   Color,
   Effect,
   Keyword,
+  ObjectFilter,
   ObjectSelector,
   PtAmount,
 } from '@commander-arena/engine';
@@ -17,7 +18,7 @@ import { grantedKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
-import { colorLetter, itemsOf, objectSelectorOf } from './nouns';
+import { colorLetter, itemsOf, lowerFilter, objectSelectorOf } from './nouns';
 import type { Lowering, LowerResult } from './types';
 
 const END = 'untilEndOfTurn' as const;
@@ -165,6 +166,26 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     ) {
       return failure(clause);
     }
+    // "can't be blocked this turn except by Spirits" (CR 509.1b): the creatures that can't block, as the engine's `restrict.blockers`.
+    let blockers: ObjectFilter | undefined;
+    if (given.blockers !== undefined) {
+      if (restriction !== 'cantBeBlocked') return failure(clause);
+      const blocked = missingFeatures(['selector:restrictBlockers']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+      const lowered = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: given.blockers,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: clause.span,
+        rule: clause.rule,
+      });
+      if (!lowered.ok) return lowered;
+      blockers = lowered.value;
+    }
     // One chosen creature (the engine's `restrict` of a target, as its fixtures write it), or every
     // creature of a group as the effect begins (`each`, CR 611.2c).
     const noun = operand(clause, 'objects');
@@ -183,6 +204,7 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
         kind: 'restrict',
         objects,
         restriction,
+        ...(blockers === undefined ? {} : { blockers }),
         duration: whileControlling
           ? 'forAsLongAsYouControlThis'
           : whileRemains
@@ -253,7 +275,11 @@ export const SET_PT: Lowering<IrClause, Effects> = {
   takesDuration: true,
   lower(clause, ctx) {
     const base = arg(clause, 'basePt');
-    if (base?.kind !== 'basePt' || !endsWithTurn(clause)) return failure(clause);
+    // No duration (Admiral Brass, CR 611.2a): only "it", for as long as the permanent stays; the engine's `permanent`.
+    const noun = arg(clause, 'objects');
+    const lasting =
+      clause.duration === undefined && noun?.kind === 'noun' && noun.det === 'anaphor';
+    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting)) return failure(clause);
     // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
     let power: PtAmount = base.power;
     let toughness: PtAmount = base.toughness;
@@ -275,9 +301,16 @@ export const SET_PT: Lowering<IrClause, Effects> = {
     return eachObject(
       clause,
       ctx,
-      (objects) => ({ kind: 'setPt', objects, power, toughness, duration: END }),
+      (objects) => ({
+        kind: 'setPt',
+        objects,
+        power,
+        toughness,
+        duration: lasting ? 'permanent' : END,
+      }),
       'objects',
-      TRIGGER_SUBJECT,
+      // Ahoy Mateys deck, Admiral Brass (CR 400.7): "it" after "return target ... to the battlefield" is the permanent that came back, a new object, which the engine's `moved` names.
+      { ...TRIGGER_SUBJECT, moved: true },
     );
   },
 };

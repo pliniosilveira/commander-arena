@@ -332,6 +332,8 @@ export function amountOf(
   if (amount.kind === 'triggerCycleX') return ctx.triggerDamage ?? 0;
   // CR 508.1 (issue 81, The Ur-Sphinx): the creatures of the declaration that matched the batch trigger, carried as the number of its event.
   if (amount.kind === 'triggerAttackerCount') return ctx.triggerDamage ?? 0;
+  // CR 603.2c (Malcolm): the opponents the batch's sources dealt damage to, carried as the number of its event.
+  if (amount.kind === 'triggerDamagedPlayerCount') return ctx.triggerDamage ?? 0;
   // CR 205.2a, 603.2c: "for each card type among those cards": the types of the cards of the batch that caused the trigger, each once, as they are or as they last were.
   if (amount.kind === 'cardTypesAmongTriggerCards') {
     const seen = new Set<string>();
@@ -382,7 +384,8 @@ export function amountOf(
   // D-131: arithmetic on other amounts. Each is read as the instruction runs, like the amounts it is made of.
   if (amount.kind === 'half') {
     const n = amountOf(state, amount.of, ctx, targets);
-    return amount.round === 'down' ? Math.floor(n / 2) : Math.ceil(n / 2);
+    const divisor = amount.divisor ?? 2;
+    return amount.round === 'down' ? Math.floor(n / divisor) : Math.ceil(n / divisor);
   }
   // D-321, CR 107.1b: a negative result of a calculation counts as 0.
   if (amount.kind === 'minus') {

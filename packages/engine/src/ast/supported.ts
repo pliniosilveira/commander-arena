@@ -896,6 +896,13 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip') {
         // CR 702.6a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.costReducedIf !== undefined) {
+          conditionIssues(
+            a.keyword.costReducedIf.condition,
+            `${path}.keyword.costReducedIf.condition`,
+            out,
+          );
+        }
       } else if (a.keyword.kind === 'ward') {
         // CR 702.21a: paid when the ward ability resolves (rules/pay-unless.ts): mana, life and
         // discarding cards (D-095), no X; D-407 (CR 701.68a): or a blight, alone.

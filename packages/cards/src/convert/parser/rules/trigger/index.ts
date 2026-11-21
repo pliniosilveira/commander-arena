@@ -33,6 +33,7 @@ import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
@@ -719,8 +720,14 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // D-437: a second kind of spell joined with "or".
     'you cast an Equipment spell or a spell that targets a creature you control',
     'you cast an artifact spell or a spell that targets a permanent',
+    // Don Andres, the Renegade (CR 108.3): a spell whose owner is another player.
+    "you cast a noncreature spell you don't own",
+    'you cast a spell you don’t own',
   ],
   rejects: [
+    "you cast a noncreature spell you don't own that targets a creature",
+    "you cast a spell you don't own or",
+    "you cast a spell you don't owns",
     'you cast ~',
     'you cast spells',
     'you cast a spell or',
@@ -779,6 +786,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
         ),
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
+      // Don Andres (CR 108.3): "a noncreature spell you don't own", a spell whose owner is not the controller of the ability.
+      optional(pattern(/ you don['’]t own(?![\p{L}\p{N}'’])/iu), null),
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
       optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
@@ -788,9 +797,13 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, colored, aimed, alternative] = r.value;
+    const [actor, spell, unowned, colored, aimed, alternative] = r.value;
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
-    const spellBase: IrFilter = spell.value[1];
+    if (unowned !== null && (colored !== null || aimed !== null || alternative !== null)) {
+      return fail(ctx, pos);
+    }
+    const spellBase: IrFilter =
+      unowned === null ? spell.value[1] : { ...spell.value[1], notOwnedByYou: true };
     if (colored !== null && (spellBase.colors !== undefined || spellBase.colorless === true)) {
       return fail(ctx, pos);
     }
@@ -1305,5 +1318,7 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
   ...TROYAN2_TRIGGER_RULES,
+  // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
+  ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

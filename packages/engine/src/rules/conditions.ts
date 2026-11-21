@@ -3,6 +3,7 @@
  * by the player who controls the thing that asks, so "you control" means that player's permanents.
  */
 import type { Condition } from '../ast/types';
+import { isPermanentType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
@@ -499,6 +500,11 @@ export function evaluateCondition(
     case 'cardLeftYourGraveyard':
       // CR 400.7 (D-206): the turn log, read now.
       return state.turnLog.leftGraveyard.includes(ctx.controller);
+    case 'descendedThisTurn':
+      // A permanent card put into a graveyard of the controller from anywhere this turn (`TurnLog.graveyardEntries`: cards only, by owner, with their card types in the graveyard).
+      return state.turnLog.graveyardEntries.some(
+        (e) => e.seat === ctx.controller && e.types.some(isPermanentType),
+      );
     case 'manaSpentAtLeast': {
       // CR 601.2h (D-206): the spell that caused the cast trigger, as it is on the stack.
       const spell =

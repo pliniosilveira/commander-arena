@@ -13,6 +13,7 @@
 import { chain, map, pattern, refuseAt, sequence } from '../../combinators';
 import type { IrArg, IrDuration, IrNoun, IrRestrictionKind, Span } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
+import { EXCEPT_BY_KIND } from '../static/restriction-words';
 import { type Clauses, single } from './operands';
 
 const RULE = 'effect.restrict';
@@ -128,6 +129,63 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     ([objects, { restriction, span }]) => {
       const kind: IrArg = { kind: 'restrictionKind', restriction, span, rule: RULE };
       const duration: IrDuration = { kind: 'duration', scope: 'thisTurn', span, rule: RULE };
+      return { verb: 'restrict', args: { objects, restriction: kind }, duration };
+    },
+  ),
+});
+
+/**
+ * `effect.restrict-except`: "another target creature you control can't be blocked this turn except by Spirits" (Departed Deckhand, CR 509.1b, 611.2a): the engine's `restrict` of
+ * `cantBeBlocked` with `blockers`, the creatures that can't block it (every creature that is not of the kind named). The creatures that are targets are those of `effect.restrict`;
+ * the exception is one plural creature type with no other quality, as the static "can't be blocked except by Slivers" says it.
+ */
+export const EFFECT_RESTRICT_EXCEPT = defineRule<Clauses>({
+  id: `${RULE}-except`,
+  family: 'effect',
+  leading: ['target', 'up', 'one', 'another'],
+  cites: [
+    'CR 509.1b (Declare Blockers Step)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.11 (Interaction of Continuous Effects)',
+    'CR 514.2 (Cleanup Step)',
+  ],
+  examples: [
+    "another target creature you control can't be blocked this turn except by Spirits",
+    "target creature can't be blocked this turn except by Pirates",
+    'target creature can’t be blocked this turn except by Spirits',
+  ],
+  rejects: [
+    "target creature can't be blocked this turn except by creatures with flying",
+    "target creature can't be blocked this turn except by Spirit",
+    "target creature can't be blocked this turn except by black Spirits",
+    "target creature can't be blocked this turn except by",
+    "target creature can't be blocked except by Spirits",
+    "target creature can't block this turn except by Spirits",
+    "target creature can't be blocked this turn except by Spirits and draw a card",
+    "~ can't be blocked this turn except by Spirits",
+  ],
+  parse: single(
+    `${RULE}-except`,
+    chain(targetCreatures, (objects) =>
+      map(
+        spanned(sequence(pattern(/ can['’]t be blocked this turn except by /iu), EXCEPT_BY_KIND)),
+        (tailed) => [objects, tailed] as const,
+      ),
+    ),
+    ([objects, { value, span }]) => {
+      const kind: IrArg = {
+        kind: 'restrictionKind',
+        restriction: 'cantBeBlocked',
+        blockers: value[1],
+        span,
+        rule: `${RULE}-except`,
+      };
+      const duration: IrDuration = {
+        kind: 'duration',
+        scope: 'thisTurn',
+        span,
+        rule: `${RULE}-except`,
+      };
       return { verb: 'restrict', args: { objects, restriction: kind }, duration };
     },
   ),
@@ -413,6 +471,8 @@ export const EFFECT_RESTRICT_WHILE_CONTROLLING = defineRule<Clauses>({
 });
 
 export const RESTRICT_RULES = [
+  // Before `effect.restrict`, whose words are a prefix of these.
+  EFFECT_RESTRICT_EXCEPT,
   EFFECT_RESTRICT,
   EFFECT_RESTRICT_ALL,
   EFFECT_RESTRICT_SELF,

@@ -91,6 +91,7 @@ import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
 import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
+import { runGainEscape } from './escape-grant';
 import { runExchangeLifeWithPt } from './exchange-life';
 import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
@@ -818,6 +819,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
+    ...(res.triggerDamaged === undefined ? {} : { triggerDamaged: res.triggerDamaged }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
@@ -953,6 +955,15 @@ function runEffect(
           // CR 701.8, 608.2h: the creatures each player controlled that were destroyed, by player, as they were just before they died.
           ...destroyedCreaturesByPlayer(state, [...destroyed]),
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
+          // CR 701.8, 608.2h: the nontoken creatures destroyed, whoever controlled them, as they were as they were destroyed.
+          destroyedNontokenCreatures: [...destroyed].filter((id) => {
+            const obj = state.objects[id];
+            return (
+              obj !== undefined &&
+              obj.token === null &&
+              derive(state, obj).types.includes('creature')
+            );
+          }).length,
           destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
             return (
@@ -1136,53 +1147,64 @@ function runEffect(
         if (amountOf(state, effect.objects.count ?? 1, ctx, targets) <= 0) {
           return { ...done(state), lastMoved: [] };
         }
+        const sel = effect.objects;
+        // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
+        const graveyards =
+          sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
         return {
           ...done(
             state,
             [],
-            [
-              {
-                kind: 'chooseMove',
-                filter: effect.objects.filter,
-                count: amountOf(state, effect.objects.count ?? 1, ctx, targets),
-                to: effect.to,
-                position: effect.position ?? 'top',
-                ...(effect.objects.optional === true ? { optional: true as const } : {}),
-                ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
-                // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
-                ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
-                ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
-                // CR 205.2a: "any number of cards ... with four or more card types among them".
-                ...(effect.objects.minCardTypes === undefined
-                  ? {}
-                  : { anyNumber: true as const, minCardTypes: effect.objects.minCardTypes }),
-                ...(effect.objects.exceptSacrificed === true
-                  ? {
-                      among: Object.keys(state.objects).filter(
-                        (id) =>
-                          !(res.sacrificed ?? []).some((old) => {
-                            const sacrificed = state.lki[old]?.object;
-                            return (
-                              sacrificed !== undefined &&
-                              controllerOf(state, sacrificed) === res.controller &&
-                              graveyardSuccessors(state, old).includes(id as ObjectId)
-                            );
-                          }),
-                      ) as ObjectId[],
-                    }
-                  : {}),
-                ...(effect.to === 'battlefield'
-                  ? {
-                      tapped: effect.tapped ?? false,
-                      controller: effect.controller ?? ('you' as const),
-                      ...(effect.withCounters === undefined
-                        ? {}
-                        : { withCounters: effect.withCounters }),
-                    }
-                  : {}),
-                chosen: null,
-              },
-            ],
+            graveyards.map((graveyard) => ({
+              kind: 'chooseMove' as const,
+              ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
+              ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              filter: sel.filter,
+              count: amountOf(state, sel.count ?? 1, ctx, targets),
+              to: effect.to,
+              position: effect.position ?? 'top',
+              ...(sel.optional === true ? { optional: true as const } : {}),
+              ...(sel.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
+              // "Put a creature card from defending player's hand": the hand of the one player the selector names (nothing to choose when it names none).
+              ...(sel.fromHandOf === undefined
+                ? {}
+                : (() => {
+                    const [owner] = resolvePlayers(state, sel.fromHandOf, ctx, targets);
+                    return owner === undefined ? { among: [] } : { handOf: owner };
+                  })()),
+              // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
+              ...(sel.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
+              ...(sel.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
+              // CR 205.2a: "any number of cards ... with four or more card types among them".
+              ...(sel.minCardTypes === undefined
+                ? {}
+                : { anyNumber: true as const, minCardTypes: sel.minCardTypes }),
+              ...(sel.exceptSacrificed === true
+                ? {
+                    among: Object.keys(state.objects).filter(
+                      (id) =>
+                        !(res.sacrificed ?? []).some((old) => {
+                          const sacrificed = state.lki[old]?.object;
+                          return (
+                            sacrificed !== undefined &&
+                            controllerOf(state, sacrificed) === res.controller &&
+                            graveyardSuccessors(state, old).includes(id as ObjectId)
+                          );
+                        }),
+                    ) as ObjectId[],
+                  }
+                : {}),
+              ...(effect.to === 'battlefield'
+                ? {
+                    tapped: effect.tapped ?? false,
+                    controller: effect.controller ?? ('you' as const),
+                    ...(effect.withCounters === undefined
+                      ? {}
+                      : { withCounters: effect.withCounters }),
+                  }
+                : {}),
+              chosen: null,
+            })),
           ),
           lastMoved: [],
         };
@@ -1702,7 +1724,9 @@ function runEffect(
         (effect.effect.kind === 'exile' ||
           effect.effect.kind === 'sacrifice' ||
           // Issue 103 (CR 903.9, 603.7c): "Return it to the command zone at the beginning of the next end step", bound to the permanent as it is now.
-          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command')) &&
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command') ||
+          // CR 603.7c, 400.7j (Zara): "Return that creature to its owner's hand at the beginning of the next end step", bound to the permanent as it is now.
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'hand')) &&
         effect.effect.objects.kind === 'moved'
       ) {
         const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
@@ -2092,6 +2116,9 @@ function runEffect(
     case 'gainFlashbackFromManaCost':
       // CR 702.34a, 611.2c: "Each instant and sorcery card in your graveyard gains flashback until end of turn" (rules/flashback-grant.ts).
       return runGainFlashbackFromManaCost(state, res, effect);
+    case 'gainEscape':
+      // CR 702.138a, 611.2c: "Until end of turn, each creature card in your graveyard gains escape" (rules/escape-grant.ts).
+      return runGainEscape(state, res, effect);
     case 'mayCastSpells':
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);
@@ -2218,7 +2245,14 @@ function runEffect(
       let lost = 0;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
-        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone, ctx.thisWay);
+        const amount = lifeAmountFor(
+          next,
+          effect.amount,
+          seat,
+          () => everyone,
+          ctx.thisWay,
+          effect.player,
+        );
         const r =
           effect.kind === 'gainLife'
             ? gainLifeOf(next, seat, amount, flow, res.source)

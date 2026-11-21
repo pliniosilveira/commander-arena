@@ -152,6 +152,7 @@ describe('the dimensions', () => {
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
       'cardLeftYourGraveyard',
+      'descendedThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".

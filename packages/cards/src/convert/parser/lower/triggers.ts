@@ -26,6 +26,7 @@ import {
   isIrAmount,
   nounsOfClause,
 } from '../ir/types';
+import { arg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
@@ -344,6 +345,22 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         to: t.damaged,
         ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
         ...(t.whileMonarch === true ? { whileMonarch: true as const } : {}),
+      });
+    }
+    case 'damageBatch': {
+      // "Whenever one or more Pirates you control deal damage to a player | to your opponents" (Ahoy Mateys group 1, CR 120.2, 603.2c): the engine's `damageBatch`.
+      if (t.subject === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
+        return failure(t);
+      }
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      const missing = missingFeatures(['trigger:damageBatch']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({
+        kind: 'damageBatch',
+        what: filter.value,
+        to: t.damaged === 'opponent' ? 'opponents' : 'player',
+        ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
       });
     }
     case 'tappedForMana': {
@@ -819,6 +836,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
+      only.event === 'damageBatch' ||
       only.event === 'noncombatDamageDealt' ||
       only.event === 'playerDealtDamage') &&
       only.recipient !== undefined);
@@ -1665,7 +1683,25 @@ function lowerTriggeredAbility(
   // The engine's `optional` covers the whole effect, so it cannot sit beside a condition.
   const conditional = sentences.some((s) => s.condition !== undefined && !boughtSentence(s));
   const others = sentences.filter(ownMay).flatMap((s) => s.clauses);
-  if (optional && (others.length !== 1 || conditional)) return failure(ability);
+  // Ahoy Mateys deck, Admiral Brass (CR 608.2d, 608.2c): "you may return target ... to the battlefield. It has base power and toughness 4/4. It gains haste until end of turn.": the one
+  // "you may" is of the return, and every sentence after it is about the card it returned ("it"), which does nothing when the player does not return it; so the ability's own `optional`
+  // asks the one question for the whole chain.
+  const [first, ...rest] = others;
+  const chain =
+    first !== undefined &&
+    first.verb === 'return' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => {
+      const objects = arg(c, 'objects');
+      return (
+        !c.optional &&
+        (c.verb === 'setPt' || c.verb === 'grantKeyword') &&
+        objects?.kind === 'noun' &&
+        objects.det === 'anaphor'
+      );
+    });
+  if (optional && ((others.length !== 1 && !chain) || conditional)) return failure(ability);
   // A "you may" of the whole ability beside an offer would be two questions for one effect.
   if (optional && sentences.some((s, i) => offerSentence(s) || mayOffer(s, i))) {
     return failure(ability);
@@ -1861,6 +1897,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersUntapped',
   'trigger:leavesToAnyOf',
   'trigger:combatDamageBatch',
+  'trigger:damageBatch',
   'trigger:diesBatch',
   'trigger:discarded',
   'trigger:exerted',

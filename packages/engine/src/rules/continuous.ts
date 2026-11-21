@@ -102,7 +102,11 @@ function changeOf(
       // D-230 (Backup): one change for each ability; `runContinuous` makes a continuous effect of each.
       return { kind: 'grantAbility', ability: node.abilities[0] as Ability };
     case 'restrict':
-      return { kind: 'restrict', restriction: node.restriction };
+      return {
+        kind: 'restrict',
+        restriction: node.restriction,
+        ...(node.blockers === undefined ? {} : { blockers: node.blockers }),
+      };
     default: {
       const unreachable: never = node;
       return unreachable;

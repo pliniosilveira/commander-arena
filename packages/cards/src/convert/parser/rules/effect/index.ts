@@ -24,6 +24,12 @@ import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
+import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
+import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
+import { AHOY_G3_EFFECT_RULES } from './ahoy-g3';
+import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
+import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
+import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -1003,6 +1009,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target triggered ability or colorless spell',
     // Issue 100 (Sublime Epiphany): an activated or a triggered ability.
     'counter target activated or triggered ability',
+    // Ahoy Mateys deck, group 10 (Siren Stormtamer): a spell or an ability that targets you or a creature you control.
+    'counter target spell or ability that targets you or a creature you control',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -1020,6 +1028,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
           'noun.target-activated-or-triggered-ability',
+          // Ahoy Mateys deck, group 10 (Siren Stormtamer).
+          'noun.target-spell-or-ability-targeting-you',
         ],
       }),
     ),
@@ -1138,6 +1148,12 @@ export const EFFECT_RULES = [
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
   // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
   ...F144_FIRST_EFFECT_RULES,
+  // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
+  ...AHOY_G2_EFFECT_RULES,
+  // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
+  ...AHOY_G1B_EFFECT_RULES,
+  // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
+  ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1151,6 +1167,11 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Ahoy Mateys deck, group 3: "Exile that token at end of combat.", "Look at defending player's hand. You may put ... tapped and attacking ..." and "Return that creature to its owner's hand at the beginning of the next end step." start like the plain exile, look and return rules, and are tried first.
+  ...AHOY_G3_EFFECT_RULES,
+  // Ahoy Mateys deck, group 7: "Until end of turn, it gains haste and becomes a Pirate in addition to its other types." and "That creature doesn't untap during its controller's untap step for as long as you control ~." start like the plain lead-gain and doesn't-untap rules, and are tried first.
+  ...AHOY_G7_EFFECT_RULES,
+  ...AHOY_G8_EFFECT_RULES,
   ...BLACK_GATE_EFFECT_RULES,
   // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,

@@ -958,6 +958,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
     // CR 702.74a, 702.109a (D-121): a permanent remembers that its evoke or dash cost was paid.
     ...(to === 'battlefield' && enteredAlt !== undefined ? { alt: enteredAlt } : {}),
+    // CR 702.138a: the permanent whose spell was cast for an escape cost an effect gave its card remembers that the cost is not on its face.
+    ...(to === 'battlefield' && old.stack?.escapeGrant !== undefined
+      ? { escapeGranted: true as const }
+      : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").
@@ -1174,6 +1178,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           ...next.turnLog.graveyardEntries,
           { seat: old.owner, types: derive(next, getObject(next, newId)).types },
         ],
+      },
+    };
+  }
+  // CR 701.9, 701.17, 404.1: a card put into a graveyard from a library ("that was discarded or put there from a library this turn"); a discard is recorded by `discardOne`.
+  if (old.zone === 'library' && to === 'graveyard' && created.card !== null) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        discardedOrFromLibrary: [...(next.turnLog.discardedOrFromLibrary ?? []), newId],
       },
     };
   }

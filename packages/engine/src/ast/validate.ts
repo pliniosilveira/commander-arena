@@ -160,6 +160,17 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
+      // "Equip {2}. This ability costs {2} less to activate if ...": as `costReducedIf` of an activated ability (D-135).
+      if (k.costReducedIf !== undefined) {
+        const reduced = k.costReducedIf;
+        if (!Number.isSafeInteger(reduced.generic) || reduced.generic < 1) {
+          issue(out, `${path}.costReducedIf.generic`, 'the reduction is a positive whole number');
+        }
+        checkCondition(reduced.condition, `${path}.costReducedIf.condition`, out);
+        if (!Array.isArray(k.cost) || !k.cost.some((c) => c?.kind === 'mana')) {
+          issue(out, `${path}.costReducedIf`, 'only a mana cost can be reduced');
+        }
+      }
       // D-220 (CR 702.6c): "Equip Wizard {1}": a filter of the creature to attach to; no zone, no owner, no combat, no tapped state.
       if (k.restriction !== undefined) {
         checkFilter(k.restriction, `${path}.restriction`, out);
@@ -1333,6 +1344,32 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'damageBatch':
+      // CR 120.2, 603.2c: a filter of the sources, whom they damaged, and how many sources.
+      checkFilter(t.what, `${path}.what`, out);
+      if (
+        filterSome(
+          t.what,
+          (f) => f.zone !== undefined || f.owner !== undefined || f.stackKind !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the source of the damage is on the battlefield: no zone, owner or stackKind',
+        );
+      }
+      if (!isOneOf(t.to, ['player', 'opponents'])) {
+        issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
+      }
+      if (t.atLeast !== undefined && (!isCount(t.atLeast) || t.atLeast < 2)) {
+        issue(
+          out,
+          `${path}.atLeast`,
+          'atLeast is a whole number of 2 or more (one is the default)',
+        );
+      }
+      break;
     case 'dealsCombatDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
       if (!isOneOf(t.to, ['player', 'opponent', 'creature', 'any', 'playerOrPlaneswalker'])) {
@@ -1894,6 +1931,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
+        ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
+          ? { triggerDamagedPlayerCount: true, triggerDamagedPlayers: true }
+          : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
@@ -1904,6 +1944,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
+        ...(a.trigger?.kind === 'dealsCombatDamage' ? { combatDamageTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
           ? { postcombatMainTrigger: true }

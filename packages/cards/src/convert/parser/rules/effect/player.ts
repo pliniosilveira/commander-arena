@@ -210,17 +210,20 @@ export const lifeAction: Action = (subject, you, rule) => {
     spanned(
       sequence(
         verbWord('lose', you),
-        pattern(/half their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
+        pattern(/(half|a third of) their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
       ),
     ),
     ({ value, span }) => {
+      // "a third of their life, rounded up" (Dire Fleet Ravager, CR 107.1a): the same amount divided by 3.
+      const third = (value[1][1] ?? '').toLowerCase() === 'a third of';
       const words = value[1][0] ?? '';
       const halfSpan = { start: span.start + words.length, end: span.end };
       const total: IrAmount = { kind: 'lifeTotalOf', of: subject, span: halfSpan };
       return {
         kind: 'half',
         of: total,
-        round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+        round: (value[1][2] ?? '').toLowerCase() as 'down' | 'up',
+        ...(third ? { divisor: 3 as const } : {}),
         span,
       };
     },

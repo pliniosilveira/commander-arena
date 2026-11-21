@@ -15,7 +15,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
   const effects = JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
   // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card" leaves out the card the permanent that died became, read as the targets are chosen and checked again.
-  if (effects.includes('"notTriggerCard"')) return true;
+  if (effects.includes('"notTriggerCard"') || effects.includes('"otherThanTriggerSubject"'))
+    return true;
   // CR 603.10a, 608.2h (Auntie Ool): "draw a card if you control that creature" reads the permanent the trigger is about, as the ability resolves.
   if (effects.includes('"subjectControlledByYou"') || effects.includes('"subjectStat"'))
     return true;
@@ -68,7 +69,17 @@ export function readsTriggerDamage(ability: Ability): boolean {
     ) ||
       // Issue 81 (Shark Typhoon): the X of the cycling cost travels with the trigger as the number of its event.
       JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerCycleX"') ||
-      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackerCount"'))
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackerCount"') ||
+      // CR 603.2c (Malcolm): the opponents dealt damage travel with the trigger as the number of its event.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerDamagedPlayerCount"'))
+  );
+}
+
+/** Whether the triggered ability reads the opponents its damage batch dealt damage to (`triggerDamagedPlayers`, CR 603.2c). */
+export function readsTriggerDamaged(ability: Ability): boolean {
+  return (
+    ability.kind === 'triggered' &&
+    JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerDamagedPlayers"')
   );
 }
 

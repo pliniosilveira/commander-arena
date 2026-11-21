@@ -193,6 +193,11 @@ export interface GameObject {
    */
   readonly alt?: PermanentAlternativeKind;
   /**
+   * Present on a permanent that entered from a spell cast for an escape cost an effect gave its card (`gainEscape`, CR 702.138a; `StackData.escapeGrant`): its `alt` of `escape` has no
+   * escape cost on its face to show for it. Absent otherwise.
+   */
+  readonly escapeGranted?: true;
+  /**
    * How many times the spell this permanent came from was kicked, when it was kicked with Multikicker (CR
    * 702.33c, D-110): "for each time it was kicked" reads it. Absent for a permanent that was not kicked
    * and for one that came from a spell kicked with plain Kicker (which has `kicked` and counts once).
@@ -441,6 +446,11 @@ export interface StackData {
    */
   readonly aftermath?: true;
   /**
+   * The escape cost a card was cast for when an effect gave it escape (`gainEscape`, CR 702.138a): the cost and the number of other cards exiled, kept on the spell because the card
+   * is a new object on the stack (CR 400.7) that the effect did not name. Absent for a card with a printed escape cost and for every other spell.
+   */
+  readonly escapeGrant?: { readonly cost: readonly Cost[]; readonly exile: number };
+  /**
    * True when cast from the graveyard by its retrace ability (CR 702.81a, D-667): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
    * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
    */
@@ -564,6 +574,8 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** For a `damageBatch` ability to opponents that reads `triggerDamagedPlayers`: the opponents dealt damage, as the ability was put on the stack. */
+  readonly triggerDamaged?: readonly SeatId[];
   /** The target count read by a cast trigger (D-574). */
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
@@ -578,6 +590,11 @@ export interface StackData {
    * (D-491): the ids they had, which the amount and the condition `sacrificedAsCost` count (absent when none was). Absent for every other object.
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
+  /**
+   * For a spell cast with Convoke (CR 702.51a): the creatures the caster tapped to help pay for it, in the order chosen, which the `convokers` reference reads ("each creature that
+   * convoked this spell"). Absent when no creature was tapped for it, and for every other object.
+   */
+  readonly convokedBy?: readonly ObjectId[];
   /**
    * For an activated ability whose cost tapped permanents (`tapPermanents`, CR 702.184a): the power the tapped creatures had as they were tapped, added up, which the amount
    * `tappedAsCostPower` reads when the ability resolves (CR 608.2h). Absent for every other object.
@@ -839,6 +856,8 @@ export interface PendingTrigger {
   /** The player the event is about (`triggerPlayer`, D-133) and the damage it dealt (`triggerDamage`), when it has them. */
   readonly player?: SeatId;
   readonly damage?: number;
+  /** For a `damageBatch` trigger to opponents that reads `triggerDamagedPlayers`: the opponents dealt damage (CR 603.2c). */
+  readonly damaged?: readonly SeatId[];
   readonly targetCount?: number;
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed (`StackData.sacrificedBefore`). */
   readonly sacrificedBefore?: readonly ObjectId[];
@@ -1361,6 +1380,8 @@ export type Instruction =
       readonly position: 'top' | 'bottom' | number;
       /** "You may ..." (`ChooseSelector.optional`, D-139): none up to `count` are chosen. */
       readonly optional?: true;
+      /** "Put a creature card from defending player's hand" (`ChooseSelector.fromHandOf`): the candidates are the cards in the hand of this player, not the chooser's. */
+      readonly handOf?: SeatId;
       /** "From your hand or graveyard" (`ChooseSelector.alsoGraveyard`, D-544): the cards of the graveyard are candidates besides those of the hand `filter` names. */
       readonly alsoGraveyard?: true;
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
@@ -1377,6 +1398,10 @@ export type Instruction =
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
       readonly minCardTypes?: number;
+      /** "A card from each graveyard" (`ChooseSelector.eachGraveyard`): the candidates are the cards in this player's graveyard (the chooser is still `seat` or the controller). */
+      readonly graveyardOf?: SeatId;
+      /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
+      readonly linkTo?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2043,6 +2068,8 @@ export interface ResolutionContext {
   /** The player whose `playersMay` answer declined the current otherwise effect (D-576). */
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** What `triggerDamagedPlayers` reads: `StackData.triggerDamaged`. */
+  readonly triggerDamaged?: readonly SeatId[];
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
@@ -2110,6 +2137,8 @@ export interface ThisWayCounts {
   readonly returned?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
+  /** The nontoken creatures a `destroy` destroyed, whoever controlled them (CR 701.8, 608.2h: "for each nontoken creature destroyed this way"). */
+  readonly destroyedNontokenCreatures?: number;
   /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */
   readonly destroyedValue?: number;
   readonly playersDrew?: number;
@@ -2222,6 +2251,11 @@ export type ContinuousChange =
    */
   | { readonly kind: 'flashbackFromManaCost' }
   /**
+   * "Until end of turn, each creature card in your graveyard gains the escape ability "Escape, {3}{B}, exile four other cards from your graveyard" (`gainEscape`, CR 702.138a, 611.2a, 611.2c): each card the
+   * effect's `objects` names, in its owner's graveyard, has escape with this cost until the effect ends. No layer: read where casting is decided (`rules/escape-grant.ts`).
+   */
+  | { readonly kind: 'escapeGrant'; readonly cost: readonly Cost[]; readonly exile: number }
+  /**
    * "Gain control of target creature" (`gainControl`, D-189, CR 613.1b): `seat` controls each permanent the effect's `objects` names while the effect
    * lasts. Layer 2: `controllerOf` (`rules/control.ts`) reads it, after the stored controller (the player the permanent entered under, CR 110.2) and
    * before anything else; of several the one with the latest timestamp decides (CR 613.7), and one that ends leaves the others. It never changes the
@@ -2255,6 +2289,13 @@ export type ContinuousChange =
        * cast with this permission carries `StackData.anyManaColor` (`rules/cast.ts`, `beginCast`), and the cost of the card is read that way while it is still in exile.
        */
       readonly anyManaColor?: true;
+      /**
+       * "You may cast that card ..., and mana of any type can be spent to cast that spell" (`mayPlay.anyManaType`, Hostage Taker, CR 609.4b): as `anyManaColor`, but any mana pays any symbol, colored or
+       * colorless (`StackData.anyManaType`).
+       */
+      readonly anyManaType?: true;
+      /** "If that spell would be put into a graveyard, exile it instead" (`mayPlay.exileInstead`, Dire Fleet Daredevil, CR 614.1a): the spell carries `StackData.exileInstead`. */
+      readonly exileInstead?: true;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,
@@ -2313,7 +2354,12 @@ export type ContinuousChange =
    * objects a restriction as the rules read it (CR 613.11) and is not an ability, so "loses all
    * abilities" leaves it. `derive` lists it in `restrictions`.
    */
-  | { readonly kind: 'restrict'; readonly restriction: Restriction }
+  | {
+      readonly kind: 'restrict';
+      readonly restriction: Restriction;
+      /** "Can't be blocked this turn except by Spirits": the creatures that can't block the object (a `cantBeBlocked` with them is a limit on blockers, not an unconditional restriction). */
+      readonly blockers?: ObjectFilter;
+    }
   /**
    * "You gain hexproof until end of turn" (`grantPlayerHexproof`, CR 702.11b, Hylda group 3): the effect's `players` have hexproof while it lasts. No layer: read where a
    * player is targeted (`rules/player-protection.ts`).
@@ -2638,6 +2684,11 @@ export interface TurnLog {
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
   readonly graveyarded: readonly ObjectId[];
+  /**
+   * Each card put into a graveyard this turn by being discarded (CR 701.9) or from a library (milled, CR 701.17; or any other move from a library), by the id it has in the
+   * graveyard (Ahoy Mateys deck, Ghost of Ramirez DePietro). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly discardedOrFromLibrary?: readonly ObjectId[];
   /**
    * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
    * whether it is a token. Absent until one left, so the state of a game where none did is as it was.

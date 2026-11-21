@@ -106,6 +106,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     // D-230: "mana value X or less, where X is the damage dealt" is read again as the ability resolves.
     ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+    ...(obj.stack?.triggerDamaged === undefined
+      ? {}
+      : { triggerDamaged: obj.stack.triggerDamaged }),
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
@@ -186,6 +189,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+      ...(obj.stack?.triggerDamaged === undefined
+        ? {}
+        : { triggerDamaged: obj.stack.triggerDamaged }),
       ...(obj.stack?.triggerTargetCount === undefined
         ? {}
         : { triggerTargetCount: obj.stack.triggerTargetCount }),
@@ -270,6 +276,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
+                destroyedNontokenCreatures:
+                  (res.thisWay?.destroyedNontokenCreatures ?? 0) +
+                  (out.thisWay.destroyedNontokenCreatures ?? 0),
                 destroyedValue:
                   (res.thisWay?.destroyedValue ?? 0) + (out.thisWay.destroyedValue ?? 0),
                 playersDrew: (res.thisWay?.playersDrew ?? 0) + (out.thisWay.playersDrew ?? 0),

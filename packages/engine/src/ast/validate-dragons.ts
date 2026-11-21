@@ -45,12 +45,13 @@ export function checkDragonsEffect(
           owner !== 'target' &&
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
+          owner !== 'triggerDamagedPlayers' &&
           owner !== 'eachOpponent'
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent') or the player of the event ('triggerPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -145,12 +146,20 @@ export function checkDragonsEffect(
         if (e.anyManaColor !== true) {
           issue(out, `${path}.anyManaColor`, 'anyManaColor must be true when present');
         }
+      }
+      // Hostage Taker (CR 609.4b), Dire Fleet Daredevil (CR 614.1a): riders of the spell cast with the permission.
+      for (const rider of ['anyManaType', 'exileInstead'] as const) {
+        if (e[rider] === undefined) continue;
+        if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
         if (e.castOnly !== true) {
           issue(
             out,
-            `${path}.anyManaColor`,
-            'mana as though of any color is spent on a cast: needs castOnly',
+            `${path}.${rider}`,
+            `${rider} is about the spell that is cast: needs castOnly`,
           );
+        }
+        if (e.free === true && rider === 'anyManaType') {
+          issue(out, `${path}.${rider}`, 'a free play spends no mana');
         }
       }
       return true;
@@ -289,6 +298,16 @@ export function checkDragonsEffect(
             `${at}.onMatch`,
             { ...scope, xAllowed: false, movedAvailable: true },
             out,
+          );
+        }
+        if (
+          branch.asController !== undefined &&
+          (branch.asController !== true || branch.onMatch === undefined)
+        ) {
+          issue(
+            out,
+            `${at}.asController`,
+            'asController is true, and only for a branch with onMatch',
           );
         }
         if (branch.to !== undefined) {
@@ -487,13 +506,14 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true
       ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
+          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
         );
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the

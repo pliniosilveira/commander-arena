@@ -117,6 +117,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'playerToRight',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
+  // "each of those opponents" of a damage batch trigger: several players, as above.
+  'triggerDamagedPlayers',
   // "each opponent dealt combat damage this game by a creature named ~": several players, as above.
   'combatDamagedByNamed',
 ]);

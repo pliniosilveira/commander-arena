@@ -398,11 +398,10 @@ describe('Turn to Frog: "loses all abilities and becomes a blue Frog" (CR 613.1d
     ).toEqual({ kind: 'setPt', objects: T1, power: 4, toughness: 4, duration: END });
   });
 
-  test('loses all abilities and has base power and toughness is not one phrase', () => {
+  // "... loses all abilities and has base power and toughness 0/1 until end of turn" is one phrase since the Ahoy Mateys deck (Warkite Marauder); with no duration it is still not read.
+  test('loses all abilities and has base power and toughness, with no duration, is not read', () => {
     expect(
-      dropped(
-        'Target creature loses all abilities and has base power and toughness 1/1 until end of turn.',
-      ),
+      dropped('Target creature loses all abilities and has base power and toughness 1/1.'),
     ).toMatchObject({ reason: 'unrecognised' });
   });
 

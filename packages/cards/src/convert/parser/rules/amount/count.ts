@@ -213,6 +213,26 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
         end = shares.pos;
       }
     }
+    // Shared Animosity (CR 508.1, 205.3m): "each other attacking creature that shares a creature type with it", whoever controls them: "other" and "it" are the creature the
+    // trigger is about, which the lowering of the ability checks (the engine's `otherThanTriggerSubject` and `sharesCreatureTypeWith: 'triggerSubject'`).
+    if (!plural && filter.controller === undefined && filter.attacking === true && other.value) {
+      const shares = quiet(SHARES_CREATURE_TYPE_WITH_IT)(ctx, end);
+      if (shares.ok) {
+        return {
+          ok: true,
+          value: {
+            filter: {
+              ...filter,
+              sharesCreatureTypeWithIt: true,
+              otherThanIt: true,
+              raw: ctx.text.slice(pos, shares.pos),
+            },
+            other: false,
+          },
+          pos: shares.pos,
+        };
+      }
+    }
     return {
       ok: true,
       value: { filter: { ...filter, raw: ctx.text.slice(pos, end) }, other: other.value },

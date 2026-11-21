@@ -239,6 +239,19 @@ function lowerCostedKeyword(
   ) {
     return failure(ability);
   }
+  // "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability.
+  let costReducedIf: { generic: number; condition: Condition } | undefined;
+  if (ability.costReducedIf !== undefined) {
+    const { amount, condition } = ability.costReducedIf;
+    if (name !== 'equip' || cost.value.kind !== 'mana' || amount.kind !== 'number') {
+      return failure(ability);
+    }
+    const reduced = gate(ability, ['ability:costReducedIf']);
+    if (reduced !== null) return reduced;
+    const lowered = lowerCondition(condition);
+    if (!lowered.ok) return lowered;
+    costReducedIf = { generic: amount.value, condition: lowered.value };
+  }
   return {
     ok: true,
     value: [
@@ -247,6 +260,7 @@ function lowerCostedKeyword(
         keyword: {
           kind: name,
           cost: [cost.value],
+          ...(costReducedIf === undefined ? {} : { costReducedIf }),
           ...(ability.quality === undefined
             ? {}
             : { restriction: { subtypes: [ability.quality] } }),
@@ -707,6 +721,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const { zone, ...filter } = lowered.value;
     void zone;
     return built({ kind: 'damageBonus', sources: filter, amount: amount.value });
+  }
+  if (event.verb === 'damageDouble') {
+    // CR 614.1a, 120.3 (Angrath's Marauders): the damage a source the controller controls would deal to any permanent or player is doubled.
+    const sources = event.args.sources;
+    if (sources?.kind !== 'noun' || event.condition !== undefined) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:damageDouble']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(sources);
+    if (!lowered.ok) return lowered;
+    const { zone, ...filter } = lowered.value;
+    void zone;
+    return built({ kind: 'damageDouble', sources: filter });
   }
   if (event.verb === 'countersPlus') {
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
@@ -1228,6 +1254,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:tokensInstead',
   'replacement:countersPlus',
   'replacement:damageBonus',
+  'replacement:damageDouble',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

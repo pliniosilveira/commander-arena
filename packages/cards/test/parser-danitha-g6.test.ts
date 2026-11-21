@@ -90,8 +90,8 @@ describe('Kutzil: "one or more creatures you control each with power greater tha
     'Whenever one or more creatures you control each with toughness greater than its base toughness deal combat damage to a player, draw a card.',
     // the wording of the singular and of the plural
     'Whenever a creature you control each with power greater than its base power deals combat damage to a player, draw a card.',
-    // damage that is not combat damage, or not to a player
-    'Whenever one or more creatures you control each with power greater than its base power deal damage to a player, draw a card.',
+    // damage that is not to a player (damage to a player that is not combat damage is read since the Ahoy Mateys deck, as a `damageBatch` trigger with the same filter)
+    'Whenever one or more creatures you control each with power greater than its base power deal damage to a creature, draw a card.',
     'Whenever one or more creatures you control each with power greater than its base power deals combat damage to a creature, draw a card.',
   ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
     const parsed = read(text, 'enchantment');

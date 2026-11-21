@@ -150,6 +150,7 @@ export interface IrNoun extends IrNode {
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
     | 'couldntSacrificeThisWay' // "each player who can't" after a sacrifice (CR 701.21a): the players the sacrifice before it found nothing for
+    | 'triggerDamagedPlayers' // "each of those opponents" (CR 603.2c): the opponents a damage batch trigger to your opponents hurt
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
@@ -265,6 +266,8 @@ export interface IrFilter {
     | 'triggerPlayer'
     // "defending player controls" (stage P34, D-152, CR 508.5): the player the source attacks
     | 'defendingPlayer'
+    // "creatures the monarch controls" (CR 725.1): only the blockers of "can't be blocked by creatures the monarch controls"
+    | 'monarch'
     // `orPlaneswalkerController`: "that player or that planeswalker's controller controls" (stage P47, D-200): the controller of the planeswalker the target is, too
     | { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
   readonly zone?: 'battlefield' | 'graveyard' | 'library' | 'hand' | 'exile' | 'stack';
@@ -298,6 +301,8 @@ export interface IrFilter {
   readonly targets?: IrFilter;
   /** "that targets only a single creature you control" (issue 144, CR 115.9c): a spell whose chosen targets are one object of this kind, however many times it was chosen. */
   readonly targetsOnly?: IrFilter;
+  /** "that targets you" (Siren Stormtamer, CR 115.1, 601.2c): a spell or ability with a chosen target that is the player the filter is read for ("you"). Only a member of a choice on the stack. */
+  readonly targetsYou?: true;
   /** "that targets ~" (Feather group 3, D-437, CR 115.1): a spell with a chosen target that is the source of the ability. */
   readonly targetsSelf?: true;
   /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
@@ -341,6 +346,11 @@ export interface IrFilter {
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
    */
   readonly sharesCreatureTypeWithIt?: true;
+  /**
+   * "each other attacking creature that shares a creature type with it" (Shared Animosity, CR 508.1, 205.3m): the count leaves out the creature the trigger is about, with
+   * `sharesCreatureTypeWithIt`. The engine's `otherThanTriggerSubject`.
+   */
+  readonly otherThanIt?: true;
   /**
    * "a creature card that shares a creature type with the sacrificed creature" (Descendants' Fury, CR 205.3m, 701.21a, 113.7a): the card has a creature type the permanent an earlier
    * sacrifice of the same text sacrificed had, as it last was. Read in the filter of a library search `revealUntil`; the engine's `sharesCreatureTypeWith: 'sacrificed'`.
@@ -405,6 +415,8 @@ export interface IrFilter {
    * during this turn (the engine's `putFromBattlefieldThisTurn`).
    */
   readonly putFromBattlefieldThisTurn?: true;
+  /** "that was discarded or put there from a library this turn" (Ahoy Mateys deck, CR 701.9, 701.17): the engine's `discardedOrFromLibraryThisTurn`. */
+  readonly discardedOrFromLibraryThisTurn?: true;
   /** "from anywhere other than your hand" (stage P75, D-235, CR 601.2a): a spell that was cast from a zone other than the hand (the engine's `notCastFromHand`). */
   readonly notCastFromHand?: true;
   /** "from your hand" (Prismari deck group 1, D-638, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
@@ -415,6 +427,8 @@ export interface IrFilter {
   readonly firstXSpellThisTurn?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /** "controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck group 7, CR 510.2): the engine's `controllerDealtCombatDamageByAtLeast`. */
+  readonly controllerDealtCombatDamageBy?: { readonly atLeast: number; readonly subtype: string };
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
   readonly exiledWithSelf?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
@@ -434,6 +448,8 @@ export interface IrFilter {
   readonly enchanted?: boolean;
   /** "enchanted by an Aura you control" (D-647, CR 303.4e): the engine's `enchantedByYou`. */
   readonly enchantedByYou?: true;
+  /** "but don't own", "you don't own" (CR 108.3): the engine's `notOwnedByYou`. */
+  readonly notOwnedByYou?: true;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
   /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
@@ -579,6 +595,8 @@ export type IrAmount =
       readonly kind: 'half';
       readonly of: IrAmount;
       readonly round: 'down' | 'up';
+      /** "a third of their life, rounded up" (CR 107.1a): divided by 3 instead of 2. */
+      readonly divisor?: 3;
       readonly span: Span;
     }
   // "twice the number of ...", "2 life for each ...": a whole number of 2 or more times an amount
@@ -615,6 +633,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedNontokenCreatures'
         | 'destroyedCreaturesOfAffected'
         | 'destroyedValue'
         | 'playersDrew'
@@ -645,6 +664,8 @@ export type IrAmount =
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
   | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
+  // Ahoy Mateys deck, Malcolm: "for each opponent dealt damage": the opponents the group of sources of a damage batch trigger damaged
+  | { readonly kind: 'triggerDamagedPlayerCount'; readonly span: Span }
   // Death Toll deck, Polluted Cistern (CR 205.2a, 603.2c): "for each card type among those cards", the card types of the cards a batch trigger saw, each once
   | { readonly kind: 'cardTypesAmongThoseCards'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
@@ -918,6 +939,8 @@ export interface IrCondition extends IrNode {
     // Death Toll deck, group B (CR 205.2a, 608.2c): "two cards that share all their card types were milled this way": the cards the instruction before it milled; lowered only after a mill.
     | { readonly kind: 'movedShareAllCardTypes' }
     | { readonly kind: 'cardLeftYourGraveyard' }
+    // Ahoy Mateys deck, group 5: "you descended this turn".
+    | { readonly kind: 'descendedThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
     | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }
@@ -1313,6 +1336,8 @@ export interface IrCostList extends IrNode {
 export interface IrRestrictionArg extends IrNode {
   readonly kind: 'restrictionKind';
   readonly restriction: IrRestrictionKind;
+  /** "can't be blocked this turn except by Spirits" (CR 509.1b): the creatures that can't block, only with `cantBeBlocked`. */
+  readonly blockers?: IrFilter;
 }
 
 /** What an "As ~ enters, choose ..." replacement asks (stage P15, D-100): a creature type or a color. */
@@ -1605,7 +1630,9 @@ export type IrRestrictionKind =
   // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.
   | 'goaded'
   // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
-  | 'canBlockOnlyFlying';
+  | 'canBlockOnlyFlying'
+  // "~ can't attack a player it has already attacked this turn" (Ahoy Mateys deck, group 6, CR 508.1a, 508.6): only of `~` itself.
+  | 'cantAttackPlayersAlreadyAttacked';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
@@ -2084,6 +2111,8 @@ export interface IrKeyword extends IrNode {
   readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
+  /** "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability, as that of `IrRestriction.costReduction`. */
+  readonly costReducedIf?: { readonly amount: IrAmount; readonly condition: IrCondition };
 }
 
 /**
@@ -2226,6 +2255,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'lifePaidAsEntered',
   'triggerTargetCount',
   'triggerAttackerCount',
+  'triggerDamagedPlayerCount',
   'cardTypesAmongThoseCards',
   'shortfall',
   'exiledStillThere',
