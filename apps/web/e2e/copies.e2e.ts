@@ -124,6 +124,11 @@ test('Storm: the third spell copies twice; the copies are on the stack and ask f
   await expect(stack(page).locator('[data-copy]')).toHaveCount(2);
   await expect(stackItems(page).first()).toContainText('copy');
   await expect(page.getByRole('log')).toContainText('You copy SYNTHETIC Storm Bolt');
+  // The card on top of the stack is previewed by itself; a tap on it closes it.
+  await page.mouse.move(5, 5);
+  await expect(page.locator('.board-preview [data-preview-stack]')).toBeVisible();
+  await page.locator('.board-preview').click();
+  await expect(page.locator('.board-preview')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
