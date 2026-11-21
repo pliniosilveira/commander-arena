@@ -2228,6 +2228,11 @@ export interface CombatState {
   readonly blocks: readonly { readonly blocker: ObjectId; readonly attacker: ObjectId }[];
   /** Creatures that had first strike or double strike as the first damage step began (CR 510.4). */
   readonly firstStrikers: readonly ObjectId[] | null;
+  /**
+   * The defending players that have declared their blockers so far (CR 509.1), in turn order. Set only when more than one player is
+   * attacked: with one defender the declaration is a single question and nothing needs to be remembered.
+   */
+  readonly blockersDeclaredBy?: readonly SeatId[];
 }
 
 /**

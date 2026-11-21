@@ -72,7 +72,7 @@ describe('a scenario with three seats', () => {
     g.expect.life(2, 40);
     g.advanceTo('declareAttackers', { attack: false });
     g.act(0).declareAttackers([{ attacker: 'Grizzly Bears[0]', target: { player: 2 } }]);
-    g.advanceTo('postcombatMain', { block: false });
+    g.advanceTo('postcombatMain');
     g.expect.life(2, 38);
     g.expect.life(1, 40);
   });
