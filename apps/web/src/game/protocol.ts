@@ -3,6 +3,7 @@
  * The Worker owns the real `GameState`; the page only ever sees a `GameView` for the human seat.
  */
 import type {
+  Ability,
   Action,
   DeckConfig,
   GameEvent,
@@ -64,6 +65,8 @@ export interface NewGameOptions {
    * the host's default, so a host built without it behaves as before M7d.
    */
   readonly ai?: AiKind;
+  /** Emblems the opponent owns from the start (the Medium level of the challenges): the engine's abilities and the text the emblem shows. */
+  readonly aiEmblems?: readonly { readonly text: string; readonly abilities: readonly Ability[] }[];
 }
 
 export type LogLevel = 'major' | 'detail';

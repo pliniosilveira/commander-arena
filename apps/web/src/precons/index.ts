@@ -8,6 +8,12 @@ export {
   type ServiceFor,
 } from './build';
 export {
+  type ChallengeEmblem,
+  type ChallengeLevel,
+  emblemsFor,
+  MEDIUM_EMBLEMS,
+} from './challenges/medium';
+export {
   blurbOf,
   type CommanderLook,
   commanderNameOf,

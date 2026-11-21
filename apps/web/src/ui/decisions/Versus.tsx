@@ -57,7 +57,10 @@ export function Versus({ view }: { view: GameView }) {
   const commanderOf = (seat: GameView['seats'][number] | undefined) =>
     seat?.command.find((o) => o.emblem !== true);
   const mine = commanderOf(view.seats.find((s) => s.id === view.viewer));
-  const theirs = commanderOf(view.seats.find((s) => s.id !== view.viewer));
+  const theirSeat = view.seats.find((s) => s.id !== view.viewer);
+  const theirs = commanderOf(theirSeat);
+  // The emblems the opponent starts with (the Medium challenges), beside its deck.
+  const emblems = theirSeat?.command.filter((o) => o.emblem === true) ?? [];
   return (
     <div className="dec-versus-wrap">
       <div className="dec-versus" data-versus>
@@ -77,6 +80,16 @@ export function Versus({ view }: { view: GameView }) {
           fallbackColors={theirs?.colors ?? []}
         />
       </div>
+      {emblems.length > 0 && (
+        <div className="dec-versus-emblems" data-versus-emblems>
+          {emblems.map((emblem) => (
+            <div className="dec-versus-emblem" key={emblem.id}>
+              <span className="dec-versus-who">Emblem</span>
+              <span className="dec-versus-emblem-text">{emblem.oracleText}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

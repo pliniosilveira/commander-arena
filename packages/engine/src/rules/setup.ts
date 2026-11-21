@@ -2,6 +2,7 @@
  * Starting the game (CR 103, 903.6, 903.7): decks, commanders, the starting player, life totals and
  * the London mulligan.
  */
+import type { Ability } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import { cardId, objectId } from '../ids';
@@ -18,6 +19,7 @@ import {
   type SeatState,
 } from '../state/types';
 import { ENGINE_VERSION } from '../version';
+import { createEmblem } from './emblem';
 import { startTurn } from './flow';
 import type { Outcome } from './priority';
 import { setPending } from './set-pending';
@@ -39,6 +41,17 @@ export interface GameConfig {
    * probe, the soak and the scenario tests turn it on; it goes away with the release phase.
    */
   readonly allowMoreThanTwoSeats?: boolean;
+  /**
+   * Emblems a seat owns from the start of the game, before the opening hands (a house rule of the app's challenges: an emblem normally comes from a
+   * card, CR 114.1). Each is an ordinary emblem of the command zone (CR 114.3, 114.4); `text` is what it shows.
+   */
+  readonly startingEmblems?: readonly StartingEmblem[];
+}
+
+export interface StartingEmblem {
+  readonly seat: SeatId;
+  readonly abilities: readonly Ability[];
+  readonly text: string;
 }
 
 const OPENING_HAND = 7;
@@ -184,6 +197,12 @@ export function createGame(config: GameConfig): Outcome {
   for (const s of state.seats) state = patchSeat(state, s.id, { life: settings.startingLife });
 
   const events: GameEvent[] = [{ kind: 'gameStarted', startingSeat: starter, seed: config.seed }];
+  for (const emblem of config.startingEmblems ?? []) {
+    if (state.seats[emblem.seat] === undefined) throw new Error(`No seat ${emblem.seat}`);
+    const made = createEmblem(state, emblem.seat, emblem.abilities, emblem.text);
+    state = made.state;
+    events.push(...made.events);
+  }
   for (const s of state.seats) state = drawOpeningHand(state, s.id);
   return { state: askMulligan(state, starter), events };
 }

@@ -7,3 +7,5 @@ pnpm precon:snapshot --file .cache/corpus/oracle_cards-<updated_at>.jsonl.gz --d
 ```
 
 and commits the result. The app lists exactly the files here and shows "No challenge is installed yet" when the folder holds none.
+
+The Medium level adds emblems the opponent owns from the start of the game; they live in `medium.ts`, by challenge id, written as engine AST. A challenge with no entry there is not offered in Medium.

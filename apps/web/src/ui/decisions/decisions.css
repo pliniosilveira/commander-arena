@@ -1395,6 +1395,7 @@
 
 /* The versus card above the opening hand: both decks as tall cells with big commander art. */
 .dec-versus-wrap {
+  position: relative;
   display: flex;
   justify-content: center;
   width: 100%;
@@ -1467,6 +1468,40 @@
 }
 .dec-versus-colors {
   margin-top: auto;
+}
+/* The opponent's starting emblems: small cards in the empty space to the right of its deck. */
+.dec-versus-emblems {
+  position: absolute;
+  top: 0;
+  left: calc(50% + 290px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 210px;
+}
+.dec-versus-emblem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  text-align: left;
+}
+.dec-versus-emblem-text {
+  font-size: 12px;
+}
+/* Not enough room beside the cells: the emblems go below them. */
+@media (max-width: 1000px) {
+  .dec-versus-emblems {
+    position: static;
+    width: 100%;
+  }
+  .dec-versus-wrap:has(.dec-versus-emblems) {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 .dec-versus-x {
   align-self: center;
