@@ -5,6 +5,7 @@ import { PreviewPanel } from './ui/board/PreviewPanel';
 import { DecisionLayer } from './ui/decisions/DecisionLayer';
 import { DockSlotContext } from './ui/decisions/dock-slot';
 import { LogDock } from './ui/panels/LogDock';
+import { ReportDock } from './ui/panels/ReportDock';
 import { SettingsDock } from './ui/panels/SettingsDock';
 import { StackPanel } from './ui/panels/StackPanel';
 import { TurnTracker } from './ui/panels/TurnTracker';
@@ -68,6 +69,7 @@ function Game() {
       <PreviewPanel />
       <LogDock />
       <SettingsDock />
+      <ReportDock />
       <HonestyBanner />
       <GameOver />
       <CombatEffects />
