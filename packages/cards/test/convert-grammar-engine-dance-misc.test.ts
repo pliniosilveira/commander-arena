@@ -120,3 +120,57 @@ describe('Shatter the Sky: players with a creature of power 4 or greater draw, t
     g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0, count: 1 });
   });
 });
+
+const slithermuse = real('Slithermuse');
+
+test('Slithermuse is a valid card', () => {
+  expect(validateCard(slithermuse)).toEqual([]);
+});
+
+describe('Slithermuse: when it leaves the battlefield, choose an opponent and draw the difference in cards in hand', () => {
+  // Shatter the Sky (a real card, supported above) is what makes it leave: it is destroyed with the other creatures.
+  const play = (mine: number, theirs: readonly number[]) => {
+    let b = scenario({ seats: theirs.length + 1 })
+      .define(shatter)
+      .define(slithermuse)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(shatter.name, ...Array.from({ length: mine }, () => 'Island'))
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains', slithermuse.name);
+    theirs.forEach((hand, i) => {
+      b = b
+        .seat(i + 1)
+        .library(...LIBRARY)
+        .hand(...Array.from({ length: hand }, () => 'Island'));
+    });
+    const g = b.at('precombatMain', { active: 0 }).build();
+    g.act(0).cast(shatter.name, { pay: true });
+    return g;
+  };
+
+  test('the opponent has more cards in hand: draw cards equal to the difference', () => {
+    const g = play(1, [4]);
+    g.passAll();
+    g.expect.zone(slithermuse.name, 'graveyard', { seat: 0, count: 1 });
+    // 1 card in hand after casting, the opponent has 4: 3 more cards.
+    g.expect.handSize(0, 4);
+    g.expect.handSize(1, 4);
+  });
+
+  test('the opponent has no more cards than you: nothing is drawn', () => {
+    const g = play(3, [3]);
+    g.passAll();
+    g.expect.handSize(0, 3);
+    const h = play(3, [1]);
+    h.passAll();
+    h.expect.handSize(0, 3);
+  });
+
+  test('with several opponents the controller chooses one, and the difference is with that player', () => {
+    const g = play(0, [1, 5]);
+    g.passAll();
+    g.expect.pending('chooseOption', 0);
+    g.act(0).chooseOption('seat:2');
+    g.expect.handSize(0, 5);
+  });
+});

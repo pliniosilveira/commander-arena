@@ -618,6 +618,13 @@ export type IrAmount =
       readonly of: readonly IrAmount[];
       readonly span: Span;
     }
+  // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
+  // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
+  | {
+      readonly kind: 'chosenPlayerLead';
+      readonly stat?: 'life' | 'cardsInHand';
+      readonly span: Span;
+    }
   // "for each opponent who has more cards in hand than you"
   | {
       readonly kind: 'opponentsWithMore';
@@ -2252,6 +2259,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'sum',
   'extreme',
   'opponentsWithMore',
+  'chosenPlayerLead',
   'thisWay',
   'triggerDamage',
   'dieResult',

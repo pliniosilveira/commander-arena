@@ -1499,6 +1499,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
     'opponentsWithMore',
+    // Slithermuse: "draw cards equal to the difference" with the player chosen before it (`chosenPlayerLead`).
+    'chosenPlayerLead',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
@@ -2539,6 +2541,8 @@ export const AMOUNT_KINDS = [
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */
   'opponentsWithMore',
+  /** "If that player has more cards in hand than you, draw cards equal to the difference" (Slithermuse, CR 608.2c): the engine's `chosenPlayerLead`. */
+  'chosenPlayerLead',
   /** "That much" for the damage that caused a trigger (D-133): the engine's `triggerDamage`. */
   'triggerDamage',
   /** Number of targets chosen for a spell in a cast trigger (D-574). */

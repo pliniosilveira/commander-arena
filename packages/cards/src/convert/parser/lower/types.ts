@@ -341,6 +341,8 @@ export interface LowerContext {
    * Set by the lowering of `choosePlayer`, never cleared inside one ability.
    */
   choseAPlayer: boolean;
+  /** The stat "that player has more cards in hand than you" compared (Slithermuse), which "equal to the difference" after it is of. Null before one. */
+  comparedStat: 'life' | 'cardsInHand' | null;
   /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
@@ -427,6 +429,7 @@ export function newContext(
     lastEffectKind: null,
     randomYardCard: false,
     choseAPlayer: false,
+    comparedStat: null,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

@@ -1091,7 +1091,7 @@ export type Instruction =
    */
   | {
       readonly kind: 'choosePlayer';
-      readonly among: 'mostLife';
+      readonly among: 'mostLife' | 'opponent';
       readonly chosen: SeatId | null;
     }
   | {

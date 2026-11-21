@@ -1920,6 +1920,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'differentNamesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
+    case 'chosenPlayerLead':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
     case 'lifeGainedOrLostThisTurn':
@@ -2353,6 +2354,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       if (a.fewer !== undefined && a.fewer !== true) {
         issue(out, `${path}.fewer`, 'fewer is true when present');
+      }
+      break;
+    case 'chosenPlayerLead':
+      if (!isOneOf(a.stat, PLAYER_STATS)) {
+        issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
       }
       break;
     case 'opponentCount':
@@ -7880,8 +7886,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putFromHandOnBottom':
       break;
     case 'choosePlayer':
-      // CR 608.2d (The Black Gate): the only rule for the players to choose among is the most life.
-      if (e.among !== 'mostLife') {
+      // CR 608.2d: the players to choose among are those with the most life (The Black Gate) or the opponents (Slithermuse).
+      if (e.among !== 'mostLife' && e.among !== 'opponent') {
         issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
       }
       break;

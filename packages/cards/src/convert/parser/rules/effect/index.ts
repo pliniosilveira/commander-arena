@@ -43,6 +43,7 @@ import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { CONTROL_EFFECT_RULES } from './control';
@@ -1220,6 +1221,7 @@ export const EFFECT_RULES = [
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".

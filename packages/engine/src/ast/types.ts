@@ -389,6 +389,12 @@ export type Amount =
       readonly fewer?: true;
     }
   /**
+   * "If that player has more cards in hand than you, draw cards equal to the difference" (Slithermuse; CR 608.2c, 119.1, 402.1): how much the player a `choosePlayer` before it in the same
+   * resolution chose has more of `stat` than the controller, now: the difference when it is positive, 0 when the chosen player has no more or nobody was chosen. As the whole amount of a
+   * condition (`amountIs` at least 1) it is "has more ... than you".
+   */
+  | { readonly kind: 'chosenPlayerLead'; readonly stat: PlayerStat }
+  /**
    * "The number of opponents you have" (CR 102.2, 102.3): the opponents of the controller still in the game, now. Not for a static ability's power or toughness.
    */
   | { readonly kind: 'opponentCount' }
@@ -4387,7 +4393,7 @@ export type Effect =
   | {
       readonly kind: 'choosePlayer';
       /** `mostLife`: "Choose a player with the most life or tied for most life" (CR 608.2d, 119.1): the controller of the effect chooses among the players with the greatest life total; one candidate is chosen without asking. */
-      readonly among: 'mostLife';
+      readonly among: 'mostLife' | 'opponent';
     }
   /**
    * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): until end of turn each object the selector names as the effect begins

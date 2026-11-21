@@ -674,6 +674,18 @@ export const CHOOSE_PLAYER: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Choose an opponent." (Slithermuse, CR 608.2d, 102.2): the engine's `choosePlayer` among the opponents of the controller; the player is what the instructions after it call "that player".
+ */
+export const CHOOSE_OPPONENT: Lowering<IrClause, Effects> = {
+  head: 'chooseOpponent',
+  id: 'lower.choose-opponent',
+  needs: ['effect:choosePlayer'],
+  lower(clause) {
+    return { ok: true, value: [{ kind: 'choosePlayer', among: 'opponent' }], rule: clause.rule };
+  },
+};
+
+/**
  * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): the engine's `cantBeBlockedByPlayer` of the player a
  * `choosePlayer` before it in the same ability chose. With no such instruction before it "that player" is nobody the engine can name: refused.
  */

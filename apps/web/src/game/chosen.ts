@@ -86,7 +86,7 @@ export function purposeNoun(
   if (purpose === 'attackTarget') return 'player or permanent to attack';
   if (purpose === 'assignOpponent') return 'opponent to gain control';
   if (purpose === 'clashOpponent') return 'opponent to clash with';
-  if (purpose === 'playerChoice') return 'player with the most life';
+  if (purpose === 'playerChoice') return 'player';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
   if (purpose === 'lifePaid') return 'amount of life to pay';

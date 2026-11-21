@@ -433,6 +433,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.opponent-has-more': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Slithermuse: the player a sentence before it chose, and the difference in the stat it compared.
+  'condition.chosen-player-has-more': permanent(
+    (e) => `When ~ enters, choose an opponent. If ${e}, you gain 1 life.`,
+  ),
+  'amount.equal-to-the-difference': permanent(
+    (e) =>
+      `When ~ enters, choose an opponent. If that player has more cards in hand than you, draw cards ${e}.`,
+  ),
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),

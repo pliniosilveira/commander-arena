@@ -212,8 +212,12 @@ export function runInstruction(
     const alive = Object.keys(state.seats)
       .map(Number)
       .filter((seat) => !getSeat(state, seat).hasLost);
+    // CR 102.2 (Slithermuse): "choose an opponent" is any opponent of the controller still in the game; "the most life" (The Black Gate) the players with the greatest life total.
     const top = Math.max(...alive.map((seat) => getSeat(state, seat).life));
-    const candidates = alive.filter((seat) => getSeat(state, seat).life === top);
+    const candidates =
+      instruction.among === 'opponent'
+        ? opponentsOf(state, res.controller).filter((seat) => !getSeat(state, seat).hasLost)
+        : alive.filter((seat) => getSeat(state, seat).life === top);
     const [only] = candidates;
     if (only !== undefined && candidates.length === 1) {
       return { ...done(state), front: [{ ...instruction, chosen: only }] };

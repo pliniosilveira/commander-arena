@@ -31,6 +31,7 @@ import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
+import { CHOSEN_PLAYER_CONDITION_RULES } from './chosen-player';
 import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
 import { COUNTER_TRIGGER_CONDITION_RULES } from './counter-triggers';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
@@ -570,6 +571,7 @@ export const CONDITION_RULES = [
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,
+  ...CHOSEN_PLAYER_CONDITION_RULES,
   ...SELF_STATE_CONDITION_RULES,
   ...NO_COUNTERS_CONDITION_RULES,
   ...COUNTER_COUNT_CONDITION_RULES,

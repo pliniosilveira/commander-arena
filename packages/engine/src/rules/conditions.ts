@@ -77,6 +77,8 @@ export interface ConditionContext {
   readonly triggerSubject?: ObjectId;
   /** The player the event of the trigger is about (`triggerPlayerHasMore`): the active player of a step trigger, the player who drew, who cast, ... */
   readonly triggerPlayer?: SeatId;
+  /** The player a `choosePlayer` of this resolution chose, for an `amountIs` of `chosenPlayerLead` (Slithermuse). */
+  readonly chosenPlayer?: SeatId;
   /**
    * What the resolving effect knows (D-135), for `objectMatches` and `didPrevious`: the targets still legal, what the earlier
    * move effect produced (`moved`) and how much the instructions since the last `may` effect did (`performed`). Absent
@@ -406,7 +408,11 @@ export function evaluateCondition(
       const n = amountOf(
         state,
         condition.amount,
-        { controller: ctx.controller, source: ctx.source },
+        {
+          controller: ctx.controller,
+          source: ctx.source,
+          ...(ctx.chosenPlayer === undefined ? {} : { chosenPlayer: ctx.chosenPlayer }),
+        },
         [],
       );
       if (condition.compare.cmp === 'atLeast') return n >= condition.compare.value;
