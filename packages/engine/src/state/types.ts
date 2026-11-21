@@ -1973,6 +1973,8 @@ export type Instruction =
       readonly cardsZone?: 'graveyard';
       /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
       readonly seat?: SeatId;
+      /** `remember` (Cmdr. Troi): the spell cast is what `moved` names afterwards. */
+      readonly remember?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -2345,6 +2347,15 @@ export type ContinuousChange =
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
       readonly awayFrom?: SeatId;
+    }
+  /**
+   * "Until your next turn, creatures can't attack you" (`creaturesCantAttackYou`, CR 508.1a, 611.2c): no layer and no fixed set (`objects` is empty): read where attackers are declared
+   * (`rules/attack-bans.ts`), for each creature `filter` matches then, with `controller` as "you": none of them may be declared attacking `controller` as a player.
+   */
+  | {
+      readonly kind: 'creaturesCantAttackPlayer';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
     }
   /**
    * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (`requireAttackSource`, CR 508.1d, 611.2c): no layer and no

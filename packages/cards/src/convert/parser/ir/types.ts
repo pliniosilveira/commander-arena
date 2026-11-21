@@ -394,7 +394,7 @@ export interface IrFilter {
    */
   readonly anyOf?: readonly IrFilter[];
   /** The noun names a player, not an object: "target player", "target opponent". */
-  readonly player?: 'any' | 'opponent';
+  readonly player?: 'any' | 'opponent' | 'opponentWhoseTurn';
   /**
    * "target player or planeswalker" (stage P37, D-180, CR 306.1; stage P47, D-200): the words "or planeswalker" of a player noun, which the engine's
    * target `playerOrObject` reads: a player, or a planeswalker (`noun.player-or-planeswalker`).

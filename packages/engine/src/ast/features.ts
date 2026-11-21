@@ -298,6 +298,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackRandomOpponent',
     // "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d).
     'requireAttackSource',
+    // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
+    'creaturesCantAttackYou',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
@@ -2720,6 +2722,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   attackRandomOpponent: true,
   requireAttackSource: true,
+  creaturesCantAttackYou: true,
   permanentsEnterTapped: true,
   doubleTokens: true,
   gainControl: true,

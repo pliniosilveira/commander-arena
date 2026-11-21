@@ -978,7 +978,11 @@ export type AttachedTo =
   | { readonly kind: 'host' }
   | { readonly kind: 'matching'; readonly filter: ObjectFilter };
 
-export type PlayerFilter = 'any' | 'opponent';
+/**
+ * Which players a player target may be: any, an opponent of the controller, or (`opponentWhoseTurn`, CR 115.1, 500.1: "target opponent whose turn it is", Cmdr. Troi) the opponent
+ * whose turn it is, which is a legal target only during the turn of an opponent.
+ */
+export type PlayerFilter = 'any' | 'opponent' | 'opponentWhoseTurn';
 
 /** A reference to one or more objects or players, resolved by the interpreter. */
 export type ObjectRef =
@@ -3762,6 +3766,17 @@ export type Effect =
       readonly awayFromYou?: true;
     }
   /**
+   * "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, 611.2c, 500.1, Chronomantic Escape): a restriction on a group of creatures that is not a set fixed as the effect
+   * resolved: whenever attackers are declared, no creature `creatures` matches then (read for the controller of the effect as "you") can be declared attacking the controller of the effect
+   * as a player; a planeswalker they control and another player stay open to it. It lasts until the next turn of the controller begins (the turn it resolves in not counted); `duration`
+   * is `untilYourNextTurn` only. A creature with no one left to attack is not able to attack.
+   */
+  | {
+      readonly kind: 'creaturesCantAttackYou';
+      readonly creatures: ObjectFilter;
+      readonly duration: 'untilYourNextTurn';
+    }
+  /**
    * "Choose an opponent at random that this creature didn't attack during your last combat. This creature attacks that player this combat if able. If you can't choose an opponent this
    * way, tap this creature." (CR 508.1d, 508.6, 506.1, 701.26a): the controller of the effect "chooses" among their opponents still in the game that `creature` was not declared
    * attacking in the last combat phase of that controller before this one (`GameState.lastCombatAttacks`; the combat of a creature that was not there is a combat it did not attack in),
@@ -4084,6 +4099,11 @@ export type Effect =
        * the one who casts the spell (and controls it), whoever owns the card. Only with `objects` a `moved` reference, whose cards are in exile.
        */
       readonly player?: PlayerSelector;
+      /**
+       * "Target opponent may cast a spell from their hand without paying its mana cost. If they do, you copy that spell." (CR 608.2g, 707.10, Cmdr. Troi): the spell cast is what `moved`
+       * names afterwards (a `copySpell` of it). With `player` and a `choose` selector of the hand of that player: they choose among the spells in their own hand that they could cast.
+       */
+      readonly remember?: true;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
