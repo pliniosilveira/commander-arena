@@ -5333,26 +5333,10 @@
     "77a9e7cf-76e9-4323-8504-a5b831de00be": {
       "name": "Ashling, the Limitless",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you sacrifice a nontoken Elemental, create a token that's a copy of it. The token gains haste until end of turn. At the beginning of your next end step, sacrifice it unless you pay {W}{U}{B}{R}{G}.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "045849bd"
+      "ast": "4963006e"
     },
     "77cf4fb1-593f-4240-96d9-6ae9084baeac": {
       "name": "Thalisse, Reverent Medium",
@@ -6622,18 +6606,10 @@
     "95b53836-18aa-451a-992d-2a111deeeab2": {
       "name": "Yarok, the Desecrated",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "29f1101b"
+      "ast": "5e18fbc6"
     },
     "95d59a06-5144-4da3-8a9c-846b087975b9": {
       "name": "Gollum, Obsessed Stalker",
@@ -10616,18 +10592,10 @@
           "text": "Companion — No card in your starting deck has more than one of the same mana symbol in its mana cost.",
           "reason": "unrecognised",
           "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}: Add {W}{U}{B}{R}{G}. This mana can't be spent to pay generic mana costs.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
         }
       ],
       "reasons": [],
-      "ast": "8ae585a0"
+      "ast": "b447009c"
     },
     "f09278dc-1e67-4cd8-977d-4b3b94430aac": {
       "name": "Ringwraiths",
@@ -11348,7 +11316,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1090,
+      "supported": 1092,
       "total": 1116
     }
   }
