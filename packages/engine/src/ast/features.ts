@@ -1781,6 +1781,12 @@ export const ABILITY_FEATURES = [
   'delayedReturnAttached',
   /** "Return enchanted creature card to the battlefield ... attach this Aura to it" (CR 400.7, 303.4, Animate Dead): `moveToZone` with `putWithSource`. */
   'putWithSource',
+  /**
+   * NOT BUILT. "...tapped and attacking that player or a planeswalker they control" (CR 508.4, 506.3a): the controller of a creature put onto the battlefield attacking chooses which
+   * player or planeswalker it attacks, and "look at defending player's hand" shows the whole hand. The engine attacks the defending player and offers only the creature cards, so
+   * a card that needs this choice is flagged unsupported (a wrong game is never played).
+   */
+  'attackTargetChoice',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 

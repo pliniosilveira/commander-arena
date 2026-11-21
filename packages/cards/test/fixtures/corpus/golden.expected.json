@@ -8742,10 +8742,21 @@
     "cd2720c2-522c-4fdc-9cef-9c5ce250fe7b": {
       "name": "Zara, Renegade Recruiter",
       "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever ~ attacks, look at defending player's hand. You may put a creature card from it onto the battlefield under your control tapped and attacking that player or a planeswalker they control. Return that creature to its owner's hand at the beginning of the next end step.",
+          "reason": "notRunnable",
+          "closestRule": "effect.look-defenders-hand-put-attacking",
+          "needs": [
+            "ability:attackTargetChoice"
+          ]
+        }
+      ],
       "reasons": [],
-      "ast": "bbfab17c"
+      "ast": "00adf992"
     },
     "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
       "name": "Sunken Hollow",
@@ -10837,7 +10848,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1038,
+      "supported": 1037,
       "total": 1059
     }
   }

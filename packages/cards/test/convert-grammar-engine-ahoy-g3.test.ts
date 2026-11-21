@@ -7,7 +7,20 @@
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
+
+// Zara is flagged unsupported in the real game (the engine does not offer the choice of the player or planeswalker it attacks, nor the whole hand: CR 508.4, 402.3; see
+// convert-grammar-zara-unsupported.test.ts). The primitives she is made of are kept under test here, with the one missing feature pretended to exist.
+vi.mock('@commander-arena/engine', async (importOriginal) => {
+  const engine = await importOriginal<typeof import('@commander-arena/engine')>();
+  return {
+    ...engine,
+    isFeatureSupported: (ref: string) =>
+      ref === 'ability:attackTargetChoice' ||
+      engine.isFeatureSupported(ref as Parameters<typeof engine.isFeatureSupported>[0]),
+  };
+});
+
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
 import { dropped } from './parser-p5-helpers';
