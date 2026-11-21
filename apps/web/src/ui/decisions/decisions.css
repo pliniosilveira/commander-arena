@@ -1395,7 +1395,6 @@
 
 /* The versus card above the opening hand: both decks as tall cells with big commander art. */
 .dec-versus-wrap {
-  position: relative;
   display: flex;
   justify-content: center;
   width: 100%;
@@ -1469,17 +1468,23 @@
 .dec-versus-colors {
   margin-top: auto;
 }
-/* The opponent's starting emblems: small cards in the empty space to the right of its deck. */
+/* The opponent's deck with the emblems it starts with, side by side in the same block. */
+.dec-versus-opponent {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
 .dec-versus-emblems {
-  position: absolute;
-  top: 0;
-  left: calc(50% + 290px);
+  flex: 0 1 210px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 210px;
+  gap: 4px;
+  min-width: 0;
 }
 .dec-versus-emblem {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1492,15 +1497,14 @@
 .dec-versus-emblem-text {
   font-size: 12px;
 }
-/* Not enough room beside the cells: the emblems go below them. */
+/* Not enough room beside the deck: the emblems go below it. */
 @media (max-width: 1000px) {
-  .dec-versus-emblems {
-    position: static;
-    width: 100%;
-  }
-  .dec-versus-wrap:has(.dec-versus-emblems) {
+  .dec-versus-opponent {
+    flex: 0 1 264px;
     flex-direction: column;
-    gap: 8px;
+  }
+  .dec-versus-emblems {
+    flex-basis: auto;
   }
 }
 .dec-versus-x {

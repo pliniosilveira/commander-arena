@@ -73,23 +73,25 @@ export function Versus({ view }: { view: GameView }) {
         <span className="dec-versus-x" role="img" aria-label="versus">
           ×
         </span>
-        <Side
-          who="opponent"
-          deck={choices.find((d) => d.id === options?.aiDeck)}
-          fallbackCommander={theirs?.name ?? ''}
-          fallbackColors={theirs?.colors ?? []}
-        />
-      </div>
-      {emblems.length > 0 && (
-        <div className="dec-versus-emblems" data-versus-emblems>
-          {emblems.map((emblem) => (
-            <div className="dec-versus-emblem" key={emblem.id}>
-              <span className="dec-versus-who">Emblem</span>
-              <span className="dec-versus-emblem-text">{emblem.oracleText}</span>
+        <div className="dec-versus-opponent">
+          <Side
+            who="opponent"
+            deck={choices.find((d) => d.id === options?.aiDeck)}
+            fallbackCommander={theirs?.name ?? ''}
+            fallbackColors={theirs?.colors ?? []}
+          />
+          {emblems.length > 0 && (
+            <div className="dec-versus-emblems" data-versus-emblems>
+              {emblems.map((emblem) => (
+                <div className="dec-versus-emblem" key={emblem.id}>
+                  <span className="dec-versus-who">Emblem</span>
+                  <span className="dec-versus-emblem-text">{emblem.oracleText}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
