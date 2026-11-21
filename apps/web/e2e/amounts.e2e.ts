@@ -16,7 +16,7 @@ const game = (seed: number) => `/?autostart=synthetic-amounts,swamp-forest&seed=
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const bar = (page: Page) => page.locator('.dec-bar');
 const logText = (page: Page) => page.getByRole('log');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const stackItems = (page: Page) => stack(page).locator('.pnl-stack-item');
 const theirs = (page: Page, name: string | RegExp): Locator =>
   page.locator('[data-field-seat="1"] .board-tile', { hasText: name });

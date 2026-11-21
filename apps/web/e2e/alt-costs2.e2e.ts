@@ -18,7 +18,7 @@ const game = (deck: string, seed: number) => `/?autostart=${deck},swamp-forest&s
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const logText = (page: Page) => page.getByRole('log');
 const chooser = (page: Page) => page.getByRole('group', { name: 'Choose an ability' });
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });
 /** The chips above the hand for the cards of the graveyard that can be used now. */
 const chip = (page: Page, label: string | RegExp) =>

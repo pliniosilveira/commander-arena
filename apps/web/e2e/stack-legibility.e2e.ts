@@ -10,7 +10,7 @@ import { settled } from './harness/settle';
  * creature spells are enough to show the stop; the seed is fixed.
  */
 const primary = (page: Page) => page.locator('[data-dec-primary]');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const preview = (page: Page) => page.getByRole('complementary', { name: 'Card preview' });
 
 /** Presses on, a click at a time on a settled page, until the opponent's spell waits on the stack. */

@@ -286,7 +286,8 @@ button {
 .log-toggle {
   position: absolute;
   left: 8px;
-  bottom: 8px;
+  /* The log's button is above the settings' one (`.settings-toggle`, bottom: 8px). */
+  bottom: 44px;
   z-index: 35;
   padding: 3px 12px;
   border: 1px solid var(--line);
@@ -303,7 +304,7 @@ button {
 .log-dialog {
   position: absolute;
   left: 8px;
-  bottom: 44px;
+  bottom: 80px;
   z-index: 36;
   display: flex;
   flex-direction: column;
@@ -311,7 +312,7 @@ button {
   width: calc(var(--info-width) * 2);
   max-width: calc(100% - 16px);
   height: 50%;
-  max-height: calc(100% - 52px);
+  max-height: calc(100% - 88px);
   padding: var(--gap);
   background: var(--bg-raised);
   border: 1px solid var(--line);
@@ -340,7 +341,8 @@ button {
   box-shadow: var(--shadow);
 }
 .settings-toggle {
-  left: 64px;
+  left: 8px;
+  bottom: 8px;
 }
 .settings-dialog {
   height: auto;

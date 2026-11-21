@@ -117,7 +117,9 @@ test('a spell dragged onto the battlefield is cast', async ({ page }) => {
   await hawk.dragTo(page.locator('[data-drop="battlefield"]'));
 
   await expect(page.getByRole('log')).toContainText("You cast Healer's Hawk");
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText("Healer's Hawk");
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    "Healer's Hawk",
+  );
 
   // Let it resolve: it joins the battlefield.
   await primary(page).click();

@@ -5,7 +5,8 @@ import { settled } from './harness/settle';
 /**
  * The game screen: the battlefield takes the whole width. The stack (right) and the card preview
  * (left) float over it, the log and the settings are behind buttons at the bottom left, and the
- * action dock (prompt and the button of the turn) is in the player's own board, at its bottom right.
+ * action dock (prompt and the button of the turn) is in the player's own battlefield, at its right
+ * edge and bottom.
  */
 const game = '/?autostart=white-knights,swamp-forest&seed=3';
 
@@ -28,7 +29,7 @@ for (const [width, height] of [
   [1366, 768],
   [1920, 1080],
 ] as const) {
-  test(`the battlefield takes the full width and the dock is in the player's board at ${width}x${height}`, async ({
+  test(`the battlefield takes the full width and the dock is in the player's field at ${width}x${height}`, async ({
     page,
   }) => {
     await start(page, width, height);
@@ -36,13 +37,14 @@ for (const [width, height] of [
     expect(board.x).toBe(0);
     expect(board.width).toBeCloseTo(width, 0);
 
-    // The dock is inside the board, at its bottom right, next to the hand (not over its cards).
+    // The dock is in your own battlefield, at its right edge, with its bottom at the field's bottom
+    // (the stack is at the top of the opponent's): the commander box below it stays clear.
     const dock = await box(page, '.board-dock-slot');
+    const field = await box(page, '.board-field-me');
     expect(dock.x + dock.width).toBeLessThanOrEqual(width);
     expect(dock.x + dock.width).toBeGreaterThanOrEqual(width - 12);
-    expect(dock.y + dock.height).toBeLessThanOrEqual(board.y + board.height);
-    const lastCard = await page.locator('.board-hand .is-clickable').last().boundingBox();
-    if (lastCard !== null) expect(lastCard.x + lastCard.width).toBeLessThanOrEqual(dock.x + 24);
+    expect(dock.y + dock.height).toBeLessThanOrEqual(field.y + field.height);
+    expect(dock.y + dock.height).toBeGreaterThanOrEqual(field.y + field.height - 12);
 
     // The action bar has no toggles any more.
     for (const name of ['Full Control', 'Manual mana', 'Undo']) {
@@ -69,7 +71,11 @@ test('the log and the settings open and close from the buttons at the bottom lef
   const log = page.getByRole('button', { name: 'Log', exact: true });
   const logButton = await box(page, '.log-toggle');
   expect(logButton.x).toBeLessThanOrEqual(16);
-  expect(logButton.y + logButton.height).toBeGreaterThanOrEqual(768 - 48);
+  // The settings button is right below the log's, at the same left edge.
+  const settingsButton = await box(page, '.settings-toggle');
+  expect(settingsButton.x).toBeCloseTo(logButton.x, 0);
+  expect(settingsButton.y).toBeGreaterThanOrEqual(logButton.y + logButton.height);
+  expect(settingsButton.y + settingsButton.height).toBeGreaterThanOrEqual(768 - 48);
   await expect(page.getByRole('dialog', { name: 'Game log' })).toHaveCount(0);
   // Closed, the log is still there for a screen reader, out of sight (one pixel).
   expect((await box(page, '#game-log-dialog')).width).toBeLessThanOrEqual(1);

@@ -34,6 +34,7 @@ function Field({
   roles,
   attachments,
   exile,
+  dockRef,
 }: {
   view: GameView;
   seat: number;
@@ -41,6 +42,8 @@ function Field({
   roles: ReturnType<typeof combatRoles>;
   attachments: Attachments;
   exile?: ExilePlayable | null;
+  /** Your own battlefield only: where the action dock is drawn, at its bottom right. */
+  dockRef?: (slot: HTMLElement | null) => void;
 }) {
   // An attachment is drawn under its host, which may belong to the other player (an Aura you
   // control on their creature), so it never gets a tile of its own here.
@@ -87,6 +90,7 @@ function Field({
       {seat === view.viewer && (
         <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
       )}
+      {dockRef !== undefined && <div className="board-dock-slot" ref={dockRef} />}
     </section>
   );
 }
@@ -180,11 +184,11 @@ export function Board() {
           roles={roles}
           attachments={attachments}
           exile={exile}
+          dockRef={setDockSlot}
         />
         <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
         <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
         <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
-        <div className="board-dock-slot" ref={setDockSlot} />
         <BlockArrows roles={roles} />
         {open !== null && (
           <ZoneViewer title={open.title} objects={open.objects} onClose={() => setZone(null)} />

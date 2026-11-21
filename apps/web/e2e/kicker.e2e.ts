@@ -94,7 +94,7 @@ test('a graveyard card is cast with flashback from the chip above the hand; it i
   await toggleSetting(page, 'Full Control');
   await chip(page, 'SYNTHETIC Flash Gain').first().click();
   await expect(logText(page)).toContainText('You cast SYNTHETIC Flash Gain with flashback.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('SYNTHETIC Flash Gain');
   await expect(stack.getByText('flashback', { exact: true })).toBeVisible();
 

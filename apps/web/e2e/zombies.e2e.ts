@@ -85,7 +85,7 @@ async function playUntil(page: Page, play: Play): Promise<void> {
 
 /** Passes priority until the stack is empty again, so the spell or ability on it has resolved. */
 async function resolveStack(page: Page): Promise<void> {
-  const items = page.getByRole('region', { name: 'Stack' }).locator('.pnl-stack-item');
+  const items = page.getByRole('region', { name: 'Stack', exact: true }).locator('.pnl-stack-item');
   for (let step = 0; step < 20; step += 1) {
     await settled(page);
     if ((await items.count()) === 0) return;
@@ -232,7 +232,7 @@ test('A card cast from the graveyard: the ability opens a window, the chip says 
   await primary(page).click();
   await settled(page);
   await expect(
-    page.getByRole('region', { name: 'Stack' }).locator('.pnl-stack-when', {
+    page.getByRole('region', { name: 'Stack', exact: true }).locator('.pnl-stack-when', {
       hasText: 'You may cast target Zombie creature card from your graveyard this turn',
     }),
   ).toBeVisible();

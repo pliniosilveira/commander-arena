@@ -282,14 +282,14 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 
 ```
 .game (flex row)
-  .game-main            TurnTracker, DecisionLayer > Board (strips, rows, hand, .board-dock-slot)
+  .game-main            TurnTracker, DecisionLayer > Board (strips, rows with .board-dock-slot in your own, hand)
   .pnl-stack            floats at the right edge (StackPanel)
   .board-preview        floats at the left edge, only while a card is read (PreviewPanel)
   .log-toggle, .settings-toggle   bottom left; open .log-dialog and .settings-dialog (LogDock, SettingsDock)
 ```
 
 - **No columns.** The board takes the whole width; the stack, the preview, the log and the settings float over it (`styles.css`). The log stays in the page, out of sight, while its dialog is closed, so it remains a live region.
-- **The dock is portaled.** `DecisionLayer` owns the decision and builds the dock (`.dec-dock`: the panels of the decision, then `ActionBar`), `Board` registers a slot element at its bottom right (`DockSlotSetContext`, `ui/decisions/dock-slot.ts`; `Game` keeps it in `DockSlotContext`), and `createPortal` draws it there, over the hand's and the player strip's right end, which keep clear of it. A modal overlay (`.dec-overlay`) and the toast stay in the layer over the board. No provider (a render test) draws the dock inside the layer; a provider whose slot has not mounted yet draws nothing.
+- **The dock is portaled.** `DecisionLayer` owns the decision and builds the dock (`.dec-dock`: the panels of the decision, then `ActionBar`), `Board` registers a slot element in the player's own battlefield, at its right edge and bottom, level with the stack at the top of the opponent's (`DockSlotSetContext`, `ui/decisions/dock-slot.ts`; `Game` keeps it in `DockSlotContext`), and `createPortal` draws it there; the command box below stays clear. A modal overlay (`.dec-overlay`) and the toast stay in the layer over the board. No provider (a render test) draws the dock inside the layer; a provider whose slot has not mounted yet draws nothing.
 - **The preview.** A tap closes it (it drops the pin, the hover and a reveal); it lets the pointer through until pinned, so hovering the cards under it works.
 - **Arrows.** `StackArrows` reads the boxes from the DOM; `facingEdge` starts an arrow at the edge of the stack item that faces the target.
 

@@ -16,7 +16,7 @@ const game = (human: string, ai: string, seed: number) => `/?autostart=${human},
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const bar = (page: Page) => page.locator('.dec-bar');
 const logText = (page: Page) => page.getByRole('log');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const unlessDialog = (page: Page) => page.getByRole('dialog', { name: 'Unless you pay' });
 const handCount = async (page: Page): Promise<number> =>
   Number(await page.locator('.board-strip-me [title="Cards in hand"] b').innerText());

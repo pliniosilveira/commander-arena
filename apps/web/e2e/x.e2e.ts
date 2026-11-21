@@ -101,7 +101,7 @@ test('an X burn spell: the dialog offers the right maximum, X is typed and stepp
 
   await targetOpponent(page);
   await expect(logText(page)).toContainText('You cast SYNTHETIC X Burn with X = 3.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('SYNTHETIC X Burn');
   await expect(stack.locator('[data-x="3"]')).toHaveText('X = 3');
   // The cost on the stack is what was paid: {3}{R}.
@@ -149,7 +149,9 @@ test('Max, the steppers and the digits stay within the range; Cancel and Esc rew
   await settled(page);
   await expect(handCard(page, 'SYNTHETIC X Burn').first()).toBeVisible();
   await expect(logText(page)).not.toContainText('You cast SYNTHETIC X Burn');
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText('Stack is empty');
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    'Stack is empty',
+  );
 
   // Casting again asks again; Esc in the field cancels as well.
   await handCard(page, 'SYNTHETIC X Burn').first().click();
@@ -188,7 +190,9 @@ test('"pay X life": each X costs 1 life, the prompt says so, and the life and th
   await targetOpponent(page);
   await expect(logText(page)).toContainText('You cast SYNTHETIC Blood Burn with X = 5.');
   await expect(life(page, 0)).toHaveText(String(mine - 5));
-  await expect(page.getByRole('region', { name: 'Stack' }).locator('[data-x="5"]')).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Stack', exact: true }).locator('[data-x="5"]'),
+  ).toBeVisible();
 
   await primary(page).click();
   await expect(life(page, 1)).toHaveText(String(foe - 5));

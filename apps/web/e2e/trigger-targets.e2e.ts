@@ -88,7 +88,9 @@ test('an enters trigger asks for its target with no Cancel; the arrow is on the 
     `Choose a target for ${REAPER}'s ability (whenever ${REAPER} enters): Destroy target creature an opponent controls.`,
   );
   await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText('Triggered ability');
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    'Triggered ability',
+  );
   await page.keyboard.press('Escape');
   await expect(askedForTrigger(page)).toHaveCount(1);
   await expect(primary(page)).toBeDisabled();

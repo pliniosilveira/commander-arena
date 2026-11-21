@@ -64,7 +64,9 @@ test('a "you may" trigger asks in a dialog, and No is logged', async ({ page }) 
   await expect(dialog).toContainText('you may draw a card');
   await expect(dialog).toContainText('Do it?');
   // The ability that asks is on the stack, shown as an ability of its source.
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText('Triggered ability');
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    'Triggered ability',
+  );
   await expect(dialog.getByRole('button', { name: 'Yes' })).toBeVisible();
 
   await dialog.getByRole('button', { name: 'No' }).click();

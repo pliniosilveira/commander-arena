@@ -15,7 +15,7 @@ const game = (human: string, ai: string, seed: number) => `/?autostart=${human},
 const bar = (page: Page) => page.locator('.dec-bar');
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const logText = (page: Page) => page.getByRole('log');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const chooser = (page: Page) => page.getByRole('group', { name: 'Choose an ability' });
 const exileStrip = (page: Page) =>
   page.getByRole('list', { name: 'Suspended and foretold cards in exile' });

@@ -249,7 +249,7 @@ test('a free cast: with the commander on the battlefield the spell is cast witho
   // Seven mana is not at hand, so the free option is the only way to cast it: no menu is asked.
   await expect(chooser(page)).toHaveCount(0);
   await expect(logText(page)).toContainText(`You cast ${spell} without paying its mana cost.`);
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText(spell);
   await expect(stack.getByText('free', { exact: true })).toBeVisible();
   expect(errors).toEqual([]);

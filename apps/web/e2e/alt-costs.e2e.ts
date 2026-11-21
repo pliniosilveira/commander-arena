@@ -18,7 +18,7 @@ const logText = (page: Page) => page.getByRole('log');
 const chooser = (page: Page) => page.getByRole('group', { name: 'Choose an ability' });
 /** The menu's items: every button of the chooser but its close button. */
 const options = (page: Page) => chooser(page).locator('button:not([aria-label="Close"])');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });
 
 /** Untapped lands of the player. */

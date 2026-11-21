@@ -135,7 +135,7 @@ test('"choose one": an illegal mode is disabled, a pick is required, the pick ru
 
   await expect(logText(page)).toContainText('You choose: Draw a card.');
   await expect(logText(page)).toContainText('You cast SYNTHETIC Three Way Charm.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('Chosen: Draw a card');
   await primary(page).click();
   await expect(stack).toContainText('Stack is empty');
@@ -172,7 +172,7 @@ test('a mode with a target: the prompt and the dock show the mode, and its effec
   await primary(page).click();
 
   await expect(logText(page)).toContainText('You choose: Deals 3 damage to target creature.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('Chosen: Deals 3 damage to target creature');
   await primary(page).click();
   await expect(logText(page)).toContainText('deals 3 damage');
@@ -239,7 +239,7 @@ test('"choose two": Cancel and Esc rewind the cast, two modes are needed, the di
   await expect(logText(page)).toContainText(
     'You choose: Deals 2 damage to target creature and Draw a card.',
   );
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText(
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
     'Chosen: Deals 2 damage to target creature; Draw a card',
   );
   expect(errors).toEqual([]);
@@ -273,7 +273,7 @@ test('one legal set is chosen without a dialog: "choose two" with only two modes
   await expect(logText(page)).toContainText(
     'You choose: Target player gains 3 life and Draw a card (the only legal choice).',
   );
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText(
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
     'Chosen: Target player gains 3 life; Draw a card',
   );
   expect(errors).toEqual([]);

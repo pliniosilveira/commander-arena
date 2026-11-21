@@ -65,7 +65,7 @@ test('Multikicker: the dialog asks how many times, the stack shows "kicked 2 tim
 
   await targetOpponent(page);
   await expect(logText(page)).toContainText('You cast SYNTHETIC Volley Barrage, kicked 2 times.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('SYNTHETIC Volley Barrage');
   await expect(stack.locator('[data-kicks="2"]')).toHaveText('kicked 2 times');
   await stack.locator('.pnl-stack-item').first().hover();

@@ -16,7 +16,7 @@ const game = (seed: number) =>
 const SEED = { combatTrigger: 2, unlessPays: 2 };
 
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const unlessDialog = (page: Page) => page.getByRole('dialog', { name: 'Unless you pay' });
 const optionalDialog = (page: Page) => page.getByRole('dialog', { name: 'Optional ability' });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });

@@ -13,7 +13,7 @@ const game = (human: string, seed: number) => `/?autostart=${human},swamp-forest
 
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const bar = (page: Page) => page.locator('.dec-bar');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const stackItems = (page: Page) => stack(page).locator('.pnl-stack-item');
 const targets = (page: Page) => page.getByRole('region', { name: 'Legal targets' });
 
