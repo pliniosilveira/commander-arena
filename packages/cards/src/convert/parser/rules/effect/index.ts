@@ -139,6 +139,7 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
+import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
@@ -1318,6 +1319,8 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
   ...WITHERBLOOM_A_EFFECT_RULES,
+  // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
+  ...PARLEY_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".

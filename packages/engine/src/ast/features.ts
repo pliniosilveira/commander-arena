@@ -1130,6 +1130,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
+    // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
+    'triggerPlayerIsOpponent',
+    'triggerPlayerStat',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
@@ -2072,6 +2075,10 @@ export const CONDITION_KINDS = [
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
+  /** "If the player is your opponent", the player being the one of the event (CR 603.2b, 102.2): the engine's `triggerPlayerIsOpponent`. */
+  'triggerPlayerIsOpponent',
+  /** "If the player has four or more cards in hand", the player being the one of the event (CR 402.1, 608.2c): the engine's `triggerPlayerStat`. */
+  'triggerPlayerStat',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */

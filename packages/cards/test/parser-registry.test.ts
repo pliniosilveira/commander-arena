@@ -429,6 +429,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
+  // Federation Fleet deck, group B: "each player other than its controller" after a target ("Exile target nonland permanent. ...").
+  'noun.each-player-other-than-its-controller': spell(
+    (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
+  ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
@@ -1259,6 +1263,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
   'condition.a-player-cards-in-hand': permanent(
     (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,
+  ),
+  // Federation Fleet deck, group B: "the player is your opponent and has four or more cards in hand" after a draw of the player of a step.
+  'condition.the-player-is-opponent-with-cards': permanent(
+    (e) =>
+      `At the beginning of each player's end step, that player draws a card. If ${e}, ~ deals 2 damage to that player.`,
   ),
   'noun.any-number-target-graveyard-cards': permanent(
     (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,

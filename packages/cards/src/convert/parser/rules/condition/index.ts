@@ -70,6 +70,7 @@ import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
+import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
 import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
@@ -629,6 +630,8 @@ export const CONDITION_RULES = [
   ...LOREHOLD_G1_CONDITION_RULES,
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
   ...LOREHOLD_G3_CONDITION_RULES,
+  // Federation Fleet deck, group B: "the player is your opponent and has four or more cards in hand" (the player of the trigger).
+  ...THE_PLAYER_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,

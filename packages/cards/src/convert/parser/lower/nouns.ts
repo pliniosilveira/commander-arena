@@ -1362,6 +1362,14 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
         const blockedExcept = gate(noun, ['selector:eachPlayerExcept']);
         return blockedExcept ?? ok({ kind: 'eachPlayerExcept', except: ctx.lastPlayer });
       }
+      // "Each player other than its controller" (Fractured Identity, CR 102.1, 109.4): every player but the controller of the object the pronoun stands for, read from
+      // its last-known information when it has left (CR 608.2h).
+      if (noun.det === 'eachPlayer' && noun.of !== undefined) {
+        const except = playerSelectorOf(noun.of, ctx);
+        if (!except.ok) return except;
+        const blockedExcept = gate(noun, ['selector:eachPlayerExcept']);
+        return blockedExcept ?? ok({ kind: 'eachPlayerExcept', except: except.value });
+      }
       // "Each other opponent" (stage P34, D-152, CR 102.2): the opponents but the player the event of the trigger is about.
       if (noun.det === 'eachOpponent' && noun.other) {
         const blockedOther = gate(noun, ['selector:eachOtherOpponent']);

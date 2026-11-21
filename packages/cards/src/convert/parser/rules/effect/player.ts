@@ -29,6 +29,8 @@ import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
+/** A draw's card word may be "additional": "draws an additional card" is one more card drawn (CR 121.1). */
+const DRAW_CARDS = pattern(/ (?:additional )?cards?(?![\p{L}\p{N}])/iu);
 const LIFE = pattern(/ life(?![\p{L}\p{N}])/iu);
 
 function verbWord(base: string, you: boolean): Parser<unknown> {
@@ -65,16 +67,16 @@ function quantityForEach(head: Parser<unknown>, tail: Parser<unknown>): Parser<I
  * control" (the amount is then the count, CR 121.1, 608.2c) and "cards equal to the greatest power among creatures
  * you control" (stage P28).
  */
-const cardsAmount = (verb: Parser<unknown>): Parser<IrAmount> =>
+const cardsAmount = (verb: Parser<unknown>, cards: Parser<unknown> = CARDS): Parser<IrAmount> =>
   choice(
-    quantityForEach(verb, CARDS),
+    quantityForEach(verb, cards),
     map(
       sequence(verb, literal('cards '), family<IrAmount>('amount', { only: EQUAL_AMOUNTS })),
       ([, , amount]) => amount,
     ),
-    map(sequence(verb, family<IrAmount>('amount'), CARDS), ([, amount]) => amount),
+    map(sequence(verb, family<IrAmount>('amount'), cards), ([, amount]) => amount),
   );
-const drawAmount = cardsAmount;
+const drawAmount = (verb: Parser<unknown>): Parser<IrAmount> => cardsAmount(verb, DRAW_CARDS);
 
 /** A player verb phrase, given the subject it is said of. Returns one clause. */
 export type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
@@ -493,6 +495,8 @@ export const PLAYER_SUBJECTS = [
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',
   'noun.each-other-player',
+  // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
+  'noun.each-player-other-than-its-controller',
   'noun.defending-player',
   'noun.player-to-your-right',
   'noun.player',
@@ -638,6 +642,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each opponent loses the game',
     'each player ~ attacked this turn loses the game',
     'target player loses the game',
+    // Howling Mine: the extra card of the draw step (CR 121.1).
+    'target player draws an additional card',
+    'each player draws two additional cards',
     'you lose the game',
     'that player loses the game',
     'target opponent loses 3 life and loses the game',
