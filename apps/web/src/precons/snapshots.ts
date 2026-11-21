@@ -101,3 +101,11 @@ export function infoOf(snapshot: PreconSnapshot): PreconInfo {
 export const SHIPPED: LoadedSnapshots = loadSnapshots(
   import.meta.glob('./snapshots/*.json', { eager: true, import: 'default' }),
 );
+
+/**
+ * The challenge opponents of the Easy list: snapshots of the same format in their own folder, so
+ * they never appear among the precons. None present means an empty list, never a made-up deck.
+ */
+export const CHALLENGES: LoadedSnapshots = loadSnapshots(
+  import.meta.glob('./challenges/*.json', { eager: true, import: 'default' }),
+);

@@ -4,11 +4,13 @@
  * the opponent's deck; choosing the second starts the game. My Decks opens the page that lists
  * and imports decks.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { deckChoices, startChallengeOptions } from '../../precons';
 import { ThemeToggle } from '../panels/ThemeToggle';
-import { usePrecons } from '../precons-context';
+import { useChallenges, usePrecons } from '../precons-context';
 import { useActions } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
+import { ChallengeDialog } from './ChallengeDialog';
 import { DeckDialog } from './DeckDialog';
 import { defaultDecks, type MenuForm, parseSeed, randomSeed, startFromForm } from './menu-model';
 import './screens.css';
@@ -26,13 +28,17 @@ export const HOW_TO_PLAY: readonly string[] = [
 export function Menu() {
   const actions = useActions();
   const precons = usePrecons();
+  const challenges = useChallenges();
   const { choices } = useDeckChoices();
+  const challengeChoices = useMemo(() => deckChoices(challenges.list, [], []), [challenges.list]);
   const [form, setForm] = useState<MenuForm>({
     ...defaultDecks(precons.list.map((p) => p.id)),
     seed: '',
     freeMulligan: true,
   });
-  const [step, setStep] = useState<'home' | 'player' | 'opponent'>('home');
+  const [step, setStep] = useState<
+    'home' | 'player' | 'opponent' | 'challenge-player' | 'challenge-pick'
+  >('home');
   const [refused, setRefused] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const seedValid = parseSeed(form.seed).ok;
@@ -45,6 +51,11 @@ export function Menu() {
       setStep('opponent');
       return;
     }
+    if (step === 'challenge-player') {
+      setForm({ ...form, humanDeck: id });
+      setStep('challenge-pick');
+      return;
+    }
     // The opponent's deck ends the flow: the game starts with the two decks chosen.
     const next = { ...form, aiDeck: id };
     setForm(next);
@@ -53,6 +64,24 @@ export function Menu() {
     void startFromForm(actions.startGame, { ...next, ai: 'normal' }, precons)
       .then((result) => {
         if (!result.started && result.kind === 'refused') setRefused(result.reason);
+      })
+      .finally(() => setStarting(false));
+  };
+  // The challenge ends the Challenges flow: the game starts against it.
+  const chooseChallenge = (id: string) => {
+    const parsed = parseSeed(form.seed);
+    if (!parsed.ok) return;
+    setRefused(null);
+    setStarting(true);
+    void startChallengeOptions(precons, challenges, {
+      seed: parsed.seed ?? randomSeed(),
+      humanDeck: form.humanDeck,
+      challenge: id,
+      freeMulligan: form.freeMulligan ?? true,
+    })
+      .then(async (result) => {
+        if (result.ok) await actions.startGame({ ...result.options, intro: true });
+        else setRefused(result.reason);
       })
       .finally(() => setStarting(false));
   };
@@ -110,6 +139,27 @@ export function Menu() {
         </div>
       </section>
 
+      <section className="scr-card" aria-labelledby="scr-challenges-h">
+        <h2 id="scr-challenges-h">Challenges</h2>
+        <p className="scr-help">Pick your deck and face a prepared opponent.</p>
+        <div className="scr-modal-group">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => setStep('challenge-player')}
+          >
+            Easy
+          </button>
+          <button type="button" className="scr-btn scr-btn-primary" disabled>
+            Medium
+          </button>
+          <button type="button" className="scr-btn scr-btn-primary" disabled>
+            Hard
+          </button>
+        </div>
+      </section>
+
       <div className="scr-start-row">
         <div className="scr-seed">
           <label htmlFor="scr-seed-input">Seed</label>
@@ -156,12 +206,26 @@ export function Menu() {
         </ul>
       </details>
 
-      {step !== 'home' && (
+      {step === 'challenge-pick' && (
+        <ChallengeDialog
+          challenges={challengeChoices}
+          error={refused}
+          busy={starting}
+          onChoose={chooseChallenge}
+          onBack={() => {
+            setRefused(null);
+            setStep('challenge-player');
+          }}
+          onCancel={closeFlow}
+        />
+      )}
+
+      {step !== 'home' && step !== 'challenge-pick' && (
         <DeckDialog
           key={step}
-          title={step === 'player' ? 'Choose your deck' : "Choose opponent's deck"}
+          title={step === 'opponent' ? "Choose opponent's deck" : 'Choose your deck'}
           prompt={
-            step === 'player'
+            step !== 'opponent'
               ? "Select the deck you'll play in this game."
               : 'Select the deck your opponent will play.'
           }
