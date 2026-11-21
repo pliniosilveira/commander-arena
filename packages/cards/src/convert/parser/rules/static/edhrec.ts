@@ -183,7 +183,7 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING = defineRule<IrStatic>({
     'If a creature attacking causes an activated ability of a permanent you control to trigger, that ability triggers an additional time.',
     'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
     'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
-    'If a creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature dying causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
     'If creatures attacking cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
   ],
   parse: (ctx, pos) => {
@@ -266,8 +266,63 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.triggers-additional-time-entering` (Yarok, the Desecrated): "If a permanent entering causes a triggered ability of a permanent you control to trigger, that
+ * ability triggers an additional time." (CR 603.2d, 603.6a: the cause is any permanent entering the battlefield; the abilities that trigger on that event trigger once more).
+ * The permanents are "a permanent you control". Not read: another kind of entering permanent, another player's permanents, "enters" as a verb, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-entering',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 603.6a (Enters-the-Battlefield Abilities)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If a permanent entering causes a triggered ability of a creature you control to trigger, that ability triggers an additional time.',
+    'If a permanent entering causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If a permanent entering causes an activated ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
+    'If a creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If permanents entering cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-entering';
+    const r = sequence(
+      literal(
+        'if a permanent entering causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(id, subject, [{ kind: 'doubleTriggers', causeEnters: true }], pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 export const EDHREC_STATIC_RULES = [
   STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING,
+  STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING,
   STATIC_TRIGGERS_ADDITIONAL_TIME,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER,
   STATIC_TRIGGERS_ADDITIONAL_TIME_CAUSE,

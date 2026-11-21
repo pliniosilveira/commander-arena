@@ -1924,6 +1924,8 @@ export type IrStaticEffect =
       readonly cause?: IrNoun;
       /** Issue 81 (Windcrag Siege): "If a creature attacking causes a triggered ability ... to trigger". */
       readonly causeAttacks?: true;
+      /** Yarok, the Desecrated: "If a permanent entering causes a triggered ability ... to trigger". */
+      readonly causeEnters?: true;
     }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }

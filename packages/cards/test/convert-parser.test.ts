@@ -1358,6 +1358,7 @@ describe('unmatched abilities', () => {
       'static.opponents-cant-cast-spells',
       'static.keeps-damage',
       'static.triggers-additional-time-attacking',
+      'static.triggers-additional-time-entering',
       'static.triggers-additional-time',
       'static.triggers-additional-time-another',
       'static.triggers-additional-time-cause',

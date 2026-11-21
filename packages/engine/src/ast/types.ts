@@ -7471,6 +7471,7 @@ export type StaticEffect =
    * spell (`castSpell`) or copying one (`castSpell` with `orCopy`) that `spell` names (the spell as it is on the stack, or as it last was). The abilities
    * that trigger on that cast event are doubled (a `castSpell` trigger, a magecraft one too); one that merely follows from the spell (it entering, or a
    * permanent becoming its target) is another event and is not doubled. Without `cause` every trigger of the permanents `subject` names is doubled.
+   * `permanentEnters` (Yarok, the Desecrated): only the triggers of a permanent entering, whoever controls it, are doubled.
    */
   | {
       readonly kind: 'doubleTriggers';
@@ -7478,7 +7479,9 @@ export type StaticEffect =
       readonly cause?:
         | { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter }
         // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
-        | { readonly kind: 'creatureAttacks' };
+        | { readonly kind: 'creatureAttacks' }
+        // Yarok, the Desecrated (CR 603.2d, 603.6a): "If a permanent entering causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a permanent entering the battlefield, under any player's control (`entersBattlefield`, `entersBatch`, `landfall`) counts.
+        | { readonly kind: 'permanentEnters' };
     }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (CR 101.2, 601.2, 113.6, D-149): the ability of a card that works

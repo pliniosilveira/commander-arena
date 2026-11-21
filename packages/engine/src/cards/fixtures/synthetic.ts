@@ -209,6 +209,7 @@ import { SYNTHETIC_VOTE_LIST } from './synthetic-vote';
 import { SYNTHETIC_VRASKA_LIST } from './synthetic-vraska';
 import { SYNTHETIC_WARD_LIST } from './synthetic-ward';
 import { SYNTHETIC_X_LIST } from './synthetic-x';
+import { SYNTHETIC_YAROK_LIST } from './synthetic-yarok';
 
 export const SYNTHETIC_PREFIX = 'SYNTHETIC ';
 
@@ -459,6 +460,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_G1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
+  ...SYNTHETIC_YAROK_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
   ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,

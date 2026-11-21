@@ -1017,6 +1017,23 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         rule: ability.rule,
       };
     }
+    if (first.causeEnters === true) {
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'doubleTriggers',
+              subject: subject.value,
+              cause: { kind: 'permanentEnters' },
+            },
+            ...linked,
+          },
+        ],
+        rule: ability.rule,
+      };
+    }
     if (first.causeAttacks === true) {
       return {
         ok: true,
