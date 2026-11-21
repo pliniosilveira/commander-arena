@@ -34,6 +34,7 @@ import { SYNTHETIC_CANT_SACRIFICE_LIST } from './synthetic-cant-sacrifice';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
+import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
 import { SYNTHETIC_COMBAT_LIST } from './synthetic-combat';
 import { SYNTHETIC_COMMANDER_TRIGGER_LIST } from './synthetic-commander-triggers';
 import { SYNTHETIC_COMMANDER_LIST } from './synthetic-commanders';
@@ -581,6 +582,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ATTACK_LIMIT_LIST,
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_SLIVER_C_LIST,
+  ...SYNTHETIC_CHOSEN_REVEAL_LIST,
   ...SYNTHETIC_PILES_LIST,
   ...SYNTHETIC_HASHATON_G2_LIST,
   ...SYNTHETIC_BLIGHT_CURSE_LIST,

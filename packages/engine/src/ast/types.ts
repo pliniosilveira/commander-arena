@@ -5932,6 +5932,11 @@ export type Condition =
    */
   | { readonly kind: 'replicated' }
   /**
+   * "If this spell was foretold" (CR 702.143a, 702.143c: a spell is foretold when it is cast from exile for its foretell cost): the spell that is resolving was cast for its
+   * foretell cost. Read from the spell, or from its last-known information once it has left (CR 113.7a). Only on a face that lists a foretell cost.
+   */
+  | { readonly kind: 'foretold' }
+  /**
    * "If this spell's additional cost was paid" (CR 118.8, 601.2b, 608.2c, 701.68a): the spell was cast with the optional additional cost of its face paid (a `blight` cost with `optional`).
    * Read from the spell as it resolves, or from its last-known information once it has left (CR 113.7a). Only the effect of a spell whose face has such a cost (`validateCard`).
    */

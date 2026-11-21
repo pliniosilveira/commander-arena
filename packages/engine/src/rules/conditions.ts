@@ -183,6 +183,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
     }
+    case 'foretold': {
+      // CR 702.143a (Foretell): a spell cast for its foretell cost carries the alternative cost on the stack; last-known information says once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && source.stack?.alt === 'foretell';
+    }
     case 'escaped': {
       // CR 702.138b: a spell that is resolving was cast from a graveyard with an escape ability (the fact is on
       // the stack), and a permanent that came from such a spell remembers it (`GameObject.alt`); last-known

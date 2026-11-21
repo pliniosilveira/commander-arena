@@ -149,6 +149,7 @@ import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
 import { QUICK_DRAW_LOWERINGS } from './quick-draw';
 import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
+import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
@@ -442,11 +443,15 @@ function zoneOf(clause: IrClause): IrZoneSpec | undefined {
  * engine requires `controller: 'you'`, which the noun says; a choice cannot enter the battlefield.
  */
 function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerResult<Effects> {
-  if (zone !== 'hand') return failure(clause);
+  // CR 608.2d, 110.2a (Haunting Voyage, D-139): "Return up to two creature cards of that type from your graveyard to the battlefield": the controller chooses none up to
+  // that many cards of their graveyard, which enter under their control. Only the "up to" form of cards of a graveyard is read onto the battlefield.
+  const toBattlefield = zone === 'battlefield';
+  if (zone !== 'hand' && !(toBattlefield && what.upTo === true)) return failure(clause);
   const blocked = missingFeatures(['selector:choose']);
   if (blocked.length > 0) return failure(clause, blocked);
   const filter = lowerFilter(what);
   if (!filter.ok) return filter;
+  if (toBattlefield && filter.value.zone !== 'graveyard') return failure(clause);
   if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard')
     return failure(clause);
   const count = what.count?.kind === 'number' ? what.count.value : undefined;
@@ -464,7 +469,8 @@ function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerR
           ...(count === undefined ? {} : { count }),
           ...(what.upTo === true ? { optional: true } : {}),
         },
-        to: 'hand',
+        to: zone,
+        ...(toBattlefield ? { controller: 'you' as const } : {}),
       },
     ],
     rule: clause.rule,
@@ -2686,6 +2692,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUICK_DRAW_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
+  ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,

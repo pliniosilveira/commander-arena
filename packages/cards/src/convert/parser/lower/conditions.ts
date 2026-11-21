@@ -80,6 +80,13 @@ export function lowerCondition(
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
       return ok({ kind: 'kicked' });
     }
+    case 'foretold': {
+      // CR 702.143a: the engine reads it from the spell; the lowering of a spell's sentence only (`validateCard` checks the face lists a foretell cost).
+      const blocked = missingFeatures(['condition:foretold']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      return ok({ kind: 'foretold' });
+    }
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
       const blocked = missingFeatures(['condition:xAtLeast']);

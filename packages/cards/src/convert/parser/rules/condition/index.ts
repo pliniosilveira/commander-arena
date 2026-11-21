@@ -46,6 +46,7 @@ import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
+import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
@@ -644,6 +645,7 @@ export const CONDITION_RULES = [
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
+  CONDITION_FORETOLD,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_ADDITIONAL_COST_PAID,
   CONDITION_X_AT_LEAST,

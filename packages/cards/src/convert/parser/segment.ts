@@ -481,6 +481,15 @@ const PUT_ALL_REVEALED_SHUFFLE_REST =
  * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
  */
 const MAY_PUT_THAT_CARD_ONTO = /^you may put that card onto the battlefield\.$/i;
+/**
+ * "Reveal cards from the top of your library until you reveal X creature cards of the chosen type, where X is the number of creatures you control of that type. Put those cards onto
+ * the battlefield, then shuffle the rest of the revealed cards into your library." (Kindred Summons): two sentences that are one instruction, kept together for
+ * `effect.reveal-until-chosen-type`.
+ */
+const REVEAL_UNTIL_CHOSEN_TYPE_FIRST =
+  /^reveal cards from the top of your library until you reveal X creature cards of the chosen type, where X is [^.]*\.$/i;
+const PUT_THOSE_CARDS_SHUFFLE_REST =
+  /^put those cards onto the battlefield, then shuffle the rest of the revealed cards into your library\.$/i;
 const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
 
 /**
@@ -1162,6 +1171,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, REVEAL_UNTIL) &&
       said(b, PUT_THAT_CARD)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, REVEAL_UNTIL_CHOSEN_TYPE_FIRST) &&
+      said(b, PUT_THOSE_CARDS_SHUFFLE_REST)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

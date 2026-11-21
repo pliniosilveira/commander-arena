@@ -192,6 +192,7 @@ import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
+import { REVEAL_CHOSEN_TYPE_EFFECT_RULES } from './reveal-chosen-type';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
@@ -1239,6 +1240,7 @@ export const EFFECT_RULES = [
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
   ...DACK_EFFECT_RULES,
+  ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
