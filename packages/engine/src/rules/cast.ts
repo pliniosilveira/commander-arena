@@ -53,6 +53,7 @@ import { planForActivation } from './activate-costs';
 import {
   buybackCostOf,
   escalateCostOf,
+  evokeExileOf,
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
@@ -694,7 +695,11 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
   if (!stack) return fail('The spell is not on the stack');
   const face = faceOf(state, spell);
   const optionalExile = face?.additionalCosts?.find((cost) => cost.kind === 'exileFromHand');
-  if (optionalExile?.kind === 'exileFromHand' && stack.exiledAsCost === undefined) {
+  // CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): the exile is part of the alternative cost, so one card must be chosen.
+  const evokeExile = alternativeOfStack(stack) === 'evoke' ? evokeExileOf(face) : undefined;
+  const exileFilter =
+    evokeExile ?? (optionalExile?.kind === 'exileFromHand' ? optionalExile.filter : undefined);
+  if (exileFilter !== undefined && stack.exiledAsCost === undefined) {
     const legal = Object.values(state.objects)
       .filter(
         (object) =>
@@ -702,12 +707,15 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
           object.owner === casting.seat &&
           object.card !== null &&
           object.id !== casting.object &&
-          matchesFilter(state, object, optionalExile.filter, {
+          matchesFilter(state, object, exileFilter, {
             controller: casting.seat,
             source: casting.object,
           }),
       )
       .map((object) => object.id);
+    if (evokeExile !== undefined && legal.length === 0) {
+      return fail('There is no card in your hand to exile for the evoke cost');
+    }
     if (legal.length > 0) {
       return ok(
         setPending(
@@ -719,10 +727,13 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
             purpose: 'additionalExile',
             zone: 'hand',
             legal,
-            min: 0,
-            max: legal.length,
+            min: evokeExile === undefined ? 0 : 1,
+            max: evokeExile === undefined ? legal.length : 1,
             reveal: true,
-            prompt: 'You may exile any number of cards from your hand',
+            prompt:
+              evokeExile === undefined
+                ? 'You may exile any number of cards from your hand'
+                : 'Exile a card from your hand to pay the evoke cost',
             forCost: true,
           },
         ),

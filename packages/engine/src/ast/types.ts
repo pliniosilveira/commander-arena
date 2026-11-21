@@ -1684,7 +1684,7 @@ export type PermanentAlternativeKind =
  *   and the spell's text changes: each "target" becomes "each", so it has no targets. The change is
  *   made by the engine from the face's spell text (`ast/overload.ts`), which `validateCard` checks
  *   it can make.
- * - `evoke` (D-121, CR 702.74): the `cost` is paid instead of the mana cost of a permanent spell, and the
+ * - `evoke` (D-121, CR 702.74): the `cost` (and, with `exileFromHand`, the exile of a card of the hand) is paid instead of the mana cost of a permanent spell, and the
  *   permanent that spell becomes has "When this permanent enters, if its evoke cost was paid, its
  *   controller sacrifices it": the engine adds that triggered ability to a permanent that entered from an
  *   evoked spell (`GameObject.alt`, `rules/derive-alt.ts`), so the card lists only the cost.
@@ -1759,6 +1759,12 @@ export type AlternativeCost =
         'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'sacrificePermanents' | 'impending'
       >;
       readonly cost: readonly Cost[];
+      /**
+       * `evoke` only (CR 702.74a, 118.9, 601.2b, 601.2h: "Evoke—Exile a red card from your hand"): besides the `cost` (mana, {0} when it has none) the caster exiles one other card
+       * from their hand that matches the filter, chosen as the spell is cast (`chooseCards`, purpose `additionalExile`). The cost can be paid only while such a card is in the hand; the
+       * card cast is never that card (it is on the stack by then, CR 601.2a).
+       */
+      readonly exileFromHand?: ObjectFilter;
       readonly condition?: Condition;
     }
   | {

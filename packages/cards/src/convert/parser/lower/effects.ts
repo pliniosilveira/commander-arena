@@ -31,6 +31,7 @@ import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
+import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -2666,6 +2667,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...NIV_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
+  ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
