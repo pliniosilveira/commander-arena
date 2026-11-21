@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -71,7 +72,7 @@ async function playUntil(page: Page, cast: string, ready: () => Promise<boolean>
 async function start(page: Page, seed: number): Promise<void> {
   await page.goto(game(seed));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 }
 
 const SCRY = /^Scry 2/;

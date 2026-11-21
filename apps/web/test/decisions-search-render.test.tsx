@@ -92,13 +92,7 @@ test('the other seat sees a status, never the cards', () => {
         passing={false}
         passTurn={false}
         onCancelPassTurn={() => {}}
-        fullControl={false}
-        manualPay={false}
         onSeize={() => {}}
-        onFullControl={() => {}}
-        onManualPay={() => {}}
-        undoDepth={0}
-        onUndo={() => {}}
       />,
     );
   expect(html(null)).toContain('Waiting for the game.');

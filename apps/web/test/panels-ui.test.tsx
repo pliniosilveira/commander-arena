@@ -63,29 +63,17 @@ function withView(snapshot: Snapshot, patch: Partial<GameView>): Snapshot {
 }
 
 describe('TurnTracker', () => {
-  test('shows the turn, whose turn it is, priority and every step', async () => {
+  test('shows the turn, whose turn it is, priority and three steps', async () => {
     const store = await startedStore();
     const out = html(store, <TurnTracker />);
     const view = store.getState().snapshot?.view;
     expect(view).toBeDefined();
     expect(out).toContain(`turn ${Math.floor(((view?.turn ?? 1) - 1) / 2) + 1}`);
-    for (const label of [
-      'Untap',
-      'Upkeep',
-      'Draw',
-      'Main 1',
-      'Begin combat',
-      'Attackers',
-      'Blockers',
-      'First strike',
-      'Damage',
-      'End combat',
-      'Main 2',
-      'End step',
-      'Cleanup',
-    ]) {
-      expect(out).toContain(label);
-    }
+    // Three steps are shown (the previous, the current and the next), not the whole row.
+    expect(view?.step).toBeDefined();
+    expect((out.match(/class="pnl-step[ "]/g) ?? []).length).toBeLessThanOrEqual(3);
+    expect((out.match(/class="pnl-step[ "]/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(out).toContain('aria-current="step"');
     expect(out).toContain('Priority:');
     expect(out).not.toContain('AI fallback');
   });
@@ -100,8 +88,9 @@ describe('TurnTracker', () => {
     const out = html(store, <TurnTracker />);
     // Engine turn 3 is the second round: "Your turn 2" (D-153).
     expect(out).toContain('Your turn 2');
-    // Default stops: Main 1 and Main 2 are marked; the current step is Main 1.
-    expect((out.match(/pnl-step-stop/g) ?? []).length).toBe(2);
+    // Draw, Main 1 and Begin combat are shown; Main 1 (the current one) has a default stop.
+    expect((out.match(/class="pnl-step[ "]/g) ?? []).length).toBe(3);
+    expect((out.match(/pnl-step-stop/g) ?? []).length).toBe(1);
     expect(out).toMatch(/aria-current="step"[^>]*><button[^>]*pnl-step-current/);
 
     store.setState({
@@ -236,10 +225,9 @@ describe('SettingsPanel through a real store', () => {
     expect(open).toMatch(/aria-pressed="false"[^>]*>Slow</);
     expect(open).toMatch(/aria-pressed="true"[^>]*>Large</);
     expect(open).toContain('>Normal<');
-    // The column of the stack and the controls is on the right by default and can be flipped (issue 47).
-    expect(open).toContain('Stack and controls');
-    expect(open).toMatch(/aria-pressed="true"[^>]*>Right</);
-    expect(open).toContain('>Left<');
+    // Undo is here, not in the action bar; the stack no longer has a side to choose.
+    expect(open).toContain('Undo');
+    expect(open).not.toContain('Stack and controls');
     expect(open).toContain('Dark');
     expect(open).toContain('Light');
     for (const label of ['Upkeep', 'Main 1', 'Main 2', 'End step']) expect(open).toContain(label);

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -14,7 +15,7 @@ const game = (human: string, ai: string, seed: number) => `/?autostart=${human},
 const bar = (page: Page) => page.locator('.dec-bar');
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const logText = (page: Page) => page.getByRole('log');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const chooser = (page: Page) => page.getByRole('group', { name: 'Choose an ability' });
 const exileStrip = (page: Page) =>
   page.getByRole('list', { name: 'Suspended and foretold cards in exile' });
@@ -92,7 +93,7 @@ test('Suspend: the button, the payment (Cancel gives priority back), the counter
       (await lands(page)) >= 1 &&
       (await handCard(page, bear).count()) > 0,
   );
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
 
   // The card can only be suspended now ({G} of three lands it does not have): the click asks.
   await handCard(page, bear).first().click();
@@ -123,7 +124,7 @@ test('Suspend: the button, the payment (Cancel gives priority back), the counter
   await expect(exileStrip(page)).toContainText(`${bear} time 3`);
 
   // From now on stop at every priority: each of our upkeeps takes a counter off, worded on the stack.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   const wording = stack(page).locator('[data-later-wording]');
   await playUntil(page, async () => (await wording.count()) > 0);
   await expect(wording).toHaveText(`Remove a time counter from ${bear}.`);
@@ -184,7 +185,7 @@ test('Madness: cycling discards the card to exile, the question names the cost, 
       (await lands(page)) >= 2 &&
       (await handCard(page, cycler).count()) > 0,
   );
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   // Cycling {1}: the card is discarded as a cost and exiled by madness instead of the graveyard.
   // A card in the hand asks about its ability even when it is the only one (#40), so the click
@@ -236,7 +237,7 @@ test('Foretell: the button, our own card face down, cast for the foretell cost f
       (await lands(page)) >= 2 &&
       (await handCard(page, giant).count()) > 0,
   );
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
 
   await handCard(page, giant).first().click();
   await chooser(page)
@@ -270,7 +271,7 @@ test('Foretell: the button, our own card face down, cast for the foretell cost f
   await playUntil(page, async () => (await noDialog(page)) && (await chip.count()) > 0);
   await expect(chip.first()).toHaveAttribute('aria-label', `Cast for {1}{G}: ${giant}`);
   // Full Control, so the spell stays on the stack for us to read.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await chip.first().click();
   await settled(page);
   if ((await bar(page).getByRole('button', { name: 'Auto-pay' }).count()) > 0) {
@@ -329,7 +330,7 @@ test('The delayed draw: worded on the stack at the next upkeep, then we draw', a
       (await lands(page)) >= 2 &&
       (await handCard(page, spell).count()) > 0,
   );
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, spell).first().click();
   await settled(page);
   await expect(logText(page)).toContainText(`You cast ${spell}.`);

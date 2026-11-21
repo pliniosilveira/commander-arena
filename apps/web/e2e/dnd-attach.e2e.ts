@@ -137,9 +137,10 @@ test('an Aura by drag: dropped on a creature it is cast and attached; elsewhere 
   await expect(aura().first()).toHaveAttribute('draggable', 'true');
   const before = await hand(page).count();
 
-  // The battlefield and the stack are no zones for an Aura: it needs a permanent to enchant.
+  // The battlefield and the stack are no zones for an Aura: it needs a permanent to enchant (the
+  // stack is out of sight then, so the drop is on the turn panel where it would be).
   await aura().first().dragTo(page.locator('[data-drop="battlefield"]').first());
-  await aura().first().dragTo(page.locator('[data-drop="stack"]'));
+  await aura().first().dragTo(page.locator('.turn-panel'));
   await expect(page.getByText('Choose what to enchant.')).toBeHidden();
   await expect(hand(page)).toHaveCount(before);
 

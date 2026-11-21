@@ -42,7 +42,6 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const passTurn = useApp((s) => s.yieldTurn !== null);
   const error = useApp((s) => s.error);
   const fullControl = useApp((s) => s.settings.fullControl);
-  const manualPay = useApp((s) => s.manualPay);
   const pinned = useApp((s) => s.preview.pinned);
   const undoDepth = useApp((s) => s.snapshot?.undoDepth ?? 0);
   const manaTaps = useApp((s) => s.manaTaps);
@@ -170,13 +169,7 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
           thinking={thinking}
           passTurn={passTurn}
           onCancelPassTurn={() => actions.cancelPassTurn()}
-          fullControl={fullControl}
-          manualPay={manualPay}
           onSeize={() => actions.seize()}
-          onFullControl={(on) => actions.setSettings({ fullControl: on })}
-          onManualPay={(on) => actions.setManualPay(on)}
-          undoDepth={undoDepth}
-          onUndo={() => void actions.undo()}
         />
       </div>
     );
