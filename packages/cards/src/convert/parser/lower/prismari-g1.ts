@@ -53,7 +53,11 @@ function atEndStep(action: 'sacrifice' | 'exile'): Lowering<IrClause, Effects> {
     id: `lower.${action}-at-end-step-made`,
     needs: ['effect:delayedTrigger', `effect:${action}`, 'selector:moved'],
     lower(clause, ctx) {
-      if (!aboutMadeTokens(ctx)) return failure(clause);
+      // CR 603.7c: also the one card an instruction before put onto the battlefield from a hand or graveyard ("You may put a creature card from your hand onto the battlefield.
+      // ... Sacrifice it at the beginning of the next end step."): the delayed ability is about that object only, and about none when the player put none.
+      if (!aboutMadeTokens(ctx) && !(action === 'sacrifice' && ctx.searched !== null)) {
+        return failure(clause);
+      }
       return {
         ok: true,
         value: [

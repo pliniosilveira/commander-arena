@@ -4200,8 +4200,13 @@ export type Effect =
    */
   | {
       readonly kind: 'castFree';
+      /**
+       * `target` (Horde of Notions, "You may play target Elemental card from your graveyard without paying its mana cost", CR 115.1, 608.2b, 608.2g): a target card of the controller's own
+       * graveyard that is still there, as the same object, when this resolves; the question is about that one card, which is cast, or with `play` played if it is a land. Not with `max`,
+       * `perOwner`, `player` or `remember`.
+       */
       readonly objects:
-        | Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' }>
+        | Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' | 'target' }>
         | ChooseSelector;
       readonly play?: true;
       /**

@@ -632,7 +632,7 @@ const PLAY_THE_EXILED_CARD = /^you may play the exiled card this turn\.$/i;
  * (`effect.cast-graveyard-card`; the first may follow the comma of a trigger).
  */
 const CAST_TARGET_FROM_GRAVEYARD =
-  /(?:^|, )you may cast target [^.,]* cards? from a graveyard(?:, and mana of any type can be spent to cast that spell)?\.$/i;
+  /(?:^|, )you may cast target [^.,]* cards? from a graveyard(?:, and mana of any type can be spent to cast that spell| without paying its mana cost)?\.$/i;
 const EXILE_THAT_SPELL_INSTEAD =
   /^if that spell would be put into a graveyard, exile it instead\.$/i;
 

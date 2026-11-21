@@ -179,6 +179,11 @@ export function castFreeText(effect: Extract<Effect, { kind: 'castFree' }>): str
     case 'linkedExile':
       what = 'the exiled card';
       break;
+    case 'target':
+      // CR 115.1 (Horde of Notions): the target card of the player's own graveyard.
+      what = 'the target card';
+      from = ' from your graveyard';
+      break;
     case 'choose': {
       const { zone, controller: _controller, notTypes, ...rest } = objects.filter;
       if (zone !== 'hand') return null;

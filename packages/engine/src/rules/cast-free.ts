@@ -140,13 +140,15 @@ export function runCastFree(
       prompt:
         ins.remaining === undefined
           ? `You may ${ins.play ? 'play' : 'cast'} ${
-              ins.cardsZone === 'graveyard'
-                ? 'a card that player milled'
-                : ins.cards !== undefined
-                  ? 'a card from among those you looked at'
-                  : ins.objects.kind === 'choose'
-                    ? 'a card from your hand'
-                    : 'the exiled card'
+              ins.objects.kind === 'target'
+                ? 'the target card from your graveyard'
+                : ins.cardsZone === 'graveyard'
+                  ? 'a card that player milled'
+                  : ins.cards !== undefined
+                    ? 'a card from among those you looked at'
+                    : ins.objects.kind === 'choose'
+                      ? 'a card from your hand'
+                      : 'the exiled card'
             } without paying its mana cost`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${
