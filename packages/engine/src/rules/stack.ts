@@ -106,6 +106,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     // D-230: "mana value X or less, where X is the damage dealt" is read again as the ability resolves.
     ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+    ...(obj.stack?.triggerDamaged === undefined
+      ? {}
+      : { triggerDamaged: obj.stack.triggerDamaged }),
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
@@ -186,6 +189,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+      ...(obj.stack?.triggerDamaged === undefined
+        ? {}
+        : { triggerDamaged: obj.stack.triggerDamaged }),
       ...(obj.stack?.triggerTargetCount === undefined
         ? {}
         : { triggerTargetCount: obj.stack.triggerTargetCount }),

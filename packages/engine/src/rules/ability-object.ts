@@ -35,6 +35,8 @@ export interface AbilityObjectRequest {
   /** For a triggered ability that reads `triggerPlayer` or `triggerDamage` (D-133): the player and the damage of its event. */
   readonly player?: SeatId;
   readonly damage?: number;
+  /** For a triggered ability that reads `triggerDamagedPlayers`: the opponents its damage batch hurt. */
+  readonly damaged?: readonly SeatId[];
   readonly targetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly attacked?: readonly SeatId[];
@@ -96,6 +98,7 @@ export function pushAbilityObject(
       ...(request.subject === undefined ? {} : { triggerSubject: request.subject }),
       ...(request.player === undefined ? {} : { triggerPlayer: request.player }),
       ...(request.damage === undefined ? {} : { triggerDamage: request.damage }),
+      ...(request.damaged === undefined ? {} : { triggerDamaged: request.damaged }),
       ...(request.targetCount === undefined ? {} : { triggerTargetCount: request.targetCount }),
       ...(request.attacked === undefined ? {} : { triggerAttacked: request.attacked }),
       ...(request.attackers === undefined ? {} : { triggerAttackers: request.attackers }),

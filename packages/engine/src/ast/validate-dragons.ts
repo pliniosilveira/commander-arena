@@ -44,12 +44,13 @@ export function checkDragonsEffect(
           owner !== 'target' &&
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
+          owner !== 'triggerDamagedPlayers' &&
           owner !== 'eachOpponent'
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent') or the player of the event ('triggerPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -143,13 +144,6 @@ export function checkDragonsEffect(
       if (e.anyManaColor !== undefined) {
         if (e.anyManaColor !== true) {
           issue(out, `${path}.anyManaColor`, 'anyManaColor must be true when present');
-        }
-        if (e.castOnly !== true) {
-          issue(
-            out,
-            `${path}.anyManaColor`,
-            'mana as though of any color is spent on a cast: needs castOnly',
-          );
         }
       }
       // Hostage Taker (CR 609.4b), Dire Fleet Daredevil (CR 614.1a): riders of the spell cast with the permission.

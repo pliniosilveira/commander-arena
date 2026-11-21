@@ -1704,7 +1704,7 @@ function damageBatchTriggers(
   if (trigger.to === 'opponents') {
     const [first] = seats;
     if (first === undefined) return [];
-    return [{ ...base, player: first, damage: seats.length }];
+    return [{ ...base, player: first, damage: seats.length, damaged: seats }];
   }
   return seats.flatMap((seat) => {
     if (

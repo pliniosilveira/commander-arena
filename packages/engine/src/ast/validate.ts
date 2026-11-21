@@ -1905,7 +1905,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
-          ? { triggerDamagedPlayerCount: true }
+          ? { triggerDamagedPlayerCount: true, triggerDamagedPlayers: true }
           : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),

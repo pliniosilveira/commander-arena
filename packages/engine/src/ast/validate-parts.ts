@@ -154,6 +154,8 @@ export interface Scope {
   readonly triggerAttackerCount?: boolean;
   /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayerCount` reads the opponents dealt damage (CR 603.2c). */
   readonly triggerDamagedPlayerCount?: boolean;
+  /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayers` names the opponents dealt damage (CR 603.2c). */
+  readonly triggerDamagedPlayers?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -1524,6 +1526,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: "each of those opponents": the opponents a batch of sources damaged in one event.
+      if (scope.triggerDamagedPlayers !== true) {
+        issue(
+          out,
+          path,
+          "'triggerDamagedPlayers' needs the effect of a trigger of damage dealt to your opponents by a group of sources (damageBatch to 'opponents')",
+        );
+      }
+      break;
     case 'declinedPlayer':
       if (scope.declinedPlayer !== true) {
         issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
@@ -1620,6 +1632,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'playerToYourRight',
   'triggerPlayer',
+  'triggerDamagedPlayers',
   'attackedPlayers',
   'combatDamagedByNamed',
 ];
@@ -5732,6 +5745,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'triggerDamagedPlayers' ||
         e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
