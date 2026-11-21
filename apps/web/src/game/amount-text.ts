@@ -325,6 +325,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
         ? `the greatest ${stat} among ${things}`
         : `the total ${stat} of ${things}`;
     }
+    case 'colorsAmong': {
+      // CR 105.2 (Vivid): "the number of colors among permanents you control".
+      const things = thingsPhrase(amount.filter, true);
+      return things === null ? UNKNOWN_AMOUNT : `the number of colors among ${things}`;
+    }
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2).
       return 'the number of differently named permanents';

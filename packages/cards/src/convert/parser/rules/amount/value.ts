@@ -41,6 +41,7 @@ import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
+import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
 import { VOTES_AMOUNT } from './votes';
 
@@ -398,6 +399,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
     CARD_TYPES_AMONG_THOSE_VALUE,
+    // CR 105.2 (Vivid): "the number of colors among permanents you control", before the count of objects, which reads no "colors among".
+    COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
     NUMBER_OF_COUNTERS(rule),
     COUNTERS_REMOVED_THIS_WAY,
@@ -594,6 +597,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of nontoken creatures you had enter the battlefield under your control this turn',
     'equal to the greatest power among creatures you control',
     'equal to the total power of creatures you control',
+    // CR 105.2 (Vivid): the colors the permanents you control have between them, each once.
+    'equal to the number of colors among permanents you control',
     'equal to the greatest mana value among artifacts you control',
     "equal to that creature's toughness",
     'equal to its toughness',
@@ -724,6 +729,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the result',
     // CR 205.2a: the card types of the cards of a graveyard.
     'where X is the number of card types among cards in your graveyard',
+    // CR 105.2 (Vivid): the colors the permanents you control have between them, each once.
+    'where X is the number of colors among permanents you control',
     // Death Toll deck, group D (CR 202.3, 608.2h): what a destroy before it in the text destroyed.
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
@@ -736,6 +743,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the total mana value of permanents destroyed',
     'where X is the greatest mana value of permanents destroyed this way',
     'where X is the results',
+    'where X is the number of colors among permanents',
+    'where X is the number of colors among permanents your opponents control',
     'where X is the result of',
     'where X is',
     'where X is 3',

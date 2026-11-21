@@ -205,6 +205,18 @@ function plainOutcomes(
       const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
       return COLORS.map((c) => Array.from({ length: n }, () => c));
     }
+    case 'eachColorAmong': {
+      // CR 105.2, 106.1b, 605.3b ("For each color among permanents you control, add one mana of that color"): one outcome with one mana of each color the permanents the
+      // filter matches have between them, read for the controller with the permanent as "this" (a mana ability resolves at once); colorless is no color, so no mana of it.
+      const colors = new Set<ManaColor>();
+      for (const id of state.battlefield) {
+        const other = state.objects[id];
+        if (other === undefined) continue;
+        if (!matchesFilter(state, other, p.filter, { controller: seat, source: obj.id })) continue;
+        for (const color of derive(state, other).colors) colors.add(color);
+      }
+      return [inTypeOrder(colors)];
+    }
     case 'oneOf':
       return [...new Set(p.colors)].map((c) => [c]);
     case 'combination': {

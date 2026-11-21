@@ -1903,6 +1903,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'colorsAmong':
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
@@ -2137,6 +2138,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'differentNamesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'colorsAmong':
+      // CR 105.2 (Vivid): the colors among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'colorsAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'only permanents on the battlefield have their colors counted',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'colorsAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }
@@ -7266,6 +7294,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.mana`,
           'only a mana ability can ask for the color of an amount of mana',
+        );
+      }
+      if (e.mana?.kind === 'eachColorAmong') {
+        issue(
+          out,
+          `${path}.mana`,
+          'only a mana ability adds a mana of each color among permanents',
         );
       }
       if (e.player !== undefined) {

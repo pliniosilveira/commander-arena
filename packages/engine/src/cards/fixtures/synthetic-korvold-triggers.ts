@@ -302,4 +302,83 @@ export const SYNTHETIC_KORVOLD_TRIGGERS_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Each opponent loses X life and you gain X life, where X is the number of colors among permanents you control." (CR 105.2, the colors among permanents as an effect's amount)
+  singleFace({
+    name: 'SYNTHETIC Prism Drain',
+    manaCost: ['2', 'B'],
+    types: ['sorcery'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'Each opponent loses X life and you gain X life, where X is the number of colors among permanents you control.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'loseLife',
+            player: { kind: 'eachOpponent' },
+            amount: { kind: 'colorsAmong', filter: { controller: 'you' } },
+          },
+          {
+            kind: 'gainLife',
+            player: { kind: 'you' },
+            amount: { kind: 'colorsAmong', filter: { controller: 'you' } },
+          },
+        ],
+      },
+    },
+  }),
+  // "Create a number of 1/1 white Spirit creature tokens equal to the number of colors among permanents you control."
+  singleFace({
+    name: 'SYNTHETIC Prism Spirits',
+    manaCost: ['2', 'W'],
+    types: ['sorcery'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      'Create a number of 1/1 white Spirit creature tokens equal to the number of colors among permanents you control.',
+    spell: {
+      effect: {
+        kind: 'createToken',
+        token: {
+          kind: 'custom',
+          definition: {
+            name: 'Spirit',
+            manaCost: null,
+            supertypes: [],
+            types: ['creature'],
+            subtypes: ['Spirit'],
+            colors: ['W'],
+            power: 1,
+            toughness: 1,
+            loyalty: null,
+            defense: null,
+            oracleText: '',
+            abilities: [],
+          },
+        },
+        count: { kind: 'colorsAmong', filter: { controller: 'you' } },
+      },
+    },
+  }),
+  // "{T}: For each color among permanents you control, add one mana of that color."
+  singleFace({
+    name: 'SYNTHETIC Prism Sprite',
+    manaCost: ['1', 'G'],
+    types: ['creature'],
+    subtypes: ['Faerie'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    power: 1,
+    toughness: 1,
+    oracleText: '{T}: For each color among permanents you control, add one mana of that color.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'eachColorAmong', filter: { controller: 'you' } },
+      },
+    ],
+  }),
 ];

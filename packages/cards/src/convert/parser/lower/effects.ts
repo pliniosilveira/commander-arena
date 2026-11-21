@@ -1029,6 +1029,13 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
         kind: 'combination',
         options: spec.what.options.map((option) => sortedMana(option)),
       };
+    case 'eachColorAmong': {
+      // CR 105.2, 605.3b: one mana of each color among the battlefield permanents the noun names, read as the mana ability is activated.
+      const { zone, ...rest } = spec.what.of.filter;
+      if (zone !== undefined && zone !== 'battlefield') return null;
+      const filter = lowerFilter({ ...spec.what.of, filter: rest });
+      return filter.ok ? { kind: 'eachColorAmong', filter: filter.value } : null;
+    }
     case 'couldProduce':
       // CR 106.7: the permanents are the lands of one player; "any type" keeps colorless.
       return {

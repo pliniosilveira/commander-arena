@@ -14,6 +14,8 @@ import {
   checkDelayedCast,
   checkEnumList,
   checkStateAmount,
+  filterSome,
+  readsCombatOrSource,
 } from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
@@ -126,6 +128,34 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         out,
         `${path}.cost`,
         'the amount is counted before the costs are paid: no cost that gives up a permanent or takes counters off',
+      );
+    }
+  }
+  // "For each color among permanents you control, add one mana of that color." (CR 105.2): the colors among the battlefield permanents a filter matches, counted before the costs are paid.
+  if (a.production?.kind === 'eachColorAmong') {
+    const filter = a.production.filter;
+    if (filter === undefined || filter === null) {
+      issue(out, `${path}.production.filter`, 'eachColorAmong needs a filter');
+    } else {
+      checkBattlefieldFilter(filter, `${path}.production.filter`, out);
+      if (
+        filterSome(
+          filter,
+          (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.production.filter`,
+          'eachColorAmong cannot read the combat, the source power, power or toughness',
+        );
+      }
+    }
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+      issue(
+        out,
+        `${path}.cost`,
+        'the colors are counted before the costs are paid: no cost that gives up a permanent or takes counters off',
       );
     }
   }

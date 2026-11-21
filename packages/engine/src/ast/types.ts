@@ -254,6 +254,13 @@ export type Amount =
    */
   | { readonly kind: 'differentNamesAmong'; readonly filter: ObjectFilter }
   /**
+   * "Create a number of 5/5 Elemental tokens equal to the number of colors among permanents you control", "each opponent loses X life, where X is the number of colors among
+   * permanents you control" (CR 105.2, 608.2c; Vivid): how many of the five colors the permanents `filter` matches on the battlefield have between them, each counted once
+   * however many have it, colorless being no color (CR 105.2c). Read as the instruction runs, through the layers like a count. The filter names the battlefield (or leaves it out) and
+   * reads no combat, source power, power or toughness. The same node, read as the board changes, is a static ability's "+1/+1 for each color among ..." (`StaticPtAmount`).
+   */
+  | { readonly kind: 'colorsAmong'; readonly filter: ObjectFilter }
+  /**
    * "Your devotion to black", "your devotion to white and blue" (CR 700.5, D-131): the number of mana symbols that
    * are one of the `colors` (a hybrid symbol counts for each of its colors, once; a symbol that is generic or
    * colorless counts for none) among the mana costs of the permanents the controller of the ability controls. The
@@ -4573,6 +4580,13 @@ export type ManaProduction =
    * the permanent up or takes counters off it is refused where the lowering reads this, as the amount is counted before costs are paid.
    */
   | { readonly kind: 'anyColorAmount'; readonly amount: Amount }
+  /**
+   * "{T}: For each color among permanents you control, add one mana of that color." (Faeburrow Elder; CR 105.2, 106.1b, 605.3b): one mana of each of the colors the permanents
+   * `filter` matches on the battlefield have between them (the `colorsAmong` count, colorless is no color), read as the ability is activated for its controller with its permanent as
+   * "this" (a mana ability resolves at once). Nothing is chosen: the mana is one fixed list, empty when no permanent has a color. Only a mana ability (`validateCard`), and not with
+   * a cost that gives up a permanent, which could change the colors counted.
+   */
+  | { readonly kind: 'eachColorAmong'; readonly filter: ObjectFilter }
   /**
    * "{T}: Add one mana of any color that a land an opponent controls could produce." (Exotic
    * Orchard, Fellwar Stone) and "... of any type that a land you control could produce." (Reflecting

@@ -58,7 +58,8 @@ type StateAmount = Extract<
       | 'exiledAsCost'
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
-      | 'differentNamesAmong';
+      | 'differentNamesAmong'
+      | 'colorsAmong';
   }
 >;
 
@@ -110,7 +111,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
-    amount.kind === 'differentNamesAmong'
+    amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'colorsAmong'
   );
 }
 
@@ -203,6 +205,21 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(derive(state, obj).name);
+  }
+  return seen.size;
+}
+
+/**
+ * CR 105.2, 105.2c (Vivid): "the number of colors among permanents you control": the colors of the battlefield permanents the filter matches, each once, as the permanents
+ * have them now (layers 1, 4 and 5, through `derive`); colorless is no color.
+ */
+function colorsAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const color of derive(state, obj).colors) seen.add(color);
   }
   return seen.size;
 }
@@ -478,6 +495,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'colorsAmong':
+      return colorsAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':
