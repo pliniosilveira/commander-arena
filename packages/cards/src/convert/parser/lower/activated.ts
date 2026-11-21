@@ -84,6 +84,11 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   if (mono?.kind === 'flag' && mono.value) {
     return plainClause(clause) ? { monocoloredChosen: true } : null;
   }
+  // "This mana can't be spent to pay generic mana costs." (Jegantha, the Wellspring, CR 106.6).
+  const notGeneric = clause.args.notGeneric;
+  if (notGeneric?.kind === 'flag' && notGeneric.value) {
+    return plainClause(clause) ? { notGeneric: true } : null;
+  }
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
@@ -381,6 +386,7 @@ function lowerManaAbility(
     ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
     ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
     ...(spendOnly?.abilitiesOnly === true ? (['ability:manaSpendOnlyAbilities'] as const) : []),
+    ...(spendOnly?.notGeneric === true ? (['ability:manaSpendOnlyNotGeneric'] as const) : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
@@ -1018,6 +1024,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:mana',
   'manaCost:exert',
   'ability:manaSpendOnlyMonocolored',
+  'ability:manaSpendOnlyNotGeneric',
   'ability:spendOnlyChosenColor',
   'manaCost:tap',
   'manaCost:mana',

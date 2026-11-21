@@ -280,6 +280,23 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly monocoloredChosen names nothing else');
       }
+      // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs" stands alone.
+      if (only.notGeneric !== undefined && only.notGeneric !== true) {
+        issue(out, `${path}.spendOnly.notGeneric`, 'notGeneric must be true when present');
+      }
+      if (
+        only.notGeneric === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly notGeneric names nothing else');
+      }
       if (
         only.types === undefined &&
         only.subtypes === undefined &&
@@ -287,7 +304,8 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         only.qualities === undefined &&
         only.xCost !== true &&
         only.abilitiesOnly !== true &&
-        only.monocoloredChosen !== true
+        only.monocoloredChosen !== true &&
+        only.notGeneric !== true
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }

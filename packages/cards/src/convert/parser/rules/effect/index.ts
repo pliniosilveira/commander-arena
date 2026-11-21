@@ -135,6 +135,7 @@ import {
   EFFECT_CHOOSE_CREATURE_TYPE,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
+import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -1370,6 +1371,8 @@ export const EFFECT_RULES = [
   ...PARLEY_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
+  // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
+  ...MANA_NOT_GENERIC_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
