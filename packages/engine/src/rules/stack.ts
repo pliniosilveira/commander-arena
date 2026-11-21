@@ -1336,6 +1336,22 @@ export function answerResolutionReplacement(
   ]);
 }
 
+/** Records the owner's answer to the dredge question (CR 702.52a, issue 102) on the `draw` instruction that asked, then continues (`rules/draw.ts` acts on it). */
+export function answerResolutionDredge(
+  state: GameState,
+  card: ObjectId,
+  accepted: boolean,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'draw') return null;
+  const updated: Instruction = { ...head, dredgeAnswer: { card, accepted } };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
 /** Records the owner's answer to CR 903.9b on the instruction that asked, then continues. */
 export function answerResolutionCommanderChoice(
   state: GameState,

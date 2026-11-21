@@ -33,6 +33,7 @@ import {
 import { controllerOf } from './control';
 import { settleDayNight, untapStepDayNight } from './day-night';
 import { derive } from './derive';
+import { dredgeCandidate, dredgeQuestion, performDredge } from './dredge';
 import { drawCard } from './effect-support';
 import { discardOne } from './madness';
 import { emptyManaPools } from './mana-engine';
@@ -239,6 +240,17 @@ export function beginStep(input: GameState, step: StepId): Outcome {
       const skip =
         state.seats.length === 2 && state.turn.number === 1 && state.turn.addedAfter === undefined;
       if (!skip) {
+        // CR 702.52a (Dredge, issue 102): a card with dredge in the graveyard may replace the draw; the step waits for the answer (`answerDredgeDraw`).
+        const dredge = dredgeCandidate(state, active);
+        if (dredge !== null) {
+          return {
+            state: setPending(
+              collectTriggers(state, events),
+              dredgeQuestion(state, active, dredge.card),
+            ),
+            events,
+          };
+        }
         const r = drawCard(state, active);
         // CR 903.9b: a commander on top of the library asks its owner first. The turn-based action
         // waits for the answer (`resumeDrawStep`); no priority is given in the meantime.
@@ -300,7 +312,7 @@ export function beginStep(input: GameState, step: StepId): Outcome {
  * top of the library is a commander): `moveToCommandZone` puts it into the command zone instead of
  * the hand, `declineCommandZone` draws it. Then the step goes on: triggers, then priority.
  */
-export function resumeDrawStep(input: GameState, toCommandZone: boolean): Outcome {
+export function resumeDrawStep(input: GameState, toCommandZone: boolean | null): Outcome {
   const state: GameState = { ...input, pending: null };
   const active = state.turn.activeSeat;
   const r = drawCard(state, active, toCommandZone);
@@ -318,6 +330,29 @@ export function resumeDrawStep(input: GameState, toCommandZone: boolean): Outcom
     };
   }
   return join({ state: r.state, events: r.events }, grantPriority(r.state, active, r.events));
+}
+
+/**
+ * The draw of the draw step (CR 504.1) was waiting for its owner's answer to the dredge question (CR 702.52a, issue 102) about `card`: accepting mills the cards and returns it
+ * instead of drawing, declining asks about the next card with dredge and, with none left, draws. Then the step goes on: triggers, then priority.
+ */
+export function answerDredgeDraw(input: GameState, card: ObjectId, accept: boolean): Outcome {
+  const state: GameState = { ...input, pending: null };
+  const active = state.turn.activeSeat;
+  if (accept) {
+    const dredged = performDredge(state, active, card);
+    if (dredged !== null) {
+      return join(
+        { state: dredged.state, events: dredged.events },
+        grantPriority(dredged.state, active, dredged.events),
+      );
+    }
+  }
+  const next = dredgeCandidate(state, active, card);
+  if (next !== null) {
+    return { state: setPending(state, dredgeQuestion(state, active, next.card)), events: [] };
+  }
+  return resumeDrawStep(state, null);
 }
 
 /**

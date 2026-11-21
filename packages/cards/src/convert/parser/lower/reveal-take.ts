@@ -26,7 +26,14 @@ const REVEAL_TAKE: Lowering<IrClause, Effects> = {
           kind: 'lookAtTop',
           count: count.value,
           revealAll: true,
-          take: { filter: filter.value, max: 1 },
+          take: {
+            filter: filter.value,
+            max: 1,
+            // Issue 102 (Shigeki, Jukai Visionary): "onto the battlefield tapped".
+            ...(arg(clause, 'tapped') === undefined
+              ? {}
+              : { to: 'battlefield' as const, tapped: true as const }),
+          },
           rest: 'graveyard',
         },
       ],

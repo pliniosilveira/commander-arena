@@ -113,6 +113,36 @@ export const FIGHT_PAIRS: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard." (issue 102, Consuming Aberration, CR 701.20,
+ * 101.4): the engine's `revealUntil` for each opponent, every card revealed going into its owner's graveyard. The kind describes a card in a library: no zone, controller or owner.
+ */
+export const REVEAL_UNTIL_EACH_OPPONENT: Lowering<IrClause, Effects> = {
+  head: 'revealUntilEachOpponent',
+  id: 'lower.reveal-until-each-opponent',
+  needs: ['effect:revealUntil', 'ability:revealUntilEachPlayer'],
+  lower(clause) {
+    const card = arg(clause, 'card');
+    if (card?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'revealUntil',
+          filter: filter.value,
+          from: { kind: 'eachOpponent' },
+          put: 'graveyard',
+          rest: 'graveyard',
+          perPlayer: true,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
  * bottom of your library in a random order." (CR 701.20, 401.4): the engine's `revealUntil`. The kind describes a card in a library: no
  * zone, controller or owner.
@@ -356,6 +386,7 @@ export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
 };
 
 export const DINOSAUR_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  REVEAL_UNTIL_EACH_OPPONENT,
   DOUBLE_PT,
   FIGHT,
   FIGHT_PAIRS,

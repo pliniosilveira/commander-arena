@@ -377,6 +377,7 @@ export function checkFilter(
     'discardedOrFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
+    'castFromGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
     'enteredThisTurn',
@@ -1261,11 +1262,15 @@ export function declareTargets(
           `${p}.what`,
           'a slot of targets with different controllers names objects (permanents), not players',
         );
-      } else if ((what.filter.zone ?? 'battlefield') !== 'battlefield') {
+      } else if (
+        (what.filter.zone ?? 'battlefield') !== 'battlefield' &&
+        // Issue 102 (Afterlife from the Loam): "For each player, choose up to one target creature card in that player's graveyard": cards of graveyards, one for each owner.
+        what.filter.zone !== 'graveyard'
+      ) {
         issue(
           out,
           `${p}.what`,
-          'targets with different controllers are permanents on the battlefield',
+          'targets with different controllers are permanents on the battlefield, or cards in graveyards (one for each owner)',
         );
       }
       if (
@@ -2202,6 +2207,21 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
+    case 'cardsToGraveyardThisTurn':
+      // Issue 102 (CR 404.1): the controller's own cards put into a graveyard this turn from the hand and/or the library (statics refuse it in `checkStateAmount`).
+      if (
+        !Array.isArray(a.from) ||
+        a.from.length === 0 ||
+        a.from.some((z) => z !== 'hand' && z !== 'library')
+      ) {
+        issue(out, `${path}.from`, 'from names the hand and/or the library');
+      }
+      for (const key of Object.keys(a)) {
+        if (key !== 'kind' && key !== 'from') {
+          issue(out, `${path}.${key}`, 'cards put into a graveyard this turn reads only the zones');
+        }
+      }
+      break;
     case 'greatestManaValueCast':
     case 'spellsCastThisTurn':
       // D-638 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).
@@ -3116,6 +3136,10 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
       }
+      // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard" has the count 1 and `countX`.
+      if (cost.countX !== undefined && (cost.countX !== true || cost.count !== 1)) {
+        issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
+      }
       break;
     case 'loyalty':
       // CR 606.4, 606.5 (D-200): [+N], [-N], [0] or [-X].
@@ -3965,6 +3989,24 @@ function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Ou
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
+  // Issue 102 (Tasigur): "of an opponent's choice": an opponent picks among the controller's own cards of a graveyard; not an offer, not a choice among cards moved.
+  if (sel.chosenBy !== undefined) {
+    if (
+      sel.chosenBy !== 'opponent' ||
+      sel.filter?.zone !== 'graveyard' ||
+      sel.filter?.controller !== 'you' ||
+      sel.optional !== undefined ||
+      sel.fromMoved !== undefined ||
+      sel.alsoGraveyard !== undefined ||
+      sel.anyNumber !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.chosenBy`,
+        "chosenBy is 'opponent', for a card of the controller's graveyard, with no optional, fromMoved, alsoGraveyard or anyNumber",
+      );
+    }
+  }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
       issue(out, `${path}.count`, 'count must be a positive integer');
@@ -4787,6 +4829,8 @@ export const MAY_EFFECT_KINDS = [
   'destroy',
   // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
   'addMana',
+  // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, put three +1/+1 counters on ~": life was lost when the amount was above 0.
+  'loseLife',
 ];
 
 /**
@@ -5285,6 +5329,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           path,
           'exileFromTriggerCards needs a trigger about a batch of cards (a batch discarded trigger)',
+        );
+      }
+      break;
+    case 'mayPlayCounterCard':
+      // CR 122.1 (issue 102, Dauthi Voidwalker): the kind of counter the exiled card has, and whether it is played without paying its mana cost.
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter names a kind of counter');
+      }
+      if (e.free !== undefined && e.free !== true) {
+        issue(out, `${path}.free`, 'free must be true when present');
+      }
+      break;
+    case 'putOneOfTriggerCards':
+      // CR 603.2c (issue 102, Colossal Grave-Reaver): the cards a batch `putIntoGraveyard` trigger saw put into a graveyard, one of which is put onto the battlefield.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          'putOneOfTriggerCards needs a trigger about a batch of cards (a batch putIntoGraveyard trigger)',
         );
       }
       break;
@@ -6760,14 +6823,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkFilter(e.filter, `${path}.filter`, out);
         }
       }
+      if (e.exileInstead !== undefined && kindOf(objects) !== 'choose') {
+        issue(out, `${path}.exileInstead`, 'exileInstead is for a card chosen from the graveyard');
+      }
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
         checkFilter(choose.filter, `${path}.objects.filter`, out);
-        if (choose.filter?.zone !== 'hand') {
+        // Issue 102 (Diviner of Mist): or from the controller's graveyard, with the rider that exiles the spell.
+        if (choose.filter?.zone !== 'hand' && choose.filter?.zone !== 'graveyard') {
           issue(
             out,
             `${path}.objects.filter.zone`,
-            'the card is chosen from the hand: the filter says zone "hand"',
+            'the card is chosen from the hand or the graveyard: the filter says zone "hand" or "graveyard"',
+          );
+        }
+        if (
+          e.exileInstead !== undefined &&
+          (e.exileInstead !== true || choose.filter?.zone !== 'graveyard')
+        ) {
+          issue(
+            out,
+            `${path}.exileInstead`,
+            'exileInstead is true, only for a card chosen from the graveyard',
           );
         }
         if (
@@ -6910,8 +6987,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkAmount(e.count, `${path}.count`, scope, out);
         }
       }
-      if (e.rest !== undefined && e.rest !== 'stay' && e.rest !== 'bottomChosen') {
-        issue(out, `${path}.rest`, 'rest is stay or bottomChosen when present');
+      if (
+        e.rest !== undefined &&
+        e.rest !== 'stay' &&
+        e.rest !== 'bottomChosen' &&
+        e.rest !== 'graveyard'
+      ) {
+        issue(out, `${path}.rest`, 'rest is stay, bottomChosen or graveyard when present');
+      }
+      // Issue 102 (Consuming Aberration): "then puts those cards into their graveyard": the cards found and the rest both go to the graveyard.
+      if (e.rest === 'graveyard' && e.put !== 'graveyard') {
+        issue(out, `${path}.rest`, 'rest graveyard goes with put graveyard');
+      }
+      if (
+        e.perPlayer !== undefined &&
+        (e.perPlayer !== true ||
+          e.from === undefined ||
+          e.put !== 'graveyard' ||
+          e.rest !== 'graveyard' ||
+          e.count !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.perPlayer`,
+          'perPlayer is true, only with from, put graveyard, rest graveyard and no count',
+        );
       }
       // Issue 81 (Jhoira, Proteus Staff): whose library is revealed, and who controls the card put onto the battlefield.
       if (e.from !== undefined) {

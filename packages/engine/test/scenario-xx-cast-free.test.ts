@@ -312,7 +312,10 @@ describe('validation', () => {
   });
 
   test.each([
-    ['a filter outside the hand', { kind: 'castFree', objects: choose({}, { zone: 'graveyard' }) }],
+    [
+      'a filter outside the hand and the graveyard',
+      { kind: 'castFree', objects: choose({}, { zone: 'exile' }) },
+    ],
     ['a count', { kind: 'castFree', objects: choose({ count: 2 }) }],
     ['play false', { kind: 'castFree', objects: choose(), play: false }],
     ['a target', { kind: 'castFree', objects: { kind: 'target', id: 't1' } }],

@@ -325,6 +325,22 @@ function effectOf(
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
+    case 'grantActivatedAbilitiesOfLinkedExile': {
+      // CR 613.1f, 607.2a (issue 102, Steward of the Harvest): the abilities of the cards the permanent exiled, given to the group; the cards are read as printed (no zone or controller).
+      if (subject.kind !== 'filter') return failure(at);
+      const from = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: effect.from,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: at.span,
+        rule: at.rule,
+      });
+      if (!from.ok) return from;
+      return ok({ kind: 'grantActivatedAbilitiesOfLinkedExile', subject, from: from.value });
+    }
     case 'cantBeSacrificed':
       // CR 701.21a, 101.2: said of the permanent itself.
       return subject.kind === 'this' ? ok({ kind: 'cantBeSacrificed' }) : failure(at);
@@ -574,6 +590,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:takeFromLinkedExile'];
     case 'grantActivatedAbilitiesOfTopCard':
       return ['static:grantActivatedAbilitiesOfTopCard'];
+    case 'grantActivatedAbilitiesOfLinkedExile':
+      return ['static:grantActivatedAbilitiesOfLinkedExile'];
     case 'costReduction':
       return ['static:costReduction'];
     case 'costIncrease':
@@ -1367,6 +1385,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:opponentsCantCastSpells',
   'static:takeFromLinkedExile',
   'static:grantActivatedAbilitiesOfTopCard',
+  'static:grantActivatedAbilitiesOfLinkedExile',
   'static:restrictionUnless',
   'static:loseAllAbilities',
   'static:setColors',

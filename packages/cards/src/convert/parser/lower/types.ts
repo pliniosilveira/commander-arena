@@ -274,6 +274,8 @@ export interface LowerContext {
   putCounters: { counter: string; creatures: boolean }[];
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
   discardBatchTrigger: boolean;
+  /** Issue 102: the trigger is about a batch of cards put into a graveyard, whose cards "one of them" names (`triggerCards`). */
+  graveyardBatchTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a batch of permanents entering (Twilight Diviner, CR 603.2c): "one of them" names the permanents that triggered it. */
   entersBatchTrigger: boolean;
   /**
@@ -410,6 +412,7 @@ export function newContext(
     payReflexive: false,
     triggeredBody: false,
     discardBatchTrigger: false,
+    graveyardBatchTrigger: false,
     entersBatchTrigger: false,
     didSearch: false,
     putCounters: [],

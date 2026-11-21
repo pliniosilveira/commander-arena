@@ -645,7 +645,10 @@ function payExileCards(state: GameState, events: GameEvent[]): Result {
   const going = inProgress(state);
   if (!going) return fail('No activation is in progress');
   const { casting, costs } = going;
-  if (costs.exileCards === null) return finishActivation(state, events);
+  // Issue 102 (CR 107.3a): an X of 0 exiles nothing.
+  if (costs.exileCards === null || costs.exileCards.count === 0) {
+    return finishActivation(state, events);
+  }
   const source = state.objects[casting.object]?.stack?.source ?? casting.object;
   const legal = exileCostCandidates(state, casting.seat, source, costs.exileCards.filter);
   if (legal.length < costs.exileCards.count) {

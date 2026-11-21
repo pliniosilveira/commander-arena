@@ -384,6 +384,12 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;
+    case 'exileInsteadOfOpponentGraveyard':
+      // Issue 102 (Dauthi Voidwalker): the counter the exiled card gets.
+      if (typeof r.counter !== 'string' || r.counter === '') {
+        issue(out, `${path}.counter`, 'counter names a kind of counter');
+      }
+      break;
     case 'wouldDie':
       // D-133: the creatures that would die, what happens instead, and tokens made at the same time.
       checkFilter(r.what, `${path}.what`, out);
@@ -821,6 +827,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'cantBeBlockedBy':
     case 'takeFromLinkedExile':
     case 'grantActivatedAbilitiesOfTopCard':
+    case 'grantActivatedAbilitiesOfLinkedExile':
     case 'castAsThoughFlash':
     case 'spellsCantBeCountered':
     case 'opponentsCantCastSpells':
@@ -903,6 +910,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         typeof t.tapped !== 'boolean'
       ) {
         issue(out, `${path}.tapped`, 'tapped must be a boolean when present');
+      }
+      // Issue 102 (River Kelpie): "enters from a graveyard" belongs to the enters trigger.
+      if (
+        t.kind === 'entersBattlefield' &&
+        t.fromGraveyard !== undefined &&
+        t.fromGraveyard !== true
+      ) {
+        issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
       }
       // D-110: "attacks alone" (CR 506.5) is a flag of the attacks trigger.
       if (t.kind === 'attacks' && t.alone !== undefined && t.alone !== true) {
@@ -1180,6 +1195,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.kind === 'leftGraveyard') {
         if (t.each !== undefined && t.each !== true) {
           issue(out, `${path}.each`, 'each must be true when present');
+        }
+        if (t.duringTurn !== undefined && t.duringTurn !== 'you') {
+          issue(out, `${path}.duringTurn`, "duringTurn must be 'you' when present");
         }
         // The card is read where it was (its owner's graveyard): no zone, controller or owner.
         if (t.filter !== undefined) {

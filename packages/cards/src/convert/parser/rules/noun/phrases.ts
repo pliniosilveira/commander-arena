@@ -1043,6 +1043,8 @@ interface CardWords {
   readonly notSubtypes?: readonly string[];
   /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
   readonly notSupertypes?: readonly string[];
+  /** "nonland card" (issue 102, CR 205.2a): card types the card does not have. */
+  readonly notTypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1062,6 +1064,8 @@ export function graveyardPhrase(
   // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
   // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
   amountLimit?: Parser<IrAmount>,
+  // Issue 102 (Tasigur): "a nonland card from your graveyard", read only by a caller that asks for it (a target's "nonland card" is another rule's reading).
+  allowNonland = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
     preposition === 'fromTheirs'
@@ -1113,6 +1117,8 @@ export function graveyardPhrase(
         map(literal('nonlegendary '), () => ['legendary']),
         [] as string[],
       ),
+      // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
+      optional(allowNonland ? map(literal('nonland '), () => ['land']) : fail, [] as string[]),
       nonSubtypes,
       many(
         map(
@@ -1128,10 +1134,11 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSupertypes, notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notTypes, notSubtypes, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
+      ...(notTypes.length > 0 ? { notTypes } : {}),
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
       ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
     }),
@@ -1233,10 +1240,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes, notSupertypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
     // A negated supertype inside a union is another reading, not built here.
-    if (notSupertypes !== undefined) return fail(ctx, pos);
+    if (notSupertypes !== undefined || notTypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
     if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
@@ -1305,18 +1312,21 @@ export function graveyardPhrase(
         ),
         undefined,
       ),
+      // Issue 102 (Tasigur): "a nonland card of an opponent's choice from your graveyard", read only where the caller asks for it (`allowNonland`).
+      optional(allowNonland ? quiet(literal(" of an opponent's choice")) : fail, null),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), null),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, notSupertypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, notSupertypes, notTypes, extra, subtypeAnyOf },
       ,
       compared,
       atMostX,
       equalsX,
       limitAmount,
+      byOpponent,
       controller,
       putThere,
     ] = r.value;
@@ -1324,7 +1334,7 @@ export function graveyardPhrase(
     if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
     const filter = toFilter(
       'graveyard',
-      { ...NO_PARTS, types, controller },
+      { ...NO_PARTS, types, controller, ...(notTypes === undefined ? {} : { notTypes }) },
       ctx.text.slice(pos, r.pos),
     );
     return {
@@ -1346,6 +1356,7 @@ export function graveyardPhrase(
           ...(putThere === 'discardedOrLibrary'
             ? { discardedOrFromLibraryThisTurn: true as const }
             : {}),
+          ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
           ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),

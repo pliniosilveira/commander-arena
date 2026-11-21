@@ -96,6 +96,7 @@ import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
+import { opponentGraveyardReplacement } from './graveyard-replacement';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
 import { gainLife } from './life-gain';
@@ -491,6 +492,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     derive(state, old).types.includes('creature');
   const dieInstead = dying ? dieReplacementFor(state, old, request.replacers) : null;
   if (dieInstead !== null) {
+    to = 'exile';
+    toSeat = null;
+  }
+  // CR 614.1a, 122.1 (issue 102, Dauthi Voidwalker): "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it."
+  const voidCounter = to === 'graveyard' ? opponentGraveyardReplacement(state, old) : null;
+  if (voidCounter !== null) {
     to = 'exile';
     toSeat = null;
   }
@@ -1222,6 +1229,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
     };
   }
+  // The card exiled instead has the counter (CR 122.1).
+  if (voidCounter !== null && to === 'exile' && next.objects[newId] !== undefined) {
+    const exiled = getObject(next, newId);
+    next = patchObject(next, newId, { counters: { ...exiled.counters, [voidCounter]: 1 } });
+  }
   // CR 603.2, 404.1: a card put into a graveyard from anywhere ("whenever a land card is put into your graveyard ... for the first time each turn").
   if (to === 'graveyard' && created.card !== null) {
     next = {
@@ -1230,7 +1242,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         ...next.turnLog,
         graveyardEntries: [
           ...next.turnLog.graveyardEntries,
-          { seat: old.owner, types: derive(next, getObject(next, newId)).types },
+          {
+            seat: old.owner,
+            types: derive(next, getObject(next, newId)).types,
+            from: old.zone,
+          },
         ],
       },
     };

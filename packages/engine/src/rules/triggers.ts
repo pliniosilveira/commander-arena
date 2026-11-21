@@ -214,6 +214,14 @@ function occurrences(
         event.toZone === 'battlefield' &&
         event.component !== true
       ) {
+        // Issue 102 (River Kelpie, CR 603.6a, 400.7): "enters from a graveyard": the zone the permanent moved from.
+        if (
+          trigger.kind === 'entersBattlefield' &&
+          trigger.fromGraveyard === true &&
+          event.fromZone !== 'graveyard'
+        ) {
+          return [];
+        }
         const entered = state.objects[event.to];
         return [
           {
@@ -223,7 +231,9 @@ function occurrences(
           },
         ];
       }
-      return event.kind === 'tokenCreated'
+      // A token was never in a graveyard (issue 102).
+      return event.kind === 'tokenCreated' &&
+        !(trigger.kind === 'entersBattlefield' && trigger.fromGraveyard === true)
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
     case 'entersBatch':
@@ -857,6 +867,10 @@ function matches(
       return subject !== null && matchesFilter(state, subject, trigger.what, ctx);
     case 'leftGraveyard': {
       if (occ.seat !== candidate.controller) return false;
+      // CR 603.2 (issue 102, Kishla Skimmer): "during your turn": the active player is the controller of this ability.
+      if (trigger.duringTurn === 'you' && state.turn.activeSeat !== candidate.controller) {
+        return false;
+      }
       if (trigger.filter === undefined) return true;
       // CR 400.7: the card as it was in the graveyard (its last-known information).
       const card = occ.card === undefined ? null : objectOrLki(state, occ.card);

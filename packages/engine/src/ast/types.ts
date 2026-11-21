@@ -442,6 +442,16 @@ export type Amount =
    */
   | { readonly kind: 'greatestManaValueCast'; readonly ofTypes?: readonly CardType[] }
   /**
+   * "Create X tapped 2/2 black Zombie Druid creature tokens, where X is the number of cards that were put into your graveyard from your hand or library this turn" (issue 102, Welcome the
+   * Dead; CR 404.1, 400.3, 603.2): how many cards the controller of the spell or ability owns that went to a graveyard this turn from one of these zones (`TurnLog.graveyardEntries`: a
+   * card that was put there from the zone, whether or not it is still there; a token is not a card), read as the instruction runs. Not valid in a static ability: nothing refreshes a
+   * layer effect when a card is put into a graveyard.
+   */
+  | {
+      readonly kind: 'cardsToGraveyardThisTurn';
+      readonly from: readonly ('hand' | 'library')[];
+    }
+  /**
    * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-491, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
@@ -704,6 +714,11 @@ export interface ObjectFilter {
    * caster's hand. Read from the spell itself as it is cast (the zone it came from), so only a spell is matched. Not with `notCastFromHand`.
    */
   readonly castFromHand?: true;
+  /**
+   * "Whenever a player casts a spell from a graveyard" (issue 102, River Kelpie, CR 601.2a, 601.2i): the spell on the stack was cast from a graveyard. Read from the spell itself as it is
+   * cast (the zone it came from), so only a spell is matched. Not with `notCastFromHand` or `castFromHand`.
+   */
+  readonly castFromGraveyard?: true;
   /**
    * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
    * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
@@ -1589,7 +1604,16 @@ export type Cost =
    * combined with a mana or sacrifice cost it is refused (see `docs/ROADMAP.md`).
    */
   | { readonly kind: 'tapCreatures'; readonly totalPower: number }
-  | { readonly kind: 'exileFromGraveyard'; readonly filter: ObjectFilter; readonly count: number }
+  | {
+      readonly kind: 'exileFromGraveyard';
+      readonly filter: ObjectFilter;
+      readonly count: number;
+      /**
+       * "{X}, {T}, Exile X cards from your graveyard: ..." (issue 102, Necropolis Fiend; CR 107.3a, 602.2b): the number of cards is the X announced for the ability (none for
+       * X = 0). Only in the cost of an activated ability that has {X} in its mana cost; `count` is 1.
+       */
+      readonly countX?: true;
+    }
   | {
       readonly kind: 'removeCounters';
       readonly counter: string;
@@ -1984,6 +2008,13 @@ export interface ChooseSelector {
    * candidates instead of exactly `count` (a question is asked whenever there is a candidate). Only for `moveToZone`.
    */
   readonly optional?: true;
+  /**
+   * "Return a nonland card of an opponent's choice from your graveyard to your hand" (issue 102, Tasigur, the Golden Fang; CR 608.2d, 101.4): an opponent of the controller chooses the
+   * card, among the cards the controller owns in the zone the filter names (the opponent is asked; the cards are the controller's). With more than two players the controller has no
+   * say in which opponent: it is the first one in turn order who is still in the game, as for `opponentChoosesCard`. Only for `moveToZone`, with `filter.zone` `graveyard` and `controller` `you`,
+   * not with `optional`, `fromMoved`, `alsoGraveyard` or `anyNumber`.
+   */
+  readonly chosenBy?: 'opponent';
   /**
    * "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d, 400.7j): the candidates are only the cards the effect
    * before it moved (`moved`: the new objects of the cards a `mill` put into the graveyard) that are still in the graveyard and that the filter matches, not
@@ -2502,6 +2533,23 @@ export type Effect =
    * `didPrevious` reads. Only in a triggered ability whose trigger is a batch `discarded` (`validateCard`).
    */
   | { readonly kind: 'exileFromTriggerCards' }
+  /**
+   * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker; CR 608.2d, 601.2, 305.1, 118.9,
+   * 122.1): the controller chooses one of the cards in exile that an opponent owns and that has a `counter` counter on it (nothing is asked with one; nothing happens with none), then, until
+   * end of turn, may play it (a land) or cast it (a spell) as though it were in their hand, paying no mana cost when `free` (additional costs are paid). The card chosen is what `moved` names.
+   */
+  | {
+      readonly kind: 'mayPlayCounterCard';
+      readonly counter: string;
+      readonly free?: true;
+    }
+  /**
+   * "Whenever one or more creature cards are put into your graveyard from your library, put one of them onto the battlefield." (issue 102, Colossal Grave-Reaver; CR 603.2c, 608.2d,
+   * 400.7, 110.2a): of the cards that triggered this ability (`triggerCards`: the cards a batch `putIntoGraveyard` trigger saw put into a graveyard, as the objects they became) the ones
+   * still in a graveyard, the controller chooses one (nothing is asked with one; nothing happens with none) and puts it onto the battlefield under their control. The card put there is
+   * what `moved` names afterwards. Only in a triggered ability whose trigger is a batch `putIntoGraveyard` (`validateCard`).
+   */
+  | { readonly kind: 'putOneOfTriggerCards' }
   /**
    * "Create a token that's a copy of one of them." (CR 603.2c, 608.2d, 707.2, 111.4, Twilight Diviner): of the permanents that triggered this ability (`triggerCards`: the batch an
    * `entersBatch` trigger saw enter) the ones still on the battlefield, the controller chooses one (nothing is asked with one; with none nothing is created) and creates a token with its
@@ -4190,6 +4238,12 @@ export type Effect =
         | ChooseSelector;
       readonly play?: true;
       /**
+       * "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it
+       * instead." (issue 102, Diviner of Mist; CR 608.2g, 118.9, 614.1a): `objects` is a `choose` selector whose filter says zone `graveyard` (the cards the controller owns there, chosen as
+       * the effect resolves, not targeted); `exileInstead` is the rider of that one spell: when it would be put into a graveyard it is exiled. Only with a `choose` from the graveyard.
+       */
+      readonly exileInstead?: true;
+      /**
        * "Each player mills three cards. For each player, you may cast a card that player milled this way without paying its mana cost" (issue 81, The Ur-Sphinx, CR 608.2g, 101.4):
        * one question for each owner of the cards `moved` names (in a graveyard now), in turn order from the active player, each asking for one of that owner's cards, cast from the
        * graveyard it is in. Only with `moved`, and with neither `play`, `max` nor `filter`.
@@ -4314,7 +4368,13 @@ export type Effect =
        * `shuffle` effect after it to place. `bottomChosen` (issue 81, Proteus Staff: "the rest on the bottom of their library in any order", CR 401.4): the player whose library it is chooses the order
        * they go on the bottom in (`rules/arrange.ts`). Without it they go to the bottom in a random order (CR 401.5).
        */
-      readonly rest?: 'stay' | 'bottomChosen';
+      readonly rest?: 'stay' | 'bottomChosen' | 'graveyard';
+      /**
+       * "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (issue 102, Consuming Aberration; CR 701.20,
+       * 101.4): the effect is done for every player `from` names, in the order it names them, each with their own library. Only with `from`, `put` `graveyard` and `rest` `graveyard` (no
+       * choice is asked, so each player's cards are moved together).
+       */
+      readonly perPlayer?: true;
     }
   /**
    * "Look at the top N cards of your library, then put them back in any order": the controller
@@ -4654,6 +4714,11 @@ export type Trigger =
        * its enters replacements, CR 614.1c, left it in). Left out, either way triggers.
        */
       readonly tapped?: boolean;
+      /**
+       * "Whenever this creature or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 400.7): only a permanent that came onto the battlefield from a
+       * graveyard (the zone it moved from, read as the event happens), never a token and not a spell that was merely cast from there.
+       */
+      readonly fromGraveyard?: true;
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**
@@ -5019,6 +5084,8 @@ export type Trigger =
        * together. `triggerCards` is then that card.
        */
       readonly each?: true;
+      /** "Whenever a card leaves your graveyard during your turn" (issue 102, Kishla Skimmer, CR 603.2): only while the controller of this ability is the active player. */
+      readonly duringTurn?: 'you';
     }
   /**
    * "Whenever a land card is put into your graveyard from anywhere" and "Whenever one or more land cards are put into your graveyard from anywhere for the first time each
@@ -5556,6 +5623,12 @@ export type Keyword =
    * has it printed and is given it again triggers twice. `count` is N, a positive integer. Grantable: "Other Zombies you control have afflict 3."
    */
   | { readonly kind: 'afflict'; readonly count: number }
+  /**
+   * CR 702.52a (Dredge, issue 102): "Dredge N" means "If you would draw a card, you may instead mill N cards and return this card from your graveyard to your hand." A static ability of a
+   * card that works in its owner's graveyard, as the draw is about to be made (`rules/dredge.ts`): offered only when the library has at least N cards (CR 702.52b), and a card returned
+   * that way is not drawn. `count` is N, a positive integer. Not grantable.
+   */
+  | { readonly kind: 'dredge'; readonly count: number }
   /**
    * CR 702.181a (Mobilize, issue 101): "Mobilize N" means "Whenever this creature attacks, create N 1/1 red Warrior creature tokens. Those tokens enter tapped and attacking.
    * Sacrifice them at the beginning of the next end step." A triggered ability the engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance
@@ -6571,6 +6644,17 @@ export type Replacement =
    * several apply to one creature the one of the oldest permanent is used and no choice is offered (CR 616.1, see
    * `docs/ROADMAP.md`).
    */
+  /**
+   * "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it." (issue 102, Dauthi Voidwalker; CR 614.1a, 400.3, 122.1): a replacement
+   * effect of a permanent on the battlefield for every card (never a token) that would be put into the graveyard of an opponent of its controller, from any zone (the battlefield, a hand,
+   * a library, the stack): it is exiled instead, with one `counter` counter on it, so a creature never dies. It is the ability of a permanent on the battlefield, lost with "loses all abilities".
+   * When several apply to one card the oldest permanent's is used and no choice is offered (CR 616.1, see `docs/ROADMAP.md`).
+   */
+  | {
+      readonly kind: 'exileInsteadOfOpponentGraveyard';
+      /** The counter the card is exiled with ("with a void counter on it"). */
+      readonly counter: string;
+    }
   | {
       readonly kind: 'wouldDie';
       readonly what: ObjectFilter;
@@ -7314,6 +7398,17 @@ export type StaticEffect =
       readonly card: ObjectFilter;
     }
   /**
+   * "Creatures you control have all activated abilities of all land cards exiled with this creature." (issue 102, Steward of the Harvest; CR 613.1f, 607.2a, 113.6): while the permanent has
+   * the ability, every permanent `subject` names has every activated and mana ability of each card in exile that the permanent exiled with its linked ability (`exile.linked`) and that `from`
+   * matches (a filter describing the card as printed: card types, subtypes, colors; no zone, owner or controller), in layer 6 with the permanent's timestamp, after their own abilities. A card
+   * that leaves exile is no longer one of them. Read each time the abilities of a permanent are looked at.
+   */
+  | {
+      readonly kind: 'grantActivatedAbilitiesOfLinkedExile';
+      readonly subject: StaticSubject;
+      readonly from: ObjectFilter;
+    }
+  /**
    * "You have hexproof." (CR 702.11b, 113.6, D-149): the controller of the permanent with the ability can't be the target of spells or
    * abilities their opponents control, while the permanent has the ability (the same as hexproof of a permanent, for the player). A player's
    * own spells and abilities can still target them. Read where targets are chosen and again as the spell or ability resolves (CR 608.2b).
@@ -7471,6 +7566,12 @@ export type StaticEffect =
       readonly land?: true;
       readonly entersTapped?: true;
       readonly gains?: Ability;
+      /**
+       * "Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs." (issue 102,
+       * Kotis, Sibsig Champion; CR 601.2b, 601.2f, 118.8): a spell cast from the graveyard with this permission has this many other cards of the graveyard exiled as an additional cost, chosen
+       * as the cost is paid (the spell cannot be cast that way with fewer). Only with `cast`.
+       */
+      readonly exileOthers?: number;
     }
   /**
    * "You may play Forests from your graveyard." and "You may play lands from your graveyard." (CR 305.1, 601.2a, 604.1, 113.6): while the permanent has the ability, its controller may
@@ -7781,6 +7882,12 @@ export interface ManaAbility {
      * `qualities`.
      */
     readonly monocoloredChosen?: true;
+    /**
+     * "Spend this mana only to cast a spell from your graveyard." (issue 102, Lord of the Forsaken; CR 106.6, 601.2a): the mana can pay for a spell that is cast from a graveyard, never
+     * for one cast from a hand or another zone, and never for an ability. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities`, `xCost`, `abilitiesOnly` or
+     * `monocoloredChosen`.
+     */
+    readonly fromGraveyard?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

@@ -42,6 +42,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   annihilator: ['Ann', 'Annihilator'],
   // Gisa deck group 1 (D-472): Afflict N (CR 702.130a).
   afflict: ['Afl', 'Afflict'],
+  // Issue 102: Dredge N (CR 702.52a).
+  dredge: ['Dre', 'Dredge'],
   mobilize: ['Mob', 'Mobilize'],
   fabricate: ['Fab', 'Fabricate'],
   backup: ['Bkp', 'Backup'],
@@ -127,6 +129,7 @@ const PARAMETERIZED: Readonly<
   annihilator: (text) => numbered(text, 'Annihilator', 'Ann'),
   // "Afflict 3": one chip per instance (CR 702.130b: each triggers separately).
   afflict: (text) => numbered(text, 'Afflict', 'Afl'),
+  dredge: (text) => numbered(text, 'Dredge', 'Dre'),
   // "Mobilize 1": one chip per instance (CR 702.181a).
   mobilize: (text) => numbered(text, 'Mobilize', 'Mob'),
   // "Fabricate 2": one chip per instance (CR 702.123b).

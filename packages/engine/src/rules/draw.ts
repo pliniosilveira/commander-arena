@@ -13,6 +13,7 @@ import type { GameEvent } from '../state/events';
 import type { GameState, Instruction } from '../state/types';
 import { derive } from './derive';
 import { drawReplacementOf } from './draw-replace';
+import { dredgeCandidate, dredgeQuestion, performDredge } from './dredge';
 import { drawCard } from './effect-support';
 import { miracleOffer } from './miracle';
 import { done, type StepOutcome } from './step-outcome';
@@ -40,9 +41,52 @@ export function runDraw(state: GameState, input: DrawInstruction): StepOutcome {
           },
         ]
       : [];
+  // CR 702.52a, 614.1a (Dredge, issue 102): "If you would draw a card, you may instead mill N cards and return this card from your graveyard to your hand." The owner is asked about each
+  // card with dredge in their graveyard before the card is drawn; the answer is recorded on the instruction, which runs again.
+  const dredgeAnswer = instruction.dredgeAnswer;
+  if (dredgeAnswer === undefined) {
+    const candidate = dredgeCandidate(state, instruction.seat, instruction.dredgeAfter);
+    if (candidate !== null) {
+      return {
+        state,
+        events: [],
+        front: [],
+        needs: dredgeQuestion(state, instruction.seat, candidate.card),
+      };
+    }
+  } else if (!dredgeAnswer.accepted) {
+    // Declined: the next card of the graveyard is asked about, and when there is none the card is drawn.
+    const { dredgeAnswer: _answer, ...unanswered } = instruction;
+    return done(state, [], [{ ...unanswered, dredgeAfter: dredgeAnswer.card }]);
+  } else {
+    const dredged = performDredge(state, instruction.seat, dredgeAnswer.card);
+    if (dredged !== null) {
+      // The draw was replaced: no card was drawn (CR 121.1), and the draws that are left go on (CR 121.6b).
+      const { dredgeAnswer: _a, dredgeAfter: _after, replacedLeft: _left, ...plain } = instruction;
+      const stillReplaced = (instruction.replacedLeft ?? 0) - 1;
+      const rest: Instruction[] =
+        instruction.count > 1
+          ? [
+              {
+                ...plain,
+                count: instruction.count - 1,
+                commanderChoice: null,
+                counted: true,
+                ...(stillReplaced > 0 ? { replacedLeft: stillReplaced } : {}),
+              },
+            ]
+          : [];
+      return { ...done(dredged.state, [...marked, ...dredged.events], rest), performed: 0 };
+    }
+  }
   const r = drawCard(state, instruction.seat, instruction.commanderChoice);
   if (r.kind === 'needsDecision') return { state, events: [], front: [], needs: r.decision };
-  const { replacedLeft: _left, ...plain } = instruction;
+  const {
+    replacedLeft: _left,
+    dredgeAnswer: _dredged,
+    dredgeAfter: _after,
+    ...plain
+  } = instruction;
   const stillReplaced = (instruction.replacedLeft ?? 0) - 1;
   const rest: Instruction[] =
     instruction.count > 1

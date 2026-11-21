@@ -428,6 +428,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: false,
     };
   }
+  if (d.purpose === 'dredge') {
+    // Dredge (CR 702.52a): "mill N cards instead of drawing and return this card"; declining draws the card (or asks about the next dredge card).
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
+    return {
+      prompt: `Dredge: mill cards and return ${card} to your hand instead of drawing?`,
+      yes: 'Dredge',
+      no: 'Draw a card',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'miracleReveal') {
     // Miracle (CR 702.94a, D-274): "reveal the card you just drew?" Declining reveals nothing; the engine refuses `cancel`.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;

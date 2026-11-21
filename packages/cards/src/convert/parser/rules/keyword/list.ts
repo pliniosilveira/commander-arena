@@ -35,6 +35,11 @@ export const KEYWORD_WORD: Parser<string> = choice(
     pattern(new RegExp(`mobilize x, where x is its power${BOUNDARY}`, 'iu')),
     () => 'mobilize power' as string,
   ),
+  // Issue 102 (CR 702.52a): "dredge 3", the number in digits, the word kept with its number ("dredge 3").
+  map(
+    pattern(new RegExp(`dredge\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),
+    (m) => `dredge ${m[1]}` as string,
+  ),
   // D-472 (CR 702.130a): "afflict 3", the number in digits, the word kept with its number ("afflict 3").
   map(
     pattern(new RegExp(`afflict\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),

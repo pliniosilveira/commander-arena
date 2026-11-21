@@ -84,6 +84,11 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   if (mono?.kind === 'flag' && mono.value) {
     return plainClause(clause) ? { monocoloredChosen: true } : null;
   }
+  // "Spend this mana only to cast a spell from your graveyard." (issue 102, Lord of the Forsaken, CR 106.6, 601.2a).
+  const fromGraveyard = clause.args.fromGraveyard;
+  if (fromGraveyard?.kind === 'flag' && fromGraveyard.value) {
+    return plainClause(clause) ? { fromGraveyard: true } : null;
+  }
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
@@ -382,6 +387,7 @@ function lowerManaAbility(
     ...(spendOnly?.monocoloredChosen === true
       ? (['ability:manaSpendOnlyMonocolored'] as const)
       : []),
+    ...(spendOnly?.fromGraveyard === true ? (['ability:manaSpendOnlyFromGraveyard'] as const) : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -425,7 +431,7 @@ function lowerManaAbility(
   // `{T}`, the sacrifice of itself or a counter taken off it pays for it (a Treasure, a Gold token with no `{T}`, or "Remove a charge counter from ~": Mana Bloom).
   const shaped =
     taps <= 1 &&
-    (taps === 1 || sacrifices.length === 1 || removals === 1) &&
+    (taps === 1 || sacrifices.length === 1 || removals === 1 || lives === 1) &&
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
@@ -761,6 +767,10 @@ function prepare(
     ...(costs.value.some((c) => c.kind === 'discard' && c.countX === true)
       ? (['ability:discardCostX'] as const)
       : []),
+    // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard".
+    ...(costs.value.some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
+      ? (['ability:exileFromGraveyardX'] as const)
+      : []),
     // D-583: "Sacrifice one or more artifacts".
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
       ? (['ability:sacrificeOneOrMore'] as const)
@@ -1009,6 +1019,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:mana',
   'manaCost:exert',
   'ability:manaSpendOnlyMonocolored',
+  'ability:manaSpendOnlyFromGraveyard',
   'ability:spendOnlyChosenColor',
   'manaCost:tap',
   'manaCost:mana',
@@ -1049,6 +1060,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:xCost',
   'ability:sacrificeX',
   'ability:discardCostX',
+  'ability:exileFromGraveyardX',
   'ability:sacrificeOneOrMore',
   'ability:sacrificeEach',
 ];

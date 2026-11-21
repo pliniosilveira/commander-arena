@@ -421,6 +421,10 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "from your hand" (Prismari deck group 1, D-638, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
   readonly castFromHand?: true;
+  /** "from a graveyard" (issue 102, River Kelpie, CR 601.2a): a spell that was cast from a graveyard (the engine's `castFromGraveyard`). */
+  readonly castFromGraveyard?: true;
+  /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
+  readonly chosenByOpponent?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
@@ -554,6 +558,13 @@ export type IrAmount =
   | {
       readonly kind: 'greatestManaValueCast';
       readonly ofTypes?: readonly string[];
+      readonly span: Span;
+    }
+  // "the number of cards that were put into your graveyard from your hand or library this turn" (issue 102, Welcome the Dead, CR 404.1): the cards the controller owns that went to a graveyard
+  // from the zones named this turn.
+  | {
+      readonly kind: 'cardsToGraveyardThisTurn';
+      readonly from: readonly ('hand' | 'library')[];
       readonly span: Span;
     }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
@@ -1498,6 +1509,8 @@ export interface IrTrigger extends IrNode {
   readonly level?: number;
   /** 'cast': only while the active player is an opponent of this ability's controller (`opponent`) or is the controller (`you`, "during your turn"). */
   readonly duringTurn?: 'you' | 'opponent';
+  /** 'enters' (issue 102, River Kelpie, CR 603.6a): "enters from a graveyard", the permanent came from a graveyard. */
+  readonly fromGraveyard?: true;
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
@@ -1839,6 +1852,11 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'grantActivatedAbilitiesOfTopCard'; readonly card: IrFilter }
   /**
+   * "Creatures you control have all activated abilities of all land cards exiled with ~." (issue 102, Steward of the Harvest, CR 613.1f, 607.2a): the activated abilities of the cards
+   * the permanent exiled with its linked ability, given to the subject group.
+   */
+  | { readonly kind: 'grantActivatedAbilitiesOfLinkedExile'; readonly from: IrFilter }
+  /**
    * "~ can't attack or block unless you control another creature with power 4 or greater" (stage P32, D-147, CR 508.1a, 509.1a): the
    * restrictions (`cantAttack`, `cantBlock` or both) that hold unless the condition does. The subject is `~`.
    */
@@ -2028,6 +2046,8 @@ export type IrStaticEffect =
       readonly land: boolean;
       readonly entersTapped: boolean;
       readonly gains?: IrQuotedAbility;
+      /** "by exiling three other cards from your graveyard in addition to paying its other costs" (issue 102, Kotis, CR 601.2f): the other cards of the graveyard exiled as the cost. */
+      readonly exileOthers?: number;
     }
   /**
    * "Lands you control enter untapped." (stage P37, D-180, CR 614.1c, 614.12): the permanents that enter under the controller's control and that
@@ -2234,6 +2254,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'experienceCounters',
   'spellsCastThisTurn',
   'greatestManaValueCast',
+  'cardsToGraveyardThisTurn',
   'toughnessOf',
   'countersOn',
   'aggregate',

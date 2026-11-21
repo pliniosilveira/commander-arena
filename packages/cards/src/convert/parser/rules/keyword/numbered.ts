@@ -16,6 +16,8 @@ export const NUMBERED_KEYWORDS = [
   'annihilator',
   // D-472 (CR 702.130a): "Afflict 3".
   'afflict',
+  // Issue 102 (CR 702.52a): "Dredge 3".
+  'dredge',
   'bushido',
   'hideaway',
   'devour',

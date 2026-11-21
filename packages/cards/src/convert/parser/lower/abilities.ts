@@ -439,6 +439,7 @@ function lowerNumbered(
     | 'toxic'
     | 'annihilator'
     | 'afflict'
+    | 'dredge'
     | 'mobilize'
     | 'fabricate'
     | 'bushido'
@@ -595,6 +596,7 @@ export function lowerKeyword(
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
     ability.name === 'afflict' ||
+    ability.name === 'dredge' ||
     ability.name === 'mobilize' ||
     ability.name === 'fabricate' ||
     ability.name === 'bushido' ||
@@ -984,6 +986,15 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       token: only.token,
     });
   }
+  // Issue 102 (Dauthi Voidwalker, CR 614.1a, 122.1): "instead exile it with a void counter on it".
+  if (event.verb === 'wouldExileInsteadOfOpponentGraveyard') {
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:exileInsteadOfOpponentGraveyard',
+    ]);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'exileInsteadOfOpponentGraveyard', counter: 'void' });
+  }
   if (event.verb === 'wouldDie') {
     // CR 614.1a, 700.4 (stage P29, D-133): a creature that would die is exiled instead; the controller of the permanent
     // creates the token. The creature phrase is relative to that controller.
@@ -1209,6 +1220,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:dredge',
   'keyword:mobilize',
   'keyword:fabricate',
   'keyword:partnerWith',
@@ -1246,6 +1258,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTapped',
   'replacement:entersWithCounters',
   'replacement:wouldDie',
+  'replacement:exileInsteadOfOpponentGraveyard',
   'replacement:entersTappedUnlessPays',
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',

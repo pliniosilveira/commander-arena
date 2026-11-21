@@ -616,6 +616,56 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.enters-from-graveyard`: "~ or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 603.2c, 400.7): one ability that triggers for the permanent itself
+ * and for any other permanent that came onto the battlefield from a graveyard (the zone it moved from; a token or a spell cast from a graveyard is not that). As for `trigger.or-subjects`,
+ * each subject is an engine ability of its own. Not read: another kind than "permanent", "cast from", "your graveyard", a battlefield-only entry ("enters").
+ */
+export const TRIGGER_ENTERS_FROM_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.enters-from-graveyard',
+  family: 'trigger',
+  leading: ['~'],
+  cites: [
+    'CR 603.6a (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 400.7 (General)',
+  ],
+  examples: ['~ or another permanent enters from a graveyard'],
+  rejects: [
+    '~ or another permanent enters',
+    '~ or another permanent enters from your graveyard',
+    '~ or another creature enters from a graveyard',
+    '~ or a permanent enters from a graveyard',
+    '~ or another permanent is cast from a graveyard',
+    '~ enters from a graveyard',
+    '~ or another permanent enters from a graveyard or exile',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(literal('~')),
+      literal(' or another permanent'),
+      pattern(/ enters(?: the battlefield)? from a graveyard(?![\p{L}\p{N}])(?! or\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [self] = r.value;
+    const id = 'trigger.enters-from-graveyard';
+    const span = { start: pos, end: r.pos };
+    const whole = (subject: IrNoun): IrTrigger => ({
+      ...trigger(id, span, 'enters', { subject }),
+      fromGraveyard: true,
+    });
+    const other = makeNoun(id, span, 'a', { raw: 'another permanent' });
+    return {
+      ok: true,
+      value: {
+        ...whole(makeNoun(id, self.span, 'self', { raw: '~' })),
+        alternatives: [{ ...whole({ ...other, other: true }) }],
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 /** What a cast trigger's spell targets: "that targets a creature [you control]" (the object's kind and, for "you control", its controller) or the source itself. */
 type Aimed =
   | {
@@ -1231,6 +1281,7 @@ export const TRIGGER_RULES = [
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
   ...UNBOUND_I_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
+  TRIGGER_ENTERS_FROM_GRAVEYARD,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,
   TRIGGER_BECOMES_TARGET,
