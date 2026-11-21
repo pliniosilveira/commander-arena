@@ -634,7 +634,8 @@ export type GameEvent =
         | 'protectionColor'
         | 'protectionCardType'
         | 'clashOpponent'
-        | 'playerChoice';
+        | 'playerChoice'
+        | 'protector';
       readonly option: string;
     }
   /**

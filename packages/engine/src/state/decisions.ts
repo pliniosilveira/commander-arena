@@ -873,7 +873,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'counterPick'
     | 'clashOpponent'
     // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life": the options are `seat:<n>`.
-    | 'playerChoice';
+    | 'playerChoice'
+    // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
+    | 'protector';
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second

@@ -39,6 +39,7 @@ import {
   getSeat,
   isSeatZone,
   loseLifeBy,
+  opponentsOf,
   patchObject,
   printedCard,
   removeFromZone,
@@ -131,6 +132,11 @@ export interface MoveRequest {
    * copies, or null for none. Absent means "not asked yet". Ignored for a permanent that asks nothing.
    */
   readonly entersCopy?: ObjectId | null;
+  /**
+   * The controller's answer to "its controller chooses a player to be its protector" as a battle enters (CR 310.9a), once asked. Absent means "not asked yet". Ignored for a permanent
+   * that is not a battle, and for a battle with one legal protector, which asks nothing.
+   */
+  readonly entersProtector?: SeatId;
   /**
    * The controller's answer to devour's "you may sacrifice any number of creatures" (CR 702.82a, D-185), once asked: the creatures sacrificed as
    * the permanent enters, possibly none. Absent means "not asked yet". Ignored for a permanent without devour.
@@ -279,19 +285,39 @@ function recordLki(
   return { ...state, lki: { ...state.lki, [obj.id]: info } };
 }
 
-/** The protector of a battle entering the battlefield, or null for any other object (CR 310.11). */
+/** The option of the protector question that stands for `seat` (`seat:<n>`, as the other questions about a player). */
+const protectorOption = (seat: SeatId): string => `seat:${seat}`;
+
+/** Whether the face of `old` that enters is a battle. */
+function entersAsBattle(state: GameState, old: GameObject, faceIndex: number): boolean {
+  const card = printedCard(old);
+  if (card === null) return false;
+  return definitionOf(state, card).faces[faceIndex]?.types.includes('battle') === true;
+}
+
+/**
+ * The players who may be the protector of a battle that `controller` controls as it enters: their opponents still in the game (CR 310.12a: only an opponent of a Siege's
+ * controller can be its protector, 800.4a: a player who left the game is no longer in it). The engine treats every battle as a Siege: a battle with no battle type, whose protector
+ * could only be its controller (CR 310.9a), is in no real card.
+ */
+function protectorChoices(state: GameState, controller: SeatId): SeatId[] {
+  return opponentsOf(state, controller);
+}
+
+/**
+ * The protector of a battle entering the battlefield, or null for any other object (CR 310.9a). `chosen` is the answer of the controller when there was more than one legal
+ * player; with one the player is not asked, and an answer that is not legal is not used.
+ */
 function protectorFor(
   state: GameState,
   old: GameObject,
   controller: SeatId,
   faceIndex: number,
+  chosen: SeatId | undefined,
 ): SeatId | null {
-  const card = printedCard(old);
-  if (card === null) return null;
-  const face = definitionOf(state, card).faces[faceIndex];
-  if (!face?.types.includes('battle')) return null;
-  // In a two-player game the opponent of the battle's controller protects it.
-  return state.seats.find((s) => s.id !== controller && !s.hasLost)?.id ?? null;
+  if (!entersAsBattle(state, old, faceIndex)) return null;
+  const legal = protectorChoices(state, controller);
+  return chosen !== undefined && legal.includes(chosen) ? chosen : (legal[0] ?? null);
 }
 
 /** The abilities of the face that enters. */
@@ -663,6 +689,32 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
+  // CR 310.9a, 310.12a: "As a battle enters the battlefield, its controller chooses a player to be its protector": asked of the controller, among their opponents still in the game,
+  // unless there is only one. Nothing has moved yet.
+  if (
+    to === 'battlefield' &&
+    !entersDown &&
+    request.entersProtector === undefined &&
+    entersAsBattle(before, old, faceIndex)
+  ) {
+    const legal = protectorChoices(before, enterController);
+    if (legal.length > 1) {
+      const info = sourceInfo(state, old.id);
+      return {
+        kind: 'needsDecision',
+        decision: {
+          kind: 'chooseOption',
+          seat: enterController,
+          purpose: 'protector',
+          options: legal.map(protectorOption),
+          source: old.id,
+          sourceName: info?.name ?? '',
+          sourceOracleText: info?.oracleText ?? '',
+        },
+      };
+    }
+  }
+
   // CR 702.136a, 702.136b (D-185): riot asks once for each instance, whether the permanent has the counter or haste.
   const faceAbilities = entering === null ? [] : entering.abilities;
   const riotCount =
@@ -937,7 +989,9 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     token: becomesToken ? copiableValues(state, old) : old.token,
     attachedTo: null,
     protector:
-      to === 'battlefield' && !entersDown ? protectorFor(next, old, controller, faceIndex) : null,
+      to === 'battlefield' && !entersDown
+        ? protectorFor(next, old, controller, faceIndex, request.entersProtector)
+        : null,
     // CR 708.2a, 708.6 (D-308): a permanent that enters face down.
     ...downEntry,
     stack: null,

@@ -1100,6 +1100,21 @@ export function describeEvent(
           'CR 508.7',
         );
       }
+      // CR 310.9a: "You choose Opponent as the protector of SYNTHETIC Vanilla Battle." The choice is public.
+      if (event.purpose === 'protector') {
+        const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
+        const subject =
+          asked?.kind === 'chooseOption' && asked.source === event.source
+            ? asked.sourceName
+            : label(event.source);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${seat === viewer ? 'you' : 'Opponent'} as the protector of ${subject}.`,
+          event.seat,
+          [],
+          'CR 310.9a',
+        );
+      }
       // CR 701.38a (D-194): "You vote for profit (Emissary Green)." / "Opponent votes for security (Emissary Green)." A vote is public.
       if (event.purpose === 'vote') {
         return line(

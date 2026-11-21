@@ -90,6 +90,26 @@ describe('a scenario with three seats', () => {
     expect(Object.values(g.state.objects).find((o) => o.protector !== null)?.protector).toBe(0);
   });
 
+  test('a battle in a three-seat scenario can be protected by the third seat, but not by its own controller', () => {
+    const g = scenario({ seats: 3 })
+      .seat(0)
+      .battlefield('SYNTHETIC Vanilla Battle', { protector: 2 })
+      .build();
+    expect(Object.values(g.state.objects).find((o) => o.protector !== null)?.protector).toBe(2);
+    expect(() =>
+      scenario({ seats: 3 })
+        .seat(0)
+        .battlefield('SYNTHETIC Vanilla Battle', { protector: 0 })
+        .build(),
+    ).toThrow(/protector is an opponent of its controller/);
+    expect(() =>
+      scenario({ seats: 3 })
+        .seat(0)
+        .battlefield('SYNTHETIC Vanilla Battle', { protector: 3 })
+        .build(),
+    ).toThrow(/protector 3 is not a seat/);
+  });
+
   test('refuses a seat past the configured count', () => {
     expect(() => scenario({ seats: 3 }).seat(3)).toThrow(
       /Seat 3 does not exist: this scenario has 3 seats/,
