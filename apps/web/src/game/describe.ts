@@ -1100,6 +1100,17 @@ export function describeEvent(
           'CR 508.7',
         );
       }
+      // CR 608.2d, 801.5b: "You choose Opponent (Fact or Fiction)." The choice is public: the opponent chosen is the one asked next.
+      if (event.purpose === 'chooseOpponent') {
+        const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${seat === viewer ? 'you' : 'Opponent'} (${label(event.source)}).`,
+          event.seat,
+          [],
+          'CR 608.2d',
+        );
+      }
       // CR 310.9a: "You choose Opponent as the protector of SYNTHETIC Vanilla Battle." The choice is public.
       if (event.purpose === 'protector') {
         const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
