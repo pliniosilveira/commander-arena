@@ -384,6 +384,24 @@ button {
 .turn-panel .pnl-stack-list {
   overflow: visible;
 }
+/* An empty stack is out of sight (it stays in the page for a screen reader), and shows while a card
+   is dragged, since it is the place a spell is dropped to cast it. */
+:root:not([data-dnd-stack]) .turn-panel .pnl-stack-empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+/* The action bar has no outline of its own: the panel around it is the outline. */
+.game-dock-slot .dec-bar {
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
 .settings-toggle {
   left: 8px;
   bottom: 8px;
