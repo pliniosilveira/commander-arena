@@ -2132,7 +2132,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
   }
   // D-648 (CR 508.4): "that's attacking that opponent": only in a trigger about a player attacking one of your opponents, which names the player attacked.
-  let entersAttacking: { attacking?: { at: PlayerSelector } } = {};
+  let entersAttacking: {
+    attacking?: { at: PlayerSelector; controllerChooses?: true };
+  } = {};
   if (token.attackingThatOpponent === true) {
     if (ctx.attackedPlayer === null) return { ok: false, needs: [], ...at };
     const missing = missingFeatures([...ctx.attackedPlayer.needs, 'token:attacking']);
@@ -2148,7 +2150,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       'token:tapped',
     ]);
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
-    entersAttacking = { attacking: { at: ctx.attackBatchPlayer.selector } };
+    entersAttacking = {
+      attacking: { at: ctx.attackBatchPlayer.selector, controllerChooses: true },
+    };
   }
   const entersTapped = {
     ...(token.tapped === true || token.tappedAndAttacking === true

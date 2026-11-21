@@ -2652,11 +2652,14 @@ export type Effect =
    * is on the battlefield and is not attacking now starts attacking. It attacks the player the source of this ability attacks (or the first
    * opponent when the source is not attacking); it was never declared as an attacker, so no "whenever this attacks" triggers (CR 508.4) and the
    * turn log does not count it. Nothing happens outside a combat phase after attackers were declared. Only in a triggered ability of an attack
-   * (`attacks`), when the combat is on. Choosing a planeswalker or battle to attack is not offered (`docs/ROADMAP.md`).
+   * (`attacks`), when the combat is on. The controller then chooses what each creature attacks (CR 508.4): a player, a planeswalker or a battle of an opponent, with a
+   * `chooseOption` decision of purpose 'attackTarget' (nothing is asked when there is only one target). With `thatPlayerOrTheirPlaneswalkers` ("attacking that player or a planeswalker
+   * they control") only the player the source attacks and the planeswalkers that player controls may be chosen.
    */
   | {
       readonly kind: 'enterAttacking';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      readonly thatPlayerOrTheirPlaneswalkers?: true;
     }
   /**
    * "You may play that card this turn", "Until the end of your next turn, you may play those cards", "You may play those cards until your next end step"
@@ -4346,7 +4349,11 @@ export type Effect =
        * player `at` names (the first one it names): it was never declared as an attacker, so nothing that triggers on an attack sees it and the turn log does not count it.
        * Nothing happens outside a combat after attackers were declared. A token that is not a creature is not put in combat.
        */
-      readonly attacking?: { readonly at: PlayerSelector };
+      /**
+       * With `controllerChooses` ("tapped and attacking" naming no player, CR 508.4) the tokens enter attacking the player `at` names and their controller then chooses what each attacks:
+       * a player, planeswalker or battle of an opponent (a `chooseOption` decision of purpose 'attackTarget', none when there is one target).
+       */
+      readonly attacking?: { readonly at: PlayerSelector; readonly controllerChooses?: true };
       /**
        * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-652, Furygale Flocking): the controller of the effect creates
        * `count` tokens for each opponent still in the game (in turn order from the next player), and each token is required to attack the player it was made for this turn if able

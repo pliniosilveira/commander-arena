@@ -1169,6 +1169,8 @@ export type Instruction =
       readonly kind: 'reselectAttack';
       readonly object: ObjectId;
       readonly chosen: string | null;
+      /** CR 508.4: only this player and the planeswalkers they control may be chosen (an effect that names "that player or a planeswalker they control"). */
+      readonly among?: SeatId;
     }
   /**
    * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (`assignControlToOpponents`, issue 81,

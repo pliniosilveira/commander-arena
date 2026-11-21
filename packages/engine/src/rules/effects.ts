@@ -2630,7 +2630,16 @@ function runEffect(
       // never declared as attackers.
       if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
         const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
-        if (defender !== undefined) next = enterCombatAttacking(next, created, defender);
+        if (defender !== undefined) {
+          const before = next.combat.attackers.length;
+          next = enterCombatAttacking(next, created, defender);
+          // CR 508.4: "tapped and attacking" without a player named: the controller chooses what each token attacks (rules/reselect-attack.ts); with one target nothing is asked.
+          if (effect.attacking.controllerChooses === true) {
+            for (const entered of next.combat?.attackers.slice(before) ?? []) {
+              front.push({ kind: 'reselectAttack', object: entered.object, chosen: null });
+            }
+          }
+        }
       }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
