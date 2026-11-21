@@ -524,6 +524,12 @@ export function checkDragonsEffect(
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
+      if (
+        e.thatPlayerOrTheirPlaneswalkers !== undefined &&
+        e.thatPlayerOrTheirPlaneswalkers !== true
+      ) {
+        issue(out, `${path}.thatPlayerOrTheirPlaneswalkers`, 'it is true or left out');
+      }
       if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
       }

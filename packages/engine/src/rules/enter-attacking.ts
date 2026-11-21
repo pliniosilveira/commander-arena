@@ -1,6 +1,8 @@
 /**
  * "Put it onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the creatures an earlier effect put onto the battlefield start
  * attacking. They were never declared as attackers (CR 508.4), so nothing that triggers on an attack sees them and the turn log does not count them.
+ * Their controller chooses which player, planeswalker or battle each attacks (CR 508.4): they enter attacking the player the source attacks, then a `reselectAttack`
+ * instruction (rules/reselect-attack.ts) asks for each one, unless it has no other target to attack.
  */
 import type { Effect } from '../ast/types';
 import { opponentsOf } from '../state/ops';
@@ -40,7 +42,7 @@ export function runEnterAttacking(
     );
   });
   if (entering.length === 0) return done(state);
-  return done({
+  const entered: GameState = {
     ...state,
     combat: {
       ...combat,
@@ -53,5 +55,16 @@ export function runEnterAttacking(
         })),
       ],
     },
-  });
+  };
+  // CR 508.4: the choice is the controller's, as each creature enters; `among` keeps it to what the effect names ("that player or a planeswalker they control").
+  return done(
+    entered,
+    [],
+    entering.map((object) => ({
+      kind: 'reselectAttack' as const,
+      object,
+      chosen: null,
+      ...(effect.thatPlayerOrTheirPlaneswalkers === true ? { among: target } : {}),
+    })),
+  );
 }

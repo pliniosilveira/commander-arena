@@ -1,5 +1,5 @@
 {
-  "parserVersion": 180,
+  "parserVersion": 181,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -8976,7 +8976,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "9eba2a4b"
+      "ast": "ef69e251"
     },
     "da46786e-28df-4638-ab3d-121011d2f150": {
       "name": "Master Transmuter",
