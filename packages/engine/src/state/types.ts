@@ -1096,6 +1096,15 @@ export type Instruction =
       readonly among: 'mostLife';
       readonly chosen: SeatId | null;
     }
+  /**
+   * "An opponent separates / chooses / copies ..." with more than one opponent left (CR 608.2d, 801.5b, 702.144a): the controller of the effect (`seat`, or the player it is run as) chooses which
+   * opponent, with a `chooseOption` decision of purpose `chooseOpponent` (options `seat:<n>`). Queued ahead of the effect that needs it; the answer becomes `ResolutionContext.chosenOpponent`.
+   */
+  | {
+      readonly kind: 'chooseOpponent';
+      readonly seat: SeatId;
+      readonly chosen: SeatId | null;
+    }
   | {
       readonly kind: 'chooseCreatureType';
       readonly chosen: string | null;
@@ -1486,6 +1495,8 @@ export type Instruction =
       /** The pile that was not chosen, in the `finish` stage. */
       readonly second: readonly ObjectId[];
       readonly pick?: 1 | 2;
+      /** The opponent who chooses a pile: the one the controller chose as the effect started, or the only one left (CR 608.2d, 801.5b). */
+      readonly opponent?: SeatId;
     }
   /**
    * "As many times as you choose, you may exile the top card of your library" (`exileTopAnyNumber`, D-661): `answer` is null while the controller is asked whether to exile
@@ -2036,6 +2047,8 @@ export interface ResolutionContext {
   readonly chosenCreatureType?: string;
   /** The player a `choosePlayer` instruction of this resolution chose, which the selector `chosenPlayer` ("that player") reads. */
   readonly chosenPlayer?: SeatId;
+  /** The opponent the controller chose for the effect that is about to start ("an opponent separates ..."), read when it starts and cleared once it did (rules/choose-opponent.ts). */
+  readonly chosenOpponent?: SeatId;
   /** Every creature type chosen by a resolving "each player chooses a creature type" (CR 101.4), in the order they were chosen; `chosenCreatureType` is the last. */
   readonly chosenCreatureTypes?: readonly string[];
   /** Objects chosen by resolving instructions, keyed by their bound text reference. */

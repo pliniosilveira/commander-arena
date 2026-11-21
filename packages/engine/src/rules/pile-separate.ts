@@ -15,14 +15,14 @@
  *     the CR orders cards put into a hand; CR 404.3 lets the owner arrange cards put into a graveyard together, which the engine does not offer for any effect). A commander asks its
  *     owner as it does for any move (CR 903.9b).
  *
- * "An opponent" is the first opponent in turn order who is still in the game: with more than two players the controller does not choose which (the CR gives that choice to nobody, and
- * D-233 set the same limit for Coin of Fate).
+ * "An opponent" is the one the controller chose when more than one is left in the game (`rules/choose-opponent.ts`, CR 608.2d, 801.5b), else the only one.
  */
 import type { Effect } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { getSeat, opponentsOf } from '../state/ops';
+import { getSeat } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { opponentOf } from './choose-opponent';
 import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { sourceInfo } from './source-info';
@@ -48,7 +48,7 @@ export function startPileSeparate(
 ): StepOutcome {
   const cards = getSeat(state, res.controller).library.slice(0, Math.max(count, 0));
   if (cards.length === 0) return done(state);
-  const [opponent] = opponentsOf(state, res.controller);
+  const opponent = opponentOf(state, res);
   if (opponent === undefined) return done(state);
   const byOpponent = effect.separator === 'opponent';
   const separator = byOpponent ? opponent : res.controller;

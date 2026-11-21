@@ -41,6 +41,7 @@ import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runChooseOne } from './choose-one';
+import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
 import { newClash, runClash } from './clash';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
@@ -206,6 +207,12 @@ export function runInstruction(
 ): StepOutcome {
   // D-191: the answers given so far to the replacement questions of the damage this instruction deals (rules/damage-effects.ts).
   const flow = askingFlow(res.damageAnswers);
+  // CR 608.2d, 801.5b: "an opponent separates ...": with more than one opponent left, the controller is asked which one before the effect starts.
+  if (instruction.kind === 'chooseOpponent') return runChooseOpponent(state, res, instruction);
+  if (instruction.kind === 'effect') {
+    const asked = askBeforeEffect(state, res, instruction);
+    if (asked !== null) return asked;
+  }
   if (instruction.kind === 'choosePlayer') {
     // CR 608.2d, 119.1 (The Black Gate): the controller of the effect chooses among the players with the most life; with one candidate nothing is asked.
     if (instruction.chosen !== null) return done(state);
@@ -1448,9 +1455,8 @@ function runEffect(
           performed: spells.length,
         };
       }
-      // D-665 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
-      const opponent =
-        effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
+      // D-665 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the opponent the controller chose, or the only one left; the copy is theirs.
+      const opponent = effect.copier === 'opponent' ? opponentOf(state, res) : undefined;
       if (effect.copier === 'opponent' && opponent === undefined) return done(state);
       return {
         ...done(

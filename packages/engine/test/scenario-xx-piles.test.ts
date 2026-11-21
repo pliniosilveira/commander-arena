@@ -321,7 +321,7 @@ describe('a commander in a pile goes through the existing move path (CR 903.9)',
   });
 });
 
-describe('with more than two players the first opponent in turn order still in the game separates', () => {
+describe('with more than two players the controller chooses which opponent still in the game separates (CR 608.2d, 801.5b)', () => {
   /** The spell is cast in the two-seat scenario; a third seat is added to the state before it resolves (the scenario builder has exactly two). */
   function threeSeats(seat1Lost: boolean): ScenarioGame {
     const two = game(READING);
@@ -340,20 +340,39 @@ describe('with more than two players the first opponent in turn order still in t
     return createDriver(state, { checkInvariants: false, labels: new Map() });
   }
 
-  test.each([
-    [false, 1],
-    [true, 2],
-  ])('seat 1 has lost: %s, so seat %i separates', (seat1Lost, separator) => {
-    const g = threeSeats(seat1Lost);
-    // Everybody passes priority and the spell resolves.
-    for (let i = 0; i < 6 && g.state.pending?.kind !== 'chooseCards'; i++) {
+  /** Everybody passes priority until a question is asked or the spell is gone. */
+  function resolve(g: ScenarioGame): void {
+    for (
+      let i = 0;
+      i < 6 && g.state.pending?.kind === 'priority' && g.state.stack.length > 0;
+      i++
+    ) {
       const holder = g.state.turn.prioritySeat;
       if (holder === null) break;
       g.act(holder).pass();
     }
+  }
+
+  test('with both opponents in the game the controller is asked, and the one chosen separates', () => {
+    const g = threeSeats(false);
+    resolve(g);
+    const q = chooseOptionDecision(g);
+    expect(q.purpose).toBe('chooseOpponent');
+    expect(q.seat).toBe(0);
+    expect(q.options).toEqual(['seat:1', 'seat:2']);
+    g.act(0).chooseOption('seat:2');
     const d = chooseCardsDecision(g);
     expect(d.purpose).toBe('separate');
-    expect(d.seat).toBe(separator);
+    expect(d.seat).toBe(2);
+    expect(d.legal).toHaveLength(5);
+  });
+
+  test('seat 1 has lost: nothing is asked and seat 2 separates', () => {
+    const g = threeSeats(true);
+    resolve(g);
+    const d = chooseCardsDecision(g);
+    expect(d.purpose).toBe('separate');
+    expect(d.seat).toBe(2);
     expect(d.legal).toHaveLength(5);
   });
 });

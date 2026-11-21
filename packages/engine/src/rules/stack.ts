@@ -24,6 +24,7 @@ import { runCastFree } from './cast-free';
 import { giftEffectOf } from './cast-gift';
 import { runChangeTarget } from './change-target';
 import { DECLINE_OPTION } from './choose-one';
+import { asksWhichOpponent } from './choose-opponent';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
@@ -368,6 +369,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(head.kind === 'choosePlayer' && head.chosen !== null
           ? { chosenPlayer: head.chosen }
           : {}),
+        // CR 608.2d, 801.5b: the opponent the controller chose is what the effect queued right after reads as it starts.
+        ...(head.kind === 'chooseOpponent' && head.chosen !== null
+          ? { chosenOpponent: head.chosen }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -380,6 +385,15 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
       state.resolution?.entersCopy !== undefined
     ) {
       const { entersCopy: _answered, ...rest } = state.resolution;
+      state = { ...state, resolution: rest };
+    }
+    // The opponent chosen belongs to the one effect that asked for it (rules/choose-opponent.ts): once that effect has started, the next one asks again.
+    if (
+      head.kind === 'effect' &&
+      asksWhichOpponent(head.effect) &&
+      state.resolution?.chosenOpponent !== undefined
+    ) {
+      const { chosenOpponent: _used, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // CR 310.9a: and the protector chosen for a battle that entered.
@@ -1117,6 +1131,38 @@ export function answerResolutionProtector(state: GameState, option: string): Res
       pending: null,
       resolution: { ...res, entersProtector: Number(option.slice('seat:'.length)) },
     },
+    [event],
+  );
+}
+
+/** Records the opponent the controller chose for the effect "an opponent ..." about to start (CR 608.2d, 801.5b) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionChooseOpponent(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'chooseOpponent' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'chooseOpponent' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const updated: Instruction = { ...head, chosen: Number(option.slice('seat:'.length)) };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [event],
   );
 }

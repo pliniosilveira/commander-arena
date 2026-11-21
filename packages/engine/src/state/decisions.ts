@@ -876,6 +876,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'clashOpponent'
     // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life": the options are `seat:<n>`.
     | 'playerChoice'
+    // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller of the effect chooses which opponent (`source` is the spell or ability): the options are `seat:<n>`.
+    | 'chooseOpponent'
     // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
     | 'protector';
   readonly options: readonly string[];
