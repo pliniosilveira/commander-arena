@@ -327,8 +327,8 @@ button {
 
 /* The turn panel floats over the board at the right edge, level with the top of the opponent's
    battlefield, and grows with its content down to the bottom of the screen; it scrolls inside.
-   In order: the turn line and the current phase, the decision and the action buttons (the dock,
-   drawn into `.game-dock-slot`), then the stack. */
+   In order: the decision and the action buttons (the dock, drawn into `.game-dock-slot`), then the
+   stack. */
 .turn-panel {
   position: absolute;
   top: 73px;
@@ -346,17 +346,23 @@ button {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
-.turn-panel .pnl-tracker {
-  padding: 0;
-  background: none;
-  border-bottom: 0;
+/* The turn box: the turn, priority and the previous, current and next step, at the left edge, level
+   with the top of the opponent's battlefield. */
+.game > .pnl-tracker {
+  position: absolute;
+  top: 73px;
+  left: 8px;
+  z-index: 30;
+  width: var(--info-width);
+  padding: var(--gap);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
-.turn-panel .pnl-tracker-info {
+.game > .pnl-tracker .pnl-tracker-info {
   flex-wrap: wrap;
   gap: 4px 8px;
-}
-.turn-panel .pnl-steps {
-  display: block;
 }
 .game-dock-slot {
   flex: none;

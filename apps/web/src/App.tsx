@@ -44,10 +44,10 @@ export function Footer({ showVersion = false }: { showVersion?: boolean }) {
 }
 
 /**
- * The game screen: the battlefield takes the whole width. Over it float the turn panel (right edge:
- * the turn line, the current phase, the decision and the action buttons, then the stack), the card
- * preview (left edge, only while a card is read) and, behind the buttons at the bottom left, the log
- * and the settings. The decision layer draws the action dock into the turn panel (`dock-slot.ts`).
+ * The game screen: the battlefield takes the whole width. Over it float the turn box (top left: the
+ * turn, priority and three steps), the turn panel (right edge: the decision and the action buttons,
+ * then the stack), the card preview (left edge, only while a card is read) and, behind the buttons
+ * at the bottom left, the log and the settings. The decision layer draws the action dock into the turn panel (`dock-slot.ts`).
  */
 function Game() {
   const [dockSlot, setDockSlot] = useState<HTMLElement | null>(null);
@@ -60,11 +60,11 @@ function Game() {
           </DecisionLayer>
         </div>
         <aside className="turn-panel" aria-label="Turn" data-testid="turn-panel">
-          <TurnTracker />
           <div className="game-dock-slot" ref={setDockSlot} />
           <StackPanel />
         </aside>
       </DockSlotContext.Provider>
+      <TurnTracker />
       <PreviewPanel />
       <LogDock />
       <SettingsDock />

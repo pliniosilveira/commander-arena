@@ -1,4 +1,7 @@
-/** The head of the turn panel: turn, whose turn, priority and the current step (a click adds or removes its stop). */
+/**
+ * The turn box at the left edge of the game screen: turn, whose turn, priority and three steps: the
+ * previous, the current and the next (a click on one adds or removes its stop).
+ */
 import type { GameView, PhaseId, StepId } from '@commander-arena/engine';
 import { roundOf, turnLabel } from '../../game/turn-label';
 import { STOP_STEPS, type StopSettings } from '../../policy/should-stop';
@@ -27,6 +30,12 @@ export const STEP_ORDER: readonly StepId[] = [
 /** The chip's words for a phase an effect added to the turn (CR 500.8, D-356): "Extra beginning phase", "Extra combat phase". */
 export function addedPhaseLabel(phase: PhaseId): string {
   return `Extra ${phase === 'precombatMain' || phase === 'postcombatMain' ? 'main' : phase} phase`;
+}
+
+/** The step before, the step and the step after it, in turn order (fewer at the ends of the turn). */
+export function neighbours(step: StepId): readonly StepId[] {
+  const at = STEP_ORDER.indexOf(step);
+  return at < 0 ? [] : STEP_ORDER.slice(Math.max(0, at - 1), at + 2);
 }
 
 /** Which settings row a click on a step edits: the active player's side (A18). */
@@ -106,7 +115,7 @@ export function TurnTracker() {
         )}
       </div>
       <ol className="pnl-steps">
-        {STEP_ORDER.filter((step) => step === view.step).map((step) => {
+        {neighbours(view.step).map((step) => {
           const current = view.step === step;
           const toggleable = STOP_STEPS.includes(step);
           const stopped = toggleable && stops.includes(step);

@@ -3,10 +3,10 @@ import { withSettings } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
- * The game screen: the battlefield takes the whole width. The turn panel floats at the right edge,
- * level with the top of the opponent's battlefield, and holds in order the turn line, the current
- * phase, the decision and action buttons, then the stack. The card preview (left) floats too, and the
- * log and the settings are behind buttons at the bottom left.
+ * The game screen: the battlefield takes the whole width. The turn box (turn, priority, three steps)
+ * floats at the top left and the turn panel at the right edge, both level with the top of the
+ * opponent's battlefield; the panel holds the decision and action buttons, then the stack. The card
+ * preview floats too, and the log and the settings are behind buttons at the bottom left.
  */
 const game = '/?autostart=white-knights,swamp-forest&seed=3';
 
@@ -38,26 +38,29 @@ for (const [width, height] of [
     expect(board.width).toBeCloseTo(width, 0);
     expect(board.y).toBe(0);
 
-    // The turn panel is at the right edge, level with the top of the opponent's battlefield.
+    // The turn panel is at the right edge, level with the top of the opponent's battlefield, and
+    // the turn box is at the left edge at the same height.
     const panel = await box(page, '[data-testid="turn-panel"]');
+    const turnBox = await box(page, '.game > .pnl-tracker');
     const oppField = await box(page, '[data-field-seat="1"]');
     expect(panel.x + panel.width).toBeCloseTo(width - 8, 0);
     expect(Math.abs(panel.y - oppField.y)).toBeLessThanOrEqual(16);
     expect(panel.y + panel.height).toBeLessThanOrEqual(height);
+    expect(turnBox.x).toBeLessThanOrEqual(16);
+    expect(Math.abs(turnBox.y - oppField.y)).toBeLessThanOrEqual(16);
 
-    // In order: the turn line, only the current phase, the action buttons, the stack.
+    // The turn box shows the turn, priority and three steps (the previous, the current, the next).
+    await expect(page.locator('.game > .pnl-tracker .pnl-priority')).toContainText('Priority');
+    expect(await page.locator('.pnl-step').count()).toBe(3);
+    await expect(page.locator('.pnl-step-current')).toHaveCount(1);
+
+    // The turn panel holds the action buttons, then the stack.
     const tops = await page.evaluate(() => {
       const top = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1;
-      return [
-        top('.turn-panel .pnl-tracker-info'),
-        top('.turn-panel .pnl-steps'),
-        top('.turn-panel .dec-bar'),
-        top('.turn-panel [aria-label="Stack"]'),
-      ];
+      return [top('.turn-panel .dec-bar'), top('.turn-panel [aria-label="Stack"]')];
     });
     expect([...tops].sort((a, b) => a - b)).toEqual(tops);
     expect(tops.every((t) => t > 0)).toBe(true);
-    expect(await page.locator('.turn-panel .pnl-step').count()).toBe(1);
 
     // The old top bar and the action bar toggles are gone.
     for (const name of ['Full Control', 'Manual mana', 'Undo']) {
