@@ -513,6 +513,8 @@ export interface StackData {
     readonly source: ObjectId;
     readonly entersTapped?: true;
     readonly gains?: Ability;
+    /** The permanent type this use of a `playFromGraveyardEachType` permission was counted as. */
+    readonly slot?: CardType;
   };
   /**
    * The named alternative cost the spell was cast for (D-121): `overload` (CR 702.96a: its text has
@@ -2593,6 +2595,8 @@ export type EffectEnd =
 export interface TurnLog {
   /** The permanents whose "once during each of your turns, you may ... from your graveyard" has been used this turn (D-232, `playFromGraveyardOnceEachTurn`). */
   readonly graveyardPlays?: readonly ObjectId[];
+  /** The permanent types ("land" for the land play) already played or cast this turn through each permanent's `playFromGraveyardEachType` permission. */
+  readonly graveyardSlots?: readonly { readonly source: ObjectId; readonly type: CardType }[];
   /**
    * Each activated ability activated this turn: the object it belongs to and its index among that object's abilities. `loyalty` is set
    * when the ability was a loyalty ability (D-200): CR 606.3 allows one loyalty ability of a permanent a turn, whichever it is.

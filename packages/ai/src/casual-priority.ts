@@ -168,9 +168,18 @@ export interface Play {
   readonly lifeForMana?: true;
   /** The named alternative cost the play pays (Overload, Evoke, Dash, Spectacle: `casual-alt-costs.ts`, D-121, D-124). */
   readonly alt?: NamedAlternativeKind;
+  /** The permanent type of a card cast from the graveyard by `playFromGraveyardEachType` that has more than one: the engine lists one option for each, the first one is played. */
+  readonly permanentType?: Extract<
+    PriorityDecision['options'][number],
+    { kind: 'castSpell' }
+  >['permanentType'];
 }
 
 export const withFace = (face: number | undefined) => (face === undefined ? {} : { face });
+
+/** The permanent type the engine's option of a graveyard cast carries, to be given back with the action. */
+export const withType = (p: Pick<Play, 'permanentType'>) =>
+  p.permanentType === undefined ? {} : { permanentType: p.permanentType };
 
 /** Whether a land option is the back-face land of a modal double-faced card that is also a spell. */
 const isSpellLand = (p: Play): boolean =>
@@ -260,6 +269,7 @@ export function spellPlays(
       ...(free ? { free: true } : {}),
       ...(life ? { lifeForMana: true as const } : {}),
       ...(alt === undefined ? {} : { alt }),
+      ...(o.permanentType === undefined ? {} : { permanentType: o.permanentType }),
     };
     if (!allowed(view, play.obj, activations)) continue;
     // CR 118.9: paying life rather than mana is a last resort of the agent: never when it would leave it in danger (as for a shock land), and no spell with an {X} (it asks the
@@ -370,6 +380,7 @@ export function choosePriorityAction(
         ...(chosen.alt === undefined ? {} : { alternative: chosen.alt }),
         ...(chosen.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
         ...withFace(chosen.face),
+        ...withType(chosen),
       };
     }
   }

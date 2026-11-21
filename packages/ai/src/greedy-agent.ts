@@ -34,7 +34,15 @@ import { createCasualHandlers } from './casual-agent';
 import { chooseLoyaltyActivation } from './casual-loyalty';
 import { noteCast, withoutTriedCasts } from './casual-no-target';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
-import { chooseLand, landPlays, type Play, spellPlays, spendOf, withFace } from './casual-priority';
+import {
+  chooseLand,
+  landPlays,
+  type Play,
+  spellPlays,
+  spendOf,
+  withFace,
+  withType,
+} from './casual-priority';
 import { manaValueOf } from './casual-view';
 import { chooseGreedyAttack, chooseGreedyBlocks } from './greedy-combat';
 import { firstSafeAction } from './legal';
@@ -54,6 +62,7 @@ const castAction = (p: Play): Action => ({
   ...(p.alt === undefined ? {} : { alternative: p.alt }),
   ...(p.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
   ...withFace(p.face),
+  ...withType(p),
 });
 
 /** Land, else the most expensive castable spell, else pass. */

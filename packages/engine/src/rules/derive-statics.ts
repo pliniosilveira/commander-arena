@@ -198,6 +198,8 @@ export interface GraveyardPlaySource {
   /** `playLandsFromGraveyard`: the land cards that may be played (any land when absent); the permission is not used up by a use. */
   readonly lands?: ObjectFilter;
   readonly unlimited?: true;
+  /** `playFromGraveyardEachType`: one use a turn for each permanent type (`TurnLog.graveyardSlots`), the land play included. */
+  readonly eachType?: true;
 }
 
 /**
@@ -430,6 +432,16 @@ function graveyardPlaysOf(
         land: a.static.land === true,
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
+      });
+    }
+    if (a.kind === 'static' && a.static.kind === 'playFromGraveyardEachType') {
+      out.push({
+        object,
+        cast: undefined,
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        eachType: true,
       });
     }
     // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.

@@ -32,7 +32,7 @@
  * The whole pre-cast state is kept in the CastingContext. Cancelling restores it, which is also how
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
-import { COLORS } from '../characteristics';
+import { type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -95,7 +95,7 @@ import { derive } from './derive';
 import { escapeGrantData } from './escape-grant';
 import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
 import { freeCastSlotToUse } from './free-cast';
-import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
+import { graveyardPlayPermission, markGraveyardPlay, riderOf, slotOf } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import {
   canCast,
@@ -175,6 +175,8 @@ export function beginCast(
    * paying its mana cost, from the graveyard it is in (`castCard`).
    */
   riders: { readonly anyManaType?: boolean; readonly exileInstead?: boolean } = {},
+  /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
+  permanentType?: CardType,
 ): Result {
   const obj = getObject(state, objectId);
   // CR 722.3c (D-214): the copy of a prepare spell is cast as its own face.
@@ -226,8 +228,12 @@ export function beginCast(
     alternative !== 'retrace' &&
     alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
-      ? graveyardPlayPermission(state, seat, obj, false)
+      ? graveyardPlayPermission(state, seat, obj, false, permanentType)
       : null;
+  const graveyardSlot =
+    graveyardUse === null
+      ? undefined
+      : slotOf(state, seat, obj, graveyardUse, false, permanentType);
   // CR 601.2, 118.9 (`mayCastEachType`): a card in exile cast for free by the permission of an effect uses up the permission of one of its types.
   const freeUse =
     !resolving && alternative === 'free' && obj.zone === 'exile' && obj.onAdventure !== true
@@ -318,10 +324,14 @@ export function beginCast(
         : {}),
       // D-232: "Once during each of your turns, you may cast an artifact spell from your graveyard. If you cast a spell this way, that artifact enters tapped":
       // the card's own permission to be cast from the graveyard is used first; otherwise the permanent's, which is used up for this turn.
-      ...(graveyardUse === null ? {} : { graveyardPlay: riderOf(graveyardUse, false) }),
+      ...(graveyardUse === null
+        ? {}
+        : { graveyardPlay: riderOf(graveyardUse, false, graveyardSlot) }),
     },
   });
-  if (graveyardUse !== null) next = markGraveyardPlay(next, graveyardUse.object.id);
+  if (graveyardUse !== null) {
+    next = markGraveyardPlay(next, graveyardUse.object.id, graveyardSlot);
+  }
   if (freeUse !== null) {
     next = {
       ...next,

@@ -284,6 +284,7 @@ describe('the dimensions', () => {
       'unspentManaBecomesColorless',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."

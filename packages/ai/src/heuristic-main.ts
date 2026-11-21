@@ -43,7 +43,14 @@ import { turnUpCandidates } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
-import { choosePriorityAction, type Play, spellPlays, spendOf, withFace } from './casual-priority';
+import {
+  choosePriorityAction,
+  type Play,
+  spellPlays,
+  spendOf,
+  withFace,
+  withType,
+} from './casual-priority';
 import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
 import { creatureValue, evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
@@ -84,6 +91,7 @@ const castAction = (p: Play): Action => ({
   ...(p.alt === undefined ? {} : { alternative: p.alt }),
   ...(p.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
   ...withFace(p.face),
+  ...withType(p),
 });
 
 const sym = (p: Play): readonly string[] => (p.free === true ? [] : costSymbols(p.obj, spendOf(p)));

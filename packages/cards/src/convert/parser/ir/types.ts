@@ -1800,6 +1800,8 @@ export type IrStaticEffect =
   | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
+  /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1): the subject is `you`. */
+  | { readonly kind: 'graveyardPlayEachType' }
   /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
   | { readonly kind: 'activateAsThoughHaste' }
   /**

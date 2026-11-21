@@ -7550,6 +7550,13 @@ export type StaticEffect =
       readonly gains?: Ability;
     }
   /**
+   * "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1, 113.6): while the permanent has the
+   * ability, its controller may, in their own turn, play a land card from their graveyard and cast from it one spell of each other permanent type (artifact, battle, creature,
+   * enchantment, planeswalker): a slot for each type, used once a turn by this permanent. A card with several permanent types is played or cast as one of them and uses only that
+   * type's slot (the land slot is the land play, which also uses the turn's land drop). The timing and the cost of the card are its own.
+   */
+  | { readonly kind: 'playFromGraveyardEachType' }
+  /**
    * "You may play Forests from your graveyard." and "You may play lands from your graveyard." (CR 305.1, 601.2a, 604.1, 113.6): while the permanent has the ability, its controller may
    * play a land card of their graveyard that `lands` matches (as the card it is: its types and subtypes; `zone`, `owner` and `controller` are not read; none is any land), as a
    * land play. When a land may be played, and how many, are those of the turn (CR 305.2, 505.6b): the permission only adds where the land may come from, and it is not used up

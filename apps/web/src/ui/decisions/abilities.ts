@@ -66,6 +66,7 @@ export const castKey = (o: CastOption): string =>
     'cast',
     ...(o.face === undefined ? [] : ['face', String(o.face)]),
     ...(o.alternative === undefined ? [] : [o.alternative]),
+    ...(o.permanentType === undefined ? [] : [o.permanentType]),
   ].join('-');
 
 /**

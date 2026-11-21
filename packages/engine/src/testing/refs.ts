@@ -3,6 +3,7 @@
  */
 import type { CastAlternativeKind } from '../ast/features';
 import type { Zone } from '../ast/types';
+import type { CardType } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import { derive } from '../rules/derive';
 import { choosesFace } from '../rules/layouts';
@@ -317,6 +318,7 @@ export function castAction(
   card: CardRef,
   alternative?: CastAlternativeKind,
   face?: number,
+  permanentType?: CardType,
 ): Action {
   const zones: readonly Zone[] =
     alternative === 'flashback' ||
@@ -351,6 +353,7 @@ export function castAction(
     object: obj.id,
     ...(alternative === undefined ? {} : { alternative }),
     ...faceField(ctx, obj, face),
+    ...(permanentType === undefined ? {} : { permanentType }),
   };
 }
 
@@ -424,7 +427,8 @@ export function unlockAction(ctx: RefContext, card: CardRef, door: number): Acti
 export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): Action {
   if (spec === 'pass') return { kind: 'pass' };
   if ('playLand' in spec) return playLandAction(ctx, seat, spec.playLand, spec.face);
-  if ('cast' in spec) return castAction(ctx, seat, spec.cast, spec.alternative, spec.face);
+  if ('cast' in spec)
+    return castAction(ctx, seat, spec.cast, spec.alternative, spec.face, spec.permanentType);
   if ('activate' in spec) return activateAction(ctx, seat, spec.activate, spec.ability);
   if ('suspend' in spec) return specialAction(ctx, seat, 'suspend', spec.suspend);
   if ('foretell' in spec) return specialAction(ctx, seat, 'foretell', spec.foretell);

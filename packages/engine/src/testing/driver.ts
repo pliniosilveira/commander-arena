@@ -300,7 +300,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
       seat,
       playLand: (card, o) => run(playLandAction(ctx, seat, card, o?.face)),
       cast(card, o: CastOptions = {}) {
-        apply(seat, castAction(ctx, seat, card, o.alternative, o.face));
+        apply(seat, castAction(ctx, seat, card, o.alternative, o.face, o.permanentType));
         const h = handle();
         if (o.modes !== undefined && state.casting?.stage === 'modes') h.modes(...o.modes);
         if (o.kicked !== undefined && state.casting?.stage === 'kicker') h.kicker(o.kicked);
