@@ -901,6 +901,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
+  'static.permanent-spells-from-hand-gain-evoke': asIs,
   'static.legend-rule-doesnt-apply': asIs,
   'static.groups-are-the-chosen-type': asIs,
   'static.graveyard-cards-have-encore': asIs,
@@ -1374,6 +1375,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,
+  ),
+  // Ashling, the Limitless: "The token gains haste until end of turn."
+  'noun.the-token': spell(
+    (e) =>
+      `Create a 3/3 blue Robot Warrior artifact creature token. ${cap(e)} gains haste until end of turn.`,
   ),
   'amount.for-each-card-type-discarded': spell(
     (e) =>

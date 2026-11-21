@@ -210,6 +210,7 @@ import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
@@ -1405,6 +1406,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Ashling, the Limitless: "The token gains haste until end of turn."
+  ...THE_TOKEN_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
   ...PUMP_THOSE_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".

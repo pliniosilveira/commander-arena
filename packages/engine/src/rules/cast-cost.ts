@@ -31,6 +31,7 @@ import { manaValue, type PaymentPlan, type PaymentSource } from '../mana';
 import type { ManaColor } from '../mana/types';
 import { definitionOf, getSeat, patchSeat, printedCard } from '../state/ops';
 import type { GameObject, GameState, StackData } from '../state/types';
+import { grantedEvokeOf } from './alt-cost-grant';
 import {
   alternativeOf,
   buybackCostOf,
@@ -380,7 +381,11 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     alternative === 'escape'
       ? (escapeOf(state, spell, face)?.cost ?? null)
       : isNamedAlternative(alternative)
-        ? namedAlternativeCostOf(face, alternative)
+        ? (namedAlternativeCostOf(face, alternative) ??
+          // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (rules/alt-cost-grant.ts).
+          (alternative === 'evoke'
+            ? (grantedEvokeOf(state, seat, spell, zone)?.cost ?? null)
+            : null))
         : null;
   const perX = spellXCost(face, alternative);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
@@ -847,7 +852,16 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
   // CR 702.138a: the escape an effect gave the card until end of turn is listed as a printed one is.
   const granted =
     alternativeOf(face ?? null, 'escape') === null ? grantedEscapeOf(state, obj) : null;
-  for (const alt of [...(face?.alternativeCosts ?? []), ...(granted === null ? [] : [granted])]) {
+  // CR 702.74a, 118.9: the evoke a static ability gives the spell as it is cast from the hand is listed as a printed one is (`grantAlternativeCostToSpells`).
+  const grantedEvoke =
+    zone === 'hand' && alternativeOf(face ?? null, 'evoke') === null
+      ? grantedEvokeOf(state, obj.owner, spell, zone)
+      : null;
+  for (const alt of [
+    ...(face?.alternativeCosts ?? []),
+    ...(granted === null ? [] : [granted]),
+    ...(grantedEvoke === null ? [] : [grantedEvoke]),
+  ]) {
     // Madness and miracle are cast only as their ability resolves (CR 702.35a, 702.94a), never from a hand: no cast option, so no cost to show.
     if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.

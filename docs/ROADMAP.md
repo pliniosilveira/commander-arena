@@ -141,6 +141,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- A static ability gives a spell only a mana evoke cost from the hand (`grantAlternativeCostToSpells`).
 - "X mana in any combination of colors" (`anyCombinationAmount`) lists every combination, a count that grows as C(X+4,4); a very large X makes the mana choice slow.
 - "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).

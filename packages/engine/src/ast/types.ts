@@ -6943,6 +6943,20 @@ export type StaticEffect =
    */
   | { readonly kind: 'grantFlashbackToGraveyardCards'; readonly what: ObjectFilter }
   /**
+   * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (Ashling, the Limitless; CR 702.74a, 118.9, 613.1f, 601.2b): a static ability of a permanent
+   * on the battlefield that gives the spells its controller casts from `from` (only the hand) that `what` matches an alternative cost, only evoke so far (`alt`, a mana cost). The
+   * spell is cast for it as for a printed evoke cost (`CastAlternative` `evoke`), unless the card has an evoke cost of its own. The grant is read as the spell is cast and kept on the
+   * spell (`StackData.evokeGrant`, `GameObject.evokeGranted`): the permanent it becomes still has the evoke sacrifice trigger when the permanent that gave it has left (rulings of the
+   * card). A copy of the spell is not cast and has none. `what` is a filter of the spell as it is on the stack, with `controller: 'you'` and no zone, owner, stack kind or combat. A
+   * permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantAlternativeCostToSpells';
+      readonly what: ObjectFilter;
+      readonly from: 'hand';
+      readonly alt: { readonly kind: 'evoke'; readonly cost: readonly Cost[] };
+    }
+  /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
    * a characteristic-defining ability of the card it is printed on, working in every zone but the battlefield (a hand, a library, a graveyard, the stack, exile): the object is also a
    * creature of the creature types `subtypes` (layer 4, applied first like Changeling) and its power and toughness are `power` and `toughness` (layer 7a). The ability is of the

@@ -50,6 +50,7 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
+import { evokeGrantData } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
@@ -273,6 +274,10 @@ export function beginCast(
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
       ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
+      // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (`grantAlternativeCostToSpells`), kept so the permanent still has it when the source has left.
+      ...(alternative === 'evoke'
+        ? evokeGrantData(state, seat, castAs(obj, seat, face), zone)
+        : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
       freeUse !== null ||
       // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".

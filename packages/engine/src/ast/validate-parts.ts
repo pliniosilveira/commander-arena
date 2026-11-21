@@ -5875,6 +5875,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
+      if (e.effect?.kind === 'unlessPays') checkCosts(e.effect.cost, `${path}.effect.cost`, out);
       checkDelayedTrigger(
         e,
         path,
