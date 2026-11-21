@@ -496,6 +496,8 @@ export interface StackData {
     readonly source: ObjectId;
     readonly entersTapped?: true;
     readonly gains?: Ability;
+    /** Issue 102 (Kotis): the other cards of the graveyard exiled as an additional cost of this spell. */
+    readonly exileOthers?: number;
   };
   /**
    * The named alternative cost the spell was cast for (D-121): `overload` (CR 702.96a: its text has

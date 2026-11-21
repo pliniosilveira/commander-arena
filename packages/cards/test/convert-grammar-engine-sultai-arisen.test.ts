@@ -688,3 +688,34 @@ describe('"Whenever ~ attacks, mill four cards. You may cast an instant or sorce
     g.expect.zone('Lightning Bolt', 'exile');
   });
 });
+
+describe('"Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs." (CR 601.2f, 118.8)', () => {
+  const kotis = parsed(
+    'SYNTHETIC Parsed Kotis',
+    'Legendary Creature — Zombie Warrior',
+    'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs.',
+    { manaCost: '{B}{G}{U}', power: '3', toughness: '3', colors: ['B', 'G', 'U'] },
+  );
+  const build = (fodder: number) =>
+    base()
+      .define(kotis)
+      .battlefield(kotis.name, 'Forest', 'Forest')
+      .graveyard('Grizzly Bears', ...Array.from({ length: fodder }, () => 'Plains'))
+      .at('precombatMain')
+      .build();
+
+  test('with three other cards to exile the creature can be cast from the graveyard, once', () => {
+    const g = build(3);
+    g.expect.legal(0, { cast: 'Grizzly Bears' });
+    g.act(0).cast('Grizzly Bears', { pay: true });
+    // Exactly three other cards: they are exiled without a choice.
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    expect(g.state.exile).toHaveLength(3);
+  });
+
+  test('with fewer than three other cards it cannot be cast that way', () => {
+    const g = build(2);
+    g.expect.illegal(0, { cast: 'Grizzly Bears' });
+  });
+});

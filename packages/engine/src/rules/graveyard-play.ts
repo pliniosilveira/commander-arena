@@ -77,6 +77,7 @@ export function riderOf(source: GraveyardPlaySource, asLand: boolean): Graveyard
     // "If you cast a spell this way, that artifact enters tapped": a land played this way is not a spell (CR 305.1) and enters as it would.
     ...(source.entersTapped && !asLand ? { entersTapped: true as const } : {}),
     ...(source.gains === undefined ? {} : { gains: source.gains }),
+    ...(source.exileOthers === undefined || asLand ? {} : { exileOthers: source.exileOthers }),
   };
 }
 

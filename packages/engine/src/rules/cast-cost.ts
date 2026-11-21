@@ -55,6 +55,7 @@ import { costReductionSources } from './derive-statics';
 import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
 import { faceDownSpellFields, isFaceDown } from './face-down';
+import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
 import { libraryCastSacrificeOf } from './library-cast-cost';
@@ -507,7 +508,20 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         : 0),
   );
   // CR 702.138a: an escape cost also exiles that many other cards from the caster's graveyard.
-  const exile = alternative === 'escape' ? (alternativeOf(face, 'escape')?.exile ?? 0) : 0;
+  // Issue 102 (Kotis, CR 601.2f): a spell cast from the graveyard by a permission that says "by exiling three other cards from your graveyard" exiles them too.
+  const permissionExile =
+    alternative !== undefined || zone !== 'graveyard'
+      ? 0
+      : // Once cast, the spell remembers the permission it was cast with; before that the card is read as it is in the graveyard.
+        (spell.stack?.graveyardPlay?.exileOthers ??
+        (() => {
+          const card = state.objects[request.spell.id];
+          return card === undefined
+            ? 0
+            : (graveyardPlayPermission(state, seat, card, false)?.exileOthers ?? 0);
+        })());
+  const exile =
+    alternative === 'escape' ? (alternativeOf(face, 'escape')?.exile ?? 0) : permissionExile;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };

@@ -7217,6 +7217,12 @@ export type StaticEffect =
       readonly land?: true;
       readonly entersTapped?: true;
       readonly gains?: Ability;
+      /**
+       * "Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs." (issue 102,
+       * Kotis, Sibsig Champion; CR 601.2b, 601.2f, 118.8): a spell cast from the graveyard with this permission has this many other cards of the graveyard exiled as an additional cost, chosen
+       * as the cost is paid (the spell cannot be cast that way with fewer). Only with `cast`.
+       */
+      readonly exileOthers?: number;
     }
   /**
    * "You may play Forests from your graveyard." and "You may play lands from your graveyard." (CR 305.1, 601.2a, 604.1, 113.6): while the permanent has the ability, its controller may

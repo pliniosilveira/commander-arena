@@ -197,6 +197,8 @@ export interface GraveyardPlaySource {
   /** `playLandsFromGraveyard`: the land cards that may be played (any land when absent); the permission is not used up by a use. */
   readonly lands?: ObjectFilter;
   readonly unlimited?: true;
+  /** Issue 102 (Kotis): the other cards of the graveyard a spell cast with this permission exiles as an additional cost. */
+  readonly exileOthers?: number;
 }
 
 /**
@@ -416,6 +418,7 @@ function graveyardPlaysOf(
         land: a.static.land === true,
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
+        ...(a.static.exileOthers === undefined ? {} : { exileOthers: a.static.exileOthers }),
       });
     }
     // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.
