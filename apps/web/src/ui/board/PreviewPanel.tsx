@@ -500,33 +500,31 @@ export function PreviewPanel() {
       data-pinned={pinned ? 'true' : undefined}
       onClick={dismiss}
     >
-      <>
-        <div className="board-preview-bar">
-          {pinned ? (
-            <span className="board-flag board-flag-pin">Pinned. Esc unpins</span>
-          ) : source === 'stack' ? (
-            <span className="board-flag" data-preview-stack>
-              Top of the stack
-            </span>
-          ) : (
-            <span className="board-dim">Right-click pins, Esc unpins</span>
-          )}
-        </div>
-        {real !== null && (
-          // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
-          <p className="board-flag" data-preview-face-down>
-            Face down. Only you can see this card; {object.name}, a {object.power}/
-            {object.toughness} creature, is what everyone sees.
-          </p>
+      <div className="board-preview-bar">
+        {pinned ? (
+          <span className="board-flag board-flag-pin">Pinned. Esc unpins</span>
+        ) : source === 'stack' ? (
+          <span className="board-flag" data-preview-stack>
+            Top of the stack
+          </span>
+        ) : (
+          <span className="board-dim">Right-click pins, Esc unpins</span>
         )}
-        <div className="board-preview-card" data-preview-id={object.id}>
-          <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
-        </div>
-        <StackWords object={object} />
-        <PreviewDetails object={object} />
-        <FaceList object={object} />
-        <MeldList object={object} />
-      </>
+      </div>
+      {real !== null && (
+        // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
+        <p className="board-flag" data-preview-face-down>
+          Face down. Only you can see this card; {object.name}, a {object.power}/{object.toughness}{' '}
+          creature, is what everyone sees.
+        </p>
+      )}
+      <div className="board-preview-card" data-preview-id={object.id}>
+        <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
+      </div>
+      <StackWords object={object} />
+      <PreviewDetails object={object} />
+      <FaceList object={object} />
+      <MeldList object={object} />
     </aside>
   );
 }
