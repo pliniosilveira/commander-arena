@@ -543,8 +543,7 @@
 }
 
 .board-row-land {
-  /* The land row asks for more height while its columns are deep (LandRow.tsx `landGrow`). */
-  flex: var(--land-grow, 1) 1 0;
+  flex: 1 1 0;
 }
 
 /* Artifacts, enchantments and planeswalkers are rare: an empty row gives its room to the others. */
@@ -2063,7 +2062,7 @@
   max-width: 170px;
 }
 
-/* ---- The land row: equal lands stacked in columns (D-215, LandRow.tsx, lands.ts) ---------- */
+/* ---- The land row: one line, equal basic lands overlapped sideways (LandRow.tsx, lands.ts) ---- */
 
 /* The columns hang from the top of one band; the band is centred by the padding the row computes. */
 .board-row-land .board-row-scroll {
@@ -2077,11 +2076,11 @@
   flex: none;
 }
 
-/* Each card lies over the one behind it (the card in front has the highest z-index), so every card shows
-   its top edge: the colour band and the name. The slot is the size of a tile; the tile fills it. */
+/* Each card lies over the one after it (the first card has the highest z-index), so every card shows
+   a strip of its right side. The slot is the size of a tile; the tile fills it. */
 .board-land-slot {
   position: absolute;
-  left: 0;
+  top: 0;
   display: block;
 }
 
@@ -2090,7 +2089,7 @@
   display: block;
 }
 
-/* How many cards the column holds, off the top-right corner. */
+/* How many cards the cluster holds, off the top-right corner. */
 .board-land-count {
   position: absolute;
   top: -6px;
