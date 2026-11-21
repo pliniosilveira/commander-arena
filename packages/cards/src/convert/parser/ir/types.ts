@@ -1256,6 +1256,16 @@ export interface IrToken extends IrNode {
    * (`copyNotLegendary`) and the loyalty it enters with (`copyStartingLoyalty`, a copiable value of a planeswalker).
    */
   readonly copyNotLegendary?: true;
+  /**
+   * "..., except it isn't legendary, it's an Illusion artifact in addition to its other types, and it has haste" (Reg Barclay, Fidgety Fantasist, CR 707.9b, 205.4a): with `copyOf`
+   * and `copyNotLegendary`, the copy has these creature types and card types besides the ones it copies, with no power and toughness of its own, and these keywords (as
+   * written, lowercase) besides its abilities.
+   */
+  readonly copyAddsTypes?: {
+    readonly subtypes: readonly string[];
+    readonly cardTypes: readonly string[];
+    readonly keywords: readonly string[];
+  };
   readonly copyStartingLoyalty?: number;
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;

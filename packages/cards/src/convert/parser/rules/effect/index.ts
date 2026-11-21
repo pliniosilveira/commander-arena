@@ -188,6 +188,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
@@ -1394,6 +1395,9 @@ export const EFFECT_RULES = [
   EFFECT_MILL,
   EFFECT_SHUFFLE,
   ...SACRIFICE_RULES,
+  // Federation Fleet deck, group A (Seek out): "one or two target creatures each get ... and gain ...", counters on two optional targets (read quietly: they share words with the
+  // older counter and pump rules and must not move where a line they do not read stops).
+  ...SEEK_OUT_EFFECT_RULES,
   ...COUNTER_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,
