@@ -19,6 +19,10 @@ A false report costs the owner more than a missed bug. Report only what you chec
    `gh api 'repos/pliniosilveira/commander-arena/issues?labels=possible-issue&state=all&per_page=100'` (page with `per_page=100&page=N`). Read titles and the `<!-- find-issue: ... -->` marker of each (Step 3). Also skim open issues labelled `bug` and open pull requests: a bug already tracked there is not new.
 4. Get the CR text as `AGENTS.md`, section "Network", says, so that rule citations are checked. Without it, cite a rule only as far as the code and docs already do, and write "CR text not checked" in the issue.
 
+## Time box
+
+A firing has a fixed search budget: **30 minutes of wall-clock time** and **at most 3 candidates verified** in Step 2. At the start of Step 0 run `date +%s` and keep the value; run `date +%s` again before each file you open and before each candidate you verify. Once 30 minutes have passed, or 3 candidates have been dropped as not reproducible, stop searching. Do not extend the budget, do not switch to a second area to keep looking, and do not file an unverified issue just because time ran out. If nothing verified by then, go to Step 4 with "nothing found in <area>" and create no issue. A candidate whose verification is already running when time is up may finish; no new one starts.
+
 ## Step 1: choose where to look
 
 Pick one **area**, the one least covered by existing `possible-issue` markers (ties: the order below). One firing, one area:
@@ -45,7 +49,7 @@ A suspicion is not a finding. For each candidate, in the scratchpad (never commi
 3. If the test passes, the candidate is not a bug: drop it. If it cannot be reproduced but the code reading is strong, it may still be reported as **unverified**, said plainly, with the reasoning.
 4. Delete the scratch test afterwards: `git status` must show a clean tree.
 
-Rank the verified candidates: wrong game outcome or crash first, then nondeterminism, then dishonest support, then missing coverage. Report the top one. Drop it if it duplicates a Step 0.3 issue, or a limit in `docs/ROADMAP.md`. If nothing survives, say "nothing found in <area>" in one line, and create nothing.
+Rank the verified candidates: wrong game outcome or crash first, then nondeterminism, then dishonest support, then missing coverage. Report the top one. Drop it if it duplicates a Step 0.3 issue, or a limit in `docs/ROADMAP.md`. If nothing survives, or the time box is spent, say "nothing found in <area>" in one line, and create nothing.
 
 ## Step 3: file the issue
 
@@ -77,7 +81,7 @@ Do not assign anyone, and do not add labels other than `possible-issue`. Do not 
 
 ## Step 4: finish
 
-Clean the scratchpad copies, confirm `git status` is clean, and stop with one line: the area, and the issue number or "nothing found". Do not start a second finding in the same firing.
+Clean the scratchpad copies, confirm `git status` is clean, and stop with one line: the area, the minutes spent, and the issue number or "nothing found". Do not start a second finding in the same firing.
 
 ## Always
 
