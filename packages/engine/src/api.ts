@@ -101,6 +101,7 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionChooseOpponent,
   answerResolutionChoosePlayer,
   answerResolutionClash,
   answerResolutionClashOpponent,
@@ -506,6 +507,11 @@ function answerChooseOption(
     // CR 701.30b: the opponent the controller chose to clash with.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
+  if (d.purpose === 'chooseOpponent') {
+    // CR 608.2d, 801.5b: the opponent the controller chose for "an opponent separates / chooses / copies ...".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
   }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.

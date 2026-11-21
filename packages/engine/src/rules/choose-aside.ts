@@ -2,16 +2,16 @@
  * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-660): the `opponentChoosesCard` effect, run as one instruction that asks at most once.
  *
  * The cards are the ones the earlier effects of the resolution moved (`moved`) that the filter matches and that are face up in exile (a card nobody may look at is not a card an
- * opponent can choose by what it is). An opponent of the controller chooses one of them: the first opponent in turn order who is still in the game, because with more than two
- * players the CR gives the controller no choice of which opponent (D-233 set the same limit for Coin of Fate). The choice is public (the cards are public) and nothing is done to
+ * opponent can choose by what it is). An opponent of the controller chooses one of them: the one the controller chose when more than one is left in the game
+ * (`rules/choose-opponent.ts`, CR 608.2d, 801.5b), else the only one. The choice is public (the cards are public) and nothing is done to
  * the card chosen: it is only set aside, so that `moved` names the others afterwards ("the other cards exiled this way", which the next instruction reads). With one card to choose
  * nothing is asked (there is one answer); with none nothing is asked and `moved` stays as it was.
  */
 import type { Effect } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { opponentsOf } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { opponentOf } from './choose-opponent';
 import { matchesFilter, type SelectContext } from './select';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
@@ -34,7 +34,7 @@ export function startOpponentChoosesCard(
       matchesFilter(state, card, { ...effect.filter, zone: 'exile' }, ctx)
     );
   });
-  const [opponent] = opponentsOf(state, res.controller);
+  const opponent = opponentOf(state, res);
   if (cards.length === 0 || opponent === undefined) return done(state);
   return done(state, [], [{ kind: 'opponentChoosesCard', seat: opponent, cards, chosen: null }]);
 }
