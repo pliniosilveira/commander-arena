@@ -692,6 +692,13 @@ const IF_REVEALED_CARD =
  * together for `effect.reveal-top-branches`. A list of types may hold a comma, which `IF_REVEALED_CARD` does not allow.
  */
 const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
+/**
+ * "Each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~." (Federation Fleet deck, Ambassador K'Ehleyr, CR
+ * 701.20a, 608.2c): the second sentence counts the cards the first one revealed, so the two are one instruction, kept together for `effect.each-player-reveals-then-draws`.
+ */
+const EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE =
+  /(?:^|, )each player reveals the top card of their library, then draws a card\.$/i;
+const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
@@ -702,6 +709,13 @@ const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 const MAY_CAST_IF_LESSER =
   /^you may cast it without paying its mana cost if it['’]s a spell with lesser mana value\.$/i;
 const ELSE_CAST_INTO_HAND = /^if you don['’]t cast it, put it into your hand\.$/i;
+/**
+ * "Surveil 2, then you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~." (Federation Fleet deck,
+ * group D, B'Elanna Torres, Scrapper; CR 701.20a, 608.2c): three sentences that are one instruction (what is revealed, what is drawn when the card is of a kind, and what happens when nothing
+ * was drawn), kept together for `effect.reveal-top-draw-else-counters`. Only all three in a row (the first may follow the comma of "Surveil 2, then").
+ */
+const DRAW_IF_REVEALED = /^draw a card if it['’]s an? [^.,]* card\.$/i;
+const ELSE_PUT_COUNTERS = /^if you don['’]t draw a card this way, put [^.]* counters? on ~\.$/i;
 /**
  * "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of
  * that type from among the exiled cards without paying its mana cost." (CR 701.13, 608.2d, 611.2a): three sentences that are one instruction ("them" and "the exiled cards" are the
@@ -779,6 +793,16 @@ const CONTROLLER_REVEALS_UNTIL =
   /^that creature['’]s controller reveals cards from the top of their library until they reveal [^.]*\.$/i;
 const THE_PLAYER_PUTS_ANY_ORDER =
   /^the player puts that card onto the battlefield and the rest on the bottom of their library in any order\.$/i;
+/**
+ * "Target opponent whose turn it is may cast a spell from their hand without paying its mana cost. If they do, you copy that spell. You may choose new targets for the copy. If they don't,
+ * you draw a card." (Federation Fleet deck, group F, Cmdr. Troi; CR 608.2g, 608.2c, 707.10): four sentences that are one instruction, kept together for
+ * `effect.opponent-casts-free-you-copy`. Only all four in a row.
+ */
+const TROI_CAST =
+  /^target opponent whose turn it is may cast a spell from their hand without paying its mana cost\.$/i;
+// "You may choose new targets for the copy." stays with the sentence before it (`splitSentences`).
+const TROI_COPY = /^if they do, you copy that spell\. you may choose new targets for the copy\.$/i;
+const TROI_ELSE_DRAW = /^if they don['’]t, you draw a card\.$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -810,6 +834,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
+      continue;
+    }
+    // Cmdr. Troi, Outgoing Empath (Federation Fleet deck, group F): the four sentences of one instruction (three spans: the copy and its new targets are one).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, TROI_CAST) &&
+      said(b, TROI_COPY) &&
+      said(c, TROI_ELSE_DRAW)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
       continue;
     }
     // Finale of Promise (issue 121): the four sentences of one instruction.
@@ -958,6 +994,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       a !== undefined &&
       c !== undefined &&
       said(a, REVEAL_TOP_CARD) &&
+      said(b, DRAW_IF_REVEALED) &&
+      said(c, ELSE_PUT_COUNTERS)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
       said(b, MAY_CAST_IF_LESSER) &&
       said(c, ELSE_CAST_INTO_HAND)
     ) {
@@ -1085,6 +1130,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, FOR_EACH_PERMANENT_DIFFERENT_OPPONENT) &&
       said(b, EACH_OPPONENT_GAINS_CONTROL)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE) &&
+      said(b, FOR_EACH_REVEALED_THIS_WAY)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

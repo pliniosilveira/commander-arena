@@ -43,6 +43,7 @@ import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
+import { FEDERATION_D_CONDITION_RULES } from './federation-d';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
@@ -70,6 +71,7 @@ import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
+import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
 import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
@@ -614,6 +616,8 @@ export const CONDITION_RULES = [
   ...ATTACKING_OPPONENTS_CONDITION_RULES,
   // Lorwyn Eclipsed (Blight Curse deck): "you control that creature", "its toughness was less than 1", "you put a counter on a creature this turn".
   ...COUNTER_TRIGGER_CONDITION_RULES,
+  // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
+  ...FEDERATION_D_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
@@ -629,6 +633,8 @@ export const CONDITION_RULES = [
   ...LOREHOLD_G1_CONDITION_RULES,
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
   ...LOREHOLD_G3_CONDITION_RULES,
+  // Federation Fleet deck, group B: "the player is your opponent and has four or more cards in hand" (the player of the trigger).
+  ...THE_PLAYER_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,

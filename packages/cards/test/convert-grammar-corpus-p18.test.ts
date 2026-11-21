@@ -51,9 +51,9 @@ const STEPS: readonly Line[] = [
   },
   {
     kind: 'enchantment',
-    text: "At the beginning of each player's draw step, that player draws an additional card.",
-    expect: no('additional card.', 'effect.player.draw'),
-    note: 'replay: 5 cards; "that player" is read since stage P29, the extra card of the draw step is not',
+    text: "At the beginning of each player's draw step, that player may draw an additional card.",
+    expect: no('may draw an additional card.', 'effect.player'),
+    note: 'replay: 5 cards; "that player" is read since stage P29; the extra card of the draw step is read since the Federation Fleet deck (Howling Mine), so the wording kept here is the optional one, which no rule reads',
   },
   {
     kind: 'creature',

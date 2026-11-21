@@ -75,8 +75,11 @@ import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { FEDERATION_D_LOWERINGS } from './federation-d';
+import { FEDERATION_F_LOWERINGS } from './federation-f';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
+import { FLEET_E_LOWERINGS } from './fleet-e';
 import { FOOD_D_LOWERINGS } from './food-d';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
@@ -122,6 +125,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
+import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
@@ -1922,6 +1926,14 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     }
     const count = amountArg(clause, 'count', ctx);
     if (!count.ok) return count;
+    // Federation Fleet group D (CR 122.6): what a later "if you put ... counters on creatures this way" asks about.
+    ctx.putCounters.push({
+      counter: counter.name,
+      creatures:
+        objectsArg?.kind === 'noun' &&
+        (objectsArg.filter.types?.length ?? 0) > 0 &&
+        objectsArg.filter.types?.every((t) => t === 'creature') === true,
+    });
     return eachObject(
       clause,
       ctx,
@@ -2574,6 +2586,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
   ...WITHERBLOOM_A_LOWERINGS,
+  // Federation Fleet deck, group B (Ambassador K'Ehleyr): every player reveals the top card of their library and draws a card, a counter for each nonland card revealed.
+  EACH_PLAYER_REVEALS_THEN_DRAWS,
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
@@ -2606,12 +2620,16 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...FLEET_E_LOWERINGS,
+  // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
+  ...FEDERATION_F_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
   ...PRISMARI_G3_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
+  ...FEDERATION_D_LOWERINGS,
   ...GALADRIEL_G1_LOWERINGS,
   // Galadriel deck, group 3 (issue 43): an exchange of control, a counter unless the controller pays an amount, "draw a card and reveal it" with counters removed, "its activated
   // abilities can't be activated this turn".
@@ -2730,20 +2748,23 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   test === 'triggerSpellManaValue' ||
                   test === 'milledThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' ||
-                    test === 'discardedSpellThisWay' ||
-                    test === 'destroyedThisWay' ||
-                    test === 'searchedThisWay'
-                  ? 'thisWayAtLeast'
-                  : test === 'otherAttachedToHost' || test === 'xAtLeast'
-                    ? 'amountIs'
-                    : test === 'attackersAtYou'
-                      ? 'attackersAtYouAtLeast'
-                      : test === 'attackedHasMoreLife'
-                        ? 'attackedHasMoreLifeThanOtherOpponent'
-                        : test === 'controlsThat'
-                          ? 'subjectControlledByYou'
-                          : test;
+                : test === 'subjectGreaterPower'
+                  ? 'subjectGreaterPt'
+                  : test === 'discardedThisWay' ||
+                      test === 'putCountersThisWay' ||
+                      test === 'discardedSpellThisWay' ||
+                      test === 'destroyedThisWay' ||
+                      test === 'searchedThisWay'
+                    ? 'thisWayAtLeast'
+                    : test === 'otherAttachedToHost' || test === 'xAtLeast'
+                      ? 'amountIs'
+                      : test === 'attackersAtYou'
+                        ? 'attackersAtYouAtLeast'
+                        : test === 'attackedHasMoreLife'
+                          ? 'attackedHasMoreLifeThanOtherOpponent'
+                          : test === 'controlsThat'
+                            ? 'subjectControlledByYou'
+                            : test;
     return failure(
       clause,
       kind === 'raw' ||
@@ -2757,6 +2778,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
         kind === 'diesThisWay' ||
+        kind === 'thePlayerIs' ||
         kind === 'cardsExiledWithSelf'
         ? []
         : missingFeatures([`condition:${kind}`]),

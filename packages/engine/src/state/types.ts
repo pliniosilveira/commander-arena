@@ -969,7 +969,8 @@ export interface CastingContext {
     | 'tap'
     | 'bounce'
     | 'blight'
-    | 'untap';
+    | 'untap'
+    | 'removeCounters';
   /**
    * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
@@ -1049,6 +1050,11 @@ export interface ActivationContext {
    * its cost. The same value is `StackData.x` of the ability's object.
    */
   readonly x: number;
+  /**
+   * The counters of a cost "Remove two +1/+1 counters from among creatures you control" still to remove (CR 118.3, 122.1): left out until the first of them has been asked for, then what
+   * is still owed. Absent when the cost has no such part.
+   */
+  readonly countersLeft?: number;
 }
 
 export type Instruction =
@@ -1969,6 +1975,8 @@ export type Instruction =
       readonly cardsZone?: 'graveyard';
       /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
       readonly seat?: SeatId;
+      /** `remember` (Cmdr. Troi): the spell cast is what `moved` names afterwards. */
+      readonly remember?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -2121,6 +2129,10 @@ export interface ThisWayCounts {
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;
+  /** The nonland cards discarded by `discard` effects (Federation Fleet group D: "When you discard a nonland card this way", CR 603.12). */
+  readonly discardedNonland?: number;
+  /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
+  readonly countersPut?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
   /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */
@@ -2337,6 +2349,15 @@ export type ContinuousChange =
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
       readonly awayFrom?: SeatId;
+    }
+  /**
+   * "Until your next turn, creatures can't attack you" (`creaturesCantAttackYou`, CR 508.1a, 611.2c): no layer and no fixed set (`objects` is empty): read where attackers are declared
+   * (`rules/attack-bans.ts`), for each creature `filter` matches then, with `controller` as "you": none of them may be declared attacking `controller` as a player.
+   */
+  | {
+      readonly kind: 'creaturesCantAttackPlayer';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
     }
   /**
    * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (`requireAttackSource`, CR 508.1d, 611.2c): no layer and no

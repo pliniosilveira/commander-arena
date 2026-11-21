@@ -191,6 +191,12 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'discardedNonland':
+      // Federation Fleet group D: "When you discard a nonland card this way".
+      return 'the number of nonland cards discarded this way';
+    case 'countersPut':
+      // Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way".
+      return 'the number of counters put this way';
     case 'discardedMost':
       // Issue 279 (Windfall).
       return 'the greatest number of cards a player discarded this way';
