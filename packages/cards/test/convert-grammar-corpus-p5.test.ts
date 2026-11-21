@@ -92,7 +92,7 @@ const GAINS: readonly Line[] = [
     kind: 'instant',
     // Feather deck group 1 (D-452): protection from a color is read now; a quality that is not a color is not.
     text: 'Target creature gains protection from artifacts until end of turn.',
-    expect: no('protection from artifacts until end of turn.', 'effect.gain-keyword'),
+    expect: no('protection from artifacts until end of turn.', 'effect.gain-keyword-and-ability'),
     note: 'backlog: 7 cards; a keyword with a parameter is not read',
   },
   {
@@ -104,7 +104,7 @@ const GAINS: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Target creature gains storm until end of turn.',
-    expect: no('storm until end of turn.', 'effect.gain-keyword'),
+    expect: no('storm until end of turn.', 'effect.gain-keyword-and-ability'),
     note: 'SYNTHETIC; the engine has no storm (D-118), so no word of the grant list names it',
   },
   {
