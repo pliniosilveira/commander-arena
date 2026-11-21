@@ -1,24 +1,30 @@
 /** The human's hand, fanned (A19), and the opponent's hand as card backs with a count. */
 import type { ObjectView } from '@commander-arena/engine';
-import { type CSSProperties, useRef } from 'react';
+import { type CSSProperties, useEffect, useRef } from 'react';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useTextScale } from '../panels/text-size';
 import { CardFace } from './CardFace';
 import { useHoverPreview } from './hover';
-import { handScale, handStep } from './layout';
+import { handStep } from './layout';
 import { useMeasure } from './measure';
 
-// D-240 (issue 137): a quarter bigger than the 108 by 150 of before. A card in the hand is the whole
-// printed card (488:680): it is big enough to read, so it is not cut to its top as a tile is.
-const BASE_W = 135;
-const BASE_H = 188;
+// D-240 (issue 137) made the card 135 by 188; it is now 10 percent smaller. A card in the hand is the
+// whole printed card (488:680): it is big enough to read, so it is not cut to its top as a tile is.
+const BASE_W = 122;
+const BASE_H = 169;
+/** The fan bends at most as much as a hand of 11 cards does; a longer hand spreads the same bend. */
+const FAN_HALF_SPAN = 5;
+/** The closest two cards get, as a share of the card width: past it the hand scrolls instead. */
+const MIN_STEP_SHARE = 0.55;
 /**
  * The height of the hand area when the window is short: what shows of a card at rest, the lower part
  * of a card sits below the board edge, as in a held hand; hover lifts it. The area is taller in a
  * taller window (`.board-hand`), and a card shows that much of itself.
  */
 const MIN_SHOWN = 108;
+/** Room at each side of the cards, so the lifted first and last card are not cut. */
+const FAN_PAD = 20;
 
 function HandCard({
   object,
@@ -49,10 +55,12 @@ function HandCard({
   const selected = ix.selected.has(object.id);
   const dimmed = ix.dimOthers && !clickable && !selected;
   const mid = (count - 1) / 2;
-  const offset = index - mid;
+  // The bend is capped, so 50 cards do not rotate to the side: the angle and the drop are spread.
+  const span = Math.min(mid, FAN_HALF_SPAN);
+  const offset = mid === 0 ? 0 : ((index - mid) / mid) * span;
   const style = {
     '--hand-w': `${cardW}px`,
-    // The text on the card grows with the card, not with the setting alone (`handScale`).
+    // The text on the card grows with the card, (the text size setting).
     '--text-scale': scale,
     '--hand-h': `${cardH}px`,
     marginLeft: index === 0 ? 0 : `${step - cardW}px`,
@@ -98,8 +106,30 @@ export function Hand({
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const width = size === null ? 800 : size.width;
-  const scale = handScale(cards.length, BASE_W, width, useTextScale());
-  const step = handStep(cards.length, Math.round(BASE_W * scale), width);
+  // The cards never shrink to fit: a long hand scrolls sideways instead.
+  const scale = useTextScale();
+  const cardW = Math.round(BASE_W * scale);
+  const step = handStep(
+    cards.length,
+    cardW,
+    width - 2 * FAN_PAD,
+    6,
+    Math.round(cardW * MIN_STEP_SHARE),
+  );
+  const fanRef = useRef<HTMLDivElement>(null);
+  // A mouse wheel scrolls the hand sideways (the scrollbar is hidden and the strip above the cards
+  // does not take the pointer).
+  useEffect(() => {
+    const el = fanRef.current;
+    if (el === null) return;
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      el.scrollLeft += e.deltaY;
+      e.preventDefault();
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
   const shown = size === null ? MIN_SHOWN : size.height;
   return (
     <section
@@ -107,7 +137,7 @@ export function Hand({
       ref={ref}
       aria-label={`Your hand, ${cards.length} cards`}
     >
-      <div className="board-hand-fan">
+      <div className="board-hand-fan" ref={fanRef}>
         {cards.length === 0 && <span className="board-hand-empty">Your hand is empty</span>}
         {cards.map((c, i) => (
           <HandCard
