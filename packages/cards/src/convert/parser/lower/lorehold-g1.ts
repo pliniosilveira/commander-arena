@@ -41,6 +41,29 @@ const PUT_ONE_OF_THEM: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
+ * CR 115.1, 404.1, 110.2a): the engine's `moveToZone` of a slot of targets with different owners (`differentControllers`, one card of each graveyard) onto the battlefield under the
+ * controller's control. The cards put there are `moved` for the sentence after it.
+ */
+const PUT_ONE_PER_GRAVEYARD: Lowering<IrClause, Effects> = {
+  head: 'putOnePerGraveyard',
+  id: 'lower.put-one-per-graveyard',
+  needs: ['effect:moveToZone', 'selector:target'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'objects');
+    if (named?.kind !== 'noun') return failure(clause);
+    const objects = objectSelectorOf(named, ctx);
+    if (!objects.ok) return objects;
+    if (objects.value.kind !== 'target') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'moveToZone', objects: objects.value, to: 'battlefield', controller: 'you' }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Shuffle any number of target cards from your graveyard into your library." (CR 701.24c, 701.24d, 404.1): the engine's `moveToZone` of the targets to the library and then the
  * `shuffle` of the controller, which happens even with no target (CR 701.24d). The targets are a slot of the ability (a spell's or an ability's), any number of them for `anyNumber`.
  */
@@ -87,6 +110,7 @@ const DEAL_DAMAGE_TO_SELF: Lowering<IrClause, Effects> = {
 export const LOREHOLD_G1_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_ONE_OF_THEM,
   PUT_ONE_OF_THEM,
+  PUT_ONE_PER_GRAVEYARD,
   SHUFFLE_INTO_LIBRARY,
   DEAL_DAMAGE_TO_SELF,
 ];

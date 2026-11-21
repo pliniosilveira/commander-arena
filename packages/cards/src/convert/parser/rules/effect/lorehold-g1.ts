@@ -7,8 +7,8 @@
 import { literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
-import { defineRule, family, quietly } from '../registry';
-import { type Clauses, single } from './operands';
+import { defineRule, family, quietly, spanned } from '../registry';
+import { type Clauses, makeClause, single } from './operands';
 
 const NOT_IN_WORD = BOUNDARY;
 
@@ -123,6 +123,60 @@ export const EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD = defineRule<Clauses>({
 });
 
 /**
+ * `effect.put-one-per-graveyard`: "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102,
+ * Afterlife from the Loam; CR 115.1, 601.2c, 404.1, 110.2a): a slot of targets with none at least, one card in each player's graveyard at most (no two cards of one owner), all put onto
+ * the battlefield under the controller's control. The two sentences are one instruction (`segment.ts`). Not read: another kind of card, "each opponent", another destination, "tapped".
+ */
+export const EFFECT_PUT_ONE_PER_GRAVEYARD = defineRule<Clauses>({
+  id: 'effect.put-one-per-graveyard',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 404.1 (Graveyard)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: [
+    "for each player, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield under your control",
+  ],
+  rejects: [
+    "for each player, choose up to one target creature card in that player's graveyard",
+    "for each opponent, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield under your control",
+    "for each player, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield",
+    "for each player, choose up to one target artifact card in that player's graveyard. put those cards onto the battlefield under your control",
+    "for each player, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield tapped under your control",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.put-one-per-graveyard';
+    const r = spanned(
+      pattern(
+        /for each player, choose up to one target creature card in that player['’]s graveyard\. put those cards onto the battlefield under your control(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: { types: ['creature'], zone: 'graveyard', card: true, raw: 'creature card' },
+      upTo: false,
+      plural: true,
+      other: false,
+      anyNumber: true,
+      differentControllers: true,
+      span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [makeClause(id, 'putOnePerGraveyard', { objects }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.shuffle-cards-into-library`: "shuffle any number of target cards from your graveyard into your library", "shuffle target card from your graveyard into your library" (CR 701.24c,
  * 701.24d, 404.1: the cards go into your library, which is shuffled even when no card is there). The cards are the targets of a phrase of your own graveyard, one or any number. Not read: a
  * graveyard that is not yours, "their library", "on top of", a list, "all", "up to", a count.
@@ -233,6 +287,7 @@ export const EFFECT_DEAL_DAMAGE_TO_ITSELF = defineRule<Clauses>({
 export const LOREHOLD_G1_EFFECT_RULES = [
   quietly(EFFECT_REPEAT_PROCESS),
   quietly(EFFECT_EXILE_ONE_OF_THEM),
+  quietly(EFFECT_PUT_ONE_PER_GRAVEYARD),
   quietly(EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD),
   quietly(EFFECT_SHUFFLE_CARDS_INTO_LIBRARY),
   quietly(EFFECT_DEAL_DAMAGE_TO_ITSELF),

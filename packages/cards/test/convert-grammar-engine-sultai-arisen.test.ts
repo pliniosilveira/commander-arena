@@ -601,3 +601,56 @@ describe('"{2}: Mill two cards, then return a nonland card of an opponent’s ch
     g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
   });
 });
+
+describe('"For each player, choose up to one target creature card in that player’s graveyard. Put those cards onto the battlefield under your control. They’re Zombies in addition to their other types." (CR 115.1, 404.1, 110.2a)', () => {
+  const afterlife = parsed(
+    'SYNTHETIC Parsed Afterlife',
+    'Sorcery',
+    "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control. They're Zombies in addition to their other types.",
+    { manaCost: '{3}{B}', colors: ['B'] },
+  );
+  const build = () =>
+    scenario()
+      .seat(0)
+      .define(afterlife)
+      .hand(afterlife.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .graveyard('Serra Angel', 'Grizzly Bears')
+      .library('Island', 'Island')
+      .seat(1)
+      .graveyard('Giant Spider')
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+
+  test('one card of each graveyard comes back under the caster’s control as a Zombie', () => {
+    const g = build();
+    g.act(0).cast(afterlife.name, {
+      targets: [
+        { name: 'Serra Angel', zone: 'graveyard' },
+        { name: 'Giant Spider', zone: 'graveyard' },
+      ],
+      pay: true,
+    });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    const spider = g.view(0).battlefield.find((o) => o.name === 'Giant Spider');
+    expect(spider?.subtypes).toEqual(expect.arrayContaining(['Spider', 'Zombie']));
+  });
+
+  test('two cards of the same graveyard cannot both be targeted', () => {
+    const g = build();
+    expect(() =>
+      g.act(0).cast(afterlife.name, {
+        targets: [
+          { name: 'Serra Angel', zone: 'graveyard' },
+          { name: 'Grizzly Bears', zone: 'graveyard' },
+        ],
+        pay: true,
+      }),
+    ).toThrow();
+  });
+});

@@ -1183,11 +1183,15 @@ export function declareTargets(
           `${p}.what`,
           'a slot of targets with different controllers names objects (permanents), not players',
         );
-      } else if ((what.filter.zone ?? 'battlefield') !== 'battlefield') {
+      } else if (
+        (what.filter.zone ?? 'battlefield') !== 'battlefield' &&
+        // Issue 102 (Afterlife from the Loam): "For each player, choose up to one target creature card in that player's graveyard": cards of graveyards, one for each owner.
+        what.filter.zone !== 'graveyard'
+      ) {
         issue(
           out,
           `${p}.what`,
-          'targets with different controllers are permanents on the battlefield',
+          'targets with different controllers are permanents on the battlefield, or cards in graveyards (one for each owner)',
         );
       }
       if (

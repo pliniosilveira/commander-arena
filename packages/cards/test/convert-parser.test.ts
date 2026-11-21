@@ -664,6 +664,7 @@ describe('unmatched abilities', () => {
       'effect.gain-flashback-from-mana-cost',
       'effect.repeat-process',
       'effect.exile-one-of-them',
+      'effect.put-one-per-graveyard',
       'effect.put-one-of-them-onto-battlefield',
       'effect.shuffle-cards-into-library',
       'effect.deal-damage-to-itself',
