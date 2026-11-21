@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { stackLabel } from '../../game/saga';
+import { useEffect, useState } from 'react';
 import { type BugReport, bugReport } from '../../import/bug-report';
 import { VERSION_INFO } from '../../version';
-import { useApp } from '../store-context';
 import { captureBoard } from './capture-board';
-import { seatName } from './objects';
 
 /**
  * A "Report issue" button at the bottom right. Pressing it takes a picture of the board first (the browser's screen capture, so the
  * dialog is not in it), then opens a dialog with a text area and a Submit button. Submit opens GitHub's "new issue" page with the
- * description, the build, the game log and the stack already in it, and puts the picture on the clipboard to paste into the issue
+ * description and the build already in it, and puts the picture on the clipboard to paste into the issue
  * (a link cannot carry an image, and the app has no secret to create the issue itself; `import/bug-report.ts`). A report too long
  * for a link stays in the dialog behind a "Copy full report" button. Esc or Cancel closes the dialog.
  */
@@ -20,18 +17,6 @@ export function ReportDock() {
   const [text, setText] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [longReport, setLongReport] = useState<BugReport | null>(null);
-  const log = useApp((s) => s.log);
-  const view = useApp((s) => s.snapshot?.view ?? null);
-  const stack = useMemo(
-    () =>
-      view === null
-        ? []
-        : [...view.stack].reverse().map((o) => ({
-            label: stackLabel(o),
-            controller: seatName(o.controller, view.viewer),
-          })),
-    [view],
-  );
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -85,9 +70,6 @@ export function ReportDock() {
     const report = bugReport({
       description: text,
       version: VERSION_INFO,
-      turn: view?.turn ?? null,
-      log,
-      stack,
       screenshot: withShot,
     });
     // Open the tab first, in the click's own gesture, then fill the clipboard.
@@ -153,7 +135,7 @@ export function ReportDock() {
             className="report-text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Describe the problem. The game log, the stack and the build are added for you."
+            placeholder="Describe the problem. The build is added for you."
           />
           <p className="report-hint">
             {shot === null
