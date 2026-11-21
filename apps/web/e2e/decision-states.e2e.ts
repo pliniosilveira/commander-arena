@@ -82,11 +82,12 @@ test('two piles: the player who chooses sees both piles in a modal', async ({ pa
   await expect(dialog.getByLabel(/^Pile 2/)).toBeVisible();
 });
 
-test('graveyard: the zone viewer lists the cards', async ({ page }) => {
+test('graveyard: the zone viewer lists the cards of the graveyard that was opened', async ({
+  page,
+}) => {
   await show(page, 'graveyard');
-  await page
-    .getByRole('button', { name: /graveyard/i })
-    .first()
-    .click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: /graveyard, 4 cards/i }).click();
+  const dialog = page.getByRole('dialog', { name: /graveyard/i });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('.board-zone-card')).toHaveCount(4);
 });
