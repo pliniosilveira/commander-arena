@@ -130,8 +130,8 @@ export function lookTakeRevealed(
   return decision.purpose === 'lookTake' && decision.prompt.startsWith('Reveal the top');
 }
 
-/** Where a looked-at card goes when taken (D-145): into the hand (the default), onto the battlefield, or into exile face down. */
-export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown';
+/** Where a looked-at card goes when taken (D-145): into the hand (the default), onto the battlefield, or into exile face down; or it stays on top of the library (Cream of the Crop). */
+export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'top';
 
 /**
  * Where the card taken from the top of the library goes, read from the `lookAtTop` of the ability on the stack; the hand
@@ -198,6 +198,7 @@ export function confirmLabel(
   if (decision.purpose === 'lookTake') {
     // CR 702.75a: Hideaway exiles the card it must take; "put it onto the battlefield" may take none.
     if (to === 'exileFaceDown') return 'Exile face down';
+    if (to === 'top') return 'Put on top';
     if (to === 'battlefield') return chosen.length === 0 ? 'Put none' : 'Put onto battlefield';
     return chosen.length === 0 ? 'Take none' : 'Put into hand';
   }
@@ -285,7 +286,7 @@ export function foundBadge(
   if (decision.purpose === 'move' && decision.minCardTypes !== undefined) return 'Exile';
   if (decision.purpose === 'move') return 'Put';
   if (decision.purpose === 'lookTake') {
-    return to === 'exileFaceDown' ? 'Exile' : to === 'battlefield' ? 'Put' : 'Take';
+    return to === 'exileFaceDown' ? 'Exile' : to === 'battlefield' || to === 'top' ? 'Put' : 'Take';
   }
   if (decision.purpose === 'lookSplit') {
     return decision.to === 'bottom' ? 'Bottom' : 'Hand';

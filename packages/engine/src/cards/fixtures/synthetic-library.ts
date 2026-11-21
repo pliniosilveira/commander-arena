@@ -73,6 +73,35 @@ export const SYNTHETIC_LIBRARY_LIST: readonly CardDefinition[] = [
     },
     ['sorcery'],
   ),
+  // CR 401.2, 401.4 (Cream of the Crop shape): one of the cards looked at stays on top unrevealed, the rest go on the bottom in an order the owner chooses.
+  spell(
+    'SYNTHETIC Top One Like',
+    'Look at the top three cards of your library. Put one of them on top of your library and the rest on the bottom of your library in any order.',
+    ['2', 'U'],
+    'U',
+    {
+      kind: 'lookAtTop',
+      count: 3,
+      take: { filter: {}, max: 1, min: 1, hidden: true, to: 'top' },
+      rest: 'bottomChosen',
+    },
+    ['sorcery'],
+  ),
+  // CR 701.20a, 608.2c (Cavalier of Thorns shape): reveal the top five, a land card from among them must go onto the battlefield, the rest into the graveyard.
+  spell(
+    'SYNTHETIC Reveal One Land Like',
+    'Reveal the top five cards of your library. Put a land card from among them onto the battlefield and the rest into your graveyard.',
+    ['2', 'U'],
+    'U',
+    {
+      kind: 'lookAtTop',
+      count: 5,
+      revealAll: true,
+      take: { filter: { types: ['land'] }, max: 1, min: 1, to: 'battlefield' },
+      rest: 'graveyard',
+    },
+    ['sorcery'],
+  ),
   spell(
     'SYNTHETIC Stock Up Three',
     'Look at the top three cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.',
