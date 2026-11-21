@@ -19,6 +19,7 @@ import {
   readCreatureType,
   regularPlurals,
   TYPE_LEADING_WORDS,
+  UNLISTED_CREATURE_TYPES,
 } from '../src/convert/parser/rules/noun/creature-types';
 import { dropped, type FaceType, readAll } from './parser-p5-helpers';
 
@@ -38,7 +39,8 @@ describe('the table', () => {
   test("is the engine's, generated from CR 205.3m, and has the two-word type", () => {
     expect(TABLE.length).toBeGreaterThan(300);
     expect(new Set(TABLE).size).toBe(TABLE.length);
-    expect(CREATURE_TYPES.size).toBe(TABLE.length);
+    // The parser reads the engine's table and the types of real cards that the repository's CR text does not list yet (`UNLISTED_CREATURE_TYPES`, one place, none in the table).
+    expect(CREATURE_TYPES.size).toBe(TABLE.length + UNLISTED_CREATURE_TYPES.length);
     expect(TABLE).toContain('Time Lord');
     expect(MULTIWORD_FORMS).toEqual(expect.arrayContaining(['Time Lord', 'Time Lords']));
   });

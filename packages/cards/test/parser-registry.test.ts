@@ -654,6 +654,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
+  'replacement.enters-as-copy-graveyard': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'static.unspent-mana': asIs,
