@@ -31,19 +31,19 @@ const ROW_LABEL: Readonly<Record<RowKind, string>> = {
 };
 
 /**
- * Tile proportions per row: how tall at most, how wide relative to height, the narrowest tile. Every
- * tile has the shape of the top of a card cut under its type line (`card-top.ts`), wider than tall.
+ * Tile proportions per row: how tall at most and how wide relative to height. Every tile has the
+ * shape of the top of a card cut under its type line (`card-top.ts`), wider than tall.
  */
-const ROW_SHAPE: Readonly<Record<RowKind, { maxH: number; aspect: number; minW: number }>> = {
+const ROW_SHAPE: Readonly<Record<RowKind, { maxH: number; aspect: number }>> = {
   // D-240 (issue 137): the largest tiles are a quarter bigger than they were (108, 84 and 70 before).
-  creature: { maxH: 136, aspect: CARD_TOP_ASPECT, minW: 96 },
-  other: { maxH: 105, aspect: CARD_TOP_ASPECT, minW: 84 },
-  land: { maxH: 88, aspect: CARD_TOP_ASPECT, minW: 56 },
+  creature: { maxH: 136, aspect: CARD_TOP_ASPECT },
+  other: { maxH: 105, aspect: CARD_TOP_ASPECT },
+  land: { maxH: 88, aspect: CARD_TOP_ASPECT },
 };
 
 /**
  * `extraW` is the width the row spends on attachment strips beside its tiles (`stripWidth` of each
- * host); the tiles shrink to leave it.
+ * host); a row that cannot hold them scrolls.
  */
 export function rowSpec(kind: RowKind, availableH: number, extraW = 0, scale = 1): RowSpec {
   const shape = ROW_SHAPE[kind];
@@ -53,7 +53,8 @@ export function rowSpec(kind: RowKind, availableH: number, extraW = 0, scale = 1
   return {
     tileH,
     preferredW,
-    minW: Math.min(Math.round(shape.minW * scale), preferredW),
+    // A card never shrinks to fit: a full row scrolls sideways (the three rows together).
+    minW: preferredW,
     gap: GAP,
     extraW,
   };

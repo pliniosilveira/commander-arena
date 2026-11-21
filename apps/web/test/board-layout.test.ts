@@ -392,12 +392,15 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(stripWidth(6)).toBe(180);
   });
 
-  test('strips take width, not height: the tiles keep their size and shrink only when the row is full', () => {
+  test('strips take width, not height: the tiles keep their size and the row scrolls when full', () => {
     const plain = rowSpec('creature', 140);
     const wide = rowSpec('creature', 140, stripWidth(10));
     expect(wide.tileH).toBe(plain.tileH);
     expect(wide.extraW).toBe(stripWidth(10));
-    expect(fitTiles(3, 420, wide).tileW).toBeLessThan(fitTiles(3, 420, plain).tileW);
+    const fit = fitTiles(3, 600, wide);
+    expect(fit.tileW).toBe(wide.preferredW);
+    expect(fit.overflow).toBe(true);
+    expect(fitTiles(3, 600, plain).overflow).toBe(false);
     // A tile has the shape of a card's top: wider than tall.
     expect(plain.preferredW).toBeGreaterThan(plain.tileH);
   });
