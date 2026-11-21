@@ -1,7 +1,7 @@
 // The Challenges flow: the player's deck comes from the precons, the opponent from the challenge
 // list; a refused challenge says why. The decks are SYNTHETIC (invented "Synthetic ..." cards).
 import { expect, test } from 'vitest';
-import { startChallengeOptions } from '../src/precons';
+import { CHALLENGES, startChallengeOptions } from '../src/precons';
 import { playableSnapshot, preconsOf, unsupportedSnapshot } from './precons-helpers';
 
 test("a challenge starts against the challenge deck with the player's precon", async () => {
@@ -34,5 +34,14 @@ test('a challenge that is not playable, or unknown, is refused with a reason', a
       challenge,
     });
     expect(result.ok).toBe(false);
+  }
+});
+
+test('every shipped challenge is a valid, fully supported deck', async () => {
+  const challenges = preconsOf(CHALLENGES.snapshots);
+  expect(CHALLENGES.problems).toEqual([]);
+  for (const info of challenges.list) {
+    const result = await challenges.prepare(info.id);
+    expect(result.ok, result.ok ? '' : result.reason).toBe(true);
   }
 });
