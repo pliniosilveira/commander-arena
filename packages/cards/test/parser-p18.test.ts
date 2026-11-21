@@ -139,6 +139,20 @@ describe('a card drawn (CR 121.1, 603.2c)', () => {
     ]);
   });
 
+  test('"except the first one they draw in each of their draw steps" is read (CR 504.1, Orcish Bowmasters)', () => {
+    expect(
+      abilities(
+        'Whenever an opponent draws a card except the first one they draw in each of their draw steps, you draw a card.',
+      ),
+    ).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'drawn', who: 'opponent', exceptFirstInDrawStep: true },
+        effect: DRAW,
+      },
+    ]);
+  });
+
   test('"~" in the body is the permanent itself: "Whenever you draw a card, put a +1/+1 counter on ~."', () => {
     expect(abilities('Whenever you draw a card, put a +1/+1 counter on ~.', 'creature')).toEqual([
       {
@@ -150,10 +164,6 @@ describe('a card drawn (CR 121.1, 603.2c)', () => {
   });
 
   test.each([
-    [
-      'Whenever an opponent draws a card except the first one they draw in each of their draw steps, you gain 1 life.',
-      'except the first one they draw in each of their draw steps, you gain 1 life.',
-    ],
     ['Whenever you draw two cards, you gain 1 life.', 'two cards, you gain 1 life.'],
     ['Whenever you draw your second card, you gain 1 life.', 'your second card, you gain 1 life.'],
     [
@@ -741,8 +751,8 @@ describe('"unless that player pays {1}" (CR 118.12a)', () => {
       'condition.unless-pays',
     ],
     [
-      'Whenever an opponent casts a spell, draw a card unless that player pays 2 life.',
-      '2 life.',
+      'Whenever an opponent casts a spell, draw a card unless that player pays X life.',
+      'X life.',
       'condition.unless-pays',
     ],
     [

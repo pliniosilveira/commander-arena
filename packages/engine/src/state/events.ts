@@ -93,6 +93,8 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly object: ObjectId;
       readonly nth: number;
+      /** Present, and `true`, when this was the first card the active player drew in the draw step that is going on (CR 504.1): the `drawn` trigger's `exceptFirstInDrawStep` reads it. */
+      readonly firstInDrawStep?: true;
     }
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
   /**
@@ -467,7 +469,8 @@ export type GameEvent =
         | 'bounce'
         | 'fight'
         | 'blight'
-        | 'untapCost';
+        | 'untapCost'
+        | 'removeCountersCost';
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;
@@ -630,7 +633,9 @@ export type GameEvent =
         | 'vote'
         | 'protectionColor'
         | 'protectionCardType'
-        | 'clashOpponent';
+        | 'clashOpponent'
+        | 'playerChoice'
+        | 'protector';
       readonly option: string;
     }
   /**

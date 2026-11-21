@@ -18,6 +18,9 @@ import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
+import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
+import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
+import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
@@ -34,6 +37,7 @@ import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
 import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
 import { ETERNAL_MIGHT_NOUN_RULES } from './eternal-might';
+import { FEDERATION_F_NOUN_RULES } from './federation-f';
 import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
 import { GISA_G2_NOUN_RULES } from './gisa-g2';
 import { GISA_G3_NOUN_RULES } from './gisa-g3';
@@ -70,6 +74,7 @@ import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
+import { SAME_NAME_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
@@ -458,8 +463,54 @@ export const NOUN_TARGET_CARD_IN_A_GRAVEYARD = defineRule<IrNoun>({
       graveyardPhrase(plural, 'inAny'),
     )(ctx, pos);
     if (!r.ok) return r;
-    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements.
-    return r.value.plural || r.value.upTo || r.value.count !== undefined ? fail(ctx, pos) : r;
+    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements. The words about this turn are
+    // `noun.target-card-in-a-graveyard-this-turn`.
+    return r.value.filter.discardedOrFromLibraryThisTurn === true ||
+      r.value.plural ||
+      r.value.upTo ||
+      r.value.count !== undefined
+      ? fail(ctx, pos)
+      : r;
+  },
+});
+
+/**
+ * `noun.target-card-in-a-graveyard-this-turn` (Ahoy Mateys deck, Ghost of Ramirez DePietro; CR 404.1, 115.1, 701.9, 701.17): "up to one target card in a graveyard that was discarded or put
+ * there from a library this turn": a card of any graveyard that went there this turn by a discard or from a library (the engine's `discardedOrFromLibraryThisTurn`). One card at most; the
+ * phrase is read only where a rule asks for this noun by its id, and only with the words about this turn.
+ */
+export const NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN = defineRule<IrNoun>({
+  id: 'noun.target-card-in-a-graveyard-this-turn',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)', 'CR 701.9 (Discard)', 'CR 701.17 (Mill)'],
+  examples: [
+    'up to one target card in a graveyard that was discarded or put there from a library this turn',
+    'target card in a graveyard that was discarded or put there from a library this turn',
+    'target creature card in a graveyard that was discarded or put there from a library this turn',
+  ],
+  rejects: [
+    'target card in a graveyard',
+    'up to one target card in a graveyard',
+    'up to two target cards in a graveyard that was discarded or put there from a library this turn',
+    'two target cards in a graveyard that was discarded or put there from a library this turn',
+    'target card in a graveyard that was discarded this turn',
+    'target card in a graveyard that was put there from a library this turn',
+    'target card in your graveyard that was discarded or put there from a library this turn',
+    'target card from a graveyard that was discarded or put there from a library this turn',
+    'card in a graveyard that was discarded or put there from a library this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-a-graveyard-this-turn', (plural) =>
+      graveyardPhrase(plural, 'inAny'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card at most, and only the words about this turn.
+    return r.value.plural ||
+      (r.value.count !== undefined && !r.value.upTo) ||
+      r.value.filter.discardedOrFromLibraryThisTurn !== true
+      ? fail(ctx, pos)
+      : r;
   },
 });
 
@@ -899,6 +950,8 @@ export const NOUN_RULES = [
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
+  // Ahoy Mateys deck, group 10 (Siren Stormtamer): "target spell or ability that targets you or a creature you control" starts like "target spell", which reads a prefix of it: tried first.
+  ...AHOY_G10_NOUN_RULES,
   NOUN_TARGET_SPELL,
   ...SPELL_OR_CREATURE_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".
@@ -925,6 +978,7 @@ export const NOUN_RULES = [
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD,
+  NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN,
   // Issue 89 (Animate Dead): "creature card in a graveyard" and "creature put onto the battlefield with ~", read by the enchant ability of an Aura only.
   ...AURA_GRAVEYARD_NOUN_RULES,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
@@ -945,6 +999,8 @@ export const NOUN_RULES = [
   ...ATTACKING_YOU_NOUN_RULES,
   // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
   ...QUANDRIX_G_TARGET_NOUN_RULES,
+  // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
+  ...AHOY_G7_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -953,10 +1009,13 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...SAME_NAME_NOUN_RULES,
   ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
+  // Ahoy Mateys deck, group 4: "each other creature you control that's a Skeleton or Pirate" and "each creature you control but don't own", which `noun.each-permanent` would stop in the middle of.
+  ...AHOY_G4_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
@@ -989,6 +1048,8 @@ export const NOUN_RULES = [
   ...ANGEL_NOUN_RULES,
   // D-362 (Hashaton, group 8): "the chosen cards".
   ...HASHATON_G8_NOUN_RULES,
+  // Federation Fleet deck, group F: "any number of target players' graveyards".
+  ...FEDERATION_F_NOUN_RULES,
   // D-392 (Hashaton, group 9): "that source's controller".
   ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -15,7 +16,7 @@ const field = (page: Page, seat: number) => page.locator(`[data-field-seat="${se
 async function start(page: Page): Promise<void> {
   await page.goto(game);
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await settled(page);
 }
 

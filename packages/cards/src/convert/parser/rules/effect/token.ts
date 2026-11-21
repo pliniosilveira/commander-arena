@@ -146,6 +146,18 @@ const createdTokens: Parser<{
       pos: host.pos,
     };
   }
+  // CR 508.4, 110.5b (Kari Zev): "create Ragavan, a legendary 2/1 red Monkey creature token. Ragavan enters tapped and attacking.": the second sentence says the token just made
+  // enters tapped and attacking, so it is the token's own flag (as "that's tapped and attacking" is), read only about the one token the first sentence names.
+  if (token.named !== undefined && token.legendary === true) {
+    const enters = literal(`. ${token.named} enters tapped and attacking`)(ctx, head.pos);
+    if (enters.ok && /^(?:\.|$)/u.test(ctx.text.slice(enters.pos))) {
+      return {
+        ok: true,
+        value: { token: { ...token, tappedAndAttacking: true }, alternative: null },
+        pos: enters.pos,
+      };
+    }
+  }
   const rider = sequence(
     choice(literal('. They have '), literal('. Those tokens have ')),
     TOKEN_QUOTED_ABILITY,

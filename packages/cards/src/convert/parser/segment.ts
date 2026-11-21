@@ -257,17 +257,30 @@ const COPY_IF_TARGETS =
  * the copy of the first targets, so the two are read as one (`effect.copy-spell`). Joined only to a sentence that ends in the copy of the spell of the trigger.
  */
 const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
+/** "Round up each time." (Saw in Half, CR 107.1a): the rounding of the halves the copy exception before it says, so it stays with that sentence. */
+const ROUND_UP_SENTENCE = /^round up each time\.$/i;
+const HALF_COPY_END = /their toughness is half that creature['’]s toughness\.$/i;
 const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
+
+/**
+ * "You may cast it this turn, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead." (Dire Fleet Daredevil, CR 614.1a): the second
+ * sentence is a rider of the permission the first gives, so the two are read as one (`effect.may-cast-any-type`).
+ */
+const EXILE_INSTEAD_SENTENCE = /^if that spell would be put into a graveyard, exile it instead\.$/i;
+const MAY_CAST_ANY_TYPE_END =
+  /(?:^|, )(?:you may )?cast (?:it|that card) this turn, and mana of any type can be spent to cast that spell\.$/i;
 
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
   const said = text.slice(span.start, span.end);
   const beforeText = text.slice(before.start, before.end);
+  if (EXILE_INSTEAD_SENTENCE.test(said)) return MAY_CAST_ANY_TYPE_END.test(beforeText);
   if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
   if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
+  if (ROUND_UP_SENTENCE.test(said)) return HALF_COPY_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
@@ -500,6 +513,14 @@ const WHEN_NONLAND_EXILED =
   /^when one or more nonland cards are exiled this way, put that many [^.]*\.$/i;
 
 /**
+ * "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token." (Storm Fleet Negotiator, CR 701.20a, 608.2c): the second sentence
+ * counts the cards the first one revealed, so the two are read as one instruction.
+ */
+const EACH_PLAYER_REVEALS_TOP = /^each player reveals the top card of their library\.$/i;
+const FOR_EACH_NONLAND_REVEALED_TOKEN =
+  /^for each nonland card revealed this way, you create [^.]*\.$/i;
+
+/**
  * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player sacrifices all other
  * nonland permanents they control." (stage P70, D-231): the sacrifice is of what was not chosen, so the two sentences are read as one instruction.
  */
@@ -705,6 +726,13 @@ const IF_REVEALED_CARD =
  * together for `effect.reveal-top-branches`. A list of types may hold a comma, which `IF_REVEALED_CARD` does not allow.
  */
 const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
+/**
+ * "Each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~." (Federation Fleet deck, Ambassador K'Ehleyr, CR
+ * 701.20a, 608.2c): the second sentence counts the cards the first one revealed, so the two are one instruction, kept together for `effect.each-player-reveals-then-draws`.
+ */
+const EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE =
+  /(?:^|, )each player reveals the top card of their library, then draws a card\.$/i;
+const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
@@ -715,6 +743,13 @@ const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 const MAY_CAST_IF_LESSER =
   /^you may cast it without paying its mana cost if it['’]s a spell with lesser mana value\.$/i;
 const ELSE_CAST_INTO_HAND = /^if you don['’]t cast it, put it into your hand\.$/i;
+/**
+ * "Surveil 2, then you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~." (Federation Fleet deck,
+ * group D, B'Elanna Torres, Scrapper; CR 701.20a, 608.2c): three sentences that are one instruction (what is revealed, what is drawn when the card is of a kind, and what happens when nothing
+ * was drawn), kept together for `effect.reveal-top-draw-else-counters`. Only all three in a row (the first may follow the comma of "Surveil 2, then").
+ */
+const DRAW_IF_REVEALED = /^draw a card if it['’]s an? [^.,]* card\.$/i;
+const ELSE_PUT_COUNTERS = /^if you don['’]t draw a card this way, put [^.]* counters? on ~\.$/i;
 /**
  * "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of
  * that type from among the exiled cards without paying its mana cost." (CR 701.13, 608.2d, 611.2a): three sentences that are one instruction ("them" and "the exiled cards" are the
@@ -759,6 +794,15 @@ const REMOVE_COUNTERS_MANA_VALUE =
 const COUNT_LIBRARY = /^count the number of cards in your library\.$/i;
 const LIFE_TOTAL_BECOMES_THAT_NUMBER = /^your life total becomes that number\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
+/**
+ * "Create Ragavan, a legendary 2/1 red Monkey creature token. Ragavan enters tapped and attacking." (Kari Zev, CR 508.4, 110.5b): the second sentence is the state the one named token
+ * enters in, read as one instruction (`effect.create-token`).
+ */
+const LOOK_AT_DEFENDERS_HAND = /(?:^|, )look at defending player['’]s hand\.$/i;
+const PUT_CREATURE_FROM_IT_ATTACKING =
+  /^you may put a creature card from it onto the battlefield under your control tapped and attacking that player or a planeswalker they control\.$/i;
+const CREATE_NAMED_TOKEN = /(?:^|, )create [^.]*, a legendary [^.]* creature token(?: [^.]*)?\.$/i;
+const NAMED_TOKEN_ENTERS_TAPPED_ATTACKING = /^[^.]+ enters tapped and attacking\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 /**
  * "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put
@@ -792,6 +836,16 @@ const CONTROLLER_REVEALS_UNTIL =
   /^that creature['’]s controller reveals cards from the top of their library until they reveal [^.]*\.$/i;
 const THE_PLAYER_PUTS_ANY_ORDER =
   /^the player puts that card onto the battlefield and the rest on the bottom of their library in any order\.$/i;
+/**
+ * "Target opponent whose turn it is may cast a spell from their hand without paying its mana cost. If they do, you copy that spell. You may choose new targets for the copy. If they don't,
+ * you draw a card." (Federation Fleet deck, group F, Cmdr. Troi; CR 608.2g, 608.2c, 707.10): four sentences that are one instruction, kept together for
+ * `effect.opponent-casts-free-you-copy`. Only all four in a row.
+ */
+const TROI_CAST =
+  /^target opponent whose turn it is may cast a spell from their hand without paying its mana cost\.$/i;
+// "You may choose new targets for the copy." stays with the sentence before it (`splitSentences`).
+const TROI_COPY = /^if they do, you copy that spell\. you may choose new targets for the copy\.$/i;
+const TROI_ELSE_DRAW = /^if they don['’]t, you draw a card\.$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -823,6 +877,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
+      continue;
+    }
+    // Cmdr. Troi, Outgoing Empath (Federation Fleet deck, group F): the four sentences of one instruction (three spans: the copy and its new targets are one).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, TROI_CAST) &&
+      said(b, TROI_COPY) &&
+      said(c, TROI_ELSE_DRAW)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
       continue;
     }
     // Finale of Promise (issue 121): the four sentences of one instruction.
@@ -971,6 +1037,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       a !== undefined &&
       c !== undefined &&
       said(a, REVEAL_TOP_CARD) &&
+      said(b, DRAW_IF_REVEALED) &&
+      said(c, ELSE_PUT_COUNTERS)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
       said(b, MAY_CAST_IF_LESSER) &&
       said(c, ELSE_CAST_INTO_HAND)
     ) {
@@ -990,6 +1065,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
+        (said(a, CREATE_NAMED_TOKEN) && said(b, NAMED_TOKEN_ENTERS_TAPPED_ATTACKING)) ||
+        (said(a, LOOK_AT_DEFENDERS_HAND) && said(b, PUT_CREATURE_FROM_IT_ATTACKING)) ||
         (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
@@ -1003,6 +1080,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
+        (said(a, EACH_PLAYER_REVEALS_TOP) && said(b, FOR_EACH_NONLAND_REVEALED_TOKEN)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
@@ -1101,6 +1179,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, FOR_EACH_PERMANENT_DIFFERENT_OPPONENT) &&
       said(b, EACH_OPPONENT_GAINS_CONTROL)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE) &&
+      said(b, FOR_EACH_REVEALED_THIS_WAY)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

@@ -2,11 +2,13 @@ import { choice, literal, map, optional, pattern, separatedBy1, sequence } from 
 import type { IrCost, IrKeyword } from '../../ir/types';
 import { defineRule, family, node } from '../registry';
 import { affinityKeyword } from './affinity';
+import { AHOY_G10_KEYWORD_RULES } from './ahoy-g10';
 import { ALT_COST_KEYWORD_RULES } from './alt-costs';
 import { ATTACHMENT_KEYWORD_RULES } from './attachments';
 import { CASTING_KEYWORD_RULES } from './casting';
 import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COPY_KEYWORD_RULES } from './copies';
+import { DECK_LIMIT_KEYWORD_RULES } from './deck-limit';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
 import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
 import { GIFT_KEYWORD_RULES } from './gift';
@@ -398,9 +400,12 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
 export const KEYWORD_RULES = [
   // D-490 (Gisa deck, group 3): "Partner with Regna, the Redeemer" starts like the plain keyword Partner, which `keyword.line` reads a prefix of: tried first.
   ...PARTNER_WITH_KEYWORD_RULES,
+  ...DECK_LIMIT_KEYWORD_RULES,
   KEYWORD_LINE,
   KEYWORD_CYCLING,
   ...TYPECYCLING_RULES,
+  // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "Equip {2}. This ability costs {2} less to activate if ..." starts like the plain equip, which reads a prefix of it: tried first.
+  ...AHOY_G10_KEYWORD_RULES,
   ...ATTACHMENT_KEYWORD_RULES,
   ...CASTING_KEYWORD_RULES,
   ...ALT_COST_KEYWORD_RULES,

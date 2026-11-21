@@ -160,6 +160,17 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
+      // "Equip {2}. This ability costs {2} less to activate if ...": as `costReducedIf` of an activated ability (D-135).
+      if (k.costReducedIf !== undefined) {
+        const reduced = k.costReducedIf;
+        if (!Number.isSafeInteger(reduced.generic) || reduced.generic < 1) {
+          issue(out, `${path}.costReducedIf.generic`, 'the reduction is a positive whole number');
+        }
+        checkCondition(reduced.condition, `${path}.costReducedIf.condition`, out);
+        if (!Array.isArray(k.cost) || !k.cost.some((c) => c?.kind === 'mana')) {
+          issue(out, `${path}.costReducedIf`, 'only a mana cost can be reduced');
+        }
+      }
       // D-220 (CR 702.6c): "Equip Wizard {1}": a filter of the creature to attach to; no zone, no owner, no combat, no tapped state.
       if (k.restriction !== undefined) {
         checkFilter(k.restriction, `${path}.restriction`, out);
@@ -418,6 +429,13 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           );
         }
         checkReplacementToken(r.alsoCreate.token, `${path}.alsoCreate.token`, out);
+      }
+      // The Darkness Crystal (CR 614.1a): the life the controller gains as the creature is exiled, and the link to the card an ability reads as "exiled with ~".
+      if (r.alsoGainLife !== undefined && (!isCount(r.alsoGainLife) || r.alsoGainLife < 1)) {
+        issue(out, `${path}.alsoGainLife`, 'the life gained must be a positive integer');
+      }
+      if (r.linkExiled !== undefined && r.linkExiled !== true) {
+        issue(out, `${path}.linkExiled`, 'linkExiled must be true when present');
       }
       break;
     default:
@@ -1297,7 +1315,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       break;
     case 'permanentSacrificed':
-      if (!isOneOf(t.by, ['you', 'any'])) {
+      if (!isOneOf(t.by, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.by`, `unknown sacrificing player ${String(t.by)}`);
       }
       if (t.filter !== undefined) checkFilter(t.filter, `${path}.filter`, out);
@@ -1333,6 +1351,41 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // CR 121.1: "your second card each turn": the nth card drawn, counting from 1.
       if (t.nth !== undefined && (!isCount(t.nth) || t.nth < 1)) {
         issue(out, `${path}.nth`, 'nth must be a positive integer');
+      }
+      // CR 504.1 (Orcish Bowmasters): "except the first one they draw in each of their draw steps": every draw but one, so not with a count.
+      if (t.exceptFirstInDrawStep !== undefined) {
+        if (t.exceptFirstInDrawStep !== true) {
+          issue(out, `${path}.exceptFirstInDrawStep`, 'exceptFirstInDrawStep must be true');
+        }
+        if (t.nth !== undefined) {
+          issue(out, `${path}.exceptFirstInDrawStep`, 'exceptFirstInDrawStep does not go with nth');
+        }
+      }
+      break;
+    case 'damageBatch':
+      // CR 120.2, 603.2c: a filter of the sources, whom they damaged, and how many sources.
+      checkFilter(t.what, `${path}.what`, out);
+      if (
+        filterSome(
+          t.what,
+          (f) => f.zone !== undefined || f.owner !== undefined || f.stackKind !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the source of the damage is on the battlefield: no zone, owner or stackKind',
+        );
+      }
+      if (!isOneOf(t.to, ['player', 'opponents'])) {
+        issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
+      }
+      if (t.atLeast !== undefined && (!isCount(t.atLeast) || t.atLeast < 2)) {
+        issue(
+          out,
+          `${path}.atLeast`,
+          'atLeast is a whole number of 2 or more (one is the default)',
+        );
       }
       break;
     case 'dealsCombatDamage':
@@ -1896,6 +1949,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
+        ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
+          ? { triggerDamagedPlayerCount: true, triggerDamagedPlayers: true }
+          : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
@@ -1906,6 +1962,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
+        ...(a.trigger?.kind === 'dealsCombatDamage' ? { combatDamageTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
           ? { postcombatMainTrigger: true }

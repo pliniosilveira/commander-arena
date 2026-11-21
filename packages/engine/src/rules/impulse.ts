@@ -140,6 +140,9 @@ export function runMayPlay(
         ...(effect.free === true ? { free: true as const } : {}),
         // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell".
         ...(effect.anyManaColor === true ? { anyManaColor: true as const } : {}),
+        // Hostage Taker (CR 609.4b): "mana of any type can be spent to cast that spell"; Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead".
+        ...(effect.anyManaType === true ? { anyManaType: true as const } : {}),
+        ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
       },
     });
   }

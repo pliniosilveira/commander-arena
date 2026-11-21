@@ -71,6 +71,7 @@ import { SYNTHETIC_ENCHANTED_LAND_MANA_LIST } from './synthetic-enchanted-land-m
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
+import { SYNTHETIC_EVASION_LIMITS_LIST } from './synthetic-evasion-limits';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
@@ -508,6 +509,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
+  ...SYNTHETIC_EVASION_LIMITS_LIST,
   ...SYNTHETIC_ENCHANTED_LAND_MANA_LIST,
   ...SYNTHETIC_POWER_ABOVE_TARGET_LIST,
   ...SYNTHETIC_UNBLOCKED_LIST,

@@ -354,8 +354,6 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return `this ${self}`;
     case 'thisSpell':
       return 'this spell';
-    case 'convokers':
-      return 'each creature that convoked this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
     case 'chosen':
@@ -397,6 +395,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSources':
       // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
       return 'those creatures';
+    case 'convokers':
+      // Lethal Scheme (CR 702.51a): the creatures tapped to cast the spell with Convoke.
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -511,10 +512,14 @@ function recipientText(
       return 'it';
     case 'triggerSources':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'defendingPlayer':
       return 'the defending player';
     case 'playerToYourRight':
       return 'the player to your right';
+    case 'chosenPlayer':
+      return 'that player';
     case 'attackedBy':
       // D-139 (CR 508.1b): "the player or planeswalker it's attacking".
       return "the player or planeswalker it's attacking";
@@ -526,6 +531,9 @@ function recipientText(
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6).
       return 'each opponent attacking that player';
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: the opponents a batch of sources damaged.
+      return 'each of those opponents';
     case 'declinedPlayer':
       return 'the player who declined';
     case 'giftRecipient':
@@ -547,7 +555,6 @@ function recipientText(
     case 'chosen':
     case 'this':
     case 'thisSpell':
-    case 'convokers':
     case 'moved':
     case 'boundObjects':
     case 'thisCard':
@@ -581,6 +588,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   cantBeBlocked: "can't be blocked",
   // Issue 81 (CR 509.1b): the Gingerbrute token.
   cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
+  cantAttackPlayersAlreadyAttacked: "can't attack a player it has already attacked this turn",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
@@ -637,11 +645,12 @@ function greatestOf(
   stat: 'power' | 'toughness' | 'manaValue',
   filter: ObjectFilter,
   theirs: boolean,
+  extreme: 'greatest' | 'least' = 'greatest',
 ): string {
   const things = thingsPhrase({ ...filter, controller: 'you' }, true);
   const group = things === null ? 'permanents' : things;
   const word = stat === 'manaValue' ? 'mana value' : stat;
-  return ` with the greatest ${word} among ${group.replace(/ you control$/, theirs ? ' they control' : ' you control')}`;
+  return ` with the ${extreme} ${word} among ${group.replace(/ you control$/, theirs ? ' they control' : ' you control')}`;
 }
 
 /** The gist of a sacrifice effect: "Defending player sacrifices 2 permanents", "Sacrifice this creature". */
@@ -667,9 +676,11 @@ function sacrificeText(
       : objects.anyNumber === true
         ? anyNumberOf(objects.filter, theirs, objects.atLeastOne === true)
         : `${chosenPermanents(objects.filter, objects.count ?? 1, defs)}${
-            objects.greatest === undefined
-              ? ''
-              : greatestOf(objects.greatest, objects.filter, theirs)
+            objects.greatest !== undefined
+              ? greatestOf(objects.greatest, objects.filter, theirs)
+              : objects.least !== undefined
+                ? greatestOf(objects.least, objects.filter, theirs, 'least')
+                : ''
           }`;
   if (player === undefined) return `Sacrifice ${what}`;
   // CR 101.4 (D-131): each of several players chooses their own, in turn order.
@@ -702,12 +713,16 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'playerToYourRight':
       return { who: 'the player to your right', third: true };
+    case 'chosenPlayer':
+      return { who: 'that player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
     case 'triggerAttackedPlayer':
       return { who: 'that opponent', third: true };
     case 'opponentsAttackingTriggerPlayer':
       return { who: 'they', third: false };
+    case 'triggerDamagedPlayers':
+      return { who: 'each of those opponents', third: true };
     case 'declinedPlayer':
       return { who: 'the player who declined', third: true };
     case 'giftRecipient':
@@ -1526,6 +1541,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'requireAttack':
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
+    case 'creaturesCantAttackYou':
+      // Federation Fleet group F (CR 508.1a): "Until your next turn, creatures can't attack you".
+      return "Until your next turn, creatures can't attack you";
     case 'doubleTokens':
       // Issue 101 (CR 614.1a): "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead".
       return 'until end of turn, twice as many tokens are created under your control';

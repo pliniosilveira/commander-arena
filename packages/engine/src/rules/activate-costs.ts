@@ -33,6 +33,7 @@ import { discardOne } from './madness';
 import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
+import { removalCounters } from './remove-counters-candidates';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
@@ -92,6 +93,12 @@ export interface CostBreakdown {
   readonly tapCreatures: number | null;
   /** "Blight 1" (D-407, CR 701.68): the -1/-1 counters put on a creature the player controls, none when 0. */
   readonly blight: number;
+  /** "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the counters taken off the player's permanents the filter matches, or null. */
+  readonly removeAmong: {
+    readonly counter: string;
+    readonly count: number;
+    readonly filter: ObjectFilter;
+  } | null;
 }
 
 /**
@@ -131,6 +138,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tapCreaturesCosts = 0;
   let blight = 0;
   let blightCosts = 0;
+  let removeAmong: CostBreakdown['removeAmong'] = null;
+  let removeAmongCosts = 0;
   let onlyChosenColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
@@ -150,6 +159,11 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         life += x;
         break;
       case 'removeCounters':
+        if (cost.among !== undefined) {
+          removeAmongCosts += 1;
+          removeAmong = { counter: cost.counter, count: cost.count, filter: cost.among };
+          break;
+        }
         counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
         break;
       case 'loyalty':
@@ -236,7 +250,16 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounces > 1 ||
     exileCardsCosts > 1 ||
     loyaltyCosts > 1 ||
-    blightCosts > 1
+    blightCosts > 1 ||
+    removeAmongCosts > 1
+  ) {
+    return null;
+  }
+  // Federation Fleet group D: the counters are chosen after the permanents to tap and before a blight, which a crew cost (its creatures are chosen last, alone), an untap cost and a blight have no
+  // order for.
+  if (
+    removeAmong !== null &&
+    (tapCreatures !== null || untapPermanents !== null || blight > 0 || loyalty !== null)
   ) {
     return null;
   }
@@ -279,6 +302,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     untapPermanents,
     tapCreatures,
     blight,
+    removeAmong,
   };
 }
 
@@ -537,6 +561,13 @@ export function costRefusal(
       return found === 0
         ? "you control nothing to return to its owner's hand"
         : `you control fewer than ${parts.bounceCount} permanents to return to their owners' hands`;
+    }
+  }
+  if (parts.removeAmong !== null) {
+    // CR 118.3, 122.1: enough counters of the kind among the permanents that match.
+    const { counter, count, filter } = parts.removeAmong;
+    if (removalCounters(paid, seat, source.id, filter, counter).total < count) {
+      return `you control too few ${counter} counters to remove`;
     }
   }
   if (parts.blight > 0 && blightCandidates(paid, seat).length === 0) {

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -12,7 +13,7 @@ const game = (human: string, seed: number) => `/?autostart=${human},swamp-forest
 
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const bar = (page: Page) => page.locator('.dec-bar');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const stackItems = (page: Page) => stack(page).locator('.pnl-stack-item');
 const targets = (page: Page) => page.getByRole('region', { name: 'Legal targets' });
 
@@ -80,7 +81,7 @@ test('Storm: the third spell copies twice; the copies are on the stack and ask f
   const bolt = 'SYNTHETIC Storm Bolt';
   await page.goto(game('synthetic-storm', 1));
   await playUntil(page, bolt, 3, 3);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   // The hint of the storm count shows while a storm card is in hand.
   await expect(page.locator('[data-spells-cast]')).toContainText('Spells cast this turn');
@@ -123,6 +124,11 @@ test('Storm: the third spell copies twice; the copies are on the stack and ask f
   await expect(stack(page).locator('[data-copy]')).toHaveCount(2);
   await expect(stackItems(page).first()).toContainText('copy');
   await expect(page.getByRole('log')).toContainText('You copy SYNTHETIC Storm Bolt');
+  // The card on top of the stack is previewed by itself; a tap on it closes it.
+  await page.mouse.move(5, 5);
+  await expect(page.locator('.board-preview [data-preview-stack]')).toBeVisible();
+  await page.locator('.board-preview').click();
+  await expect(page.locator('.board-preview')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -135,7 +141,7 @@ test('Replicate: the count dialog, the cost, and a copy for each time it was pai
   const bolt = 'SYNTHETIC Replicate Bolt';
   await page.goto(game('synthetic-replicate', 1));
   await playUntil(page, bolt, 1, 3);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, bolt).first().click();
   const dialog = page.getByRole('dialog', { name: 'Replicate' });

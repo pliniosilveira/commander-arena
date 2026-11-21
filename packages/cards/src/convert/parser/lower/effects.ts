@@ -21,6 +21,10 @@ import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
+import { AHOY_G3_LOWERINGS } from './ahoy-g3';
+import { AHOY_G7_LOWERINGS } from './ahoy-g7';
+import { AHOY_G8_LOWERINGS } from './ahoy-g8';
+import { AHOY_G10_LOWERINGS, revealEachTokenLowering } from './ahoy-g10';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
@@ -33,6 +37,8 @@ import { amountArg, arg, type Effects, eachObject, failure, operand } from './cl
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
+  CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
+  CHOOSE_PLAYER,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
@@ -73,8 +79,11 @@ import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { FEDERATION_D_LOWERINGS } from './federation-d';
+import { FEDERATION_F_LOWERINGS } from './federation-f';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
+import { FLEET_E_LOWERINGS } from './fleet-e';
 import { FOOD_D_LOWERINGS } from './food-d';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
@@ -84,6 +93,7 @@ import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
   BECOMES_LOSES_ALL,
+  BECOMES_WHILE_COUNTER,
   GAIN_STATIC_ABILITY,
   GIVE_POISON,
 } from './granted-static';
@@ -119,6 +129,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
+import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
@@ -241,7 +252,7 @@ const GOAD: Lowering<IrClause, Effects> = {
 };
 
 function simple(
-  verb: 'destroy' | 'exile' | 'counter' | 'tap' | 'untap' | 'transform',
+  verb: 'destroy' | 'exile' | 'counter' | 'tap' | 'untap' | 'transform' | 'explore',
 ): Lowering<IrClause, Effects> {
   return {
     head: verb,
@@ -1746,6 +1757,10 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       ...(what.anyNumber === true ? (['selector:anyNumber'] as const) : []),
       ...(what.atLeastOne === true ? (['selector:atLeastOne'] as const) : []),
       ...(what.greatest !== undefined ? (['selector:greatest'] as const) : []),
+      ...(what.least !== undefined ? (['selector:least'] as const) : []),
+      ...(what.dealtCombatDamageToYou === true
+        ? (['selector:chooseDealtCombatDamageToYou'] as const)
+        : []),
     ]);
     if (blocked.length > 0) return failure(clause, blocked);
     const filter = lowerFilter(what);
@@ -1771,6 +1786,8 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
       ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
       ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
+      ...(what.least === undefined ? {} : { least: what.least }),
+      ...(what.dealtCombatDamageToYou === true ? { dealtCombatDamageToYou: true as const } : {}),
       ...(xCount !== undefined ? { count: xCount } : {}),
       ...(count > 1 && what.anyNumber !== true ? { count } : {}),
     };
@@ -1921,6 +1938,14 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     }
     const count = amountArg(clause, 'count', ctx);
     if (!count.ok) return count;
+    // Federation Fleet group D (CR 122.6): what a later "if you put ... counters on creatures this way" asks about.
+    ctx.putCounters.push({
+      counter: counter.name,
+      creatures:
+        objectsArg?.kind === 'noun' &&
+        (objectsArg.filter.types?.length ?? 0) > 0 &&
+        objectsArg.filter.types?.every((t) => t === 'creature') === true,
+    });
     return eachObject(
       clause,
       ctx,
@@ -2119,7 +2144,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
   }
   // D-648 (CR 508.4): "that's attacking that opponent": only in a trigger about a player attacking one of your opponents, which names the player attacked.
-  let entersAttacking: { attacking?: { at: PlayerSelector } } = {};
+  let entersAttacking: {
+    attacking?: { at: PlayerSelector; controllerChooses?: true };
+  } = {};
   if (token.attackingThatOpponent === true) {
     if (ctx.attackedPlayer === null) return { ok: false, needs: [], ...at };
     const missing = missingFeatures([...ctx.attackedPlayer.needs, 'token:attacking']);
@@ -2135,7 +2162,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       'token:tapped',
     ]);
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
-    entersAttacking = { attacking: { at: ctx.attackBatchPlayer.selector } };
+    entersAttacking = {
+      attacking: { at: ctx.attackBatchPlayer.selector, controllerChooses: true },
+    };
   }
   const entersTapped = {
     ...(token.tapped === true || token.tappedAndAttacking === true
@@ -2356,6 +2385,29 @@ const PLAYER_LOCK: Lowering<IrClause, Effects> = {
   },
 };
 
+const PLAYER_PROTECTION: Lowering<IrClause, Effects> = {
+  head: 'playerProtection',
+  id: 'lower.player-protection',
+  needs: ['effect:grantPlayerProtectionEverything'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'player');
+    if (named?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(named, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
   ADD_COUNTERS,
@@ -2480,6 +2532,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ATTACK_RANDOM_OPPONENT,
   ATTACK_RANDOM_OPPONENT_ANY,
   simple('transform'),
+  // CR 701.44a (Francisco): "~ explores", "it explores".
+  simple('explore'),
   REGENERATE,
   ADD_MANA,
   CHOOSE_COLOR,
@@ -2491,6 +2545,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainExperience'),
   playerVerb('loseLife'),
   PLAYER_LOCK,
+  PLAYER_PROTECTION,
   playerVerb('mill'),
   MANIFEST,
   playerVerb('shuffle'),
@@ -2523,6 +2578,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_ABILITY,
   GRANT_MANA_ABILITY,
   RESTRICT,
+  CHOOSE_PLAYER,
+  CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
   BECOMES,
@@ -2543,6 +2600,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
   ...WITHERBLOOM_A_LOWERINGS,
+  // Federation Fleet deck, group B (Ambassador K'Ehleyr): every player reveals the top card of their library and draws a card, a counter for each nonland card revealed.
+  EACH_PLAYER_REVEALS_THEN_DRAWS,
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
@@ -2574,13 +2633,26 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...UNBOUND_I_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
+  // Ahoy Mateys deck, group 3: "Exile that token at end of combat.", "Look at defending player's hand. You may put a creature card from it onto the battlefield ... tapped and attacking ...", "Return that creature to its owner's hand at the beginning of the next end step.".
+  ...AHOY_G3_LOWERINGS,
+  // Ahoy Mateys deck, group 7: "That creature doesn't untap during its controller's untap step for as long as you control ~."
+  ...AHOY_G7_LOWERINGS,
+  // Ahoy Mateys deck, group 10: "Each creature that convoked this spell connives.", "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token."
+  ...AHOY_G10_LOWERINGS,
+  revealEachTokenLowering(lowerCreateToken),
+  // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
+  ...AHOY_G8_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...FLEET_E_LOWERINGS,
+  // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
+  ...FEDERATION_F_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
   ...PRISMARI_G3_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
+  ...FEDERATION_D_LOWERINGS,
   ...GALADRIEL_G1_LOWERINGS,
   // Galadriel deck, group 3 (issue 43): an exchange of control, a counter unless the controller pays an amount, "draw a card and reveal it" with counters removed, "its activated
   // abilities can't be activated this turn".
@@ -2648,6 +2720,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   BECOMES_FOR_GOOD,
+  BECOMES_WHILE_COUNTER,
   BECOMES_LOSES_ALL,
   GIVE_POISON,
   GAIN_CONTROL,
@@ -2698,20 +2771,23 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   test === 'triggerSpellManaValue' ||
                   test === 'milledThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' ||
-                    test === 'discardedSpellThisWay' ||
-                    test === 'destroyedThisWay' ||
-                    test === 'searchedThisWay'
-                  ? 'thisWayAtLeast'
-                  : test === 'otherAttachedToHost' || test === 'xAtLeast'
-                    ? 'amountIs'
-                    : test === 'attackersAtYou'
-                      ? 'attackersAtYouAtLeast'
-                      : test === 'attackedHasMoreLife'
-                        ? 'attackedHasMoreLifeThanOtherOpponent'
-                        : test === 'controlsThat'
-                          ? 'subjectControlledByYou'
-                          : test;
+                : test === 'subjectGreaterPower'
+                  ? 'subjectGreaterPt'
+                  : test === 'discardedThisWay' ||
+                      test === 'putCountersThisWay' ||
+                      test === 'discardedSpellThisWay' ||
+                      test === 'destroyedThisWay' ||
+                      test === 'searchedThisWay'
+                    ? 'thisWayAtLeast'
+                    : test === 'otherAttachedToHost' || test === 'xAtLeast'
+                      ? 'amountIs'
+                      : test === 'attackersAtYou'
+                        ? 'attackersAtYouAtLeast'
+                        : test === 'attackedHasMoreLife'
+                          ? 'attackedHasMoreLifeThanOtherOpponent'
+                          : test === 'controlsThat'
+                            ? 'subjectControlledByYou'
+                            : test;
     return failure(
       clause,
       kind === 'raw' ||
@@ -2724,6 +2800,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
+        kind === 'diesThisWay' ||
+        kind === 'thePlayerIs' ||
         kind === 'cardsExiledWithSelf'
         ? []
         : missingFeatures([`condition:${kind}`]),

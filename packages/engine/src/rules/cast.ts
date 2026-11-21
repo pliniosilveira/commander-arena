@@ -90,6 +90,7 @@ import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
 import { derive } from './derive';
+import { escapeGrantData } from './escape-grant';
 import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
 import { freeCastSlotToUse } from './free-cast';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
@@ -128,7 +129,11 @@ import {
   remainders,
   usePayOptions,
 } from './pay-options';
-import { playPermissionAnyColor } from './play-permission-color';
+import {
+  playPermissionAnyColor,
+  playPermissionAnyType,
+  playPermissionExiles,
+} from './play-permission-color';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -265,6 +270,8 @@ export function beginCast(
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
+      // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
+      ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
       freeUse !== null ||
       // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
@@ -277,10 +284,16 @@ export function beginCast(
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
       // D-350: what the effect that let the card be cast says about this spell.
-      ...(riders.anyManaType === true ? { anyManaType: true as const } : {}),
+      ...(riders.anyManaType === true ||
+      // Hostage Taker (CR 609.4b): "mana of any type can be spent to cast that spell" of the permission the card is cast with from exile.
+      (zone === 'exile' && !resolving && playPermissionAnyType(state, seat, obj.id))
+        ? { anyManaType: true as const }
+        : {}),
       // D-359: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
       ...(riders.exileInstead === true ||
-      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
+      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj)) ||
+      // Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead" of the permission the card is cast with from exile.
+      (zone === 'exile' && !resolving && playPermissionExiles(state, seat, obj.id))
         ? { exileInstead: true as const }
         : {}),
       // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" of the permission the card is cast with.
@@ -1097,23 +1110,9 @@ function settlePayOptions(
 ): { state: GameState; events: GameEvent[]; cost: string[] } | null {
   const casting = state.casting;
   if (!casting || !payOptionsAnswerOk(base, objects)) return null;
-  const tapped =
-    objects.length === 0 ? { state, events: [] } : usePayOptions(state, base.mechanism, objects);
-  if (tapped === null) return null;
-  // CR 702.51a (issue 102): the creatures that convoked the spell are remembered by it, for "each creature that convoked this spell".
-  const spellObject = tapped.state.objects[casting.object];
   const used =
-    base.mechanism === 'convoke' && objects.length > 0 && spellObject?.stack != null
-      ? {
-          ...tapped,
-          state: patchObject(tapped.state, casting.object, {
-            stack: {
-              ...spellObject.stack,
-              convokedBy: [...(spellObject.stack.convokedBy ?? []), ...objects],
-            },
-          }),
-        }
-      : tapped;
+    objects.length === 0 ? { state, events: [] } : usePayOptions(state, base.mechanism, objects);
+  if (used === null) return null;
   const spell = getObject(used.state, casting.object);
   const options =
     objects.length === 0 ? [[...base.cost]] : remainders(base.cost, colorsOfChoice(base, objects));
@@ -1242,7 +1241,18 @@ export function answerPayOptions(state: GameState, objects: readonly ObjectId[])
   const left = casting.optionsLeft ?? [];
   const settled = settlePayOptions(cleared, d, objects, left);
   if (settled === null) return fail('That would leave a cost you cannot pay');
-  const next: GameState = { ...settled.state, casting: { ...casting, totalCost: settled.cost } };
+  const withCasting: GameState = {
+    ...settled.state,
+    casting: { ...casting, totalCost: settled.cost },
+  };
+  // CR 702.51a: the creatures tapped for Convoke are remembered for "each creature that convoked this spell".
+  const stack = state.objects[casting.object]?.stack ?? null;
+  const next: GameState =
+    d.mechanism === 'convoke' && objects.length > 0 && stack !== null
+      ? patchObject(withCasting, casting.object, {
+          stack: { ...stack, convokedBy: [...(stack.convokedBy ?? []), ...objects] },
+        })
+      : withCasting;
   return askPayOptions(next, settled.events, left);
 }
 

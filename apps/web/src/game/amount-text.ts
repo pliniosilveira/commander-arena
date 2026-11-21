@@ -50,9 +50,6 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return `this ${ctx.self ?? 'permanent'}'s`;
     case 'thisSpell':
       return "this spell's";
-    case 'convokers':
-      // Issue 102: the creatures that convoked the spell.
-      return "that creature's";
     case 'target':
     case 'triggerSubject':
       return ctx.spell === true && ref.kind === 'triggerSubject'
@@ -66,6 +63,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'its';
     case 'triggerSources':
+    case 'convokers':
       return 'their';
     case 'sacrificedCost':
       // D-133: the permanent sacrificed to pay the cost ("the sacrificed creature's power").
@@ -92,8 +90,6 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return ctx.same === undefined ? `this ${ctx.self ?? 'permanent'}` : 'it';
     case 'thisSpell':
       return 'this spell';
-    case 'convokers':
-      return 'each creature that convoked this spell';
     case 'target':
     case 'triggerSubject':
       return 'that creature';
@@ -106,6 +102,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'it';
     case 'triggerSources':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -177,6 +175,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
+    case 'destroyedNontokenCreatures':
+      // Blood Money: "for each nontoken creature destroyed this way".
+      return 'the number of nontoken creatures destroyed this way';
     case 'playersDrew':
       return 'the number of players who drew a card this way';
     case 'tapped':
@@ -196,6 +197,12 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'discardedNonland':
+      // Federation Fleet group D: "When you discard a nonland card this way".
+      return 'the number of nonland cards discarded this way';
+    case 'countersPut':
+      // Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way".
+      return 'the number of counters put this way';
     case 'discardedMost':
       // Issue 279 (Windfall).
       return 'the greatest number of cards a player discarded this way';
@@ -368,6 +375,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: "for each opponent dealt damage" of a batch damage trigger.
+      return 'the number of opponents dealt damage';
     case 'shortfall':
       // D-151 (CR 701.57): "the difference" between the limit and the mana value of the card found.
       return `the difference between ${amount.limit} and ${shortfallOf(amount.of)} mana value`;

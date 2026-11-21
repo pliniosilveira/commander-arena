@@ -134,7 +134,11 @@ export function StackPanel() {
   const shown = useMemo(() => [...stack].reverse(), [stack]);
 
   return (
-    <section className="pnl-panel pnl-stack" aria-label="Stack" data-drop="stack">
+    <section
+      className={`pnl-panel pnl-stack${shown.length === 0 ? ' pnl-stack-empty' : ''}`}
+      aria-label="Stack"
+      data-drop="stack"
+    >
       <h2 className="pnl-title">
         Stack
         {shown.length > 0 && <span className="pnl-count">{shown.length}</span>}

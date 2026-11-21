@@ -43,6 +43,7 @@ const EXECUTABLE_KEYWORDS = [
   'devoid', // scenario-xx-changeling-devoid
   'partner', // scenario-xx-changeling-devoid
   'partnerWith', // scenario-xx-gisa-g3-sacrifice-x
+  'deckLimit', // convert-grammar-engine-witch-king (a deck-construction line, no effect in a game)
   'chooseBackground', // scenario-xx-choose-background
   'canBeCommander', // scenario-xx-planeswalker-commander
   'ascend', // scenario-xx-ascend
@@ -151,6 +152,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   devoid: { kind: 'devoid' },
   partner: { kind: 'partner' },
   partnerWith: { kind: 'partnerWith', name: 'SYNTHETIC Partner Quarry' },
+  deckLimit: { kind: 'deckLimit', limit: 9 },
   chooseBackground: { kind: 'chooseBackground' },
   canBeCommander: { kind: 'canBeCommander' },
   ascend: { kind: 'ascend' },
@@ -340,6 +342,7 @@ describe('supported feature gate', () => {
         'dealsDamage',
         'dealtDamage',
         'combatDamageBatch',
+        'damageBatch',
         'countersAdded',
         'crimeCommitted',
         'dies',

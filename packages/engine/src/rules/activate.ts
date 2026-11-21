@@ -40,6 +40,7 @@ import {
   sacrificeGroups,
 } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
+import { answerRemoveCountersCost, payRemoveCounters } from './activate-remove-counters';
 import { answerUntapPermanentsCost, payUntap } from './activate-untap';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
@@ -339,7 +340,14 @@ function payRest(state: GameState, events: GameEvent[]): Result {
   }
   // CR 701.26b, 601.2h: the permanents to untap are chosen once the mana is paid, so the creatures tapped for it are among them.
   if (costs.untapPermanents !== null) return payUntap(state, events, paySacrifice);
-  return payBlight(state, events, paySacrifice);
+  return afterTaps(state, events);
+}
+
+/**
+ * After the permanents to tap: the counters to remove from among permanents (Federation Fleet group D, CR 118.3, 122.1), then the blight, then the sacrifice.
+ */
+function afterTaps(state: GameState, events: GameEvent[]): Result {
+  return payRemoveCounters(state, events, (paid, more) => payBlight(paid, more, paySacrifice));
 }
 
 /**
@@ -400,7 +408,7 @@ function tapChosen(
   next = rememberTappedPower(next, tappedPower);
   // D-625: the mana is paid after the permanents are tapped when the cost has both; otherwise the sacrifice comes next.
   if ((going?.costs.mana.length ?? 0) > 0) return askMana(next, events);
-  return payBlight(next, events, paySacrifice);
+  return afterTaps(next, events);
 }
 
 /** The answer to the tap question of a cost; the caller checked it against the decision's candidates and count. */
@@ -705,6 +713,13 @@ export function answerUntapCost(state: GameState, chosen: readonly ObjectId[]): 
 /** The answer to the question of a blight cost (D-407, CR 701.68a): the creature gets the counters, then the sacrifice comes next. */
 export function answerBlight(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerBlightCost(state, chosen, paySacrifice);
+}
+
+/** The answer to the question of a cost that removes counters from among permanents (CR 118.3, 122.1): one counter comes off, then the rest of the cost goes on. */
+export function answerRemoveCounters(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerRemoveCountersCost(state, chosen, (paid, events) =>
+    payBlight(paid, events, paySacrifice),
+  );
 }
 
 /** The answer to the question of a cost that returns permanents to their owners' hands (D-139); the discard comes next. */

@@ -4,8 +4,8 @@ import { CombatEffects } from './ui/board/CombatEffects';
 import { PreviewPanel } from './ui/board/PreviewPanel';
 import { DecisionLayer } from './ui/decisions/DecisionLayer';
 import { DockSlotContext } from './ui/decisions/dock-slot';
-import { LogPanel } from './ui/panels/LogPanel';
-import { SettingsPanel } from './ui/panels/SettingsPanel';
+import { LogDock } from './ui/panels/LogDock';
+import { SettingsDock } from './ui/panels/SettingsDock';
 import { StackPanel } from './ui/panels/StackPanel';
 import { TurnTracker } from './ui/panels/TurnTracker';
 import { GameOver } from './ui/screens/GameOver';
@@ -44,49 +44,30 @@ export function Footer({ showVersion = false }: { showVersion?: boolean }) {
 }
 
 /**
- * The game screen (issue 47): the battlefield in the middle with a column on each side. One holds
- * the highlighted card (tall enough for a whole card with its abilities and state) and the log; the
- * other holds the stack at the top and the action dock at the bottom, above the settings at its foot
- * (D-146: the buttons keep their place while the stack grows and shrinks). The Side panel setting says which side the stack and
- * controls are on (the right, by default). Below `--narrow` (styles.css) the two columns are one
- * drawer over the board, opened with a button that shows how many objects are on the stack.
+ * The game screen: the battlefield takes the whole width. Over it float the turn box (top left: the
+ * turn, priority and three steps), the turn panel (right edge: the decision and the action buttons,
+ * then the stack), the card preview (left edge, only while a card is read) and, behind the buttons
+ * at the bottom left, the log and the settings. The decision layer draws the action dock into the turn panel (`dock-slot.ts`).
  */
 function Game() {
-  const [drawer, setDrawer] = useState(false);
-  // The decision layer draws the action dock into the column of the stack (`dock-slot.ts`).
   const [dockSlot, setDockSlot] = useState<HTMLElement | null>(null);
-  const stackSize = useApp((s) => s.snapshot?.view.stack.length ?? 0);
   return (
-    <div className="game" data-testid="game" data-drawer={drawer ? 'open' : 'closed'}>
+    <div className="game" data-testid="game">
       <DockSlotContext.Provider value={dockSlot}>
         <div className="game-main">
-          <TurnTracker />
           <DecisionLayer>
             <Board />
           </DecisionLayer>
         </div>
-        <button
-          type="button"
-          className="game-drawer-toggle"
-          aria-expanded={drawer}
-          aria-controls="game-sides"
-          onClick={() => setDrawer(!drawer)}
-        >
-          {drawer ? 'Hide panels' : 'Stack, controls, card and log'}
-          {!drawer && stackSize > 0 && <span className="pnl-count">{stackSize}</span>}
-        </button>
-        <div className="game-sides" id="game-sides">
-          <div className="game-side game-side-controls" data-testid="game-side-controls">
-            <StackPanel />
-            <div className="game-dock-slot" ref={setDockSlot} />
-            <SettingsPanel />
-          </div>
-          <div className="game-side game-side-info" data-testid="game-side-info">
-            <PreviewPanel />
-            <LogPanel />
-          </div>
-        </div>
+        <aside className="turn-panel" aria-label="Turn" data-testid="turn-panel">
+          <div className="game-dock-slot" ref={setDockSlot} />
+          <StackPanel />
+        </aside>
       </DockSlotContext.Provider>
+      <TurnTracker />
+      <PreviewPanel />
+      <LogDock />
+      <SettingsDock />
       <HonestyBanner />
       <GameOver />
       <CombatEffects />

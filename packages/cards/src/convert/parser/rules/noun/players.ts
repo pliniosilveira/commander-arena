@@ -7,6 +7,7 @@
 import { fail, map, type Parser, pattern } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, family, node, spanned } from '../registry';
+import { possessedNoun } from './controller';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
 
@@ -214,9 +215,59 @@ export const NOUN_THAT_ATTACKING_PLAYER = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.each-player-other-than-its-controller`: "each player other than its controller" (Fractured Identity: "Exile target nonland permanent. Each player other than its controller creates a
+ * token that's a copy of it."; CR 102.1, 109.4, 101.4): every player in the game but the controller of an object an earlier part of the text named, read from its last-known information
+ * when it has left (CR 608.2h). The object is a pronoun like any other, left to the binding pass; the lowering names the players the engine's `eachPlayerExcept` of that controller. Not read:
+ * "each other player" (another rule), "each player other than you", "each player other than its owner", "each player other than target player", "each players", a missing "its".
+ */
+export const NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER = defineRule<IrNoun>({
+  id: 'noun.each-player-other-than-its-controller',
+  family: 'noun',
+  leading: ['each'],
+  cites: [
+    'CR 102.1 (Players)',
+    'CR 109.4 (Objects)',
+    'CR 101.4 (Handling Simultaneous Decisions)',
+    'CR 608.2h (Resolving Spells and Abilities)',
+  ],
+  examples: ['each player other than its controller', 'Each player other than its controller'],
+  rejects: [
+    'each player',
+    'each other player',
+    'each player other than you',
+    'each player other than its owner',
+    'each player other than target player',
+    'each player other than its controllers',
+    'each players other than its controller',
+    'each player other than it',
+    'each player other than that creature’s controller',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/each player other than its controller(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    const text = ctx.text.slice(pos, r.pos);
+    const itsStart = pos + 'each player other than '.length;
+    const controller: IrNoun = {
+      ...bare('controllerOf', 'its controller', {
+        of: possessedNoun('noun.each-player-other-than-its-controller', 'its', itsStart),
+      }),
+      span: { start: itsStart, end: r.pos },
+      rule: 'noun.each-player-other-than-its-controller',
+    };
+    const noun: IrNoun = {
+      ...bare('eachPlayer', text, { of: controller }),
+      span: { start: pos, end: r.pos },
+      rule: 'noun.each-player-other-than-its-controller',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
 export const PLAYER_NOUN_RULES = [
   NOUN_YOU_AND_PLAYER,
   NOUN_EACH_OTHER_PLAYER,
+  NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER,
   NOUN_DEFENDING_PLAYER,
   NOUN_PLAYER_TO_YOUR_RIGHT,
   NOUN_THAT_PLAYER,

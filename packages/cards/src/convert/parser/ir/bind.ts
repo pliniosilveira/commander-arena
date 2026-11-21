@@ -117,6 +117,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'playerToRight',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
+  // "each of those opponents" of a damage batch trigger: several players, as above.
+  'triggerDamagedPlayers',
   // "each opponent dealt combat damage this game by a creature named ~": several players, as above.
   'combatDamagedByNamed',
 ]);
@@ -147,7 +149,8 @@ function classify(raw: string): Pronoun | null {
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
   if (/^that (?:[\p{L}-]+ )+card$/u.test(word)) return { kind: 'single', type: null };
-  if (word === 'it' || word === 'her' || word === 'him') return { kind: 'single', type: null };
+  if (word === 'it' || word === 'her' || word === 'him' || word === 'she' || word === 'he')
+    return { kind: 'single', type: null };
   // "the creature you control" (stage P32, D-147): the most recent object of the text that says it is "you control".
   const controlled = /^the (\w+) you control$/.exec(word);
   if (controlled?.[1] !== undefined) {
@@ -427,9 +430,13 @@ class Binder {
       powerNoun === undefined
         ? bareFilter
         : { ...bareFilter, powerGreaterThanNoun: this.noun(powerNoun) };
+    // "target creature card and all other cards with the same name as that card": the target is numbered with the others of the text.
+    const nameNoun = noun.filter.sameNameAsNoun;
+    const named =
+      nameNoun === undefined ? filter : { ...filter, sameNameAsNoun: this.noun(nameNoun) };
     let out: IrNoun = {
       ...noun,
-      filter,
+      filter: named,
       ...(of === undefined ? {} : { of }),
       ...(members === undefined ? {} : { members }),
     };
@@ -653,6 +660,7 @@ class Binder {
     const condition =
       clause.condition !== undefined &&
       (test?.kind === 'unlessPays' ||
+        test?.kind === 'diesThisWay' ||
         test?.kind === 'objectMatches' ||
         test?.kind === 'controlsThat' ||
         test?.kind === 'manaValueAtMostAmount')
@@ -728,10 +736,17 @@ class Binder {
         const condition =
           s.condition !== undefined &&
           (test?.kind === 'objectMatches' ||
+            test?.kind === 'diesThisWay' ||
             test?.kind === 'controlsThat' ||
             test?.kind === 'manaValueAtMostAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
-            : s.condition;
+            : // "Then if she has nine or more time counters on her, ..." (Kes, CR 122.1): the pronoun of the count is the permanent the sentences before it named.
+              s.condition !== undefined &&
+                test?.kind === 'amountIs' &&
+                test.amount.kind === 'countersOn' &&
+                test.amount.of.det === 'anaphor'
+              ? { ...s.condition, test: { ...test, amount: this.amount(test.amount) } }
+              : s.condition;
         // "Target opponent may have you draw three cards" (stage P52, D-210): the player asked is named before the clauses, and later sentences may say "that player".
         const mayBy =
           s.mayBy === undefined ? undefined : { ...s.mayBy, who: this.noun(s.mayBy.who) };

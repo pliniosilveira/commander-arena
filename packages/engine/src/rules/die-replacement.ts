@@ -47,6 +47,11 @@ export function replacementSources(state: GameState): ObjectId[] {
 export interface DieReplacement {
   readonly controller: SeatId;
   readonly alsoCreate: WouldDie['alsoCreate'];
+  /** The life the controller gains as the creature is exiled (`WouldDie.alsoGainLife`). */
+  readonly alsoGainLife?: number;
+  /** The permanent with the replacement, which remembers the exiled card when `linkExiled` is set (CR 607.2a). */
+  readonly source: ObjectId;
+  readonly linkExiled?: true;
 }
 
 /**
@@ -69,8 +74,15 @@ export function dieReplacementFor(
         { ...r.what, zone: 'battlefield' },
         { controller: controllerOf(state, found.object), source: id },
       );
-      if (matches)
-        return { controller: controllerOf(state, found.object), alsoCreate: r.alsoCreate };
+      if (matches) {
+        return {
+          controller: controllerOf(state, found.object),
+          alsoCreate: r.alsoCreate,
+          ...(r.alsoGainLife === undefined ? {} : { alsoGainLife: r.alsoGainLife }),
+          source: id,
+          ...(r.linkExiled === true ? { linkExiled: true as const } : {}),
+        };
+      }
     }
   }
   return null;

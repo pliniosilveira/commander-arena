@@ -186,10 +186,9 @@ button {
   color: var(--text-dim);
 }
 
-/* The game screen (issue 47): the battlefield with a column on each side. One column holds the
-   highlighted card and the log (`.game-side-info`), the other the stack, the action dock and the
-   settings (`.game-side-controls`). The controls are on the right unless Settings says Left
-   (`data-side-panel` on the root); the other column takes the other side. */
+/* The game screen: the battlefield takes the whole width. The stack, the card preview, the log and
+   the settings float over it (see the rules at the end of this file); the action dock is drawn in
+   the player's own board (`.board-dock-slot`, board.css). */
 .game {
   position: relative;
   flex: 1;
@@ -211,123 +210,6 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-/* Wide windows: the two columns are plain flex items of `.game`; the drawer wraps them below. */
-.game-sides {
-  display: contents;
-}
-
-.game-side {
-  flex: none;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-  padding: var(--gap);
-  background: var(--bg-raised);
-}
-
-.game-side-info {
-  order: -1;
-  width: var(--info-width);
-  border-right: 1px solid var(--line);
-}
-
-.game-side-controls {
-  /* Room the stack keeps for itself: its heading and about three items. */
-  --stack-min: 230px;
-  order: 1;
-  width: var(--controls-width);
-  border-left: 1px solid var(--line);
-}
-
-:root[data-side-panel="left"] .game-side-info {
-  order: 1;
-  border-right: 0;
-  border-left: 1px solid var(--line);
-}
-
-:root[data-side-panel="left"] .game-side-controls {
-  order: -1;
-  border-left: 0;
-  border-right: 1px solid var(--line);
-}
-
-/* The slot the decision layer draws the action dock into (D-146): at the foot of the controls
-   column, just above Settings, so the buttons keep their place while the stack above them grows
-   and shrinks, and the dock itself grows upward. It is empty (no box) when the dock is not shown.
-   It shrinks (its panels scroll) before the stack loses its minimum height. */
-.game-dock-slot {
-  flex: 0 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.game-dock-slot:empty {
-  display: none;
-}
-
-/* The button that opens the drawer is only there when the columns are one. */
-.game-drawer-toggle {
-  display: none;
-}
-
-/* Narrow windows: both columns slide over the board from the edge instead of taking its width. */
-@media (max-width: 1099px) {
-  .game {
-    /* The closed drawer waits outside the window: it must not widen the page. */
-    overflow: hidden;
-  }
-  .game-sides {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    z-index: 40;
-    display: flex;
-    box-shadow: var(--shadow);
-    transform: translateX(100%);
-    visibility: hidden;
-  }
-  :root[data-side-panel="left"] .game-sides {
-    right: auto;
-    left: 0;
-    transform: translateX(-100%);
-  }
-  .game[data-drawer="open"] .game-sides {
-    transform: none;
-    visibility: visible;
-  }
-  .game-drawer-toggle {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    z-index: 41;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    background: var(--bg-raised);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  :root[data-side-panel="left"] .game-drawer-toggle {
-    right: auto;
-    left: 8px;
-  }
-  /* Open, the button sits just outside the drawer, not over the stack's heading. */
-  .game[data-drawer="open"] .game-drawer-toggle {
-    right: calc(var(--info-width) + var(--controls-width) + 8px);
-  }
-  :root[data-side-panel="left"] .game[data-drawer="open"] .game-drawer-toggle {
-    right: auto;
-    left: calc(var(--info-width) + var(--controls-width) + 8px);
-  }
 }
 
 /* Mana symbols (original drawing, see ui/mana.tsx). */
@@ -371,4 +253,166 @@ button {
 }
 .mana-hybrid {
   background: linear-gradient(135deg, var(--mana-w) 50%, var(--mana-b) 50%);
+}
+
+/* The card preview floats over the board at the left edge, centered vertically, and takes no room
+   from the battlefield. The pointer passes through it (a card under it can still be hovered)
+   until the card is pinned, when it can be scrolled. */
+.game > .board-preview {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  /* Above the log dialog (36). */
+  z-index: 45;
+  flex: none;
+  cursor: pointer;
+  width: var(--info-width);
+  max-height: calc(100% - 64px);
+  pointer-events: none;
+  box-shadow: var(--shadow);
+}
+.game > .board-preview[data-pinned="true"] {
+  pointer-events: auto;
+}
+/* The card of the stack's top takes a tap (it closes the preview); the rest of the box lets the
+   pointer through, so a target under it (your life total) stays clickable. */
+.game > .board-preview[data-stack-preview="true"] .board-preview-card {
+  pointer-events: auto;
+}
+/* On a touch screen there is no hover: a tap on the preview closes it. */
+@media (hover: none) {
+  .game > .board-preview {
+    pointer-events: auto;
+  }
+}
+
+/* The log: a button at the bottom left and, open, a dialog above it over the board. */
+.log-toggle {
+  position: absolute;
+  left: 8px;
+  /* The log's button is above the settings' one (`.settings-toggle`, bottom: 8px). */
+  bottom: 44px;
+  z-index: 35;
+  padding: 3px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.log-toggle[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+.log-dialog {
+  position: absolute;
+  left: 8px;
+  bottom: 80px;
+  z-index: 36;
+  display: flex;
+  flex-direction: column;
+  /* Twice the width the log had in the column; as tall as about half of the screen. */
+  width: calc(var(--info-width) * 2);
+  max-width: calc(100% - 16px);
+  height: 50%;
+  max-height: calc(100% - 88px);
+  padding: var(--gap);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.log-dialog .pnl-log {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+/* The turn panel floats over the board at the right edge, level with the top of the opponent's
+   battlefield, and grows with its content down to the bottom of the screen; it scrolls inside.
+   In order: the decision and the action buttons (the dock, drawn into `.game-dock-slot`), then the
+   stack. */
+.turn-panel {
+  position: absolute;
+  top: 73px;
+  right: 8px;
+  z-index: 30;
+  width: var(--info-width);
+  max-height: calc(100% - 81px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding: var(--gap);
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+/* The turn box: the turn, priority and the previous, current and next step, at the left edge, level
+   with the top of the opponent's battlefield. */
+.game > .pnl-tracker {
+  position: absolute;
+  top: 73px;
+  left: 8px;
+  z-index: 30;
+  width: var(--info-width);
+  padding: var(--gap);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.game > .pnl-tracker .pnl-tracker-info {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.game-dock-slot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+.game-dock-slot:empty {
+  display: none;
+}
+.game-dock-slot .dec-dock > :not(.dec-bar) {
+  overflow: visible;
+}
+/* The stack is the last part of the panel and takes the height of its items: the panel scrolls. */
+.turn-panel .pnl-stack {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.turn-panel .pnl-stack-list {
+  overflow: visible;
+}
+/* An empty stack is out of sight (it stays in the page for a screen reader), and shows while a card
+   is dragged, since it is the place a spell is dropped to cast it. */
+:root:not([data-dnd-stack]) .turn-panel .pnl-stack-empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+/* The action bar has no outline of its own: the panel around it is the outline. */
+.game-dock-slot .dec-bar {
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.settings-toggle {
+  left: 8px;
+  bottom: 8px;
+}
+.settings-dialog {
+  height: auto;
+  width: var(--controls-width);
+  overflow-y: auto;
 }

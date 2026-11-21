@@ -231,7 +231,38 @@ const BECOME_COPY_EXCEPT: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "At the beginning of the next end step, exile that token unless ~ is your Ring-bearer." (Sauron, the Necromancer; CR 701.54e, 603.7c): the instruction of the delayed sentence, an `exile` of
+ * the token the instruction before made unless `thisIsRingBearer` holds as the delayed ability resolves.
+ */
+const EXILE_MADE_UNLESS_RING_BEARER: Lowering<IrClause, Effects> = {
+  head: 'exileMadeUnlessRingBearer',
+  id: 'lower.exile-made-unless-ring-bearer',
+  needs: [
+    'effect:conditional',
+    'condition:not',
+    'condition:thisIsRingBearer',
+    'effect:exile',
+    'selector:moved',
+  ],
+  lower(clause, ctx) {
+    if (!aboutMadeTokens(ctx)) return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'conditional' as const,
+          condition: { kind: 'not' as const, term: { kind: 'thisIsRingBearer' as const } },
+          effect: { kind: 'exile' as const, objects: MOVED },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const PRISMARI_G1_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  EXILE_MADE_UNLESS_RING_BEARER,
   GRANT_TO_MADE,
   atEndStep('sacrifice'),
   atEndStep('exile'),

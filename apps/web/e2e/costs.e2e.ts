@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -211,7 +212,7 @@ test('a creature spell costs {2} less with Giant Discount: shown on the card, in
   await page.keyboard.press('Escape');
 
   // Paying by hand shows the cost the engine asks: one {G}.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
   await handCard(page, 'Grizzly Bears').first().click();
   const pay = page.getByRole('region', { name: 'Payment' });
   await expect(pay).toBeVisible();
@@ -243,12 +244,12 @@ test('a free cast: with the commander on the battlefield the spell is cast witho
   );
 
   // Full Control keeps the spell on the stack, so its badge can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, spell).first().click();
   // Seven mana is not at hand, so the free option is the only way to cast it: no menu is asked.
   await expect(chooser(page)).toHaveCount(0);
   await expect(logText(page)).toContainText(`You cast ${spell} without paying its mana cost.`);
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText(spell);
   await expect(stack.getByText('free', { exact: true })).toBeVisible();
   expect(errors).toEqual([]);

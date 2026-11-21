@@ -888,6 +888,19 @@ export function describeEvent(
           'CR 701.26b',
         );
       }
+      // CR 118.3, 122.1, 602.2b: "Remove two +1/+1 counters from among creatures you control" as a cost; the counters' own lines follow.
+      if (event.purpose === 'removeCountersCost') {
+        const taken = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          event.automatic
+            ? `${who(event.seat)} must remove counters from ${taken} to pay for ${label(event.source)}: no other choice.`
+            : `${who(event.seat)} ${verb(event.seat, 'remove', 'removes')} a counter from ${taken} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 122.1',
+        );
+      }
       // D-407 (CR 701.68a, 602.2b): "Blight 1" as a cost; the counter's own line follows.
       if (event.purpose === 'blight') {
         const blighted = joinNames(event.objects.map(name));
@@ -1085,6 +1098,21 @@ export function describeEvent(
           event.seat,
           attacker === undefined ? [] : [attacker],
           'CR 508.7',
+        );
+      }
+      // CR 310.9a: "You choose Opponent as the protector of SYNTHETIC Vanilla Battle." The choice is public.
+      if (event.purpose === 'protector') {
+        const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
+        const subject =
+          asked?.kind === 'chooseOption' && asked.source === event.source
+            ? asked.sourceName
+            : label(event.source);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${seat === viewer ? 'you' : 'Opponent'} as the protector of ${subject}.`,
+          event.seat,
+          [],
+          'CR 310.9a',
         );
       }
       // CR 701.38a (D-194): "You vote for profit (Emissary Green)." / "Opponent votes for security (Emissary Green)." A vote is public.

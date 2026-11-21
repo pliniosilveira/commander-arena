@@ -562,6 +562,25 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
+  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  if (
+    removingAmong.length > 1 ||
+    (removingAmong.length === 1 &&
+      costs.some(
+        (c) =>
+          c.kind === 'tapCreatures' ||
+          c.kind === 'untapPermanents' ||
+          c.kind === 'blight' ||
+          c.kind === 'loyalty',
+      ))
+  ) {
+    // Federation Fleet group D: `breakDown` pays one such cost, and has no order for it next to a crew cost, an untap cost, a blight or a loyalty cost.
+    out.push({
+      path,
+      message:
+        'more than one "remove counters from among" cost, or one with a crew, untap, blight or loyalty cost, is not implemented by the engine yet',
+    });
+  }
   if (sacrifices > 1) {
     // `breakDown` (rules/activate-costs.ts) pays one sacrifice; an ability with two is never offered.
     out.push({
@@ -877,6 +896,13 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip') {
         // CR 702.6a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.costReducedIf !== undefined) {
+          conditionIssues(
+            a.keyword.costReducedIf.condition,
+            `${path}.keyword.costReducedIf.condition`,
+            out,
+          );
+        }
       } else if (a.keyword.kind === 'ward') {
         // CR 702.21a: paid when the ward ability resolves (rules/pay-unless.ts): mana, life and
         // discarding cards (D-095), no X; D-407 (CR 701.68a): or a blight, alone.

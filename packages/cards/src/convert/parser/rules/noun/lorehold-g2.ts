@@ -97,7 +97,7 @@ export const NOUN_TARGET_NONMATCHING_GRAVEYARD_CARD = defineRule<IrNoun>({
 /**
  * `noun.target-card-exiled-with-self`: "target card exiled with ~" (CR 607.2a, 115.1, 400.7): one card in exile that the permanent the ability belongs to exiled with its linked ability. The
  * engine's `exiledWithSource` of a card in exile. Read only by `effect.cast-exiled-with-self`, which names it. Not read: another permanent ("exiled with target creature"), the plural, "up to",
- * "target card exiled with it", a card named by a type ("target creature card exiled with ~").
+ * "target card exiled with it", another noun than a card type ("target creature or land card exiled with ~").
  */
 export const NOUN_TARGET_CARD_EXILED_WITH_SELF = defineRule<IrNoun>({
   id: 'noun.target-card-exiled-with-self',
@@ -110,7 +110,8 @@ export const NOUN_TARGET_CARD_EXILED_WITH_SELF = defineRule<IrNoun>({
     'target cards exiled with ~',
     'two target cards exiled with ~',
     'up to one target card exiled with ~',
-    'target creature card exiled with ~',
+    'target creature or land card exiled with ~',
+    'target Zombie card exiled with ~',
     'target card exiled with target creature',
     'target card exiled with',
     'card exiled with ~',
@@ -118,8 +119,15 @@ export const NOUN_TARGET_CARD_EXILED_WITH_SELF = defineRule<IrNoun>({
     'target card exiled with ~ this turn',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(new RegExp(`target card exiled with ~${BOUNDARY}`, 'iu'))(ctx, pos);
+    // The Darkness Crystal: a card type before "card" ("target creature card exiled with ~").
+    const r = pattern(
+      new RegExp(
+        `target (?:(artifact|creature|enchantment|land|planeswalker|instant|sorcery) )?card exiled with ~${BOUNDARY}`,
+        'iu',
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
+    const type = r.value[1]?.toLowerCase();
     return {
       ok: true,
       value: {
@@ -128,6 +136,7 @@ export const NOUN_TARGET_CARD_EXILED_WITH_SELF = defineRule<IrNoun>({
         filter: {
           zone: 'exile',
           card: true,
+          ...(type === undefined ? {} : { types: [type] }),
           exiledWithSelf: true,
           raw: ctx.text.slice(pos, r.pos),
         },

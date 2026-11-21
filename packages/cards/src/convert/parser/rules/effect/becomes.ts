@@ -30,6 +30,7 @@ import type {
   IrColorSpec,
   IrDuration,
   IrKeywordArg,
+  IrNameArg,
   IrNoun,
   IrTypeList,
   Span,
@@ -274,7 +275,7 @@ const LOSES = spanned(literal(' loses all abilities'));
  * `effect.loses-abilities`: "target creature loses all abilities until end of turn" and, in the
  * words of Turn to Frog, "... and becomes a blue Frog with base power and toughness 1/1 until end
  * of turn" (CR 613.1f: abilities it has at that moment are gone, abilities granted later still
- * apply, CR 613.7).
+ * apply, CR 613.7), or "... and has base power and toughness 0/1 until end of turn" (Warkite Marauder, CR 613.4b).
  */
 export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
   id: 'effect.loses-abilities',
@@ -293,6 +294,9 @@ export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
     'target creature loses all abilities and becomes a blue Frog with base power and toughness 1/1 until end of turn',
     'target creature loses all abilities and becomes a Frog until end of turn',
     'target creature you control loses all abilities and becomes red until end of turn',
+    // Ahoy Mateys group 7 (Warkite Marauder, CR 613.4b): the base power and toughness alone.
+    'target creature loses all abilities and has base power and toughness 0/1 until end of turn',
+    'target creature defending player controls loses all abilities and has base power and toughness 0/1 until end of turn',
   ],
   rejects: [
     'target creature loses all abilities',
@@ -300,7 +304,10 @@ export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
     'target creature loses flying until end of turn',
     'target creature lose all abilities until end of turn',
     'target creatures lose all abilities until end of turn',
-    'target creature loses all abilities and has base power and toughness 1/1 until end of turn',
+    'target creature loses all abilities and has base power and toughness +1/+1 until end of turn',
+    'target creature loses all abilities and has base power 0 until end of turn',
+    'target creature loses all abilities and has base power and toughness 0/1',
+    'target creature loses all abilities and has flying until end of turn',
     'target creature loses all abilities and becomes an artifact creature until end of turn',
     'target creature loses all abilities and becomes a Frog in addition to its other types until end of turn',
     'target creature loses all other abilities until end of turn',
@@ -310,8 +317,16 @@ export const EFFECT_LOSES_ABILITIES = defineRule<Clauses>({
     const head = sequence(family<IrNoun>('noun', { only: SINGLE_SUBJECTS }), LOSES)(ctx, pos);
     if (!head.ok) return head;
     const [subject, loses] = head.value;
+    // "and has base power and toughness 0/1" (Ahoy Mateys group 7, Warkite Marauder, CR 613.4b): the layer 7b setting alone, with no type or color.
+    const alsoHas = map(
+      sequence(literal(' and has '), BASE_PT(rule)),
+      ([, pt]): Becoming => ({ colors: null, types: null, basePt: pt, span: pt.span }),
+    );
     const also = optional(
-      map(sequence(literal(' and becomes '), becoming(rule)), ([, what]) => what),
+      choice(
+        map(sequence(literal(' and becomes '), becoming(rule)), ([, what]) => what),
+        alsoHas,
+      ),
       null,
     )(ctx, head.pos);
     if (!also.ok) return also;
@@ -459,6 +474,7 @@ export const EFFECT_BASE_PT = defineRule<Clauses>({
     'target creature has base power and toughness 4/4 until end of turn',
     '~ has base power and toughness 0/1 until end of turn',
     'it has base power and toughness 2/2 until end of turn',
+    'it has base power and toughness 4/4',
   ],
   rejects: [
     'target creature has base power and toughness 4/4',
@@ -478,10 +494,22 @@ export const EFFECT_BASE_PT = defineRule<Clauses>({
       literal(' '),
       family<IrDuration>('duration'),
     )(ctx, pos);
-    if (!r.ok) return r;
-    const [subject, , basePt, , duration] = r.value;
+    if (r.ok) {
+      const [subject, , basePt, , duration] = r.value;
+      const clause = makeClause(rule, 'setPt', { objects: subject, basePt }, basePt.span);
+      return { ok: true, value: [{ ...clause, duration }], pos: r.pos };
+    }
+    // Ahoy Mateys deck, Admiral Brass (CR 611.2a, 613.4b): "It has base power and toughness 4/4." with no duration, said of the card the sentence before put onto the
+    // battlefield: the effect lasts as long as that permanent does. Only "it", so a target named with no duration stays unread.
+    const open = sequence(
+      family<IrNoun>('noun', { only: ['noun.it'] }),
+      literal(' has '),
+      BASE_PT(rule),
+    )(ctx, pos);
+    if (!open.ok) return r;
+    const [subject, , basePt] = open.value;
     const clause = makeClause(rule, 'setPt', { objects: subject, basePt }, basePt.span);
-    return { ok: true, value: [{ ...clause, duration }], pos: r.pos };
+    return { ok: true, value: [clause], pos: open.pos };
   },
 });
 
@@ -743,6 +771,74 @@ export const EFFECT_EACH_BECOMES = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.becomes-while-counter`: "for as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types" (Minas Morgul, Dark Fortress; CR 611.2b,
+ * 122.1, 205.1b, 205.3d, 613.1d): the creature an earlier instruction of the text named has the creature type besides its types as long as it has a counter of the kind, and not
+ * after it loses the last one (the effect ends for good). The engine's additive `setTypes` with `whileHasCounter`. Not read: another subject than "that creature", "a"
+ * counter of no kind, a color, "until end of turn", the words without "in addition to its other types".
+ */
+export const EFFECT_BECOMES_WHILE_COUNTER = defineRule<Clauses>({
+  id: 'effect.becomes-while-counter',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 611.2b (Continuous Effects)',
+    'CR 122.1 (Counters)',
+    'CR 205.1b (Type Line)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    "for as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types",
+    'for as long as that creature has a shadow counter on it, it’s a Wraith in addition to its other types',
+  ],
+  rejects: [
+    "for as long as that creature has a shadow counter on it, it's a Wraith",
+    "for as long as that creature has a counter on it, it's a Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, it's a blue Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types until end of turn",
+    "for as long as target creature has a shadow counter on it, it's a Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, that creature's a Wraith in addition to its other types",
+    "for as long as that creature has a shadow counter on it, it's a Wraiths in addition to its other types",
+    "as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types",
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.becomes-while-counter';
+    const head = sequence(
+      literal('for as long as '),
+      family<IrNoun>('noun', { only: ['noun.that-object'] }),
+      pattern(/ has an? ([a-z]+) counter on it, it['’]s an? /iu),
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const [, subject, counter] = head.value;
+    const types = spanned(CREATURE_TYPE_LIST)(ctx, head.pos);
+    if (!types.ok) return types;
+    const tail = pattern(IN_ADDITION)(ctx, types.pos);
+    if (!tail.ok) return tail;
+    const span = { start: pos, end: tail.pos };
+    const kind = (counter[1] ?? '').toLowerCase();
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value.value,
+      additive: true,
+      span: types.value.span,
+      rule,
+    };
+    const named: IrNameArg = { kind: 'name', name: kind, span, rule };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          rule,
+          'becomesWhileCounter',
+          { objects: subject, types: typeList, counter: named },
+          span,
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
 export const BECOMES_RULES = [
   EFFECT_LOSES_ABILITIES,
   EFFECT_BECOMES,
@@ -751,4 +847,5 @@ export const BECOMES_RULES = [
   EFFECT_LEAD_BECOMES,
   EFFECT_LEAD_BECOMES_TARGET,
   EFFECT_HAVE_BASE_PT,
+  EFFECT_BECOMES_WHILE_COUNTER,
 ];

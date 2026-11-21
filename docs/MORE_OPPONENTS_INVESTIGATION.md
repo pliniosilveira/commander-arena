@@ -140,7 +140,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 ## Plan in phases
 
-0. Investigation (this note): done so far are the probe with the random, casual and heuristic agents and the crash seeds. Open: reproducing the crash and the turn caps, an inventory of `'opponent'` and seat assumptions.
+0. Investigation (this note): done so far are the probe with the random, casual and heuristic agents and the crash seeds. Open: reproducing the crash and the turn caps, the inventory of `'opponent'` and seat assumptions is done (see "Audit of the one-opponent assumptions").
 1. Engine: leaving the game (CR 800.4a), a player who loses during their own turn, several defenders, full APNAP, commander damage with several defenders. Tests first. An S-class gap needs a proposal on an issue and the human's approval (`AGENTS.md`, "Card support").
 2. Cards: re-test the supported cards that depend on the number of opponents with 3 and 4 seats and reclassify those that fail.
 3. AI: a target policy and several hidden-hand samples; `ai:arena` with 3 and 4 seats.
@@ -156,8 +156,35 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 ## Open work from the probe
 
 - Check the crash of the random run (4 seats) and the three turn caps of that run.
-- Read how the 21-point commander loss is checked with several defenders (CR 903.10a and 104.3j: 21 or more combat damage from the same commander; the key `"seat:card"` suggests it is per defender, but the check was not read).
+- Read how the 21-point commander loss is checked with several defenders (CR 903.10a and 104.3j: 21 or more combat damage from the same commander; the key `"seat:card"` is per defender in `lossReasons`, read but not yet covered by a 3 or 4 seat test: #421).
 - Look at the rejections: `You cannot pay that cost` (casual with 3 seats, heuristic with both) and the mana ability of Overflowing Basin tried with an empty pool (heuristic with 3 seats). They may be agent bugs that exist with two seats too.
-- Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
+- Inventory of `'opponent'`: done for the rules; the parser is left as card-pipeline limits (see "Audit of the one-opponent assumptions").
 - Scenario DSL with 3 and 4 seats.
-- Choose 20 to 30 cards that depend on the number of opponents and write a scenario for each.
+- Choose 20 to 30 cards that depend on the number of opponents and write a scenario for each: #420.
+
+## Audit of the one-opponent assumptions (step 3, #363)
+
+Read-only audit of `packages/engine/src/rules/`. The selector layer is already correct for N seats (`resolvePlayers` returns every living opponent in turn order, and sacrifice, clash, vote, control changes, gift, encore, crime, speed, the Ring and the monarch handle N). What is wrong with 3 or 4 seats, and the issue that fixes it:
+
+| Finding | Where | Issue |
+| --- | --- | --- |
+| Only the first opponent is asked to block; attackers aimed at other opponents are never blocked | `combat-flow.ts:53`, `:113` | #414 |
+| "Choose an opponent" takes the first opponent (Demonstrate, piles, Coin of Fate) | `effects.ts:1426`, `choose-aside.ts`, `pile-separate.ts`, `exile-piles.ts`, `activation-exile.ts` | #416 |
+| `lifeTotalHolds` counts opponents who left the game | `condition-reads.ts:65` | #417 |
+| Each-player discard, search, exile and "may" act after each choice, not after all (CR 101.4, 701.23i) | `effects.ts` | #418 |
+| Myriad is a no-op with 3 or more seats | `ast/features.ts:1587` | #419 |
+| Latent `resolvePlayers(...)[0]` and `[0]` sites, none reachable from real card text | `amounts.ts`, `effects.ts`, `legality.ts`, `control-effects.ts` | #422 |
+
+A battle's protector is now chosen by its controller among their living opponents (CR 310.9a, 310.12a; #415, asked only with more than one).
+
+The combat data model already supports several defenders (each attacker stores its own target and defender, and `defending.ts` derives the defending player per creature, CR 508.5a); only the declare-blockers flow assumes one. Tests for annihilator, `reselectAttack`, goad and commander damage with 3 seats: #421. Not audited: the AI, the UI and the view code.
+
+## Cards not supported for more than one opponent
+
+Support is one flag per card today, so a card here is marked supported in the golden corpus and is known not to work with 3 or 4 seats. 1v1 support is unchanged. Add a card with what fails and the issue that fixes it; delete the row when the fix is merged. The 3-seat re-test that fills this list is #420.
+
+| Card | What fails with 3 or more seats | Issue |
+| --- | --- | --- |
+| Goldlust Triad | Myriad does nothing | #419 |
+| Hammers of Moradin | Myriad does nothing | #419 |
+| Legion Loyalty | Myriad does nothing | #419 |

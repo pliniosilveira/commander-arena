@@ -70,11 +70,15 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-mana-spent',
   // Stage P68 (D-230): the nontoken creatures of the controller that an earlier destroy destroyed.
   'amount.for-each-own-nontoken-destroyed',
+  // Ahoy Mateys deck, group 5 (Blood Money): the nontoken creatures of any player that an earlier destroy destroyed.
+  'amount.for-each-nontoken-destroyed',
   // Feather deck group 1 (D-450): the cards the controller has drawn this turn.
   'amount.for-each-card-drawn',
   // Issue 145 (Aetherflux Reservoir): the spells the controller has cast this turn.
   'amount.for-each-spell-cast',
   'amount.for-each-spell-color',
+  // Ahoy Mateys deck, group 1 (Malcolm): the opponents a group of sources dealt damage to in one event.
+  'amount.for-each-opponent-dealt-damage',
   // Lock and Load (issue 121): the other instants and sorceries the controller has cast this turn.
   'amount.for-each-other-spell-cast',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.

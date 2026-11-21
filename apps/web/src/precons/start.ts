@@ -7,6 +7,7 @@
 
 import type { AiKind, NewGameOptions } from '../game/protocol';
 import type { PreconDeck, Precons } from './build';
+import { type ChallengeLevel, emblemsFor } from './challenges/levels';
 
 export type StartOptions =
   | { readonly ok: true; readonly options: NewGameOptions }
@@ -63,4 +64,53 @@ export async function startOptionsFor(
     ...(request.ai === undefined ? {} : { ai: request.ai }),
   };
   return { ok: true, options };
+}
+
+export interface ChallengeRequest {
+  readonly seed: number;
+  /** The player's deck: a precon id or `saved:<deck id>`. */
+  readonly humanDeck: string;
+  /** The challenge opponent: an id of the challenge list. */
+  readonly challenge: string;
+  /** Easy (the default), Medium or Hard: the opponent also owns its emblems from the start. */
+  readonly level?: ChallengeLevel;
+  readonly freeMulligan?: boolean;
+}
+
+/**
+ * Starting a challenge: the player's deck comes from the precons and saved decks, the opponent's
+ * from the challenge list. Both go through the same preparation and refusal rule as any deck.
+ */
+export async function startChallengeOptions(
+  precons: Precons,
+  challenges: Precons,
+  request: ChallengeRequest,
+): Promise<StartOptions> {
+  const human = await precons.prepare(request.humanDeck);
+  if (!human.ok) return { ok: false, reason: human.reason };
+  const ai = await challenges.prepare(request.challenge);
+  if (!ai.ok) return { ok: false, reason: ai.reason };
+  const level = request.level ?? 'easy';
+  const emblems = emblemsFor(level, request.challenge);
+  if (level !== 'easy' && emblems.length === 0) {
+    return {
+      ok: false,
+      reason: `${ai.info.name} has no ${level === 'medium' ? 'Medium' : 'Hard'} level yet.`,
+    };
+  }
+  const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
+  return {
+    ok: true,
+    options: {
+      seed: request.seed,
+      humanDeck: request.humanDeck,
+      aiDeck: request.challenge,
+      ...(emblems.length === 0 ? {} : { aiEmblems: emblems }),
+      humanCards: human.deck,
+      aiCards: ai.deck,
+      ...(humanPreconName === undefined ? {} : { humanPreconName }),
+      aiPreconName: ai.info.name,
+      ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
+    },
+  };
 }

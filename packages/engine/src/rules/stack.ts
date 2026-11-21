@@ -106,6 +106,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     // D-230: "mana value X or less, where X is the damage dealt" is read again as the ability resolves.
     ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+    ...(obj.stack?.triggerDamaged === undefined
+      ? {}
+      : { triggerDamaged: obj.stack.triggerDamaged }),
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
@@ -186,6 +189,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+      ...(obj.stack?.triggerDamaged === undefined
+        ? {}
+        : { triggerDamaged: obj.stack.triggerDamaged }),
       ...(obj.stack?.triggerTargetCount === undefined
         ? {}
         : { triggerTargetCount: obj.stack.triggerTargetCount }),
@@ -270,6 +276,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
+                destroyedNontokenCreatures:
+                  (res.thisWay?.destroyedNontokenCreatures ?? 0) +
+                  (out.thisWay.destroyedNontokenCreatures ?? 0),
                 destroyedValue:
                   (res.thisWay?.destroyedValue ?? 0) + (out.thisWay.destroyedValue ?? 0),
                 playersDrew: (res.thisWay?.playersDrew ?? 0) + (out.thisWay.playersDrew ?? 0),
@@ -286,6 +295,19 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 discardedInstantOrSorcery:
                   (res.thisWay?.discardedInstantOrSorcery ?? 0) +
                   (out.thisWay.discardedInstantOrSorcery ?? 0),
+                // Left out until there is some, so the state of every game that never reads it is what it was.
+                ...(res.thisWay?.discardedNonland === undefined &&
+                out.thisWay.discardedNonland === undefined
+                  ? {}
+                  : {
+                      discardedNonland:
+                        (res.thisWay?.discardedNonland ?? 0) + (out.thisWay.discardedNonland ?? 0),
+                    }),
+                ...(res.thisWay?.countersPut === undefined && out.thisWay.countersPut === undefined
+                  ? {}
+                  : {
+                      countersPut: (res.thisWay?.countersPut ?? 0) + (out.thisWay.countersPut ?? 0),
+                    }),
                 searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
                 ...mergeTypes(res.thisWay?.discardedTypes, out.thisWay.discardedTypes),
                 // Issue 279: the greatest number one player discarded, not a sum.
@@ -342,6 +364,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(head.kind === 'chooseObjects' && head.chosen !== null
           ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
           : {}),
+        // The Black Gate: the player chosen is what "that player" means for the rest of the resolution.
+        ...(head.kind === 'choosePlayer' && head.chosen !== null
+          ? { chosenPlayer: head.chosen }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -354,6 +380,11 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
       state.resolution?.entersCopy !== undefined
     ) {
       const { entersCopy: _answered, ...rest } = state.resolution;
+      state = { ...state, resolution: rest };
+    }
+    // CR 310.9a: and the protector chosen for a battle that entered.
+    if (head.kind === 'move' && state.resolution?.entersProtector !== undefined) {
+      const { entersProtector: _protector, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // D-225: so does the card revealed for a land's "you may reveal a card".
@@ -491,6 +522,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
+      ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
@@ -1018,6 +1050,74 @@ export function answerResolutionAssign(state: GameState, option: string): Resolv
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],
+  );
+}
+
+/** Records the player chosen by "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionChoosePlayer(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'choosePlayer' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'playerChoice' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const seat = Number(option.slice('seat:'.length));
+  const updated: Instruction = { ...head, chosen: seat };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
+/**
+ * Records the protector the controller chose as a battle entered (CR 310.9a, 310.12a) for the move that asked: the head of the queue when it is a move, or the spell resolving when the
+ * queue is empty, then continues. Null when no such question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionProtector(state: GameState, option: string): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (
+    !res ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'protector' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const head = res.queue[0];
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source) return null;
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, entersProtector: Number(option.slice('seat:'.length)) },
+    },
+    [event],
   );
 }
 

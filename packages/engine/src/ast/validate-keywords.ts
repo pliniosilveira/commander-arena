@@ -111,6 +111,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         issue(out, `${path}.count`, `${k.kind} needs a positive integer`);
       }
       return true;
+    case 'deckLimit':
+      // CR 100.2a: how many copies a deck may hold: a whole number above the one a Commander deck holds.
+      if (!isCount(k.limit) || k.limit < 2) {
+        issue(out, `${path}.limit`, 'deckLimit needs a whole number of at least 2');
+      }
+      return true;
     case 'partnerWith':
       // CR 702.124j (D-490): the name of the card the other commander is, and the card the enters trigger searches for.
       if (typeof k.name !== 'string' || k.name.trim() === '') {

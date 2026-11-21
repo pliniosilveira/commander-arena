@@ -86,17 +86,3 @@ export function handStep(
   const room = (width - cardW) / (count - 1);
   return Math.max(minStep, Math.min(cardW + gap, Math.floor(room)));
 }
-
-/**
- * How much of the text size factor the hand cards take. A hand that would fan so tightly that the
- * middle of a card is covered by its neighbour, even when the neighbour is lifted by the pointer
- * (step under 0.65 of the card width), keeps cards smaller, down to their normal size; a short hand
- * takes the whole factor. A gain under 5 percent is not worth a different card, so it snaps to the
- * normal size. `baseW` is the normal card width, `width` the room the fan has.
- */
-export function handScale(count: number, baseW: number, width: number, scale: number): number {
-  if (count <= 1) return scale;
-  const widest = width / (1 + 0.65 * (count - 1));
-  const fit = Math.min(scale, Math.floor((widest / baseW) * 100) / 100);
-  return fit < 1.05 ? 1 : fit;
-}

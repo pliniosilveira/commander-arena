@@ -49,7 +49,11 @@ export function runRevealTopBranches(
       );
       if (!matches) continue;
       if (branch.onMatch !== undefined) {
-        instructions.push({ kind: 'effect', effect: branch.onMatch, as: seat });
+        instructions.push({
+          kind: 'effect',
+          effect: branch.onMatch,
+          as: branch.asController === true ? ctx.controller : seat,
+        });
       }
       if (branch.to !== undefined) {
         // The player who revealed it puts it there, so it is under their control (CR 110.2a): its owner, the library being theirs.

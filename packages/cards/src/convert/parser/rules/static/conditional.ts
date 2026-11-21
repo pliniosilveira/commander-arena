@@ -17,6 +17,8 @@ import { OPPONENTS_CANT_CAST_UNIT } from './korvold';
 
 /** The conditions a static ability reads: counts of permanents, a commander, the life total, this permanent's tapped status. */
 const STATIC_CONDITIONS = [
+  // Ahoy Mateys deck, group 8: "as long as you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
+  'condition.control-at-least-subtypes',
   'condition.control-at-least',
   'condition.control-a',
   'condition.control-at-most',
@@ -365,8 +367,14 @@ export const STATIC_CONDITIONAL_SUFFIX = defineRule<IrStatic>({
     'You may cast this card from your graveyard as long as you control a Zombie.',
     '~ gets +1/+1 and has hexproof as long as you control your commander.',
     'Other Time Lords you control have flying as long as you control a Time Lord.',
+    // Federation Fleet deck, group E: "if" in place of "as long as".
+    "~ can't be blocked if you control a Spacecraft.",
+    '~ has flying if you control an artifact.',
   ],
   rejects: [
+    '~ gets +3/+3 if you control a banana.',
+    '~ gets +3/+3 if you have 30 or more life and you control a Zombie.',
+    '~ gets +3/+3 if you have 30 or more life',
     '~ gets +3/+3 as long as you have 30 or more life',
     '~ gets +3/+3 as long as',
     '~ gets +3/+3 as long as you have 30 or more life. Draw a card.',
@@ -381,7 +389,8 @@ export const STATIC_CONDITIONAL_SUFFIX = defineRule<IrStatic>({
   parse: (ctx, pos) => {
     const read = sequence(
       choice(ANY_UNIT, CAST_FROM_GRAVEYARD_UNIT),
-      literal(' as long as '),
+      // Federation Fleet deck, group E (Geordi La Forge): "~ can't be blocked if you control a Spacecraft." says the same as "as long as" (CR 611.3a).
+      choice(literal(' as long as '), literal(' if ')),
       CONDITION,
     )(ctx, pos);
     if (!read.ok) return read;

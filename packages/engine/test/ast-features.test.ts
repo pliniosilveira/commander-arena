@@ -84,6 +84,7 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      'whileHasCounter',
       'forAsLongAsYouControlThis',
       // D-207: "for as long as this Saga remains on the battlefield".
       'forAsLongAsThisRemains',
@@ -115,6 +116,8 @@ describe('the dimensions', () => {
       'subjectStat',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
+      'triggerPlayerIsOpponent',
+      'triggerPlayerStat',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
@@ -137,6 +140,7 @@ describe('the dimensions', () => {
       'manaValueAtMostAmount',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
+      'diedThisWay',
       'objectMatches',
       'giftPromised',
       'opponentControlsAtLeast',
@@ -148,6 +152,7 @@ describe('the dimensions', () => {
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
       'cardLeftYourGraveyard',
+      'descendedThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".

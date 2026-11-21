@@ -239,6 +239,19 @@ function lowerCostedKeyword(
   ) {
     return failure(ability);
   }
+  // "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability.
+  let costReducedIf: { generic: number; condition: Condition } | undefined;
+  if (ability.costReducedIf !== undefined) {
+    const { amount, condition } = ability.costReducedIf;
+    if (name !== 'equip' || cost.value.kind !== 'mana' || amount.kind !== 'number') {
+      return failure(ability);
+    }
+    const reduced = gate(ability, ['ability:costReducedIf']);
+    if (reduced !== null) return reduced;
+    const lowered = lowerCondition(condition);
+    if (!lowered.ok) return lowered;
+    costReducedIf = { generic: amount.value, condition: lowered.value };
+  }
   return {
     ok: true,
     value: [
@@ -247,6 +260,7 @@ function lowerCostedKeyword(
         keyword: {
           kind: name,
           cost: [cost.value],
+          ...(costReducedIf === undefined ? {} : { costReducedIf }),
           ...(ability.quality === undefined
             ? {}
             : { restriction: { subtypes: [ability.quality] } }),
@@ -605,6 +619,19 @@ export function lowerKeyword(
       rule: 'keyword.partner-with',
     };
   }
+  // CR 100.2a: "A deck can have up to nine cards named ~": a deck-construction line, no effect in a game.
+  if (ability.name === 'deckLimit') {
+    const [limit] = ability.params;
+    if (ability.params.length !== 1 || limit?.kind !== 'number') return failure(ability);
+    if (!Number.isSafeInteger(limit.value) || limit.value < 2) return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:deckLimit']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'deckLimit', limit: limit.value } }],
+      rule: 'keyword.deck-limit',
+    };
+  }
   if (ability.name === 'protection') return lowerProtection(ability);
   // A creature type ("Halflingcycling {4}", D-538) names its type in `quality`; the five land types and "basic land" are in the table.
   const typeSearch: ObjectFilter | undefined =
@@ -696,6 +723,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const { zone, ...filter } = lowered.value;
     void zone;
     return built({ kind: 'damageBonus', sources: filter, amount: amount.value });
+  }
+  if (event.verb === 'damageDouble') {
+    // CR 614.1a, 120.3 (Angrath's Marauders): the damage a source the controller controls would deal to any permanent or player is doubled.
+    const sources = event.args.sources;
+    if (sources?.kind !== 'noun' || event.condition !== undefined) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:damageDouble']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(sources);
+    if (!lowered.ok) return lowered;
+    const { zone, ...filter } = lowered.value;
+    void zone;
+    return built({ kind: 'damageDouble', sources: filter });
   }
   if (event.verb === 'countersPlus') {
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
@@ -825,12 +864,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       'ability:replacement',
       'replacement:entersAsCopy',
       ...(event.args.withX === undefined ? [] : (['ability:copyEntersWithX'] as const)),
+      ...(event.args.fromGraveyard === undefined
+        ? []
+        : (['ability:copyEntersFromGraveyard'] as const)),
     ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
-    const { zone, ...kind } = filter.value;
-    void zone;
+    // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the filter keeps its zone, the graveyard.
+    const fromGraveyard =
+      event.args.fromGraveyard?.kind === 'flag' && event.args.fromGraveyard.value;
+    const { zone, ...unzoned } = filter.value;
+    if (fromGraveyard ? zone !== 'graveyard' : zone !== undefined && zone !== 'battlefield') {
+      return failure(ability);
+    }
+    const kind = fromGraveyard ? filter.value : unzoned;
     const gains: Keyword[] = [];
     for (const name of gained?.kind === 'keywordList' ? gained.names : []) {
       const word = keywordKind(name);
@@ -856,6 +904,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
+      ...(fromGraveyard ? { fromGraveyard: true as const } : {}),
+      // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types".
+      ...(event.args.keepName?.kind === 'flag' && event.args.keepName.value
+        ? { keepName: true as const }
+        : {}),
+      ...(event.args.addLegendary?.kind === 'flag' && event.args.addLegendary.value
+        ? { addSupertypes: ['legendary' as const] }
+        : {}),
       // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
       ...(event.args.withX?.kind === 'flag' && event.args.withX.value
         ? { withX: { counter: '+1/+1' } }
@@ -954,6 +1010,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     // The permanent's own zone ("on the battlefield") is the engine's business, not the filter's.
     const { zone, ...filter } = what.value;
     void zone;
+    // The Darkness Crystal (CR 614.1a, 119.1): "instead exile it and you gain 2 life".
+    const life = event.args.life;
+    if (life !== undefined) {
+      if (life.kind !== 'number' || life.value < 1 || token !== undefined) return failure(ability);
+      return built({ kind: 'wouldDie', what: filter, instead: 'exile', alsoGainLife: life.value });
+    }
     if (token === undefined) {
       return built({ kind: 'wouldDie', what: filter, instead: 'exile' });
     }
@@ -1162,6 +1224,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:mobilize',
   'keyword:fabricate',
   'keyword:partnerWith',
+  'keyword:deckLimit',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',
@@ -1204,6 +1267,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:tokensInstead',
   'replacement:countersPlus',
   'replacement:damageBonus',
+  'replacement:damageDouble',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

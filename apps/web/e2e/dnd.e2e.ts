@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { untilHandPlayable } from './harness/resolve';
+import { dragToStack } from './harness/settings';
 import { settled } from './harness/settle';
 
 /** Drag and drop is an addition to clicking: every test here drives the real HTML5 drag events. */
@@ -69,7 +70,8 @@ test('a drop outside every zone sends no action and the card stays in the hand',
   const plains = hand(page).filter({ hasText: 'Basic Land' }).first();
   // The exile bar between the two battlefields is not a drop zone.
   await plains.dragTo(page.locator('.board-mid'));
-  await plains.dragTo(page.getByRole('log'));
+  // Nor is the turn bar.
+  await plains.dragTo(page.locator('.pnl-tracker').first());
 
   await expect(hand(page)).toHaveCount(before);
   await expect(page.getByRole('log')).not.toContainText('You play');
@@ -116,7 +118,9 @@ test('a spell dragged onto the battlefield is cast', async ({ page }) => {
   await hawk.dragTo(page.locator('[data-drop="battlefield"]'));
 
   await expect(page.getByRole('log')).toContainText("You cast Healer's Hawk");
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText("Healer's Hawk");
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    "Healer's Hawk",
+  );
 
   // Let it resolve: it joins the battlefield.
   await primary(page).click();
@@ -160,10 +164,7 @@ test('attackers: drag a creature at the opponent, then back to take it out of th
 
 test('the stack panel is a drop zone too: a land dropped there is played', async ({ page }) => {
   await toMain(page);
-  await hand(page)
-    .filter({ hasText: 'Basic Land' })
-    .first()
-    .dragTo(page.locator('[data-drop="stack"]'));
+  await dragToStack(page, hand(page).filter({ hasText: 'Basic Land' }).first());
   await expect(page.getByRole('log')).toContainText('You play Plains');
   await expect(mine(page).locator('[data-object-id]', { hasText: 'Plains' })).toHaveCount(1);
 });

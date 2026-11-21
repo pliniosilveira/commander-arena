@@ -551,6 +551,8 @@ export const STATIC_EACH = defineRule<IrStatic>({
     'Each creature you control gets +1/+1.',
     'Each Zombie you control has deathtouch.',
     'Each creature you control gets +1/+1 and has trample.',
+    "Each other creature you control that's a Skeleton or Pirate gets +1/+1.",
+    "Each creature you control but don't own gets +2/+2, has menace and deathtouch, and is a Pirate in addition to its other types.",
   ],
   rejects: [
     "Each creature you control with power 4 or greater can't be blocked by more than one creature",
@@ -563,7 +565,13 @@ export const STATIC_EACH = defineRule<IrStatic>({
   parse: statement(
     'static.each',
     // D-647: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
-    ['noun.each-permanent', 'noun.each-creature-enchanted-by-you'],
+    [
+      'noun.each-permanent',
+      'noun.each-creature-enchanted-by-you',
+      // Ahoy Mateys deck, group 4: "Each other creature you control that's a Skeleton or Pirate gets +1/+1." and "Each creature you control but don't own gets +2/+2".
+      'noun.each-creature-that-is-subtype-or-subtype',
+      'noun.each-creature-you-control-but-dont-own',
+    ],
     'each',
   ),
 });

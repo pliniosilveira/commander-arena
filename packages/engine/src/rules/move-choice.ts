@@ -40,6 +40,7 @@ function cardCandidates(
   alsoGraveyard = false,
   triggerDamage?: number,
   among?: readonly ObjectId[],
+  handOf?: SeatId,
 ): ObjectId[] {
   // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
   const ctx = {
@@ -72,7 +73,8 @@ function cardCandidates(
   const zones: readonly ('hand' | 'graveyard' | 'command')[] =
     alsoGraveyard && zone === 'hand' ? ['hand', 'graveyard'] : [zone];
   return zones.flatMap((z) =>
-    zoneList(state, z, seat).filter((id) => {
+    // CR 402.3 (hands): "from defending player's hand" names the zone of another player (`handOf`); the chooser is still `seat`.
+    zoneList(state, z, z === 'hand' && handOf !== undefined ? handOf : seat).filter((id) => {
       const obj = state.objects[id];
       return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
@@ -153,6 +155,8 @@ export function runChooseMove(
         instruction.withCounters,
       ).map((i) => {
         if (i.kind !== 'move') return i;
+        // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
+        if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
@@ -171,40 +175,62 @@ export function runChooseMove(
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal =
-    fromCards && instruction.anyOwner === true
-      ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
-        (instruction.among ?? []).filter((id) => {
+    fromCards && instruction.graveyardOf !== undefined
+      ? // King Narfi's Betrayal (CR 404.1): the cards in one player's graveyard that match the filter, whoever chooses.
+        zoneList(state, 'graveyard', instruction.graveyardOf).filter((id) => {
           const obj = state.objects[id];
-          const { controller: _owner, ...described } = instruction.filter;
+          const { controller: _you, ...described } = instruction.filter;
           return (
             obj !== undefined &&
-            obj.zone === 'graveyard' &&
             matchesFilter(
               state,
               obj,
               { ...described, zone: 'graveyard' },
-              {
-                controller: chooser,
-                source: res.source,
-              },
+              { controller: chooser, source: res.source },
             )
           );
         })
-      : fromCards
-        ? cardCandidates(
-            state,
-            chooser,
-            res.source,
-            instruction.filter,
-            instruction.alsoGraveyard === true,
-            res.triggerDamage,
-            instruction.among,
-          ).filter(
-            // D-411: only the cards the effect before it moved.
-            (id) => instruction.among === undefined || instruction.among.includes(id),
-          )
-        : controlledCandidates(state, chooser, res.source, instruction.filter);
-  if (legal.length === 0) return { ...done(state), lastMoved: [], ...restart };
+      : fromCards && instruction.anyOwner === true
+        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
+          (instruction.among ?? []).filter((id) => {
+            const obj = state.objects[id];
+            const { controller: _owner, ...described } = instruction.filter;
+            return (
+              obj !== undefined &&
+              obj.zone === 'graveyard' &&
+              matchesFilter(
+                state,
+                obj,
+                { ...described, zone: 'graveyard' },
+                {
+                  controller: chooser,
+                  source: res.source,
+                },
+              )
+            );
+          })
+        : fromCards
+          ? cardCandidates(
+              state,
+              chooser,
+              res.source,
+              instruction.filter,
+              instruction.alsoGraveyard === true,
+              res.triggerDamage,
+              instruction.among,
+              instruction.handOf,
+            ).filter(
+              // D-411: only the cards the effect before it moved.
+              (id) => instruction.among === undefined || instruction.among.includes(id),
+            )
+          : controlledCandidates(state, chooser, res.source, instruction.filter);
+  // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
+  // shown it even when none can be chosen; an empty hand shows nothing.
+  const looked =
+    instruction.handOf === undefined ? [] : zoneList(state, 'hand', instruction.handOf);
+  if (legal.length === 0 && looked.length === 0) {
+    return { ...done(state), lastMoved: [], ...restart };
+  }
   const optional = instruction.optional === true;
   // CR 205.2a: "any number of cards ... with four or more card types among them": with no way to reach that many card types among the candidates nothing can be chosen,
   // so nothing is asked (and "if you do" reads that nothing was done).
@@ -246,6 +272,8 @@ export function runChooseMove(
         zone,
         ...(instruction.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
         legal,
+        // CR 402.3: every card of the hand looked at (`looked`), which only `seat` may see; `legal` are the ones that may be chosen.
+        ...(looked.length === 0 ? {} : { looked }),
         min,
         max,
         reveal: zone !== 'hand',
@@ -260,28 +288,37 @@ export function runChooseMove(
               ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
                   instruction.to
                 ].replace('your', 'their')}`
-              : `Choose ${
-                  instruction.minCardTypes !== undefined
-                    ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-                    : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-                } ${
-                  instruction.among !== undefined && zone === 'exile'
-                    ? 'from among the cards exiled this way'
-                    : instruction.among !== undefined
-                      ? 'from among the cards put into your graveyard'
-                      : zone === 'exile'
-                        ? 'exiled with this permanent'
-                        : instruction.alsoGraveyard === true
-                          ? 'from your hand or graveyard'
-                          : zone === 'command'
-                            ? 'from your command zone'
-                            : `from your ${zone}`
-                } to put ${WHERE[instruction.to]}`.replace(
-                  'from among the cards put into your graveyard',
-                  instruction.anyOwner === true
-                    ? 'from among the cards put into a graveyard'
-                    : 'from among the cards put into your graveyard',
-                ),
+              : legal.length === 0
+                ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
+                  `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
+                : `Choose ${
+                    instruction.minCardTypes !== undefined
+                      ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                      : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+                  } ${
+                    instruction.among !== undefined && zone === 'exile'
+                      ? 'from among the cards exiled this way'
+                      : instruction.among !== undefined
+                        ? 'from among the cards put into your graveyard'
+                        : zone === 'exile'
+                          ? 'exiled with this permanent'
+                          : instruction.graveyardOf !== undefined
+                            ? instruction.graveyardOf === chooser
+                              ? 'from your graveyard'
+                              : "from an opponent's graveyard"
+                            : instruction.alsoGraveyard === true
+                              ? 'from your hand or graveyard'
+                              : zone === 'command'
+                                ? 'from your command zone'
+                                : instruction.handOf !== undefined
+                                  ? 'from their hand'
+                                  : `from your ${zone}`
+                  } to put ${WHERE[instruction.to]}`.replace(
+                    'from among the cards put into your graveyard',
+                    instruction.anyOwner === true
+                      ? 'from among the cards put into a graveyard'
+                      : 'from among the cards put into your graveyard',
+                  ),
       },
     };
   }

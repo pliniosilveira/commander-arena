@@ -62,10 +62,14 @@ export interface SelectContext {
   readonly costTappedPower?: number;
   /** What `sacrificed` means (D-177): the permanents the earlier `sacrifice` instructions of this resolution sacrificed. */
   readonly sacrificed?: readonly ObjectId[];
+  /** What `chosenPlayer` ("that player" after "choose a player ...") means in this resolution (The Black Gate). */
+  readonly chosenPlayer?: SeatId;
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
   readonly triggerPlayer?: SeatId;
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** The opponents dealt damage by the batch of this trigger (`triggerDamagedPlayers`, CR 603.2c). */
+  readonly triggerDamaged?: readonly SeatId[];
   readonly triggerTargetCount?: number;
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
   readonly targets?: readonly ChosenTarget[];
@@ -83,6 +87,8 @@ export interface SelectContext {
   readonly controllers?: readonly SeatId[];
   /** The power `powerGreaterThan` of an `each` filter compares with, read as the effect resolves (see `FilterContext.powerLimit`). */
   readonly powerLimit?: number | null;
+  /** The name `sameNameAs` of an `each` filter compares with, read as the effect resolves (see `FilterContext.nameLimit`). */
+  readonly nameLimit?: string | null;
   /**
    * An object a `countOf` does not count: the card of a spell that is not on the stack yet while its
    * cost is looked at beforehand (`canCast`), which the real cast has already moved there (CR 601.2a).
@@ -215,7 +221,9 @@ export function matchesFilter(
     const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
     const aimed =
       (ctx.spellTargetsMayHold === true && unchosen) ||
-      (obj.stack?.chosenTargets ?? []).some((t) => t.kind === 'player');
+      (obj.stack?.chosenTargets ?? []).some(
+        (t) => t.kind === 'player' && (filter.targetsPlayer !== 'you' || t.seat === ctx.controller),
+      );
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
   // CR 115.9c (D-437): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
@@ -283,6 +291,17 @@ export function matchesFilter(
     ...(filter.notTriggerCard === true && ctx.triggerSubject !== undefined
       ? { excludedCards: successorsOf(state, ctx.triggerSubject, () => true) }
       : {}),
+    // CR 508.1 (Shared Animosity): "each other attacking creature": the creature the trigger is about is left out (on the battlefield or as it last was).
+    ...(filter.otherThanTriggerSubject === true && ctx.triggerSubject !== undefined
+      ? {
+          excludedCards: [
+            ...(filter.notTriggerCard === true
+              ? successorsOf(state, ctx.triggerSubject, () => true)
+              : []),
+            ctx.triggerSubject,
+          ],
+        }
+      : {}),
     // CR 202.3: "with lesser mana value": at most one less than the amount.
     ...(filter.manaValueBelow !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
@@ -313,8 +332,14 @@ export function matchesFilter(
     ...(filter.controllerDealtDamageBySource === true
       ? { damagedPlayers: damagedBy(state, ctx.source) }
       : {}),
+    ...(filter.controllerDealtCombatDamageByAtLeast !== undefined
+      ? { combatDamaged: state.turnLog.combatDamaged }
+      : {}),
     ...(filter.putFromBattlefieldThisTurn === true
       ? { graveyarded: state.turnLog.graveyarded }
+      : {}),
+    ...(filter.discardedOrFromLibraryThisTurn === true
+      ? { discardedOrFromLibrary: state.turnLog.discardedOrFromLibrary ?? [] }
       : {}),
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
@@ -354,12 +379,15 @@ function readsGame(f: ObjectFilter): boolean {
     f.powerLessThanSource === true ||
     f.manaValueX === true ||
     f.controllerDealtDamageBySource === true ||
+    f.controllerDealtCombatDamageByAtLeast !== undefined ||
     f.putFromBattlefieldThisTurn === true ||
+    f.discardedOrFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
     f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
     f.notTriggerCard === true ||
+    f.otherThanTriggerSubject === true ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );
@@ -594,9 +622,11 @@ export function legalTargets(
 ): ChosenTarget[] {
   const out: ChosenTarget[] = [];
   const specId = spec.id;
-  const playersFor = (filter: 'any' | 'opponent'): ChosenTarget[] =>
+  const playersFor = (filter: 'any' | 'opponent' | 'opponentWhoseTurn'): ChosenTarget[] =>
     seatsInOrder(state, ctx.controller)
       .filter((s) => filter === 'any' || s !== ctx.controller)
+      // CR 115.1, 500.1 (Cmdr. Troi): "target opponent whose turn it is": the opponent who is the active player, so no one on the controller's own turn.
+      .filter((s) => filter !== 'opponentWhoseTurn' || s === state.turn.activeSeat)
       // CR 702.11b (D-149): "You have hexproof": the opponents of that player can't target them.
       // CR 702.16b (D-376): "You have protection from the chosen card type": a source of that type can't target them.
       .filter((s) => playerCanBeTargetedBy(state, s, ctx.controller, ctx.source))
@@ -771,11 +801,6 @@ export function resolveObjects(
     case 'this':
     case 'thisSpell':
       return ctx.source === null ? [] : [ctx.source];
-    case 'convokers':
-      // CR 702.51a (issue 102): the creatures that convoked the spell that is resolving, those still on the battlefield.
-      return (
-        ctx.source === null ? [] : (state.objects[ctx.source]?.stack?.convokedBy ?? [])
-      ).filter((id) => state.objects[id]?.zone === 'battlefield');
     case 'target':
       return targetObjects(selector.id, targets);
     case 'chosen':
@@ -833,6 +858,13 @@ export function resolveObjects(
         );
       });
     }
+    case 'convokers': {
+      // CR 702.51a, 400.7: the creatures tapped to cast the resolving spell, only while each is still the creature that was tapped.
+      const spell = ctx.source === null ? undefined : state.objects[ctx.source];
+      return (spell?.stack?.convokedBy ?? []).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
+    }
     case 'triggerSources':
       // CR 400.7, 603.2c: the creatures that dealt the damage, only while each is still the permanent that did.
       return (ctx.triggerCards ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
@@ -876,13 +908,24 @@ export function resolveObjects(
                   .map((id) => powerOfObject(state, id))
                   .find((p) => p !== null) ?? null,
             };
+      // CR 201.2, 608.2c: "with the same name as that card", read now, with the targets: the name of the first object the reference names.
+      const nameRef = selector.filter.sameNameAs;
+      const named =
+        nameRef === undefined
+          ? limited
+          : {
+              ...limited,
+              nameLimit:
+                resolveObjects(state, nameRef, ctx, targets)
+                  .map((id) => derive(state, getObject(state, id)).name)
+                  .find((n) => n !== undefined) ?? null,
+            };
       // D-151: "each other creature" besides the one the effect names (`except`), read now, with the targets.
       const left =
         selector.except === undefined ? [] : resolveObjects(state, selector.except, ctx, targets);
       return objectsInZone(state, zone).filter(
         (id) =>
-          !left.includes(id) &&
-          matchesFilter(state, getObject(state, id), selector.filter, limited),
+          !left.includes(id) && matchesFilter(state, getObject(state, id), selector.filter, named),
       );
     }
     default: {
@@ -962,6 +1005,11 @@ export function resolvePlayers(
       const seat = defendingPlayerOf(state, ctx.source);
       return seat === null ? [] : [seat];
     }
+    case 'chosenPlayer':
+      // The Black Gate: the player the `choosePlayer` before it chose; nobody when it has left the game.
+      return ctx.chosenPlayer === undefined || getSeat(state, ctx.chosenPlayer).hasLost
+        ? []
+        : [ctx.chosenPlayer];
     case 'playerToYourRight': {
       const seat = playerToRightOf(state, ctx.controller);
       return seat === null ? [] : [seat];
@@ -986,6 +1034,12 @@ export function resolvePlayers(
         ? [attacker]
         : [];
     }
+    case 'triggerDamagedPlayers':
+      // CR 603.2c, 120.2: "each of those opponents": the opponents the batch of sources damaged, those still in the game, in the order of CR 101.4.
+      return apnapOrder(
+        state,
+        (ctx.triggerDamaged ?? []).filter((seat) => !getSeat(state, seat).hasLost),
+      );
     case 'declinedPlayer':
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []
@@ -1059,6 +1113,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'ownerOf' ||
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'playerToYourRight' ||
+    sel.kind === 'chosenPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||

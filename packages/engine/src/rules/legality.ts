@@ -35,6 +35,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardPlayPermission } from './graveyard-play';
@@ -498,7 +499,8 @@ export function castZone(
   }
   if (alternative === 'escape') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
-    return alternativeOf(faceOf(state, obj), 'escape') === null ? null : 'graveyard';
+    // CR 702.138a: a printed escape cost, or the one an effect gave the card until end of turn (rules/escape-grant.ts).
+    return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
   }
   // Issue 159: a card with a `sacrificeFromGraveyard` cost is cast from its owner's graveyard only.
   if (alternative === 'sacrificeFromGraveyard') {
@@ -691,7 +693,8 @@ export function alternativeCostAllowed(
   const alt = definitionOf(state, obj.card).faces[face]?.alternativeCosts?.find(
     (a) => a.kind === kind,
   );
-  if (alt === undefined) return false;
+  // CR 702.138a: an escape cost the face lists, or the one an effect gave the card until end of turn (`gainEscape`, rules/escape-grant.ts).
+  if (alt === undefined) return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
     kind === 'overload' &&

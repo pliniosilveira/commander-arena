@@ -457,68 +457,83 @@ function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
 }
 
 export function PreviewPanel() {
+  const hover = useApp((s) => s.hover);
+  const pin = useApp((s) => s.pin);
+  const dismissStackPreview = useApp((s) => s.dismissStackPreview);
+  const dismissedStack = useApp((s) => s.preview.dismissedStack ?? null);
   const view = useApp((s) => s.snapshot?.view ?? null);
   const pinnedId = useApp((s) => s.preview.pinned);
   const hoveredId = useApp((s) => s.preview.hovered);
   const revealed = useApp((s) => s.preview.revealed);
   const { id, source } =
-    view === null ? { id: null, source: 'none' } : previewChoice(view, pinnedId, hoveredId);
+    view === null
+      ? { id: null, source: 'none' }
+      : previewChoice(view, pinnedId, hoveredId, dismissedStack);
   const log = useApp((s) => s.log);
   const activated = useMemo(() => activatedStackIds(log), [log]);
   const object = view !== null && id !== null ? findObject(view, id) : null;
   const pinned = source === 'pinned' && object !== null;
   // The card behind the viewer's own face-down permanent (D-315), or null.
   const real = object === null ? null : realCardOf(object);
+  // A tap on the preview closes it: it drops the pin, the hover, a reveal and the stack's card.
+  const dismiss = () => {
+    hover(null);
+    pin(null);
+    // The card on top of the stack is shown by itself: the tap closes it until another is on top.
+    if (source === 'stack' && id !== null) dismissStackPreview(id);
+  };
   // A reveal is read when the player holds no object (pinned or hovered) and nothing newer than it is on the stack.
   if (revealed.length > 0 && (source === 'none' || source === 'stack')) {
     return (
-      <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
+      // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
+      <aside
+        className="preview-panel board-preview"
+        aria-label="Card preview"
+        aria-live="polite"
+        data-pinned="true"
+        onClick={dismiss}
+      >
         <RevealedList cards={revealed} />
       </aside>
     );
   }
+  // Nothing to read: the panel floats over the board, so it is not drawn at all.
+  if (object === null) return null;
   return (
-    <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
-      {object === null ? (
-        <div className="board-preview-empty">
-          <p className="board-preview-title">
-            {id === null ? 'Hover a card to read it' : 'Not visible any more'}
-          </p>
-          <p>
-            {id === null
-              ? 'Right-click pins, Esc unpins.'
-              : 'That object has moved to another zone or is hidden from you.'}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="board-preview-bar">
-            {pinned ? (
-              <span className="board-flag board-flag-pin">Pinned. Esc unpins</span>
-            ) : source === 'stack' ? (
-              <span className="board-flag" data-preview-stack>
-                Top of the stack
-              </span>
-            ) : (
-              <span className="board-dim">Right-click pins, Esc unpins</span>
-            )}
-          </div>
-          {real !== null && (
-            // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
-            <p className="board-flag" data-preview-face-down>
-              Face down. Only you can see this card; {object.name}, a {object.power}/
-              {object.toughness} creature, is what everyone sees.
-            </p>
-          )}
-          <div className="board-preview-card" data-preview-id={object.id}>
-            <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
-          </div>
-          <StackWords object={object} />
-          <PreviewDetails object={object} />
-          <FaceList object={object} />
-          <MeldList object={object} />
-        </>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
+    <aside
+      className="preview-panel board-preview"
+      aria-label="Card preview"
+      aria-live="polite"
+      data-pinned={pinned ? 'true' : undefined}
+      data-stack-preview={source === 'stack' ? 'true' : undefined}
+      onClick={dismiss}
+    >
+      <div className="board-preview-bar">
+        {pinned ? (
+          <span className="board-flag board-flag-pin">Pinned. Esc unpins</span>
+        ) : source === 'stack' ? (
+          <span className="board-flag" data-preview-stack>
+            Top of the stack
+          </span>
+        ) : (
+          <span className="board-dim">Right-click pins, Esc unpins</span>
+        )}
+      </div>
+      {real !== null && (
+        // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
+        <p className="board-flag" data-preview-face-down>
+          Face down. Only you can see this card; {object.name}, a {object.power}/{object.toughness}{' '}
+          creature, is what everyone sees.
+        </p>
       )}
+      <div className="board-preview-card" data-preview-id={object.id}>
+        <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
+      </div>
+      <StackWords object={object} />
+      <PreviewDetails object={object} />
+      <FaceList object={object} />
+      <MeldList object={object} />
     </aside>
   );
 }

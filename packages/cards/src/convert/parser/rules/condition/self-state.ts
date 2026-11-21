@@ -349,13 +349,16 @@ export const CONDITION_THIS_HAS_COUNTER = defineRule<IrCondition>({
 export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
   id: 'condition.this-counter-count',
   family: 'condition',
-  leading: ['~'],
+  leading: ['~', 'she', 'he'],
   cites: ['CR 122.1 (Counters)', 'CR 603.4 (Handling Triggered Abilities)'],
   examples: [
     '~ has fewer than three charge counters on it',
     '~ has fewer than 3 charge counters on it',
     '~ has three or more charge counters on it',
     '~ has fewer than two +1/+1 counters on it',
+    // A card the text names by a person's pronoun (Kes, Evolving Telepath): the pronoun is bound to the permanent like "it" is.
+    'she has nine or more time counters on her',
+    'he has three or more charge counters on him',
   ],
   rejects: [
     '~ has fewer than three charge counters on it.',
@@ -364,6 +367,10 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
     '~ has fewer than three charge counters',
     '~ has fewer than three charge counters on it and',
     'it has fewer than three charge counters on it',
+    'she has nine or more time counters on it',
+    'she has nine or more time counters on him',
+    'he has nine or more time counters on her',
+    'she has nine or more counters on her',
     'target artifact has fewer than three charge counters on it',
     '~ has more than three charge counters on it',
     '~ had fewer than three charge counters on it',
@@ -372,7 +379,7 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
   parse: (ctx, pos) => {
     const r = spanned(
       sequence(
-        literal('~ has '),
+        pattern(/(~|she|he) has /iu),
         choice<{ cmp: 'atMost' | 'atLeast'; value: number }>(
           map(
             sequence(
@@ -394,12 +401,15 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
         ),
         literal(' '),
         pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
-        literal(' counters on it'),
-        pattern(/(?![\p{L}\p{N}])/u),
+        pattern(/ counters on (it|her|him)(?![\p{L}\p{N}])/iu),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, compare, , counter] = r.value.value;
+    const [head, compare, , counter, tail] = r.value.value;
+    // "she has ... on her" and "he has ... on him" name the card by a person's pronoun, which the binding pass makes the permanent the text last named; "~ ... on it" is the permanent itself.
+    const subject = (head[1] ?? '').toLowerCase();
+    const object = (tail[1] ?? '').toLowerCase();
+    if (object !== { '~': 'it', she: 'her', he: 'him' }[subject]) return fail(ctx, pos);
     const name = counter[0].toLowerCase();
     if (name === 'no') return fail(ctx, pos);
     const span = r.value.span;
@@ -411,8 +421,8 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
           kind: 'countersOn',
           of: {
             kind: 'noun',
-            det: 'self',
-            filter: { raw: '~' },
+            det: subject === '~' ? 'self' : 'anaphor',
+            filter: { raw: subject === '~' ? '~' : object },
             upTo: false,
             plural: false,
             other: false,

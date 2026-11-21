@@ -12,6 +12,7 @@ import {
   answerCrewCost,
   answerDiscardCost,
   answerExileCost,
+  answerRemoveCounters,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -101,6 +102,7 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionChoosePlayer,
   answerResolutionClash,
   answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
@@ -115,6 +117,7 @@ import {
   answerResolutionPayAmount,
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
+  answerResolutionProtector,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
@@ -513,6 +516,16 @@ function answerChooseOption(
     // CR 701.30b: the opponent the controller chose to clash with.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
+  if (d.purpose === 'protector') {
+    // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionProtector(state, option));
+  }
+  if (d.purpose === 'playerChoice') {
+    // CR 608.2d (The Black Gate): the player the controller chose among those with the most life.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionChoosePlayer(state, option));
   }
   if (d.purpose === 'assignOpponent') {
     // Issue 81 (Dack Fayden): the opponent the controller chose for a permanent.
@@ -992,6 +1005,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           ? answerCastBlight(state, action.objects)
           : answerBlight(state, action.objects);
       }
+      // CR 118.3, 122.1: the permanent a counter is removed from to pay "Remove two +1/+1 counters from among creatures you control".
+      if (d.purpose === 'removeCountersCost') return answerRemoveCounters(state, action.objects);
       // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
       if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".

@@ -49,6 +49,9 @@ export function playerSubject(
     case 'playerToYourRight':
       // Hithlain Rope: the previous player in turn order.
       return { text: 'the player to your right', base: false };
+    case 'chosenPlayer':
+      // The Black Gate: the player "Choose a player with the most life or tied for most life" chose.
+      return { text: 'that player', base: false };
     case 'triggerPlayer':
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };
@@ -58,6 +61,9 @@ export function playerSubject(
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6): "each opponent attacking that player".
       return { text: 'each opponent attacking that player', base: false };
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: the opponents a batch of sources damaged.
+      return { text: 'each of those opponents', base: false };
     case 'declinedPlayer':
       // D-576: a player who declined a choice, named in its `otherwise` effect.
       return { text: 'the player who declined', base: false };

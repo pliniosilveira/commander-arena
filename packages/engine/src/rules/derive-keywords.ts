@@ -11,7 +11,14 @@
  * itself stays (CR 702.29b), so the object still has it. Each instance of a keyword expands on its
  * own: two instances of prowess are two triggered abilities (CR 702.108b), and so are two of ward.
  */
-import type { Ability, Cost, Keyword, ObjectFilter, TokenDefinition } from '../ast/types';
+import type {
+  Ability,
+  Condition,
+  Cost,
+  Keyword,
+  ObjectFilter,
+  TokenDefinition,
+} from '../ast/types';
 import { effectForGift } from './gift-effect';
 import { SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY } from './soulbond-abilities';
 
@@ -30,7 +37,11 @@ export function hasPrintedKeyword(abilities: readonly Ability[], kind: Keyword['
 }
 
 /** CR 702.6a: "Equip [cost]" is "[Cost]: Attach this permanent to target creature you control." */
-function equipAbility(cost: readonly Cost[], restriction?: ObjectFilter): Ability {
+function equipAbility(
+  cost: readonly Cost[],
+  restriction?: ObjectFilter,
+  costReducedIf?: { readonly generic: number; readonly condition: Condition },
+): Ability {
   return {
     kind: 'activated',
     cost,
@@ -49,6 +60,8 @@ function equipAbility(cost: readonly Cost[], restriction?: ObjectFilter): Abilit
     timing: 'sorcery',
     // D-425: what "Equip abilities you activate that target ..." names.
     equip: true,
+    // "This ability costs {2} less to activate if you have one or fewer cards in hand." (CR 601.2f)
+    ...(costReducedIf === undefined ? {} : { costReducedIf }),
   };
 }
 
@@ -757,7 +770,13 @@ export function expansionOf(ability: Ability): Ability[] {
         },
       ];
     case 'equip':
-      return [equipAbility(ability.keyword.cost, ability.keyword.restriction)];
+      return [
+        equipAbility(
+          ability.keyword.cost,
+          ability.keyword.restriction,
+          ability.keyword.costReducedIf,
+        ),
+      ];
     case 'prowess':
       return [PROWESS_ABILITY];
     case 'ward':

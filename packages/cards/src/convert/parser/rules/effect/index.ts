@@ -24,6 +24,12 @@ import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
+import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
+import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
+import { AHOY_G3_EFFECT_RULES } from './ahoy-g3';
+import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
+import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
+import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -31,6 +37,7 @@ import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
+import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
@@ -70,8 +77,11 @@ import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FEDERATION_D_EFFECT_RULES } from './federation-d';
+import { FEDERATION_F_EFFECT_RULES } from './federation-f';
 import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
+import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
@@ -138,6 +148,7 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
+import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
@@ -151,6 +162,7 @@ import {
   EFFECT_MILL,
   EFFECT_PLAYER,
   EFFECT_PLAYER_LOCK,
+  EFFECT_PLAYER_PROTECTION,
   EFFECT_SHUFFLE,
 } from './player';
 import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
@@ -186,6 +198,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
@@ -480,6 +493,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     "exile target player's graveyard",
     'exile target opponent’s graveyard',
     'exile all graveyards',
+    "exile any number of target players' graveyards",
     'exile all cards from all graveyards',
     'exile it',
     'exile that card',
@@ -511,6 +525,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile all creatures until ~ leaves the battlefield',
     'exile target tapped artifact or enchantment',
     "exile target player's hand",
+    "exile any number of target players' hands",
     'exile them',
     'exile this card from your hand',
     'exile that card from your hand',
@@ -533,6 +548,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             // Lorehold group 2 (issue 86): "exile target noncreature, nonland card from your graveyard".
             'noun.target-nonmatching-graveyard-card',
             'noun.player-graveyard',
+            // Federation Fleet deck, group F (Stonespeaker Crystal): "exile any number of target players' graveyards".
+            'noun.any-number-target-players-graveyards',
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
@@ -711,6 +728,21 @@ const RETURN_IT_TO_BATTLEFIELD: Parser<{ objects: IrNoun | IrNounList; to: IrZon
 );
 
 /**
+ * "return target creature card and all other cards with the same name as that card from your graveyard to your hand" (Echoing Return, CR 201.2, 400.3, 608.2c): the cards of your
+ * graveyard with the name of the target card, which the noun says in full (the "from your graveyard" is part of it).
+ */
+const RETURN_SAME_NAME: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  map(
+    sequence(
+      literal('return '),
+      operands(['noun.target-card-and-same-name'], 'effect.return'),
+      TO_YOUR_HAND,
+    ),
+    ([, objects, to]) => ({ objects, to }),
+  ),
+);
+
+/**
  * "return that nonland permanent card to the battlefield", "return that card to your hand" (stage P33, D-150, CR 608.2c): the card an earlier
  * instruction of the text chose from a graveyard, which the lowering checks it is.
  */
@@ -719,9 +751,11 @@ const RETURN_THAT_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
     sequence(
       literal('return '),
       operands(['noun.that-card'], 'effect.return'),
+      // Stitch Together (CR 608.2c): "Return that card from your graveyard to the battlefield instead if ...": the card the first sentence returned, said with where it is.
+      optional(literal(' from your graveyard'), null),
       choice(TO_THE_BATTLEFIELD, TO_YOUR_HAND),
     ),
-    ([, objects, to]) => ({ objects, to }),
+    ([, objects, , to]) => ({ objects, to }),
   ),
 );
 
@@ -868,6 +902,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
     "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
+    // Echoing Return (CR 201.2, 608.2c): the target card and every card of your graveyard with its name.
+    'return target creature card and all other cards with the same name as that card from your graveyard to your hand',
     // Persist (CR 205.4, 122.6, 614.1c): a nonlegendary card of your graveyard, entering with a -1/-1 counter.
     'return target nonlegendary creature card from your graveyard to the battlefield with a -1/-1 counter on it',
     "return a land you control to its owner's hand",
@@ -937,6 +973,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
+      RETURN_SAME_NAME,
       RETURN_FROM_GRAVEYARD,
       RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND,
       RETURN_THAT_CARD,
@@ -972,6 +1009,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target triggered ability or colorless spell',
     // Issue 100 (Sublime Epiphany): an activated or a triggered ability.
     'counter target activated or triggered ability',
+    // Ahoy Mateys deck, group 10 (Siren Stormtamer): a spell or an ability that targets you or a creature you control.
+    'counter target spell or ability that targets you or a creature you control',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -989,6 +1028,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
           'noun.target-activated-or-triggered-ability',
+          // Ahoy Mateys deck, group 10 (Siren Stormtamer).
+          'noun.target-spell-or-ability-targeting-you',
         ],
       }),
     ),
@@ -1107,6 +1148,12 @@ export const EFFECT_RULES = [
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
   // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
   ...F144_FIRST_EFFECT_RULES,
+  // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
+  ...AHOY_G2_EFFECT_RULES,
+  // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
+  ...AHOY_G1B_EFFECT_RULES,
+  // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
+  ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1120,6 +1167,12 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Ahoy Mateys deck, group 3: "Exile that token at end of combat.", "Look at defending player's hand. You may put ... tapped and attacking ..." and "Return that creature to its owner's hand at the beginning of the next end step." start like the plain exile, look and return rules, and are tried first.
+  ...AHOY_G3_EFFECT_RULES,
+  // Ahoy Mateys deck, group 7: "Until end of turn, it gains haste and becomes a Pirate in addition to its other types." and "That creature doesn't untap during its controller's untap step for as long as you control ~." start like the plain lead-gain and doesn't-untap rules, and are tried first.
+  ...AHOY_G7_EFFECT_RULES,
+  ...AHOY_G8_EFFECT_RULES,
+  ...BLACK_GATE_EFFECT_RULES,
   // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
   // choose and gain rules, and are tried first.
@@ -1152,6 +1205,8 @@ export const EFFECT_RULES = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
   ...LOREHOLD_G2_EFFECT_RULES,
   ...FOOD_D_EFFECT_RULES,
+  // Federation Fleet deck, group D: "you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~."
+  ...FEDERATION_D_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
@@ -1294,6 +1349,8 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
   ...WITHERBLOOM_A_EFFECT_RULES,
+  // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
+  ...PARLEY_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
@@ -1366,10 +1423,19 @@ export const EFFECT_RULES = [
   EFFECT_DISCARD,
   EFFECT_LIFE,
   EFFECT_PLAYER_LOCK,
+  EFFECT_PLAYER_PROTECTION,
   EFFECT_MANIFEST,
   EFFECT_MILL,
   EFFECT_SHUFFLE,
   ...SACRIFICE_RULES,
+  // Federation Fleet deck, group A (Seek out): "one or two target creatures each get ... and gain ...", counters on two optional targets (read quietly: they share words with the
+  // older counter and pump rules and must not move where a line they do not read stops).
+  ...SEEK_OUT_EFFECT_RULES,
+  // Federation Fleet deck, group E (Unification, U.S.S. Stargazer): the owner draws then shuffles the creature in; the delayed exile of a token at end of combat.
+  ...FLEET_E_EFFECT_RULES,
+  // Federation Fleet deck, group F: "Until your next turn, creatures can't attack you.", the delayed return of two exiled cards, a commander into the hand, Tuvok's choice of attackers,
+  // Troi's free cast (read quietly, as the rules around them).
+  ...FEDERATION_F_EFFECT_RULES,
   ...COUNTER_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,

@@ -23,7 +23,9 @@ import {
   type AstIssue,
   checkAffectedObjects,
   checkEnumList,
+  checkFilter,
   checkPtAmount,
+  filterSome,
   issue,
   type Scope,
 } from './validate-parts';
@@ -167,6 +169,18 @@ function checkSetTypes(
   }
   if (e.types === undefined && e.subtypes === undefined) {
     issue(out, path, 'setTypes needs types, subtypes or both');
+  }
+  // CR 611.2b (Minas Morgul): "for as long as that creature has a shadow counter on it": a counter kind, for good (`permanent`), with nothing else that lasts differently.
+  if (e.whileHasCounter !== undefined) {
+    if (typeof e.whileHasCounter !== 'string' || e.whileHasCounter === '') {
+      issue(out, `${path}.whileHasCounter`, 'whileHasCounter names a kind of counter');
+    }
+    if (e.duration !== 'permanent') {
+      issue(out, `${path}.duration`, 'whileHasCounter goes with the duration permanent');
+    }
+    if (e.basePt !== undefined) {
+      issue(out, `${path}.basePt`, 'whileHasCounter does not set base power and toughness');
+    }
   }
   if (e.additive !== undefined && e.additive !== true) {
     issue(out, `${path}.additive`, 'additive must be true when present (CR 205.1b)');
@@ -382,13 +396,39 @@ export function checkContinuousEffect(
     case 'restrict':
       // D-094: "can't block", "can't be blocked" and "attacks each combat if able" last until end of
       // turn; "doesn't untap" and "can't be countered" are not effects the engine runs.
+      if (e.blockers !== undefined) {
+        // CR 509.1b: "can't be blocked this turn except by Spirits": the creatures that can't block, only of `cantBeBlocked`, as a filter of creatures as they are (no zone, owner or stack kind).
+        if (e.restriction !== 'cantBeBlocked') {
+          issue(out, `${path}.blockers`, "blockers go with the restriction 'cantBeBlocked'");
+        } else if (typeof e.blockers !== 'object' || e.blockers === null) {
+          issue(
+            out,
+            `${path}.blockers`,
+            'blockers is a filter of the creatures that can not block',
+          );
+        } else {
+          checkFilter(e.blockers, `${path}.blockers`, out);
+          if (
+            filterSome(
+              e.blockers,
+              (m) => m.zone !== undefined || m.stackKind !== undefined || m.owner !== undefined,
+            )
+          ) {
+            issue(
+              out,
+              `${path}.blockers`,
+              'blockers names creatures by what they are: no zone, stackKind or owner',
+            );
+          }
+        }
+      }
       if (e.restriction === 'doesntUntap') {
-        // D-517: only with the duration that ends at the next untap step.
-        if (e.duration !== 'untilNextUntapStep') {
+        // D-517: the duration that ends at the next untap step; Ahoy Mateys group 7 (CR 611.2b): "for as long as you control this creature" in the ability of a permanent.
+        if (e.duration !== 'untilNextUntapStep' && e.duration !== 'forAsLongAsYouControlThis') {
           issue(
             out,
             `${path}.duration`,
-            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep, not doesntUntap with ${JSON.stringify(e.duration)}`,
+            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep or forAsLongAsYouControlThis, not doesntUntap with ${JSON.stringify(e.duration)}`,
           );
         }
       } else if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {

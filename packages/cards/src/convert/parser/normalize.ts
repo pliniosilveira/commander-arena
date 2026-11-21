@@ -192,8 +192,22 @@ export function selfNames(options: NormalizeOptions): string[] {
   const names = [options.name];
   if (options.legendary) {
     const comma = options.name.indexOf(',');
-    if (comma > 0) names.push(options.name.slice(0, comma));
-    else {
+    if (comma > 0) {
+      names.push(options.name.slice(0, comma));
+      // "<Rank> <Given name> <Family name>, <Title>": Oracle text may call the card by the rank and the family name ("Ensign Harry Kim, Operations" is "Ensign Kim", Federation Fleet
+      // deck, group D). Only a part of three or more capitalized words has such a short form.
+      const words = options.name.slice(0, comma).split(' ');
+      const first = words[0];
+      const last = words[words.length - 1];
+      if (
+        words.length >= 3 &&
+        first !== undefined &&
+        last !== undefined &&
+        words.every((w) => /^\p{Lu}[\p{L}'’-]*$/u.test(w))
+      ) {
+        names.push(`${first} ${last}`);
+      }
+    } else {
       const short = SHORT_NAME_THE.exec(options.name);
       if (short?.[1] !== undefined) names.push(short[1]);
       else {

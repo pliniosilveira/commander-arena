@@ -42,6 +42,22 @@ export function discardOne(
   const madness = hasMadness(state, obj);
   const moved = moveObject(state, { object: id, to: madness ? 'exile' : 'graveyard' });
   if (moved.kind !== 'done') return null;
+  // CR 701.9 (Ghost of Ramirez DePietro): a card discarded into the graveyard is "discarded this turn" there; one exiled by madness, or sent to the command zone, is not in it.
+  const inGraveyard =
+    moved.newObject !== null && moved.state.objects[moved.newObject]?.zone === 'graveyard';
+  const kept =
+    inGraveyard && moved.newObject !== null
+      ? {
+          ...moved.state,
+          turnLog: {
+            ...moved.state.turnLog,
+            discardedOrFromLibrary: [
+              ...(moved.state.turnLog.discardedOrFromLibrary ?? []),
+              moved.newObject,
+            ],
+          },
+        }
+      : moved.state;
   const events: GameEvent[] = [
     ...moved.events,
     { kind: 'discarded', seat, object: id, to: moved.newObject },
@@ -49,5 +65,5 @@ export function discardOne(
   if (madness && moved.newObject !== null) {
     events.push({ kind: 'madnessExiled', seat, object: moved.newObject });
   }
-  return { state: moved.state, events };
+  return { state: kept, events };
 }

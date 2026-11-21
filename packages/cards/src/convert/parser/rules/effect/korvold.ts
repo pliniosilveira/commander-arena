@@ -81,10 +81,13 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     // Death Toll deck, Dim Oubliette (CR 400.7, 608.2d, 110.2a): the same choice, put onto the battlefield under your control.
     'return a creature card from your graveyard to the battlefield',
     'you may return a creature card from your graveyard to the battlefield',
-    // Issue 102 (Tasigur, the Golden Fang): a card that is not a land card.
+    // Ahoy Mateys deck, Port of Karfell (CR 110.5b, tapped): the same, entering tapped.
+    'return a creature card from your graveyard to the battlefield tapped',
+    'you may return a creature card from your graveyard to the battlefield tapped',
+    // Issue 102 (Tasigur, the Golden Fang): a card that is not a land card, and the one an opponent chooses.
     'return a nonland card from your graveyard to your hand',
     "return a nonland card of an opponent's choice from your graveyard to your hand",
-    // Issue 102 (Teval, the Balanced Scale): the same choice, entering tapped.
+    // Issue 102 (Teval, the Balanced Scale): the same choice of a land card.
     'you may return a land card from your graveyard to the battlefield tapped',
   ],
   rejects: [
@@ -93,8 +96,6 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     'you may return a creature card from a graveyard to your hand',
     'you may return a creature card from an opponent’s graveyard to your hand',
     "you may return a creature card from your graveyard to its owner's hand",
-    'you may return a creature card from your graveyard to your hand tapped',
-    'you may return a creature card from your graveyard to the battlefield tapped and attacking',
     'you may return a creature card from your graveyard to the battlefield under your control',
     'you may return a creature from your graveyard to your hand',
     'you may return a creature card from your graveyard to your hand tapped',
@@ -143,11 +144,12 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
       };
       const placed = ctx.text.slice(hand.span.start, hand.span.end);
       const toBattlefield = placed !== ' to your hand';
+      const tapped = placed === ' to the battlefield tapped';
       const to: IrZoneSpec = {
         kind: 'zoneSpec',
         zone: toBattlefield ? 'battlefield' : 'hand',
         ...(toBattlefield ? {} : { whose: 'you' as const }),
-        ...(placed === ' to the battlefield tapped' ? { tapped: true } : {}),
+        ...(tapped ? { tapped: true as const } : {}),
         span: hand.span,
         rule: 'effect.return-chosen-card',
       };

@@ -1,16 +1,8 @@
 // The land row as a table lays it out (D-215): groups, columns, order and sizes. Pure functions.
 import type { ObjectView } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { landGrow, landSpec } from '../src/ui/board/LandRow';
-import {
-  columnHeight,
-  deepest,
-  groupLands,
-  LAND_STACK_MAX,
-  landKey,
-  landRank,
-  layoutLands,
-} from '../src/ui/board/lands';
+import { landSpec } from '../src/ui/board/LandRow';
+import { clusterWidth, groupLands, landKey, landRank, layoutLands } from '../src/ui/board/lands';
 
 let next = 0;
 function land(name: string, over: Partial<ObjectView> = {}): ObjectView {
@@ -85,7 +77,7 @@ describe('which lands stack', () => {
     ]);
   });
 
-  test('nonbasic lands follow the basic ones, grouped by card name and ordered by name', () => {
+  test('nonbasic lands follow the basic ones, ordered by name, one tile each', () => {
     const row = [
       land('Sunken Ruins'),
       land('Command Tower'),
@@ -94,10 +86,12 @@ describe('which lands stack', () => {
       land('Arid Mesa'),
     ];
     const columns = groupLands(row);
+    // Nonbasic lands never overlap: each is a tile of its own.
     expect(names(columns)).toEqual([
       'Forestx1',
       'Arid Mesax1',
-      'Command Towerx2',
+      'Command Towerx1',
+      'Command Towerx1',
       'Sunken Ruinsx1',
     ]);
   });
@@ -118,9 +112,8 @@ describe('which lands stack', () => {
   test('a land with an Aura stands alone', () => {
     const aura = land('Forest');
     const row = [land('Forest'), aura, land('Forest')];
-    const columns = groupLands(row, LAND_STACK_MAX, (o) => o.id === aura.id);
+    const columns = groupLands(row, (o) => o.id === aura.id);
     expect(columns.map((c) => c.objects.length).sort()).toEqual([1, 2]);
-    expect(columns.some((c) => c.objects.length === 1 && c.objects[0]?.id === aura.id)).toBe(true);
   });
 
   test('basic lands rank by color; every nonbasic ranks after them', () => {
@@ -130,36 +123,18 @@ describe('which lands stack', () => {
   });
 });
 
-describe('the columns', () => {
-  test('a column holds five; the sixth card starts a new one, and the first column never changes', () => {
-    const six = many('Forest', 6);
-    const columns = groupLands(six);
-    expect(columns.map((c) => c.objects.length)).toEqual([5, 1]);
-    expect(columns.map((c) => [c.part, c.parts, c.groupSize])).toEqual([
-      [0, 2, 6],
-      [1, 2, 6],
-    ]);
-    // A seventh land arrives: the first five stay where they were.
-    const seven = groupLands([...six, land('Forest')]);
-    expect(seven[0]?.objects.map((o) => o.id)).toEqual(columns[0]?.objects.map((o) => o.id));
-    expect(seven.map((c) => c.objects.length)).toEqual([5, 2]);
+describe('the clusters', () => {
+  test('all equal basic lands make one cluster, however many', () => {
+    expect(groupLands(many('Forest', 11)).map((c) => c.objects.length)).toEqual([11]);
   });
 
-  test('eleven equal lands make three columns, and a smaller capacity makes more', () => {
-    const eleven = many('Island', 11);
-    expect(groupLands(eleven).map((c) => c.objects.length)).toEqual([5, 5, 1]);
-    expect(groupLands(eleven, 3).map((c) => c.objects.length)).toEqual([3, 3, 3, 2]);
-    expect(groupLands(eleven, 99).map((c) => c.objects.length)).toEqual([5, 5, 1]);
-    expect(groupLands(eleven, 0).map((c) => c.objects.length)).toEqual(Array(11).fill(1));
-  });
-
-  test('inside a column the cards are in the order they entered, whatever the order given', () => {
+  test('inside a cluster the cards are in the order they entered, whatever the order given', () => {
     const [a, b, c] = many('Swamp', 3);
     if (a === undefined || b === undefined || c === undefined) throw new Error('lands');
     expect(groupLands([c, a, b])[0]?.objects.map((o) => o.id)).toEqual([a.id, b.id, c.id]);
   });
 
-  test('tapping a land never moves it: the order and the columns are the same tapped or not', () => {
+  test('tapping a land never moves it', () => {
     const lands = many('Forest', 7);
     const tapped = lands.map((o, i) => (i % 2 === 0 ? { ...o, tapped: true } : o));
     expect(groupLands(tapped).map((c) => c.objects.map((o) => o.id))).toEqual(
@@ -167,83 +142,64 @@ describe('the columns', () => {
     );
   });
 
-  test('tapped and untapped lands of one name share a column', () => {
-    const row = [
-      land('Forest', { tapped: true }),
-      land('Forest'),
-      land('Forest', { tapped: true }),
-    ];
-    const columns = groupLands(row);
-    expect(columns).toHaveLength(1);
-    expect(columns[0]?.objects.map((o) => o.tapped)).toEqual([true, false, true]);
-  });
-
-  test('an empty row has no columns, and the same lands always give the same columns', () => {
+  test('an empty row has no clusters, and the same lands always give the same clusters', () => {
     expect(groupLands([])).toEqual([]);
     const row = [land('Forest'), land('Plains'), land('Forest'), land('Command Tower')];
     expect(groupLands(row)).toEqual(groupLands([...row].reverse()));
-    expect(deepest(groupLands(row))).toBe(2);
   });
 });
 
-describe('the size of the columns', () => {
+describe('the size of the row', () => {
   const spec = landSpec(1);
-  const columnsOf = (lands: readonly ObjectView[]) => (capacity: number) =>
-    groupLands(lands, capacity);
 
-  test('a roomy row takes the full tile and five-deep columns', () => {
-    const lands = [...many('Forest', 5), ...many('Plains', 5)];
-    // D-240 (issue 137): the full tile is 88 now (70 before), and a column of five needs 164.
-    const { layout } = layoutLands(columnsOf(lands), 900, 170, spec);
-    expect(layout.capacity).toBe(5);
+  test('a roomy row takes the full tile and a generous overlap', () => {
+    const columns = groupLands([...many('Forest', 5), ...many('Plains', 5)]);
+    const layout = layoutLands(columns, 900, 100, spec);
     expect(layout.tile).toBe(88);
     expect(layout.step).toBeGreaterThanOrEqual(spec.minStep);
-    expect(columnHeight(5, layout.tile, layout.step)).toBeLessThanOrEqual(170);
+    expect(layout.step).toBeLessThan(layout.width);
     expect(layout.overflow).toBe(false);
   });
 
-  test('a short row makes the columns shallower instead of the tiles unreadable', () => {
-    const lands = many('Forest', 10);
-    const { layout, columns } = layoutLands(columnsOf(lands), 900, 55, spec);
-    expect(layout.capacity).toBeLessThan(5);
-    // A stack is not drawn below the worthwhile size: the column gets shallower instead.
-    expect(layout.tile).toBeGreaterThanOrEqual(spec.stackTile);
-    expect(deepest(columns)).toBeLessThanOrEqual(layout.capacity);
-    expect(columns.reduce((n, c) => n + c.objects.length, 0)).toBe(10);
-    const tallest = columnHeight(deepest(columns), layout.tile, layout.step);
-    expect(tallest).toBeLessThanOrEqual(Math.max(55, spec.minTile));
+  test('a tight row tightens the overlap before it shrinks the tiles', () => {
+    const columns = groupLands([...many('Forest', 8), ...many('Plains', 8)]);
+    const roomy = layoutLands(columns, 2000, 100, spec);
+    const tight = layoutLands(columns, 560, 100, spec);
+    expect(tight.tile).toBe(88);
+    expect(tight.step).toBeLessThan(roomy.step);
+    expect(tight.step).toBeGreaterThanOrEqual(spec.minStep);
+    const total = columns.reduce(
+      (n, c) => n + clusterWidth(c.objects.length, tight.width, tight.step),
+      spec.gap,
+    );
+    expect(total).toBeLessThanOrEqual(560 + 0.5 + spec.gap);
   });
 
-  test('a row too short even for one card still draws the smallest tile', () => {
-    const { layout } = layoutLands(columnsOf(many('Forest', 3)), 900, 20, spec);
-    expect(layout.capacity).toBe(1);
-    expect(layout.tile).toBe(spec.minTile);
+  test('the tile is no taller than the row, but never below the smallest', () => {
+    expect(layoutLands(groupLands(many('Forest', 3)), 900, 60, spec).tile).toBe(60);
+    expect(layoutLands(groupLands(many('Forest', 3)), 900, 20, spec).tile).toBe(spec.minTile);
   });
 
   test('a lot of different lands shrink the tiles to fit the width, then scroll', () => {
     const lands = Array.from({ length: 14 }, (_, i) =>
       land(`Nonbasic ${String(i).padStart(2, '0')}`),
     );
-    // A land tile is wider than tall (the top of a card), so fourteen need more room than fourteen squares did.
-    const fit = layoutLands(columnsOf(lands), 800, 80, spec).layout;
+    const fit = layoutLands(groupLands(lands), 800, 80, spec);
     expect(fit.width).toBeGreaterThan(fit.tile);
     expect(fit.tile).toBeLessThan(70);
     expect(fit.overflow).toBe(false);
-    const scroll = layoutLands(columnsOf(lands), 300, 80, spec).layout;
+    const scroll = layoutLands(groupLands(lands), 300, 80, spec);
     expect(scroll.tile).toBe(spec.minTile);
     expect(scroll.overflow).toBe(true);
   });
 
   test('before the row is measured the tiles are drawn at full size with no width limit', () => {
-    const { layout } = layoutLands(columnsOf(many('Forest', 2)), null, 100, spec);
+    const layout = layoutLands(groupLands(many('Forest', 2)), null, 100, spec);
     expect(layout.overflow).toBe(false);
     expect(layout.tile).toBeGreaterThan(40);
   });
 
-  test('the text size scales the tile; deep columns ask the field for more height', () => {
+  test('the text size scales the tile', () => {
     expect(landSpec(1.25).maxTile).toBeGreaterThan(landSpec(1).maxTile);
-    expect(landGrow(1)).toBe(1);
-    expect(landGrow(3)).toBeGreaterThan(1);
-    expect(landGrow(5)).toBeGreaterThan(landGrow(3));
   });
 });

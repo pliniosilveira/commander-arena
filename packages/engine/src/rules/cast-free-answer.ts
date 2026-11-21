@@ -76,12 +76,20 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
     a.head.remaining === undefined ? 0 : a.head.remaining === 'any' ? 'any' : a.head.remaining - 1;
   const again: readonly Instruction[] =
     left === 'any' || left > 0 ? [{ ...a.head, remaining: left, chosen: null }] : [];
+  // Cmdr. Troi (CR 608.2g, 707.10): "you copy that spell": the spell cast is what `moved` names, with those cast before it by the same effect.
+  // A cast with nothing left to choose is already finished (the spell is the top of the stack, the last of the array); otherwise it is still the object being cast.
+  const cast = begun.state.casting?.object ?? begun.state.stack[begun.state.stack.length - 1];
+  const remembered =
+    a.head.remember === true && cast !== undefined
+      ? { lastMoved: [...(resolving.lastMoved ?? []), cast] }
+      : {};
   // CR 608.2c (issue 100): a spell was cast, which "if you do" reads (`performed`).
   return ok(
     {
       ...begun.state,
       resolution: {
         ...resolving,
+        ...remembered,
         queue: [...again, ...a.rest],
         performed: (resolving.performed ?? 0) + 1,
       },

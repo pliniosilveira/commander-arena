@@ -342,46 +342,6 @@ export const EFFECT_CONNIVE = defineRule<Clauses>({
 });
 
 /**
- * `effect.convokers-connive`: "each creature that convoked ~ connives" (issue 102, Lethal Scheme; CR 702.51a, 701.50a): every creature tapped to pay for the spell with Convoke that is still
- * on the battlefield connives, one after another. The engine's `connive` of the `convokers` the spell remembers. Not read: another verb, "that convoked" something other than the spell
- * itself, "each creature you control", a rider after it.
- */
-export const EFFECT_CONVOKERS_CONNIVE = defineRule<Clauses>({
-  id: 'effect.convokers-connive',
-  family: 'effect',
-  leading: ['each'],
-  cites: [
-    'CR 702.51a (Convoke)',
-    'CR 701.50a (Connive)',
-    'CR 608.2c (Resolving Spells and Abilities)',
-  ],
-  examples: [
-    'each creature that convoked ~ connives',
-    'each creature that convoked this spell connives',
-  ],
-  rejects: [
-    'each creature that convoked ~',
-    'each creature that convoked ~ connive',
-    'each creature that convoked another spell connives',
-    'each creature you control connives',
-    'each creature that convoked ~ connives 2',
-    'each creature that convoked ~ gets +1/+1 until end of turn',
-    'target creature that convoked ~ connives',
-  ],
-  parse: (ctx, pos) => {
-    const r = spanned(
-      pattern(/each creature that convoked (?:~|this spell) connives(?![\p{L}\p{N}])/iu),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    return {
-      ok: true,
-      value: [makeClause('effect.convokers-connive', 'conniveConvokers', {}, r.value.span)],
-      pos: r.pos,
-    };
-  },
-});
-
-/**
  * `effect.become-copy`: "have ~ become a copy of another target creature you control until end of turn, except its name is ~" (stage P53, D-212, CR 707.2, 707.9a,
  * 611.2a, 613.2a: this permanent gets the copiable values of the target as they are when the instruction runs, keeps its own name, for the turn). The text after
  * "you may" of the sentence; the engine's `becomeCopy` with `keepName`. Not read: a copy of "any creature", "until your next turn", an exception besides the name, a
@@ -654,7 +614,6 @@ export const VRASKA_EFFECT_RULES = [
   quietly(EFFECT_CHOOSE_TARGET),
   quietly(EFFECT_COUNTERS_IF_IT_IS),
   EFFECT_CONNIVE,
-  EFFECT_CONVOKERS_CONNIVE,
   EFFECT_BECOME_COPY,
   EFFECT_TARGET_BECOMES_COPY,
   EFFECT_GAIN_EACH_OF_TWO,

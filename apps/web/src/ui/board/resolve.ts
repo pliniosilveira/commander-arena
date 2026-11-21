@@ -48,19 +48,23 @@ export interface PreviewChoice {
  * still see it; with neither, the object on top of the stack, so the card that waits for the player's
  * pass is read without moving the pointer to the stack and back (issue 82). A hovered object that has
  * gone, with an empty stack, is still named ("Not visible any more"). An ability with no source (the
- * monarch's) is not a card: it is not shown.
+ * monarch's) is not a card: it is not shown. A top of the stack the player dismissed is not shown
+ * either, until another object is on top.
  */
 export function previewChoice(
   view: GameView,
   pinned: ObjectId | null,
   hovered: ObjectId | null,
+  dismissedStack: ObjectId | null = null,
 ): PreviewChoice {
   if (pinned !== null) return { id: pinned, source: 'pinned' };
   if (hovered !== null && findObject(view, hovered) !== null)
     return { id: hovered, source: 'hovered' };
   const top = view.stack[view.stack.length - 1];
   // The monarch's and the Ring's abilities have no card to show (nothing to hover either).
-  if (top !== undefined && !isInherentAbility(top)) return { id: top.id, source: 'stack' };
+  // A top of the stack the player tapped away stays closed (a new one shows again).
+  if (top !== undefined && !isInherentAbility(top) && top.id !== dismissedStack)
+    return { id: top.id, source: 'stack' };
   return hovered === null ? { id: null, source: 'none' } : { id: hovered, source: 'hovered' };
 }
 

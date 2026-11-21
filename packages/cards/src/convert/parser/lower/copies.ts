@@ -65,10 +65,18 @@ export function lowerCopyToken(
       if (letter === undefined) return { ok: false, needs: [], ...at };
       colors.push(letter);
     }
+    // Sauron, the Necromancer (CR 707.9a, 707.9b): "with menace": the keywords the copy has besides the abilities it copies.
+    const keywordAbilities: Ability[] = [];
+    for (const word of token.copyExcept.keywords ?? []) {
+      const kind = keywordKind(word);
+      if (kind === undefined || !isGrantable(kind)) return { ok: false, needs: [], ...at };
+      keywordAbilities.push({ kind: 'keyword', keyword: plainKeyword(kind) });
+    }
     exceptions = {
       setPt: { power: token.copyExcept.power, toughness: token.copyExcept.toughness },
       setColors: colors,
       setCreatureTypes: [...token.copyExcept.subtypes],
+      ...(keywordAbilities.length === 0 ? {} : { abilities: keywordAbilities }),
     };
   }
   // "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103, CR 707.9b): the values the copy has besides the ones it copies.
@@ -103,6 +111,32 @@ export function lowerCopyToken(
         ? {}
         : { startingLoyalty: token.copyStartingLoyalty }),
     };
+  }
+  // "..., except it isn't legendary, it's an Illusion artifact in addition to its other types, and it has haste" (Reg Barclay, CR 707.9b, 205.4a): types and keywords besides the copied ones.
+  if (token.copyAddsTypes !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    const extra = token.copyAddsTypes;
+    const abilities: Ability[] = [];
+    for (const word of extra.keywords) {
+      const kind = keywordKind(word);
+      if (kind === undefined || !isGrantable(kind)) return { ok: false, needs: [], ...at };
+      abilities.push({ kind: 'keyword', keyword: plainKeyword(kind) });
+    }
+    const types = extra.cardTypes.filter((t): t is CardType => CARD_TYPES.includes(t as CardType));
+    if (types.length !== extra.cardTypes.length) return { ok: false, needs: [], ...at };
+    exceptions = {
+      ...exceptions,
+      addSubtypes: [...extra.subtypes],
+      addTypes: types,
+      ...(abilities.length === 0 ? {} : { abilities }),
+    };
+  }
+  // "..., except their power is half that creature's power and their toughness is half ... Round up each time" (Saw in Half, CR 707.9b, 107.1a).
+  if (token.copyHalfPt === true) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    exceptions = { ...exceptions, halfPt: true };
   }
   // "Create a tapped token that's a copy of ...": the token enters tapped (CR 110.5b).
   if (token.tapped === true) {

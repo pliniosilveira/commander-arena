@@ -29,6 +29,8 @@ import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
+/** A draw's card word may be "additional": "draws an additional card" is one more card drawn (CR 121.1). */
+const DRAW_CARDS = pattern(/ (?:additional )?cards?(?![\p{L}\p{N}])/iu);
 const LIFE = pattern(/ life(?![\p{L}\p{N}])/iu);
 
 function verbWord(base: string, you: boolean): Parser<unknown> {
@@ -65,16 +67,16 @@ function quantityForEach(head: Parser<unknown>, tail: Parser<unknown>): Parser<I
  * control" (the amount is then the count, CR 121.1, 608.2c) and "cards equal to the greatest power among creatures
  * you control" (stage P28).
  */
-const cardsAmount = (verb: Parser<unknown>): Parser<IrAmount> =>
+const cardsAmount = (verb: Parser<unknown>, cards: Parser<unknown> = CARDS): Parser<IrAmount> =>
   choice(
-    quantityForEach(verb, CARDS),
+    quantityForEach(verb, cards),
     map(
       sequence(verb, literal('cards '), family<IrAmount>('amount', { only: EQUAL_AMOUNTS })),
       ([, , amount]) => amount,
     ),
-    map(sequence(verb, family<IrAmount>('amount'), CARDS), ([, amount]) => amount),
+    map(sequence(verb, family<IrAmount>('amount'), cards), ([, amount]) => amount),
   );
-const drawAmount = cardsAmount;
+const drawAmount = (verb: Parser<unknown>): Parser<IrAmount> => cardsAmount(verb, DRAW_CARDS);
 
 /** A player verb phrase, given the subject it is said of. Returns one clause. */
 export type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
@@ -208,17 +210,20 @@ export const lifeAction: Action = (subject, you, rule) => {
     spanned(
       sequence(
         verbWord('lose', you),
-        pattern(/half their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
+        pattern(/(half|a third of) their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
       ),
     ),
     ({ value, span }) => {
+      // "a third of their life, rounded up" (Dire Fleet Ravager, CR 107.1a): the same amount divided by 3.
+      const third = (value[1][1] ?? '').toLowerCase() === 'a third of';
       const words = value[1][0] ?? '';
       const halfSpan = { start: span.start + words.length, end: span.end };
       const total: IrAmount = { kind: 'lifeTotalOf', of: subject, span: halfSpan };
       return {
         kind: 'half',
         of: total,
-        round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+        round: (value[1][2] ?? '').toLowerCase() as 'down' | 'up',
+        ...(third ? { divisor: 3 as const } : {}),
         span,
       };
     },
@@ -373,7 +378,13 @@ const sacrificeAction: Action = (subject, you, rule) =>
               // Stage P30 (D-135): "a creature with the greatest power among creatures they control" is read too.
               // Stage P31 (D-140): "all permanents they control that are one or more colors" (each permanent by its controller).
               family<IrNoun>('noun', {
-                only: ['noun.a-greatest-permanent', 'noun.a-permanent', 'noun.all-they-control'],
+                only: [
+                  'noun.a-greatest-permanent',
+                  // Witch-king of Angmar (CR 510.2): "a creature of their choice that dealt combat damage to you this turn", before the plain noun, of which it is a longer reading.
+                  'noun.a-creature-that-dealt-damage-to-you',
+                  'noun.a-permanent',
+                  'noun.all-they-control',
+                ],
               }),
               // Nobody chooses when every permanent of the kind goes ("all ... they control").
               optional(literal(' of their choice'), null),
@@ -462,6 +473,8 @@ const createAction: Action = (subject, you, rule) =>
           'token.predefined',
           'token.custom',
           'token.number-of',
+          // Saw in Half: "its controller creates two tokens that are copies of that creature, except their power is half ...", before the plain copy.
+          'token.copies-half-pt',
           'token.copy',
           'token.copy-that-creature',
         ]),
@@ -485,6 +498,8 @@ export const PLAYER_SUBJECTS = [
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',
   'noun.each-other-player',
+  // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
+  'noun.each-player-other-than-its-controller',
   'noun.defending-player',
   'noun.player-to-your-right',
   'noun.player',
@@ -630,6 +645,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each opponent loses the game',
     'each player ~ attacked this turn loses the game',
     'target player loses the game',
+    // Howling Mine: the extra card of the draw step (CR 121.1).
+    'target player draws an additional card',
+    'each player draws two additional cards',
     'you lose the game',
     'that player loses the game',
     'target opponent loses 3 life and loses the game',
@@ -1095,6 +1113,44 @@ export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
       ok: true,
       value: [
         makeClause('effect.player-lock', 'playerLock', { player: player.value }, r.value.span),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * "You gain protection from everything until your next turn" (The One Ring, CR 702.16 Protection): the controller has protection from everything, as the engine's
+ * `grantPlayerProtectionEverything` has it. Only the controller, and only until their next turn; "until end of turn", another player and a creature are other statements.
+ */
+export const EFFECT_PLAYER_PROTECTION = defineRule<Clauses>({
+  id: 'effect.player-protection',
+  family: 'effect',
+  leading: ['you'],
+  cites: ['CR 702.16 (Protection)', 'CR 611.2 (Continuous Effects from Resolving Effects)'],
+  examples: ['you gain protection from everything until your next turn'],
+  rejects: [
+    'you gain protection from everything',
+    'you gain protection from everything until end of turn',
+    'you gain protection from red until your next turn',
+    'target player gains protection from everything until your next turn',
+    'you gain protection from everything until their next turn',
+    'you gain protection from everything and your life total can’t change',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/you gain protection from everything until your next turn(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          'effect.player-protection',
+          'playerProtection',
+          { player: impliedYou('effect.player-protection', pos) },
+          r.value.span,
+        ),
       ],
       pos: r.pos,
     };

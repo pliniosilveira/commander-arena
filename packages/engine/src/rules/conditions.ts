@@ -3,6 +3,7 @@
  * by the player who controls the thing that asks, so "you control" means that player's permanents.
  */
 import type { Condition } from '../ast/types';
+import { isPermanentType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
@@ -215,6 +216,8 @@ export function evaluateCondition(
       const subject = ptNow(state, ctx.triggerSubject);
       const source = ptNow(state, ctx.source);
       if (subject === null || source === null) return false;
+      // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
+      if (condition.onlyPower === true) return subject.power > source.power;
       return subject.power > source.power || subject.toughness > source.toughness;
     }
     case 'controlCommander':
@@ -329,6 +332,26 @@ export function evaluateCondition(
           )
         );
       });
+    }
+    case 'diedThisWay': {
+      // CR 700.4, 608.2h (Saw in Half): the creature the reference names was destroyed by this resolution's `destroy` and went to a graveyard (a token, which ceases to exist there, counts).
+      if ((ctx.thisWay?.destroyed ?? 0) < 1) return false;
+      const [id] = resolveObjects(
+        state,
+        condition.of,
+        {
+          controller: ctx.controller,
+          source: ctx.source,
+          ...(ctx.moved === undefined ? {} : { moved: ctx.moved }),
+          ...(ctx.triggerSubject === undefined ? {} : { triggerSubject: ctx.triggerSubject }),
+        },
+        ctx.targets ?? [],
+      );
+      const known = id === undefined ? undefined : state.lki[id];
+      if (known === undefined) return false;
+      if (known.object.token !== null) return true;
+      const successor = known.successor === undefined ? undefined : state.objects[known.successor];
+      return successor?.zone === 'graveyard';
     }
     case 'giftPromised': {
       // CR 702.174k (D-135): the spell carries the chosen player on the stack, the permanent that came from it remembers
@@ -477,6 +500,11 @@ export function evaluateCondition(
     case 'cardLeftYourGraveyard':
       // CR 400.7 (D-206): the turn log, read now.
       return state.turnLog.leftGraveyard.includes(ctx.controller);
+    case 'descendedThisTurn':
+      // A permanent card put into a graveyard of the controller from anywhere this turn (`TurnLog.graveyardEntries`: cards only, by owner, with their card types in the graveyard).
+      return state.turnLog.graveyardEntries.some(
+        (e) => e.seat === ctx.controller && e.types.some(isPermanentType),
+      );
     case 'manaSpentAtLeast': {
       // CR 601.2h (D-206): the spell that caused the cast trigger, as it is on the stack.
       const spell =
@@ -670,6 +698,19 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'triggerPlayerIsOpponent':
+      // CR 603.2b, 102.2: "that player", the player the event is about, is an opponent of the controller of the ability.
+      return (
+        ctx.triggerPlayer !== undefined &&
+        opponentsOf(state, ctx.controller).includes(ctx.triggerPlayer)
+      );
+    case 'triggerPlayerStat': {
+      // CR 402.1, 119.1, 608.2c: "that player" has so many cards in hand (or life, creatures, lands) as the instruction comes up.
+      if (ctx.triggerPlayer === undefined) return false;
+      const n = playerStatOf(state, ctx.triggerPlayer, condition.stat);
+      const { cmp, value } = condition.compare;
+      return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
+    }
     case 'paired': {
       // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature now, both on the battlefield.
       const own = ctx.source === null ? undefined : state.objects[ctx.source];

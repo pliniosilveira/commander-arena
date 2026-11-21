@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -111,8 +112,7 @@ test('manual payment: a filter land asks the combination and the badge names it'
     },
     FILTER_LANDS,
   );
-  const toggle = page.getByRole('button', { name: 'Manual mana' });
-  if ((await toggle.getAttribute('aria-pressed')) === 'false') await toggle.click();
+  await toggleSetting(page, 'Manual mana payment');
 
   await page.locator('.board-hand .is-clickable', { hasText: 'Youthful Knight' }).first().click();
   const pay = page.getByRole('region', { name: 'Payment' });

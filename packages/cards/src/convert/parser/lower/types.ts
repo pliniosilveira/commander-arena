@@ -270,6 +270,8 @@ export interface LowerContext {
   triggeredBody: boolean;
   /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
   didSearch: boolean;
+  /** The counters the `addCounters` instructions lowered so far put, by kind and whether every object they go on is a creature (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way"). */
+  putCounters: { counter: string; creatures: boolean }[];
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
   discardBatchTrigger: boolean;
   /** Issue 102: the trigger is about a batch of cards put into a graveyard, whose cards "one of them" names (`triggerCards`). */
@@ -336,6 +338,11 @@ export interface LowerContext {
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
   randomYardCard: boolean;
+  /**
+   * True after "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d): "that player" of the instructions after it is the player chosen, the engine's `chosenPlayer`.
+   * Set by the lowering of `choosePlayer`, never cleared inside one ability.
+   */
+  choseAPlayer: boolean;
   /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
@@ -408,6 +415,7 @@ export function newContext(
     graveyardBatchTrigger: false,
     entersBatchTrigger: false,
     didSearch: false,
+    putCounters: [],
     searched: null,
     sacrificedRef: null,
     madeToken: null,
@@ -421,6 +429,7 @@ export function newContext(
     exiledRef: null,
     lastEffectKind: null,
     randomYardCard: false,
+    choseAPlayer: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

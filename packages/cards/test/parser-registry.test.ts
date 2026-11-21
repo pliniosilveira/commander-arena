@@ -271,6 +271,25 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `{T}: Return target creature card from your graveyard to the battlefield. ${cap(e)}.`,
   ),
   'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
+  'effect.put-target-exiled-with-battlefield': permanent((e) => `{6}, {T}: ${cap(e)}.`),
+  // Sauron, the Necromancer: the delayed sentence that exiles the token it made.
+  'effect.exile-made-token-unless-ring-bearer': spell(
+    (e) =>
+      `Create a 1/1 white Soldier creature token. At the beginning of the next end step, ${e}.`,
+  ),
+  // Saw in Half.
+  'condition.dies-this-way': spell(
+    (e) => `Destroy target creature. If ${e}, its controller gains 1 life.`,
+  ),
+  'token.copies-half-pt': spell(
+    (e) => `Destroy target creature. If that creature dies this way, its controller creates ${e}.`,
+  ),
+  'effect.choose-player-most-life': permanent(
+    (e) => `{1}{B}, {T}: ${cap(e)}. Target creature can't be blocked this turn.`,
+  ),
+  'effect.cant-be-blocked-by-that-players-creatures': permanent(
+    (e) => `{1}{B}, {T}: Choose a player with the most life or tied for most life. ${cap(e)}.`,
+  ),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.
@@ -368,6 +387,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.may-cast-any-graveyard': spell((e) => `${cap(e).replace('. when', '. When')}.`),
   'noun.target-card-in-a-graveyard': spell((e) => `You may cast ${e} this turn.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
+  // Federation Fleet deck, group F (Stonespeaker Crystal).
+  'noun.any-number-target-players-graveyards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
@@ -395,6 +416,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-spell-cast': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-opponent-dealt-damage': permanent(
+    (e) =>
+      `Whenever one or more Pirates you control deal damage to your opponents, you create a Treasure token ${e}.`,
+  ),
   'amount.for-each-spell-color': permanent(
     (e) => `Whenever you cast a spell, you gain 1 life ${e}.`,
   ),
@@ -413,6 +438,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
+  // Federation Fleet deck, group B: "each player other than its controller" after a target ("Exile target nonland permanent. ...").
+  'noun.each-player-other-than-its-controller': spell(
+    (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
+  ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
@@ -492,6 +521,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
   'trigger.combat-damage-batch': whenever,
+  'trigger.damage-batch': whenever,
   'trigger.tapped-for-mana': whenever,
   'trigger.taps-for-mana': whenever,
   'trigger.state': whenever,
@@ -535,6 +565,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
+  'static.sacrifice-alt-cost': asIs,
   // Issue 144 (Goblin Negotiation): the number of tokens follows "create a number of ... tokens".
   'amount.excess-damage-dealt-this-way': spell(
     (e) =>
@@ -638,8 +669,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
+  'replacement.enters-as-copy-graveyard': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
+  'replacement.damage-double': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,
   'trigger.attacks-first-time': whenever,
@@ -848,6 +881,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'noun.up-to-one-target-spell': spell(
     (e) =>
@@ -938,6 +972,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.card-left-graveyard': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
   ),
+  'condition.descended-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'amount.for-each-nontoken-destroyed': spell(
+    (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
+  ),
   // Stage P67 (D-220): trigger doubling is a line of its own, and so is the equip of a creature type.
   'static.triggers-additional-time': asIs,
   // Issue 25 (D-339): the line of its own, with the card's wording.
@@ -950,6 +990,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-commander': asIs,
   // Issue 345: the equip of a legendary creature is a line of its own.
   'keyword.equip-legendary': asIs,
+  // Ahoy Mateys deck, group 10 (Siren Stormtamer): the target of a counter, in the activated ability that sacrifices the creature.
+  'noun.target-spell-or-ability-targeting-you': permanent((e) => `{U}, Sacrifice ~: Counter ${e}.`),
+  // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): the equip line with its cost reduction, and the condition of that reduction.
+  'keyword.equip-cost-reduced': asIs,
+  'condition.you-have-few-cards-in-hand': permanent(
+    (e) => `Equip {2}. This ability costs {2} less to activate if ${e}.`,
+  ),
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
@@ -1062,6 +1109,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, you may sacrifice a creature. If you do, each opponent may sacrifice ${e}.`,
   ),
+  // Witch-king of Angmar: what an opponent sacrifices after combat damage to the controller.
+  'noun.a-creature-that-dealt-damage-to-you': permanent(
+    (e) =>
+      `Whenever one or more creatures deal combat damage to you, each opponent sacrifices ${e}.`,
+  ),
+  // Echoing Return: the target card and the cards with its name, returned together.
+  'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,
@@ -1174,6 +1228,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  // Ahoy Mateys deck, group 7.
+  'noun.target-permanent-controller-dealt-damage-by': spell((e) => `Gain control of ${e}.`),
+  // Ahoy Mateys deck, group 4.
+  'noun.each-creature-that-is-subtype-or-subtype': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
+  'noun.each-creature-you-control-but-dont-own': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
   // D-270: a target of two zones, read by `exile`.
@@ -1195,6 +1258,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `{T}, Sacrifice one or more artifacts: Choose a color. ${cap(e)}.`,
   ),
   'keyword.partner-with': asIs,
+  'keyword.deck-limit': asIs,
   // D-492: the optional sacrifice and the copies are one statement of a spell.
   'static.additional-cost-sacrifice-copies': spell((e) => e),
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
@@ -1228,6 +1292,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
+  // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
+  'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  'condition.it-has-greater-power': permanent(
+    (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
+  ),
+  'condition.put-counters-this-way': permanent(
+    (e) =>
+      `{1}, {T}: Put a +1/+1 counter on each creature you control that entered this turn. If ${e}, draw a card.`,
+  ),
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
@@ -1235,6 +1308,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
   'condition.a-player-cards-in-hand': permanent(
     (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,
+  ),
+  // Federation Fleet deck, group B: "the player is your opponent and has four or more cards in hand" after a draw of the player of a step.
+  'condition.the-player-is-opponent-with-cards': permanent(
+    (e) =>
+      `At the beginning of each player's end step, that player draws a card. If ${e}, ~ deals 2 damage to that player.`,
   ),
   'noun.any-number-target-graveyard-cards': permanent(
     (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,
@@ -1307,6 +1385,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),
+  // Ahoy Mateys deck, group 8: the condition of the card's own permission to be cast from the graveyard, and the noun of the targets the choice names.
+  'condition.control-at-least-subtypes': permanent(
+    (e) => `You may cast this card from your graveyard as long as ${e}.`,
+  ),
+  'noun.target-card-in-a-graveyard-this-turn': spell(
+    (e) => `Choose ${e}. Put that card into its owner's hand.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

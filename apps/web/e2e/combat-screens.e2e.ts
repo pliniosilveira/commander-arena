@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { reachAttackers, reachBlocks, reachDivision } from './harness/blocks';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -15,7 +16,7 @@ const mine = (page: Page) => page.locator('[data-field-seat="0"] .board-tile.is-
 async function toBlocks(page: Page, attackers: number, blockers: number): Promise<void> {
   await page.goto(game(1));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await reachBlocks(page, attackers, blockers);
 }
 
@@ -62,14 +63,8 @@ test.describe('issue 92: dividing combat damage leaves the board visible', () =>
     // Not a modal: no dialog, no overlay over the battlefield.
     await expect(page.getByRole('dialog', { name: 'Divide combat damage' })).toHaveCount(0);
     await expect(page.locator('.dec-overlay')).toHaveCount(0);
-    // The panel is in the controls column, beside the board.
-    expect(
-      await page.evaluate(() => {
-        const dock = document.querySelector('.dec-damage-dock')?.getBoundingClientRect();
-        const board = document.querySelector('.board')?.getBoundingClientRect();
-        return dock !== undefined && board !== undefined && dock.left >= board.right - 0.5;
-      }),
-    ).toBe(true);
+    // The panel is in the turn panel at the right edge, over the board.
+    await expect(page.locator('.turn-panel .dec-damage-dock')).toHaveCount(1);
     // The trampler, the blocker and the player each have a row; the creatures show their card and numbers.
     await expect(panel.locator('.dec-damage-thumb')).toHaveCount(2);
     await expect(panel).toContainText('SYNTHETIC Trampler 4/4');
@@ -214,13 +209,13 @@ test.describe('issue 9: combat animations', () => {
   }
 
   const chooseSpeed = async (page: Page, speed: 'Fast' | 'Normal' | 'Slow') => {
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.locator('.settings-toggle').click();
     await page
       .getByRole('group', { name: 'Animation speed' })
       .getByRole('button', { name: speed })
       .click();
     // Close Settings again: open, it covers the action buttons the script presses.
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.locator('.settings-toggle').click();
   };
 
   test('a hit and a death play slowly, one after another, and stay long enough to be seen', async ({
@@ -317,7 +312,7 @@ test.describe('issue 9: combat animations', () => {
     await watchEffects(page);
     await page.goto(TRAMPLE);
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.locator('.settings-toggle').click();
     const group = page.getByRole('group', { name: 'Animation speed' });
     await expect(group.getByRole('button', { name: 'Normal' })).toHaveAttribute(
       'aria-pressed',
@@ -329,7 +324,7 @@ test.describe('issue 9: combat animations', () => {
       'true',
     );
     expect(await page.evaluate(() => document.documentElement.dataset.animationSpeed)).toBe('fast');
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.locator('.settings-toggle').click();
     await reachDivision(page);
     await page.getByRole('button', { name: 'Confirm' }).click();
     await expect.poll(async () => count(await seenOf(page), 'fx-num')).toBeGreaterThanOrEqual(3);
@@ -344,7 +339,8 @@ test.describe('issue 9: combat animations', () => {
     // Remembered: a new page load starts on Fast, and the control shows it.
     await page.reload();
     expect(await page.evaluate(() => document.documentElement.dataset.animationSpeed)).toBe('fast');
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.getByRole('button', { name: 'Keep', exact: true }).click();
+    await page.locator('.settings-toggle').click();
     await expect(
       page.getByRole('group', { name: 'Animation speed' }).getByRole('button', { name: 'Fast' }),
     ).toHaveAttribute('aria-pressed', 'true');
@@ -369,12 +365,12 @@ test.describe('issue 9: combat animations', () => {
     await watchEffects(page);
     await page.goto(TRAMPLE);
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.locator('.settings-toggle').click();
     const box = page.getByRole('checkbox', { name: 'Combat animations' });
     await expect(box).toBeChecked();
     await box.uncheck();
     // Close Settings again: open, it covers the action buttons the script presses.
-    await page.getByRole('button', { name: /Settings/ }).click();
+    await page.locator('.settings-toggle').click();
     await reachDivision(page);
     await page.getByRole('button', { name: 'Confirm' }).click();
     await expect(page.getByRole('region', { name: 'Divide combat damage' })).toBeHidden({

@@ -6,18 +6,16 @@ import { createWorkerClient } from './game/client';
 import { autostartAiDelay, withSlowOpponent } from './game/slow-opponent';
 import { createImportEnvironment } from './import';
 import { animationGate } from './policy/animation-gate';
-import { createPrecons, SHIPPED, startOptionsFor } from './precons';
+import { CHALLENGES, createPrecons, SHIPPED, startOptionsFor } from './precons';
 import { createAppStore } from './store';
 import { ImportProvider } from './ui/import/import-context';
 import { applyStoredCombatAnimations } from './ui/panels/animations';
-import { applyStoredSidePanel } from './ui/panels/side-panel';
 import { applyStoredTextSize } from './ui/panels/text-size';
 import { PreconsProvider } from './ui/precons-context';
 import { StoreProvider } from './ui/store-context';
 import './styles.css';
 
 applyStoredTextSize();
-applyStoredSidePanel();
 applyStoredCombatAnimations();
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -34,7 +32,11 @@ const precons = createPrecons(SHIPPED.snapshots, (client) => importEnvironment.s
   decks: importEnvironment.decks,
   client: importEnvironment.client,
 });
-for (const problem of SHIPPED.problems) console.warn(`Precon snapshot skipped: ${problem}`);
+const challenges = createPrecons(CHALLENGES.snapshots, (client) =>
+  importEnvironment.serviceFor(client),
+);
+for (const problem of [...SHIPPED.problems, ...CHALLENGES.problems])
+  console.warn(`Precon snapshot skipped: ${problem}`);
 
 // `?autostart=<humanDeck>,<aiDeck>&seed=<n>[&freeMulligan=0][&ai=casual|normal]` skips the menu: used by the Playwright tests and for
 // quick manual checks. An id is a real precon (prepared and checked like an imported deck, D-137)
@@ -63,7 +65,7 @@ createRoot(container).render(
   <StrictMode>
     <StoreProvider store={store}>
       <ImportProvider environment={importEnvironment}>
-        <PreconsProvider precons={precons}>
+        <PreconsProvider precons={precons} challenges={challenges}>
           <App />
         </PreconsProvider>
       </ImportProvider>

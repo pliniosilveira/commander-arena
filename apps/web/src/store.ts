@@ -34,6 +34,8 @@ export interface PreviewState {
   readonly hovered: ObjectId | null;
   /** A pinned object stays until Esc (A19). */
   readonly pinned: ObjectId | null;
+  /** The top of the stack the player tapped away: its preview stays closed, a new top shows again. */
+  readonly dismissedStack?: ObjectId | null;
   /**
    * The cards a reveal showed (CR 701.20), read in the preview panel when nothing is pinned or hovered. The
    * latest reveal replaces them; Esc (unpin), a new turn or a new game clears them.
@@ -141,6 +143,8 @@ export interface AppActions {
   setManualPay(on: boolean): void;
   hover(id: ObjectId | null): void;
   pin(id: ObjectId | null): void;
+  /** Closes the preview of the object on top of the stack until another one is on top. */
+  dismissStackPreview(id: ObjectId): void;
   clearError(): void;
   /** Shows a message from the page itself (not from the engine), like a refused action's error. */
   fail(message: string): void;
@@ -531,6 +535,10 @@ export function createAppStore(options: StoreOptions): AppStore {
         set((s) => ({
           preview: { ...s.preview, pinned: id, ...(id === null ? { revealed: [] } : {}) },
         }));
+      },
+
+      dismissStackPreview(id) {
+        set((s) => ({ preview: { ...s.preview, dismissedStack: id } }));
       },
 
       clearError() {

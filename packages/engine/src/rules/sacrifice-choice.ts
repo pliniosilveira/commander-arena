@@ -22,14 +22,15 @@ export function sacrificeInstructions(ids: readonly ObjectId[], seat?: SeatId): 
 }
 
 /**
- * "The greatest power among creatures they control" (D-135): of the candidates, those whose value of the stat is the largest
- * among them, as `derive` gives it now; the player chooses among the tied ones (CR 608.2d). A candidate with no such value (a
+ * "The greatest power among creatures they control" (D-135), or with `least` the smallest ("the least power", CR 701.21a): of the candidates, those whose value of the stat is the largest
+ * (smallest) among them, as `derive` gives it now; the player chooses among the tied ones (CR 608.2d). A candidate with no such value (a
  * noncreature has no power) is left out; with none that has one nothing is left.
  */
 export function greatestAmong(
   state: GameState,
   ids: readonly ObjectId[],
   stat: 'power' | 'toughness' | 'manaValue',
+  extreme: 'greatest' | 'least' = 'greatest',
 ): ObjectId[] {
   const valued = ids.flatMap((id) => {
     const obj = state.objects[id];
@@ -38,7 +39,8 @@ export function greatestAmong(
     const value = stat === 'manaValue' ? manaValueOfCost(d.manaCost, obj) : d[stat];
     return value === null ? [] : [{ id, value }];
   });
-  const top = Math.max(...valued.map((v) => v.value));
+  const values = valued.map((v) => v.value);
+  const top = extreme === 'greatest' ? Math.max(...values) : Math.min(...values);
   return valued.filter((v) => v.value === top).map((v) => v.id);
 }
 
@@ -113,12 +115,23 @@ export function runChooseSacrifice(
     res.sacrificed,
   );
   // CR 603.2c, 400.7 (Descendants' Fury): "sacrifice one of them" is one of the creatures that dealt the damage, as long as each is still the permanent that did.
-  const named =
+  const namedByTrigger =
     instruction.fromTriggerSources === true
       ? candidates.filter((id) => res.triggerCards?.includes(id) === true)
       : candidates;
+  // CR 510.2 (Witch-king of Angmar): "that dealt combat damage to you this turn": the turn log says which sources dealt combat damage to the controller of the ability.
+  const named =
+    instruction.dealtCombatDamageToYou === true
+      ? namedByTrigger.filter((id) =>
+          state.turnLog.combatDamaged.some((d) => d.source === id && d.player === res.controller),
+        )
+      : namedByTrigger;
   const legal =
-    instruction.greatest === undefined ? named : greatestAmong(state, named, instruction.greatest);
+    instruction.greatest !== undefined
+      ? greatestAmong(state, named, instruction.greatest)
+      : instruction.least !== undefined
+        ? greatestAmong(state, named, instruction.least, 'least')
+        : named;
   if (legal.length === 0) return proceed([], [], true);
   // D-135: "any number": the player chooses none, some or all of the candidates, even when there is only one.
   // D-187: "one or more": at least one of them.

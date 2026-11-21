@@ -152,6 +152,10 @@ export interface Scope {
   readonly triggerCycleX?: boolean;
   /** True in the effect of an `attackBatch` trigger: `triggerAttackerCount` reads the creatures of the declaration that matched (issue 81, The Ur-Sphinx). */
   readonly triggerAttackerCount?: boolean;
+  /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayerCount` reads the opponents dealt damage (CR 603.2c). */
+  readonly triggerDamagedPlayerCount?: boolean;
+  /** True in the effect of a `damageBatch` trigger to opponents: `triggerDamagedPlayers` names the opponents dealt damage (CR 603.2c). */
+  readonly triggerDamagedPlayers?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -162,6 +166,8 @@ export interface Scope {
   readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of combat damage (`dealsCombatDamage`): combat damage is dealt in the combat phase, so an `extraCombat` has one to follow (CR 500.8, Port Razer). */
+  readonly combatDamageTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
   readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
@@ -237,6 +243,18 @@ export function checkFilter(
       checkRef(f.powerGreaterThan, 'object', `${path}.powerGreaterThan`, ownerScope, out);
     }
   }
+  // CR 201.2, 608.2c: "with the same name as that card" names an object the effect knows, so only an `each` selector reads it.
+  if (f.sameNameAs !== undefined) {
+    if (ownerScope === undefined) {
+      issue(
+        out,
+        `${path}.sameNameAs`,
+        "sameNameAs is only read in the 'each' selector of an effect (not in a target slot, trigger, condition, static ability, search or cost)",
+      );
+    } else {
+      checkRef(f.sameNameAs, 'object', `${path}.sameNameAs`, ownerScope, out);
+    }
+  }
   if (f.owner !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -292,7 +310,14 @@ export function checkFilter(
   checkEnumList(out, `${path}.notKeywords`, f.notKeywords, FILTERABLE_KEYWORDS, 'keyword');
   if (
     f.controller !== undefined &&
-    !isOneOf(f.controller, ['you', 'opponent', 'any', 'triggerPlayer', 'defendingPlayer'])
+    !isOneOf(f.controller, [
+      'you',
+      'opponent',
+      'any',
+      'triggerPlayer',
+      'defendingPlayer',
+      'monarch',
+    ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);
   }
@@ -316,6 +341,21 @@ export function checkFilter(
   ) {
     issue(out, `${path}.hasCounter`, 'hasCounter must be true or the name of a counter');
   }
+  if (f.otherThanTriggerSubject !== undefined) {
+    if (f.otherThanTriggerSubject !== true) {
+      issue(
+        out,
+        `${path}.otherThanTriggerSubject`,
+        'otherThanTriggerSubject must be true when present',
+      );
+    } else if (sharesWith !== true) {
+      issue(
+        out,
+        `${path}.otherThanTriggerSubject`,
+        'otherThanTriggerSubject is read in a count of a trigger about a permanent (the creature the trigger is about is left out)',
+      );
+    }
+  }
   if (f.notTriggerCard !== undefined && f.notTriggerCard !== true) {
     issue(out, `${path}.notTriggerCard`, 'notTriggerCard must be true when present');
   }
@@ -334,6 +374,7 @@ export function checkFilter(
     'powerLessThanSource',
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
+    'discardedOrFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
@@ -377,6 +418,9 @@ export function checkFilter(
       `${path}.enchanted`,
       'enchanted must be a boolean (true: has an Aura, false: has none)',
     );
+  }
+  if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
+    issue(out, `${path}.notOwnedByYou`, 'notOwnedByYou must be true');
   }
   if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
     issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
@@ -486,6 +530,13 @@ export function checkFilter(
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
+  if (f.discardedOrFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.discardedOrFromLibraryThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
   // CR 607.2a (Lorehold group 2): "card exiled with this creature" is a card in exile.
   if (f.exiledWithSource === true && f.zone !== 'exile') {
     issue(
@@ -501,6 +552,28 @@ export function checkFilter(
       `${path}.putWithSource`,
       'only a permanent on the battlefield was put onto the battlefield with another',
     );
+  }
+  if (f.controllerDealtCombatDamageByAtLeast !== undefined) {
+    const spec = f.controllerDealtCombatDamageByAtLeast;
+    if (
+      !Number.isInteger(spec.atLeast) ||
+      spec.atLeast < 1 ||
+      !Array.isArray(spec.subtypes) ||
+      spec.subtypes.length === 0
+    ) {
+      issue(
+        out,
+        `${path}.controllerDealtCombatDamageByAtLeast`,
+        'a count of one or more and at least one subtype',
+      );
+    }
+    if (f.zone !== undefined && f.zone !== 'battlefield') {
+      issue(
+        out,
+        `${path}.controllerDealtCombatDamageByAtLeast`,
+        'only a permanent on the battlefield has a controller to ask',
+      );
+    }
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(
@@ -544,7 +617,9 @@ export function checkFilter(
   }
   // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
   if (f.targetsPlayer !== undefined) {
-    if (f.targetsPlayer !== true) issue(out, `${path}.targetsPlayer`, 'targetsPlayer must be true');
+    if (f.targetsPlayer !== true && f.targetsPlayer !== 'you') {
+      issue(out, `${path}.targetsPlayer`, "targetsPlayer must be true or 'you'");
+    }
     if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
       issue(
         out,
@@ -758,9 +833,12 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.powerAboveBase === true ||
   f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
+  f.sameNameAs !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
+  f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
+  f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.putWithSource !== undefined ||
@@ -799,6 +877,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerSpellX',
   'triggerCycleX',
   'triggerAttackerCount',
+  'triggerDamagedPlayerCount',
   'cardTypesAmongTriggerCards',
   'dieResult',
   'votesFor',
@@ -870,7 +949,7 @@ export function declareTargets(
         }
         break;
       case 'player':
-        if (!isOneOf(what.filter, ['any', 'opponent'])) {
+        if (!isOneOf(what.filter, ['any', 'opponent', 'opponentWhoseTurn'])) {
           issue(out, `${p}.what.filter`, `unknown player filter ${JSON.stringify(what.filter)}`);
         }
         break;
@@ -1310,11 +1389,6 @@ export function checkRef(
         issue(out, path, "'thisSpell' is only valid in spell text; abilities use 'this'");
       }
       break;
-    case 'convokers':
-      if (scope.owner === 'ability') {
-        issue(out, path, "'convokers' is only valid in spell text");
-      }
-      break;
     case 'target':
       checkTargetRef(ref.id, expect, path, scope, out);
       break;
@@ -1349,6 +1423,12 @@ export function checkRef(
     case 'thisCard':
       // Read only where a node says so: the object of a moveToZone in an ability (Persist's "return it").
       issue(out, path, "'thisCard' is only valid as the object of moveToZone in an ability");
+      break;
+    case 'convokers':
+      // Lethal Scheme: the creatures that convoked the spell, read in the effect of a spell.
+      if (scope.owner !== 'spell') {
+        issue(out, path, "'convokers' is only valid in the effect of a spell");
+      }
       break;
     case 'triggerSources':
       // Tamiyo, Upriser Crowned: the creatures of the batch of combat damage that triggered the ability.
@@ -1459,6 +1539,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'eachOpponent':
     case 'defendingPlayer':
     case 'playerToYourRight':
+    case 'chosenPlayer':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1501,6 +1582,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           out,
           path,
           "'opponentsAttackingTriggerPlayer' needs the effect of a trigger about an attacked player (attackBatch)",
+        );
+      }
+      break;
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: "each of those opponents": the opponents a batch of sources damaged in one event.
+      if (scope.triggerDamagedPlayers !== true) {
+        issue(
+          out,
+          path,
+          "'triggerDamagedPlayers' needs the effect of a trigger of damage dealt to your opponents by a group of sources (damageBatch to 'opponents')",
         );
       }
       break;
@@ -1599,7 +1690,9 @@ export const PLAYER_ONLY = [
   'ownerOf',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
+  'triggerDamagedPlayers',
   'attackedPlayers',
   'combatDamagedByNamed',
 ];
@@ -1654,6 +1747,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
+  destroyedNontokenCreatures: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
   returned: 'a moveToZone effect that chooses cards of a graveyard',
@@ -1664,6 +1758,8 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   milledCreature: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
+  discardedNonland: 'a discard effect',
+  countersPut: 'an addCounters effect',
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
@@ -1685,7 +1781,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
   if (e?.kind === 'destroy')
-    return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
+    return [
+      'destroyed',
+      'destroyedOwnNontoken',
+      'destroyedNontokenCreatures',
+      'destroyedValue',
+      'destroyedCreaturesOfAffected',
+    ];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (
     e?.kind === 'moveToZone' &&
@@ -1702,12 +1804,17 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discarded',
       'discardedCreature',
       'discardedNoncreature',
+      'discardedNonland',
       'discardedInstantOrSorcery',
       'discardedMost',
       'discardedTypeCount',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
+  // Federation Fleet group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way".
+  if (e?.kind === 'addCounters') return ['countersPut'];
+  // "You may reveal the top card of your library. Draw a card if it's an artifact card": what the effect done for a card of the kind produced.
+  if (e?.kind === 'revealTop' && e.onMatch !== undefined) return thisWayProduced(e.onMatch);
   if (e?.kind === 'removeAllCounters' || e?.kind === 'removeChosenCounters') {
     return ['countersRemoved'];
   }
@@ -2178,6 +2285,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
       }
+      if (a.divisor !== undefined && a.divisor !== 3) {
+        issue(out, `${path}.divisor`, 'divisor is 3 ("a third of"), or absent for half');
+      }
       checkAmount(a.of, `${path}.of`, scope, out);
       break;
     case 'minus':
@@ -2356,6 +2466,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: the opponents the sources of the batch dealt damage to.
+      if (scope.triggerDamagedPlayerCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerDamagedPlayerCount' needs a triggered ability whose trigger is damage dealt to your opponents by a group of sources",
+        );
+      }
+      break;
     case 'cardTypesAmongTriggerCards':
       // CR 603.2c: the cards a batch trigger saw put into a graveyard.
       if (scope.triggerCards !== true) {
@@ -2461,7 +2581,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         }
         checkFilter(rest, `${path}.filter`, out);
       } else {
-        checkFilter(a.filter, `${path}.filter`, out);
+        // CR 603.10a, 205.3m (Shared Animosity): "shares a creature type with it" in a count of a trigger about a permanent reads that permanent (`triggerSubject`).
+        checkFilter(
+          a.filter,
+          `${path}.filter`,
+          out,
+          undefined,
+          scope.triggerSubject === 'permanent',
+        );
       }
       break;
     default:
@@ -3028,6 +3155,27 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
       }
+      if (cost.kind === 'removeCounters' && cost.among !== undefined) {
+        // Federation Fleet group D (CR 118.3, 122.1): "Remove two +1/+1 counters from among creatures you control": permanents the player controls, on the battlefield.
+        checkFilter(cost.among, `${path}.among`, out);
+        if (filterSome(cost.among, (f) => f.controller === 'opponent')) {
+          issue(
+            out,
+            `${path}.among.controller`,
+            'counters are removed for a cost only from permanents you control',
+          );
+        }
+        if (filterSome(cost.among, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(out, `${path}.among.zone`, 'only permanents on the battlefield give up counters');
+        }
+        if (filterSome(cost.among, (f) => f.stackKind !== undefined || f.owner !== undefined)) {
+          issue(
+            out,
+            `${path}.among`,
+            'a remove-counters cost names permanents by type, subtype, color and the like: no stackKind or owner',
+          );
+        }
+      }
       break;
     case 'returnToHand':
       // D-139: "Return an artifact you control to its owner's hand": this permanent, or a choice among the player's own.
@@ -3112,6 +3260,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'eachOpponent':
     case 'defendingPlayer':
     case 'playerToYourRight':
+    case 'chosenPlayer':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -3193,6 +3342,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'cardLeftYourGraveyard':
+    case 'descendedThisTurn':
     case 'yourMainPhase':
     case 'yourCombatPhase':
     case 'yourTurn':
@@ -3391,6 +3541,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'triggerPlayerIsOpponent':
+    case 'triggerPlayerStat':
+      // CR 603.2b, 608.2c: read as the instruction comes up, from the player the event is about: only in a conditional effect of a trigger about a player (`checkEffectCondition`).
+      issue(
+        out,
+        path,
+        `${c.kind} reads the player the event of a trigger is about as an instruction comes up: it is only valid in a conditional effect of such a trigger, not as an intervening "if" or a static condition`,
+      );
+      break;
     case 'attackingMostLife':
       // D-151 (Dethrone): read from the combat of the source, which must be an attacking creature.
       break;
@@ -3559,7 +3718,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
+      break;
     case 'subjectGreaterPt': // D-120: where it may stand is checked with the trigger (validate.ts)
+      // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
+      if (c.onlyPower !== undefined && c.onlyPower !== true) {
+        issue(out, `${path}.onlyPower`, 'onlyPower must be true when present');
+      }
       break;
     case 'ringBearerChosen':
       // Galadriel group 1 (CR 701.54a): the creature chosen by the tempting of this trigger; where it may stand is checked with the trigger (validate.ts).
@@ -3677,6 +3841,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileFromTriggerCards' ||
     // Issue 121 (Finale of Promise): the spells a `castCard` with `remember` cast are "those spells" ("If X is 10 or more, copy each of those spells twice").
     (e?.kind === 'castCard' && e.remember === true) ||
+    // Cmdr. Troi (CR 608.2g, 707.10): the spell a `castFree` with `remember` cast is "that spell" ("If they do, you copy that spell").
+    (e?.kind === 'castFree' && e.remember === true) ||
     // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
     (e?.kind === 'draw' && e.reveal === true)
   );
@@ -3703,6 +3869,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'target',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
 ];
 
@@ -3728,6 +3895,13 @@ function checkSacrificeSelector(
         "fromTriggerSources needs a triggered ability of a combatDamageBatch trigger: 'them' are the creatures that dealt the damage",
       );
     }
+  }
+  if (choose.dealtCombatDamageToYou !== undefined && choose.dealtCombatDamageToYou !== true) {
+    issue(
+      out,
+      `${path}.dealtCombatDamageToYou`,
+      'dealtCombatDamageToYou must be true when present',
+    );
   }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
@@ -3759,6 +3933,12 @@ function checkSacrificeSelector(
   ) {
     issue(out, `${path}.greatest`, `unknown stat ${JSON.stringify(choose.greatest)}`);
   }
+  if (choose.least !== undefined && !isOneOf(choose.least, ['power', 'toughness', 'manaValue'])) {
+    issue(out, `${path}.least`, `unknown stat ${JSON.stringify(choose.least)}`);
+  }
+  if (choose.least !== undefined && choose.greatest !== undefined) {
+    issue(out, `${path}.least`, 'a choice is of the greatest or of the least, not both');
+  }
   // D-131: a number, or an amount read as the effect runs ("each player sacrifices X creatures").
   if (choose.count !== undefined) {
     if (typeof choose.count === 'number' && (!isCount(choose.count) || choose.count < 1)) {
@@ -3775,8 +3955,13 @@ function checkSacrificeSelector(
  */
 function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
-  if (sel.greatest !== undefined || sel.optional !== undefined) {
-    issue(out, path, 'greatest and optional do not belong to a tap choice');
+  if (
+    sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
+    sel.optional !== undefined
+  ) {
+    issue(out, path, 'greatest, least and optional do not belong to a tap choice');
   }
   if (sel.filter?.controller !== 'you') {
     issue(
@@ -3856,6 +4041,8 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
     sel.anyNumber !== undefined ||
     sel.atLeastOne !== undefined ||
     sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
     sel.optional !== undefined
   ) {
     issue(
@@ -3901,9 +4088,15 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (
     sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
     (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
   ) {
-    issue(out, path, 'anyNumber and greatest belong to a sacrifice choice (D-135)');
+    issue(
+      out,
+      path,
+      'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least',
+    );
   }
   // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
   if (sel.minCardTypes !== undefined) {
@@ -4010,6 +4203,25 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
         `${path}.alsoGraveyard`,
         'a choice from the hand or the graveyard (D-544) names the hand as its zone and is not a choice among moved cards',
       );
+    }
+  }
+  // "Put a creature card from defending player's hand onto the battlefield": the hand of one named player, the chooser choosing.
+  if (sel.fromHandOf !== undefined) {
+    checkPlayerSelector(sel.fromHandOf, `${path}.fromHandOf`, scope, out);
+    if (
+      sel.filter?.zone !== 'hand' ||
+      sel.fromMoved === true ||
+      sel.alsoGraveyard !== undefined ||
+      sel.optional !== true
+    ) {
+      issue(
+        out,
+        `${path}.fromHandOf`,
+        'a choice from the hand of another player names the hand as its zone, is optional and is not a choice among moved cards or from the graveyard',
+      );
+    }
+    if (sel.fromHandOf.kind !== 'defendingPlayer') {
+      issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
     }
   }
   if (sel.count !== undefined) {
@@ -4229,6 +4441,13 @@ function checkCopyExceptions(
     const { power, toughness } = spec.setPt;
     if (!Number.isSafeInteger(power) || !Number.isSafeInteger(toughness)) {
       issue(out, `${path}.setPt`, 'setPt is a whole power and a whole toughness');
+    }
+  }
+  // CR 707.9b, 107.1a (Saw in Half): "except their power is half that creature's power and their toughness is half ... Round up each time".
+  if (spec.halfPt !== undefined) {
+    if (spec.halfPt !== true) issue(out, `${path}.halfPt`, 'halfPt must be true when present');
+    if (spec.setPt !== undefined) {
+      issue(out, `${path}.halfPt`, 'halfPt and setPt both give the power and toughness: only one');
     }
   }
   if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
@@ -4776,6 +4995,13 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.count`, 'a count of one or more');
       }
       break;
+    case 'diedThisWay':
+      // CR 700.4, 608.2h (Saw in Half): the creature a reference names went to a graveyard because of a `destroy` earlier in the same sequence.
+      checkRef(c.of, 'object', `${path}.of`, scope, out);
+      if (!(scope.thisWay ?? []).includes('destroyed')) {
+        issue(out, path, 'diedThisWay needs a destroy before it in the same sequence');
+      }
+      break;
     case 'clashWon':
       // CR 701.30d: "If you win": the clash earlier in the same sequence.
       if (scope.clashed !== true) {
@@ -4824,6 +5050,27 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
           path,
           'didPrevious ("if you do") needs a "may" effect before it in the sequence (or an effect whose doing it can tell: discard, sacrifice, exile, move, draw, mill)',
         );
+      }
+      break;
+    case 'triggerPlayerIsOpponent':
+    case 'triggerPlayerStat':
+      // CR 603.2b, 402.1, 608.2c (Fevered Visions): "if the player is your opponent and has four or more cards in hand": the player the event is about.
+      if (scope.triggerPlayer !== true) {
+        issue(
+          out,
+          path,
+          `${c.kind} reads the player the event is about: it needs a triggered ability whose event is about a player`,
+        );
+      }
+      if (c.kind === 'triggerPlayerStat') {
+        if (!isOneOf(c.stat, PLAYER_STATS))
+          issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+        if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+          issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+        }
+        if (!Number.isSafeInteger(c.compare?.value)) {
+          issue(out, `${path}.compare.value`, 'a player stat is compared with a whole number');
+        }
       }
       break;
     case 'and':
@@ -5723,6 +5970,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'triggerDamagedPlayers' ||
         e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
@@ -6139,7 +6387,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         const zone = (e.objects as ChooseSelector).filter?.zone;
         // Issue 103 (Hellkite Courser): "a commander you own from the command zone" is a card chosen from the command zone, only to put onto the battlefield.
         const fromCards = zone === 'hand' || zone === 'graveyard' || zone === 'command';
-        // Issue 102 (Command Beacon): or into its owner's hand.
+        // Federation Fleet group F (Command Beacon): or into the hand ("Put your commander into your hand from the command zone").
         if (zone === 'command' && e.to !== 'battlefield' && e.to !== 'hand') {
           issue(
             out,
@@ -6164,12 +6412,51 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
         }
+        if ((e.objects as ChooseSelector).fromHandOf !== undefined && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            "a card chosen from another player's hand is put onto the battlefield",
+          );
+        }
         if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {
           issue(
             out,
             `${path}.to`,
             'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
           );
+        }
+        // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard", the cards exiled with this permanent.
+        const eachGy = e.objects as ChooseSelector;
+        if (eachGy.eachGraveyard !== undefined) {
+          if (
+            eachGy.eachGraveyard !== true ||
+            e.to !== 'exile' ||
+            zone !== 'graveyard' ||
+            eachGy.optional !== true ||
+            (eachGy.count !== undefined && eachGy.count !== 1) ||
+            eachGy.fromMoved !== undefined ||
+            eachGy.alsoGraveyard !== undefined ||
+            eachGy.minCardTypes !== undefined
+          ) {
+            issue(
+              out,
+              `${path}.objects.eachGraveyard`,
+              "eachGraveyard is true, with an optional choice of one card from the graveyard, to 'exile'",
+            );
+          }
+        }
+        if (e.linked !== undefined) {
+          if (e.linked !== true || e.to !== 'exile') {
+            issue(out, `${path}.linked`, "linked is true, with to 'exile'");
+          }
+          if (scope.owner !== 'ability') {
+            issue(
+              out,
+              `${path}.linked`,
+              'cards exiled with this permanent: an ability of a permanent',
+            );
+          }
         }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand); onto the battlefield from exile too.
         const among = e.objects as ChooseSelector;
@@ -6513,12 +6800,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
-        if (kindOf(objects) !== 'moved' || e.play === true) {
+        // Cmdr. Troi: or a spell of their own hand ("target opponent may cast a spell from their hand without paying its mana cost").
+        if ((kindOf(objects) !== 'moved' && kindOf(objects) !== 'choose') || e.play === true) {
           issue(
             out,
             `${path}.player`,
-            "another player casts the cards an effect before moved ('moved'), and does not play them",
+            "another player casts the cards an effect before moved ('moved') or a spell of their own hand, and does not play them",
           );
+        }
+      }
+      // Cmdr. Troi (CR 608.2g, 707.10): the spell cast is what `moved` names afterwards; one spell only.
+      if (e.remember !== undefined) {
+        if (e.remember !== true || e.max !== undefined || e.perOwner !== undefined) {
+          issue(out, `${path}.remember`, 'remember is true, for one spell (no max, no perOwner)');
         }
       }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
@@ -6558,6 +6852,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           choose.anyNumber !== undefined ||
           choose.atLeastOne !== undefined ||
           choose.greatest !== undefined ||
+          choose.least !== undefined ||
+          choose.dealtCombatDamageToYou !== undefined ||
           choose.optional !== undefined
         ) {
           issue(
@@ -7200,6 +7496,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.awayFromYou`, 'awayFromYou is true when present');
       }
       break;
+    case 'creaturesCantAttackYou':
+      // CR 508.1a, 611.2c: a group restriction read when attackers are declared: a filter of creatures, as for `requireAttack`.
+      checkFilter(e.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          e.creatures,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'a restriction names creatures by type, color, controller and the like (the battlefield, as they are when attackers are declared): no zone, owner, stackKind, combat or trigger player',
+        );
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
+      }
+      break;
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
       // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura or Equipment the trigger is about.
@@ -7305,7 +7626,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       if (e.ifThisWay !== undefined) {
-        if (e.ifThisWay !== 'exiledNonland') {
+        if (e.ifThisWay !== 'exiledNonland' && e.ifThisWay !== 'discardedNonland') {
           issue(out, `${path}.ifThisWay`, `unknown count ${JSON.stringify(e.ifThisWay)}`);
         } else if (!(scope.thisWay ?? []).includes(e.ifThisWay)) {
           issue(
@@ -7455,6 +7776,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
       }
       break;
+    case 'gainEscape':
+      // CR 702.138a: "each creature card in your graveyard gains escape until end of turn": a filter of the cards, the cost (mana only) and how many other cards are exiled.
+      checkFilter(e.what, `${path}.what`, out);
+      if (
+        e.what?.zone !== undefined ||
+        e.what?.controller !== undefined ||
+        e.what?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (
+        !Array.isArray(e.cost) ||
+        e.cost.length === 0 ||
+        !e.cost.every((c) => c.kind === 'mana')
+      ) {
+        issue(out, `${path}.cost`, 'the escape cost is paid with mana only');
+      }
+      if (!Number.isInteger(e.exile) || e.exile < 1) {
+        issue(out, `${path}.exile`, 'escape exiles at least one other card');
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the escape is gained until end of turn');
+      }
+      break;
     case 'gainFlashbackFromManaCost':
       // CR 702.34a: "each instant and sorcery card in your graveyard gains flashback until end of turn": a filter of the cards, for the rest of the turn.
       checkFilter(e.what, `${path}.what`, out);
@@ -7560,6 +7909,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'putFromHandOnBottom':
+      break;
+    case 'choosePlayer':
+      // CR 608.2d (The Black Gate): the only rule for the players to choose among is the most life.
+      if (e.among !== 'mostLife') {
+        issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
+      }
+      break;
+    case 'cantBeBlockedByPlayer':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'cantAttackPlaneswalkers':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

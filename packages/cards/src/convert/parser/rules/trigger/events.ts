@@ -206,8 +206,8 @@ const ORDINALS: Readonly<Record<string, number>> = {
 /**
  * `trigger.drawn`: "you draw a card", "an opponent draws a card", "a player draws a card", "you draw
  * your second card each turn", "an opponent draws their second card each turn" (CR 121.1: drawing a
- * card; CR 603.2c: it triggers once for each card drawn). The card is not read ("except the first one
- * they draw in each of their draw steps" is another event and is not read).
+ * card; CR 603.2c: it triggers once for each card drawn), and, since Orcish Bowmasters, "a card except the first one they draw in each of their draw steps" (CR 504.1). The card
+ * is not read.
  */
 export const TRIGGER_DRAWN = defineRule<IrTrigger>({
   id: 'trigger.drawn',
@@ -226,9 +226,14 @@ export const TRIGGER_DRAWN = defineRule<IrTrigger>({
     'you draw your first card each turn',
     'an opponent draws their second card each turn',
     'a player draws their third card each turn',
+    // Orcish Bowmasters (CR 504.1): every draw but the first one of a draw step.
+    'you draw a card except the first one you draw in each of your draw steps',
+    'an opponent draws a card except the first one they draw in each of their draw steps',
   ],
   rejects: [
-    'you draw a card except the first one you draw in each of your draw steps',
+    'you draw a card except the first one they draw in each of their draw steps',
+    'an opponent draws a card except the first one you draw in each of your draw steps',
+    'you draw a card except the first one you draw each turn',
     'you draw two cards',
     'you draw your second card',
     'you draw their second card each turn',
@@ -268,7 +273,20 @@ export const TRIGGER_DRAWN = defineRule<IrTrigger>({
     const subject = who(ctx, pos);
     if (!subject.ok) return subject;
     const { actor, possessive } = subject.value;
-    const count: Parser<number | undefined> = choice(
+    const pronoun = possessive === 'your' ? 'you' : 'they';
+    const count: Parser<number | undefined | 'exceptFirstInDrawStep'> = choice<
+      number | undefined | 'exceptFirstInDrawStep'
+    >(
+      // Orcish Bowmasters (CR 504.1, 121.1): every draw but the first one the player makes in their draw step.
+      map(
+        pattern(
+          new RegExp(
+            `a card except the first one ${pronoun} draw in each of ${possessive} draw steps${NOT_IN_WORD}`,
+            'iu',
+          ),
+        ),
+        () => 'exceptFirstInDrawStep' as const,
+      ),
       map(pattern(new RegExp(`a card${NOT_IN_WORD}`, 'iu')), () => undefined),
       map(
         pattern(
@@ -287,7 +305,8 @@ export const TRIGGER_DRAWN = defineRule<IrTrigger>({
       kind: 'trigger',
       event: 'drawn',
       actor,
-      ...(r.value === undefined ? {} : { nth: r.value }),
+      ...(r.value === undefined || r.value === 'exceptFirstInDrawStep' ? {} : { nth: r.value }),
+      ...(r.value === 'exceptFirstInDrawStep' ? { exceptFirstInDrawStep: true as const } : {}),
       args: {},
       span,
       rule: 'trigger.drawn',

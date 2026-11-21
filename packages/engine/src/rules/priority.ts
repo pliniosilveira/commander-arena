@@ -39,6 +39,7 @@ const ALTERNATIVES = [
   'spectacle',
   'morph',
   'tapPermanents',
+  'sacrificePermanents',
   'impending',
   // `nextSpellPayLife`: not listed on a face, but granted by an effect (the list of cards is the one of the ordinary cast).
   'lifeForMana',

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -79,7 +80,7 @@ test('an X burn spell: the dialog offers the right maximum, X is typed and stepp
   const max = (await sources(page)) - 1; // the {R} of {X}{R}
   const foe = Number(await life(page, 1).textContent());
   // Full Control keeps the spell on the stack, so its X can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC X Burn').first().click();
   await expect(dialog(page)).toBeVisible();
@@ -100,7 +101,7 @@ test('an X burn spell: the dialog offers the right maximum, X is typed and stepp
 
   await targetOpponent(page);
   await expect(logText(page)).toContainText('You cast SYNTHETIC X Burn with X = 3.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('SYNTHETIC X Burn');
   await expect(stack.locator('[data-x="3"]')).toHaveText('X = 3');
   // The cost on the stack is what was paid: {3}{R}.
@@ -148,7 +149,9 @@ test('Max, the steppers and the digits stay within the range; Cancel and Esc rew
   await settled(page);
   await expect(handCard(page, 'SYNTHETIC X Burn').first()).toBeVisible();
   await expect(logText(page)).not.toContainText('You cast SYNTHETIC X Burn');
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText('Stack is empty');
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    'Stack is empty',
+  );
 
   // Casting again asks again; Esc in the field cancels as well.
   await handCard(page, 'SYNTHETIC X Burn').first().click();
@@ -171,7 +174,7 @@ test('"pay X life": each X costs 1 life, the prompt says so, and the life and th
   await playUntil(page, 'SYNTHETIC Blood Burn', 1);
   const mine = Number(await life(page, 0).textContent());
   const foe = Number(await life(page, 1).textContent());
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Blood Burn').first().click();
   // CR 119.4 (Life): a payment is allowed when the life total is greater than or equal to it, so the
@@ -187,7 +190,9 @@ test('"pay X life": each X costs 1 life, the prompt says so, and the life and th
   await targetOpponent(page);
   await expect(logText(page)).toContainText('You cast SYNTHETIC Blood Burn with X = 5.');
   await expect(life(page, 0)).toHaveText(String(mine - 5));
-  await expect(page.getByRole('region', { name: 'Stack' }).locator('[data-x="5"]')).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Stack', exact: true }).locator('[data-x="5"]'),
+  ).toBeVisible();
 
   await primary(page).click();
   await expect(life(page, 1)).toHaveText(String(foe - 5));

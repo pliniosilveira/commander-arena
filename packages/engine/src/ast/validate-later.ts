@@ -43,6 +43,27 @@ export function checkDelayedTrigger(
   // the creature became in the graveyard (`triggerCard`), as it is when the ability is created and only if it is still there when it triggers.
   // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents an earlier effect of the same sequence put onto the
   // battlefield (`moved`), as they are when the ability is created.
+  // Sauron, the Necromancer (CR 701.54e, 603.7c): "At the beginning of the next end step, exile that token unless ~ is your Ring-bearer": the same plain exile, run only when the permanent with
+  // the ability is not the controller's Ring-bearer as the delayed ability resolves.
+  if (kind === 'conditional') {
+    const conditional = inner as Extract<Effect, { kind: 'conditional' }>;
+    const c = conditional.condition;
+    if (
+      c?.kind !== 'not' ||
+      c.term?.kind !== 'thisIsRingBearer' ||
+      conditional.else !== undefined ||
+      kindOf(conditional.effect) !== 'exile'
+    ) {
+      issue(
+        out,
+        `${path}.effect`,
+        "a delayed conditional exiles the objects of an effect before it unless the permanent is the controller's Ring-bearer (not thisIsRingBearer)",
+      );
+      return;
+    }
+    checkDelayedTrigger({ ...e, effect: conditional.effect }, path, out, exiledAvailable);
+    return;
+  }
   if (kind === 'exile') {
     const exile = inner as Extract<Effect, { kind: 'exile' }>;
     if (!exiledAvailable || kindOf(exile.objects) !== 'moved') {
@@ -87,6 +108,9 @@ export function checkDelayedTrigger(
       }
       return;
     }
+    // CR 603.7c, 400.7j (Zara): "Return that creature to its owner's hand at the beginning of the next end step", about the permanents an earlier effect of the same sequence
+    // put onto the battlefield (`moved`), as they are when the ability is created.
+    if (move.to === 'hand' && exiledAvailable && kindOf(move.objects) === 'moved') return;
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
     // D-657 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
     // that has the ability became in the graveyard (`thisCard`).

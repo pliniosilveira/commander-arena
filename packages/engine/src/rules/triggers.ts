@@ -92,6 +92,8 @@ interface Occurrence {
   readonly toZone?: Zone;
   /** For `drawn`: how many cards the player has drawn this turn, this one included. */
   readonly nth?: number;
+  /** For `drawn`: this was the first card the active player drew in their draw step (CR 504.1). */
+  readonly firstInDrawStep?: true;
   /** For `attacks`: whom the creature was declared as attacking (CR 508.1b). */
   readonly attackTarget?: AttackTarget;
   /** The player the event is about, for `triggerPlayer` (D-133). */
@@ -336,7 +338,15 @@ function occurrences(
     case 'drawn':
       // CR 121.1: a card drawn; a draw that was replaced (CR 903.9b) has no `cardDrawn` event.
       return event.kind === 'cardDrawn'
-        ? [{ subject: event.object, seat: event.seat, nth: event.nth, player: event.seat }]
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              nth: event.nth,
+              player: event.seat,
+              ...(event.firstInDrawStep === true ? { firstInDrawStep: true as const } : {}),
+            },
+          ]
         : [];
     case 'dealsCombatDamage':
       // CR 120.2a, 510.2: one occurrence for each source and each object or player it damages. Damage
@@ -560,7 +570,8 @@ function occurrences(
       // CR 605.4 (D-139): a triggered mana ability resolves as the mana ability that triggered it is activated (`rules/mana-triggers.ts`).
       return [];
     case 'combatDamageBatch':
-      // CR 603.2c (D-139): "one or more": once for the whole batch of damage, found after the events are read (`batchOccurrences`).
+    case 'damageBatch':
+      // CR 603.2c (D-139): "one or more": once for the whole batch of damage, found after the events are read (`batchTriggers`).
       return [];
     case 'lifeGained':
       // CR 119.9 (D-149): one occurrence for each gain of life.
@@ -920,6 +931,7 @@ function matches(
     case 'state':
     case 'tappedForMana':
     case 'combatDamageBatch':
+    case 'damageBatch':
       return false;
     case 'crimeCommitted':
     case 'tokenCreated':
@@ -1045,6 +1057,8 @@ function matches(
     case 'drawn':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 504.1 (Orcish Bowmasters): "except the first one they draw in each of their draw steps".
+      if (trigger.exceptFirstInDrawStep === true && occ.firstInDrawStep === true) return false;
       return trigger.nth === undefined || occ.nth === trigger.nth;
     case 'dealsCombatDamage': {
       if (!matchesWhat(state, trigger.what, subject, candidate)) return false;
@@ -1113,6 +1127,7 @@ function matches(
       return subject !== null && matchesFilter(state, subject, trigger.what, ctx);
     case 'permanentSacrificed': {
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       if (trigger.filter === undefined) return true;
       return subject !== null && matchesFilter(state, subject, trigger.filter, ctx);
     }
@@ -1587,19 +1602,26 @@ function batchTriggers(
   members: readonly ObjectId[],
   candidateOf: (id: ObjectId) => Candidate | null,
 ): PendingTrigger[] {
-  const damage = events.flatMap((e) =>
-    e.kind === 'damageDealt' && e.combat && e.to.kind === 'player' && e.amount > 0
-      ? [{ source: e.source, seat: e.to.seat, amount: e.amount }]
+  const everyDamage = events.flatMap((e) =>
+    e.kind === 'damageDealt' && e.to.kind === 'player' && e.amount > 0
+      ? [{ source: e.source, seat: e.to.seat, amount: e.amount, combat: e.combat === true }]
       : [],
   );
-  if (damage.length === 0) return [];
+  const damage = everyDamage.filter((d) => d.combat);
+  if (everyDamage.length === 0) return [];
   const found: PendingTrigger[] = [];
   for (const id of members) {
     const candidate = candidateOf(id);
     if (!candidate) continue;
     for (const { index, ability } of candidate.triggered) {
       const trigger = ability.trigger;
-      if (trigger.kind !== 'combatDamageBatch') continue;
+      if (trigger.kind === 'damageBatch') {
+        found.push(
+          ...damageBatchTriggers(state, everyDamage, id, index, ability, trigger, candidate),
+        );
+        continue;
+      }
+      if (trigger.kind !== 'combatDamageBatch' || damage.length === 0) continue;
       const seats = [...new Set(damage.map((d) => d.seat))];
       for (const seat of seats) {
         if (trigger.to === 'opponent' && seat === candidate.controller) continue;
@@ -1661,6 +1683,71 @@ function batchTriggers(
     }
   }
   return found;
+}
+
+/**
+ * CR 120.2, 603.2c (Francisco, Malcolm): the triggers of one `damageBatch` ability for the damage of any kind that players were dealt in one run of events. The sources are the
+ * permanents the trigger's filter names, read as they are or as they last were, "you" in the filter being the controller of the ability; at least `atLeast` different ones must
+ * have damaged the same player. `to: 'player'` triggers once for each player damaged, `to: 'opponents'` once for the run, counting the opponents damaged (`damage` of the trigger).
+ */
+function damageBatchTriggers(
+  state: GameState,
+  damage: readonly { readonly source: ObjectId; readonly seat: SeatId; readonly amount: number }[],
+  id: ObjectId,
+  index: number,
+  ability: TriggeredAbility,
+  trigger: Extract<Trigger, { kind: 'damageBatch' }>,
+  candidate: Candidate,
+): PendingTrigger[] {
+  const seats: SeatId[] = [];
+  const sourcesOf = new Map<SeatId, ObjectId[]>();
+  for (const seat of new Set(damage.map((d) => d.seat))) {
+    if (trigger.to === 'opponents' && seat === candidate.controller) continue;
+    const sources = [...new Set(damage.filter((d) => d.seat === seat).map((d) => d.source))].filter(
+      (source) => {
+        const obj = objectOrLki(state, source);
+        return (
+          obj !== null &&
+          matchesFilter(state, obj, trigger.what, { controller: candidate.controller, source: id })
+        );
+      },
+    );
+    if (sources.length < (trigger.atLeast ?? 1)) continue;
+    seats.push(seat);
+    sourcesOf.set(seat, sources);
+  }
+  const base = {
+    source: id,
+    controller: candidate.controller,
+    abilityIndex: index,
+    ability,
+    subject: null,
+  };
+  const conditionContext = (seat: SeatId) => ({
+    controller: candidate.controller,
+    source: id,
+    triggerPlayer: seat,
+  });
+  if (trigger.to === 'opponents') {
+    const [first] = seats;
+    if (first === undefined) return [];
+    return [{ ...base, player: first, damage: seats.length, damaged: seats }];
+  }
+  return seats.flatMap((seat) => {
+    if (
+      ability.interveningIf !== undefined &&
+      !evaluateCondition(state, ability.interveningIf, conditionContext(seat))
+    ) {
+      return [];
+    }
+    if (
+      ability.triggerCondition !== undefined &&
+      !evaluateCondition(state, ability.triggerCondition, conditionContext(seat))
+    ) {
+      return [];
+    }
+    return [{ ...base, player: seat, cards: sourcesOf.get(seat) ?? [] }];
+  });
 }
 
 /**

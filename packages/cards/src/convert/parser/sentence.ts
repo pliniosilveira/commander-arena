@@ -178,16 +178,24 @@ const LEAD_CONDITIONS = [
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.
   'condition.discarded-spell-this-way',
+  // Federation Fleet deck, group D: "If you put two or more +1/+1 counters on creatures this way, draw a card." after counters put on creatures.
+  'condition.put-counters-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
   // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.
   'condition.two-milled-cards-share-all-types',
   // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
   'condition.destroyed-this-way',
+  // Saw in Half: "If that creature dies this way, ..." after a destroy.
+  'condition.dies-this-way',
   // Death Toll deck: "Delirium — Then if there are four or more card types among cards in your graveyard, create ..." (CR 205.2a, 608.2c).
   'condition.card-types-among',
   // Prize Pig: "Then if there are three or more ribbon counters on ~, remove those counters and untap it." (CR 122.1, 608.2c).
   'condition.there-are-counters-on-self',
+  // Kes, Evolving Telepath: "Then if she has nine or more time counters on her, sacrifice her." (CR 122.1, 608.2c).
+  'condition.this-counter-count',
+  // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
+  'condition.the-player-is-opponent-with-cards',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
@@ -314,6 +322,11 @@ interface SentenceOptions {
    * before it creates when the player did what it offered. Only a triggered ability's body asks for it.
    */
   readonly reflexive?: boolean;
+  /**
+   * "When you discard a nonland card this way, ..." may start the sentence (Federation Fleet deck, group D, CR 603.12): the reflexive ability the discards of the sentence before it create.
+   * The activated and triggered abilities' bodies ask for it, where the lowering joins the two.
+   */
+  readonly afterDiscard?: boolean;
   /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
@@ -495,7 +508,17 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let at = start;
     let condition: IrCondition | undefined;
     let reflexive = false;
-    if (options.reflexive === true) {
+    let afterDiscard: IrSentence['afterDiscard'];
+    if (options.afterDiscard === true) {
+      const lead = literal('when you discard a nonland card this way, ')(ctx, start);
+      if (lead.ok) {
+        // The sentence is read as a reflexive one (no test of its own, no "you may"), and says which discards make it.
+        reflexive = true;
+        afterDiscard = 'nonland';
+        at = lead.pos;
+      }
+    }
+    if (options.reflexive === true && !reflexive) {
       // Issue 121 (Bloodthirsty Adversary): "When you pay this cost one or more times, ..." is the reflexive ability of a payment made any number of times.
       const lead = choice(
         literal('when you do, '),
@@ -638,7 +661,8 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive ? { reflexive: true as const } : {}),
+        ...(reflexive && afterDiscard === undefined ? { reflexive: true as const } : {}),
+        ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
         ...(mayBy === undefined ? {} : { mayBy }),
         span: { start: pos, end: r.pos },
@@ -674,6 +698,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
 export const ACTIVATED_SENTENCE: Parser<IrSentence> = sentenceParser({
   may: 'afterTest',
   conditional: true,
+  // Federation Fleet deck, group D (Seven of Nine, Tertiary Adjunct): "When you discard a nonland card this way, put two charge counters on up to one target artifact."
+  afterDiscard: true,
   // Conduit of Worlds: "If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn." (CR 608.2c): the lowering
   // reads an "If you do" only after an instruction it can tell was done, and refuses it anywhere else.
   ifYouDo: true,

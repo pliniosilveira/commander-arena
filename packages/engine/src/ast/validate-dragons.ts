@@ -5,7 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype } from '../characteristics';
+import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -14,6 +14,7 @@ import {
   type AstIssue,
   checkAmount,
   checkEffect,
+  checkEnumList,
   checkFilter,
   checkPlayerSelector,
   checkRef,
@@ -44,12 +45,13 @@ export function checkDragonsEffect(
           owner !== 'target' &&
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
+          owner !== 'triggerDamagedPlayers' &&
           owner !== 'eachOpponent'
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent') or the player of the event ('triggerPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -144,12 +146,20 @@ export function checkDragonsEffect(
         if (e.anyManaColor !== true) {
           issue(out, `${path}.anyManaColor`, 'anyManaColor must be true when present');
         }
+      }
+      // Hostage Taker (CR 609.4b), Dire Fleet Daredevil (CR 614.1a): riders of the spell cast with the permission.
+      for (const rider of ['anyManaType', 'exileInstead'] as const) {
+        if (e[rider] === undefined) continue;
+        if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
         if (e.castOnly !== true) {
           issue(
             out,
-            `${path}.anyManaColor`,
-            'mana as though of any color is spent on a cast: needs castOnly',
+            `${path}.${rider}`,
+            `${rider} is about the spell that is cast: needs castOnly`,
           );
+        }
+        if (e.free === true && rider === 'anyManaType') {
+          issue(out, `${path}.${rider}`, 'a free play spends no mana');
         }
       }
       return true;
@@ -288,6 +298,16 @@ export function checkDragonsEffect(
             `${at}.onMatch`,
             { ...scope, xAllowed: false, movedAvailable: true },
             out,
+          );
+        }
+        if (
+          branch.asController !== undefined &&
+          (branch.asController !== true || branch.onMatch === undefined)
+        ) {
+          issue(
+            out,
+            `${at}.asController`,
+            'asController is true, and only for a branch with onMatch',
           );
         }
         if (branch.to !== undefined) {
@@ -486,13 +506,14 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true
       ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
+          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
         );
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the
@@ -523,6 +544,12 @@ export function checkDragonsEffect(
         issue(out, `${path}.objects`, "the creatures that enter attacking are what moved: 'moved'");
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
+      }
+      if (
+        e.thatPlayerOrTheirPlaneswalkers !== undefined &&
+        e.thatPlayerOrTheirPlaneswalkers !== true
+      ) {
+        issue(out, `${path}.thatPlayerOrTheirPlaneswalkers`, 'it is true or left out');
       }
       if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
@@ -762,7 +789,7 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
     filterSome(
       r.what,
       (f) =>
-        f.zone !== undefined ||
+        (f.zone !== undefined && !(r.fromGraveyard === true && f.zone === 'graveyard')) ||
         f.stackKind !== undefined ||
         f.attacking !== undefined ||
         f.attackingYou !== undefined ||
@@ -774,6 +801,23 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       `${path}.what`,
       'what is copied is a permanent on the battlefield: no zone, stackKind, combat or other',
     );
+  }
+  // Federation Fleet deck (CR 614.12, 707.9, 700.4): "... a copy of any creature card in your graveyard that was put there from the battlefield this turn".
+  if (r.fromGraveyard !== undefined && r.fromGraveyard !== true) {
+    issue(out, `${path}.fromGraveyard`, 'fromGraveyard is true when present');
+  }
+  if (r.fromGraveyard === true && r.what?.zone !== 'graveyard') {
+    issue(out, `${path}.what`, 'what names the zone graveyard when the copy is of a card there');
+  }
+  if (r.keepName !== undefined && r.keepName !== true) {
+    issue(out, `${path}.keepName`, 'keepName is true when present');
+  }
+  if (r.addSupertypes !== undefined) {
+    if (!Array.isArray(r.addSupertypes) || r.addSupertypes.length === 0) {
+      issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
+    } else {
+      checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
+    }
   }
   if (r.optional !== undefined && r.optional !== true) {
     issue(out, `${path}.optional`, 'optional is true or absent');

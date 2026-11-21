@@ -102,7 +102,11 @@ function changeOf(
       // D-230 (Backup): one change for each ability; `runContinuous` makes a continuous effect of each.
       return { kind: 'grantAbility', ability: node.abilities[0] as Ability };
     case 'restrict':
-      return { kind: 'restrict', restriction: node.restriction };
+      return {
+        kind: 'restrict',
+        restriction: node.restriction,
+        ...(node.blockers === undefined ? {} : { blockers: node.blockers }),
+      };
     default: {
       const unreachable: never = node;
       return unreachable;
@@ -174,6 +178,26 @@ export function runContinuous(
         objects: [id],
         until,
         change: changeOf(state, node, ctx, targets, obj),
+      });
+    }
+    return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
+  }
+  // CR 611.2b, 122.1 (Minas Morgul): "for as long as that creature has a shadow counter on it": one effect for each object that has the counter now, each ending, for good,
+  // as that object stops having it (`endLostControlEffects`); an object with none has the duration over before the effect begins.
+  if (node.kind === 'setTypes' && node.whileHasCounter !== undefined) {
+    const counter = node.whileHasCounter;
+    let next = state;
+    const made: ContinuousEffect[] = [];
+    for (const id of affected) {
+      if ((state.objects[id]?.counters[counter] ?? 0) <= 0) continue;
+      const [timestamp, stamped] = allocateTimestamp(next);
+      next = stamped;
+      made.push({
+        id: `ce${timestamp}`,
+        timestamp,
+        objects: [id],
+        until: { kind: 'whileHasCounter', object: id, counter },
+        change: changeOf(state, node, ctx, targets),
       });
     }
     return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
@@ -331,6 +355,32 @@ export function runRequireAttack(
 }
 
 /**
+ * "Until your next turn, creatures can't attack you" (CR 508.1a, 611.2a, 611.2c, 500.1): one continuous effect with no set of objects, read where attackers are declared for the
+ * creatures its filter matches then (a restriction changes the rules, so it reaches creatures that arrive later). `until` is the start of the next turn of the controller (the one that
+ * comes after this moment, not this turn even when it is theirs), as for `runRequireAttack`.
+ */
+export function runCreaturesCantAttackYou(
+  state: GameState,
+  node: Extract<Effect, { kind: 'creaturesCantAttackYou' }>,
+  ctx: SelectContext,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    change: {
+      kind: 'creaturesCantAttackPlayer',
+      filter: node.creatures,
+      controller: ctx.controller,
+    },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, issue 81): one continuous effect over the creatures the effect names as it begins, which
  * bars them from the planeswalkers of the subtype the controller controls (`rules/attack-bans.ts`) until end of turn.
  */
@@ -355,6 +405,36 @@ export function runCantAttackPlaneswalkers(
     },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
+ * "Target creature can't be blocked by creatures that player controls this turn" (CR 509.1b, 611.2a, The Black Gate): for each player the effect names as it resolves, one continuous
+ * effect over the creatures the effect names as it begins (CR 611.2c) that bars them from being blocked by a creature that player controls (`rules/combat-legality.ts`) until end of turn.
+ */
+export function runCantBeBlockedByPlayer(
+  state: GameState,
+  node: Extract<Effect, { kind: 'cantBeBlockedByPlayer' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const objects = resolveObjects(state, node.objects, ctx, targets).filter(
+    (id) => state.objects[id]?.zone === 'battlefield',
+  );
+  if (objects.length === 0) return done(state);
+  let next = state;
+  const made: ContinuousEffect[] = [];
+  for (const seat of resolvePlayers(state, node.player, ctx, targets)) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    made.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects,
+      until: 'endOfTurn',
+      change: { kind: 'cantBeBlockedByPlayer', seat },
+    });
+  }
+  return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
 }
 
 /**

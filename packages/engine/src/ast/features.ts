@@ -150,6 +150,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseMinCardTypes',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
+    // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
+    'chooseFromDefendersHand',
     // Yedora, Grave Gardener (CR 708.2, 708.3): "return it to the battlefield face down ... It's a Forest land" (`moveToZone.faceDownAs`).
     'moveFaceDownLand',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
@@ -166,10 +168,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
     'copyEntersWithX',
+    // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
+    'copyEntersFromGraveyard',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
     'delayedReturnToCommandZone',
+    // Ahoy Mateys deck, group 3 (Zara): "Return that creature to its owner's hand at the beginning of the next end step" (a delayed `moveToZone` to the hand of the `moved` objects).
+    'delayedReturnToHand',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
     // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
@@ -306,6 +312,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackRandomOpponent',
     // "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d).
     'requireAttackSource',
+    // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
+    'creaturesCantAttackYou',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
@@ -336,6 +344,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromHandOnBottom',
     // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
     'cantAttackPlaneswalkers',
+    // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
+    'choosePlayer',
+    'cantBeBlockedByPlayer',
     'createToken',
     'search',
     'attach',
@@ -408,6 +419,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainActivatedAbilitiesOf',
     // "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a).
     'gainFlashbackFromManaCost',
+    // Ahoy Mateys deck: "until end of turn, each creature card in your graveyard gains escape" (CR 702.138a).
+    'gainEscape',
     // D-139: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand".
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
@@ -548,6 +561,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapsForMana',
     // D-139: "whenever one or more artifact creatures you control deal combat damage to a player" (CR 603.2c).
     'combatDamageBatch',
+    // CR 120.2, 603.2c: "whenever one or more Pirates you control deal damage to a player" (damage of any kind).
+    'damageBatch',
     // D-149: "whenever you gain life [for the first time each turn]", "whenever you put one or more +1/+1 counters on this creature",
     // "whenever you attack with two or more creatures".
     'lifeGained',
@@ -652,6 +667,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'partner',
     // D-490: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
     'partnerWith',
+    // CR 100.2a: "A deck can have up to nine cards named ~": a deck-construction line with no effect in a game.
+    'deckLimit',
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
@@ -776,6 +793,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'redirectDamage',
     // CR 614.1a: "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
     'damageBonus',
+    // CR 614.1a: "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead."
+    'damageDouble',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
@@ -911,8 +930,6 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   selectorKinds: [
     'this',
     'thisSpell',
-    // Issue 102 (Lethal Scheme): "each creature that convoked this spell" (`ObjectRef` `convokers`).
-    'convokers',
     'target',
     'chosen',
     'anyTarget',
@@ -936,6 +953,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'combatDamagedByNamed',
     // D-648: "that opponent" of a `playerAttacksOpponent` trigger.
     'triggerAttackedPlayer',
+    'triggerDamagedPlayers',
     'controllerOf',
     'ownerOf',
     'anyOf',
@@ -944,6 +962,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'controllerRef',
     // D-179: "that was put there from the battlefield this turn" (`ObjectFilter.putFromBattlefieldThisTurn`).
     'putFromBattlefieldThisTurn',
+    // Ahoy Mateys deck: "that was discarded or put there from a library this turn" (`ObjectFilter.discardedOrFromLibraryThisTurn`).
+    'discardedOrFromLibraryThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
@@ -953,6 +973,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
+    // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (`ObjectFilter.controllerDealtCombatDamageByAtLeast`).
+    'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
@@ -965,14 +987,20 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enchanted',
     // D-647: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
     'enchantedByYou',
+    // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
+    'notOwnedByYou',
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
     // CR 205.3m (Titan of Littjara, Descendants' Fury): `sharesCreatureTypeWith` of the source of the ability, or of the creature an earlier sacrifice sacrificed.
     'sharesCreatureTypeWithSource',
     'sharesCreatureTypeWithSacrificed',
+    // CR 205.3m (Shared Animosity): "each other attacking creature" besides the creature the trigger is about (`ObjectFilter.otherThanTriggerSubject`).
+    'otherThanTriggerSubject',
     // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
     'chooseFromTriggerSources',
+    // CR 510.2 (Witch-king of Angmar): `ChooseSelector.dealtCombatDamageToYou`.
+    'chooseDealtCombatDamageToYou',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
@@ -988,6 +1016,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'targetsObject',
     // "copy that spell if it targets a permanent or player" (`ObjectFilter.targetsPlayer`).
     'targetsPlayer',
+    // "a spell or ability that targets you" (`ObjectFilter.targetsPlayer` of 'you').
+    'targetsYou',
     // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
     'targetsOnly',
     'isSource',
@@ -1015,11 +1045,15 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'defendingPlayer',
     // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
     'playerToYourRight',
+    // The Black Gate: `PlayerSelector` `chosenPlayer`, "that player" after "Choose a player ...".
+    'chosenPlayer',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
     // Issue 81 (Tamiyo): "those creatures" of a combat damage batch trigger.
     'triggerSources',
+    // Lethal Scheme: "each creature that convoked this spell" (`convokers`).
+    'convokers',
     'manaValueAtMost',
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
@@ -1035,12 +1069,17 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notAttacking',
     'blocking',
     'powerLessThanSource',
+    // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
+    'monarchController',
+    'restrictBlockers',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
     // "Creatures you control with base power 0" (`ObjectFilter.basePowerIs`).
     'basePowerIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
+    // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
+    'sameNameAs',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -1084,6 +1123,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
     'greatest',
+    'least',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
     'discardedThisWay',
@@ -1142,6 +1182,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
+    // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
+    'triggerPlayerIsOpponent',
+    'triggerPlayerStat',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
@@ -1177,6 +1220,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaValueAtMostAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
+    // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
+    'diedThisWay',
     'objectMatches',
     'giftPromised',
     'opponentControlsAtLeast',
@@ -1191,6 +1236,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-206: "during your turn" (`yourTurn`), "if a card left your graveyard this turn", "if at least four mana was spent to cast it", "if this spell was cast from a graveyard".
     'yourTurn',
     'cardLeftYourGraveyard',
+    'descendedThisTurn',
     'manaSpentAtLeast',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
@@ -1261,6 +1307,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   durationKinds: [
     'untilEndOfTurn',
     'untilYourNextTurn',
+    // CR 611.2b (Minas Morgul): `setTypes.whileHasCounter`, "for as long as that creature has a shadow counter on it".
+    'whileHasCounter',
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
     'untilNextUntapStep',
@@ -1482,6 +1530,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 81 (Shark Typhoon): the X of the cycling cost, in a "when you cycle this card" trigger.
     'triggerCycleX',
     'triggerAttackerCount',
+    // CR 603.2c: "for each opponent dealt damage" of a `damageBatch` trigger.
+    'triggerDamagedPlayerCount',
     // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
     'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
@@ -1542,6 +1592,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'jumpStart',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
+    // CR 118.9, 701.21a (Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost".
+    'sacrificePermanents',
   ],
 };
 
@@ -1608,6 +1660,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn."
+  'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
   'canBlockOnlyFlying',
   'cantBeBlockedByMoreThanOne',
@@ -1716,6 +1770,8 @@ export const ABILITY_FEATURES = [
   'chooseMinCardTypes',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
+  /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
+  'chooseFromDefendersHand',
   /** "Return it to the battlefield face down ... It's a Forest land" (Yedora, CR 708.2, 708.3, 613.2b): the engine's `moveToZone.faceDownAs`, a face-down land with the Forest subtype. */
   'moveFaceDownLand',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
@@ -1732,10 +1788,14 @@ export const ABILITY_FEATURES = [
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
   'copyEntersWithX',
+  /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
+  'copyEntersFromGraveyard',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
   'delayedReturnToCommandZone',
+  /** "Return that creature to its owner's hand at the beginning of the next end step" (Zara, CR 603.7c, 108.3): a `delayedTrigger` of a `moveToZone` to the hand of the `moved` objects. */
+  'delayedReturnToHand',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
   /** "At the beginning of combat on your turn, you may choose two." (CR 700.2, 700.2b): a triggered ability's `ModeChoice.allOrNone`, no mode or exactly `max` of them. */
@@ -1815,7 +1875,6 @@ export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 export const SELECTOR_KINDS = [
   'this',
   'thisSpell',
-  'convokers',
   'target',
   'chosen',
   'anyTarget',
@@ -1840,6 +1899,8 @@ export const SELECTOR_KINDS = [
   'combatDamagedByNamed',
   /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-648): the engine's `triggerAttackedPlayer`. */
   'triggerAttackedPlayer',
+  /** "Each of those opponents" of a `damageBatch` trigger to your opponents (CR 603.2c): the engine's `triggerDamagedPlayers`. */
+  'triggerDamagedPlayers',
   'controllerOf',
   'ownerOf',
   'anyOf',
@@ -1859,6 +1920,10 @@ export const SELECTOR_KINDS = [
   'controllerRef',
   /** "That was put there from the battlefield this turn" (CR 700.4, D-179): the engine's `ObjectFilter.putFromBattlefieldThisTurn`. */
   'putFromBattlefieldThisTurn',
+  /** "Controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2, Ahoy Mateys group 7): the engine's `ObjectFilter.controllerDealtCombatDamageByAtLeast`. */
+  'controllerDealtCombatDamageByAtLeast',
+  /** "That was discarded or put there from a library this turn" (CR 701.9, 701.17, Ahoy Mateys deck): the engine's `ObjectFilter.discardedOrFromLibraryThisTurn`. */
+  'discardedOrFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
@@ -1873,6 +1938,8 @@ export const SELECTOR_KINDS = [
   'enchanted',
   /** "Enchanted by an Aura you control" (CR 303.4e, D-647): the engine's `ObjectFilter.enchantedByYou`. */
   'enchantedByYou',
+  /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */
+  'notOwnedByYou',
   /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
@@ -1881,8 +1948,12 @@ export const SELECTOR_KINDS = [
   'sharesCreatureTypeWithSource',
   /** "A creature card that shares a creature type with the sacrificed creature" (CR 205.3m, 701.21a, Descendants' Fury): `ObjectFilter.sharesCreatureTypeWith: 'sacrificed'`. */
   'sharesCreatureTypeWithSacrificed',
+  /** "Each other attacking creature that shares a creature type with it" (CR 205.3m, 508.1, Shared Animosity): the engine's `ObjectFilter.otherThanTriggerSubject`. */
+  'otherThanTriggerSubject',
   /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
   'chooseFromTriggerSources',
+  /** "A creature that dealt combat damage to you this turn" (CR 510.2, 701.21a, Witch-king of Angmar): the engine's `ChooseSelector.dealtCombatDamageToYou`. */
+  'chooseDealtCombatDamageToYou',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
@@ -1895,6 +1966,8 @@ export const SELECTOR_KINDS = [
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
   'targetsPlayer',
+  /** "That targets you" (Siren Stormtamer, CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer` of `'you'`. */
+  'targetsYou',
   /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
   'targetsOnly',
   /** "This creature" as the object a filter describes, "that targets this creature" (D-437): the engine's `ObjectFilter.isSource`. */
@@ -1938,12 +2011,16 @@ export const SELECTOR_KINDS = [
   'defendingPlayer',
   /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */
   'playerToYourRight',
+  /** "That player" after "Choose a player with the most life" (The Black Gate): the engine's `PlayerSelector` `chosenPlayer`. */
+  'chosenPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
   'triggerCard',
   /** "Those creatures" of a combat damage batch trigger (CR 603.2c, issue 81): the engine's `triggerSources`. */
   'triggerSources',
+  /** "Each creature that convoked this spell" (CR 702.51a, Lethal Scheme): the engine's `convokers`. */
+  'convokers',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
   /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */
@@ -1964,12 +2041,18 @@ export const SELECTOR_KINDS = [
   'blocking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
+  'monarchController',
+  /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
+  'restrictBlockers',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
   'powerAboveBase',
   /** "With base power 0" (CR 208.4b): the engine's `ObjectFilter.basePowerIs`. */
   'basePowerIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
+  /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
+  'sameNameAs',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -2019,6 +2102,8 @@ export const SELECTOR_KINDS = [
   'ownedByTarget',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
+  /** "A creature with the least power among creatures they control" (CR 701.21a): the engine's `ChooseSelector.least`. */
+  'least',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
   'giftRecipient',
   /** "Each player who discarded a card this way" (CR 701.9, D-210): the engine's `PlayerSelector` `discardedThisWay`. */
@@ -2053,6 +2138,8 @@ export const SELECTOR_KINDS = [
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
 export const CONDITION_KINDS = [
+  /** "If that creature dies this way" (CR 700.4, 608.2h, Saw in Half): the engine's `diedThisWay`. */
+  'diedThisWay',
   /** "You control two or more basic lands" (CR 614.12): the engine's `controlsAtLeast`. */
   'controlsAtLeast',
   /** "You have two or more opponents": the engine's `opponentsAtLeast`. */
@@ -2087,6 +2174,10 @@ export const CONDITION_KINDS = [
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
+  /** "If the player is your opponent", the player being the one of the event (CR 603.2b, 102.2): the engine's `triggerPlayerIsOpponent`. */
+  'triggerPlayerIsOpponent',
+  /** "If the player has four or more cards in hand", the player being the one of the event (CR 402.1, 608.2c): the engine's `triggerPlayerStat`. */
+  'triggerPlayerStat',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */
@@ -2131,6 +2222,8 @@ export const CONDITION_KINDS = [
   'yourTurn',
   /** "If a card left your graveyard this turn" (D-206): the engine's `cardLeftYourGraveyard`. */
   'cardLeftYourGraveyard',
+  /** "If you descended this turn": the engine's `descendedThisTurn`. */
+  'descendedThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
@@ -2218,6 +2311,8 @@ export type ConditionKind = (typeof CONDITION_KINDS)[number];
 export const DURATION_KINDS = [
   'untilEndOfTurn',
   'untilYourNextTurn',
+  /** "For as long as that creature has a shadow counter on it" (CR 611.2b): `setTypes.whileHasCounter`. */
+  'whileHasCounter',
   'untilEndOfNextTurn',
   'asLongAs',
   'thisTurn',
@@ -2494,6 +2589,8 @@ export const AMOUNT_KINDS = [
   'triggerCycleX',
   /** "that many" in a "whenever one or more Sphinxes attack" trigger (issue 81): the engine's `triggerAttackerCount`. */
   'triggerAttackerCount',
+  /** "for each opponent dealt damage" in a "whenever one or more Pirates deal damage to your opponents" trigger: the engine's `triggerDamagedPlayerCount`. */
+  'triggerDamagedPlayerCount',
   /** "For each card type among those cards" (CR 205.2a, 603.2c): the engine's `cardTypesAmongTriggerCards`, of a batch `putIntoGraveyard` trigger. */
   'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
@@ -2555,6 +2652,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'retrace',
   'jumpStart',
   'sacrificeFromGraveyard',
+  'sacrificePermanents',
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
@@ -2627,6 +2725,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAlsoGraveyard: true,
   chooseMinCardTypes: true,
   chooseFromCommandZone: true,
+  chooseFromDefendersHand: true,
   moveFaceDownLand: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
@@ -2635,8 +2734,10 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,
+  copyEntersFromGraveyard: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,
+  delayedReturnToHand: true,
   modeCost: true,
   modeAllOrNone: true,
   modeDifferentTargets: true,
@@ -2733,6 +2834,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   attackRandomOpponent: true,
   requireAttackSource: true,
+  creaturesCantAttackYou: true,
   permanentsEnterTapped: true,
   doubleTokens: true,
   gainControl: true,
@@ -2751,6 +2853,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   putFromHandOnTop: true,
   putFromHandOnBottom: true,
   cantAttackPlaneswalkers: true,
+  choosePlayer: true,
+  cantBeBlockedByPlayer: true,
   createToken: true,
   search: true,
   attach: true,
@@ -2794,6 +2898,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCastSpells: true,
   gainActivatedAbilitiesOf: true,
   gainFlashbackFromManaCost: true,
+  gainEscape: true,
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
@@ -2876,6 +2981,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tappedForMana: true,
   tapsForMana: true,
   combatDamageBatch: true,
+  damageBatch: true,
   lifeGained: true,
   lifeLost: true,
   countersAdded: true,
@@ -2948,6 +3054,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   devoid: true,
   partner: true,
   partnerWith: true,
+  deckLimit: true,
   chooseBackground: true,
   canBeCommander: true,
   compleated: true,
@@ -3028,6 +3135,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersAsCopy: true,
   redirectDamage: true,
   damageBonus: true,
+  damageDouble: true,
   skipDraw: true,
   drawInstead: true,
   umbraArmor: true,

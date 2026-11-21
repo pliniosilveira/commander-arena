@@ -213,6 +213,26 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
         end = shares.pos;
       }
     }
+    // Shared Animosity (CR 508.1, 205.3m): "each other attacking creature that shares a creature type with it", whoever controls them: "other" and "it" are the creature the
+    // trigger is about, which the lowering of the ability checks (the engine's `otherThanTriggerSubject` and `sharesCreatureTypeWith: 'triggerSubject'`).
+    if (!plural && filter.controller === undefined && filter.attacking === true && other.value) {
+      const shares = quiet(SHARES_CREATURE_TYPE_WITH_IT)(ctx, end);
+      if (shares.ok) {
+        return {
+          ok: true,
+          value: {
+            filter: {
+              ...filter,
+              sharesCreatureTypeWithIt: true,
+              otherThanIt: true,
+              raw: ctx.text.slice(pos, shares.pos),
+            },
+            other: false,
+          },
+          pos: shares.pos,
+        };
+      }
+    }
     return {
       ok: true,
       value: { filter: { ...filter, raw: ctx.text.slice(pos, end) }, other: other.value },
@@ -302,15 +322,8 @@ function cards(plural: boolean): Parser<IrFilter> {
     inTargetPlayersZone,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
-  // Crypt of Agadeem (CR 105.2, 108.2): a color word before the card, "black creature card in your graveyard"; a card in a graveyard has the colors of its mana cost.
-  const colorWords = many(
-    map(sequence(pattern(/(?:white|blue|black|red|green)(?= )/iu), literal(' ')), ([w]) =>
-      w[0].toLowerCase(),
-    ),
-  );
   const words = map(
     sequence(
-      colorWords,
       many(
         map(
           sequence(
@@ -325,7 +338,7 @@ function cards(plural: boolean): Parser<IrFilter> {
         [] as string[],
       ),
     ),
-    ([colors, subtypes, types]) => ({ colors, subtypes, types }),
+    ([subtypes, types]) => ({ subtypes, types }),
   );
   // D-518 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
   const union: Parser<IrFilter> = (ctx, pos) => {
@@ -360,20 +373,25 @@ function cards(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
+  // Crypt of Agadeem (CR 105.2, 205.2a): "for each black creature card in your graveyard": colors before the card types, each in the singular.
+  const colors = many(
+    map(pattern(/(white|blue|black|red|green) /iu), (m) => (m[1] ?? '').toLowerCase()),
+  );
   const single: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
+      colors,
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
       where,
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [{ colors, subtypes, types }, , place] = r.value;
+    const [colorWords, { subtypes, types }, , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
     const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
     const base = toFilter(
       place.zone,
-      { ...NO_PARTS, types, colors, controller: simpleController },
+      { ...NO_PARTS, types, colors: colorWords, controller: simpleController },
       raw,
     );
     return {
@@ -476,9 +494,12 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each card in target opponent’s graveyard',
     'for each instant and sorcery card in your graveyard',
     'for each instant or sorcery card in your graveyard',
+    'for each black creature card in your graveyard',
+    'for each black card in your graveyard',
   ],
   rejects: [
     'for each',
+    'for each black creature cards in your graveyard',
     'for each creature',
     'for each creatures you control',
     'for each opponent',
