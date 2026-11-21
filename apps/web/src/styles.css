@@ -326,7 +326,7 @@ button {
 }
 
 /* The stack floats over the board at the right edge, over the opponent's side of the field. Empty, it is a small box
-   (still the place a spell is dropped to cast it); with objects it grows to about half the screen
+   (still the place a spell is dropped to cast it); with objects it grows down to the action dock
    and scrolls. */
 .game > .pnl-stack {
   position: absolute;
@@ -337,7 +337,8 @@ button {
   flex: none;
   width: var(--controls-width);
   min-height: 0;
-  max-height: 50%;
+  /* Ends above the action dock (about 360px at the bottom right, over the stack when it is taller) and scrolls. */
+  max-height: max(160px, calc(100% - 500px));
   box-shadow: var(--shadow);
 }
 .settings-toggle {
