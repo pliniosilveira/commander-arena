@@ -1313,6 +1313,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantKeywordToSpells',
     // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
     'grantFlashbackToGraveyardCards',
+    // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
+    'grantAlternativeCostToSpells',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -2321,6 +2323,8 @@ export const STATIC_KINDS = [
   'grantKeywordToSpells',
   /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
   'grantFlashbackToGraveyardCards',
+  /** "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9). */
+  'grantAlternativeCostToSpells',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */

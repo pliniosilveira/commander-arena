@@ -73,6 +73,7 @@ import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
 import { SYNTHETIC_EVASION_LIMITS_LIST } from './synthetic-evasion-limits';
+import { SYNTHETIC_EVOKE_GRANT_LIST } from './synthetic-evoke-grant';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
@@ -505,6 +506,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HOFRI_LIST,
   ...SYNTHETIC_ETERNAL_MIGHT_LIST,
   ...SYNTHETIC_JESKAI_FLASHBACK_LIST,
+  ...SYNTHETIC_EVOKE_GRANT_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,

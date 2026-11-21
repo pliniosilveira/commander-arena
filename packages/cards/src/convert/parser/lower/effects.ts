@@ -156,6 +156,7 @@ import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
+import { THE_TOKEN_LOWERINGS } from './the-token';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -2656,6 +2657,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   revealEachTokenLowering(lowerCreateToken),
   // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
   ...AHOY_G8_LOWERINGS,
+  ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.

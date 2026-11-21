@@ -51,7 +51,12 @@ import {
   SLIVER_LORD_NEEDS,
   sliverLordNeeds,
 } from './sliver-lords';
-import { isSpellKeywordStatic, lowerSpellKeywordStatic } from './spell-keyword-grant';
+import {
+  isSpellEvokeStatic,
+  isSpellKeywordStatic,
+  lowerSpellEvokeStatic,
+  lowerSpellKeywordStatic,
+} from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
@@ -609,6 +614,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantKeywordToHandCards'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
+    case 'spellEvoke':
+      return ['static:grantAlternativeCostToSpells'];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
     case 'legendRuleDoesntApply':
@@ -959,6 +966,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
+  // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them."
+  if (isSpellEvokeStatic(first)) return lowerSpellEvokeStatic(ability);
   // Issue 133 (CR 704.5j, 613.1d, 702.141a): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
@@ -1359,6 +1368,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:allCreatureTypes',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
+  'static:grantAlternativeCostToSpells',
   ...SLIVER_LORD_NEEDS,
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',

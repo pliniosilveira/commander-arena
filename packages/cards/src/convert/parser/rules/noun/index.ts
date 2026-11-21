@@ -71,7 +71,7 @@ import { PLAYER_NOUN_RULES } from './players';
 import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
-import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
+import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN, NOUN_THE_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
@@ -1044,6 +1044,7 @@ export const NOUN_RULES = [
   NOUN_IT,
   NOUN_EACH_OF_THEM,
   NOUN_THAT_TOKEN,
+  NOUN_THE_TOKEN,
   // Stage P50 (D-207): "target triggered ability or colorless spell".
   ...VRASKA_NOUN_RULES,
   // Stage P33 (D-150): "that nonland permanent card", "this card".

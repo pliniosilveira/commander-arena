@@ -1016,6 +1016,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     ...(to === 'battlefield' && old.stack?.escapeGrant !== undefined
       ? { escapeGranted: true as const }
       : {}),
+    // CR 702.74a: the permanent whose spell was cast for an evoke cost a static ability gave it remembers that the cost is not on its face.
+    ...(to === 'battlefield' && old.stack?.evokeGrant !== undefined
+      ? { evokeGranted: true as const }
+      : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").

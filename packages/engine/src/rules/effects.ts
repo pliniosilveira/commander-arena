@@ -1725,6 +1725,31 @@ function runEffect(
           ],
         });
       }
+      // CR 603.7c, 118.12a, 701.21a (Ashling, the Limitless): "At the beginning of your next end step, sacrifice it unless you pay {W}{U}{B}{R}{G}": the same bound sacrifice of the
+      // permanents the effects before it made, which the controller of the ability pays to keep (`unlessPays`, as the ability resolves).
+      if (
+        effect.effect.kind === 'unlessPays' &&
+        effect.effect.effect.kind === 'sacrifice' &&
+        effect.effect.effect.objects.kind === 'moved'
+      ) {
+        const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+        if (ids.length === 0) return done(state);
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: {
+            ...effect.effect,
+            effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
+          },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            { source: res.source, controller: res.controller, ability },
+          ],
+        });
+      }
       if (
         (effect.effect.kind === 'exile' ||
           effect.effect.kind === 'sacrifice' ||

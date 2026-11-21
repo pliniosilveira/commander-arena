@@ -9,6 +9,7 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { grantedEvokeOf } from './alt-cost-grant';
 import {
   alternativeOf,
   flashbackCostOf,
@@ -700,7 +701,12 @@ export function alternativeCostAllowed(
     (a) => a.kind === kind,
   );
   // CR 702.138a: an escape cost the face lists, or the one an effect gave the card until end of turn (`gainEscape`, rules/escape-grant.ts).
-  if (alt === undefined) return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+  if (alt === undefined) {
+    // CR 702.74a, 118.9: an evoke cost a static ability gives a spell as it is cast from the hand (`grantAlternativeCostToSpells`, rules/alt-cost-grant.ts).
+    if (kind === 'evoke')
+      return grantedEvokeOf(state, seat, castAs(obj, seat, face), obj.zone) !== null;
+    return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+  }
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
     kind === 'overload' &&

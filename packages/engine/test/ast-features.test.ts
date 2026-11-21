@@ -221,6 +221,8 @@ describe('the dimensions', () => {
       'grantKeywordToSpells',
       // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
       'grantFlashbackToGraveyardCards',
+      // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
+      'grantAlternativeCostToSpells',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',

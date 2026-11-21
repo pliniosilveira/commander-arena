@@ -62,6 +62,39 @@ export const NOUN_THAT_TOKEN = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.the-token`: "the token" (CR 111.2, 400.7j), the subject of a keyword grant that says "The token gains haste until end of turn" after the instruction that made one token: the same
+ * token "that token" names, and bound by the same pass (its `raw` is "that token"). Only a gain reads it (`GAIN_SUBJECTS`). "The tokens", "the token's controller" and "the token created
+ * this way" (`effect.grant-keyword-to-made`'s own words) are not read.
+ */
+export const NOUN_THE_TOKEN = defineRule<IrNoun>({
+  id: 'noun.the-token',
+  family: 'noun',
+  leading: ['the'],
+  cites: ['CR 111.2 (Tokens)', 'CR 400.7 (General)'],
+  examples: ['the token', 'The token'],
+  rejects: [
+    'the',
+    'the tokens',
+    "the token's controller",
+    'the token created this way',
+    'the creature',
+    'that token',
+  ],
+  parse: node<RegExpExecArray, IrNoun>(
+    'noun.the-token',
+    pattern(new RegExp(`the token${BOUNDARY}(?!['’])(?! created)`, 'iu')),
+    () => ({
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'that token' },
+      upTo: false,
+      plural: false,
+      other: false,
+    }),
+  ),
+});
+
+/**
  * `noun.each-of-them`: "each of them" (stage P48, D-205, CR 608.2c, 109.1), the several objects an earlier noun of the text named ("Tap up to two target creatures.
  * Put a stun counter on each of them."): bound like "them" to the most recent plural object noun, which a target slot of several targets is. Only the verbs
  * that name it in their operands read it (counters); "each of those" and "each of it" are not read.

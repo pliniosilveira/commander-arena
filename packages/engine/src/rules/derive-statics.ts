@@ -21,6 +21,7 @@ import type {
   Ability,
   Amount,
   Condition,
+  Cost,
   Keyword,
   ObjectFilter,
   Restriction,
@@ -244,6 +245,17 @@ export interface FlashbackGrantSource {
   readonly condition?: Condition;
 }
 
+/**
+ * A static ability of a permanent that gives an alternative cost to the spells its controller casts from the hand (`grantAlternativeCostToSpells`, CR 702.74a, 118.9, 613.1f): read
+ * where casting is decided (`rules/alt-cost-grant.ts`), never by `derive`: an alternative cost is no characteristic of the spell. A permanent that lost all its abilities has none.
+ */
+export interface AltCostGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly alt: { readonly kind: 'evoke'; readonly cost: readonly Cost[] };
+  readonly condition?: Condition;
+}
+
 interface BoardIndex {
   readonly battlefield: readonly ObjectId[];
   readonly definitions: GameState['definitions'];
@@ -278,6 +290,8 @@ interface BoardIndex {
   readonly legendExemptions: readonly LegendExemptionSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
+  /** Permanents with a `grantAlternativeCostToSpells` static ability, in battlefield order. */
+  readonly altCostGrants: readonly AltCostGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -523,6 +537,26 @@ function flashbackGrantsOf(
   return out;
 }
 
+function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): AltCostGrantSource[] {
+  const out: AltCostGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantAlternativeCostToSpells' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        alt: a.static.alt,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  return out;
+}
+
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
@@ -535,6 +569,7 @@ function buildIndex(state: GameState): BoardIndex {
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
+  const altCostGrants: AltCostGrantSource[] = [];
   const legendExemptions: LegendExemptionSource[] = [];
   const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
@@ -560,6 +595,7 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
+    altCostGrants.push(...altCostGrantsOf(object, printed));
     legendExemptions.push(...legendExemptionsOf(object, printed));
     encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
@@ -637,6 +673,7 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants,
     spellGrants,
     flashbackGrants,
+    altCostGrants,
     legendExemptions,
     encoreGrants,
     attachments,
@@ -712,6 +749,11 @@ export function legendExemptionSources(state: GameState): readonly LegendExempti
 /** The static abilities of the permanents on the battlefield that give flashback to the cards of their controller's graveyard (CR 702.34a). */
 export function flashbackGrantSources(state: GameState): readonly FlashbackGrantSource[] {
   return indexOf(state).flashbackGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that give an alternative cost to the spells their controller casts from the hand (CR 702.74a, 118.9). */
+export function altCostGrantSources(state: GameState): readonly AltCostGrantSource[] {
+  return indexOf(state).altCostGrants;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */

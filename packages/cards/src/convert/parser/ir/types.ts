@@ -1902,6 +1902,11 @@ export type IrStaticEffect =
       readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
     }
   /**
+   * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9, 601.2b): the permanent spells the subject names (a noun with the controller
+   * `you`), cast from the hand, are given an evoke cost `cost` (a mana cost) as they are cast.
+   */
+  | { readonly kind: 'spellEvoke'; readonly cost: IrCost }
+  /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
    */
