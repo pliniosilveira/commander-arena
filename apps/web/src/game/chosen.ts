@@ -30,6 +30,7 @@ export function optionText(
     | 'assignOpponent'
     | 'clashOpponent'
     | 'playerChoice'
+    | 'protector'
     | 'option'
     | 'effect'
     | 'riot'
@@ -43,7 +44,12 @@ export function optionText(
   if (purpose === 'color' || purpose === 'protectionColor') return colorName(option);
   if (purpose === 'riot') return riotAnswerText(option);
   // Issue 81 (Dack Fayden): "seat:1" is the opponent in that seat (seats count from 0).
-  if (purpose === 'assignOpponent' || purpose === 'clashOpponent' || purpose === 'playerChoice') {
+  if (
+    purpose === 'assignOpponent' ||
+    purpose === 'clashOpponent' ||
+    purpose === 'playerChoice' ||
+    purpose === 'protector'
+  ) {
     const seat = /^seat:(\d+)$/.exec(option)?.[1];
     return seat === undefined ? option : `player ${Number(seat) + 1}`;
   }
@@ -66,6 +72,7 @@ export function purposeNoun(
     | 'assignOpponent'
     | 'clashOpponent'
     | 'playerChoice'
+    | 'protector'
     | 'option'
     | 'effect'
     | 'riot'
@@ -87,6 +94,7 @@ export function purposeNoun(
   if (purpose === 'assignOpponent') return 'opponent to gain control';
   if (purpose === 'clashOpponent') return 'opponent to clash with';
   if (purpose === 'playerChoice') return 'player';
+  if (purpose === 'protector') return 'protector';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
   if (purpose === 'lifePaid') return 'amount of life to pay';

@@ -169,12 +169,13 @@ Read-only audit of `packages/engine/src/rules/`. The selector layer is already c
 | Finding | Where | Issue |
 | --- | --- | --- |
 | Only the first opponent is asked to block; attackers aimed at other opponents are never blocked | `combat-flow.ts:53`, `:113` | #414 |
-| A battle's protector is the first other seat; CR 310.9a says its controller chooses | `zones.ts:294` | #415 |
 | "Choose an opponent" takes the first opponent (Demonstrate, piles, Coin of Fate) | `effects.ts:1426`, `choose-aside.ts`, `pile-separate.ts`, `exile-piles.ts`, `activation-exile.ts` | #416 |
 | `lifeTotalHolds` counts opponents who left the game | `condition-reads.ts:65` | #417 |
 | Each-player discard, search, exile and "may" act after each choice, not after all (CR 101.4, 701.23i) | `effects.ts` | #418 |
 | Myriad is a no-op with 3 or more seats | `ast/features.ts:1587` | #419 |
 | Latent `resolvePlayers(...)[0]` and `[0]` sites, none reachable from real card text | `amounts.ts`, `effects.ts`, `legality.ts`, `control-effects.ts` | #422 |
+
+A battle's protector is now chosen by its controller among their living opponents (CR 310.9a, 310.12a; #415, asked only with more than one).
 
 The combat data model already supports several defenders (each attacker stores its own target and defender, and `defending.ts` derives the defending player per creature, CR 508.5a); only the declare-blockers flow assumes one. Tests for annihilator, `reselectAttack`, goad and commander damage with 3 seats: #421. Not audited: the AI, the UI and the view code.
 

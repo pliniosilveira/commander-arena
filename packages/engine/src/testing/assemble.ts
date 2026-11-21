@@ -70,7 +70,7 @@ export function assemble(
   const labels = new Map<string, CardId>();
   for (const p of spec.placements) {
     const def = resolveCard(p.name, spec.custom);
-    validatePlacement(p, def);
+    validatePlacement(p, def, spec.seats.length);
     const count = p.options.count ?? 1;
     if (p.options.label !== undefined && count !== 1) {
       throw new ScenarioError(`Label "${p.options.label}" names one card but count is ${count}`);

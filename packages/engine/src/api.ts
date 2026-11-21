@@ -115,6 +115,7 @@ import {
   answerResolutionPayAmount,
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
+  answerResolutionProtector,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
@@ -505,6 +506,11 @@ function answerChooseOption(
     // CR 701.30b: the opponent the controller chose to clash with.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
+  if (d.purpose === 'protector') {
+    // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionProtector(state, option));
   }
   if (d.purpose === 'playerChoice') {
     // CR 608.2d (The Black Gate): the player the controller chose among those with the most life.
