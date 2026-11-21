@@ -1,6 +1,6 @@
 /**
- * Lowerings of group 3 of the Ahoy Mateys deck (put onto the battlefield tapped and attacking): the delayed exile of the token an instruction just made at the end of combat, the
- * look at the defending player's hand with the creature put from it, and the delayed return of that creature. Each sentence is read only where it is about the objects the instruction
+ * Lowerings of group 3 of the Ahoy Mateys deck (put onto the battlefield tapped and attacking): the look at the defending player's hand with the creature put from it, and the delayed
+ * return of that creature. Each sentence is read only where it is about the objects the instruction
  * before it made or put onto the battlefield (`ctx.tokensMade`, `ctx.movedOnto`: the engine's `moved`) and, for the attack, only where the source is the attacker
  * (`ctx.selfAttackTrigger`); after anything else it is not lowered (never guessed).
  */
@@ -10,27 +10,6 @@ import { missingFeatures } from './features';
 import type { Lowering } from './types';
 
 const MOVED = { kind: 'moved' } as const;
-
-/** "Exile that token at end of combat": a delayed exile of the tokens made, at the end of combat step. */
-const EXILE_AT_END_OF_COMBAT: Lowering<IrClause, Effects> = {
-  head: 'exileAtEndOfCombatMade',
-  id: 'lower.exile-at-end-of-combat-made',
-  needs: ['effect:delayedTrigger', 'effect:exile', 'selector:moved'],
-  lower(clause, ctx) {
-    if (!ctx.tokensMade) return failure(clause);
-    return {
-      ok: true,
-      value: [
-        {
-          kind: 'delayedTrigger',
-          at: { step: 'combatEnd', whose: 'each' },
-          effect: { kind: 'exile', objects: MOVED },
-        },
-      ],
-      rule: clause.rule,
-    };
-  },
-};
 
 /** "Look at defending player's hand. You may put a creature card from it onto the battlefield under your control tapped and attacking that player ...". */
 const LOOK_HAND_PUT_ATTACKING: Lowering<IrClause, Effects> = {
@@ -100,7 +79,6 @@ const RETURN_AT_END_STEP: Lowering<IrClause, Effects> = {
 };
 
 export const AHOY_G3_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
-  EXILE_AT_END_OF_COMBAT,
   LOOK_HAND_PUT_ATTACKING,
   RETURN_AT_END_STEP,
 ];

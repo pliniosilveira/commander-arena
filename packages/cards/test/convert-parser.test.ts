@@ -643,7 +643,6 @@ describe('unmatched abilities', () => {
       'effect.exile-instead-when-leaving',
       'effect.put-exiled-with-battlefield',
       'effect.put-target-exiled-with-battlefield',
-      'effect.exile-made-token-at-end-of-combat',
       'effect.look-defenders-hand-put-attacking',
       'effect.return-that-creature-at-end-step',
       'effect.lead-gain-becomes-subtype',
