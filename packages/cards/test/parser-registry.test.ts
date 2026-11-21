@@ -994,6 +994,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (D-339): the line of its own, with the card's wording.
   'static.triggers-additional-time-cause': asIs,
   'static.triggers-additional-time-attacking': asIs,
+  'static.triggers-additional-time-entering': asIs,
   'static.pt-unspent-mana': asIs,
   'static.unspent-mana-colorless': asIs,
   'keyword.equip-quality': asIs,
