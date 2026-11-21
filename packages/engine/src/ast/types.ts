@@ -7415,8 +7415,8 @@ export type Ability =
   /**
    * "12+ | {G}, {T}: Add {G} for each creature you control." (CR 721.2, 721.2a, Station): what follows a station symbol. The permanent has `abilities` as long as it has `threshold` or
    * more charge counters on it, read each time its abilities are looked at (nothing is locked in, CR 611.3a); with fewer it does not have them, and the abilities of the card that
-   * no symbol gates, the station ability included, are there at every count (CR 721.4). A card lists it after the abilities it gates nothing of. A card with a power and toughness box in the
-   * striation (CR 721.2b) is not built. A copy of a station permanent has the abilities its own counters give it, as counters are not copiable (CR 707.2).
+   * no symbol gates, the station ability included, are there at every count (CR 721.4). A card lists it after the abilities it gates nothing of. The power and toughness box of the striation (CR 721.2b) is
+   * two more abilities of the symbol: a static `setTypes` (creature, additive) and a static `setPt`, so the permanent is a creature with that base power and toughness from `threshold` counters on. A copy of a station permanent has the abilities its own counters give it, as counters are not copiable (CR 707.2).
    */
   | {
       readonly kind: 'stationLevel';

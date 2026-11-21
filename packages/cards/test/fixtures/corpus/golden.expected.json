@@ -1,5 +1,5 @@
 {
-  "parserVersion": 181,
+  "parserVersion": 182,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -5813,7 +5813,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "814d9d75"
+      "ast": "9f284e71"
     },
     "87c43776-dd98-4e12-9b95-82d2b8f4f1ab": {
       "name": "Duskwatch Recruiter // Krallenhorde Howler",
@@ -7064,7 +7064,7 @@
         }
       ],
       "reasons": [],
-      "ast": "089fbbb0"
+      "ast": "e3ef49b0"
     },
     "a5cbd257-c836-493e-bb1a-76242619dea2": {
       "name": "Big Score",
@@ -7692,7 +7692,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "374b817c"
+      "ast": "9387e928"
     },
     "b4429e71-434e-480c-a8d1-2ad11de8b2d9": {
       "name": "Convert to Slime",
@@ -8831,7 +8831,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "d64490bd"
+      "ast": "3605f7af"
     },
     "d1deba03-b26a-4a0d-b242-24bb3a3f9ea6": {
       "name": "Bootleggers' Stash",
@@ -10202,7 +10202,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "a0bb8de5"
+      "ast": "fba2c047"
     },
     "f29dc596-2121-4421-8463-15f6c2e8b9b3": {
       "name": "Rogue's Passage",
@@ -10564,7 +10564,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "871b1016"
+      "ast": "7c88d6b0"
     },
     "fa6d05a1-3df4-4751-b1a0-8d9693faec73": {
       "name": "Tainted Wood",

@@ -247,3 +247,40 @@ describe('Station Spacecraft: 5+ | {T}: Add X mana of any one color, X the numbe
     g.expect.pool(0, 'RRRRR');
   });
 });
+
+describe('CR 721.2b: a station symbol with a power and toughness box makes the permanent a creature', () => {
+  const CRAFT = 'SYNTHETIC Station Creature Spacecraft'; // station; 4+ | flying [3/4]
+
+  test('the card is valid and has no power and toughness of its own (CR 721.2c)', () => {
+    expect(validateCard(syntheticCard(CRAFT))).toEqual([]);
+    const g = game((b) => b.battlefield(CRAFT));
+    const d = derive(g.state, g.object(CRAFT));
+    expect(d.power).toBeNull();
+    expect(d.types).not.toContain('creature');
+  });
+
+  test('below 4 charge counters it is not a creature and has no flying', () => {
+    const g = game((b) => b.battlefield(CRAFT, { counters: { charge: 3 } }));
+    const d = derive(g.state, g.object(CRAFT));
+    expect(d.types).toEqual(['artifact']);
+    expect(d.power).toBeNull();
+    expect(d.toughness).toBeNull();
+  });
+
+  test('at exactly 4 it is an artifact creature with base power and toughness 3/4 and flying', () => {
+    const g = game((b) => b.battlefield(CRAFT, { counters: { charge: 4 } }));
+    const d = derive(g.state, g.object(CRAFT));
+    expect(d.types).toEqual(['artifact', 'creature']);
+    expect([d.power, d.toughness]).toEqual([3, 4]);
+    expect(d.abilities.some((a) => a.kind === 'keyword')).toBe(true);
+  });
+
+  test('counters put by Station turn it into a creature in the middle of a turn, and more counters do not change its size', () => {
+    const g = game((b) => b.battlefield(CRAFT, HUGE));
+    g.act(0).activate(CRAFT, { ability: stationIndex(g, CRAFT) });
+    g.passAll();
+    const d = derive(g.state, g.object(CRAFT));
+    expect(d.types).toContain('creature');
+    expect([d.power, d.toughness]).toEqual([3, 4]);
+  });
+});

@@ -93,4 +93,37 @@ export const SYNTHETIC_STATION_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Station. 4+ | Flying [3/4]" (CR 721.2b: at 4 or more charge counters it has flying and is a creature with base power and toughness 3/4 in addition to its other types)
+  singleFace({
+    name: 'SYNTHETIC Station Creature Spacecraft',
+    manaCost: ['3'],
+    types: ['artifact'],
+    subtypes: ['Spacecraft'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'Station. 4+ | Flying [3/4]',
+    abilities: [
+      STATION,
+      {
+        kind: 'stationLevel',
+        threshold: 4,
+        abilities: [
+          { kind: 'keyword', keyword: { kind: 'flying' } },
+          {
+            kind: 'static',
+            static: {
+              kind: 'setTypes',
+              subject: { kind: 'this' },
+              additive: true,
+              types: ['creature'],
+            },
+          },
+          {
+            kind: 'static',
+            static: { kind: 'setPt', subject: { kind: 'this' }, power: 3, toughness: 4 },
+          },
+        ],
+      },
+    ],
+  }),
 ];
