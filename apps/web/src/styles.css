@@ -413,9 +413,10 @@ button {
   z-index: 36;
   display: flex;
   flex-direction: column;
-  /* Twice the width and height the log had in the column. */
+  /* Twice the width the log had in the column; as tall as about half of the screen. */
   width: calc(var(--info-width) * 2);
   max-width: calc(100% - 16px);
+  height: 50%;
   max-height: calc(100% - 52px);
   padding: var(--gap);
   background: var(--bg-raised);
@@ -424,6 +425,7 @@ button {
   box-shadow: var(--shadow);
 }
 .log-dialog .pnl-log {
-  height: clamp(229px, calc((100vh - 640px) * 2.2), 1056px);
-  max-height: 100%;
+  flex: 1;
+  height: auto;
+  min-height: 0;
 }
