@@ -891,6 +891,18 @@ describe('"a creature with the greatest power among creatures they control" (CR 
     });
   });
 
+  test('"the least power" is the mirror of the greatest (CR 701.21a, Witch-king, Bringer of Ruin)', () => {
+    expect(
+      spellOf(
+        'Target opponent sacrifices a creature with the least power among creatures they control.',
+      )?.effect,
+    ).toEqual({
+      kind: 'sacrifice',
+      objects: { kind: 'choose', filter: { types: ['creature'] }, least: 'power' },
+      player: T1,
+    });
+  });
+
   test('each opponent, and a player who sacrifices "of their choice" before it', () => {
     expect(
       spellOf(
@@ -906,7 +918,7 @@ describe('"a creature with the greatest power among creatures they control" (CR 
   test.each([
     'Target opponent sacrifices a creature with the greatest power among creatures you control.',
     'Target opponent sacrifices a creature with the greatest power among artifacts they control.',
-    'Target opponent sacrifices a creature with the least power among creatures they control.',
+    'Target opponent sacrifices a creature with the least loyalty among creatures they control.',
     'Target opponent sacrifices a creature with the greatest power.',
     'Target opponent sacrifices creatures with the greatest power among creatures they control.',
     'Target opponent sacrifices a creature with the greatest loyalty among creatures they control.',

@@ -330,6 +330,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromHandOnBottom',
     // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
     'cantAttackPlaneswalkers',
+    // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
+    'choosePlayer',
+    'cantBeBlockedByPlayer',
     'createToken',
     'search',
     'attach',
@@ -642,6 +645,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'partner',
     // D-490: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
     'partnerWith',
+    // CR 100.2a: "A deck can have up to nine cards named ~": a deck-construction line with no effect in a game.
+    'deckLimit',
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
@@ -966,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'otherThanTriggerSubject',
     // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
     'chooseFromTriggerSources',
+    // CR 510.2 (Witch-king of Angmar): `ChooseSelector.dealtCombatDamageToYou`.
+    'chooseDealtCombatDamageToYou',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
@@ -1010,6 +1017,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'defendingPlayer',
     // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
     'playerToYourRight',
+    // The Black Gate: `PlayerSelector` `chosenPlayer`, "that player" after "Choose a player ...".
+    'chosenPlayer',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
@@ -1041,6 +1050,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'basePowerIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
+    // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
+    'sameNameAs',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -1084,6 +1095,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
     'greatest',
+    'least',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
     'discardedThisWay',
@@ -1177,6 +1189,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaValueAtMostAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
+    // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
+    'diedThisWay',
     'objectMatches',
     'giftPromised',
     'opponentControlsAtLeast',
@@ -1262,6 +1276,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   durationKinds: [
     'untilEndOfTurn',
     'untilYourNextTurn',
+    // CR 611.2b (Minas Morgul): `setTypes.whileHasCounter`, "for as long as that creature has a shadow counter on it".
+    'whileHasCounter',
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
     'untilNextUntapStep',
@@ -1541,6 +1557,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'jumpStart',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
+    // CR 118.9, 701.21a (Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost".
+    'sacrificePermanents',
   ],
 };
 
@@ -1883,6 +1901,8 @@ export const SELECTOR_KINDS = [
   'otherThanTriggerSubject',
   /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
   'chooseFromTriggerSources',
+  /** "A creature that dealt combat damage to you this turn" (CR 510.2, 701.21a, Witch-king of Angmar): the engine's `ChooseSelector.dealtCombatDamageToYou`. */
+  'chooseDealtCombatDamageToYou',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
@@ -1938,6 +1958,8 @@ export const SELECTOR_KINDS = [
   'defendingPlayer',
   /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */
   'playerToYourRight',
+  /** "That player" after "Choose a player with the most life" (The Black Gate): the engine's `PlayerSelector` `chosenPlayer`. */
+  'chosenPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
@@ -1976,6 +1998,8 @@ export const SELECTOR_KINDS = [
   'basePowerIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
+  /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
+  'sameNameAs',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -2025,6 +2049,8 @@ export const SELECTOR_KINDS = [
   'ownedByTarget',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
+  /** "A creature with the least power among creatures they control" (CR 701.21a): the engine's `ChooseSelector.least`. */
+  'least',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
   'giftRecipient',
   /** "Each player who discarded a card this way" (CR 701.9, D-210): the engine's `PlayerSelector` `discardedThisWay`. */
@@ -2059,6 +2085,8 @@ export const SELECTOR_KINDS = [
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
 export const CONDITION_KINDS = [
+  /** "If that creature dies this way" (CR 700.4, 608.2h, Saw in Half): the engine's `diedThisWay`. */
+  'diedThisWay',
   /** "You control two or more basic lands" (CR 614.12): the engine's `controlsAtLeast`. */
   'controlsAtLeast',
   /** "You have two or more opponents": the engine's `opponentsAtLeast`. */
@@ -2226,6 +2254,8 @@ export type ConditionKind = (typeof CONDITION_KINDS)[number];
 export const DURATION_KINDS = [
   'untilEndOfTurn',
   'untilYourNextTurn',
+  /** "For as long as that creature has a shadow counter on it" (CR 611.2b): `setTypes.whileHasCounter`. */
+  'whileHasCounter',
   'untilEndOfNextTurn',
   'asLongAs',
   'thisTurn',
@@ -2561,6 +2591,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'retrace',
   'jumpStart',
   'sacrificeFromGraveyard',
+  'sacrificePermanents',
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
@@ -2754,6 +2785,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   putFromHandOnTop: true,
   putFromHandOnBottom: true,
   cantAttackPlaneswalkers: true,
+  choosePlayer: true,
+  cantBeBlockedByPlayer: true,
   createToken: true,
   search: true,
   attach: true,
@@ -2949,6 +2982,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   devoid: true,
   partner: true,
   partnerWith: true,
+  deckLimit: true,
   chooseBackground: true,
   canBeCommander: true,
   compleated: true,

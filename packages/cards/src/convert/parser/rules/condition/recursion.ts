@@ -157,6 +157,8 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
     'that land is a Plains',
     'that creature is an Angel',
     'that card is a creature card',
+    // Ringwraiths: only a supertype or a color, with no article and no type after it.
+    'that creature is legendary',
   ],
   rejects: [
     "it's a card",
@@ -176,17 +178,33 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
     'that land is a Plains or a Forest',
     'that is a Plains',
     'that land card is a Plains',
+    'that creature is not legendary',
+    'that creature is',
+    'it is legendary',
   ],
   parse: (ctx, pos) => {
     const lead = spanned(pattern(/(it(?:['’]s| was)|that [a-z]+ (?:is|was)) (?:a|an) /iu))(
       ctx,
       pos,
     );
-    if (!lead.ok) return lead;
-    const what = WHAT_IT_IS(ctx, lead.pos);
+    // "that creature is legendary" (Ringwraiths, CR 205.4 supertypes): the adjective alone, with no article and no type after it.
+    const bare = lead.ok ? lead : spanned(pattern(/(that [a-z]+ (?:is|was)) /iu))(ctx, pos);
+    if (!bare.ok) return bare;
+    const what = lead.ok
+      ? WHAT_IT_IS(ctx, lead.pos)
+      : map(
+          pattern(/(legendary|snow)(?![\p{L}\p{N}])/iu),
+          (m): IrFilter =>
+            whatItIs(
+              [(p) => ({ ...p, supertypes: [...p.supertypes, (m[1] ?? '').toLowerCase()] })],
+              [],
+              [],
+              m[0],
+            ),
+        )(ctx, bare.pos);
     if (!what.ok) return what;
     // The words that name the object: "it", or "that land" (stage P33); the binding pass finds what they mean.
-    const words = (lead.value.value[1] ?? 'it').replace(/ (?:is|was)$/iu, '');
+    const words = (bare.value.value[1] ?? 'it').replace(/ (?:is|was)$/iu, '');
     const named = words.toLowerCase().startsWith('it') ? 'it' : words;
     const it: IrNoun = {
       kind: 'noun',

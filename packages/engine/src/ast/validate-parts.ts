@@ -243,6 +243,18 @@ export function checkFilter(
       checkRef(f.powerGreaterThan, 'object', `${path}.powerGreaterThan`, ownerScope, out);
     }
   }
+  // CR 201.2, 608.2c: "with the same name as that card" names an object the effect knows, so only an `each` selector reads it.
+  if (f.sameNameAs !== undefined) {
+    if (ownerScope === undefined) {
+      issue(
+        out,
+        `${path}.sameNameAs`,
+        "sameNameAs is only read in the 'each' selector of an effect (not in a target slot, trigger, condition, static ability, search or cost)",
+      );
+    } else {
+      checkRef(f.sameNameAs, 'object', `${path}.sameNameAs`, ownerScope, out);
+    }
+  }
   if (f.owner !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -820,6 +832,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.powerAboveBase === true ||
   f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
+  f.sameNameAs !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
   f.controllerDealtCombatDamageByAtLeast !== undefined ||
@@ -1521,6 +1534,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'eachOpponent':
     case 'defendingPlayer':
     case 'playerToYourRight':
+    case 'chosenPlayer':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1671,6 +1685,7 @@ export const PLAYER_ONLY = [
   'ownerOf',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
   'triggerDamagedPlayers',
   'attackedPlayers',
@@ -3193,6 +3208,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'eachOpponent':
     case 'defendingPlayer':
     case 'playerToYourRight':
+    case 'chosenPlayer':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -3785,6 +3801,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'target',
   'defendingPlayer',
   'playerToYourRight',
+  'chosenPlayer',
   'triggerPlayer',
 ];
 
@@ -3810,6 +3827,13 @@ function checkSacrificeSelector(
         "fromTriggerSources needs a triggered ability of a combatDamageBatch trigger: 'them' are the creatures that dealt the damage",
       );
     }
+  }
+  if (choose.dealtCombatDamageToYou !== undefined && choose.dealtCombatDamageToYou !== true) {
+    issue(
+      out,
+      `${path}.dealtCombatDamageToYou`,
+      'dealtCombatDamageToYou must be true when present',
+    );
   }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
@@ -3841,6 +3865,12 @@ function checkSacrificeSelector(
   ) {
     issue(out, `${path}.greatest`, `unknown stat ${JSON.stringify(choose.greatest)}`);
   }
+  if (choose.least !== undefined && !isOneOf(choose.least, ['power', 'toughness', 'manaValue'])) {
+    issue(out, `${path}.least`, `unknown stat ${JSON.stringify(choose.least)}`);
+  }
+  if (choose.least !== undefined && choose.greatest !== undefined) {
+    issue(out, `${path}.least`, 'a choice is of the greatest or of the least, not both');
+  }
   // D-131: a number, or an amount read as the effect runs ("each player sacrifices X creatures").
   if (choose.count !== undefined) {
     if (typeof choose.count === 'number' && (!isCount(choose.count) || choose.count < 1)) {
@@ -3857,8 +3887,13 @@ function checkSacrificeSelector(
  */
 function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
-  if (sel.greatest !== undefined || sel.optional !== undefined) {
-    issue(out, path, 'greatest and optional do not belong to a tap choice');
+  if (
+    sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
+    sel.optional !== undefined
+  ) {
+    issue(out, path, 'greatest, least and optional do not belong to a tap choice');
   }
   if (sel.filter?.controller !== 'you') {
     issue(
@@ -3920,6 +3955,8 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
     sel.anyNumber !== undefined ||
     sel.atLeastOne !== undefined ||
     sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
     sel.optional !== undefined
   ) {
     issue(
@@ -3965,9 +4002,15 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (
     sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.dealtCombatDamageToYou !== undefined ||
     (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
   ) {
-    issue(out, path, 'anyNumber and greatest belong to a sacrifice choice (D-135)');
+    issue(
+      out,
+      path,
+      'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least',
+    );
   }
   // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
   if (sel.minCardTypes !== undefined) {
@@ -4312,6 +4355,13 @@ function checkCopyExceptions(
     const { power, toughness } = spec.setPt;
     if (!Number.isSafeInteger(power) || !Number.isSafeInteger(toughness)) {
       issue(out, `${path}.setPt`, 'setPt is a whole power and a whole toughness');
+    }
+  }
+  // CR 707.9b, 107.1a (Saw in Half): "except their power is half that creature's power and their toughness is half ... Round up each time".
+  if (spec.halfPt !== undefined) {
+    if (spec.halfPt !== true) issue(out, `${path}.halfPt`, 'halfPt must be true when present');
+    if (spec.setPt !== undefined) {
+      issue(out, `${path}.halfPt`, 'halfPt and setPt both give the power and toughness: only one');
     }
   }
   if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
@@ -4855,6 +4905,13 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       if (!isCount(c.count) || c.count < 1) {
         issue(out, `${path}.count`, 'a count of one or more');
+      }
+      break;
+    case 'diedThisWay':
+      // CR 700.4, 608.2h (Saw in Half): the creature a reference names went to a graveyard because of a `destroy` earlier in the same sequence.
+      checkRef(c.of, 'object', `${path}.of`, scope, out);
+      if (!(scope.thisWay ?? []).includes('destroyed')) {
+        issue(out, path, 'diedThisWay needs a destroy before it in the same sequence');
       }
       break;
     case 'clashWon':
@@ -6645,6 +6702,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           choose.anyNumber !== undefined ||
           choose.atLeastOne !== undefined ||
           choose.greatest !== undefined ||
+          choose.least !== undefined ||
+          choose.dealtCombatDamageToYou !== undefined ||
           choose.optional !== undefined
         ) {
           issue(
@@ -7652,6 +7711,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'putFromHandOnBottom':
+      break;
+    case 'choosePlayer':
+      // CR 608.2d (The Black Gate): the only rule for the players to choose among is the most life.
+      if (e.among !== 'mostLife') {
+        issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
+      }
+      break;
+    case 'cantBeBlockedByPlayer':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'cantAttackPlaneswalkers':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

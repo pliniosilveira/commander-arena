@@ -6,8 +6,8 @@
  * read: a cost with {X} (CR 107.3j: no X in a triggered ability), "pays 2 life", "discards a card",
  * "any opponent may pay" and a payer who chooses among costs are not.
  */
-import { choice, literal, map, sequence } from '../../combinators';
-import type { IrCondition, IrCost, IrNoun } from '../../ir/types';
+import { choice, literal, map, satisfy, sequence } from '../../combinators';
+import type { IrAmount, IrCondition, IrCost, IrNoun } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 
 /** The player who pays: a pronoun the binding pass resolves ("that player", "they") or "you". */
@@ -62,10 +62,15 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     // Stage P51 (D-209, CR 107.14): energy counters.
     'unless you pay {E}{E}',
     'unless you pay {E}',
+    // Nazgûl Battle-Mace (CR 119.4, 118.3): a payment of life.
+    'unless that player pays 3 life',
+    'unless you pay 2 life',
   ],
   rejects: [
     'unless that player pays {X}',
-    'unless that player pays 2 life',
+    'unless that player pays 0 life',
+    'unless that player pays X life',
+    'unless that player pays life',
     'unless that player pays',
     'unless that player discards a card',
     'unless any opponent pays {1}',
@@ -81,7 +86,27 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     const r = sequence(
       literal('unless '),
       PAYER,
-      spanned(family<IrCost>('cost', { only: ['cost.mana', 'cost.energy'] })),
+      spanned(
+        choice(
+          family<IrCost>('cost', { only: ['cost.mana', 'cost.energy'] }),
+          // "unless that player pays 3 life" (Nazgûl Battle-Mace, CR 119.4): the engine's `payLife`, which `unlessPays` runs for the player.
+          map(
+            sequence(
+              satisfy(
+                family<IrAmount>('amount', { only: ['amount.number'] }),
+                (amount) => amount.kind === 'number' && amount.value >= 1,
+              ),
+              literal(' life'),
+            ),
+            ([amount]): IrCost => ({
+              kind: 'payLife',
+              amount,
+              span: amount.span,
+              rule: 'condition.unless-pays',
+            }),
+          ),
+        ),
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     const [, who, cost] = r.value;

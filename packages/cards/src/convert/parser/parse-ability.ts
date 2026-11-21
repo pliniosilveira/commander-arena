@@ -63,6 +63,8 @@ const SPELL_STATICS = [
   'static.additional-cost-sacrifice-copies',
   'static.additional-cost',
   'static.free-cast',
+  // Flare of Malice (CR 118.9, 701.21a): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost."
+  'static.sacrifice-alt-cost',
 ] as const;
 
 const FAMILIES: ReadonlySet<string> = new Set([

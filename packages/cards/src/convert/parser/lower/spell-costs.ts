@@ -265,6 +265,32 @@ function lowerGraveyardSacrificeAlternative(
 }
 
 /**
+ * "You may sacrifice a nontoken black creature rather than pay ~'s mana cost." (Flare of Malice, CR 118.9, 601.2h, 701.21a): the engine's alternative cost `sacrificePermanents`: no
+ * mana ({0}) and the permanents of the caster's that match the filter, which the engine asks for as it asks for the sacrifice of an additional cost.
+ */
+function lowerSacrificeAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'sacrificeAlternative';
+  },
+): LowerResult<FaceCosts> {
+  const what = lowerFilter({ ...effect.what, filter: withoutZone(effect.what.filter) });
+  if (!what.ok) return what;
+  const { controller, ...filter } = what.value;
+  if (controller !== undefined && controller !== 'you') return failure(ability);
+  if (effect.count < 1) return failure(ability);
+  const blocked = missingFeatures(['castAlternative:sacrificePermanents', 'cost:mana']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'sacrificePermanents',
+    cost: [{ kind: 'mana', symbols: ['0'] }],
+    filter,
+    count: effect.count,
+  };
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
  * The face costs of a static statement that says one, or null when the statement is not about the
  * cost of casting (the caller lowers it as an ability).
  */
@@ -280,6 +306,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'graveyardSacrificeAlternative') {
     return lowerGraveyardSacrificeAlternative(ability, effect);
   }
+  if (effect.kind === 'sacrificeAlternative') return lowerSacrificeAlternative(ability, effect);
   return null;
 }
 

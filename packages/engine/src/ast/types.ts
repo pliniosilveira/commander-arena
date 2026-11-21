@@ -921,6 +921,12 @@ export interface ObjectFilter {
    */
   readonly powerGreaterThan?: ObjectRef;
   /**
+   * "Return target creature card and all other cards with the same name as that card from your graveyard to your hand" (Echoing Return, CR 201.2, 608.2c): the object has the same
+   * name as the object this reference names (the target card included, which has its own name), read as the effect resolves. Read only in the filter of an `each` selector of an effect,
+   * which knows the targets (as `powerGreaterThan` is). A reference that names nothing matches nothing.
+   */
+  readonly sameNameAs?: ObjectRef;
+  /**
    * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.
@@ -1176,6 +1182,11 @@ export type PlayerSelector =
    * the only player left.
    */
   | { readonly kind: 'playerToYourRight' }
+  /**
+   * "That player" after "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d): the player the `choosePlayer` effect before it in the same resolution
+   * chose. Nobody when no such effect ran, or the chosen player has left the game.
+   */
+  | { readonly kind: 'chosenPlayer' }
   /**
    * "That player", "that creature's controller", "its controller" in a triggered ability (D-133): the player the
    * event that caused the trigger is about. For `drawn` the player who drew; for `dealsCombatDamage` to a player the
@@ -1630,6 +1641,7 @@ export type NamedAlternativeKind =
   | 'morph'
   | 'tapPermanents'
   | 'sacrificeFromGraveyard'
+  | 'sacrificePermanents'
   | 'impending';
 
 /**
@@ -1705,6 +1717,9 @@ export type PermanentAlternativeKind =
  *   paying its mana cost": the card is cast from its owner's graveyard, the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also sacrifices
  *   `count` permanents they control that match `filter` as part of it (the sacrifice is chosen with the same question as the sacrifice of an additional cost). The spell is an
  *   ordinary spell otherwise: it goes to the graveyard when it leaves the stack. Not on a land; not with Convoke, Improvise or Delve.
+ * - `sacrificePermanents` (CR 118.9, 601.2h, 701.21a, Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost": cast from the hand (or any zone the
+ *   card is cast from), the `cost` (mana only, no X, possibly none) is paid instead of the mana cost, and the caster also sacrifices `count` permanents they control that match `filter`
+ *   as part of it, chosen as the sacrifice of an additional cost is. Not on a land; not with Convoke, Improvise or Delve.
  * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
  *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
  *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
@@ -1721,7 +1736,7 @@ export type AlternativeCost =
   | {
       readonly kind: Exclude<
         NamedAlternativeKind,
-        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'impending'
+        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'sacrificePermanents' | 'impending'
       >;
       readonly cost: readonly Cost[];
       readonly condition?: Condition;
@@ -1746,6 +1761,16 @@ export type AlternativeCost =
       readonly kind: 'sacrificeFromGraveyard';
       readonly cost: readonly Cost[];
       /** The permanents sacrificed as part of the cost (issue 159): ones the caster controls that match. */
+      readonly filter: ObjectFilter;
+      /** How many: at least 1. */
+      readonly count: number;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'sacrificePermanents';
+      /** The mana paid besides the sacrifice: {0} for "You may sacrifice a nontoken black creature rather than pay this spell's mana cost" (Flare of Malice). */
+      readonly cost: readonly Cost[];
+      /** The permanents sacrificed as part of the cost (CR 118.9, 601.2h, 701.21a): ones the caster controls that match. */
       readonly filter: ObjectFilter;
       /** How many: at least 1. */
       readonly count: number;
@@ -1832,6 +1857,12 @@ export type TokenSpec =
       readonly setCreatureTypes?: readonly Subtype[];
       /** "..., except it's black" (D-382, CR 707.9b, 707.9d): the copy is exactly these colors; a color-defining ability (devoid) is not copied. */
       readonly setColors?: readonly Color[];
+      /**
+       * "..., except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time." (Saw in Half, CR 707.9b, 107.1a, 608.2h): the
+       * copy has half the power and half the toughness the copied object had, rounded up, as it was (its last-known information when it has left the battlefield: power and toughness with
+       * every effect and counter on it). Part of the copiable values. Not with `setPt`.
+       */
+      readonly halfPt?: true;
       /** "..., except it's 4/4" (D-382, CR 707.9b, 707.9d): the copy has this power and toughness; a characteristic-defining ability that defines either is not copied. */
       readonly setPt?: { readonly power: number; readonly toughness: number };
       /** "..., except it has no mana cost" (D-382, CR 707.9b, 202.1b): the copy's mana cost is nothing, so its mana value is 0. */
@@ -1924,6 +1955,11 @@ export interface ChooseSelector {
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /**
+   * "A creature with the least power among creatures they control" (CR 701.21a, 608.2d; the mirror of `greatest`): the choice is limited to the permanents the filter matches
+   * that have the smallest value of this stat among them (the player chooses among the tied ones). Only for `sacrifice`, and not with `greatest`.
+   */
+  readonly least?: 'power' | 'toughness' | 'manaValue';
+  /**
    * "You may put an artifact card from your hand onto the battlefield" (D-139): the controller chooses none up to `count` of the
    * candidates instead of exactly `count` (a question is asked whenever there is a candidate). Only for `moveToZone`.
    */
@@ -1974,6 +2010,12 @@ export interface ChooseSelector {
    * (`triggerSources`) that are still the same permanent on the battlefield under the chooser's control. Only for `sacrifice`, in the effect of such a trigger.
    */
   readonly fromTriggerSources?: true;
+  /**
+   * "Each opponent sacrifices a creature of their choice that dealt combat damage to you this turn" (Witch-king of Angmar, CR 510.2, 701.21a, 608.2d): the candidates are only the permanents that
+   * dealt combat damage this turn to the controller of the ability (`TurnLog.combatDamaged`, kept as the damage is dealt, so every damage step of the turn counts), that are still the same
+   * permanent on the battlefield. Only for `sacrifice`.
+   */
+  readonly dealtCombatDamageToYou?: true;
 }
 
 /**
@@ -3558,6 +3600,12 @@ export type Effect =
        * not stop matching once they are creatures). Applies in the same duration.
        */
       readonly basePt?: { readonly power: number; readonly toughness: number };
+      /**
+       * "For as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types" (Minas Morgul, CR 611.2b, 122.1): each object the selector
+       * names as the effect begins has the change only while it is on the battlefield with a counter of this kind, and for good no longer once it stops (a counter put
+       * on again later does not bring it back). An object with no such counter as the effect begins gets nothing. With `duration` `permanent`, and no `basePt`.
+       */
+      readonly whileHasCounter?: string;
       readonly duration: Duration;
     }
   /**
@@ -4277,6 +4325,20 @@ export type Effect =
    * one) and puts it on the bottom of their library. Only one card: with more, the order they go in would matter and nothing asks it.
    */
   | { readonly kind: 'putFromHandOnBottom' }
+  | {
+      readonly kind: 'choosePlayer';
+      /** `mostLife`: "Choose a player with the most life or tied for most life" (CR 608.2d, 119.1): the controller of the effect chooses among the players with the greatest life total; one candidate is chosen without asking. */
+      readonly among: 'mostLife';
+    }
+  /**
+   * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): until end of turn each object the selector names as the effect begins
+   * can't be blocked by a creature controlled by a player `player` names as it resolves (a creature that enters or changes control later counts, as it is read when blockers are declared).
+   */
+  | {
+      readonly kind: 'cantBeBlockedByPlayer';
+      readonly objects: ObjectSelector;
+      readonly player: PlayerSelector;
+    }
   /**
    * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, Jace, Multiverse Architect, issue 81): the creatures `objects` names (fixed as the effect
    * begins) can't be declared attacking a planeswalker of the subtype `subtype` that the controller of the effect controls, until end of turn. The player and their other
@@ -4726,6 +4788,11 @@ export type Trigger =
       readonly kind: 'drawn';
       readonly who: 'you' | 'opponent' | 'any';
       readonly nth?: number;
+      /**
+       * "Whenever an opponent draws a card except the first one they draw in each of their draw steps" (Orcish Bowmasters, CR 504.1, 121.1): every draw but the one that is the first the
+       * active player makes in their draw step. Not with `nth`.
+       */
+      readonly exceptFirstInDrawStep?: true;
     }
   /**
    * "Whenever [a creature] deals combat damage [to a player | to a creature]" (CR 120.2a, 510.2, 603.2,
@@ -4814,7 +4881,8 @@ export type Trigger =
    */
   | {
       readonly kind: 'permanentSacrificed';
-      readonly by: 'you' | 'any';
+      /** `opponent` ("Whenever an opponent sacrifices a nontoken permanent", CR 701.21, Nazgûl Battle-Mace): a player who is not the controller of this ability. */
+      readonly by: 'you' | 'opponent' | 'any';
       readonly filter?: ObjectFilter;
     }
   /**
@@ -5368,6 +5436,11 @@ export type Keyword =
    * that a commander with it validates; `packages/cards` checks the pair of commanders (D-053).
    */
   | { readonly kind: 'partner' }
+  /**
+   * "A deck can have up to nine cards named Nazgûl" (CR 100.2a, 702.124 does not apply: a deck-construction rule, Nazgûl): no effect in the game, as Partner has none. Accepted so that
+   * the card is supported; `packages/cards` reads the limit from the stored card's text when it checks a deck (`validate/deck.ts`). `limit` is a whole number of at least 2.
+   */
+  | { readonly kind: 'deckLimit'; readonly limit: number }
   /**
    * CR 702.124j (Partner with [name], D-490): "You may designate two legendary cards as your commander rather than one if each has a 'partner with [name]' ability with the
    * other's name" (a deck-construction ability: `packages/cards` reads it from the stored card, D-053) and "When this permanent enters, target player may search their library for a
@@ -6063,6 +6136,12 @@ export type Condition =
    */
   | { readonly kind: 'thisWayAtLeast'; readonly what: ThisWayKind; readonly count: number }
   /**
+   * "If that creature dies this way" (Saw in Half, CR 700.4, 608.2c, 608.2h): the object `of` names (a target of the spell) was destroyed by a `destroy` effect earlier in this
+   * resolution and went to a graveyard as a result, as it last existed (a token, which goes to the graveyard and then ceases to exist, counts). It is false when the destroy did nothing
+   * (indestructible, regenerated) or the creature was exiled or otherwise moved instead of dying. Only in a `conditional` effect after a `destroy` of the same sequence.
+   */
+  | { readonly kind: 'diedThisWay'; readonly of: ObjectRef }
+  /**
    * "If the gift was promised" (CR 702.174k, D-135): the spell was cast with its gift cost paid (an opponent chosen), or the
    * permanent came from such a spell. Read from the spell on the stack, from the permanent that remembers it, or from last-known
    * information once either has left (CR 113.7a), as `kicked` is. The face must have the Gift keyword (`validateCard`).
@@ -6434,6 +6513,16 @@ export type Replacement =
         readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
         readonly count: number;
       };
+      /**
+       * "..., instead exile it and you gain 2 life" (The Darkness Crystal, CR 614.1a, 119.1): the controller of the permanent with the ability also gains this much life (a positive
+       * whole number) as the creature is exiled.
+       */
+      readonly alsoGainLife?: number;
+      /**
+       * "... exile it instead" with another ability of the permanent that reads "exiled with ~" (CR 607.2a, linked abilities): the exiled card is remembered by the permanent with the
+       * replacement as one it exiled (`GameObject.linkedExile`), as `exile.linked` does. Set by the card's lowering when exactly one other ability reads the link.
+       */
+      readonly linkExiled?: true;
     }
   /**
    * "If one or more artifact tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead" (`thatMany`)

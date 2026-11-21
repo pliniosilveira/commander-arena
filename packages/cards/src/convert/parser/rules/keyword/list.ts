@@ -74,9 +74,11 @@ export function keywordWordsOf(word: Parser<string>): Parser<string[]> {
       end = next.pos;
     }
     // Oracle shape: "A and B", "A, B, and C": commas between all but the last two, ", and" before.
+    // CR 613.1f (Nazgûl Battle-Mace): "has menace, deathtouch, and \"Whenever ...\"": when the ", and" belongs to a quoted ability that follows, every separator of the keywords is a comma.
+    const quoteFollows = /^, and ["“]/u.test(ctx.text.slice(end, end + 8));
     const last = separators.length - 1;
     for (const [i, sep] of separators.entries()) {
-      const expected = i < last ? ', ' : last === 0 ? ' and ' : ', and ';
+      const expected = quoteFollows || i < last ? ', ' : last === 0 ? ' and ' : ', and ';
       if (sep.text !== expected) return fail(ctx, sep.at);
     }
     return { ok: true, value: words, pos: end };

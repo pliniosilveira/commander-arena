@@ -73,6 +73,7 @@ import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
+import { SAME_NAME_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
@@ -1007,6 +1008,7 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...SAME_NAME_NOUN_RULES,
   ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.

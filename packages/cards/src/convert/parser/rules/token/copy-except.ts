@@ -15,7 +15,8 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrNoun, IrToken } from '../../ir/types';
-import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
+import { quantity } from '../amount/index';
+import { KEYWORD_WORD, KEYWORD_WORDS, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
 
 type Bare = Omit<IrToken, 'span' | 'rule'>;
@@ -59,6 +60,9 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
     'a token that’s a copy of that card, except it’s a 4/4 black Zombie',
     'a token that’s a copy of target creature, except it’s a 1/1 white Spirit',
     'a tapped token that’s a copy of ~, except it’s a 2/2 blue and red Elf Wizard',
+    // Sauron, the Necromancer: tapped and attacking, with a keyword.
+    'a tapped and attacking token that’s a copy of that card, except it’s a 3/3 black Wraith with menace',
+    'a token that’s a copy of that card, except it’s a 3/3 black Wraith with menace',
   ],
   rejects: [
     'a token that’s a copy of that card',
@@ -81,8 +85,9 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
           spanned(pattern(/an? /i)),
           ({ span }): IrAmount => ({ kind: 'number', value: 1, span }),
         ),
+        // "tapped" or, since Sauron, the Necromancer, "tapped and attacking" (CR 508.4, 110.5b).
         optional(
-          map(literal('tapped '), () => true as const),
+          map(choice(literal('tapped and attacking '), literal('tapped ')), (w) => w),
           null,
         ),
         pattern(/token that['’]s a copy of /i),
@@ -95,17 +100,27 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
           map(literal(' creature'), () => true as const),
           null,
         ),
+        // Sauron, the Necromancer: "..., except it's a 3/3 black Wraith with menace".
+        optional(
+          map(sequence(literal(' with '), KEYWORD_WORDS), ([, words]) => words),
+          null,
+        ),
       ),
-      ([count, tapped, , copyOf, pt, colors, , subtypes]): Bare => ({
+      ([count, tapped, , copyOf, pt, colors, , subtypes, , keywords]): Bare => ({
         kind: 'token',
         copyOf,
         count,
-        ...(tapped === null ? {} : { tapped }),
+        ...(tapped === null
+          ? {}
+          : tapped === 'tapped and attacking '
+            ? { tappedAndAttacking: true as const }
+            : { tapped: true as const }),
         copyExcept: {
           power: Number(pt[1]),
           toughness: Number(pt[2]),
           colors,
           subtypes,
+          ...(keywords === null ? {} : { keywords }),
         },
       }),
     ),
@@ -186,4 +201,57 @@ export const TOKEN_COPY_EXCEPT_ADDITIVE = defineRule<IrToken>({
     ),
     (b) => b,
   ),
+});
+
+/**
+ * `token.copies-half-pt`: "two tokens that are copies of that creature, except their power is half that creature's power and their toughness is half that creature's toughness. Round up each
+ * time" (Saw in Half; CR 707.9b: an exception of a copy; CR 107.1a: rounded up; CR 608.2h: the numbers the creature had as it last was). The tokens copy the creature an earlier instruction of
+ * the text named ("that creature", resolved by the binding pass). The engine's `copyOf` with `halfPt`. Not read: one token, another creature than "that creature", only the power or only
+ * the toughness, "round down", no rounding words, another exception.
+ */
+export const TOKEN_COPIES_HALF_PT = defineRule<IrToken>({
+  id: 'token.copies-half-pt',
+  family: 'token',
+  leading: [],
+  cites: [
+    'CR 707.9b (Copying Objects)',
+    'CR 107.1a (Numbers and Symbols)',
+    'CR 608.2h (Resolving Spells and Abilities)',
+    'CR 111.4 (Tokens)',
+  ],
+  examples: [
+    "two tokens that are copies of that creature, except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time",
+  ],
+  rejects: [
+    "a token that's a copy of that creature, except its power is half that creature's power and its toughness is half that creature's toughness. Round up each time",
+    "two tokens that are copies of that creature, except their power is half that creature's power. Round up each time",
+    "two tokens that are copies of that creature, except their power is half that creature's power and their toughness is half that creature's toughness. Round down each time",
+    "two tokens that are copies of that creature, except their power is half that creature's power and their toughness is half that creature's toughness",
+    "two tokens that are copies of target creature, except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time",
+    "two tokens that are copies of that creature, except their power is half that creature's toughness and their toughness is half that creature's power. Round up each time",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      map(
+        spanned(satisfy(quantity, (n) => n >= 2)),
+        ({ value, span }): IrAmount => ({ kind: 'number', value, span }),
+      ),
+      pattern(/ tokens that are copies of /iu),
+      family<IrNoun>('noun', { only: ['noun.that-object'] }),
+      pattern(
+        /, except their power is half that creature['’]s power and their toughness is half that creature['’]s toughness\. Round up each time(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [count, , copyOf] = r.value;
+    const token: IrToken = {
+      kind: 'token',
+      copyOf,
+      copyHalfPt: true,
+      count,
+      span: { start: pos, end: r.pos },
+      rule: 'token.copies-half-pt',
+    };
+    return { ok: true, value: token, pos: r.pos };
+  },
 });

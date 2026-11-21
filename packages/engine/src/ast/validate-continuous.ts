@@ -170,6 +170,18 @@ function checkSetTypes(
   if (e.types === undefined && e.subtypes === undefined) {
     issue(out, path, 'setTypes needs types, subtypes or both');
   }
+  // CR 611.2b (Minas Morgul): "for as long as that creature has a shadow counter on it": a counter kind, for good (`permanent`), with nothing else that lasts differently.
+  if (e.whileHasCounter !== undefined) {
+    if (typeof e.whileHasCounter !== 'string' || e.whileHasCounter === '') {
+      issue(out, `${path}.whileHasCounter`, 'whileHasCounter names a kind of counter');
+    }
+    if (e.duration !== 'permanent') {
+      issue(out, `${path}.duration`, 'whileHasCounter goes with the duration permanent');
+    }
+    if (e.basePt !== undefined) {
+      issue(out, `${path}.basePt`, 'whileHasCounter does not set base power and toughness');
+    }
+  }
   if (e.additive !== undefined && e.additive !== true) {
     issue(out, `${path}.additive`, 'additive must be true when present (CR 205.1b)');
   }

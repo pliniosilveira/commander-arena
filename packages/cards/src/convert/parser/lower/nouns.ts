@@ -81,6 +81,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyOf',
   'selector:controllerRef',
   'selector:powerGreaterThan',
+  'selector:sameNameAs',
   'selector:bound',
   'selector:ownerRef',
   'selector:power',
@@ -114,6 +115,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
   'selector:countX',
   'selector:greatest',
+  'selector:least',
+  'selector:chooseDealtCombatDamageToYou',
   'selector:giftRecipient',
   'selector:attacking',
   'selector:colorCount',
@@ -184,6 +187,7 @@ function lowerFilterAt(
   if (typeof filter.controller === 'object') return bad(['selector:controllerRef']);
   // CR 208.1, 608.2c: "with power greater than target creature's power" is read by the group of an effect (`selectorOf`), where the targets are known.
   if (filter.powerGreaterThanNoun !== undefined) return bad(['selector:powerGreaterThan']);
+  if (filter.sameNameAsNoun !== undefined) return bad(['selector:sameNameAs']);
   // D-656: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
   if (filter.namedSelf === true) return bad([]);
   const types = filter.types ?? [];
@@ -821,6 +825,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         noun.otherTarget === true ||
         noun.atLeastOne === true ||
         noun.greatest !== undefined ||
+        noun.least !== undefined ||
+        noun.dealtCombatDamageToYou === true ||
         noun.filter.manaValueAtMostX === true ||
         noun.filter.manaValueAtMostAmount !== undefined ||
         noun.upTo !== true
@@ -1251,6 +1257,24 @@ function selectorOf(
       return {
         ok: true,
         value: { kind: 'each', filter: { ...plain.value, powerGreaterThan: named.value } },
+        rule: noun.rule,
+      };
+    }
+    // "Target creature card and all other cards with the same name as that card" (Echoing Return, CR 201.2, 608.2c): the filter names the target by reference, the engine's `sameNameAs`.
+    const nameNoun = noun.filter.sameNameAsNoun;
+    if (nameNoun !== undefined) {
+      const refused = gate(noun, ['selector:sameNameAs']);
+      if (refused !== null) return refused;
+      if (typeof noun.filter.controller === 'object') return failure(noun, []);
+      const named = selectorOf(nameNoun, ctx);
+      if (!named.ok) return named;
+      if (named.value.kind !== 'target') return failure(nameNoun, []);
+      const { sameNameAsNoun: _bound, ...rest } = noun.filter;
+      const plain = lowerFilterAt(rest, noun, false);
+      if (!plain.ok) return plain;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: { ...plain.value, sameNameAs: named.value } },
         rule: noun.rule,
       };
     }

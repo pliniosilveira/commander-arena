@@ -3,7 +3,7 @@
  * way, you gain life equal to its toughness.").
  */
 import { pattern } from '../../combinators';
-import type { IrCondition } from '../../ir/types';
+import type { IrCondition, IrNoun } from '../../ir/types';
 import { defineRule } from '../registry';
 
 /**
@@ -43,4 +43,51 @@ export const CONDITION_DESTROYED_THIS_WAY = defineRule<IrCondition>({
   },
 });
 
-export const DEATH_TOLL_D_CONDITION_RULES = [CONDITION_DESTROYED_THIS_WAY];
+/**
+ * `condition.dies-this-way`: "that creature dies this way" (Saw in Half; CR 700.4: a creature dies when it is put into a graveyard from the battlefield; CR 608.2c: what the instruction
+ * before it did). "That creature" is the creature an earlier instruction of the text named (the binding pass finds it). The engine's `diedThisWay` of the target: false when the destroy
+ * did nothing, or the creature was exiled instead. Not read: another subject, another tense, "this turn", "dies" alone.
+ */
+export const CONDITION_DIES_THIS_WAY = defineRule<IrCondition>({
+  id: 'condition.dies-this-way',
+  family: 'condition',
+  leading: ['that'],
+  cites: ['CR 700.4 (General)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['that creature dies this way', 'That creature dies this way'],
+  rejects: [
+    'that creature died this way',
+    'that creature dies',
+    'that creature dies this turn',
+    'that creatures dies this way',
+    'a creature dies this way',
+    'that land dies this way',
+    'that creature is destroyed this way',
+    'that creature dies this way and',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/that creature dies this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const who: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'that creature' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 'that creature'.length },
+      rule: 'condition.dies-this-way',
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'diesThisWay', who },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.dies-this-way',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const DEATH_TOLL_D_CONDITION_RULES = [CONDITION_DESTROYED_THIS_WAY, CONDITION_DIES_THIS_WAY];

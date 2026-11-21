@@ -49,6 +49,9 @@ export function playerSubject(
     case 'playerToYourRight':
       // Hithlain Rope: the previous player in turn order.
       return { text: 'the player to your right', base: false };
+    case 'chosenPlayer':
+      // The Black Gate: the player "Choose a player with the most life or tied for most life" chose.
+      return { text: 'that player', base: false };
     case 'triggerPlayer':
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };

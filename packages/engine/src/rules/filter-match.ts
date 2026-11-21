@@ -122,6 +122,8 @@ export interface FilterContext {
    * Absent fails the comparison closed.
    */
   readonly powerLimit?: number | null;
+  /** The name of the object `sameNameAs` names, read by the caller as the effect resolves (CR 201.2); null when it names nothing. Absent fails the filter closed. */
+  readonly nameLimit?: string | null;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
   /**
@@ -450,6 +452,11 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power > limit)) return false;
+  }
+  // CR 201.2, 608.2c (Echoing Return): "with the same name as that card": the name of the object the effect names.
+  if (filter.sameNameAs !== undefined) {
+    const name = ctx.nameLimit;
+    if (name === null || name === undefined || d.name !== name) return false;
   }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {

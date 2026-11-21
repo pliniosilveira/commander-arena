@@ -331,6 +331,26 @@ export function evaluateCondition(
         );
       });
     }
+    case 'diedThisWay': {
+      // CR 700.4, 608.2h (Saw in Half): the creature the reference names was destroyed by this resolution's `destroy` and went to a graveyard (a token, which ceases to exist there, counts).
+      if ((ctx.thisWay?.destroyed ?? 0) < 1) return false;
+      const [id] = resolveObjects(
+        state,
+        condition.of,
+        {
+          controller: ctx.controller,
+          source: ctx.source,
+          ...(ctx.moved === undefined ? {} : { moved: ctx.moved }),
+          ...(ctx.triggerSubject === undefined ? {} : { triggerSubject: ctx.triggerSubject }),
+        },
+        ctx.targets ?? [],
+      );
+      const known = id === undefined ? undefined : state.lki[id];
+      if (known === undefined) return false;
+      if (known.object.token !== null) return true;
+      const successor = known.successor === undefined ? undefined : state.objects[known.successor];
+      return successor?.zone === 'graveyard';
+    }
     case 'giftPromised': {
       // CR 702.174k (D-135): the spell carries the chosen player on the stack, the permanent that came from it remembers
       // it, and last-known information says once either has left (CR 113.7a), as `kicked` does.

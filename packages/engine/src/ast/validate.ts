@@ -424,6 +424,13 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         }
         checkReplacementToken(r.alsoCreate.token, `${path}.alsoCreate.token`, out);
       }
+      // The Darkness Crystal (CR 614.1a): the life the controller gains as the creature is exiled, and the link to the card an ability reads as "exiled with ~".
+      if (r.alsoGainLife !== undefined && (!isCount(r.alsoGainLife) || r.alsoGainLife < 1)) {
+        issue(out, `${path}.alsoGainLife`, 'the life gained must be a positive integer');
+      }
+      if (r.linkExiled !== undefined && r.linkExiled !== true) {
+        issue(out, `${path}.linkExiled`, 'linkExiled must be true when present');
+      }
       break;
     default:
       // D-149: "If you would gain life, you gain that much life plus 1 instead."
@@ -1290,7 +1297,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       break;
     case 'permanentSacrificed':
-      if (!isOneOf(t.by, ['you', 'any'])) {
+      if (!isOneOf(t.by, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.by`, `unknown sacrificing player ${String(t.by)}`);
       }
       if (t.filter !== undefined) checkFilter(t.filter, `${path}.filter`, out);
@@ -1326,6 +1333,15 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // CR 121.1: "your second card each turn": the nth card drawn, counting from 1.
       if (t.nth !== undefined && (!isCount(t.nth) || t.nth < 1)) {
         issue(out, `${path}.nth`, 'nth must be a positive integer');
+      }
+      // CR 504.1 (Orcish Bowmasters): "except the first one they draw in each of their draw steps": every draw but one, so not with a count.
+      if (t.exceptFirstInDrawStep !== undefined) {
+        if (t.exceptFirstInDrawStep !== true) {
+          issue(out, `${path}.exceptFirstInDrawStep`, 'exceptFirstInDrawStep must be true');
+        }
+        if (t.nth !== undefined) {
+          issue(out, `${path}.exceptFirstInDrawStep`, 'exceptFirstInDrawStep does not go with nth');
+        }
       }
       break;
     case 'damageBatch':

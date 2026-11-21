@@ -100,6 +100,7 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionChoosePlayer,
   answerResolutionClash,
   answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
@@ -503,6 +504,11 @@ function answerChooseOption(
     // CR 701.30b: the opponent the controller chose to clash with.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
+  if (d.purpose === 'playerChoice') {
+    // CR 608.2d (The Black Gate): the player the controller chose among those with the most life.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionChoosePlayer(state, option));
   }
   if (d.purpose === 'assignOpponent') {
     // Issue 81 (Dack Fayden): the opponent the controller chose for a permanent.

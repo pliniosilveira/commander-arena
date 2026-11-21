@@ -8,6 +8,7 @@ import { ATTACHMENT_KEYWORD_RULES } from './attachments';
 import { CASTING_KEYWORD_RULES } from './casting';
 import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COPY_KEYWORD_RULES } from './copies';
+import { DECK_LIMIT_KEYWORD_RULES } from './deck-limit';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
 import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
 import { GIFT_KEYWORD_RULES } from './gift';
@@ -394,6 +395,7 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
 export const KEYWORD_RULES = [
   // D-490 (Gisa deck, group 3): "Partner with Regna, the Redeemer" starts like the plain keyword Partner, which `keyword.line` reads a prefix of: tried first.
   ...PARTNER_WITH_KEYWORD_RULES,
+  ...DECK_LIMIT_KEYWORD_RULES,
   KEYWORD_LINE,
   KEYWORD_CYCLING,
   ...TYPECYCLING_RULES,

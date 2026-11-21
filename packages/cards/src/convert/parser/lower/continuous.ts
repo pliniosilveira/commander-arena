@@ -660,3 +660,40 @@ export const DELAYED_RETURN_TO_BATTLEFIELD: Lowering<IrClause, Effects> = {
     };
   },
 };
+
+/**
+ * "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d, 119.1): the engine's `choosePlayer`; the player is what the instructions after it call "that player".
+ */
+export const CHOOSE_PLAYER: Lowering<IrClause, Effects> = {
+  head: 'choosePlayer',
+  id: 'lower.choose-player',
+  needs: ['effect:choosePlayer'],
+  lower(clause) {
+    return { ok: true, value: [{ kind: 'choosePlayer', among: 'mostLife' }], rule: clause.rule };
+  },
+};
+
+/**
+ * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): the engine's `cantBeBlockedByPlayer` of the player a
+ * `choosePlayer` before it in the same ability chose. With no such instruction before it "that player" is nobody the engine can name: refused.
+ */
+export const CANT_BE_BLOCKED_BY_CHOSEN_PLAYER: Lowering<IrClause, Effects> = {
+  head: 'cantBeBlockedByChosenPlayer',
+  id: 'lower.cant-be-blocked-by-chosen-player',
+  needs: ['effect:cantBeBlockedByPlayer', 'selector:chosenPlayer', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    if (!ctx.choseAPlayer || clause.duration?.scope !== 'thisTurn') return failure(clause);
+    const noun = operand(clause, 'objects');
+    if (noun?.kind !== 'noun' || noun.det !== 'target') return failure(clause);
+    const objects = objectSelectorOf(noun, ctx, TRIGGER_SUBJECT);
+    if (!objects.ok) return objects;
+    return {
+      ok: true,
+      value: [
+        { kind: 'cantBeBlockedByPlayer', objects: objects.value, player: { kind: 'chosenPlayer' } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};

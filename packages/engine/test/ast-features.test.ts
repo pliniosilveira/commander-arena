@@ -84,6 +84,7 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      'whileHasCounter',
       'forAsLongAsYouControlThis',
       // D-207: "for as long as this Saga remains on the battlefield".
       'forAsLongAsThisRemains',
@@ -137,6 +138,7 @@ describe('the dimensions', () => {
       'manaValueAtMostAmount',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
+      'diedThisWay',
       'objectMatches',
       'giftPromised',
       'opponentControlsAtLeast',

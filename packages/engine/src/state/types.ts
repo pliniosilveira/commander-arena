@@ -1079,6 +1079,15 @@ export type Instruction =
       readonly exactly?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
+  /**
+   * "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d, `choosePlayer`): the controller of the effect picks one of the players the rule allows (`among`),
+   * with a `chooseOption` decision of purpose `playerChoice` unless there is only one. `chosen` is null until then; the answer becomes `ResolutionContext.chosenPlayer` ("that player").
+   */
+  | {
+      readonly kind: 'choosePlayer';
+      readonly among: 'mostLife';
+      readonly chosen: SeatId | null;
+    }
   | {
       readonly kind: 'chooseCreatureType';
       readonly chosen: string | null;
@@ -1130,8 +1139,12 @@ export type Instruction =
       readonly atLeastOne?: true;
       /** "A creature with the greatest power among creatures they control" (`ChooseSelector.greatest`, D-135). */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      /** "A creature with the least power among creatures they control" (`ChooseSelector.least`). */
+      readonly least?: 'power' | 'toughness' | 'manaValue';
       /** "Sacrifice one of them" (`ChooseSelector.fromTriggerSources`): only the permanents that dealt the combat damage of the batch trigger. */
       readonly fromTriggerSources?: true;
+      /** "That dealt combat damage to you this turn" (`ChooseSelector.dealtCombatDamageToYou`): only the permanents that dealt combat damage to the controller of the ability this turn. */
+      readonly dealtCombatDamageToYou?: true;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1997,6 +2010,8 @@ export interface ResolutionContext {
   readonly controller: SeatId;
   /** Creature type chosen by a resolving instruction such as "choose a creature type". */
   readonly chosenCreatureType?: string;
+  /** The player a `choosePlayer` instruction of this resolution chose, which the selector `chosenPlayer` ("that player") reads. */
+  readonly chosenPlayer?: SeatId;
   /** Every creature type chosen by a resolving "each player chooses a creature type" (CR 101.4), in the order they were chosen; `chosenCreatureType` is the last. */
   readonly chosenCreatureTypes?: readonly string[];
   /** Objects chosen by resolving instructions, keyed by their bound text reference. */
@@ -2389,6 +2404,11 @@ export type ContinuousChange =
    * "Each of those creatures can't attack you or planeswalkers you control" (`sparePermanents.own.cantAttackYou`, CR 508.1a): the objects of the effect can't be declared attacking
    * the player `seat` or the planeswalkers `seat` controls. A restriction of the rules, not an ability: read in `rules/attack-bans.ts`, not in a layer.
    */
+  /**
+   * "Target creature can't be blocked by creatures that player controls this turn" (`cantBeBlockedByPlayer`, CR 509.1b): the objects of the effect can't be blocked by a creature the player
+   * `seat` controls. A restriction of the rules, read where the legality of a block is worked out (`rules/combat-legality.ts`), not in a layer.
+   */
+  | { readonly kind: 'cantBeBlockedByPlayer'; readonly seat: SeatId }
   | {
       readonly kind: 'cantAttackPlayer';
       readonly seat: SeatId;

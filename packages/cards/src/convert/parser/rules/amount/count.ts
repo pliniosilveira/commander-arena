@@ -373,18 +373,27 @@ function cards(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
+  // Crypt of Agadeem (CR 105.2, 205.2a): "for each black creature card in your graveyard": colors before the card types, each in the singular.
+  const colors = many(
+    map(pattern(/(white|blue|black|red|green) /iu), (m) => (m[1] ?? '').toLowerCase()),
+  );
   const single: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
+      colors,
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
       where,
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [{ subtypes, types }, , place] = r.value;
+    const [colorWords, { subtypes, types }, , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
     const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
-    const base = toFilter(place.zone, { ...NO_PARTS, types, controller: simpleController }, raw);
+    const base = toFilter(
+      place.zone,
+      { ...NO_PARTS, types, colors: colorWords, controller: simpleController },
+      raw,
+    );
     return {
       ok: true,
       value: {
@@ -485,9 +494,12 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each card in target opponent’s graveyard',
     'for each instant and sorcery card in your graveyard',
     'for each instant or sorcery card in your graveyard',
+    'for each black creature card in your graveyard',
+    'for each black card in your graveyard',
   ],
   rejects: [
     'for each',
+    'for each black creature cards in your graveyard',
     'for each creature',
     'for each creatures you control',
     'for each opponent',

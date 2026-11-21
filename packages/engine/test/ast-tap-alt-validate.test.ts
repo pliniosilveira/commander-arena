@@ -67,7 +67,7 @@ describe('the tapPermanents alternative cost', () => {
       count: 2,
     } as unknown as AlternativeCost;
     expect(messages(card(bad)).join('|')).toContain(
-      'only tapPermanents and sacrificeFromGraveyard name permanents',
+      'only tapPermanents, sacrificeFromGraveyard and sacrificePermanents name permanents',
     );
   });
 
