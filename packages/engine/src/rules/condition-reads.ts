@@ -63,14 +63,13 @@ export function aPlayerCardsInHandHolds(
  */
 export function lifeTotalHolds(state: GameState, seat: SeatId, condition: LifeCondition): boolean {
   if (condition.player === 'opponent') {
-    return state.seats.some(
-      (other) =>
-        other.id !== seat &&
-        lifeTotalHolds(state, other.id, {
-          kind: 'lifeTotal',
-          compare: condition.compare,
-          ...(condition.aboveStarting === true ? { aboveStarting: true } : {}),
-        }),
+    // CR 800.4a: a player who has left the game is not an opponent any more, though they keep the life total they had.
+    return opponentsOf(state, seat).some((other) =>
+      lifeTotalHolds(state, other, {
+        kind: 'lifeTotal',
+        compare: condition.compare,
+        ...(condition.aboveStarting === true ? { aboveStarting: true } : {}),
+      }),
     );
   }
   const life = getSeat(state, seat).life;
