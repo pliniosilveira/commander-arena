@@ -57,7 +57,10 @@ export function Versus({ view }: { view: GameView }) {
   const commanderOf = (seat: GameView['seats'][number] | undefined) =>
     seat?.command.find((o) => o.emblem !== true);
   const mine = commanderOf(view.seats.find((s) => s.id === view.viewer));
-  const theirs = commanderOf(view.seats.find((s) => s.id !== view.viewer));
+  const theirSeat = view.seats.find((s) => s.id !== view.viewer);
+  const theirs = commanderOf(theirSeat);
+  // The emblems the opponent starts with (the Medium and Hard challenges), beside its deck.
+  const emblems = theirSeat?.command.filter((o) => o.emblem === true) ?? [];
   return (
     <div className="dec-versus-wrap">
       <div className="dec-versus" data-versus>
@@ -70,12 +73,24 @@ export function Versus({ view }: { view: GameView }) {
         <span className="dec-versus-x" role="img" aria-label="versus">
           ×
         </span>
-        <Side
-          who="opponent"
-          deck={choices.find((d) => d.id === options?.aiDeck)}
-          fallbackCommander={theirs?.name ?? ''}
-          fallbackColors={theirs?.colors ?? []}
-        />
+        <div className="dec-versus-opponent">
+          <Side
+            who="opponent"
+            deck={choices.find((d) => d.id === options?.aiDeck)}
+            fallbackCommander={theirs?.name ?? ''}
+            fallbackColors={theirs?.colors ?? []}
+          />
+          {emblems.length > 0 && (
+            <div className="dec-versus-emblems" data-versus-emblems>
+              <h3 className="dec-versus-emblems-title">Opponent's emblems</h3>
+              <ul className="dec-versus-emblem-list">
+                {emblems.map((emblem) => (
+                  <li key={emblem.id}>{emblem.oracleText}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -77,8 +77,11 @@ import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FEDERATION_D_EFFECT_RULES } from './federation-d';
+import { FEDERATION_F_EFFECT_RULES } from './federation-f';
 import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
+import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
@@ -145,6 +148,7 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
+import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
@@ -194,6 +198,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
@@ -488,6 +493,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     "exile target player's graveyard",
     'exile target opponent’s graveyard',
     'exile all graveyards',
+    "exile any number of target players' graveyards",
     'exile all cards from all graveyards',
     'exile it',
     'exile that card',
@@ -519,6 +525,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile all creatures until ~ leaves the battlefield',
     'exile target tapped artifact or enchantment',
     "exile target player's hand",
+    "exile any number of target players' hands",
     'exile them',
     'exile this card from your hand',
     'exile that card from your hand',
@@ -541,6 +548,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             // Lorehold group 2 (issue 86): "exile target noncreature, nonland card from your graveyard".
             'noun.target-nonmatching-graveyard-card',
             'noun.player-graveyard',
+            // Federation Fleet deck, group F (Stonespeaker Crystal): "exile any number of target players' graveyards".
+            'noun.any-number-target-players-graveyards',
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
@@ -1196,6 +1205,8 @@ export const EFFECT_RULES = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
   ...LOREHOLD_G2_EFFECT_RULES,
   ...FOOD_D_EFFECT_RULES,
+  // Federation Fleet deck, group D: "you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~."
+  ...FEDERATION_D_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
@@ -1338,6 +1349,8 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
   ...WITHERBLOOM_A_EFFECT_RULES,
+  // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
+  ...PARLEY_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
@@ -1415,6 +1428,14 @@ export const EFFECT_RULES = [
   EFFECT_MILL,
   EFFECT_SHUFFLE,
   ...SACRIFICE_RULES,
+  // Federation Fleet deck, group A (Seek out): "one or two target creatures each get ... and gain ...", counters on two optional targets (read quietly: they share words with the
+  // older counter and pump rules and must not move where a line they do not read stops).
+  ...SEEK_OUT_EFFECT_RULES,
+  // Federation Fleet deck, group E (Unification, U.S.S. Stargazer): the owner draws then shuffles the creature in; the delayed exile of a token at end of combat.
+  ...FLEET_E_EFFECT_RULES,
+  // Federation Fleet deck, group F: "Until your next turn, creatures can't attack you.", the delayed return of two exiled cards, a commander into the hand, Tuvok's choice of attackers,
+  // Troi's free cast (read quietly, as the rules around them).
+  ...FEDERATION_F_EFFECT_RULES,
   ...COUNTER_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,

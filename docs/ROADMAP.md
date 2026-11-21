@@ -160,7 +160,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A prepared copy of a spell (CR 722.3c) was offered, then the engine refused `payAuto` ("You cannot pay that cost"); cause not traced. The agents cancel it and do not cast it again that turn.
 - The CasualAgent sometimes casts a spell with "creature with mana value X" that the engine refuses ("No creature has a mana value that X could be"); one refused answer, then the fallback.
 - The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.
-- A station symbol is read only with one ability line each and no power and toughness box (CR 721.2b); a line after a symbol with none is left unread.
+- A station symbol is read with one ability line each; its power and toughness box (CR 721.2b) only when the Station reminder text names the symbol; a line after a symbol with none is left unread.
 - The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment cannot.
 - "Total power of creatures they controlled that were exiled this way" (Oversimplify) counts only creatures an `exile` effect exiled, for each player's own tokens; other exiles (`exileTop`, until-leaves) and "you" or opponent phrasings are not read.
 - A card given flashback with the cost equal to its mana cost does not show the keyword in the view, and one that also prints flashback is offered only for its printed cost.
@@ -493,8 +493,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Forgotten Ancient: the AI never moves counters (it keeps them), and the question is asked after the trigger's own "you may".
 - Goad with three or more players is not tested (the test DSL has two seats).
 - Myriad does nothing with two players and is not built for a table.
-- Redoubled Stormsinger, General Kreat, Adeline, Mobilize: the controller does not choose the player or planeswalker the tapped and attacking tokens attack (CR 508.4).
-- A creature put onto the battlefield attacking always attacks the defending player; the controller cannot choose a planeswalker (CR 508.4), so Zara, Renegade Recruiter is unsupported (it also needs the whole hand shown, CR 402.3).
+- Zara, Renegade Recruiter is unsupported: she needs the whole hand shown (CR 402.3).
 - `spellsCastThisTurn` counts the spells of the effect's controller only; "each player", "an opponent" and "other than the first" counts are not built.
 - Strive supports mana costs only, on an instant or sorcery face; the question "may this be cast at all?" assumes no target.
 - A copy "except it has <keyword>" works for keywords the engine implements as abilities; it is not combined with "except it is a <type>" or "except its power is" in one effect.
@@ -571,3 +570,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Can't be blocked except by" is read for one creature type only; "its controller may ..." stays unread when the clause says "you" or "your".
 - Replicate given by Hatchery Sliver is not given to a spell with {X} in its mana cost.
 - Encore given to graveyard cards is skipped for a card with an Encore of its own.
+- The Medium and Hard challenge emblems are written as AST: "if it's your first turn of the game" is not read by the Oracle text parser.

@@ -160,6 +160,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
     'copyEntersWithX',
+    // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
+    'copyEntersFromGraveyard',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
@@ -300,6 +302,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackRandomOpponent',
     // "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d).
     'requireAttackSource',
+    // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
+    'creaturesCantAttackYou',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
@@ -1154,6 +1158,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
+    // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
+    'triggerPlayerIsOpponent',
+    'triggerPlayerStat',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
@@ -1745,6 +1752,8 @@ export const ABILITY_FEATURES = [
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
   'copyEntersWithX',
+  /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
+  'copyEntersFromGraveyard',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
@@ -1782,9 +1791,8 @@ export const ABILITY_FEATURES = [
   /** "Return enchanted creature card to the battlefield ... attach this Aura to it" (CR 400.7, 303.4, Animate Dead): `moveToZone` with `putWithSource`. */
   'putWithSource',
   /**
-   * NOT BUILT. "...tapped and attacking that player or a planeswalker they control" (CR 508.4): the controller of a creature put onto the battlefield attacking chooses which
-   * player or planeswalker it attacks, and "look at defending player's hand" shows the whole hand. The engine attacks the defending player and offers only the creature cards, so
-   * a card that needs this choice is flagged unsupported (a wrong game is never played).
+   * NOT BUILT. "look at defending player's hand" shows the whole hand (CR 402.3); the engine offers only the creature cards. The name is from before the controller could choose
+   * what a creature put onto the battlefield attacking attacks (CR 508.4, built since): a card that needs the whole hand shown is flagged unsupported (a wrong game is never played).
    */
   'attackTargetChoice',
 ] as const;
@@ -2127,6 +2135,10 @@ export const CONDITION_KINDS = [
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
+  /** "If the player is your opponent", the player being the one of the event (CR 603.2b, 102.2): the engine's `triggerPlayerIsOpponent`. */
+  'triggerPlayerIsOpponent',
+  /** "If the player has four or more cards in hand", the player being the one of the event (CR 402.1, 608.2c): the engine's `triggerPlayerStat`. */
+  'triggerPlayerStat',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */
@@ -2675,6 +2687,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilGraveyard: true,
   spellXAtMost: true,
   copyEntersWithX: true,
+  copyEntersFromGraveyard: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,
   delayedReturnToHand: true,
@@ -2693,6 +2706,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   attachedToMoved: true,
   delayedReturnAttached: true,
   putWithSource: true,
+  attackTargetChoice: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -2773,6 +2787,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   attackRandomOpponent: true,
   requireAttackSource: true,
+  creaturesCantAttackYou: true,
   permanentsEnterTapped: true,
   doubleTokens: true,
   gainControl: true,

@@ -562,6 +562,25 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
+  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  if (
+    removingAmong.length > 1 ||
+    (removingAmong.length === 1 &&
+      costs.some(
+        (c) =>
+          c.kind === 'tapCreatures' ||
+          c.kind === 'untapPermanents' ||
+          c.kind === 'blight' ||
+          c.kind === 'loyalty',
+      ))
+  ) {
+    // Federation Fleet group D: `breakDown` pays one such cost, and has no order for it next to a crew cost, an untap cost, a blight or a loyalty cost.
+    out.push({
+      path,
+      message:
+        'more than one "remove counters from among" cost, or one with a crew, untap, blight or loyalty cost, is not implemented by the engine yet',
+    });
+  }
   if (sacrifices > 1) {
     // `breakDown` (rules/activate-costs.ts) pays one sacrifice; an ability with two is never offered.
     out.push({

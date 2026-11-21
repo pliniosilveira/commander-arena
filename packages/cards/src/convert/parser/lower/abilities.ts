@@ -862,12 +862,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       'ability:replacement',
       'replacement:entersAsCopy',
       ...(event.args.withX === undefined ? [] : (['ability:copyEntersWithX'] as const)),
+      ...(event.args.fromGraveyard === undefined
+        ? []
+        : (['ability:copyEntersFromGraveyard'] as const)),
     ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
-    const { zone, ...kind } = filter.value;
-    void zone;
+    // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the filter keeps its zone, the graveyard.
+    const fromGraveyard =
+      event.args.fromGraveyard?.kind === 'flag' && event.args.fromGraveyard.value;
+    const { zone, ...unzoned } = filter.value;
+    if (fromGraveyard ? zone !== 'graveyard' : zone !== undefined && zone !== 'battlefield') {
+      return failure(ability);
+    }
+    const kind = fromGraveyard ? filter.value : unzoned;
     const gains: Keyword[] = [];
     for (const name of gained?.kind === 'keywordList' ? gained.names : []) {
       const word = keywordKind(name);
@@ -893,6 +902,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
+      ...(fromGraveyard ? { fromGraveyard: true as const } : {}),
+      // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types".
+      ...(event.args.keepName?.kind === 'flag' && event.args.keepName.value
+        ? { keepName: true as const }
+        : {}),
+      ...(event.args.addLegendary?.kind === 'flag' && event.args.addLegendary.value
+        ? { addSupertypes: ['legendary' as const] }
+        : {}),
       // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
       ...(event.args.withX?.kind === 'flag' && event.args.withX.value
         ? { withX: { counter: '+1/+1' } }

@@ -382,6 +382,14 @@ export function runDiscard(
       }),
     ),
   ];
+  // Federation Fleet group D (CR 603.12): the cards that are not lands, read before they leave the hand ("When you discard a nonland card this way").
+  const wasNonland = new Set(
+    chosen.filter((id) => {
+      const card = state.objects[id];
+      return card?.zone === 'hand' && !derive(state, card).types.includes('land');
+    }),
+  );
+  let discardedNonlands = 0;
   // CR 701.50a (D-209): "if a nonland card is discarded this way", read before the card leaves the hand.
   const nonland = chosen.some((id) => {
     const card = state.objects[id];
@@ -397,6 +405,7 @@ export function runDiscard(
     events.push(...discarded.events);
     discardedCards += 1;
     if (wasCreature.has(id)) discardedCreatures += 1;
+    if (wasNonland.has(id)) discardedNonlands += 1;
     if (wasSpell.has(id)) discardedSpells += 1;
   }
   // CR 701.50a (D-209): the creature that connives gets a +1/+1 counter for a nonland card discarded, if it is still there.
@@ -426,6 +435,7 @@ export function runDiscard(
       // D-210: "if a creature card was discarded this way", "each player who discarded a card this way".
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
+      ...(discardedNonlands > 0 ? { discardedNonland: discardedNonlands } : {}),
       discardedInstantOrSorcery: discardedSpells,
       ...(discardedCards > 0 ? { discardedTypes, discardedTypeCount: discardedTypes.length } : {}),
       // Issue 279: this player's own number; the resolution keeps the greatest of them (`stack.ts`).

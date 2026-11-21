@@ -46,10 +46,10 @@ import { VOTES_AMOUNT } from './votes';
 
 const COLOR_WORD = pattern(/(white|blue|black|red|green)(?![\p{L}\p{N}])/iu);
 
-/** `~` or "it" as the object of "counters on ...": the permanent itself, or what the binding pass makes of "it". */
+/** `~`, "it" or "her"/"him" (a card the text names by a person's pronoun, as `noun.it` does) as the object of "counters on ...": the permanent itself, or what the binding pass makes of the pronoun. */
 function selfOrIt(rule: string): Parser<IrNoun> {
   return (ctx, pos) => {
-    const m = pattern(/(~|it)(?![\p{L}\p{N}])/iu)(ctx, pos);
+    const m = pattern(/(~|it|her|him)(?![\p{L}\p{N}])/iu)(ctx, pos);
     if (!m.ok) return m;
     const word = (m.value[1] ?? '').toLowerCase();
     const span = { start: pos, end: m.pos };
@@ -702,6 +702,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of cards in your hand minus 4',
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
+    // A card the text names by a person's pronoun (Kes, Evolving Telepath).
+    'where X is the number of time counters on her',
+    'where X is the number of +1/+1 counters on him',
     'where X is that card’s mana value',
     // Prismari deck, group 2 (D-646, CR 202.3): the spell that caused a cast trigger.
     "where X is that spell's mana value",

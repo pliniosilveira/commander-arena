@@ -355,6 +355,32 @@ export function runRequireAttack(
 }
 
 /**
+ * "Until your next turn, creatures can't attack you" (CR 508.1a, 611.2a, 611.2c, 500.1): one continuous effect with no set of objects, read where attackers are declared for the
+ * creatures its filter matches then (a restriction changes the rules, so it reaches creatures that arrive later). `until` is the start of the next turn of the controller (the one that
+ * comes after this moment, not this turn even when it is theirs), as for `runRequireAttack`.
+ */
+export function runCreaturesCantAttackYou(
+  state: GameState,
+  node: Extract<Effect, { kind: 'creaturesCantAttackYou' }>,
+  ctx: SelectContext,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    change: {
+      kind: 'creaturesCantAttackPlayer',
+      filter: node.creatures,
+      controller: ctx.controller,
+    },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, issue 81): one continuous effect over the creatures the effect names as it begins, which
  * bars them from the planeswalkers of the subtype the controller controls (`rules/attack-bans.ts`) until end of turn.
  */

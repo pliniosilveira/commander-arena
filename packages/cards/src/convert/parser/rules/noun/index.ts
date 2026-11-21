@@ -37,6 +37,7 @@ import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
 import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
 import { ETERNAL_MIGHT_NOUN_RULES } from './eternal-might';
+import { FEDERATION_F_NOUN_RULES } from './federation-f';
 import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
 import { GISA_G2_NOUN_RULES } from './gisa-g2';
 import { GISA_G3_NOUN_RULES } from './gisa-g3';
@@ -1047,6 +1048,8 @@ export const NOUN_RULES = [
   ...ANGEL_NOUN_RULES,
   // D-362 (Hashaton, group 8): "the chosen cards".
   ...HASHATON_G8_NOUN_RULES,
+  // Federation Fleet deck, group F: "any number of target players' graveyards".
+  ...FEDERATION_F_NOUN_RULES,
   // D-392 (Hashaton, group 9): "that source's controller".
   ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,

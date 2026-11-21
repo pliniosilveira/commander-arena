@@ -47,6 +47,14 @@ export function withoutBannedTargets(
       .map((a) => a.player);
     allowed = allowed.filter((t) => t.kind !== 'player' || !already.includes(t.seat));
   }
+  // CR 508.1a, 611.2c (Chronomantic Escape): "Until your next turn, creatures can't attack you": the creatures the filter matches now may not attack that player.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'creaturesCantAttackPlayer') continue;
+    const ctx = { controller: e.change.controller, source: null };
+    if (!matchesFilter(state, obj, { ...e.change.filter, zone: 'battlefield' }, ctx)) continue;
+    const protectedSeat = e.change.controller;
+    allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== protectedSeat);
+  }
   // CR 508.1a (Promise of Loyalty): the continuous effects `cantAttackPlayer` bar their objects from the player and the planeswalkers that player controls.
   for (const e of state.continuousEffects) {
     if (e.change.kind !== 'cantAttackPlayer' || !e.objects.includes(attacker)) continue;

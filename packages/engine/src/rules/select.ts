@@ -622,9 +622,11 @@ export function legalTargets(
 ): ChosenTarget[] {
   const out: ChosenTarget[] = [];
   const specId = spec.id;
-  const playersFor = (filter: 'any' | 'opponent'): ChosenTarget[] =>
+  const playersFor = (filter: 'any' | 'opponent' | 'opponentWhoseTurn'): ChosenTarget[] =>
     seatsInOrder(state, ctx.controller)
       .filter((s) => filter === 'any' || s !== ctx.controller)
+      // CR 115.1, 500.1 (Cmdr. Troi): "target opponent whose turn it is": the opponent who is the active player, so no one on the controller's own turn.
+      .filter((s) => filter !== 'opponentWhoseTurn' || s === state.turn.activeSeat)
       // CR 702.11b (D-149): "You have hexproof": the opponents of that player can't target them.
       // CR 702.16b (D-376): "You have protection from the chosen card type": a source of that type can't target them.
       .filter((s) => playerCanBeTargetedBy(state, s, ctx.controller, ctx.source))

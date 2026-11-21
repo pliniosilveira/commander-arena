@@ -5,7 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype } from '../characteristics';
+import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -14,6 +14,7 @@ import {
   type AstIssue,
   checkAmount,
   checkEffect,
+  checkEnumList,
   checkFilter,
   checkPlayerSelector,
   checkRef,
@@ -544,6 +545,12 @@ export function checkDragonsEffect(
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
+      if (
+        e.thatPlayerOrTheirPlaneswalkers !== undefined &&
+        e.thatPlayerOrTheirPlaneswalkers !== true
+      ) {
+        issue(out, `${path}.thatPlayerOrTheirPlaneswalkers`, 'it is true or left out');
+      }
       if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
       }
@@ -775,7 +782,7 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
     filterSome(
       r.what,
       (f) =>
-        f.zone !== undefined ||
+        (f.zone !== undefined && !(r.fromGraveyard === true && f.zone === 'graveyard')) ||
         f.stackKind !== undefined ||
         f.attacking !== undefined ||
         f.attackingYou !== undefined ||
@@ -787,6 +794,23 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       `${path}.what`,
       'what is copied is a permanent on the battlefield: no zone, stackKind, combat or other',
     );
+  }
+  // Federation Fleet deck (CR 614.12, 707.9, 700.4): "... a copy of any creature card in your graveyard that was put there from the battlefield this turn".
+  if (r.fromGraveyard !== undefined && r.fromGraveyard !== true) {
+    issue(out, `${path}.fromGraveyard`, 'fromGraveyard is true when present');
+  }
+  if (r.fromGraveyard === true && r.what?.zone !== 'graveyard') {
+    issue(out, `${path}.what`, 'what names the zone graveyard when the copy is of a card there');
+  }
+  if (r.keepName !== undefined && r.keepName !== true) {
+    issue(out, `${path}.keepName`, 'keepName is true when present');
+  }
+  if (r.addSupertypes !== undefined) {
+    if (!Array.isArray(r.addSupertypes) || r.addSupertypes.length === 0) {
+      issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
+    } else {
+      checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
+    }
   }
   if (r.optional !== undefined && r.optional !== true) {
     issue(out, `${path}.optional`, 'optional is true or absent');

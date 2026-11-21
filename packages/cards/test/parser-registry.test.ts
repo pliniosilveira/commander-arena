@@ -384,6 +384,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.may-cast-any-graveyard': spell((e) => `${cap(e).replace('. when', '. When')}.`),
   'noun.target-card-in-a-graveyard': spell((e) => `You may cast ${e} this turn.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
+  // Federation Fleet deck, group F (Stonespeaker Crystal).
+  'noun.any-number-target-players-graveyards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
@@ -433,6 +435,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
+  // Federation Fleet deck, group B: "each player other than its controller" after a target ("Exile target nonland permanent. ...").
+  'noun.each-player-other-than-its-controller': spell(
+    (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
+  ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
@@ -659,6 +665,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
+  'replacement.enters-as-copy-graveyard': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'replacement.damage-double': asIs,
@@ -870,6 +877,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'noun.up-to-one-target-spell': spell(
     (e) =>
@@ -1278,6 +1286,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
+  // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
+  'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  'condition.it-has-greater-power': permanent(
+    (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
+  ),
+  'condition.put-counters-this-way': permanent(
+    (e) =>
+      `{1}, {T}: Put a +1/+1 counter on each creature you control that entered this turn. If ${e}, draw a card.`,
+  ),
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
@@ -1285,6 +1302,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
   'condition.a-player-cards-in-hand': permanent(
     (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,
+  ),
+  // Federation Fleet deck, group B: "the player is your opponent and has four or more cards in hand" after a draw of the player of a step.
+  'condition.the-player-is-opponent-with-cards': permanent(
+    (e) =>
+      `At the beginning of each player's end step, that player draws a card. If ${e}, ~ deals 2 damage to that player.`,
   ),
   'noun.any-number-target-graveyard-cards': permanent(
     (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,

@@ -486,6 +486,10 @@ export type ThisWayKind =
   | 'milledCreature'
   | 'discardedCreature'
   | 'discardedNoncreature'
+  // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.
+  | 'discardedNonland'
+  // Federation Fleet deck, group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way": the counters `addCounters` effects of this resolution put on objects.
+  | 'countersPut'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
   | 'discardedInstantOrSorcery'
   // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": the most cards one player discarded to the `discard` effects of this resolution (CR 608.2c).
@@ -1024,7 +1028,11 @@ export type AttachedTo =
   | { readonly kind: 'host' }
   | { readonly kind: 'matching'; readonly filter: ObjectFilter };
 
-export type PlayerFilter = 'any' | 'opponent';
+/**
+ * Which players a player target may be: any, an opponent of the controller, or (`opponentWhoseTurn`, CR 115.1, 500.1: "target opponent whose turn it is", Cmdr. Troi) the opponent
+ * whose turn it is, which is a legal target only during the turn of an opponent.
+ */
+export type PlayerFilter = 'any' | 'opponent' | 'opponentWhoseTurn';
 
 /** A reference to one or more objects or players, resolved by the interpreter. */
 export type ObjectRef =
@@ -1582,7 +1590,19 @@ export type Cost =
    */
   | { readonly kind: 'tapCreatures'; readonly totalPower: number }
   | { readonly kind: 'exileFromGraveyard'; readonly filter: ObjectFilter; readonly count: number }
-  | { readonly kind: 'removeCounters'; readonly counter: string; readonly count: number }
+  | {
+      readonly kind: 'removeCounters';
+      readonly counter: string;
+      readonly count: number;
+      /**
+       * "Remove two +1/+1 counters from among creatures you control" (Federation Fleet deck, group D, CR 118.3, 122.1, 602.2b): the counters come off the permanents on the battlefield the filter
+       * matches (the player's own: `controller` is `you` or left out), the player choosing the permanent for each counter (a `choosePermanent` decision of purpose `removeCountersCost`
+       * and `forCost`, asked once for each counter while more than one permanent could give it; with no choice the engine removes them and says so). The cost can't be paid with fewer than
+       * `count` counters of the kind among them (CR 118.3). Only the cost of an ordinary activated ability of a permanent: no mana ability, no cost next to a crew, blight or untap cost, and
+       * the filter names no zone, owner or stack kind.
+       */
+      readonly among?: ObjectFilter;
+    }
   /**
    * The loyalty symbol of a loyalty ability (CR 606.2, 606.4, 606.5, D-200): `change` is the number of loyalty counters the permanent
    * the ability belongs to gets (positive, "[+1]") or loses (negative, "[-2]"), 0 for "[0]", and the string `'x'` for "[-X]" (X is announced
@@ -2724,11 +2744,14 @@ export type Effect =
    * is on the battlefield and is not attacking now starts attacking. It attacks the player the source of this ability attacks (or the first
    * opponent when the source is not attacking); it was never declared as an attacker, so no "whenever this attacks" triggers (CR 508.4) and the
    * turn log does not count it. Nothing happens outside a combat phase after attackers were declared. Only in a triggered ability of an attack
-   * (`attacks`), when the combat is on. Choosing a planeswalker or battle to attack is not offered (`docs/ROADMAP.md`).
+   * (`attacks`), when the combat is on. The controller then chooses what each creature attacks (CR 508.4): a player, a planeswalker or a battle of an opponent, with a
+   * `chooseOption` decision of purpose 'attackTarget' (nothing is asked when there is only one target). With `thatPlayerOrTheirPlaneswalkers` ("attacking that player or a planeswalker
+   * they control") only the player the source attacks and the planeswalkers that player controls may be chosen.
    */
   | {
       readonly kind: 'enterAttacking';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      readonly thatPlayerOrTheirPlaneswalkers?: true;
     }
   /**
    * "You may play that card this turn", "Until the end of your next turn, you may play those cards", "You may play those cards until your next end step"
@@ -3858,6 +3881,17 @@ export type Effect =
       readonly awayFromYou?: true;
     }
   /**
+   * "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, 611.2c, 500.1, Chronomantic Escape): a restriction on a group of creatures that is not a set fixed as the effect
+   * resolved: whenever attackers are declared, no creature `creatures` matches then (read for the controller of the effect as "you") can be declared attacking the controller of the effect
+   * as a player; a planeswalker they control and another player stay open to it. It lasts until the next turn of the controller begins (the turn it resolves in not counted); `duration`
+   * is `untilYourNextTurn` only. A creature with no one left to attack is not able to attack.
+   */
+  | {
+      readonly kind: 'creaturesCantAttackYou';
+      readonly creatures: ObjectFilter;
+      readonly duration: 'untilYourNextTurn';
+    }
+  /**
    * "Choose an opponent at random that this creature didn't attack during your last combat. This creature attacks that player this combat if able. If you can't choose an opponent this
    * way, tap this creature." (CR 508.1d, 508.6, 506.1, 701.26a): the controller of the effect "chooses" among their opponents still in the game that `creature` was not declared
    * attacking in the last combat phase of that controller before this one (`GameState.lastCombatAttacks`; the combat of a creature that was not there is a combat it did not attack in),
@@ -4180,6 +4214,11 @@ export type Effect =
        * the one who casts the spell (and controls it), whoever owns the card. Only with `objects` a `moved` reference, whose cards are in exile.
        */
       readonly player?: PlayerSelector;
+      /**
+       * "Target opponent may cast a spell from their hand without paying its mana cost. If they do, you copy that spell." (CR 608.2g, 707.10, Cmdr. Troi): the spell cast is what `moved`
+       * names afterwards (a `copySpell` of it). With `player` and a `choose` selector of the hand of that player: they choose among the spells in their own hand that they could cast.
+       */
+      readonly remember?: true;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -4422,7 +4461,11 @@ export type Effect =
        * player `at` names (the first one it names): it was never declared as an attacker, so nothing that triggers on an attack sees it and the turn log does not count it.
        * Nothing happens outside a combat after attackers were declared. A token that is not a creature is not put in combat.
        */
-      readonly attacking?: { readonly at: PlayerSelector };
+      /**
+       * With `controllerChooses` ("tapped and attacking" naming no player, CR 508.4) the tokens enter attacking the player `at` names and their controller then chooses what each attacks:
+       * a player, planeswalker or battle of an opponent (a `chooseOption` decision of purpose 'attackTarget', none when there is one target).
+       */
+      readonly attacking?: { readonly at: PlayerSelector; readonly controllerChooses?: true };
       /**
        * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-652, Furygale Flocking): the controller of the effect creates
        * `count` tokens for each opponent still in the game (in turn order from the next player), and each token is required to attack the player it was made for this turn if able
@@ -5924,7 +5967,14 @@ export type Condition =
    * information if one has left (CR 113.7a); a source with no power or toughness (a noncreature permanent,
    * CR 702.100c) is never exceeded. Only valid as the intervening "if" of an `entersBattlefield` trigger.
    */
-  | { readonly kind: 'subjectGreaterPt' }
+  | {
+      readonly kind: 'subjectGreaterPt';
+      /**
+       * "If it has greater power than ~" (Federation Fleet deck, group D; CR 208.1, 603.4, 702.100a): only the power is compared, not the toughness. Left out, it is Evolve's
+       * "power and/or toughness".
+       */
+      readonly onlyPower?: true;
+    }
   /**
    * "If that player controls more lands than you" (D-229, CR 603.4, 109.4): the controller of the object whose event caused the trigger (the land that
    * entered, `triggerSubject`) has a greater `stat` than the controller of this ability. Read as the ability triggers and again as it resolves (an
@@ -5967,6 +6017,22 @@ export type Condition =
    * with the ability. Only the intervening "if" of a trigger whose event is about a player; fails when there is none.
    */
   | { readonly kind: 'triggerPlayerHasMore'; readonly stat: PlayerStat }
+  /**
+   * "If the player is your opponent" (Fevered Visions; CR 603.2b, 102.2, 608.2c): the player the event of the trigger is about (`triggerPlayer`: the active player of a step
+   * trigger, the player who drew, ...) is an opponent of the controller of the ability, as the instruction comes up. False when there is no such player. Only in a `conditional`
+   * effect of a triggered ability whose event is about a player, not an intervening "if" (which would read the player as the ability triggers).
+   */
+  | { readonly kind: 'triggerPlayerIsOpponent' }
+  /**
+   * "If the player ... has four or more cards in hand" (Fevered Visions; CR 402.1, 119.1, 608.2c): the player the event of the trigger is about has a `stat` that meets `compare`,
+   * as the instruction comes up (the number of cards in their hand, their life total, the creatures or lands they control). False when there is no such player. Only in a
+   * `conditional` effect of a triggered ability whose event is about a player, as `triggerPlayerIsOpponent`.
+   */
+  | {
+      readonly kind: 'triggerPlayerStat';
+      readonly stat: PlayerStat;
+      readonly compare: NumberComparison;
+    }
   /**
    * "As long as there are fewer than eight cards in your graveyard" (D-229, CR 404.1): the number of cards in the graveyard of the controller of the thing
    * that asks meets the comparison (`atMost` 7 is "fewer than eight"). It reads no characteristic, so a static ability that works in layer 4 may have it.
@@ -6571,6 +6637,21 @@ export type Replacement =
        * part of its copiable values. Never empty.
        */
       readonly addSubtypes?: readonly Subtype[];
+      /**
+       * "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn" (Federation Fleet deck, CR 614.12, 707.9, 707.2,
+       * 700.4): what is copied is a card in the graveyard of the controller, not a permanent on the battlefield. `what` then names the zone `graveyard` (and may carry
+       * `putFromBattlefieldThisTurn`); without this flag it names no zone. The card stays in the graveyard (a copy takes the values, not the card).
+       */
+      readonly fromGraveyard?: true;
+      /**
+       * "..., except her name is ~" (CR 707.9a): the permanent that enters keeps the name it has as a card, every other copiable value is the original's. Only `true`.
+       */
+      readonly keepName?: true;
+      /**
+       * "..., except she's a legendary Trill in addition to her other types" (CR 707.9b, 205.4a): the supertypes the permanent has besides the ones it copies, part of its
+       * copiable values (the creature types are `addSubtypes`). Never empty.
+       */
+      readonly addSupertypes?: readonly Supertype[];
       /**
        * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
        * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not
@@ -7487,8 +7568,8 @@ export type Ability =
   /**
    * "12+ | {G}, {T}: Add {G} for each creature you control." (CR 721.2, 721.2a, Station): what follows a station symbol. The permanent has `abilities` as long as it has `threshold` or
    * more charge counters on it, read each time its abilities are looked at (nothing is locked in, CR 611.3a); with fewer it does not have them, and the abilities of the card that
-   * no symbol gates, the station ability included, are there at every count (CR 721.4). A card lists it after the abilities it gates nothing of. A card with a power and toughness box in the
-   * striation (CR 721.2b) is not built. A copy of a station permanent has the abilities its own counters give it, as counters are not copiable (CR 707.2).
+   * no symbol gates, the station ability included, are there at every count (CR 721.4). A card lists it after the abilities it gates nothing of. The power and toughness box of the striation (CR 721.2b) is
+   * two more abilities of the symbol: a static `setTypes` (creature, additive) and a static `setPt`, so the permanent is a creature with that base power and toughness from `threshold` counters on. A copy of a station permanent has the abilities its own counters give it, as counters are not copiable (CR 707.2).
    */
   | {
       readonly kind: 'stationLevel';

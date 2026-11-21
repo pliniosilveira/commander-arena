@@ -186,3 +186,93 @@ describe('the three cards of the golden corpus play in the engine', () => {
     g.expect.pool(0, 'BBBBBB');
   });
 });
+
+describe('CR 721.2b, 721.2c: the power and toughness box of a station card is the creature its symbol makes', () => {
+  const boxed = (reminderThreshold: string, symbol: string, power = '3', toughness = '4') =>
+    parseOnly(
+      syntheticCard({
+        name: 'SYNTHETIC Boxed Ship',
+        typeLine: 'Artifact — Spacecraft',
+        manaCost: '{3}',
+        power,
+        toughness,
+        oracleText: `Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at ${reminderThreshold}.)\n${symbol}`,
+      }),
+    );
+
+  test('the symbol holds the creature type and the base power and toughness, and the card has none of its own', () => {
+    const imported = boxed('4+', '4+ | Flying');
+    expect(imported.support.status).toBe('supported');
+    const face = imported.definition.faces[0];
+    expect(face?.power).toBeNull();
+    expect(face?.toughness).toBeNull();
+    expect(face?.abilities.at(-1)).toEqual({
+      kind: 'stationLevel',
+      threshold: 4,
+      abilities: [
+        { kind: 'keyword', keyword: { kind: 'flying' } },
+        {
+          kind: 'static',
+          static: {
+            kind: 'setTypes',
+            subject: { kind: 'this' },
+            additive: true,
+            types: ['creature'],
+          },
+        },
+        {
+          kind: 'static',
+          static: { kind: 'setPt', subject: { kind: 'this' }, power: 3, toughness: 4 },
+        },
+      ],
+    });
+  });
+
+  test('in a game it is a plain artifact below the threshold and a 3/4 artifact creature from it', () => {
+    const def = boxed('4+', '4+ | Flying').definition;
+    const below = game(def)
+      .battlefield(def.name, { counters: { charge: 3 } })
+      .seat(1)
+      .build();
+    below.expect.derived(def.name, { types: ['artifact'], keywords: ['station'] });
+    const at = game(def)
+      .battlefield(def.name, { counters: { charge: 4 } })
+      .seat(1)
+      .build();
+    at.expect.pt(def.name, 3, 4);
+    at.expect.derived(def.name, {
+      types: ['artifact', 'creature'],
+      keywords: ['station', 'flying'],
+    });
+  });
+
+  test.each([
+    // a box whose reminder text names no symbol, or two
+    [
+      'no threshold in the reminder text',
+      'Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery.)\n4+ | Flying',
+    ],
+    // the threshold of the reminder text is not one of the symbols
+    [
+      'a symbol other than the one the reminder names',
+      "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n4+ | Flying",
+    ],
+  ])('never half read: %s is unsupported', (_why, text) => {
+    const imported = parseOnly(
+      syntheticCard({
+        name: 'SYNTHETIC Unplaced Box Ship',
+        typeLine: 'Artifact — Spacecraft',
+        manaCost: '{3}',
+        power: '3',
+        toughness: '4',
+        oracleText: text,
+      }),
+    );
+    expect(imported.support.status).toBe('unsupported');
+    expect(imported.support.reasons.join(' ')).toContain('CR 721.2b');
+  });
+
+  test('a power or toughness that is not a number is unsupported', () => {
+    expect(boxed('4+', '4+ | Flying', '*', '4').support.status).toBe('unsupported');
+  });
+});

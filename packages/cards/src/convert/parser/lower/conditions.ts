@@ -282,6 +282,29 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'subjectGreaterPower': {
+      // CR 208.1, 603.4, 702.100a (Ensign Harry Kim, Operations): "if it has greater power than ~" is the intervening "if" of a trigger about the creature that entered, read as the ability
+      // triggers and again as it resolves. The engine's Evolve test with the toughness left out.
+      const blocked = missingFeatures(['condition:subjectGreaterPt']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectGreaterPt', onlyPower: true });
+    }
+    case 'putCountersThisWay': {
+      // CR 122.6, 608.2c (Guinan, Ancient Advisor): "If you put two or more +1/+1 counters on creatures this way": the counters of the instructions before it in the same text. The engine counts
+      // every counter its `addCounters` effects put, so the text before it must put counters of this one kind, and only on creatures, or the count would not be the one the words name.
+      const blocked = missingFeatures(['condition:thisWayAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const put = ctx?.putCounters ?? [];
+      if (
+        put.length === 0 ||
+        !put.every((p) => p.counter === test.counter && p.creatures) ||
+        test.atLeast < 1
+      ) {
+        return failure(c, []);
+      }
+      return ok({ kind: 'thisWayAtLeast', what: 'countersPut', count: test.atLeast });
+    }
     case 'putCountersThisTurn': {
       // CR 122.6, 603.4 (Lasting Tarfire): read from the turn log, for the controller of the ability.
       const blocked = missingFeatures(['condition:putCountersThisTurn']);
@@ -315,6 +338,26 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       const { cmp, value } = test.compare;
       return ok({ kind: 'aPlayerCardsInHand', compare: { cmp, value } });
+    }
+    case 'thePlayerIs': {
+      // CR 603.2b, 102.2, 402.1, 608.2c (Fevered Visions): "the player" is the player the event of the trigger is about, read as the instruction comes up. A trigger that has
+      // no such player (the lowering of the trigger says which "that player" it has) leaves the condition unread.
+      if (ctx?.thatPlayer?.selector.kind !== 'triggerPlayer') return failure(c, []);
+      const terms: Condition[] = [];
+      if (test.opponent === true) {
+        const blocked = missingFeatures(['condition:triggerPlayerIsOpponent']);
+        if (blocked.length > 0) return failure(c, blocked);
+        terms.push({ kind: 'triggerPlayerIsOpponent' });
+      }
+      if (test.cardsInHand !== undefined) {
+        const blocked = missingFeatures(['condition:triggerPlayerStat']);
+        if (blocked.length > 0) return failure(c, blocked);
+        const { cmp, value } = test.cardsInHand;
+        terms.push({ kind: 'triggerPlayerStat', stat: 'cardsInHand', compare: { cmp, value } });
+      }
+      const [only, ...more] = terms;
+      if (only === undefined) return failure(c, []);
+      return ok(more.length === 0 ? only : { kind: 'and', terms });
     }
     case 'paired': {
       // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
@@ -875,6 +918,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectStat',
   'condition:putCountersThisTurn',
   'condition:triggerPlayerHasMore',
+  'condition:triggerPlayerIsOpponent',
+  'condition:triggerPlayerStat',
   'condition:thisMatches',
   'condition:escaped',
   'condition:and',
