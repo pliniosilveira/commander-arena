@@ -14,15 +14,16 @@ The owner asked for this to run every 2 hours, each time in a fresh session. A s
 1. Read `AGENTS.md`, then `docs/MORE_OPPONENTS_INVESTIGATION.md` in full (the plan in phases, "Decisions that are the owner's", "Open work from the probe"), and the SPEC and ARCHITECTURE sections the task touches.
 2. List the issues: `gh api 'repos/pliniosilveira/commander-arena/issues?labels=more-opponents&state=open&per_page=100'`. Read each description and its comments. Also list the open pull requests whose branch starts with `feat-more-opponents-` or `fix-more-opponents-`.
 3. Budget: read the weekly use as `deck-support` Step 0.2 does (`get_session`, then `list_events` with `kinds: ["rate_limit_event"]`) and apply the same day table. At or over the limit, or unreadable: stop with one line, without commenting.
+4. Close out merged work first (see "After the merge"): it is housekeeping, not the firing's task, and it costs no budget worth counting.
 
 ## Step 1: choose one task
 
 Order of preference, stop at the first that applies:
 
 1. **A pull request of this routine that waits on you**: review comments to answer, CI failures to fix (never skip or weaken a test). Handle it, and that is the firing.
-2. **An issue with `more-opponents:in-progress`** whose branch exists: resume it.
+2. **An issue with `more-opponents:in-progress`** whose branch exists and that has no open pull request: resume it. An issue with `more-opponents:done` is never a task: its pull request is open (waiting for the owner) or merged (closed out in Step 0).
 3. **The open issue with the highest priority.** Priority is, in order: the phase of the note's "Plan in phases" it belongs to (earlier phase first); then what unblocks others (an engine rule that other issues need comes before the card re-tests that depend on it); then crash or wrong-rules bugs before missing tests; then the lowest number. Checklist or proposal issues (#363, #422 and the like) are not tasks: they are updated, never the one built, unless every item of the checklist is closed.
-4. An issue labelled `more-opponents:blocked`, or one that waits on a decision the note lists as the owner's, is skipped. If no task is left, say "nothing to do" in one line and stop.
+4. An issue labelled `more-opponents:blocked` or `more-opponents:done`, or one that waits on a decision the note lists as the owner's, is skipped. If no task is left, say "nothing to do" in one line and stop.
 
 Say in the progress comment why this one was chosen over the next, in one sentence.
 
@@ -39,9 +40,14 @@ Say in the progress comment why this one was chosen over the next, in one senten
 ## Step 3: finish the firing
 
 1. Open one pull request (body: what changed, how it was checked, "Refs #<issue>", not "Closes"; for a change in `apps/web`, the screenshots `AGENTS.md` asks for). Remove the session link the tool appends from the description. Subscribe to it. **Do not merge, do not enable auto-merge.**
+   Then move the issue's label: remove `more-opponents:in-progress` and add `more-opponents:done` (create the label if it is missing). `done` means "built, its pull request is open"; the issue stays open until the merge.
 2. Update `docs/MORE_OPPONENTS_INVESTIGATION.md` as the PR's own commit: tick or delete what is done, add what the work found, keep the "Plan in phases" current. Respect the word ceiling in `tools/docs/docs.test.ts` (cut, never raise it). Edit `docs/RULES_COVERAGE.md` and `docs/ROADMAP.md` only as `AGENTS.md` allows.
 3. Update the other issues the work touches: tick the item in the checklist issues (#363, #422), comment on a dependent issue when its starting point changed, open a new `more-opponents` issue for what the work found and did not fix (one issue per problem, with the failing seed or scenario), and fix the priority notes in the note if the order changed.
 4. Update the progress comment to its final state (what was done, the PR, what is next) and stop. Do not start a second task in the same firing.
+
+## After the merge: close the issue
+
+When a pull request of this routine is merged (the `pull_request.closed` event with `merged`, or Step 0.4 finding an open `more-opponents:done` issue whose pull request is merged), check what the work left behind: the issue's own "Work" and "Failing scenarios" items all built, no `more-opponents:blocked` label or proposal waiting on it. If nothing is left, close it as completed with one short comment ("Merged in #N."), and tick its item in the checklist issues (#363, #422) if it has one. If something is left, keep it open, remove `more-opponents:done`, put `more-opponents:in-progress` back, and say in the progress comment what remains (the next firing resumes it). If the pull request was closed unmerged, remove `more-opponents:done` and leave the issue open for a later firing. The pull request says "Refs", so only this routine closes the issue.
 
 ## Always
 
