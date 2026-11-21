@@ -1,4 +1,4 @@
-/** The top bar of the game screen: turn, whose turn, the step row with stops, and priority. */
+/** The head of the turn panel: turn, whose turn, priority and the current step (a click adds or removes its stop). */
 import type { GameView, PhaseId, StepId } from '@commander-arena/engine';
 import { roundOf, turnLabel } from '../../game/turn-label';
 import { STOP_STEPS, type StopSettings } from '../../policy/should-stop';
@@ -106,7 +106,7 @@ export function TurnTracker() {
         )}
       </div>
       <ol className="pnl-steps">
-        {STEP_ORDER.map((step) => {
+        {STEP_ORDER.filter((step) => step === view.step).map((step) => {
           const current = view.step === step;
           const toggleable = STOP_STEPS.includes(step);
           const stopped = toggleable && stops.includes(step);

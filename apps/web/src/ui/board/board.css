@@ -2278,25 +2278,3 @@
   border: 1px solid var(--line);
   border-radius: 6px;
 }
-
-/* The action dock (prompt and buttons) is drawn in your own battlefield, at its right edge and
-   aligned with its bottom, as the stack is with the top of the opponent's. It grows upward when a
-   decision brings panels. Empty, it takes no space. */
-.board-field-me {
-  position: relative;
-}
-.board-dock-slot {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  /* Over the floating stack (30), which a tall decision's panels can reach. */
-  z-index: 32;
-  width: var(--controls-width);
-  max-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-.board-dock-slot:empty {
-  display: none;
-}

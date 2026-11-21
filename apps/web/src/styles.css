@@ -325,21 +325,58 @@ button {
   min-height: 0;
 }
 
-/* The stack floats over the board at the right edge, over the opponent's side of the field. Empty, it is a small box
-   (still the place a spell is dropped to cast it); with objects it grows down to the action dock
-   and scrolls. */
-.game > .pnl-stack {
+/* The turn panel floats over the board at the right edge, level with the top of the opponent's
+   battlefield, and grows with its content down to the bottom of the screen; it scrolls inside.
+   In order: the turn line and the current phase, the decision and the action buttons (the dock,
+   drawn into `.game-dock-slot`), then the stack. */
+.turn-panel {
   position: absolute;
-  /* Under the opponent's strip, so its commander stays readable. */
-  top: 136px;
+  top: 73px;
   right: 8px;
   z-index: 30;
-  flex: none;
-  width: var(--controls-width);
-  min-height: 0;
-  /* Ends above the action dock (about 360px at the bottom right, over the stack when it is taller) and scrolls. */
-  max-height: max(160px, calc(100% - 500px));
+  width: var(--info-width);
+  max-height: calc(100% - 81px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding: var(--gap);
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
+}
+.turn-panel .pnl-tracker {
+  padding: 0;
+  background: none;
+  border-bottom: 0;
+}
+.turn-panel .pnl-tracker-info {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.turn-panel .pnl-steps {
+  display: block;
+}
+.game-dock-slot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+.game-dock-slot:empty {
+  display: none;
+}
+.game-dock-slot .dec-dock > :not(.dec-bar) {
+  overflow: visible;
+}
+/* The stack is the last part of the panel and takes the height of its items: the panel scrolls. */
+.turn-panel .pnl-stack {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.turn-panel .pnl-stack-list {
+  overflow: visible;
 }
 .settings-toggle {
   left: 8px;

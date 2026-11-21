@@ -63,29 +63,16 @@ function withView(snapshot: Snapshot, patch: Partial<GameView>): Snapshot {
 }
 
 describe('TurnTracker', () => {
-  test('shows the turn, whose turn it is, priority and every step', async () => {
+  test('shows the turn, whose turn it is, priority and the current step', async () => {
     const store = await startedStore();
     const out = html(store, <TurnTracker />);
     const view = store.getState().snapshot?.view;
     expect(view).toBeDefined();
     expect(out).toContain(`turn ${Math.floor(((view?.turn ?? 1) - 1) / 2) + 1}`);
-    for (const label of [
-      'Untap',
-      'Upkeep',
-      'Draw',
-      'Main 1',
-      'Begin combat',
-      'Attackers',
-      'Blockers',
-      'First strike',
-      'Damage',
-      'End combat',
-      'Main 2',
-      'End step',
-      'Cleanup',
-    ]) {
-      expect(out).toContain(label);
-    }
+    // Only the current step is shown, not the whole row.
+    expect(view?.step).toBeDefined();
+    expect((out.match(/class="pnl-step[ "]/g) ?? []).length).toBe(1);
+    expect(out).toContain('aria-current="step"');
     expect(out).toContain('Priority:');
     expect(out).not.toContain('AI fallback');
   });
@@ -100,8 +87,8 @@ describe('TurnTracker', () => {
     const out = html(store, <TurnTracker />);
     // Engine turn 3 is the second round: "Your turn 2" (D-153).
     expect(out).toContain('Your turn 2');
-    // Default stops: Main 1 and Main 2 are marked; the current step is Main 1.
-    expect((out.match(/pnl-step-stop/g) ?? []).length).toBe(2);
+    // Default stops: Main 1 is marked, and it is the current step (the only one shown).
+    expect((out.match(/pnl-step-stop/g) ?? []).length).toBe(1);
     expect(out).toMatch(/aria-current="step"[^>]*><button[^>]*pnl-step-current/);
 
     store.setState({

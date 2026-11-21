@@ -3,7 +3,7 @@ import { Board } from './ui/board/Board';
 import { CombatEffects } from './ui/board/CombatEffects';
 import { PreviewPanel } from './ui/board/PreviewPanel';
 import { DecisionLayer } from './ui/decisions/DecisionLayer';
-import { DockSlotContext, DockSlotSetContext } from './ui/decisions/dock-slot';
+import { DockSlotContext } from './ui/decisions/dock-slot';
 import { LogDock } from './ui/panels/LogDock';
 import { SettingsDock } from './ui/panels/SettingsDock';
 import { StackPanel } from './ui/panels/StackPanel';
@@ -44,27 +44,27 @@ export function Footer({ showVersion = false }: { showVersion?: boolean }) {
 }
 
 /**
- * The game screen: the battlefield takes the whole width. Over it float the stack (right edge), the
- * card preview (left edge, only while a card is read) and, behind the buttons at the bottom left,
- * the log and the settings. The action dock is drawn into the player's own board, at its bottom
- * right (`dock-slot.ts`).
+ * The game screen: the battlefield takes the whole width. Over it float the turn panel (right edge:
+ * the turn line, the current phase, the decision and the action buttons, then the stack), the card
+ * preview (left edge, only while a card is read) and, behind the buttons at the bottom left, the log
+ * and the settings. The decision layer draws the action dock into the turn panel (`dock-slot.ts`).
  */
 function Game() {
-  // The decision layer draws the action dock into a slot of the board (`dock-slot.ts`).
   const [dockSlot, setDockSlot] = useState<HTMLElement | null>(null);
   return (
     <div className="game" data-testid="game">
       <DockSlotContext.Provider value={dockSlot}>
-        <DockSlotSetContext.Provider value={setDockSlot}>
-          <div className="game-main">
-            <TurnTracker />
-            <DecisionLayer>
-              <Board />
-            </DecisionLayer>
-          </div>
-        </DockSlotSetContext.Provider>
+        <div className="game-main">
+          <DecisionLayer>
+            <Board />
+          </DecisionLayer>
+        </div>
+        <aside className="turn-panel" aria-label="Turn" data-testid="turn-panel">
+          <TurnTracker />
+          <div className="game-dock-slot" ref={setDockSlot} />
+          <StackPanel />
+        </aside>
       </DockSlotContext.Provider>
-      <StackPanel />
       <PreviewPanel />
       <LogDock />
       <SettingsDock />

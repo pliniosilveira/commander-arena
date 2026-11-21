@@ -3,10 +3,10 @@ import { withSettings } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
- * The game screen: the battlefield takes the whole width. The stack (right) and the card preview
- * (left) float over it, the log and the settings are behind buttons at the bottom left, and the
- * action dock (prompt and the button of the turn) is in the player's own battlefield, at its right
- * edge and bottom.
+ * The game screen: the battlefield takes the whole width. The turn panel floats at the right edge,
+ * level with the top of the opponent's battlefield, and holds in order the turn line, the current
+ * phase, the decision and action buttons, then the stack. The card preview (left) floats too, and the
+ * log and the settings are behind buttons at the bottom left.
  */
 const game = '/?autostart=white-knights,swamp-forest&seed=3';
 
@@ -29,31 +29,40 @@ for (const [width, height] of [
   [1366, 768],
   [1920, 1080],
 ] as const) {
-  test(`the battlefield takes the full width and the dock is in the player's field at ${width}x${height}`, async ({
+  test(`the battlefield takes the full width and the turn panel holds the turn, the buttons and the stack at ${width}x${height}`, async ({
     page,
   }) => {
     await start(page, width, height);
     const board = await box(page, '.board');
     expect(board.x).toBe(0);
     expect(board.width).toBeCloseTo(width, 0);
+    expect(board.y).toBe(0);
 
-    // The dock is in your own battlefield, at its right edge, with its bottom at the field's bottom
-    // (the stack is at the top of the opponent's): the commander box below it stays clear.
-    const dock = await box(page, '.board-dock-slot');
-    const field = await box(page, '.board-field-me');
-    expect(dock.x + dock.width).toBeLessThanOrEqual(width);
-    expect(dock.x + dock.width).toBeGreaterThanOrEqual(width - 12);
-    expect(dock.y + dock.height).toBeLessThanOrEqual(field.y + field.height);
-    expect(dock.y + dock.height).toBeGreaterThanOrEqual(field.y + field.height - 12);
+    // The turn panel is at the right edge, level with the top of the opponent's battlefield.
+    const panel = await box(page, '[data-testid="turn-panel"]');
+    const oppField = await box(page, '[data-field-seat="1"]');
+    expect(panel.x + panel.width).toBeCloseTo(width - 8, 0);
+    expect(Math.abs(panel.y - oppField.y)).toBeLessThanOrEqual(16);
+    expect(panel.y + panel.height).toBeLessThanOrEqual(height);
 
-    // The action bar has no toggles any more.
+    // In order: the turn line, only the current phase, the action buttons, the stack.
+    const tops = await page.evaluate(() => {
+      const top = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1;
+      return [
+        top('.turn-panel .pnl-tracker-info'),
+        top('.turn-panel .pnl-steps'),
+        top('.turn-panel .dec-bar'),
+        top('.turn-panel [aria-label="Stack"]'),
+      ];
+    });
+    expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+    expect(tops.every((t) => t > 0)).toBe(true);
+    expect(await page.locator('.turn-panel .pnl-step').count()).toBe(1);
+
+    // The old top bar and the action bar toggles are gone.
     for (const name of ['Full Control', 'Manual mana', 'Undo']) {
       await expect(page.locator('.dec-bar').getByRole('button', { name })).toHaveCount(0);
     }
-
-    // The stack floats at the right edge, over the board.
-    const stack = await box(page, '[aria-label="Stack"]');
-    expect(stack.x + stack.width).toBeCloseTo(width - 8, 0);
     // No page scroll.
     expect(
       await page.evaluate(() => [

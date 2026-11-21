@@ -1,11 +1,10 @@
 /** The battlefield, both players' strips, the command zones and the human's hand (SPEC 10, A19). */
 import type { GameView, ObjectView } from '@commander-arena/engine';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useApp } from '../store-context';
 import './board.css';
-import { DockSlotSetContext } from '../decisions/dock-slot';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
@@ -34,7 +33,6 @@ function Field({
   roles,
   attachments,
   exile,
-  dockRef,
 }: {
   view: GameView;
   seat: number;
@@ -42,8 +40,6 @@ function Field({
   roles: ReturnType<typeof combatRoles>;
   attachments: Attachments;
   exile?: ExilePlayable | null;
-  /** Your own battlefield only: where the action dock is drawn, at its bottom right. */
-  dockRef?: (slot: HTMLElement | null) => void;
 }) {
   // An attachment is drawn under its host, which may belong to the other player (an Aura you
   // control on their creature), so it never gets a tile of its own here.
@@ -90,7 +86,6 @@ function Field({
       {seat === view.viewer && (
         <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
       )}
-      {dockRef !== undefined && <div className="board-dock-slot" ref={dockRef} />}
     </section>
   );
 }
@@ -109,7 +104,6 @@ function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: 
 export function Board() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
-  const setDockSlot = useContext(DockSlotSetContext);
   useCloseOnDecision(view, () => setZone(null));
   // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
   // when the question is answered is the board's doing too, not the player's chore.
@@ -184,7 +178,6 @@ export function Board() {
           roles={roles}
           attachments={attachments}
           exile={exile}
-          dockRef={setDockSlot}
         />
         <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
         <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
