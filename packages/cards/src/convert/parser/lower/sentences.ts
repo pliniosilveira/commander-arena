@@ -101,7 +101,10 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     const fromCommandZone =
       effect.kind === 'moveToZone' &&
       effect.objects.kind === 'choose' &&
-      effect.objects.filter.zone === 'command';
+      (effect.objects.filter.zone === 'command' ||
+        // "You may put a creature card from your hand onto the battlefield. That creature gains haste": the card put is what "that creature" names (`lower.put-from-zone`).
+        (effect.to === 'battlefield' &&
+          (effect.objects.filter.zone === 'hand' || effect.objects.filter.zone === 'graveyard')));
     if (!fromCommandZone) ctx.searched = null;
     // Lorehold group 1: "that card" of "you may play that card this turn" after "exile that card from your graveyard": the card the exile moved.
     if (effect.kind === 'exile') ctx.exiled = 'cards';

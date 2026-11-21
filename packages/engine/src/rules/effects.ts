@@ -3115,6 +3115,27 @@ function runEffect(
         });
         return done(state, [], asks);
       }
+      // CR 115.1, 608.2b, 608.2g (Horde of Notions): "You may play target Elemental card from your graveyard without paying its mana cost": the question is about the target
+      // card, if it is still in a graveyard as the object it was targeted as (`cards`), and about nothing else.
+      if (effect.objects.kind === 'target') {
+        const named = resolveObjects(state, effect.objects, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'graveyard',
+        );
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'castFree',
+              objects: effect.objects,
+              play: effect.play === true,
+              cards: named,
+              cardsZone: 'graveyard',
+              chosen: null,
+            },
+          ],
+        );
+      }
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
       // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
       const [caster] =

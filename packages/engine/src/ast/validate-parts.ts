@@ -6839,13 +6839,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             "the cards are in the controller's hand: no owner or stackKind",
           );
         }
-      } else if (kindOf(objects) === 'moved' || kindOf(objects) === 'linkedExile') {
+      } else if (
+        kindOf(objects) === 'moved' ||
+        kindOf(objects) === 'linkedExile' ||
+        kindOf(objects) === 'target'
+      ) {
         checkRef(objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+        // CR 115.1, 608.2b: a target card of a graveyard: one card, cast or played, with none of the several-card or other-player forms.
+        if (
+          kindOf(objects) === 'target' &&
+          (e.max !== undefined ||
+            e.perOwner !== undefined ||
+            e.player !== undefined ||
+            e.remember !== undefined ||
+            e.filter !== undefined)
+        ) {
+          issue(
+            out,
+            `${path}.objects`,
+            'a target card has no max, perOwner, player, remember or filter',
+          );
+        }
       } else {
         issue(
           out,
           `${path}.objects`,
-          "the card is chosen from the hand, or is 'moved' or 'linkedExile'",
+          "the card is chosen from the hand, or is 'moved', 'linkedExile' or a target",
         );
       }
       break;

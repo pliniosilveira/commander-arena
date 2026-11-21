@@ -98,6 +98,7 @@ import {
   GAIN_STATIC_ABILITY,
   GIVE_POISON,
 } from './granted-static';
+import { GRAVECAST_LOWERINGS } from './gravecast';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
@@ -916,6 +917,9 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // CR 400.7, 608.2c: "That creature gains haste until end of turn. Sacrifice it at the beginning of the next end step." after "You may put a creature card from your hand onto the
+    // battlefield": the one card put (the engine's `moved`, nothing when the player puts none) is what the next sentences name, so the pronoun is let through (`ctx.searched`).
+    if (count === undefined) ctx.searched = named.ref ?? null;
     return { ok: true, value: [move], rule: clause.rule };
   },
 };
@@ -2700,6 +2704,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
+  ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,

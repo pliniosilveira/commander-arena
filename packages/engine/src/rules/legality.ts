@@ -159,14 +159,20 @@ function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): bool
  */
 /**
  * CR 305.1, 305.2a, 305.3 (D-145): whether `seat` may play the land card `obj` as the effect of a resolving spell or ability allows ("You may play
- * the exiled card without paying its mana cost"): it is the seat's own turn and they have a land play left. The card is in their hand or in exile.
+ * the exiled card without paying its mana cost"): it is the seat's own turn and they have a land play left. The card is in their hand, in exile or (a target of the effect) in their graveyard.
  * The timing of a land play (a main phase, an empty stack) is not asked: the effect is what lets them play it now.
  */
 export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObject): boolean {
-  if (obj.card === null || (obj.zone !== 'hand' && obj.zone !== 'exile')) return false;
+  if (
+    obj.card === null ||
+    (obj.zone !== 'hand' && obj.zone !== 'exile' && obj.zone !== 'graveyard')
+  ) {
+    return false;
+  }
   // D-149 (CR 702.75a, 608.2g): a card in exile is the effect's to name, whoever owns it (a Hideaway permanent that changed controller lets its
   // new controller play the card its old one exiled); a card in a hand is the player's own.
-  if (obj.zone === 'hand' && obj.owner !== seat) return false;
+  // CR 404.1 (Horde of Notions: "play target Elemental card from your graveyard"): a card of a graveyard is the player's own to play.
+  if ((obj.zone === 'hand' || obj.zone === 'graveyard') && obj.owner !== seat) return false;
   if (state.turn.activeSeat !== seat) return false;
   return getSeat(state, seat).landsPlayedThisTurn < landPlaysAllowed(state, seat);
 }
