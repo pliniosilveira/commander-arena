@@ -1397,6 +1397,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
     'playFromGraveyardOnceEachTurn',
+    // CR 601.2a, 305.1: "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard."
+    'playFromGraveyardEachType',
     // CR 305.1: "You may play Forests from your graveyard."
     'playLandsFromGraveyard',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
@@ -2415,6 +2417,8 @@ export const STATIC_KINDS = [
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
   'playFromGraveyardOnceEachTurn',
+  /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard" (CR 601.2a, 305.1): `playFromGraveyardEachType`. */
+  'playFromGraveyardEachType',
   /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
   'playLandsFromGraveyard',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */

@@ -6,6 +6,7 @@
 import { overloadedText } from '../ast/overload';
 import type { AlternativeCost, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
+import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
@@ -38,7 +39,7 @@ import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
-import { graveyardPlayPermission } from './graveyard-play';
+import { graveyardCastTypes, graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
@@ -927,6 +928,18 @@ export interface FaceOption {
   readonly object: ObjectId;
   /** Present exactly when the card has more than one face to choose from. */
   readonly face?: number;
+  /** A card of the graveyard cast by `playFromGraveyardEachType` that can be cast as several permanent types: one option for each. */
+  readonly permanentType?: CardType;
+}
+
+/** A cast of a card of the graveyard that can be counted as several permanent types is one option for each (`playFromGraveyardEachType`: the player chooses one as it is cast). */
+function withTypeChoices(state: GameState, seat: SeatId, options: FaceOption[]): FaceOption[] {
+  return options.flatMap((o) => {
+    const obj = getObject(state, o.object);
+    if (obj.zone !== 'graveyard' || mayCastFromGraveyard(state, seat, obj)) return [o];
+    const types = graveyardCastTypes(state, seat, obj);
+    return types.length < 2 ? [o] : types.map((permanentType) => ({ ...o, permanentType }));
+  });
 }
 
 function faceOptions(
@@ -986,7 +999,11 @@ export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
     ...playable,
     ...(top === undefined ? [] : [top]),
   ];
-  return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, undefined, face));
+  return withTypeChoices(
+    state,
+    seat,
+    faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, undefined, face)),
+  );
 }
 
 /**

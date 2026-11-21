@@ -66,6 +66,7 @@ import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
 import { SYNTHETIC_DIVIDE_ABILITIES_LIST } from './synthetic-divide-abilities';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
+import { SYNTHETIC_EACH_TYPE_LIST } from './synthetic-each-type';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
 import { SYNTHETIC_ENCHANTED_LAND_MANA_LIST } from './synthetic-enchanted-land-mana';
@@ -412,6 +413,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_VEHICLE_LIST,
   ...SYNTHETIC_PREVENTION_LIST,
   ...SYNTHETIC_DAMAGE_ORDER_LIST,
+  ...SYNTHETIC_EACH_TYPE_LIST,
   ...SYNTHETIC_DAMAGE_BONUS_LIST,
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_ROOM_LIST,

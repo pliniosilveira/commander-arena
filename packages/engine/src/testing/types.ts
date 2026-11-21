@@ -5,6 +5,7 @@
 import type { CastAlternativeKind } from '../ast/features';
 import type { Zone } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
+import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { Action } from '../state/actions';
@@ -369,6 +370,8 @@ export interface PlayLandOptions {
 }
 
 export interface CastOptions {
+  /** The permanent type a card cast from the graveyard counts as (`playFromGraveyardEachType`); left out, the engine chooses. */
+  readonly permanentType?: CardType;
   /**
    * Answers the modes question of a modal spell when the engine asks it (CR 601.2b, 700.2a, D-114): the
    * indices of the modes to choose. Left out, the question stays pending for the test to answer
@@ -544,7 +547,12 @@ export interface ZoneExpectation {
 export type ActionSpec =
   | 'pass'
   | { readonly playLand: CardRef; readonly face?: number }
-  | { readonly cast: CardRef; readonly alternative?: CastAlternativeKind; readonly face?: number }
+  | {
+      readonly cast: CardRef;
+      readonly alternative?: CastAlternativeKind;
+      readonly face?: number;
+      readonly permanentType?: CardType;
+    }
   | { readonly activate: CardRef; readonly ability?: number }
   | { readonly suspend: CardRef }
   | { readonly foretell: CardRef }

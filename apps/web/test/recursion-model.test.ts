@@ -539,6 +539,24 @@ describe('the graveyard', () => {
     ]);
   });
 
+  test('a card that can be cast as two permanent types is one menu entry for each, and each action names its type (`playFromGraveyardEachType`)', () => {
+    const golem = view(4, 'SYNTHETIC Gear Golem', { zone: 'graveyard' });
+    const d = decision([
+      { kind: 'castSpell', object: 'o4', permanentType: 'artifact' },
+      { kind: 'castSpell', object: 'o4', permanentType: 'creature' },
+    ]);
+    const items = menuItems(d, 'o4', lookupIndexFor([golem]));
+    expect(items.map((i) => i.label)).toEqual([
+      'Cast SYNTHETIC Gear Golem from graveyard as an artifact',
+      'Cast SYNTHETIC Gear Golem from graveyard as a creature',
+    ]);
+    expect(new Set(items.map((i) => i.key)).size).toBe(2);
+    expect(items.map((i) => i.action)).toEqual([
+      { kind: 'castSpell', object: 'o4', permanentType: 'artifact' },
+      { kind: 'castSpell', object: 'o4', permanentType: 'creature' },
+    ]);
+  });
+
   test('the reduction note is empty without a reduction or with a condition the words do not cover', () => {
     expect(costReductionNote({})).toBe('');
     expect(

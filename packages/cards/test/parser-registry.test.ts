@@ -121,6 +121,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.reveal-top': asIs,
   'static.play-lands-from-top': asIs,
   'static.play-lands-from-graveyard': asIs,
+  'static.graveyard-play-each-type': asIs,
   // Issue 345: the play-from-the-top lines are lines of their own.
   'static.look-and-play-lands-from-top': asIs,
   'static.activate-as-though-haste': asIs,
