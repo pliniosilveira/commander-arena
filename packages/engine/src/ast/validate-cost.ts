@@ -297,6 +297,22 @@ export function checkAlternativeCosts(
         `only tapPermanents, sacrificeFromGraveyard and sacrificePermanents name permanents (${alt.kind} has no filter or count)`,
       );
     }
+    // CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): an evoke cost may exile a card of the hand that matches a filter; no other kind has the field.
+    const exileFromHand = (alt as { readonly exileFromHand?: ObjectFilter }).exileFromHand;
+    if (alt.kind === 'evoke') {
+      if (exileFromHand !== undefined) {
+        checkFilter(exileFromHand, `${p}.exileFromHand`, out);
+        if (exileFromHand.zone !== 'hand') {
+          issue(out, `${p}.exileFromHand.zone`, 'an evoke exile cost selects cards from the hand');
+        }
+      }
+    } else if (exileFromHand !== undefined) {
+      issue(
+        out,
+        `${p}.exileFromHand`,
+        `only evoke exiles a card from the hand (${alt.kind} has none)`,
+      );
+    }
     if (alt.condition !== undefined) checkCondition(alt.condition, `${p}.condition`, out);
   });
 }

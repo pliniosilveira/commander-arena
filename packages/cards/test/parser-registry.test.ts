@@ -137,6 +137,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P22: the named alternative costs are lines of their own.
   'keyword.overload': asIs,
   'keyword.evoke': asIs,
+  'keyword.evoke-exile': asIs,
   'keyword.dash': asIs,
   'keyword.bestow': asIs,
   // Stage P23: Spectacle, Unearth and Escape are lines of their own.
