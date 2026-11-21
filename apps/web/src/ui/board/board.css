@@ -2067,6 +2067,7 @@
 /* The columns hang from the top of one band; the band is centred by the padding the row computes. */
 .board-row-land .board-row-scroll {
   align-items: flex-start;
+  gap: 12px; /* LAND_GAP in LandRow.tsx */
   padding-top: var(--land-pad, 0px);
   padding-bottom: 0;
 }

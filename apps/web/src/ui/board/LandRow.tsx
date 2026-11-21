@@ -15,6 +15,9 @@ import { GAP, PAD_Y, type RowProps } from './row-shape';
 import { Tile } from './Tile';
 import { useRowScroll } from './use-row-scroll';
 
+/** The space between neighbouring clusters of the land row, a little wider than a plain row's. */
+export const LAND_GAP = GAP + 6;
+
 /** The sizes of the land row for a text size scale: tiles in the shape of a card's top (`card-top.ts`). */
 export function landSpec(scale: number): LandSpec {
   return {
@@ -22,7 +25,7 @@ export function landSpec(scale: number): LandSpec {
     aspect: CARD_TOP_ASPECT,
     minTile: 40,
     minStep: Math.round(14 * scale),
-    gap: GAP,
+    gap: LAND_GAP,
   };
 }
 
