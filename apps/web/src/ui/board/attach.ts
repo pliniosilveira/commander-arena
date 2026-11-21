@@ -15,21 +15,15 @@ export interface Attachments {
 }
 
 /**
- * Width of one strip, and how much of a stack of strips stays legible before they get thinner. The
- * strips lie behind the host's tile and show a vertical sliver of their right side, the way equal
- * basic lands overlap in the land row (`lands.ts`).
+ * Width of one strip. The strips lie behind the host's tile and show a vertical sliver of their
+ * right side, the way equal basic lands overlap in the land row (`lands.ts`). Every strip keeps
+ * this width however many there are: the row makes room for them.
  */
 export const STRIP_W = 30;
-const STACK_MAX = STRIP_W * 3;
-
-/** Distance between neighbouring strips: full width up to three, then squeezed into the same room. */
-export function stripStep(count: number): number {
-  return count <= 3 ? STRIP_W : Math.max(10, Math.floor(STACK_MAX / count));
-}
 
 /** Room a tile needs beside it for `count` strips, in pixels. */
 export function stripWidth(count: number): number {
-  return count <= 0 ? 0 : count * stripStep(count);
+  return count <= 0 ? 0 : count * STRIP_W;
 }
 
 /**

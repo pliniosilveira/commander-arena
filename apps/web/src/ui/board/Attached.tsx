@@ -8,7 +8,7 @@ import type { ObjectView } from '@commander-arena/engine';
 import type { CSSProperties } from 'react';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
-import { stripStep, stripWidth } from './attach';
+import { STRIP_W, stripWidth } from './attach';
 import { useHoverPreview } from './hover';
 import { bandBackground, type CombatRole } from './resolve';
 import { Tile } from './Tile';
@@ -72,7 +72,7 @@ export function HostStack({
   h: number;
   role?: CombatRole | undefined;
 }) {
-  const step = stripStep(attachments.length);
+  const step = STRIP_W;
   // A tapped tile is turned 90 degrees: its visible card is wider and shorter than its box.
   const turn = host.tapped ? Math.max(0, (h - w) / 2) : 0;
   const shown = host.tapped ? Math.min(h, w) : h;

@@ -1,6 +1,6 @@
 import type { GameView, ObjectView } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { splitAttachments, stripStep, stripWidth } from '../src/ui/board/attach';
+import { STRIP_W, splitAttachments, stripWidth } from '../src/ui/board/attach';
 import { groupEqual } from '../src/ui/board/group';
 import { fitTiles, handStep, layoutRow, type RowSpec } from '../src/ui/board/layout';
 import { rowSpec } from '../src/ui/board/Row';
@@ -384,15 +384,12 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(attached.size).toBe(0);
   });
 
-  test('strips take up to three full steps of room, then are squeezed into the same space', () => {
-    expect(stripStep(1)).toBe(30);
-    expect(stripStep(3)).toBe(30);
+  test('every strip keeps one fixed width, however many there are', () => {
+    expect(stripWidth(1)).toBe(STRIP_W);
+    expect(stripWidth(20)).toBe(20 * STRIP_W);
     expect(stripWidth(0)).toBe(0);
-    expect(stripWidth(2)).toBe(60);
     expect(stripWidth(3)).toBe(90);
-    expect(stripStep(6)).toBe(15);
-    expect(stripWidth(6)).toBeLessThanOrEqual(90);
-    expect(stripStep(20)).toBe(10);
+    expect(stripWidth(6)).toBe(180);
   });
 
   test('strips take width, not height: the tiles keep their size and shrink only when the row is full', () => {
