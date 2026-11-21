@@ -1023,7 +1023,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // abilities that trigger as it enters see the copy. The values are the original's as they are now (CR 707.2), with what the exception adds.
   const copiedObject =
     copyRule === null || request.entersCopy == null ? undefined : next.objects[request.entersCopy];
-  if (to === 'battlefield' && copyRule !== null && copiedObject?.zone === 'battlefield') {
+  if (
+    to === 'battlefield' &&
+    copyRule !== null &&
+    copiedObject?.zone === (copyRule.fromGraveyard === true ? 'graveyard' : 'battlefield')
+  ) {
     const became = becomeCopyAsItEnters(next, newId, copyRule, copiedObject.id, controller);
     next = became.state;
     events.push(...became.events);

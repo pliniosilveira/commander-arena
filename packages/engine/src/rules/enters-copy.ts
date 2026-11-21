@@ -15,23 +15,22 @@ import { matchesFilter } from './select';
 
 type CopyRule = Extract<Replacement, { kind: 'entersAsCopy' }>;
 
-/** The permanents on the battlefield the entering permanent may become a copy of (`source` is the object that enters or, for a token, what creates it). */
+/** The permanents on the battlefield (or, with `fromGraveyard`, the cards of the controller's graveyard) the entering permanent may become a copy of (`source` is the object that enters or, for a token, what creates it). */
 export function copyCandidates(
   state: GameState,
   seat: SeatId,
   rule: CopyRule,
   source: ObjectId | null,
 ): ObjectId[] {
-  return state.battlefield.filter((id) => {
+  // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the cards of the graveyard of the controller.
+  const pool =
+    rule.fromGraveyard === true ? (state.seats[seat]?.graveyard ?? []) : state.battlefield;
+  const zone = rule.fromGraveyard === true ? 'graveyard' : 'battlefield';
+  return pool.filter((id) => {
     const candidate = state.objects[id];
     return (
       candidate !== undefined &&
-      matchesFilter(
-        state,
-        candidate,
-        { ...rule.what, zone: 'battlefield' },
-        { controller: seat, source },
-      )
+      matchesFilter(state, candidate, { ...rule.what, zone }, { controller: seat, source })
     );
   });
 }
@@ -50,7 +49,9 @@ export function becomeCopyAsItEnters(
   embalmed = false,
 ): { state: GameState; events: GameEvent[]; counterEvents: GameEvent[] } {
   const original = state.objects[copied];
-  if (original?.zone !== 'battlefield') return { state, events: [], counterEvents: [] };
+  if (original?.zone !== (rule.fromGraveyard === true ? 'graveyard' : 'battlefield')) {
+    return { state, events: [], counterEvents: [] };
+  }
   // CR 707.9b, 702.128b: "except if this creature was embalmed, the token has no mana cost, it's white, ...": exceptions only an embalmed token has.
   const copiedValues = copiableValues(state, original);
   const withEmbalm =
@@ -58,10 +59,28 @@ export function becomeCopyAsItEnters(
       ? withCopyExceptions(copiedValues, rule.ifEmbalmed)
       : copiedValues;
   // CR 707.9b (issue 103): "except it's a Dragon in addition to its other types": the creature types of the exception are part of the copiable values.
-  const values =
+  const excepted =
     rule.addSubtypes === undefined
       ? withEmbalm
       : withCopyExceptions(withEmbalm, { addSubtypes: rule.addSubtypes });
+  // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types": the name the card has itself, and the supertypes added.
+  const own = rule.keepName === true ? state.objects[entering] : undefined;
+  const values =
+    rule.addSupertypes === undefined && own === undefined
+      ? excepted
+      : {
+          ...excepted,
+          characteristics: {
+            ...excepted.characteristics,
+            ...(own === undefined ? {} : { name: copiableValues(state, own).characteristics.name }),
+            supertypes: [
+              ...excepted.characteristics.supertypes,
+              ...(rule.addSupertypes ?? []).filter(
+                (t) => !excepted.characteristics.supertypes.includes(t),
+              ),
+            ],
+          },
+        };
   const [stamp, stamped] = allocateTimestamp(state);
   let next: GameState = {
     ...stamped,

@@ -6433,6 +6433,21 @@ export type Replacement =
        */
       readonly addSubtypes?: readonly Subtype[];
       /**
+       * "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn" (Federation Fleet deck, CR 614.12, 707.9, 707.2,
+       * 700.4): what is copied is a card in the graveyard of the controller, not a permanent on the battlefield. `what` then names the zone `graveyard` (and may carry
+       * `putFromBattlefieldThisTurn`); without this flag it names no zone. The card stays in the graveyard (a copy takes the values, not the card).
+       */
+      readonly fromGraveyard?: true;
+      /**
+       * "..., except her name is ~" (CR 707.9a): the permanent that enters keeps the name it has as a card, every other copiable value is the original's. Only `true`.
+       */
+      readonly keepName?: true;
+      /**
+       * "..., except she's a legendary Trill in addition to her other types" (CR 707.9b, 205.4a): the supertypes the permanent has besides the ones it copies, part of its
+       * copiable values (the creature types are `addSubtypes`). Never empty.
+       */
+      readonly addSupertypes?: readonly Supertype[];
+      /**
        * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
        * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not
        * embalmed, is not changed by them.

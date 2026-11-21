@@ -346,6 +346,7 @@ describe('unmatched abilities', () => {
       'replacement.enters-as-copy-embalmed',
       'replacement.enters-as-copy-x-counters',
       'replacement.enters-as-copy-except',
+      'replacement.enters-as-copy-graveyard',
       'replacement.redirect-damage',
       'replacement.damage-bonus',
       'replacement.tokens-instead',

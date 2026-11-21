@@ -7,7 +7,7 @@ import { fail, literal, map, optional, pattern, sequence } from '../../combinato
 import type { IrAbility, IrClause, IrKeywordList, IrNoun, IrTypeList } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { CREATURE_TYPES } from '../noun/creature-types';
-import { permanentPhrase, withoutZone } from '../noun/phrases';
+import { graveyardPhrase, permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, quietly, spanned } from '../registry';
 import { replacement } from './shared';
 
@@ -105,4 +105,98 @@ export const REPLACEMENT_ENTERS_AS_COPY_EXCEPT = defineRule<IrAbility>({
   },
 });
 
-export const COPY_EXCEPT_REPLACEMENT_RULES = [REPLACEMENT_ENTERS_AS_COPY_EXCEPT].map(quietly);
+/**
+ * `replacement.enters-as-copy-graveyard`: "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~
+ * and she's a legendary Trill in addition to her other types." (Federation Fleet deck, CR 614.12, 707.2, 707.9a, 707.9b, 700.4, 205.4a: it enters as a copy of a card of the
+ * controller's graveyard, keeps its own name, and is also legendary and of the creature type.) The engine's `entersAsCopy` with `fromGraveyard`, `keepName` and `addSupertypes`. The copy
+ * lasts for good; the cards it may copy are those of the phrase, which names whose graveyard ("your"). Not read: another owner, a name that is not the card's own, an exception
+ * without the name, without "legendary" or with a type that is not a creature type, a pronoun that does not agree.
+ */
+export const REPLACEMENT_ENTERS_AS_COPY_GRAVEYARD = defineRule<IrAbility>({
+  id: 'replacement.enters-as-copy-graveyard',
+  family: 'replacement',
+  leading: ['you'],
+  cites: [
+    'CR 614.12 (Replacement Effects)',
+    'CR 707.2 (Copying Objects)',
+    'CR 707.9a (Copying Objects)',
+    'CR 707.9b (Copying Objects)',
+    'CR 700.4 (Dies)',
+    'CR 205.4a (Supertypes)',
+  ],
+  examples: [
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types.",
+    "You may have ~ enter as a copy of any creature card in your graveyard, except his name is ~ and he's a legendary Trill in addition to his other types.",
+  ],
+  rejects: [
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types",
+    "You may have ~ enter as a copy of any creature card in a graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types.",
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is Bob and she's a legendary Trill in addition to her other types.",
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a Trill in addition to her other types.",
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Goblinoid in addition to her other types.",
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and he's a legendary Trill in addition to her other types.",
+    'You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn.',
+    "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types. Draw a card.",
+    "You may have ~ enter as a copy of a creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.enters-as-copy-graveyard';
+    const head = literal('you may have ~ enter as a copy of any ')(ctx, pos);
+    if (!head.ok) return head;
+    const kind = spanned(graveyardPhrase(false, 'in'))(ctx, head.pos);
+    if (!kind.ok) return kind;
+    // The cards it may copy are those of the controller's graveyard.
+    if (kind.value.value.controller !== 'you') return fail(ctx, pos);
+    // The pronoun agrees with itself: "her ... she's ... her", "his ... he's ... his", "its ... it's ... its".
+    const name = pattern(
+      /, except (?:(her) name is ~ and she|(his) name is ~ and he|(its) name is ~ and it)['’]s a legendary /iu,
+    )(ctx, kind.pos);
+    if (!name.ok) return name;
+    const possessive = (name.value[1] ?? name.value[2] ?? name.value[3] ?? '').toLowerCase();
+    const type = spanned(pattern(/[A-Z][a-z]+(?![\p{L}\p{N}])/u))(ctx, name.pos);
+    if (!type.ok) return type;
+    const [subtype] = type.value.value;
+    if (!CREATURE_TYPES.has(subtype)) return fail(ctx, pos);
+    const end = literal(` in addition to ${possessive} other types.`)(ctx, type.pos);
+    if (!end.ok) return end;
+    const span = { start: pos, end: end.pos };
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: kind.value.value,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: kind.value.span,
+      rule: id,
+    };
+    const flag = { kind: 'flag' as const, value: true, span, rule: id };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersAsCopy',
+      args: {
+        what,
+        duration: { kind: 'flag', value: false, span, rule: id },
+        exceptTypes: {
+          kind: 'typeList',
+          subtypes: [subtype],
+          additive: true,
+          span: type.value.span,
+          rule: id,
+        },
+        fromGraveyard: flag,
+        keepName: flag,
+        addLegendary: flag,
+      },
+      optional: true,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: end.pos };
+  },
+});
+
+export const COPY_EXCEPT_REPLACEMENT_RULES = [
+  REPLACEMENT_ENTERS_AS_COPY_EXCEPT,
+  REPLACEMENT_ENTERS_AS_COPY_GRAVEYARD,
+].map(quietly);

@@ -16,8 +16,15 @@
  */
 import { CREATURE_TYPES as TABLE } from '@commander-arena/engine';
 
-/** Every creature type of CR 205.3m, as the rules spell it (C’tan and Shi’ar with a typographic apostrophe). */
-export const CREATURE_TYPES: ReadonlySet<string> = new Set(TABLE);
+/**
+ * Creature types real cards use that the CR text of the repository does not list yet (its 205.3m is what the engine's generated table follows, and that file is
+ * never edited by hand). Each one is verified against the real type line and Oracle text of a card of the golden corpus ("Officers you control", "a legendary Trill");
+ * remove an entry once `pnpm creature-types:generate` lists it.
+ */
+export const UNLISTED_CREATURE_TYPES: readonly string[] = ['Officer', 'Trill'];
+
+/** Every creature type of CR 205.3m, as the rules spell it (C’tan and Shi’ar with a typographic apostrophe), and the unlisted ones above. */
+export const CREATURE_TYPES: ReadonlySet<string> = new Set([...TABLE, ...UNLISTED_CREATURE_TYPES]);
 
 /**
  * The plural forms the ending of `type` asks for. The last word takes the ending ("Time Lord" is "Time Lords",
@@ -87,7 +94,7 @@ interface Reading {
  */
 const INDEX: ReadonlyMap<string, Reading> = (() => {
   const forms = new Map<string, Set<string>>();
-  for (const type of TABLE) {
+  for (const type of CREATURE_TYPES) {
     for (const form of [...regularPlurals(type), ...(IRREGULAR_PLURALS[type] ?? [])]) {
       const key = keyOf(form);
       forms.set(key, (forms.get(key) ?? new Set<string>()).add(type));
@@ -98,7 +105,7 @@ const INDEX: ReadonlyMap<string, Reading> = (() => {
     const [only] = types;
     if (types.size === 1 && only !== undefined) index.set(key, { type: only, plural: true });
   }
-  for (const type of TABLE) {
+  for (const type of CREATURE_TYPES) {
     index.set(keyOf(type), { type, plural: INVARIANT_TYPES.has(type) ? null : false });
   }
   return index;
