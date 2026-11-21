@@ -1287,6 +1287,8 @@ export function graveyardPhrase(
     const r = sequence(
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
+      // "creature cards of that type from your graveyard" (CR 608.2d, 205.3m: Haunting Voyage, after "Choose a creature type"): the type chosen as the spell resolves.
+      optional(quiet(CHOSEN_SUFFIX), undefined),
       // "creature card with mana value 3 or less from your graveyard" (stage P18): a card outside the
       // battlefield has its printed power, toughness and mana value (CR 202.3, 208.1).
       optional(quiet(comparisonSuffix(ALL_COMPARABLE)), undefined),
@@ -1313,6 +1315,7 @@ export function graveyardPhrase(
     const [
       { types, anyOf, subtypes, notSubtypes, notSupertypes, extra, subtypeAnyOf },
       ,
+      chosen,
       compared,
       atMostX,
       equalsX,
@@ -1342,6 +1345,7 @@ export function graveyardPhrase(
             : subtypeAnyOf === undefined
               ? {}
               : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
+          ...(chosen === undefined ? {} : { chosen }),
           ...(putThere === 'battlefield' ? { putFromBattlefieldThisTurn: true as const } : {}),
           ...(putThere === 'discardedOrLibrary'
             ? { discardedOrFromLibraryThisTurn: true as const }

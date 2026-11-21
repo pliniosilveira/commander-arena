@@ -1171,6 +1171,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
+    // CR 702.143a: "if this spell was foretold".
+    'foretold',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
     'cameUnderControlSinceLastUpkeep',
     // D-131: any state-reading amount compared with a number ("total power 8 or greater", "seven or more
@@ -2138,6 +2140,8 @@ export const CONDITION_KINDS = [
   'triggerPlayerStat',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
+  /** "If this spell was foretold" (CR 702.143a): the engine's `foretold`. */
+  'foretold',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */
   'cameUnderControlSinceLastUpkeep',
   /** "If creatures you control have total power 8 or greater", "if you have seven or more creature cards in your graveyard" (D-131): the engine's `amountIs`. */

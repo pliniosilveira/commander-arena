@@ -41,12 +41,17 @@ function cardCandidates(
   triggerDamage?: number,
   among?: readonly ObjectId[],
   handOf?: SeatId,
+  /** CR 608.2d, 205.3m: the creature type chosen as the spell resolves, for a filter of "the chosen type" ("cards of that type from your graveyard"). */
+  chosenCreatureType?: string,
 ): ObjectId[] {
   // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
   const ctx = {
     controller: seat,
     source,
     ...(triggerDamage === undefined ? {} : { triggerDamage }),
+    ...(chosenCreatureType === undefined
+      ? {}
+      : { sourceChosen: { creatureType: chosenCreatureType } }),
   };
   // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
   if (filter.zone === 'exile') {
@@ -195,6 +200,7 @@ export function runChooseMove(
               res.triggerDamage,
               instruction.among,
               instruction.handOf,
+              res.chosenCreatureType,
             ).filter(
               // D-411: only the cards the effect before it moved.
               (id) => instruction.among === undefined || instruction.among.includes(id),

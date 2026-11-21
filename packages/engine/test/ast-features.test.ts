@@ -124,6 +124,8 @@ describe('the dimensions', () => {
       // Lorehold group 3: "if a player has one or fewer cards in hand".
       'aPlayerCardsInHand',
       'escaped',
+      // CR 702.143a: "if this spell was foretold".
+      'foretold',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',

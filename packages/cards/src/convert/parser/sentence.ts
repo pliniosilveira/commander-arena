@@ -70,6 +70,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.cast-from-graveyard',
   // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
   'condition.cast-in-own-main-phase',
+  // CR 702.143a (Haunting Voyage): "If this spell was foretold, return all creature cards of that type from your graveyard to the battlefield instead."
+  'condition.foretold',
   // Burning Curiosity (CR 118.8, 701.68a): "If this spell's additional cost was paid, exile the top three cards instead."
   'condition.additional-cost-paid',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."

@@ -3722,6 +3722,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
+    case 'foretold': // CR 702.143a: the face must list a foretell cost (`checkCastFace`)
       break;
     case 'subjectGreaterPt': // D-120: where it may stand is checked with the trigger (validate.ts)
       // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
