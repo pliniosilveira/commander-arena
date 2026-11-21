@@ -2289,7 +2289,8 @@
   position: absolute;
   right: 8px;
   bottom: 8px;
-  z-index: 10;
+  /* Over the floating stack (30), which a tall decision's panels can reach. */
+  z-index: 32;
   width: var(--controls-width);
   max-height: 60vh;
   display: flex;
