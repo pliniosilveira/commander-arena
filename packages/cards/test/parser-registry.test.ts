@@ -1155,6 +1155,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token ${e}.`,
   ),
   'static.top-card-abilities': asIs,
+  'static.linked-exile-abilities': asIs,
   // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
   'effect.extra-beginning-phase': permanent(
     (e) => `At the beginning of each of your postcombat main phases, ${e}.`,

@@ -1265,6 +1265,7 @@ describe('unmatched abilities', () => {
       'static.linked-exile',
       'static.attached-unless-monarch',
       'static.top-card-abilities',
+      'static.linked-exile-abilities',
       'static.cant-attack-block-unless',
       'static.attached-becomes',
       'static.pt-amount',

@@ -809,6 +809,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'cantBeBlockedBy':
     case 'takeFromLinkedExile':
     case 'grantActivatedAbilitiesOfTopCard':
+    case 'grantActivatedAbilitiesOfLinkedExile':
     case 'castAsThoughFlash':
     case 'spellsCantBeCountered':
     case 'opponentsCantCastSpells':

@@ -7081,6 +7081,17 @@ export type StaticEffect =
       readonly card: ObjectFilter;
     }
   /**
+   * "Creatures you control have all activated abilities of all land cards exiled with this creature." (issue 102, Steward of the Harvest; CR 613.1f, 607.2a, 113.6): while the permanent has
+   * the ability, every permanent `subject` names has every activated and mana ability of each card in exile that the permanent exiled with its linked ability (`exile.linked`) and that `from`
+   * matches (a filter describing the card as printed: card types, subtypes, colors; no zone, owner or controller), in layer 6 with the permanent's timestamp, after their own abilities. A card
+   * that leaves exile is no longer one of them. Read each time the abilities of a permanent are looked at.
+   */
+  | {
+      readonly kind: 'grantActivatedAbilitiesOfLinkedExile';
+      readonly subject: StaticSubject;
+      readonly from: ObjectFilter;
+    }
+  /**
    * "You have hexproof." (CR 702.11b, 113.6, D-149): the controller of the permanent with the ability can't be the target of spells or
    * abilities their opponents control, while the permanent has the ability (the same as hexproof of a permanent, for the player). A player's
    * own spells and abilities can still target them. Read where targets are chosen and again as the spell or ability resolves (CR 608.2b).

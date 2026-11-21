@@ -1323,6 +1323,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'takeFromLinkedExile',
     // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
     'grantActivatedAbilitiesOfTopCard',
+    // Issue 102 (Steward of the Harvest): "Creatures you control have all activated abilities of all land cards exiled with ~".
+    'grantActivatedAbilitiesOfLinkedExile',
     'castAsThoughFlash',
     // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
     'creatureOffBattlefield',
@@ -2294,6 +2296,8 @@ export const STATIC_KINDS = [
   'takeFromLinkedExile',
   /** "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card" (CR 613.1f, issue 144): the engine's `grantActivatedAbilitiesOfTopCard`. */
   'grantActivatedAbilitiesOfTopCard',
+  /** "Creatures you control have all activated abilities of all land cards exiled with this creature" (issue 102, CR 613.1f, 607.2a): the engine's `grantActivatedAbilitiesOfLinkedExile`. */
+  'grantActivatedAbilitiesOfLinkedExile',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
   /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */

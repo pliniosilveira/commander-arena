@@ -107,7 +107,10 @@ function hasLinkedExile(e: unknown): boolean {
 function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
   const reads = face.abilities.some(
     (a) =>
-      (a?.kind === 'static' && a.static?.kind === 'takeFromLinkedExile') ||
+      (a?.kind === 'static' &&
+        (a.static?.kind === 'takeFromLinkedExile' ||
+          // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~".
+          a.static?.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.
@@ -204,6 +207,26 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
             if (typeof t !== 'string' || t === '')
               issue(out, `${path}.alsoSubtypes[${i}]`, 'empty subtype');
           });
+        }
+      }
+      return true;
+    case 'grantActivatedAbilitiesOfLinkedExile':
+      // Issue 102 (Steward of the Harvest): the cards the permanent exiled with its linked ability, named by a filter of the card as printed.
+      if (s.from === undefined || s.from === null || typeof s.from !== 'object') {
+        issue(
+          out,
+          `${path}.from`,
+          'grantActivatedAbilitiesOfLinkedExile names the cards: a filter',
+        );
+      } else {
+        checkDescribing(s.from, `${path}.from`, out);
+        if (
+          filterSome(
+            s.from,
+            (f) => f.zone !== undefined || f.owner !== undefined || f.controller !== undefined,
+          )
+        ) {
+          issue(out, `${path}.from`, 'the cards are read as printed: no zone, owner or controller');
         }
       }
       return true;

@@ -805,3 +805,33 @@ describe('Dauthi Voidwalker, whole: milled cards are exiled with void counters a
     g.expect.life(1, 37);
   });
 });
+
+describe('Steward of the Harvest: "When this creature enters, exile up to three target land cards from your graveyard. Creatures you control have all activated abilities of all land cards exiled with this creature." (CR 613.1f, 607.2a)', () => {
+  const steward = parsed(
+    'SYNTHETIC Parsed Steward',
+    'Creature — Human Druid',
+    'When ~ enters, exile up to three target land cards from your graveyard.\nCreatures you control have all activated abilities of all land cards exiled with ~.',
+    { manaCost: '{3}{G}', power: '3', toughness: '3', colors: ['G'] },
+  );
+  test('a creature taps for the mana of the exiled land', () => {
+    const g = scenario()
+      .seat(0)
+      .define(steward)
+      .hand(steward.name)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest', 'Grizzly Bears')
+      .graveyard('Mountain')
+      .library('Island', 'Island')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(steward.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ name: 'Mountain', zone: 'graveyard' });
+    g.passAll();
+    g.expect.zone('Mountain', 'exile', { seat: 0 });
+    g.act(0).tapForMana('Grizzly Bears');
+    g.expect.pool(0, 'R');
+  });
+});

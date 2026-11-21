@@ -1765,6 +1765,11 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'grantActivatedAbilitiesOfTopCard'; readonly card: IrFilter }
   /**
+   * "Creatures you control have all activated abilities of all land cards exiled with ~." (issue 102, Steward of the Harvest, CR 613.1f, 607.2a): the activated abilities of the cards
+   * the permanent exiled with its linked ability, given to the subject group.
+   */
+  | { readonly kind: 'grantActivatedAbilitiesOfLinkedExile'; readonly from: IrFilter }
+  /**
    * "~ can't attack or block unless you control another creature with power 4 or greater" (stage P32, D-147, CR 508.1a, 509.1a): the
    * restrictions (`cantAttack`, `cantBlock` or both) that hold unless the condition does. The subject is `~`.
    */
