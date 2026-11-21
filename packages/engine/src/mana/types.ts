@@ -25,6 +25,11 @@ export type ManaRestriction =
    */
   | { readonly kind: 'xCost' }
   /**
+   * "This mana can't be spent to pay generic mana costs" (CR 106.6; Jegantha, the Wellspring): it may be spent on any spell or ability, but never on a generic mana cost: not on
+   * the {N} of a cost, nor on an {X}, nor on the generic part of a hybrid symbol such as {2/W}. It does pay a colored symbol, the colored side of a hybrid symbol included.
+   */
+  | { readonly kind: 'notGeneric' }
+  /**
    * May be spent only on spells (never on abilities) that match (CR 106.6; D-149: "Spend this mana only to cast an Angel spell"): the spell
    * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
    */

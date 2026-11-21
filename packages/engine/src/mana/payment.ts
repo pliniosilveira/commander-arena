@@ -126,6 +126,8 @@ interface Entry {
   readonly payAct: boolean;
   /** Its mana pays generic mana only (`PaymentSource.genericOnly`). */
   readonly genericOnly: boolean;
+  /** Its mana can't pay generic mana (`ManaRestriction` `notGeneric`, CR 106.6): never a generic demand of the cost nor of an activation cost, only a colored symbol. */
+  readonly notGeneric: boolean;
   /** The card types of the permanent that makes it (D-183). */
   readonly types: readonly string[];
   /** Issue 144 (CR 609.4b): its mana of a color pays any colored symbol of the spell, as the spell may be paid with mana as though it were of any color. */
@@ -310,6 +312,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           // An activation cost is paid for an ability, which restricted mana may not be spent on.
           payAct: restrictionAllows(mana.restriction, { ability: true }),
           genericOnly: false,
+          notGeneric: mana.restriction?.kind === 'notGeneric',
           types: mana.sourceTypes ?? [],
           anyColor: spendsAnyColor(request),
         },
@@ -374,6 +377,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           vec,
           payAct: !mandatory && source.genericOnly !== true,
           genericOnly: source.genericOnly === true,
+          notGeneric: source.restriction?.kind === 'notGeneric',
           types: source.types ?? [],
           anyColor: spendsAnyColor(request),
         });
@@ -420,10 +424,11 @@ function assignUnits(
         }
       }
       if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
-      dims.push(GENERIC_DIM);
+      if (!entry.notGeneric) dims.push(GENERIC_DIM);
       // Mana of a source with no mana cost may instead pay an activation cost (one level only).
       if (entry.payAct) {
-        dims.push(ACT_BASE + colorDim(color), ACT_GENERIC);
+        dims.push(ACT_BASE + colorDim(color));
+        if (!entry.notGeneric) dims.push(ACT_GENERIC);
         // A hybrid symbol of a costed ability that this color is one half of (CR 107.4e).
         flex.forEach((colors, k) => {
           if (colors.includes(color)) dims.push(TOTAL_DIMS + k);

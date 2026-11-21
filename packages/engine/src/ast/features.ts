@@ -122,6 +122,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyAbilities',
     // Issue 144 (Throne of Eldraine): "Spend this mana only to cast monocolored spells of that color." (`ManaAbility.spendOnly.monocoloredChosen`) and "Spend only mana of the chosen color to activate this ability." (`Cost` `mana` with `onlyChosenColor`).
     'manaSpendOnlyMonocolored',
+    // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs." (`ManaAbility.spendOnly.notGeneric`)
+    'manaSpendOnlyNotGeneric',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
@@ -1724,6 +1726,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyAbilities',
   /** "Spend this mana only to cast monocolored spells of that color" (issue 144, CR 106.6, 105.2a): `ManaAbility.spendOnly.monocoloredChosen`. */
   'manaSpendOnlyMonocolored',
+  /** "This mana can't be spent to pay generic mana costs" (CR 106.6): `ManaAbility.spendOnly.notGeneric`. */
+  'manaSpendOnlyNotGeneric',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
@@ -2682,6 +2686,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyXCost: true,
   manaSpendOnlyAbilities: true,
   manaSpendOnlyMonocolored: true,
+  manaSpendOnlyNotGeneric: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   functionsInGraveyard: true,

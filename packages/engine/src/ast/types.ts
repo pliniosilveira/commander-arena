@@ -7841,6 +7841,12 @@ export interface ManaAbility {
      * `qualities`.
      */
     readonly monocoloredChosen?: true;
+    /**
+     * "This mana can't be spent to pay generic mana costs." (CR 106.6; Jegantha, the Wellspring): the mana can pay for any spell or ability, but never a generic mana cost (a {N}, an
+     * {X}, the generic part of a hybrid symbol such as {2/W}); it pays colored symbols. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities`, `xCost`,
+     * `abilitiesOnly` or `monocoloredChosen`.
+     */
+    readonly notGeneric?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

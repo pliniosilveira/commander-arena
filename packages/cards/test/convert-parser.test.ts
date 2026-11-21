@@ -911,6 +911,7 @@ describe('unmatched abilities', () => {
       'effect.each-player-reveals-then-draws',
       'effect.spend-only-monocolored-chosen',
       'effect.spend-only-chosen-color-activate',
+      'effect.mana-not-generic',
       'effect.choose-graveyard-cards',
       'effect.copy-each-token',
       'effect.copy-each-creature-token',

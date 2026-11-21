@@ -64,6 +64,8 @@ export function spendRestrictionOf(
   }
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
+  // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
+  if (only.notGeneric === true) return { kind: 'notGeneric' };
   // CR 106.6 (issue 345): "Spend this mana only to activate abilities".
   if (only.abilitiesOnly === true) return { kind: 'abilitiesOnly' };
   // Issue 199 (CR 106.6, 607.2d): "of the chosen type" is the creature type the source chose as it entered; none chosen, an empty list (no spell matches it).
