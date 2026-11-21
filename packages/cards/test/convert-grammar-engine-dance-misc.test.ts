@@ -74,3 +74,49 @@ describe('Omnath, Locus of the Roil: damage equal to the Elementals you control'
     g.expect.life(1, 18);
   });
 });
+
+const shatter = real('Shatter the Sky');
+
+test('Shatter the Sky is a valid card', () => {
+  expect(validateCard(shatter)).toEqual([]);
+});
+
+describe('Shatter the Sky: players with a creature of power 4 or greater draw, then all creatures are destroyed', () => {
+  const play = (mine: readonly string[], theirs: readonly string[]) => {
+    const g = scenario()
+      .define(shatter)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(shatter.name)
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains', ...mine)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(...theirs)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(shatter.name, { pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('only the player with a 4-power creature draws, and every creature is destroyed', () => {
+    const g = play(['Serra Angel'], ['Grizzly Bears']);
+    g.expect.handSize(0, 1);
+    g.expect.handSize(1, 0);
+    g.expect.zone('Serra Angel', 'graveyard', { seat: 0, count: 1 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 1, count: 1 });
+  });
+
+  test('both players with a 4-power creature draw', () => {
+    const g = play(['Serra Angel'], ['Serra Angel']);
+    g.expect.handSize(0, 1);
+    g.expect.handSize(1, 1);
+  });
+
+  test('with no creature of power 4 or greater nobody draws, and the creatures are still destroyed', () => {
+    const g = play(['Grizzly Bears'], []);
+    g.expect.handSize(0, 0);
+    g.expect.handSize(1, 0);
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0, count: 1 });
+  });
+});

@@ -504,6 +504,8 @@ function recipientText(
       return 'each other opponent';
     case 'eachPlayerExcept':
       return 'each other player';
+    case 'eachPlayerControlling':
+      return 'each player who controls one';
     case 'controllerOf':
       return 'its controller';
     case 'ownerOf':
@@ -702,6 +704,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'eachOpponent':
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
+    case 'eachPlayerControlling':
     case 'eachPlayer':
       return { who: 'they', third: false };
     case 'controllerOf':

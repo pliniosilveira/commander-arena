@@ -1546,6 +1546,20 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerControlling':
+      // CR 102.1, 109.4 (Shatter the Sky): "each player who controls a creature with power 4 or greater": the filter reads battlefield permanents, each player as "you".
+      checkFilter(sel.filter, `${path}.filter`, out);
+      if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be counted');
+      }
+      if (sel.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          "'each player who controls' names the controller itself",
+        );
+      }
+      break;
     case 'eachPlayerExcept':
       // CR 102.1 (Oft-Nabbed Goat): "each other player": the players the `except` selector does not name.
       checkPlayerSelector(sel.except, `${path}.except`, scope, out);
@@ -1680,6 +1694,7 @@ export const PLAYER_ONLY = [
   'eachOpponent',
   'eachOtherOpponent',
   'eachPlayerExcept',
+  'eachPlayerControlling',
   'all',
   'controllerOf',
   'ownerOf',

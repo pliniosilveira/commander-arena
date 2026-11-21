@@ -1174,6 +1174,11 @@ export type PlayerSelector =
    */
   | { readonly kind: 'eachPlayerExcept'; readonly except: PlayerSelector }
   /**
+   * "Each player who controls a creature with power 4 or greater" (Shatter the Sky; CR 102.1, 109.4, 101.4): the players still in the game who control at least one battlefield permanent that
+   * matches `filter`, read as the effect resolves, in the order of CR 101.4. The filter names no controller of its own (each player is read as "you" in turn).
+   */
+  | { readonly kind: 'eachPlayerControlling'; readonly filter: ObjectFilter }
+  /**
    * Several selectors at once (D-131): "you and target opponent" is `all` of `you` and a `target` player. The players
    * they name together, each once (a player named twice acts once), in the order CR 101.4 gives (the active player
    * first, then in turn order): the order in which each acts in a draw, a life change, a sacrifice or a token

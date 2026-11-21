@@ -69,6 +69,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   triggerDamagedPlayers: 'selector:triggerDamagedPlayers',
   // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
   combatDamagedByNamed: 'selector:combatDamagedByNamed',
+  // CR 102.1: "each player who controls a creature with power 4 or greater".
+  eachPlayerControlling: 'selector:eachPlayerControlling',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -1454,6 +1456,17 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       // CR 603.2c: the opponents a batch trigger damaged; `validateCard` refuses it in any other ability.
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'triggerDamagedPlayers' });
+    }
+    case 'eachPlayerControlling': {
+      // CR 102.1, 109.4: the players who control a battlefield permanent like the noun after "who controls"; the filter names no controller (each player is "you" in turn).
+      if (noun.of === undefined) return failure(noun, []);
+      const filter = lowerFilter(noun.of);
+      if (!filter.ok) return filter;
+      if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
+        return failure(noun, []);
+      }
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
     }
     case 'combatDamagedByNamed': {
       // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.

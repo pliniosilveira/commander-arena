@@ -121,6 +121,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'triggerDamagedPlayers',
   // "each opponent dealt combat damage this game by a creature named ~": several players, as above.
   'combatDamagedByNamed',
+  // "each player who controls a creature with power 4 or greater": several players, as above.
+  'eachPlayerControlling',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {

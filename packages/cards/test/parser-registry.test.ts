@@ -1134,6 +1134,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-opponent-dealt-combat-damage-by-named': permanent(
     (e) => `At the beginning of your end step, ${e} loses 1 life.`,
   ),
+  // CR 102.1: the players with a creature of power 4 or greater, as the subject of "draws a card".
+  'noun.each-player-who-controls': permanent(
+    (e) => `At the beginning of your end step, ${e} draws a card.`,
+  ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,
   ),

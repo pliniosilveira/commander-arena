@@ -927,6 +927,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachOtherOpponent',
     // Oft-Nabbed Goat: "each other player" besides its owner (`eachPlayerExcept`, CR 102.1).
     'eachPlayerExcept',
+    // Shatter the Sky: "each player who controls a creature with power 4 or greater" (`eachPlayerControlling`, CR 102.1).
+    'eachPlayerControlling',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -1853,6 +1855,8 @@ export const SELECTOR_KINDS = [
   'eachOtherOpponent',
   /** "Each other player" besides the one a selector names (CR 102.1, Oft-Nabbed Goat): the engine's `PlayerSelector` `eachPlayerExcept`. */
   'eachPlayerExcept',
+  /** "Each player who controls a creature with power 4 or greater" (CR 102.1, 109.4, Shatter the Sky): the engine's `PlayerSelector` `eachPlayerControlling`. */
+  'eachPlayerControlling',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
