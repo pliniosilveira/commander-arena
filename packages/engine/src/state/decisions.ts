@@ -762,6 +762,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
    * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
+   * `'dredge'` (CR 702.52a, issue 102): "you may instead mill N cards and return this card from your graveyard to your hand": asked of the player about to draw (`seat`), once for each card with dredge in their graveyard that could be used; `subject` is the card (in the graveyard, public), `source` the same card. Accepting mills the cards and returns it instead of drawing; declining asks about the next card, and when none is left the card is drawn. `cancel` is refused.
    * `'castCard'` (D-350, CR 608.2g): "you may cast target instant or sorcery card from a graveyard": `subject` is the card (in a graveyard, public), `source` the ability on
    * the stack; declining leaves the card in its graveyard. `'buyback'` (CR 702.27a, 601.2b; Galadriel group 3): the spell being cast has buyback and the total with the buyback
    * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
@@ -780,6 +781,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'suspend'
     | 'madness'
     | 'miracleReveal'
+    | 'dredge'
     | 'miracle'
     | 'gift'
     | 'costChoice'
@@ -879,6 +881,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'clashOpponent'
     // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life": the options are `seat:<n>`.
     | 'playerChoice'
+    // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller of the effect chooses which opponent (`source` is the spell or ability): the options are `seat:<n>`.
+    | 'chooseOpponent'
     // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
     | 'protector';
   readonly options: readonly string[];

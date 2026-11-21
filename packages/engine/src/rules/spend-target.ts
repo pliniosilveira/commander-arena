@@ -15,6 +15,8 @@ export function spellSpendTarget(
   anyType: boolean,
   /** Issue 144 (CR 609.4b): mana can be spent as though it were mana of any color: left out, what the spell on the stack says. */
   anyColor: boolean = spell.stack?.anyManaColor === true,
+  /** CR 601.2a: the zone the spell is cast from, when it is not on the stack yet. */
+  castFrom: string | undefined = spell.stack?.castFrom,
 ): Extract<SpendTarget, { types: readonly string[] }> {
   const derived = derive(state, spell);
   return {
@@ -26,6 +28,8 @@ export function spellSpendTarget(
     hasX: derived.manaCost !== null && xSymbolCount(derived.manaCost) > 0,
     // CR 105.2a: the colors of the spell, which a "monocolored spells" restriction reads.
     colors: derived.colors,
+    // CR 601.2a, 106.6: the zone the spell is cast from, which a "from your graveyard" restriction reads.
+    ...(castFrom === undefined ? {} : { castFrom }),
     ...(anyType ? { anyType: true as const } : {}),
     ...(anyColor ? { anyColor: true as const } : {}),
   };

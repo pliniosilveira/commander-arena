@@ -67,6 +67,7 @@ import { answerDestruction } from './rules/destroy-replacement';
 import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
+  answerDredgeDraw,
   answerMiracleDraw,
   answerUntapChoice,
   discardCards,
@@ -104,6 +105,7 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionChooseOpponent,
   answerResolutionChoosePlayer,
   answerResolutionClash,
   answerResolutionClashOpponent,
@@ -111,6 +113,7 @@ import {
   answerResolutionCounterPick,
   answerResolutionCreatureType,
   answerResolutionDevour,
+  answerResolutionDredge,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
@@ -440,6 +443,14 @@ function answerConfirm(
     }
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }
+  // CR 702.52a (Dredge, issue 102): "you may instead mill N cards and return this card": asked in the draw step (no resolution) or by a draw of a resolving spell or ability.
+  if (d.purpose === 'dredge' && d.subject !== undefined) {
+    if (state.resolution === null) {
+      const r = answerDredgeDraw(state, d.subject, accept);
+      return ok(r.state, r.events);
+    }
+    return finishResolutionAnswer(answerResolutionDredge(state, d.subject, accept));
+  }
   // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-274): "you may play it without paying its mana cost" (Suspend), "its owner may
   // cast it by paying [cost]" (Madness) and "you may cast it by paying [its miracle cost]" (Miracle): asked while the ability resolves.
   if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
@@ -522,6 +533,11 @@ function answerChooseOption(
     // CR 701.30b: the opponent the controller chose to clash with.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
+  if (d.purpose === 'chooseOpponent') {
+    // CR 608.2d, 801.5b: the opponent the controller chose for "an opponent separates / chooses / copies ...".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
   }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.

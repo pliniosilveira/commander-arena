@@ -286,11 +286,18 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (options.ordinary !== true) return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
       if (blocked.length > 0) return failure(cost, blocked);
+      // Issue 102 (Necropolis Fiend, CR 107.3a, 602.2b): "Exile X cards from your graveyard" is the X announced as the ability is activated.
+      const countX = cost.what.count?.kind === 'x';
       const many = cost.what.count?.kind === 'number' ? cost.what.count.value : 1;
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
       return filter.ok
-        ? ok({ kind: 'exileFromGraveyard', filter: filter.value, count: many })
+        ? ok({
+            kind: 'exileFromGraveyard',
+            filter: filter.value,
+            count: many,
+            ...(countX ? { countX: true as const } : {}),
+          })
         : filter;
     }
     case 'exileFromHand': {

@@ -416,3 +416,47 @@ button {
   width: var(--controls-width);
   overflow-y: auto;
 }
+
+/* The report button: at the bottom right; its dialog opens above it. */
+.report-toggle {
+  left: auto;
+  right: 8px;
+  bottom: 8px;
+}
+.report-dialog {
+  left: auto;
+  right: 8px;
+  bottom: 44px;
+  height: auto;
+  width: min(420px, calc(100% - 16px));
+  gap: 8px;
+}
+.report-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+.report-text {
+  min-height: 140px;
+  resize: vertical;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.report-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim, var(--text));
+}
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.report-submit {
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 600;
+}

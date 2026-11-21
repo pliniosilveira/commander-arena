@@ -58,6 +58,7 @@ import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { faceDownSpellFields, isFaceDown } from './face-down';
+import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
 import { libraryCastSacrificeOf } from './library-cast-cost';
@@ -117,6 +118,8 @@ export interface SpellCost {
   readonly anyType?: true;
   /** Issue 144 (CR 609.4b): mana can be spent as though it were mana of any color, so a mana of a color pays any colored symbol of `symbols`. */
   readonly anyColor?: true;
+  /** CR 601.2a, 106.6: the zone the spell is cast from, read by mana that can be spent only on a spell cast from a graveyard (issue 102). */
+  readonly castFrom?: CastFrom;
 }
 
 /** "Tap four untapped creatures you control with flying" (D-149): how many permanents matching the filter are tapped. */
@@ -521,7 +524,20 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         : 0),
   );
   // CR 702.138a: an escape cost also exiles that many other cards from the caster's graveyard.
-  const exile = alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : 0;
+  // Issue 102 (Kotis, CR 601.2f): a spell cast from the graveyard by a permission that says "by exiling three other cards from your graveyard" exiles them too.
+  const permissionExile =
+    alternative !== undefined || zone !== 'graveyard'
+      ? 0
+      : // Once cast, the spell remembers the permission it was cast with; before that the card is read as it is in the graveyard.
+        (spell.stack?.graveyardPlay?.exileOthers ??
+        (() => {
+          const card = state.objects[request.spell.id];
+          return card === undefined
+            ? 0
+            : (graveyardPlayPermission(state, seat, card, false)?.exileOthers ?? 0);
+        })());
+  const exile =
+    alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
@@ -579,6 +595,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     tap,
     ...(anyType ? { anyType: true as const } : {}),
     ...(anyColor ? { anyColor: true as const } : {}),
+    castFrom: zone,
   };
 }
 
@@ -662,9 +679,11 @@ export function castManaPlan(
   sacrificeCount = 1,
   /** Issue 144 (CR 609.4b): mana can be spent as though it were mana of any color: left out, what the spell on the stack says. */
   anyColor: boolean = spell.stack?.anyManaColor === true,
+  /** CR 601.2a: the zone the spell is cast from, when it is not on the stack yet (the affordability check): left out, what the spell on the stack says. */
+  castFrom?: CastFrom,
 ): PaymentPlan | null {
   // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes; CR 106.6: or its mana value and {X}.
-  const target = spellSpendTarget(state, spell, anyType, anyColor);
+  const target = spellSpendTarget(state, spell, anyType, anyColor, castFrom);
   const options = extraSources === undefined ? {} : { extraSources };
   const reserve = handReserve(state, seat, spell);
   const plan = planFor(state, seat, symbols, target, reserve, options);
@@ -788,6 +807,7 @@ export function canPaySpellCost(
       cost.anyType === true,
       cost.sacrificeCount ?? 1,
       cost.anyColor === true,
+      cost.castFrom,
     ) !== null
   );
 }

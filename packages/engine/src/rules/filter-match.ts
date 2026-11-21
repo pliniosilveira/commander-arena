@@ -414,6 +414,13 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'hand') return false;
   }
+  // CR 601.2a (issue 102, River Kelpie): "a spell cast from a graveyard": a spell on the stack that was cast from a graveyard.
+  if (filter.castFromGraveyard === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'graveyard') return false;
+  }
   // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
   if (
     filter.xInManaCost === true &&

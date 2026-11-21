@@ -1,26 +1,23 @@
 /**
- * The land row as players lay lands out at a table (D-215): equal lands stacked in small columns,
- * similar columns side by side. Pure, so the order, the columns and the sizes are unit tested
- * without a DOM.
+ * The land row: one line, every land side by side, and equal basic lands overlapped horizontally
+ * like cards on a table (the first in front, each next one behind it showing a strip of its right
+ * side). Pure, so the order, the clusters and the sizes are unit tested without a DOM.
  *
  * - A group is the lands that look alike: the same card name (a basic land by its name, a nonbasic
  *   land by its card name, so two Command Towers stack), the same state the player reads on the
  *   tile (counters, a chosen color or type, a control effect), token or card. A land with an Aura
  *   on it stands alone: its strips hang under its own tile.
- * - A column holds at most five cards of one group; the sixth starts a new column. The columns are
- *   filled in that order, so a land that arrives never moves the cards already laid out.
+ * - Only basic lands overlap: a cluster is every card of one basic group. A nonbasic land is a tile
+ *   of its own, so two Command Towers stand side by side.
  * - Groups are ordered the way a player sorts: basic lands first in the order of the colors (Plains,
  *   Island, Swamp, Mountain, Forest, then Wastes), the snow-covered ones after the plain ones, then
  *   the nonbasic lands by name.
- * - Inside a column the cards are in the order they entered (the object id), the last one in front.
+ * - Inside a cluster the cards are in the order they entered (the object id), the first in front.
  *   Tapping a land never moves it: a click on a card taps it and a second click untaps it, as on a
  *   flat row, and the tilt and a mark in its corner show which cards are tapped.
  */
 import type { ObjectId, ObjectView } from '@commander-arena/engine';
 import { chosenLabel } from '../../game/chosen';
-
-/** The most cards one column holds. */
-export const LAND_STACK_MAX = 5;
 
 /** Order of the basic land names: the colors in the order of the color wheel (W, U, B, R, G), then Wastes. */
 const BASIC_ORDER: readonly string[] = [
@@ -64,17 +61,12 @@ export function landKey(o: ObjectView, alone = false): string {
   ]);
 }
 
-/** One column of the land row. */
+/** One cluster of the land row: the overlapped cards of a basic group, or one nonbasic land. */
 export interface LandColumn {
-  /** The group's key, shared by its columns. */
+  /** The group's key, shared by its clusters. */
   readonly key: string;
-  /** Its cards from the back to the front, in the order they entered; the last is drawn in front. */
+  /** Its cards from the front to the back, in the order they entered; the first is drawn in front. */
   readonly objects: readonly ObjectView[];
-  /** This column's place among the columns of its group (0 first) and how many the group has. */
-  readonly part: number;
-  readonly parts: number;
-  /** Every card of the group, over all its columns. */
-  readonly groupSize: number;
 }
 
 const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -85,16 +77,11 @@ interface Group {
   readonly objects: ObjectView[];
 }
 
-/**
- * The columns of a land row. `capacity` is how many cards a column holds (at most
- * `LAND_STACK_MAX`; a short row passes less). `alone` names the lands that must not stack.
- */
+/** The clusters of a land row. `alone` names the lands that must not overlap (an Aura hangs under them). */
 export function groupLands(
   lands: readonly ObjectView[],
-  capacity: number = LAND_STACK_MAX,
   alone: (o: ObjectView) => boolean = () => false,
 ): LandColumn[] {
-  const size = Math.max(1, Math.min(LAND_STACK_MAX, Math.floor(capacity)));
   const groups = new Map<string, Group>();
   for (const o of lands) {
     const key = landKey(o, alone(o));
@@ -117,23 +104,14 @@ export function groupLands(
   const columns: LandColumn[] = [];
   for (const group of ordered) {
     const cards = [...group.objects].sort((a, b) => numberOf(a.id) - numberOf(b.id));
-    const parts = Math.ceil(cards.length / size);
-    for (let part = 0; part < parts; part += 1) {
-      columns.push({
-        key: group.key,
-        objects: cards.slice(part * size, (part + 1) * size),
-        part,
-        parts,
-        groupSize: cards.length,
-      });
+    const first = cards[0];
+    if (first !== undefined && first.supertypes.includes('basic') && !first.isToken) {
+      columns.push({ key: group.key, objects: cards });
+    } else {
+      for (const card of cards) columns.push({ key: group.key, objects: [card] });
     }
   }
   return columns;
-}
-
-/** The number of cards in the deepest column of a row laid out with `capacity` per column. */
-export function deepest(columns: readonly LandColumn[]): number {
-  return columns.reduce((most, column) => Math.max(most, column.objects.length), 1);
 }
 
 // ------------------------------------------------------------------------------------- sizes
@@ -145,83 +123,61 @@ export interface LandSpec {
   readonly aspect?: number;
   /** The smallest tile whose name stays legible. */
   readonly minTile: number;
-  /**
-   * The smallest tile worth overlapping cards for: below it a row makes its columns shallower and
-   * uses its width instead, which is cheap, rather than draw small tiles.
-   */
-  readonly stackTile: number;
-  /** The least of a card that shows when another lies over it (its name strip). */
+  /** The least of a card that shows when another lies over it, in pixels. */
   readonly minStep: number;
   readonly gap: number;
+  /** Width the row spends on attachment strips beside its lands, whatever the tile size. */
+  readonly extraW?: number;
 }
 
 export interface LandLayout {
-  /** Cards a column holds in this row. */
-  readonly capacity: number;
   /** The height of a tile. */
   readonly tile: number;
   /** The width of a tile. */
   readonly width: number;
-  /** Distance between the top edges of neighbouring cards of a column. */
+  /** Distance between the left edges of neighbouring cards of a cluster. */
   readonly step: number;
   /** Still wider than the row at the smallest tile: the row scrolls sideways. */
   readonly overflow: boolean;
 }
 
-/** How much of a card shows when another lies over it, for a tile of this size, at the least. */
-const stripOf = (tile: number, spec: LandSpec): number =>
-  Math.max(spec.minStep, Math.round(tile * 0.22));
-/** And the most it shows when the row has room: a third of the card. */
-const roomyStripOf = (tile: number): number => Math.round(tile * 0.34);
+/** The most of a card that shows when the row has room: a third of its width. */
+const roomyStepOf = (width: number): number => Math.round(width * 0.34);
+
+/** The width a cluster of `count` cards takes. */
+export const clusterWidth = (count: number, width: number, step: number): number =>
+  width + Math.max(0, count - 1) * step;
 
 /**
- * The biggest tile at most `spec.maxTile` for a column of `depth` cards in `height`; null when the
- * smallest worthwhile tile (`stackTile` for a stack, `minTile` for a single card) does not fit.
- */
-function tileForDepth(depth: number, height: number, spec: LandSpec): number | null {
-  const smallest = depth > 1 ? Math.min(spec.stackTile, spec.maxTile) : spec.minTile;
-  for (let tile = spec.maxTile; tile >= smallest; tile -= 1) {
-    if (tile + (depth - 1) * stripOf(tile, spec) <= height) return tile;
-  }
-  return null;
-}
-
-/**
- * The size of the columns of a land row. `groupsOf(capacity)` returns the columns of the row for a
- * capacity (`groupLands` over the row's lands). The capacity is the deepest column the height
- * allows at a worthwhile tile (at most five); then the tile shrinks until the columns fit the width,
- * down to `minTile`, and past that the row scrolls. `width` null means not measured yet: no limit.
+ * The size of the clusters of a one-line land row: the tile is as tall as the row allows (at most
+ * `maxTile`), then the overlap tightens down to `minStep`, and past that the row scrolls; the tile
+ * keeps its size. `width` null means not measured yet: no limit.
  */
 export function layoutLands(
-  groupsOf: (capacity: number) => readonly LandColumn[],
+  columns: readonly LandColumn[],
   width: number | null,
   height: number,
   spec: LandSpec,
-): { readonly layout: LandLayout; readonly columns: readonly LandColumn[] } {
-  const wanted = deepest(groupsOf(LAND_STACK_MAX));
-  let capacity = wanted;
-  let tile = tileForDepth(capacity, height, spec);
-  while (tile === null && capacity > 1) {
-    capacity -= 1;
-    tile = tileForDepth(capacity, height, spec);
-  }
-  // One card deep always fits: the row is short, so the tile is as tall as the row allows.
+): LandLayout {
   const widthOf = (t: number) => Math.round(t * (spec.aspect ?? 1));
-  let side = tile ?? Math.max(spec.minTile, Math.min(spec.maxTile, height));
-  const columns = groupsOf(capacity);
-  const depth = deepest(columns);
-  let overflow = false;
-  if (width !== null && columns.length > 0) {
-    const fits = (t: number) =>
-      columns.length * widthOf(t) + (columns.length - 1) * spec.gap <= width + 0.5;
-    while (side > spec.minTile && !fits(side)) side -= 1;
-    overflow = !fits(side);
+  let tile = Math.max(spec.minTile, Math.min(spec.maxTile, Math.floor(height)));
+  // The tile never shrinks to fit: past the tightest overlap the row scrolls.
+  const floor = tile;
+  const overlaps = columns.reduce((n, c) => n + Math.max(0, c.objects.length - 1), 0);
+  if (width === null || columns.length === 0) {
+    return { tile, width: widthOf(tile), step: roomyStepOf(widthOf(tile)), overflow: false };
   }
-  const room = depth > 1 ? Math.floor((height - side) / (depth - 1)) : 0;
-  const step = depth > 1 ? Math.max(1, Math.min(roomyStripOf(side), room)) : 0;
-  return { layout: { capacity, tile: side, width: widthOf(side), step, overflow }, columns };
+  for (;;) {
+    const w = widthOf(tile);
+    const base = columns.length * w + (columns.length - 1) * spec.gap + (spec.extraW ?? 0);
+    const room = overlaps === 0 ? Infinity : Math.floor((width + 0.5 - base) / overlaps);
+    const step = Math.min(roomyStepOf(w), room);
+    if (base <= width + 0.5 && (overlaps === 0 || step >= spec.minStep)) {
+      return { tile, width: w, step: Math.max(step, spec.minStep), overflow: false };
+    }
+    if (tile <= floor) {
+      return { tile, width: w, step: spec.minStep, overflow: true };
+    }
+    tile -= 1;
+  }
 }
-
-/** The height a column of `depth` cards takes. */
-export const columnHeight = (depth: number, tile: number, step: number): number =>
-  tile + Math.max(0, depth - 1) * step;

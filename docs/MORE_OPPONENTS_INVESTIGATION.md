@@ -168,16 +168,13 @@ Read-only audit of `packages/engine/src/rules/`. The selector layer is already c
 
 | Finding | Where | Issue |
 | --- | --- | --- |
-| Only the first opponent is asked to block; attackers aimed at other opponents are never blocked | `combat-flow.ts:53`, `:113` | #414 |
-| "Choose an opponent" takes the first opponent (Demonstrate, piles, Coin of Fate) | `effects.ts:1426`, `choose-aside.ts`, `pile-separate.ts`, `exile-piles.ts`, `activation-exile.ts` | #416 |
-| `lifeTotalHolds` counts opponents who left the game | `condition-reads.ts:65` | #417 |
 | Each-player discard, search, exile and "may" act after each choice, not after all (CR 101.4, 701.23i) | `effects.ts` | #418 |
 | Myriad is a no-op with 3 or more seats | `ast/features.ts:1587` | #419 |
 | Latent `resolvePlayers(...)[0]` and `[0]` sites, none reachable from real card text | `amounts.ts`, `effects.ts`, `legality.ts`, `control-effects.ts` | #422 |
 
-A battle's protector is now chosen by its controller among their living opponents (CR 310.9a, 310.12a; #415, asked only with more than one).
+A battle's protector is now chosen by its controller among their living opponents (CR 310.9a, 310.12a; #415), and so is the opponent in "an opponent separates, chooses or copies" (Demonstrate, piles, Coin of Fate; #416, CR 608.2d, 801.5b), each asked only with more than one. "An opponent has N or less life" now ignores opponents who left the game (CR 800.4a; #417).
 
-The combat data model already supports several defenders (each attacker stores its own target and defender, and `defending.ts` derives the defending player per creature, CR 508.5a); only the declare-blockers flow assumes one. Tests for annihilator, `reselectAttack`, goad and commander damage with 3 seats: #421. Not audited: the AI, the UI and the view code.
+The combat data model already supports several defenders (each attacker stores its own target and defender, and `defending.ts` derives the defending player per creature, CR 508.5a); the defending players now declare blockers one after the other, each against the attackers aimed at them (CR 802.4; #414). Tests for annihilator, `reselectAttack`, goad and commander damage with 3 seats: #421. Not audited: the AI, the UI and the view code.
 
 ## Cards not supported for more than one opponent
 

@@ -53,6 +53,7 @@ const EXECUTABLE_KEYWORDS = [
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
   'afflict', // scenario-xx-gisa-g1-afflict (D-472)
+  'dredge', // convert-grammar-engine-sultai-arisen (issue 102, Dredge 3)
   'mobilize', // convert-grammar-engine-mardu-surge (issue 101, on the real cards)
   'fabricate', // convert-grammar-engine-mardu-surge (issue 101, on the real card)
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
@@ -161,6 +162,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
   afflict: { kind: 'afflict', count: 3 },
+  dredge: { kind: 'dredge', count: 3 },
   mobilize: { kind: 'mobilize', count: 1 },
   fabricate: { kind: 'fabricate', count: 2 },
   backup: { kind: 'backup', count: 1 },
@@ -421,6 +423,9 @@ describe('supported feature gate', () => {
       'castFirstOfKind',
       'castDuringOpponentTurn',
       'castDuringYourTurn',
+      // Issue 102: "enters from a graveyard" and "leaves your graveyard during your turn".
+      'entersBattlefieldFromGraveyard',
+      'leftGraveyardDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',

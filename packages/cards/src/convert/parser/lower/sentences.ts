@@ -816,6 +816,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'becomeCopy',
   // Quandrix Unlimited deck, group G (CR 122.1, 608.2c): "you may remove a +1/+1 counter from ~. If you do, ...".
   'removeCounters',
+  // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, ...": done when some life was lost.
+  'loseLife',
 ]);
 
 /**
@@ -1063,7 +1065,11 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   const [clause, ...more] = sentence.clauses;
   // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
   // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
-  if (clause?.verb === 'castFree' && clause.optional && more.length === 0) {
+  if (
+    (clause?.verb === 'castFree' || clause?.verb === 'castChosenGraveyardSpell') &&
+    clause.optional &&
+    more.length === 0
+  ) {
     // Death Toll deck, group D (CR 608.2c): "Then if there are twenty or more cards in your graveyard, you may play the exiled card without paying its mana cost.": a test of the
     // game the sentence starts with, which the engine's `conditional` runs the free cast under (the cast is the controller's to decline, as with no test). Any other test (what an
     // offer before it did, a kicker) is still refused here, never guessed.
@@ -1102,6 +1108,19 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
       value: [{ kind: 'conditional', condition: guard, effect: oneEffect(cast.value) }],
       rule: cast.rule,
     };
+  }
+  // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped.": a card chosen from the graveyard, the choice of none or one is
+  // the offer itself (the engine's `moveToZone` of a `choose` with `optional`), so it is not wrapped in a `may`.
+  if (clause?.verb === 'putFromZone' && clause.optional && more.length === 0) {
+    if (
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined
+    ) {
+      return refuse(sentence);
+    }
+    const may = { kind: 'flag' as const, value: true, span: clause.span, rule: clause.rule };
+    return lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
   }
   if (
     clause === undefined ||

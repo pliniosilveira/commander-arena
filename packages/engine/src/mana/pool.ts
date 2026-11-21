@@ -25,6 +25,8 @@ export type SpendTarget =
       readonly hasX?: boolean;
       /** The colors of the spell as it is cast (`W`, `U`, `B`, `R`, `G`); read by a `monocolored` restriction (issue 144, CR 105.2a). */
       readonly colors?: readonly string[];
+      /** The zone the spell is cast from (CR 601.2a); read by a `fromGraveyard` restriction (issue 102, CR 106.6). */
+      readonly castFrom?: string;
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
@@ -89,6 +91,13 @@ export function restrictionAllows(
           ? 'hasX' in target && target.hasX === true
           : 'manaValue' in target && target.manaValue !== undefined && target.manaValue >= q.value,
       )
+    ) {
+      return false;
+    }
+    // CR 106.6, 601.2a: "only to cast a spell from your graveyard": the spell was cast from a graveyard.
+    if (
+      restriction.fromGraveyard === true &&
+      !('castFrom' in target && target.castFrom === 'graveyard')
     ) {
       return false;
     }

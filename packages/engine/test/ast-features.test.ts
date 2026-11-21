@@ -257,6 +257,8 @@ describe('the dimensions', () => {
       'takeFromLinkedExile',
       // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
       'grantActivatedAbilitiesOfTopCard',
+      // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
+      'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',

@@ -124,6 +124,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyMonocolored',
     // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs." (`ManaAbility.spendOnly.notGeneric`)
     'manaSpendOnlyNotGeneric',
+    // Issue 102 (Lord of the Forsaken): "Spend this mana only to cast a spell from your graveyard." (`ManaAbility.spendOnly.fromGraveyard`)
+    'manaSpendOnlyFromGraveyard',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
@@ -158,6 +160,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealUntilCount',
     // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
     'revealUntilGraveyard',
+    // Issue 102 (Consuming Aberration): "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (`revealUntil` with `perPlayer`).
+    'revealUntilEachPlayer',
+    // Issue 102 (Diviner of Mist): "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead" (`castFree` of a `choose` from the graveyard, with `exileInstead`).
+    'castFreeFromGraveyard',
+    // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
+    'chosenByOpponent',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
@@ -177,6 +185,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modeDifferentTargets',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
+    // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
+    'exileFromGraveyardX',
     // Issue 101: "{4}{B}{B}{B}, Discard X cards: ..." (`Cost` `discard` with `countX`, CR 107.3a, 602.2b).
     'discardCostX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
@@ -459,6 +469,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
     'exileFromTriggerCards',
+    // Issue 102 (Dauthi Voidwalker): "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost".
+    'mayPlayCounterCard',
+    // Issue 102 (Colossal Grave-Reaver): "put one of them onto the battlefield" of a batch of cards put into a graveyard.
+    'putOneOfTriggerCards',
     // Twilight Diviner: "create a token that's a copy of one of them" of the permanents a batch enters trigger saw (CR 603.2c, 707.2).
     'copyOneOfTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
@@ -602,6 +616,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castDuringOpponentTurn',
     // CR 603.2: "an opponent casts a spell during your turn" (`castSpell` with `duringTurn: 'you'`).
     'castDuringYourTurn',
+    // Issue 102 (River Kelpie): "enters from a graveyard" (`entersBattlefield` with `fromGraveyard`).
+    'entersBattlefieldFromGraveyard',
+    // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
+    'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -671,6 +689,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'annihilator',
     // D-472: Afflict N (CR 702.130).
     'afflict',
+    // Issue 102 (Life from the Loam): Dredge N (CR 702.52).
+    'dredge',
     // Issue 101: Mobilize N (CR 702.181).
     'mobilize',
     // Issue 101: Fabricate N (CR 702.123).
@@ -754,6 +774,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'asEntersChoose',
     // D-133: "If a nontoken creature an opponent controls would die, instead exile it and create a token".
     'wouldDie',
+    // Issue 102 (Dauthi Voidwalker): "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it".
+    'exileInsteadOfOpponentGraveyard',
     // D-149: "If you would gain life, you gain that much life plus 1 instead", "each other Angel you control enters with an
     // additional +1/+1 counter on it".
     'lifeGainBonus',
@@ -954,6 +976,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
     'castFromHand',
+    // Issue 102 (River Kelpie): "a spell cast from a graveyard" (`ObjectFilter.castFromGraveyard`).
+    'castSpellFromGraveyard',
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
@@ -1363,6 +1387,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'takeFromLinkedExile',
     // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
     'grantActivatedAbilitiesOfTopCard',
+    // Issue 102 (Steward of the Harvest): "Creatures you control have all activated abilities of all land cards exiled with ~".
+    'grantActivatedAbilitiesOfLinkedExile',
     'castAsThoughFlash',
     // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
     'creatureOffBattlefield',
@@ -1536,6 +1562,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastThisTurn',
     // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
     'greatestManaValueCast',
+    // Issue 102 (Welcome the Dead): "the number of cards that were put into your graveyard from your hand or library this turn" (CR 404.1).
+    'cardsToGraveyardThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
     // D-575: "for each card exiled this way" for a spell's additional cost.
@@ -1732,6 +1760,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyMonocolored',
   /** "This mana can't be spent to pay generic mana costs" (CR 106.6): `ManaAbility.spendOnly.notGeneric`. */
   'manaSpendOnlyNotGeneric',
+  /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): `ManaAbility.spendOnly.fromGraveyard`. */
+  'manaSpendOnlyFromGraveyard',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
@@ -1768,6 +1798,12 @@ export const ABILITY_FEATURES = [
   'revealUntilCount',
   /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
   'revealUntilGraveyard',
+  /** "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (issue 102, CR 701.20, 101.4): the engine's `revealUntil` with `perPlayer` and `rest: 'graveyard'`. */
+  'revealUntilEachPlayer',
+  /** "Cast an instant or sorcery spell from your graveyard without paying its mana cost, then exile it instead" (issue 102, CR 608.2g, 614.1a): the engine's `castFree` of a `choose` from the graveyard. */
+  'castFreeFromGraveyard',
+  /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
+  'chosenByOpponent',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
@@ -1788,6 +1824,8 @@ export const ABILITY_FEATURES = [
   'modeDifferentTargets',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
+  /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
+  'exileFromGraveyardX',
   /** "Discard X cards" in the cost of an activated ability (issue 101, CR 107.3a, 602.2b): a `discard` cost with `countX`. */
   'discardCostX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
@@ -1832,6 +1870,10 @@ export const TRIGGER_FEATURES = [
   'castDuringOpponentTurn',
   /** "Whenever an opponent casts a spell during your turn" (CR 603.2): `castSpell` with `duringTurn: 'you'`. */
   'castDuringYourTurn',
+  /** "Whenever a card leaves your graveyard during your turn" (issue 102, CR 603.2): `leftGraveyard` with `duringTurn`. */
+  'leftGraveyardDuringYourTurn',
+  /** "Whenever this creature or another permanent enters from a graveyard" (issue 102, CR 603.6a): `entersBattlefield` with `fromGraveyard`. */
+  'entersBattlefieldFromGraveyard',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -1972,6 +2014,8 @@ export const SELECTOR_KINDS = [
   'notCastFromHand',
   /** "A spell you cast from your hand" (CR 601.2a, D-638): the engine's `ObjectFilter.castFromHand`. */
   'castFromHand',
+  /** "A spell cast from a graveyard" (CR 601.2a, issue 102): the engine's `ObjectFilter.castFromGraveyard`. */
+  'castSpellFromGraveyard',
   /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
@@ -2377,6 +2421,8 @@ export const STATIC_KINDS = [
   'takeFromLinkedExile',
   /** "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card" (CR 613.1f, issue 144): the engine's `grantActivatedAbilitiesOfTopCard`. */
   'grantActivatedAbilitiesOfTopCard',
+  /** "Creatures you control have all activated abilities of all land cards exiled with this creature" (issue 102, CR 613.1f, 607.2a): the engine's `grantActivatedAbilitiesOfLinkedExile`. */
+  'grantActivatedAbilitiesOfLinkedExile',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
   /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */
@@ -2589,6 +2635,8 @@ export const AMOUNT_KINDS = [
   'spellsCastThisTurn',
   /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */
   'greatestManaValueCast',
+  /** "The number of cards that were put into your graveyard from your hand or library this turn" (issue 102, CR 404.1): the engine's `cardsToGraveyardThisTurn`. */
+  'cardsToGraveyardThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
@@ -2695,6 +2743,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyAbilities: true,
   manaSpendOnlyMonocolored: true,
   manaSpendOnlyNotGeneric: true,
+  manaSpendOnlyFromGraveyard: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
@@ -2713,6 +2762,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   moveFaceDownLand: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
+  revealUntilEachPlayer: true,
+  castFreeFromGraveyard: true,
+  chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,
   copyEntersFromGraveyard: true,
@@ -2723,6 +2775,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeAllOrNone: true,
   modeDifferentTargets: true,
   sacrificeX: true,
+  exileFromGraveyardX: true,
   discardCostX: true,
   optionalSacrifice: true,
   optionalBlight: true,
@@ -2886,6 +2939,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
+  mayPlayCounterCard: true,
+  putOneOfTriggerCards: true,
   copyOneOfTriggerCards: true,
   fight: true,
   castFree: true,
@@ -2988,6 +3043,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castFirstOfKind: true,
   castDuringOpponentTurn: true,
   castDuringYourTurn: true,
+  leftGraveyardDuringYourTurn: true,
+  entersBattlefieldFromGraveyard: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
@@ -3042,6 +3099,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   exalted: true,
   annihilator: true,
   afflict: true,
+  dredge: true,
   mobilize: true,
   fabricate: true,
   backup: true,
@@ -3099,6 +3157,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersPrepared: true,
   asEntersChoose: true,
   wouldDie: true,
+  exileInsteadOfOpponentGraveyard: true,
   lifeGainBonus: true,
   lifeGainDouble: true,
   countersPlus: true,

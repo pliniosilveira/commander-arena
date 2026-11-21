@@ -543,8 +543,7 @@
 }
 
 .board-row-land {
-  /* The land row asks for more height while its columns are deep (LandRow.tsx `landGrow`). */
-  flex: var(--land-grow, 1) 1 0;
+  flex: 1 1 0;
 }
 
 /* Artifacts, enchantments and planeswalkers are rare: an empty row gives its room to the others. */
@@ -566,11 +565,6 @@
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-}
-
-/* Room under the tiles for the name strips of attached Auras and Equipment (Row.tsx). */
-.board-row-scroll {
-  padding-bottom: var(--attach-reserve, 0px);
 }
 
 .board-row-scroll::-webkit-scrollbar {
@@ -1089,8 +1083,8 @@
   margin-top: 18px;
 }
 
-/* Auras and Equipment attached to a permanent: the host's tile with a name strip per attachment
-   tucked behind it, so the stack reads like cards laid over each other. */
+/* Auras and Equipment attached to a permanent: the host's tile with a vertical name strip per
+   attachment tucked behind it to the right, like the basic lands of the land row overlap. */
 .board-stack {
   position: relative;
   flex: none;
@@ -1110,19 +1104,20 @@
 
 .board-attach-slot {
   position: absolute;
-  left: 0;
-  right: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
-  justify-content: center;
+  align-items: flex-start;
 }
 
 .board-attach {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
   gap: 4px;
-  height: 100%;
-  padding: 0 4px 0 0;
+  width: 100%;
+  padding: 4px 0 0;
   overflow: hidden;
   color: var(--text);
   font-size: calc(10px * var(--text-scale));
@@ -1132,8 +1127,8 @@
   cursor: default;
   background: var(--bg-raised);
   border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 0 6px 6px;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
   pointer-events: auto;
 }
 
@@ -1160,13 +1155,14 @@
 .board-attach-band {
   flex: none;
   align-self: stretch;
-  width: 5px;
+  height: 5px;
 }
 
 .board-attach-name {
   flex: 1 1 auto;
-  min-width: 0;
-  padding-bottom: 2px;
+  min-height: 0;
+  padding-left: 3px;
+  writing-mode: vertical-rl;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1179,8 +1175,9 @@
 
 .board-attach-badge {
   flex: none;
-  padding: 0 4px;
-  margin-bottom: 1px;
+  padding: 2px 0;
+  margin-bottom: 2px;
+  writing-mode: vertical-rl;
   font-size: calc(9px * var(--text-scale));
   color: var(--accent-text);
   background: var(--accent);
@@ -2063,11 +2060,12 @@
   max-width: 170px;
 }
 
-/* ---- The land row: equal lands stacked in columns (D-215, LandRow.tsx, lands.ts) ---------- */
+/* ---- The land row: one line, equal basic lands overlapped sideways (LandRow.tsx, lands.ts) ---- */
 
 /* The columns hang from the top of one band; the band is centred by the padding the row computes. */
 .board-row-land .board-row-scroll {
   align-items: flex-start;
+  gap: 12px; /* LAND_GAP in LandRow.tsx */
   padding-top: var(--land-pad, 0px);
   padding-bottom: 0;
 }
@@ -2077,11 +2075,11 @@
   flex: none;
 }
 
-/* Each card lies over the one behind it (the card in front has the highest z-index), so every card shows
-   its top edge: the colour band and the name. The slot is the size of a tile; the tile fills it. */
+/* Each card lies over the one after it (the first card has the highest z-index), so every card shows
+   a strip of its right side. The slot is the size of a tile; the tile fills it. */
 .board-land-slot {
   position: absolute;
-  left: 0;
+  top: 0;
   display: block;
 }
 
@@ -2090,7 +2088,7 @@
   display: block;
 }
 
-/* How many cards the column holds, off the top-right corner. */
+/* How many cards the cluster holds, off the top-right corner. */
 .board-land-count {
   position: absolute;
   top: -6px;

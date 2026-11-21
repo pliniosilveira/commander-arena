@@ -251,6 +251,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
   // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
+  'restriction.during-your-turn-and-if': permanent((e) => `{1}: Draw a card. ${e}`),
   'restriction.opponents-only': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
   'static.creature-ability-cost-reduction-power': asIs,
@@ -265,6 +266,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of combat on your turn, create ${e}, where X is the number of creatures you control.`,
   ),
   'trigger.cast-from-hand': whenever,
+  'trigger.cast-from-graveyard': whenever,
   'trigger.token-combat-damage-batch': whenever,
   'trigger.enters-and-token-damage': permanent((e) => `When ${e}, you gain 1 life.`),
   'effect.exile-instead-when-leaving': permanent(
@@ -332,6 +334,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.landfall': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
+  'trigger.enters-from-graveyard': whenever,
   'trigger.cast': whenever,
   'trigger.becomes-target': whenever,
   'trigger.upkeep': atStep,
@@ -496,6 +499,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.conditional-suffix': asIs,
   'static.cast-from-graveyard': asIs,
   'replacement.would-die': asIs,
+  'replacement.exile-instead-of-opponent-graveyard': asIs,
   // Stage P30 (D-135, D-136): the recursion slice. "Gift a card" is a line of its own; the conditions begin a sentence or follow the
   // trigger; "enters untapped" and "dies or is put into exile" are triggers; the reduction of a cost ends an activated ability.
   'keyword.gift': asIs,
@@ -1223,11 +1227,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
   // Issue 144 (Goblin Dark-Dwellers, Glimpse the Impossible, Conspicuous Snoop).
   'effect.cast-own-graveyard-card-free': permanent((e) => `When ~ enters, ${e}.`),
+  'effect.cast-chosen-graveyard-spell-free': permanent((e) => `Whenever ~ attacks, ${e}.`),
   'amount.for-each-card-put-into-your-graveyard': spell(
     (e) =>
       `Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token ${e}.`,
   ),
   'static.top-card-abilities': asIs,
+  'static.linked-exile-abilities': asIs,
   // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
   'effect.extra-beginning-phase': permanent(
     (e) => `At the beginning of each of your postcombat main phases, ${e}.`,

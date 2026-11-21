@@ -146,6 +146,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {G}{G} for each creature you control',
     'add {B} or {G} for each permanent destroyed this way',
     'add {R} or {G} for each creature you control',
+    // Issue 102 (Crypt of Agadeem, CR 105.2): a color word before the cards counted.
+    'add {B} for each black creature card in your graveyard',
     // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
     'add an amount of mana of that color equal to your devotion to that color',
     // Kami of Whispered Hopes, Astral Cornucopia: a mana ability's count of mana of one chosen color.

@@ -41,6 +41,7 @@ import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runChooseOne } from './choose-one';
+import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
 import { newClash, runClash } from './clash';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
@@ -206,6 +207,12 @@ export function runInstruction(
 ): StepOutcome {
   // D-191: the answers given so far to the replacement questions of the damage this instruction deals (rules/damage-effects.ts).
   const flow = askingFlow(res.damageAnswers);
+  // CR 608.2d, 801.5b: "an opponent separates ...": with more than one opponent left, the controller is asked which one before the effect starts.
+  if (instruction.kind === 'chooseOpponent') return runChooseOpponent(state, res, instruction);
+  if (instruction.kind === 'effect') {
+    const asked = askBeforeEffect(state, res, instruction);
+    if (asked !== null) return asked;
+  }
   if (instruction.kind === 'choosePlayer') {
     // CR 608.2d, 119.1 (The Black Gate): the controller of the effect chooses among the players with the most life; with one candidate nothing is asked.
     if (instruction.chosen !== null) return done(state);
@@ -1165,6 +1172,10 @@ function runEffect(
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
               filter: sel.filter,
+              // Issue 102 (Tasigur): "of an opponent's choice": the first opponent in turn order is asked (CR 101.4, as for `opponentChoosesCard`).
+              ...(sel.chosenBy === 'opponent' && opponentsOf(state, res.controller)[0] !== undefined
+                ? { decider: opponentsOf(state, res.controller)[0] as SeatId }
+                : {}),
               count: amountOf(state, sel.count ?? 1, ctx, targets),
               to: effect.to,
               position: effect.position ?? 'top',
@@ -1448,9 +1459,8 @@ function runEffect(
           performed: spells.length,
         };
       }
-      // D-665 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
-      const opponent =
-        effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
+      // D-665 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the opponent the controller chose, or the only one left; the copy is theirs.
+      const opponent = effect.copier === 'opponent' ? opponentOf(state, res) : undefined;
       if (effect.copier === 'opponent' && opponent === undefined) return done(state);
       return {
         ...done(
@@ -2300,7 +2310,12 @@ function runEffect(
         // CR 702.101a (D-120): the life lost is remembered for "the total life lost this way".
         if (effect.kind === 'loseLife') lost += Math.max(0, amount);
       }
-      return { ...done(next, events), ...(lost > 0 ? { lifeLost: lost } : {}) };
+      // CR 608.2c: a "you may have target player lose 3 life. If you do, ..." counts as done when some life was lost (`may`, issue 102).
+      return {
+        ...done(next, events),
+        ...(lost > 0 ? { lifeLost: lost } : {}),
+        ...(effect.kind === 'loseLife' && lost > 0 ? { performed: 1 } : {}),
+      };
     }
 
     case 'meld':
@@ -2994,6 +3009,59 @@ function runEffect(
       );
     }
 
+    case 'mayPlayCounterCard': {
+      // CR 608.2d, 122.1 (issue 102, Dauthi Voidwalker): the controller chooses an exiled card an opponent owns with the counter on it, and may play it this turn.
+      const among = Object.values(state.objects)
+        .filter(
+          (o) =>
+            o.zone === 'exile' &&
+            o.card !== null &&
+            o.owner !== res.controller &&
+            (o.counters[effect.counter] ?? 0) > 0,
+        )
+        .map((o) => o.id);
+      if (among.length === 0) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'exile' as const },
+            count: 1,
+            to: 'exile' as const,
+            position: 'top' as const,
+            among,
+            permit: effect.free === true ? { free: true as const } : {},
+            chosen: null,
+          },
+        ],
+      );
+    }
+
+    case 'putOneOfTriggerCards': {
+      // CR 603.2c, 608.2d, 400.7, 110.2a (issue 102): the controller chooses one of the cards that triggered this ability that are still in a graveyard and puts it onto the battlefield
+      // under their control; with one candidate nothing is asked, with none nothing is done.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'graveyard' as const },
+            count: 1,
+            to: 'battlefield' as const,
+            position: 'top' as const,
+            tapped: false,
+            controller: 'you' as const,
+            anyOwner: true as const,
+            among: res.triggerCards ?? [],
+            chosen: null,
+          },
+        ],
+      );
+    }
+
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
       const seats = resolvePlayers(state, effect.players, ctx, targets);
@@ -3179,6 +3247,7 @@ function runEffect(
             kind: 'castFree',
             objects: effect.objects,
             play: effect.play === true,
+            ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
             ...(caster === undefined ? {} : { seat: caster }),
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
@@ -3214,6 +3283,17 @@ function runEffect(
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
       // Issue 81 (Jhoira, Proteus Staff): the library may be another player's (`from`); with none to name nothing is revealed.
+      // Issue 102 (Consuming Aberration): "each opponent reveals ... until they reveal a land card, then puts those cards into their graveyard": every player named reveals from their own library.
+      if (effect.from !== undefined && effect.perPlayer === true) {
+        const outcomes = resolvePlayers(state, effect.from, ctx, targets).map((revealer) =>
+          runRevealUntil(state, res, effect, 1, revealer),
+        );
+        return done(
+          state,
+          outcomes.flatMap((o) => o.events),
+          outcomes.flatMap((o) => o.front),
+        );
+      }
       if (effect.from !== undefined) {
         const revealer = resolvePlayers(state, effect.from, ctx, targets)[0];
         if (revealer === undefined) return done(state);

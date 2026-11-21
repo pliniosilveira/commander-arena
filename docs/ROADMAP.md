@@ -189,7 +189,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Total mana value" look: the AI takes the cards greedily within the limit; it does not search for the best subset.
 - Tragic Arrogance: the same permanent may be chosen for more than one of its types (an artifact creature as both); the owner confirmed this reading.
 - Tragic Arrogance: the nonland permanents are sacrificed together, in turn order, with no replacement chosen by the player beyond the usual ones.
-- Coin of Fate: "an opponent" is the first opponent in turn order still in the game; with more than two players the controller does not choose which.
 - Spirit of Resilience: the "you may" is asked even when none of the cards can be copied (accepting then does nothing).
 - Phasing: the keyword and "phase in" as an effect are not built; permanents phased out when their controller loses the game stay phased out (CR 702.26k, 702.26n).
 - Turbulent Steppe was read from text the owner pasted, not from a Scryfall extraction; it is not in the golden corpus until the owner extracts it.
@@ -200,6 +199,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "You win the game" is not read: no effect makes a player win the game.
 - `loseGame` is not read with a delay or a condition inside its sentence.
 - A player who leaves on their own turn stays the active seat until it ends (CR 800.4j: no active player); CR 800.4e to 800.4h (damage, costs, choices of a player who left) are not built.
+- Declare blockers skips a defender who has left the game (CR 800.4e): no one blocks for attackers aimed at them. Combat damage to such a player is not checked.
 - `attackedPlayers` reads only the permanent of the ability (`this`).
 - Ascend: the city's blessing is checked with the state-based actions, so "create two tokens, then if you have the city's blessing ..." reads the answer from before the tokens (CR 702.131b says "any time").
 - Ascend on an instant or sorcery (CR 702.131a) is not built; a card with it is unsupported.
@@ -273,7 +273,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A list of kinds taken from the top cards: "a Dragon or Elf creature card" (subtypes, then a card type) and a list of three with no comma before the "or" are not read; one card is taken.
 - "If N or more mana was spent to cast that spell" is lowered only in a trigger about another spell being cast, not in a "cast or copy" trigger or a spell's own text.
 - "If N or more mana was spent": "at most", "exactly" and the mana of a kind ("{R}{R} was spent") are not read.
-- Fact or Fiction: "an opponent" is the first opponent in turn order still in the game; with more than two players the controller does not choose which.
 - The cards put into a graveyard by piles go in library order, top card first; CR 404.3 lets their owner arrange them, which no effect of the engine offers.
 - Piles: the parser reads only Fact or Fiction's wording. "Separate them into two piles. An opponent chooses one of those piles. ..." runs in the engine but has no grammar rule.
 - Piles, not built: a count of "X plus one" cards, piles of target cards in graveyards put onto the battlefield, and a pile put anywhere but the hand and the graveyard.
@@ -573,3 +572,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Replicate given by Hatchery Sliver is not given to a spell with {X} in its mana cost.
 - Encore given to graveyard cards is skipped for a card with an Encore of its own.
 - The Medium and Hard challenge emblems are written as AST: "if it's your first turn of the game" is not read by the Oracle text parser.
+- Tasigur's "an opponent chooses" and Dauthi Voidwalker's exile replacement use the first opponent; with several opponents the choice and the replacement order (CR 616.1) are not offered.

@@ -91,4 +91,41 @@ export const EFFECT_SPEND_ONLY_QUALITIES = defineRule<Clauses>({
   },
 });
 
-export const SPEND_QUALITIES_EFFECT_RULES = [EFFECT_SPEND_ONLY_QUALITIES].map(quietly);
+/**
+ * `effect.spend-only-from-graveyard`: "Spend this mana only to cast a spell from your graveyard." (issue 102, Lord of the Forsaken; CR 106.6, 601.2a): the mana can pay for a
+ * spell cast from its controller's graveyard. It says something about the mana ability before it; the lowering gives the engine its `spendOnly.fromGraveyard`. Not read: a
+ * spell type or quality ("a creature spell from your graveyard"), another zone, another player's graveyard, "spells" in the plural, an ability.
+ */
+export const EFFECT_SPEND_ONLY_FROM_GRAVEYARD = defineRule<Clauses>({
+  id: 'effect.spend-only-from-graveyard',
+  family: 'effect',
+  leading: ['spend'],
+  cites: ['CR 106.6 (Mana)', 'CR 601.2a (Casting Spells)', 'CR 605.1a (Mana Abilities)'],
+  examples: ['spend this mana only to cast a spell from your graveyard'],
+  rejects: [
+    'spend this mana only to cast a creature spell from your graveyard',
+    'spend this mana only to cast a spell from your hand',
+    "spend this mana only to cast a spell from an opponent's graveyard",
+    'spend this mana only to cast spells from your graveyard',
+    'spend this mana only to cast a spell from your graveyard and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/spend this mana only to cast a spell from your graveyard(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const id = 'effect.spend-only-from-graveyard';
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'spendOnly', { fromGraveyard: flag(id, span) }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+export const SPEND_QUALITIES_EFFECT_RULES = [
+  EFFECT_SPEND_ONLY_QUALITIES,
+  EFFECT_SPEND_ONLY_FROM_GRAVEYARD,
+].map(quietly);

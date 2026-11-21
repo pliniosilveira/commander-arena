@@ -31,6 +31,7 @@ export function optionText(
     | 'clashOpponent'
     | 'playerChoice'
     | 'protector'
+    | 'chooseOpponent'
     | 'option'
     | 'effect'
     | 'riot'
@@ -48,7 +49,8 @@ export function optionText(
     purpose === 'assignOpponent' ||
     purpose === 'clashOpponent' ||
     purpose === 'playerChoice' ||
-    purpose === 'protector'
+    purpose === 'protector' ||
+    purpose === 'chooseOpponent'
   ) {
     const seat = /^seat:(\d+)$/.exec(option)?.[1];
     return seat === undefined ? option : `player ${Number(seat) + 1}`;
@@ -73,6 +75,7 @@ export function purposeNoun(
     | 'clashOpponent'
     | 'playerChoice'
     | 'protector'
+    | 'chooseOpponent'
     | 'option'
     | 'effect'
     | 'riot'
@@ -95,6 +98,7 @@ export function purposeNoun(
   if (purpose === 'clashOpponent') return 'opponent to clash with';
   if (purpose === 'playerChoice') return 'player';
   if (purpose === 'protector') return 'protector';
+  if (purpose === 'chooseOpponent') return 'opponent';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
   if (purpose === 'lifePaid') return 'amount of life to pay';

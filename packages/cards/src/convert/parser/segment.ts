@@ -298,6 +298,20 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/**
+ * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
+ * CR 115.1, 608.2c): the second sentence says what is done with the cards the first one targets, so the two are one instruction (`effect.put-one-per-graveyard`).
+ */
+const CHOOSE_PER_PLAYER_GRAVEYARD =
+  /^for each player, choose up to one target creature card in that player['’]s graveyard\.$/i;
+/**
+ * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker, CR 608.2d, 601.2, 122.1):
+ * the second sentence is what is done with the card the first one chooses, so the two are one instruction (`effect.play-chosen-void-card`).
+ */
+const CHOOSE_EXILED_VOID_CARD =
+  /(?:^|: )choose an exiled card an opponent owns with a void counter on it\.$/i;
+const MAY_PLAY_IT_FREE = /^you may play it this turn without paying its mana cost\.$/i;
+const PUT_THOSE_CARDS_ONTO = /^put those cards onto the battlefield under your control\.$/i;
 /** "You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand." (For the Ancestors): the middle sentence of the same instruction. */
 const TAKE_ANY_OF_CHOSEN_TYPE =
   /^you may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand\.$/i;
@@ -658,6 +672,8 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
  * "When this creature enters, you may cast target instant or sorcery card with mana value 3 or less from your graveyard without paying its mana cost. If that spell would be put into your
  * graveyard, exile it instead." (issue 144, Goblin Dark-Dwellers, CR 118.9, 614.1a): the second sentence is a rider of the cast the first one allows (`effect.cast-own-graveyard-card-free`).
  */
+const CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE =
+  /(?:^|, )you may cast an instant or sorcery spell from your graveyard with mana value [1-9] or less without paying its mana cost\.$/i;
 const CAST_FROM_YOUR_GRAVEYARD_FREE =
   /(?:^|, )you may cast target [^.,]* cards? [^.,]*from your graveyard without paying its mana cost\.$/i;
 
@@ -719,7 +735,8 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
-const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
+const PUT_FROM_AMONG_REVEALED =
+  /^you may put [^.]* from among them (?:into your hand|onto the battlefield tapped)\.$/i;
 /**
  * "You and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you
  * revealed into your hand." (CR 701.20a, 119.3): three sentences that are one instruction, kept together for `effect.reveal-top-duel`.
@@ -1123,6 +1140,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, CHOOSE_ANY_OPPONENT_AT_RANDOM) && said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT)) ||
@@ -1136,6 +1154,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PAY_REFLEXIVE_AND_COPY_THEM) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
+        (said(a, CHOOSE_PER_PLAYER_GRAVEYARD) && said(b, PUT_THOSE_CARDS_ONTO)) ||
+        (said(a, CHOOSE_EXILED_VOID_CARD) && said(b, MAY_PLAY_IT_FREE)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||

@@ -130,6 +130,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'assignOpponent') return chooseFirstReplacement(d);
   // CR 701.30b: "clash with an opponent": which opponent. Nothing in the agent's plans reads it, so the first, deterministic and always legal.
   if (d.purpose === 'clashOpponent') return chooseFirstReplacement(d);
+  // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": which opponent. Nothing in the agent's plans reads it yet, so the first opponent left, deterministic and always legal.
+  if (d.purpose === 'chooseOpponent') return chooseFirstReplacement(d);
   // CR 310.9a: the protector of a battle that enters. Nothing in the agent's plans reads it yet, so the first opponent left, deterministic and always legal.
   if (d.purpose === 'protector') return chooseFirstReplacement(d);
   // CR 608.2d (The Black Gate): "choose a player with the most life or tied for most life": an opponent if one is among them (the effect is a bar on their creatures), else the first.

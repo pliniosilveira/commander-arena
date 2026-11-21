@@ -851,12 +851,20 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       const filter = lowerFilter(objects);
       if (!filter.ok) return filter;
       const optionalReturn = may?.kind === 'flag' && may.value;
+      // Issue 102 (Tasigur, CR 608.2d): "a nonland card of an opponent's choice": an opponent picks the card, never an offer.
+      const byOpponent = objects.filter.chosenByOpponent === true;
+      if (byOpponent) {
+        const blocked = missingFeatures(['ability:chosenByOpponent']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        if (optionalReturn) return failure(clause);
+      }
       const move: Effect = {
         kind: 'moveToZone',
         objects: {
           kind: 'choose',
           filter: filter.value,
           ...(optionalReturn ? { optional: true as const } : {}),
+          ...(byOpponent ? { chosenBy: 'opponent' as const } : {}),
         },
         to: 'hand',
       };

@@ -1,6 +1,6 @@
 import type { GameView, ObjectView } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { splitAttachments, stripReserve, stripStep } from '../src/ui/board/attach';
+import { STRIP_W, splitAttachments, stripWidth } from '../src/ui/board/attach';
 import { groupEqual } from '../src/ui/board/group';
 import { fitTiles, handStep, layoutRow, type RowSpec } from '../src/ui/board/layout';
 import { rowSpec } from '../src/ui/board/Row';
@@ -384,24 +384,23 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(attached.size).toBe(0);
   });
 
-  test('strips take up to three full steps of room, then are squeezed into the same space', () => {
-    expect(stripStep(1)).toBe(14);
-    expect(stripStep(3)).toBe(14);
-    expect(stripReserve(0)).toBe(0);
-    expect(stripReserve(2)).toBe(28);
-    expect(stripReserve(3)).toBe(42);
-    expect(stripStep(6)).toBe(7);
-    expect(stripReserve(6)).toBeLessThanOrEqual(42);
-    expect(stripStep(20)).toBe(5);
+  test('every strip keeps one fixed width, however many there are', () => {
+    expect(stripWidth(1)).toBe(STRIP_W);
+    expect(stripWidth(20)).toBe(20 * STRIP_W);
+    expect(stripWidth(0)).toBe(0);
+    expect(stripWidth(3)).toBe(90);
+    expect(stripWidth(6)).toBe(180);
   });
 
-  test('a row with a host keeps room for its strips by drawing the tiles smaller', () => {
+  test('strips take width, not height: the tiles keep their size and the row scrolls when full', () => {
     const plain = rowSpec('creature', 140);
-    const reserved = rowSpec('creature', 140, stripReserve(2));
-    // The row is the room the tile fits in: 140 - 2 * 6 padding (the cap, 136, is above it).
-    expect(plain.tileH).toBe(128);
-    expect(reserved.tileH).toBe(100); // 140 - 2 * 6 padding - 28 for two strips
-    expect(reserved.preferredW).toBeLessThan(plain.preferredW);
+    const wide = rowSpec('creature', 140, stripWidth(10));
+    expect(wide.tileH).toBe(plain.tileH);
+    expect(wide.extraW).toBe(stripWidth(10));
+    const fit = fitTiles(3, 600, wide);
+    expect(fit.tileW).toBe(wide.preferredW);
+    expect(fit.overflow).toBe(true);
+    expect(fitTiles(3, 600, plain).overflow).toBe(false);
     // A tile has the shape of a card's top: wider than tall.
     expect(plain.preferredW).toBeGreaterThan(plain.tileH);
   });

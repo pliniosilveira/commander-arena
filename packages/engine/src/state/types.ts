@@ -515,6 +515,8 @@ export interface StackData {
     readonly gains?: Ability;
     /** The permanent type this use of a `playFromGraveyardEachType` permission was counted as. */
     readonly slot?: CardType;
+    /** Issue 102 (Kotis): the other cards of the graveyard exiled as an additional cost of this spell. */
+    readonly exileOthers?: number;
   };
   /**
    * The named alternative cost the spell was cast for (D-121): `overload` (CR 702.96a: its text has
@@ -1107,6 +1109,15 @@ export type Instruction =
       readonly among: 'mostLife' | 'opponent';
       readonly chosen: SeatId | null;
     }
+  /**
+   * "An opponent separates / chooses / copies ..." with more than one opponent left (CR 608.2d, 801.5b, 702.144a): the controller of the effect (`seat`, or the player it is run as) chooses which
+   * opponent, with a `chooseOption` decision of purpose `chooseOpponent` (options `seat:<n>`). Queued ahead of the effect that needs it; the answer becomes `ResolutionContext.chosenOpponent`.
+   */
+  | {
+      readonly kind: 'chooseOpponent';
+      readonly seat: SeatId;
+      readonly chosen: SeatId | null;
+    }
   | {
       readonly kind: 'chooseCreatureType';
       readonly chosen: string | null;
@@ -1388,6 +1399,10 @@ export type Instruction =
       readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
+      /** Issue 102 (Dauthi Voidwalker): the card chosen is not moved; the controller may play it this turn (`mayPlay`), without paying its mana cost when `free`. */
+      readonly permit?: { readonly free?: true };
+      /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
+      readonly decider?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */
       readonly countsNonland?: true;
       readonly position: 'top' | 'bottom' | number;
@@ -1493,6 +1508,8 @@ export type Instruction =
       /** The pile that was not chosen, in the `finish` stage. */
       readonly second: readonly ObjectId[];
       readonly pick?: 1 | 2;
+      /** The opponent who chooses a pile: the one the controller chose as the effect started, or the only one left (CR 608.2d, 801.5b). */
+      readonly opponent?: SeatId;
     }
   /**
    * "As many times as you choose, you may exile the top card of your library" (`exileTopAnyNumber`, D-661): `answer` is null while the controller is asked whether to exile
@@ -1937,6 +1954,12 @@ export type Instruction =
        * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
        */
       readonly replacedLeft?: number;
+      /**
+       * Dredge (CR 702.52a, issue 102): the card of the graveyard last declined for the draw being made (the next one asked comes after it), and the owner's answer to the card being
+       * asked (`accepted`), recorded here when given. Absent for a draw nobody was asked about. See rules/dredge.ts.
+       */
+      readonly dredgeAfter?: ObjectId;
+      readonly dredgeAnswer?: { readonly card: ObjectId; readonly accepted: boolean };
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {
@@ -2004,6 +2027,8 @@ export type Instruction =
       readonly kind: 'castFree';
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
+      /** "If that spell would be put into your graveyard, exile it instead" (`castFree.exileInstead`, issue 102): the rider of the spell cast. */
+      readonly exileInstead?: true;
       readonly filter?: ObjectFilter;
       /** D-660: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
       readonly remaining?: number | 'any';
@@ -2035,6 +2060,8 @@ export interface ResolutionContext {
   readonly chosenCreatureType?: string;
   /** The player a `choosePlayer` instruction of this resolution chose, which the selector `chosenPlayer` ("that player") reads. */
   readonly chosenPlayer?: SeatId;
+  /** The opponent the controller chose for the effect that is about to start ("an opponent separates ..."), read when it starts and cleared once it did (rules/choose-opponent.ts). */
+  readonly chosenOpponent?: SeatId;
   /** Every creature type chosen by a resolving "each player chooses a creature type" (CR 101.4), in the order they were chosen; `chosenCreatureType` is the last. */
   readonly chosenCreatureTypes?: readonly string[];
   /** Objects chosen by resolving instructions, keyed by their bound text reference. */
@@ -2228,6 +2255,11 @@ export interface CombatState {
   readonly blocks: readonly { readonly blocker: ObjectId; readonly attacker: ObjectId }[];
   /** Creatures that had first strike or double strike as the first damage step began (CR 510.4). */
   readonly firstStrikers: readonly ObjectId[] | null;
+  /**
+   * The defending players that have declared their blockers so far (CR 509.1), in turn order. Set only when more than one player is
+   * attacked: with one defender the declaration is a single question and nothing needs to be remembered.
+   */
+  readonly blockersDeclaredBy?: readonly SeatId[];
 }
 
 /**
@@ -2735,6 +2767,8 @@ export interface TurnLog {
   readonly graveyardEntries: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
+    /** The zone the card was put into the graveyard from (issue 102, "put into your graveyard from your hand or library this turn"). */
+    readonly from: Zone;
   }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];

@@ -741,6 +741,13 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       if (s.cast === undefined && s.land !== true) {
         issue(out, path, 'the permission names the spells to cast, a land to play, or both');
       }
+      // Issue 102 (Kotis): "by exiling three other cards from your graveyard": an additional cost of the spell cast this way.
+      if (
+        s.exileOthers !== undefined &&
+        (!Number.isSafeInteger(s.exileOthers) || s.exileOthers < 1 || s.cast === undefined)
+      ) {
+        issue(out, `${path}.exileOthers`, 'exileOthers is a whole number from 1, only with cast');
+      }
       if (s.cast !== undefined) {
         checkFilter(s.cast, `${path}.cast`, out);
         if (

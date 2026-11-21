@@ -501,6 +501,7 @@ export function lowerGraveyardPlayStatic(
           ...(effect.land ? { land: true as const } : {}),
           ...(effect.entersTapped ? { entersTapped: true as const } : {}),
           ...(gains === undefined ? {} : { gains }),
+          ...(effect.exileOthers === undefined ? {} : { exileOthers: effect.exileOthers }),
         },
       },
     ],

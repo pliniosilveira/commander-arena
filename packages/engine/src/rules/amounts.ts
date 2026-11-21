@@ -54,6 +54,7 @@ type StateAmount = Extract<
       | 'experienceCounters'
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
+      | 'cardsToGraveyardThisTurn'
       | 'sacrificedAsCost'
       | 'tappedAsCostPower'
       | 'exiledAsCost'
@@ -108,6 +109,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'experienceCounters' ||
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
+    amount.kind === 'cardsToGraveyardThisTurn' ||
     amount.kind === 'sacrificedAsCost' ||
     amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
@@ -560,6 +562,11 @@ export function stateAmountOf(
           (amount.otherThanThis !== true || s.object !== ctx.source),
       ).length;
     }
+    case 'cardsToGraveyardThisTurn':
+      // CR 404.1, 400.3 (issue 102): the cards the controller owns that were put into a graveyard this turn from one of the zones.
+      return state.turnLog.graveyardEntries.filter(
+        (e) => e.seat === ctx.controller && amount.from.includes(e.from as 'hand' | 'library'),
+      ).length;
     case 'greatestManaValueCast': {
       // CR 202.3, 202.3e, 601.2i (D-646): the greatest mana value among the spells the controller has cast this turn (copies are not cast, CR 707.10), each as it was cast.
       const types = amount.ofTypes;

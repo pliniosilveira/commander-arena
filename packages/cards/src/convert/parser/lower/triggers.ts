@@ -187,11 +187,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'enters': {
       const what = entersWhat(t, ctx);
       if (!what.ok) return what;
+      // "enters from a graveyard" (issue 102, River Kelpie, CR 603.6a): the zone it came from, as the event is noticed.
+      if (t.fromGraveyard === true) {
+        const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
       return ok({
         kind: 'entersBattlefield',
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
+        ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
       });
     }
     case 'attacks': {
@@ -705,11 +711,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;
+      // "... during your turn" (issue 102, Kishla Skimmer, CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const during = missingFeatures(['trigger:leftGraveyardDuringYourTurn']);
+        if (during.length > 0) return failure(t, during);
+      }
       return ok({
         kind: 'leftGraveyard',
         who: 'you',
         ...(filter === null ? {} : { filter: filter.value }),
         ...(t.each === true ? { each: true as const } : {}),
+        ...(t.duringTurn === 'you' ? { duringTurn: 'you' as const } : {}),
       });
     }
     case 'exiledFromLibraryOrGraveyard': {
@@ -1350,6 +1362,8 @@ function lowerTriggeredAbility(
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
+  ctx.graveyardBatchTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.batch === true);
   // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
   ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
@@ -1416,7 +1430,7 @@ function lowerTriggeredAbility(
     // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
     const [only] = triggers;
     if (events.length !== 1 || only?.kind !== 'entersBatch') return failure(ifWritten, []);
-    const blocked = missingFeatures(['trigger:entersFromGraveyard']);
+    const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers[0] = { ...only, fromGraveyard: true };
   } else if (ifWritten?.test.kind === 'damageDealtByType') {
@@ -1660,9 +1674,13 @@ function lowerTriggeredAbility(
       c.verb === 'castFromAmong' ||
       // Issue 100 (Baral and Kari Zev): "you may cast a spell ... from your hand without paying its mana cost. If you don't, ...": the engine's `castFree` asks (and may be declined).
       c.verb === 'castFree' ||
+      // Issue 102 (Diviner of Mist): the engine's `castFree` of a card of the graveyard asks, and may be declined.
+      c.verb === 'castChosenGraveyardSpell' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
+      // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped": the engine's choice of none or one card is the offer.
+      (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
       // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
@@ -1929,7 +1947,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:notAsAttacker',
-  'trigger:entersFromGraveyard',
+  'trigger:entersBattlefieldFromGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',

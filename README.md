@@ -73,6 +73,7 @@ The ready-made decks work without any setup:
 | Mardu Surge | A Commander precon led by Zurgo Stormrender. |
 | Blight Curse | A Commander precon led by Auntie Ool, Cursewretch. |
 | Angels: They're Just Like Us, but Cooler and with Wings | A Commander precon led by Bruna, the Fading Light. |
+| Sultai Arisen | A Commander precon led by Teval, the Balanced Scale. |
 
 ## Playing with your own deck
 

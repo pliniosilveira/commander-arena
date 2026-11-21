@@ -33,10 +33,11 @@ import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { characteristicPtOf, staticAmountOf } from './derive-count';
-import { linkedCardOf, topCardOf } from './derive-group-types';
+import { linkedCardOf, linkedCardsOf, topCardOf } from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
+import { intrinsicManaAbilities } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { isCommanderCardId } from './melded';
 import { staticConditionHolds } from './static-conditions';
@@ -55,6 +56,7 @@ type Modifier = Extract<
       | 'cantBeBlockedBy'
       | 'takeFromLinkedExile'
       | 'grantActivatedAbilitiesOfTopCard'
+      | 'grantActivatedAbilitiesOfLinkedExile'
       | 'loseAllAbilities';
   }
 > & {
@@ -200,6 +202,8 @@ export interface GraveyardPlaySource {
   readonly unlimited?: true;
   /** `playFromGraveyardEachType`: one use a turn for each permanent type (`TurnLog.graveyardSlots`), the land play included. */
   readonly eachType?: true;
+  /** Issue 102 (Kotis): the other cards of the graveyard a spell cast with this permission exiles as an additional cost. */
+  readonly exileOthers?: number;
 }
 
 /**
@@ -318,6 +322,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
       a.static.kind === 'cantBeBlockedBy' ||
       a.static.kind === 'takeFromLinkedExile' ||
       a.static.kind === 'grantActivatedAbilitiesOfTopCard' ||
+      a.static.kind === 'grantActivatedAbilitiesOfLinkedExile' ||
       a.static.kind === 'loseAllAbilities')
   );
 }
@@ -432,6 +437,7 @@ function graveyardPlaysOf(
         land: a.static.land === true,
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
+        ...(a.static.exileOthers === undefined ? {} : { exileOthers: a.static.exileOthers }),
       });
     }
     if (a.kind === 'static' && a.static.kind === 'playFromGraveyardEachType') {
@@ -1108,6 +1114,22 @@ export function staticEffectsOn(
       const card = topCardOf(state, source.object, mod.card);
       if (card !== null) {
         for (const ability of printedAbilities(state, card)) {
+          if (ability.kind === 'activated' || ability.kind === 'mana') {
+            grants.push({ ability, timestamp: source.object.timestamp });
+          }
+        }
+      }
+    } else if (mod.kind === 'grantActivatedAbilitiesOfLinkedExile') {
+      // CR 613.1f, 607.2a (issue 102): the activated and mana abilities of each card the permanent exiled with its linked ability that the filter names, given in layer 6 with the
+      // permanent's timestamp (read from the cards as printed: in exile no layer but a copy effect changes them).
+      for (const card of linkedCardsOf(state, source.object, mod.from)) {
+        // CR 305.6: a basic land type is the ability "{T}: Add {C}", which the card has too.
+        const printed = copiableValues(state, card).characteristics;
+        const abilities = [
+          ...printedAbilities(state, card),
+          ...intrinsicManaAbilities(printed.types, printed.subtypes),
+        ];
+        for (const ability of abilities) {
           if (ability.kind === 'activated' || ability.kind === 'mana') {
             grants.push({ ability, timestamp: source.object.timestamp });
           }

@@ -77,25 +77,31 @@ export function runRevealUntil(
   const bottom =
     effect.rest === 'stay'
       ? done(state)
-      : effect.rest === 'bottomChosen'
-        ? // CR 401.4 (issue 81, Proteus Staff): the owner of the library chooses the order the cards go on the bottom in; with fewer than two there is nothing to order.
-          leftOver.length > 1
-          ? done(
-              state,
-              [],
-              [
-                {
-                  kind: 'arrange' as const,
-                  purpose: 'bottom' as const,
-                  seat,
-                  count: leftOver.length,
-                  cards: leftOver,
-                  arranged: null,
-                },
-              ],
-            )
-          : bottomInRandomOrder(state, seat, leftOver)
-        : bottomInRandomOrder(state, seat, leftOver);
+      : effect.rest === 'graveyard'
+        ? // Issue 102 (Consuming Aberration, CR 701.20): "then puts those cards into their graveyard": every card revealed that was not found goes to its owner's graveyard.
+          {
+            ...done(state),
+            front: moveInstructions(leftOver, 'graveyard', 'top', false, undefined),
+          }
+        : effect.rest === 'bottomChosen'
+          ? // CR 401.4 (issue 81, Proteus Staff): the owner of the library chooses the order the cards go on the bottom in; with fewer than two there is nothing to order.
+            leftOver.length > 1
+            ? done(
+                state,
+                [],
+                [
+                  {
+                    kind: 'arrange' as const,
+                    purpose: 'bottom' as const,
+                    seat,
+                    count: leftOver.length,
+                    cards: leftOver,
+                    arranged: null,
+                  },
+                ],
+              )
+            : bottomInRandomOrder(state, seat, leftOver)
+          : bottomInRandomOrder(state, seat, leftOver);
   const put =
     found.length === 0 || effect.put === 'none'
       ? []

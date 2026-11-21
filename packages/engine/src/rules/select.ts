@@ -734,7 +734,13 @@ export function legalTargets(
       }
       out.push(
         spec.onePerOpponent === true || spec.differentControllers === true
-          ? { kind: 'object', id, specId, group: controllerOf(state, obj) }
+          ? {
+              kind: 'object',
+              id,
+              specId,
+              // A card in a graveyard is its owner's (CR 404.1, 108.3): one target for each owner.
+              group: obj.zone === 'graveyard' ? obj.owner : controllerOf(state, obj),
+            }
           : { kind: 'object', id, specId },
       );
     }

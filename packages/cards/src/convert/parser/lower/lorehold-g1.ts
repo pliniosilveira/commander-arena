@@ -27,6 +27,58 @@ const EXILE_ONE_OF_THEM: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Put one of them onto the battlefield." (issue 102, Colossal Grave-Reaver; CR 603.2c, 608.2d, 400.7, 110.2a): the engine's `putOneOfTriggerCards`, which asks the controller to
+ * choose one of the cards that triggered the ability that are still in a graveyard. Only in the body of a trigger about a batch of cards put into a graveyard.
+ */
+const PUT_ONE_OF_THEM: Lowering<IrClause, Effects> = {
+  head: 'putOneOfThem',
+  id: 'lower.put-one-of-them',
+  needs: ['effect:putOneOfTriggerCards'],
+  lower(clause, ctx) {
+    if (clause.optional || !ctx.graveyardBatchTrigger) return failure(clause);
+    return { ok: true, value: [{ kind: 'putOneOfTriggerCards' }], rule: clause.rule };
+  },
+};
+
+/**
+ * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
+ * CR 115.1, 404.1, 110.2a): the engine's `moveToZone` of a slot of targets with different owners (`differentControllers`, one card of each graveyard) onto the battlefield under the
+ * controller's control. The cards put there are `moved` for the sentence after it.
+ */
+const PUT_ONE_PER_GRAVEYARD: Lowering<IrClause, Effects> = {
+  head: 'putOnePerGraveyard',
+  id: 'lower.put-one-per-graveyard',
+  needs: ['effect:moveToZone', 'selector:target'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'objects');
+    if (named?.kind !== 'noun') return failure(clause);
+    const objects = objectSelectorOf(named, ctx);
+    if (!objects.ok) return objects;
+    if (objects.value.kind !== 'target') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'moveToZone', objects: objects.value, to: 'battlefield', controller: 'you' }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker, CR 608.2d, 601.2, 118.9, 122.1):
+ * the engine's `mayPlayCounterCard` with the void counter, for no mana cost.
+ */
+const PLAY_VOID_CARD: Lowering<IrClause, Effects> = {
+  head: 'mayPlayVoidCard',
+  id: 'lower.play-void-card',
+  needs: ['effect:mayPlayCounterCard'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'mayPlayCounterCard', counter: 'void', free: true }],
+    rule: clause.rule,
+  }),
+};
+
+/**
  * "Shuffle any number of target cards from your graveyard into your library." (CR 701.24c, 701.24d, 404.1): the engine's `moveToZone` of the targets to the library and then the
  * `shuffle` of the controller, which happens even with no target (CR 701.24d). The targets are a slot of the ability (a spell's or an ability's), any number of them for `anyNumber`.
  */
@@ -72,6 +124,9 @@ const DEAL_DAMAGE_TO_SELF: Lowering<IrClause, Effects> = {
 
 export const LOREHOLD_G1_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_ONE_OF_THEM,
+  PUT_ONE_OF_THEM,
+  PUT_ONE_PER_GRAVEYARD,
+  PLAY_VOID_CARD,
   SHUFFLE_INTO_LIBRARY,
   DEAL_DAMAGE_TO_SELF,
 ];
