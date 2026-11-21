@@ -989,6 +989,33 @@
   gap: 2px;
   text-align: left;
 }
+/* A mana choice ({W}, {U}, ...): each button takes the color it stands for. */
+.dec-mana-btn {
+  color: #14151a;
+  border-color: transparent;
+  font-weight: 700;
+}
+.dec-mana-btn[data-mana="W"] {
+  background: var(--mana-w);
+}
+.dec-mana-btn[data-mana="U"] {
+  background: var(--mana-u);
+}
+.dec-mana-btn[data-mana="B"] {
+  background: var(--mana-b);
+}
+.dec-mana-btn[data-mana="R"] {
+  background: var(--mana-r);
+}
+.dec-mana-btn[data-mana="G"] {
+  background: var(--mana-g);
+}
+.dec-mana-btn[data-mana="C"] {
+  background: var(--mana-c);
+}
+.dec-mana-btn:hover {
+  filter: brightness(1.1);
+}
 .dec-named-label {
   font-weight: 700;
 }
