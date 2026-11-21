@@ -43,11 +43,11 @@ test('Report issue opens a dialog and Submit opens a prefilled GitHub issue', as
   const body = url.searchParams.get('body') ?? '';
   expect(body).toContain('### Stack (top first)');
   expect(body).toContain('### Game log');
+  await expect(dialog).toContainText('screenshot of the board is on your clipboard');
   const types = await page.evaluate(async () => {
     const items = await navigator.clipboard.read();
     return items.flatMap((i) => [...i.types]);
   });
   expect(types).toContain('image/png');
   expect(body).toContain('paste it here');
-  await expect(dialog).toContainText('screenshot of the board is on your clipboard');
 });
