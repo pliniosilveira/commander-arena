@@ -47,6 +47,8 @@
 }
 
 .board-strip-me {
+  /* The right end is the action dock's (`.board-dock-slot`): the command box stays clear of it. */
+  padding-right: calc(var(--controls-width) + 20px);
   border-top: 1px solid var(--line);
   border-bottom: 0;
   border-left-color: var(--me);
@@ -1272,7 +1274,8 @@
   /* 108px in a short window; a taller window gives the hand more, and a card shows that much of
      itself (Hand.tsx `shown`): 120px at 1003, the most (128px) from 1067 (issue 137). */
   height: clamp(108px, 12vh, 128px);
-  padding: 0 12px;
+  /* The right side is the action dock's (`.board-dock-slot`). */
+  padding: 0 calc(var(--controls-width) + 20px) 0 12px;
   background: linear-gradient(0deg, var(--bg-sunken), var(--bg));
 }
 
@@ -2277,4 +2280,22 @@
   padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
+}
+
+/* The action dock (prompt and buttons) in the player's board, at its bottom right, over the hand's
+   right end (the hand keeps clear of it). It grows upward over the field when a decision brings
+   panels. Empty, it takes no space. */
+.board-dock-slot {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 10;
+  width: var(--controls-width);
+  max-height: calc(100% - 16px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.board-dock-slot:empty {
+  display: none;
 }

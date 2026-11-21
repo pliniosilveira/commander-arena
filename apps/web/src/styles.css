@@ -186,10 +186,9 @@ button {
   color: var(--text-dim);
 }
 
-/* The game screen (issue 47): the battlefield with a column on each side. One column holds the
-   highlighted card and the log (`.game-side-info`), the other the stack, the action dock and the
-   settings (`.game-side-controls`). The controls are on the right unless Settings says Left
-   (`data-side-panel` on the root); the other column takes the other side. */
+/* The game screen: the battlefield takes the whole width. The stack, the card preview, the log and
+   the settings float over it (see the rules at the end of this file); the action dock is drawn in
+   the player's own board (`.board-dock-slot`, board.css). */
 .game {
   position: relative;
   flex: 1;
@@ -211,111 +210,6 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-/* Wide windows: the two columns are plain flex items of `.game`; the drawer wraps them below. */
-.game-sides {
-  display: contents;
-}
-
-.game-side {
-  flex: none;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-  padding: var(--gap);
-  background: var(--bg-raised);
-}
-
-.game-side-controls {
-  /* Room the stack keeps for itself: its heading and about three items. */
-  --stack-min: 230px;
-  order: 1;
-  width: var(--controls-width);
-  border-left: 1px solid var(--line);
-}
-
-:root[data-side-panel="left"] .game-side-controls {
-  order: -1;
-  border-left: 0;
-  border-right: 1px solid var(--line);
-}
-
-/* The slot the decision layer draws the action dock into (D-146): at the foot of the controls
-   column, just above Settings, so the buttons keep their place while the stack above them grows
-   and shrinks, and the dock itself grows upward. It is empty (no box) when the dock is not shown.
-   It shrinks (its panels scroll) before the stack loses its minimum height. */
-.game-dock-slot {
-  flex: 0 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.game-dock-slot:empty {
-  display: none;
-}
-
-/* The button that opens the drawer is only there when the columns are one. */
-.game-drawer-toggle {
-  display: none;
-}
-
-/* Narrow windows: both columns slide over the board from the edge instead of taking its width. */
-@media (max-width: 1099px) {
-  .game {
-    /* The closed drawer waits outside the window: it must not widen the page. */
-    overflow: hidden;
-  }
-  .game-sides {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    z-index: 40;
-    display: flex;
-    box-shadow: var(--shadow);
-    transform: translateX(100%);
-    visibility: hidden;
-  }
-  :root[data-side-panel="left"] .game-sides {
-    right: auto;
-    left: 0;
-    transform: translateX(-100%);
-  }
-  .game[data-drawer="open"] .game-sides {
-    transform: none;
-    visibility: visible;
-  }
-  .game-drawer-toggle {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    z-index: 41;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    background: var(--bg-raised);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  :root[data-side-panel="left"] .game-drawer-toggle {
-    right: auto;
-    left: 8px;
-  }
-  /* Open, the button sits just outside the drawer, not over the stack's heading. */
-  .game[data-drawer="open"] .game-drawer-toggle {
-    right: calc(var(--controls-width) + 8px);
-  }
-  :root[data-side-panel="left"] .game[data-drawer="open"] .game-drawer-toggle {
-    right: auto;
-    left: calc(var(--controls-width) + 8px);
-  }
 }
 
 /* Mana symbols (original drawing, see ui/mana.tsx). */
@@ -428,4 +322,28 @@ button {
   flex: 1;
   height: auto;
   min-height: 0;
+}
+
+/* The stack floats over the board at the right edge, over the opponent's side of the field. Empty, it is a small box
+   (still the place a spell is dropped to cast it); with objects it grows to about half the screen
+   and scrolls. */
+.game > .pnl-stack {
+  position: absolute;
+  /* Under the opponent's strip, so its commander stays readable. */
+  top: 136px;
+  right: 8px;
+  z-index: 30;
+  flex: none;
+  width: var(--controls-width);
+  min-height: 0;
+  max-height: 50%;
+  box-shadow: var(--shadow);
+}
+.settings-toggle {
+  left: 64px;
+}
+.settings-dialog {
+  height: auto;
+  width: var(--controls-width);
+  overflow-y: auto;
 }

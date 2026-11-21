@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -23,7 +24,7 @@ test('after blocking, the player has priority in the declare blockers step befor
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/?autostart=white-knights,swamp-forest&seed=2');
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   const blocking = bar(page).getByText('Click a creature, then the attacker it blocks.');
   for (let step = 0; step < 900; step += 1) {

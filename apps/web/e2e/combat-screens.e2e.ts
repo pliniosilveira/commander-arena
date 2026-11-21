@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { reachAttackers, reachBlocks, reachDivision } from './harness/blocks';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -15,7 +16,7 @@ const mine = (page: Page) => page.locator('[data-field-seat="0"] .board-tile.is-
 async function toBlocks(page: Page, attackers: number, blockers: number): Promise<void> {
   await page.goto(game(1));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await reachBlocks(page, attackers, blockers);
 }
 

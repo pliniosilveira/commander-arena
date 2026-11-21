@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { untilHandPlayable } from './harness/resolve';
+import { clickUndo, undoEnabled } from './harness/settings';
 
 async function toMainWithHand(page: import('@playwright/test').Page) {
   await page.goto('/?autostart=white-knights,swamp-forest&seed=7');
@@ -13,20 +14,19 @@ test('Undo takes a land back to the hand, from the button and with Ctrl+Z', asyn
   await toMainWithHand(page);
   const hand = page.locator('.board-hand [data-object-id]');
   const lands = page.locator('.board-field [data-object-id]', { hasText: 'Plains' });
-  const undo = page.getByRole('button', { name: /^Undo/ });
-  await expect(undo).toBeDisabled();
+  await expect.poll(() => undoEnabled(page)).toBe(false);
 
   const before = await hand.count();
   await hand.filter({ hasText: 'Basic Land' }).first().click();
   await expect(lands).toHaveCount(1);
   await expect(hand).toHaveCount(before - 1);
-  await expect(undo).toBeEnabled();
+  await expect.poll(() => undoEnabled(page)).toBe(true);
 
-  await undo.click();
+  await clickUndo(page);
   await expect(lands).toHaveCount(0);
   await expect(hand).toHaveCount(before);
   await expect(page.getByRole('log')).not.toContainText('You play Plains');
-  await expect(undo).toBeDisabled();
+  await expect.poll(() => undoEnabled(page)).toBe(false);
 
   // The same again with the keyboard.
   await hand.filter({ hasText: 'Basic Land' }).first().click();
@@ -39,9 +39,9 @@ test('Undo takes a land back to the hand, from the button and with Ctrl+Z', asyn
 test('passing the turn clears the undo history', async ({ page }) => {
   await toMainWithHand(page);
   await page.locator('.board-hand [data-object-id]', { hasText: 'Basic Land' }).first().click();
-  await expect(page.getByRole('button', { name: /^Undo/ })).toBeEnabled();
+  await expect.poll(() => undoEnabled(page)).toBe(true);
   await page.locator('[data-dec-primary]').click(); // Pass Turn (nothing can attack): the autopilot and the AI move on
-  await expect(page.getByRole('button', { name: /^Undo/ })).toBeDisabled({ timeout: 15_000 });
+  await expect.poll(() => undoEnabled(page), { timeout: 15_000 }).toBe(false);
 });
 
 test('clicking a land tapped for mana, with the mana unspent, untaps it', async ({ page }) => {

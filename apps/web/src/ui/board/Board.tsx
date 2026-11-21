@@ -1,10 +1,11 @@
 /** The battlefield, both players' strips, the command zones and the human's hand (SPEC 10, A19). */
 import type { GameView, ObjectView } from '@commander-arena/engine';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useApp } from '../store-context';
 import './board.css';
+import { DockSlotSetContext } from '../decisions/dock-slot';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
@@ -104,6 +105,7 @@ function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: 
 export function Board() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
+  const setDockSlot = useContext(DockSlotSetContext);
   useCloseOnDecision(view, () => setZone(null));
   // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
   // when the question is answered is the board's doing too, not the player's chore.
@@ -182,6 +184,7 @@ export function Board() {
         <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
         <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
         <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
+        <div className="board-dock-slot" ref={setDockSlot} />
         <BlockArrows roles={roles} />
         {open !== null && (
           <ZoneViewer title={open.title} objects={open.objects} onClose={() => setZone(null)} />

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -79,7 +80,7 @@ test('an X burn spell: the dialog offers the right maximum, X is typed and stepp
   const max = (await sources(page)) - 1; // the {R} of {X}{R}
   const foe = Number(await life(page, 1).textContent());
   // Full Control keeps the spell on the stack, so its X can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC X Burn').first().click();
   await expect(dialog(page)).toBeVisible();
@@ -171,7 +172,7 @@ test('"pay X life": each X costs 1 life, the prompt says so, and the life and th
   await playUntil(page, 'SYNTHETIC Blood Burn', 1);
   const mine = Number(await life(page, 0).textContent());
   const foe = Number(await life(page, 1).textContent());
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Blood Burn').first().click();
   // CR 119.4 (Life): a payment is allowed when the life total is greater than or equal to it, so the

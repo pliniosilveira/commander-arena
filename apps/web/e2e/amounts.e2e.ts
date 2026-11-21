@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import { handCard, handLand, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -27,7 +28,7 @@ const THEIR_CREATURES = /Llanowar Elves|Typhoid Rats|Giant Spider|Grizzly Bears/
 async function start(page: Page, seed: number): Promise<void> {
   await page.goto(game(seed));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 }
 
 /**

@@ -105,42 +105,6 @@
   padding-inline: 8px;
   line-height: 1.2;
 }
-.dec-bar-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 4px;
-  padding-top: 5px;
-  border-top: 1px solid var(--line);
-  /* Two rows of chips, whether or not they fit on one ("Undo" alone is shorter than "Undo (13)"):
-     the buttons above them keep their place as the count changes (D-146). */
-  min-height: calc(2 * (11px * var(--text-scale) * 1.3 + 6px) + 4px + 6px);
-}
-.dec-bar-footer:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-.dec-toggle {
-  line-height: 1.3;
-  padding: 2px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-dim);
-  font-size: calc(11px * var(--text-scale));
-  white-space: nowrap;
-  cursor: pointer;
-}
-.dec-toggle:hover {
-  color: var(--text);
-  border-color: var(--text-dim);
-}
-.dec-toggle[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
-  font-weight: 600;
-}
 .dec-passing {
   padding: 8px 12px;
   border: 1px dashed var(--accent);

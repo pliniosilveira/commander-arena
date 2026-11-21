@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -29,7 +30,7 @@ test('a long AI answer shows "Opponent is thinking" without moving the dock, and
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
   // Full Control: the player holds priority at every step, so the autopilot does not pass and the
   // bar keeps its prompt and buttons while the request is out.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await settled(page);
 
   await expect(status(page)).toHaveAttribute('data-thinking', 'false');
@@ -65,7 +66,7 @@ test('a long AI answer shows "Opponent is thinking" without moving the dock, and
 test('a game without &aidelay never shows the status for a quick move', async ({ page }) => {
   await page.goto('/?autostart=white-knights,swamp-forest&seed=1&freeMulligan=0');
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await settled(page);
   const seen: string[] = [];
   await page.exposeFunction('noteThinking', (v: string) => seen.push(v));

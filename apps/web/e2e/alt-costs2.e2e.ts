@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -111,7 +112,7 @@ test('Spectacle: no button until an opponent loses life, then "Spectacle {1}{R}"
 
   // Nobody has lost life this turn: the creature cannot be cast at all, so it is not clickable.
   await expect(handCard(page, raider)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, pulse).first().click();
   await expect(logText(page)).toContainText(`You cast ${pulse}.`);
   await settled(page);
@@ -157,7 +158,7 @@ test('Escape: a button on the graveyard card, the exile question (Cancel takes t
   });
   const before = await graveyardCount(page);
 
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await expect(chip(page, 'Escape').first()).toHaveAttribute(
     'aria-label',
     `Graveyard: ${label}: ${name}`,
@@ -233,7 +234,7 @@ test('Unearth: "Unearth {R}" on the graveyard card, haste, the delayed exile at 
     ready: async () => (await chip(page, 'Unearth {R}').count()) > 0,
   });
 
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await chip(page, 'Unearth {R}').first().click();
   // An ability, not a spell: it is on the stack under the card's name with what it does.
   const ability = stack(page).locator('.pnl-stack-item.pnl-triggered');

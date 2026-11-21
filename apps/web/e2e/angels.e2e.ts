@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -100,7 +101,7 @@ test('Cost of blocking: the dock says what a block costs, Confirm waits for bloc
     ready: async () => (await cost.isVisible()) && (await primary(page).isVisible()),
   });
   // The payment of the tax is asked by hand: the toggle is on from here.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
 
   await expect(cost.locator('[data-block-cost]')).toContainText(
     /^Blocking costs \{\d+\} per creature \(SYNTHETIC Tithe Angel\)\. Your mana covers (\d+ creatures?|none) now\.$/,

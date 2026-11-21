@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handLand } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -20,7 +21,7 @@ test('the pass button names the step it moves to, from the first main phase to t
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/?autostart=synthetic-hasty-goblins,swamp-forest&seed=1');
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await settled(page);
 
   // Play on until the player has a Goblin with haste in play at their first main phase with the stack empty.
@@ -116,21 +117,26 @@ const commanderReachable = (page: Page) =>
   });
 
 /** True when the middle of the element at `selector` belongs to it, not to an overlay. */
-const reachableAt = (page: Page, selector: string) =>
-  page.evaluate((sel) => {
-    const el = document.querySelector(sel);
-    if (el === null) return false;
-    const box = el.getBoundingClientRect();
-    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-    return hit !== null && el.contains(hit);
-  }, selector);
+/** True when the point at the middle of the element (or `down` pixels under its top edge) belongs to it. */
+const reachableAt = (page: Page, selector: string, down?: number) =>
+  page.evaluate(
+    ([sel, offset]) => {
+      const el = document.querySelector(sel as string);
+      if (el === null) return false;
+      const box = el.getBoundingClientRect();
+      const y = typeof offset === 'number' ? box.top + offset : box.top + box.height / 2;
+      const hit = document.elementFromPoint(box.left + box.width / 2, y);
+      return hit !== null && el.contains(hit);
+    },
+    [selector, down],
+  );
 
-/** The dock sits in the column of the stack (issue 47): it overlaps none of the board's parts. */
+/** The dock is in the player's board, at its bottom right: it overlaps neither the commander nor a hand card. */
 async function dockClearsTheBoard(page: Page): Promise<boolean> {
   return page.evaluate(() => {
     const dock = document.querySelector('.dec-dock')?.getBoundingClientRect();
     if (dock === undefined) return false;
-    const parts = ['.board', '.board-hand', '.board-strip-me', '.board-strip-opp', '.board-cmdr'];
+    const parts = ['.board-cmdr', '.board-hand .is-clickable'];
     return parts.every((sel) =>
       [...document.querySelectorAll(sel)].every((el) => {
         const r = el.getBoundingClientRect();
@@ -156,12 +162,12 @@ test('at 1280x720 with Large text the action dock never covers the commander til
   expect(await commanderReachable(page)).toBe(true);
   expect(await dockClearsTheBoard(page)).toBe(true);
   // Full Control keeps the bar up, with its toggles, at every step.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await settled(page);
   expect(await commanderReachable(page)).toBe(true);
   expect(await dockClearsTheBoard(page)).toBe(true);
   // Nothing lies over a hand card or the button of the turn either.
   await page.mouse.move(5, 5);
-  expect(await reachableAt(page, '.board-hand .is-clickable')).toBe(true);
+  expect(await reachableAt(page, '.board-hand .is-clickable', 24)).toBe(true);
   expect(await reachableAt(page, '.dec-bar [data-dec-primary]')).toBe(true);
 });

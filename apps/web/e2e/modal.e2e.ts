@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -105,7 +106,7 @@ test('"choose one": an illegal mode is disabled, a pick is required, the pick ru
   // No creature on either side: "Deals 3 damage to target creature" has no target.
   await expect(creatures(page)).toHaveCount(0);
   // Full Control keeps the spell on the stack, so what was chosen can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   const handBefore = await hand(page).getAttribute('aria-label');
 
   await handCard(page, 'SYNTHETIC Three Way Charm').first().click();
@@ -150,7 +151,7 @@ test('a mode with a target: the prompt and the dock show the mode, and its effec
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED_CREATURE));
   await playUntil(page, 'SYNTHETIC Three Way Charm', THREE_WAY);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Three Way Charm').first().click();
   await expect(dialog(page)).toBeVisible();
@@ -185,7 +186,7 @@ test('"choose two": Cancel and Esc rewind the cast, two modes are needed, the di
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED_CREATURE));
   await playUntil(page, 'SYNTHETIC Twin Charm', TWIN);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   const handBefore = await hand(page).getAttribute('aria-label');
 
   await handCard(page, 'SYNTHETIC Twin Charm').first().click();
@@ -252,7 +253,7 @@ test('one legal set is chosen without a dialog: "choose two" with only two modes
   await page.goto(game(SEED_NO_CREATURE));
   await playUntil(page, 'SYNTHETIC Twin Charm', TWIN, { creatureless: true });
   await expect(creatures(page)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Twin Charm').first().click();
   // No dialog: the engine chose "Target player gains 3 life" and "Draw a card"; the first of them

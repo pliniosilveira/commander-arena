@@ -85,9 +85,9 @@ test('priority: playable cards are clickable and, with nothing able to attack, t
   expect(html).toMatch(/data-clickable="[1-9]/);
   expect(html).toContain(passLabel(view as GameView));
   expect(passLabel(view as GameView)).toBe('Pass Turn');
-  expect(html).toContain('Full Control');
-  expect(html).toContain('Manual mana');
-  // Concede is in the Settings panel now (issue 43), not in the action bar.
+  // Full Control, manual mana, Undo and Concede are in the Settings panel, not in the action bar.
+  expect(html).not.toContain('Full Control');
+  expect(html).not.toContain('Manual mana');
   expect(html).not.toContain('Concede');
 });
 

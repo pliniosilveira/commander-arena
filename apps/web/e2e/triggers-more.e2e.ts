@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { toggleSetting, undoEnabled } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -31,7 +32,7 @@ const press = (page: Page) =>
 async function start(page: Page, seed: number): Promise<void> {
   await page.goto(game(seed));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 }
 
 /**
@@ -110,7 +111,7 @@ test('"unless that player pays": decline, and the effect happens', async ({ page
   await expect(dialog).toBeHidden();
   await expect(logText(page)).toContainText(declineLine(prompt));
   // It cannot be taken back.
-  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  expect(await undoEnabled(page)).toBe(false);
   expect(errors).toEqual([]);
 });
 

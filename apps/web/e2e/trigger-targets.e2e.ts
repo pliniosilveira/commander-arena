@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -69,7 +70,7 @@ async function playUntil(page: Page, ready: () => Promise<boolean>): Promise<voi
 async function start(page: Page, seed: number): Promise<void> {
   await page.goto(game(seed));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 }
 
 test('an enters trigger asks for its target with no Cancel; the arrow is on the stack and it resolves', async ({
@@ -110,9 +111,8 @@ test('an enters trigger asks for its target with no Cancel; the arrow is on the 
   await expect(page.locator('.pnl-arrow')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
 
-  // The stack is in the controls column (issue 47) and the target on the battlefield: the arrow
-  // starts at the stack item, at the edge that faces the board, and its tip is at the target's tile.
-  // With the column on the right that edge is the item's left one; with it on the left, the right one.
+  // The stack floats at the right edge and the target is on the battlefield: the arrow starts at the
+  // stack item, at its left edge (the one that faces the board), and its tip is at the target's tile.
   const reach = () =>
     page.evaluate(
       ([id]) => {
@@ -125,9 +125,7 @@ test('an enters trigger asks for its target with no Cancel; the arrow is on the 
         );
         const gap = (r: DOMRect, x: number, y: number) =>
           Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
-        const from = document
-          .querySelector('[data-testid="game-side-controls"] .pnl-stack-item')
-          ?.getBoundingClientRect();
+        const from = document.querySelector('.pnl-stack .pnl-stack-item')?.getBoundingClientRect();
         const to = document.querySelector(`[data-object-id="${id}"]`)?.getBoundingClientRect();
         if (from === undefined || to === undefined) return null;
         return {
@@ -145,30 +143,6 @@ test('an enters trigger asks for its target with no Cancel; the arrow is on the 
   expect(right?.start).toBeLessThanOrEqual(2);
   expect(right?.tip).toBeLessThanOrEqual(8);
   expect(right?.fromLeft).toBeLessThanOrEqual(2);
-  // The dock is under the stack, in the same column, at the foot of it (D-146): the stack stays at
-  // the top and the buttons do not move with it.
-  const stackBox = await page.getByRole('region', { name: 'Stack' }).boundingBox();
-  const barBox = await page.locator('.dec-dock').boundingBox();
-  expect(barBox?.x).toBeCloseTo(stackBox?.x ?? -1, 0);
-  expect((stackBox?.y ?? 0) + (stackBox?.height ?? 0)).toBeLessThanOrEqual((barBox?.y ?? 0) + 0.5);
-
-  // Swap the columns: the stack is on the left now, the arrow leaves its right edge, same tip.
-  await page.getByRole('button', { name: /Settings/ }).click();
-  await page
-    .getByRole('group', { name: 'Stack and controls side' })
-    .getByRole('button', { name: 'Left', exact: true })
-    .click();
-  await expect(page.locator('html')).toHaveAttribute('data-side-panel', 'left');
-  await expect.poll(async () => (await reach())?.fromRight ?? 99).toBeLessThanOrEqual(2);
-  const left = await reach();
-  expect(left?.start).toBeLessThanOrEqual(2);
-  expect(left?.tip).toBeLessThanOrEqual(8);
-  await page
-    .getByRole('group', { name: 'Stack and controls side' })
-    .getByRole('button', { name: 'Right', exact: true })
-    .click();
-  await page.getByRole('button', { name: /Settings/ }).click();
-
   for (let step = 0; step < 12; step += 1) {
     await settled(page);
     if ((await item.count()) === 0) break;

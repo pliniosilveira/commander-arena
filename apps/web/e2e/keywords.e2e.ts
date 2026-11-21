@@ -15,6 +15,7 @@ import {
   poisonOpponent,
   primary,
 } from './harness/keywords-script';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 // Any seed that reaches the situation passes; these were scanned and reach it early.
@@ -42,7 +43,7 @@ test('Multikicker: the dialog asks how many times, the stack shows "kicked 2 tim
   await playUntil(page, 'SYNTHETIC Volley Barrage', 3);
   const foe = Number(await life(page, 1).textContent());
   // Full Control keeps the spell on the stack, so its badge can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Volley Barrage').first().click();
   await expect(dialog(page)).toBeVisible();
@@ -85,7 +86,7 @@ test('Split second: while the spell is on the stack the action bar says why noth
   await page.goto(game(SEED_SPLIT_SECOND));
   await playUntil(page, 'SYNTHETIC Hush Bolt', 2);
   const foe = Number(await life(page, 1).textContent());
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Hush Bolt').first().click();
   await targetOpponent(page);

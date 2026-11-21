@@ -1,6 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
 import { leaveHand } from './harness/pointer';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -90,7 +91,7 @@ test('a graveyard card is cast with flashback from the chip above the hand; it i
 
   await expect(chip(page, 'SYNTHETIC Flash Gain')).toContainText('Flashback {1}{W}');
   // Full Control keeps the spell on the stack, so its badge can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await chip(page, 'SYNTHETIC Flash Gain').first().click();
   await expect(logText(page)).toContainText('You cast SYNTHETIC Flash Gain with flashback.');
   const stack = page.getByRole('region', { name: 'Stack' });

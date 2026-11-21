@@ -12,13 +12,7 @@ const props = {
   passing: false,
   passTurn: false,
   onCancelPassTurn: noop,
-  fullControl: false,
-  manualPay: false,
   onSeize: noop,
-  onFullControl: noop,
-  onManualPay: noop,
-  undoDepth: 0,
-  onUndo: noop,
 };
 
 const line = (html: string) => /<p class="dec-thinking"[^>]*>.*?<\/p>/s.exec(html)?.[0] ?? '';

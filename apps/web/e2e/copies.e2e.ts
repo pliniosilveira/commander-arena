@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -80,7 +81,7 @@ test('Storm: the third spell copies twice; the copies are on the stack and ask f
   const bolt = 'SYNTHETIC Storm Bolt';
   await page.goto(game('synthetic-storm', 1));
   await playUntil(page, bolt, 3, 3);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   // The hint of the storm count shows while a storm card is in hand.
   await expect(page.locator('[data-spells-cast]')).toContainText('Spells cast this turn');
@@ -135,7 +136,7 @@ test('Replicate: the count dialog, the cost, and a copy for each time it was pai
   const bolt = 'SYNTHETIC Replicate Bolt';
   await page.goto(game('synthetic-replicate', 1));
   await playUntil(page, bolt, 1, 3);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, bolt).first().click();
   const dialog = page.getByRole('dialog', { name: 'Replicate' });

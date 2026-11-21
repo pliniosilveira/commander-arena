@@ -236,10 +236,9 @@ describe('SettingsPanel through a real store', () => {
     expect(open).toMatch(/aria-pressed="false"[^>]*>Slow</);
     expect(open).toMatch(/aria-pressed="true"[^>]*>Large</);
     expect(open).toContain('>Normal<');
-    // The column of the stack and the controls is on the right by default and can be flipped (issue 47).
-    expect(open).toContain('Stack and controls');
-    expect(open).toMatch(/aria-pressed="true"[^>]*>Right</);
-    expect(open).toContain('>Left<');
+    // Undo is here, not in the action bar; the stack no longer has a side to choose.
+    expect(open).toContain('Undo');
+    expect(open).not.toContain('Stack and controls');
     expect(open).toContain('Dark');
     expect(open).toContain('Light');
     for (const label of ['Upkeep', 'Main 1', 'Main 2', 'End step']) expect(open).toContain(label);

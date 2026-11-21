@@ -11,20 +11,8 @@ interface ActionBarProps {
   /** True while a "Pass turn" runs (issue 46): the bar says so and offers to cancel it. */
   readonly passTurn: boolean;
   readonly onCancelPassTurn: () => void;
-  readonly fullControl: boolean;
-  readonly manualPay: boolean;
   readonly onSeize: () => void;
-  readonly onFullControl: (on: boolean) => void;
-  readonly onManualPay: (on: boolean) => void;
-  /** Human actions that can be taken back; zero hides nothing but disables the button. */
-  readonly undoDepth: number;
-  readonly onUndo: () => void;
 }
-
-/** Drops focus after a mouse click, so Space keeps meaning "primary button" afterwards. */
-const blurOnClick = (e: { detail: number; currentTarget: { blur: () => void } }) => {
-  if (e.detail > 0) e.currentTarget.blur();
-};
 
 /**
  * The "Opponent is thinking" line (D-174). Its box is always there, one line tall, and a polite live
@@ -49,19 +37,11 @@ function ThinkingStatus({ thinking }: { readonly thinking: boolean }) {
 }
 
 /**
- * The action bar (SPEC 10): the prompt, the single context-sensitive button, and the toggles for
- * Full Control and manual mana. Concede lives in the Settings panel (issue 43).
+ * The action bar (SPEC 10): the prompt and the single context-sensitive button. Full Control,
+ * manual mana, Undo and Concede live in the Settings panel (issue 43).
  */
 export function ActionBar(props: ActionBarProps) {
-  const {
-    bar,
-    passing,
-    passTurn,
-    fullControl,
-    manualPay,
-    waiting = null,
-    thinking = false,
-  } = props;
+  const { bar, passing, passTurn, waiting = null, thinking = false } = props;
   return (
     <section className="dec-bar dec-panel" aria-label="Actions">
       <ThinkingStatus thinking={thinking} />
@@ -108,44 +88,6 @@ export function ActionBar(props: ActionBarProps) {
           </div>
         </>
       )}
-      <div className="dec-bar-footer">
-        <button
-          type="button"
-          className="dec-toggle"
-          disabled={props.undoDepth === 0 || passing}
-          title="Take back your last small action: a land, a cast, a mana tap (Ctrl+Z)"
-          onClick={(e) => {
-            props.onUndo();
-            blurOnClick(e);
-          }}
-        >
-          Undo{props.undoDepth > 0 ? ` (${props.undoDepth})` : ''}
-        </button>
-        <button
-          type="button"
-          className="dec-toggle"
-          aria-pressed={fullControl}
-          title="Stop at every priority point and hold priority after casting (F)"
-          onClick={(e) => {
-            props.onFullControl(!fullControl);
-            blurOnClick(e);
-          }}
-        >
-          Full Control
-        </button>
-        <button
-          type="button"
-          className="dec-toggle"
-          aria-pressed={manualPay}
-          title="Tap your own mana sources when paying costs"
-          onClick={(e) => {
-            props.onManualPay(!manualPay);
-            blurOnClick(e);
-          }}
-        >
-          Manual mana
-        </button>
-      </div>
     </section>
   );
 }

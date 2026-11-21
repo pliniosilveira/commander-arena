@@ -10,14 +10,12 @@ import { CHALLENGES, createPrecons, SHIPPED, startOptionsFor } from './precons';
 import { createAppStore } from './store';
 import { ImportProvider } from './ui/import/import-context';
 import { applyStoredCombatAnimations } from './ui/panels/animations';
-import { applyStoredSidePanel } from './ui/panels/side-panel';
 import { applyStoredTextSize } from './ui/panels/text-size';
 import { PreconsProvider } from './ui/precons-context';
 import { StoreProvider } from './ui/store-context';
 import './styles.css';
 
 applyStoredTextSize();
-applyStoredSidePanel();
 applyStoredCombatAnimations();
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
