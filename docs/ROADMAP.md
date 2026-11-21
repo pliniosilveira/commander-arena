@@ -141,7 +141,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
-- "Pirates you control deal damage to a player" fires once per player damaged; the official ruling for that wording is unverified. A spell's damage to several players is one run of events.
+- "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
 - `nextSpellPayLife`: hand, command zone only.
@@ -494,7 +494,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Goad with three or more players is not tested (the test DSL has two seats).
 - Myriad does nothing with two players and is not built for a table.
 - Redoubled Stormsinger, General Kreat, Adeline, Mobilize: the controller does not choose the player or planeswalker the tapped and attacking tokens attack (CR 508.4).
-- Zara, Renegade Recruiter: "look at defending player's hand" shows only the creature cards that can be put onto the battlefield, not the whole hand, and the planeswalker to attack is not chosen.
+- Zara: "look at the hand" shows only the creatures that can be put in; the planeswalker to attack is not chosen.
 - `spellsCastThisTurn` counts the spells of the effect's controller only; "each player", "an opponent" and "other than the first" counts are not built.
 - Strive supports mana costs only, on an instant or sorcery face; the question "may this be cast at all?" assumes no target.
 - A copy "except it has <keyword>" works for keywords the engine implements as abilities; it is not combined with "except it is a <type>" or "except its power is" in one effect.

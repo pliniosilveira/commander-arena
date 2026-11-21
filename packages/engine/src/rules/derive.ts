@@ -296,7 +296,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
     restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
     goadedBy: fx.goadedBy,
     affectedBy: fx.affectedBy,
-    blockLimits: blockLimitsOf(obj, fx.blockLimits, effects),
+    blockLimits: blockLimitsOf(state, obj, fx.blockLimits, effects),
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,
   };
@@ -313,6 +313,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
  * except by Spirits"), which are not abilities and stay when the object loses its abilities. A limit of an effect is read for the controller of the object, with no source.
  */
 function blockLimitsOf(
+  state: GameState,
   obj: GameObject,
   fromStatics: readonly BlockLimit[],
   effects: readonly ContinuousEffect[],
@@ -320,7 +321,10 @@ function blockLimitsOf(
   let out = fromStatics;
   for (const e of effects) {
     if (e.change.kind !== 'restrict' || e.change.blockers === undefined) continue;
-    out = [...out, { filter: e.change.blockers, controller: obj.controller, source: obj.id }];
+    out = [
+      ...out,
+      { filter: e.change.blockers, controller: controllerOf(state, obj), source: obj.id },
+    ];
   }
   return out;
 }
