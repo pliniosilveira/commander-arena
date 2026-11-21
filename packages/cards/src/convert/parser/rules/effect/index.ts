@@ -58,6 +58,7 @@ import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
+import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -1218,6 +1219,7 @@ export const EFFECT_RULES = [
   ...GALADRIEL_G3_EFFECT_RULES,
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
+  ...DAMAGE_IT_COUNT_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".
