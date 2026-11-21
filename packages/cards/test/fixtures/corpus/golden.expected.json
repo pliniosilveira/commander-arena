@@ -1,5 +1,5 @@
 {
-  "parserVersion": 185,
+  "parserVersion": 186,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -98,6 +98,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "06997299"
+    },
+    "0177b410-b559-491f-b393-ac3ed774653c": {
+      "name": "Kotis, Sibsig Champion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "20d44c52"
     },
     "01a79429-7d57-4a51-9815-a20905ed4707": {
       "name": "Rashmi, Eternities Crafter",
@@ -1010,6 +1018,14 @@
       "reasons": [],
       "ast": "3e66d376"
     },
+    "151c867f-cc77-42de-9ae5-5fd2233ccdab": {
+      "name": "Afterlife from the Loam",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c70b70c4"
+    },
     "15276d3b-a117-44bf-87c3-c17e032e4a26": {
       "name": "Thunderclap Wyvern",
       "group": "acceptance",
@@ -1034,6 +1050,14 @@
       ],
       "reasons": [],
       "ast": "5dd824a2"
+    },
+    "154104b7-4125-4276-8bc7-9a6edfe48cb9": {
+      "name": "Ob Nixilis, the Fallen",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "94cffd91"
     },
     "159cd205-6afc-4d8c-a4b9-501911a9c345": {
       "name": "Incremental Blight",
@@ -1314,6 +1338,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f5077df0"
+    },
+    "1bb7a942-c4b9-47a2-9782-3ec3efcdaff5": {
+      "name": "Steward of the Harvest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1ad976ba"
     },
     "1bc42024-52da-4d93-8b47-544f0a4a72a1": {
       "name": "Astral Cornucopia",
@@ -2663,6 +2695,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3178465c"
+    },
+    "3a25d1e2-63d8-4a93-b0ce-f9307736b3f9": {
+      "name": "Lord of the Forsaken",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a408d891"
     },
     "3a49b518-61c8-4dea-8008-c5edf8384581": {
       "name": "Ob Nixilis, the Ascended",
@@ -5493,7 +5533,7 @@
           "text": "When ~ has two or fewer loyalty counters on him, transform him.",
           "reason": "unrecognised",
           "slot": "trigger",
-          "closestRule": "trigger.or"
+          "closestRule": "trigger.enters-from-graveyard"
         },
         {
           "face": 0,
@@ -5783,6 +5823,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cc592c04"
+    },
+    "837e3fde-241f-4826-ad04-f146fdcf2278": {
+      "name": "Tasigur, the Golden Fang",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "120145af"
     },
     "83917116-d2d8-4701-a79f-af17486706ae": {
       "name": "Light the Way",
@@ -6723,6 +6771,14 @@
       "reasons": [],
       "ast": "8d19e6f7"
     },
+    "9b55fb72-237d-4935-b645-8ebc6eb4140e": {
+      "name": "Consuming Aberration",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "093760f4"
+    },
     "9b598025-80a3-4144-be9a-863165161594": {
       "name": "Shield of the Oversoul",
       "group": "acceptance",
@@ -7115,6 +7171,14 @@
       "reasons": [],
       "ast": "987374ea"
     },
+    "a3275d80-112b-4839-a014-e44ef48d2e6b": {
+      "name": "Kishla Skimmer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "78cc758a"
+    },
     "a38828be-781e-4340-9c6f-f40b1d34773f": {
       "name": "White Sun's Twilight",
       "group": "acceptance",
@@ -7218,13 +7282,6 @@
         },
         {
           "face": 0,
-          "ability": 1,
-          "text": "−2: You may put an Equipment card from your hand or graveyard onto the battlefield.",
-          "reason": "notRunnable",
-          "closestRule": "effect.put-from-hand"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "−10: Create a colorless Equipment artifact token named Stoneforged Blade. It has indestructible, \"Equipped creature gets +5/+5 and has double strike,\" and equip {0}.",
           "reason": "unrecognised",
@@ -7233,7 +7290,7 @@
         }
       ],
       "reasons": [],
-      "ast": "fc17eb59"
+      "ast": "006aa8cc"
     },
     "a58adf82-d9e2-4b47-933e-68180f280ba2": {
       "name": "Mystic Speculation",
@@ -7555,6 +7612,14 @@
       "reasons": [],
       "ast": "87b253a7"
     },
+    "abf4dcd8-5176-4f4a-b7c1-5ce24ff181bf": {
+      "name": "Diviner of Mist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "694422db"
+    },
     "ac10d218-f9a6-4058-9cda-a15ca1b0b7b5": {
       "name": "Assassin's Trophy",
       "group": "training",
@@ -7610,6 +7675,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8e39838d"
+    },
+    "ac8fba34-512c-4f24-999a-ab72f1ce4acb": {
+      "name": "Life from the Loam",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1fdb6959"
     },
     "acc9c16a-5e72-43bd-87e1-56a16aa892f5": {
       "name": "Haven of the Spirit Dragon",
@@ -7795,6 +7868,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4a9ee0e8"
+    },
+    "affa0b6c-a9fd-49fc-b9ce-9a3486af8320": {
+      "name": "Welcome the Dead",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c2d93482"
     },
     "b0394cf2-12a0-4d4f-87e0-fe8937e6faff": {
       "name": "Well of Lost Dreams",
@@ -8174,6 +8255,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a3d03d1d"
+    },
+    "bb714bc6-9f32-42f6-9064-f28a383675b5": {
+      "name": "Necropolis Fiend",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5d9ee670"
     },
     "bbcae463-ba05-4cfe-9c25-13f2e64698c7": {
       "name": "Sarkhan, Soul Aflame",
@@ -8696,6 +8785,14 @@
       "reasons": [],
       "ast": "6541824f"
     },
+    "c8cbf0ec-ec98-4cb3-8068-60e92bbd740d": {
+      "name": "Teval, the Balanced Scale",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0558bd3b"
+    },
     "c8decfdf-1421-4649-acde-5215e7f08bb9": {
       "name": "Martial Impetus",
       "group": "acceptance",
@@ -8873,6 +8970,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7fa9ccfa"
+    },
+    "cbad3570-5417-42e6-b3ef-f42194098314": {
+      "name": "Shigeki, Jukai Visionary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8ae736e6"
     },
     "cbcb6d9a-6ae5-4bcd-8013-2b657553764a": {
       "name": "Mangara, the Diplomat",
@@ -9724,6 +9829,14 @@
       "reasons": [],
       "ast": "abf2e6df"
     },
+    "df8e0d1b-b47c-4807-9c9b-84dcec835254": {
+      "name": "Colossal Grave-Reaver",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d70dae4d"
+    },
     "dfaa02d4-4f3c-4e5d-b9e5-283a45395a53": {
       "name": "Eccentric Pestfinder // Turn Stones",
       "group": "acceptance",
@@ -9827,6 +9940,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e5351d85"
+    },
+    "e28a3f0e-40bd-4293-b5eb-ec9d185c1e1c": {
+      "name": "Essence Anchor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7357ca35"
     },
     "e2b472dd-047d-47eb-9ebb-df6aa4b52dd4": {
       "name": "Perilous Landscape",
@@ -10333,6 +10454,14 @@
       "reasons": [],
       "ast": "2bae1436"
     },
+    "ef5c93ae-91e0-4edb-b8a3-1171a3694bb8": {
+      "name": "River Kelpie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3073b720"
+    },
     "ef6c0054-3a89-4fac-b822-37c7d2514489": {
       "name": "Matoya, Archon Elder",
       "group": "acceptance",
@@ -10444,6 +10573,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "69f9ca33"
+    },
+    "f1c2dbe2-fbe0-4058-bdf1-91d1b1832786": {
+      "name": "Dauthi Voidwalker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "06186796"
     },
     "f21ce158-2925-4658-ab7b-b73718d31965": {
       "name": "Diluvian Primordial",
@@ -11084,8 +11221,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1067,
-      "total": 1089
+      "supported": 1085,
+      "total": 1107
     }
   }
 }

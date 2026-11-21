@@ -54,12 +54,24 @@ export function freeCandidates(
     ins.cards !== undefined
       ? ins.cards.filter((id) => state.objects[id]?.zone === (ins.cardsZone ?? 'library'))
       : ins.objects.kind === 'choose'
-        ? (state.seats[seat]?.hand.filter((id) => {
+        ? // CR 608.2g: a card of the controller's hand, or (issue 102, Diviner of Mist) of their graveyard, as the filter says.
+          ((ins.objects.filter.zone === 'graveyard'
+            ? state.seats[seat]?.graveyard
+            : state.seats[seat]?.hand
+          )?.filter((id) => {
             const card = state.objects[id];
             return (
               card !== undefined &&
               ins.objects.kind === 'choose' &&
-              matchesFilter(state, card, { ...ins.objects.filter, zone: 'hand' }, ctx)
+              matchesFilter(
+                state,
+                card,
+                {
+                  ...ins.objects.filter,
+                  zone: ins.objects.filter.zone === 'graveyard' ? 'graveyard' : 'hand',
+                },
+                ctx,
+              )
             );
           }) ?? [])
         : resolveObjects(state, ins.objects as ObjectRef, ctx, []);
@@ -145,7 +157,9 @@ export function runCastFree(
                 : ins.cards !== undefined
                   ? 'a card from among those you looked at'
                   : ins.objects.kind === 'choose'
-                    ? 'a card from your hand'
+                    ? ins.objects.filter.zone === 'graveyard'
+                      ? 'a card from your graveyard'
+                      : 'a card from your hand'
                     : 'the exiled card'
             } without paying its mana cost`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.

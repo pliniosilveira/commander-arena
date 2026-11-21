@@ -101,6 +101,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'afflict':
+    case 'dredge':
     case 'annihilator':
     case 'backup':
     case 'bushido':

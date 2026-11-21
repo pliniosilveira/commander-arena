@@ -198,7 +198,10 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'tapCreatures':
       return `Tap untapped creatures you control with total power ${cost.totalPower} or greater`;
     case 'exileFromGraveyard':
-      return `Exile ${countText(cost.count, 'card', 'cards')} from your graveyard`;
+      // Issue 102 (Necropolis Fiend): as many cards as the X announced.
+      return cost.countX === true
+        ? 'Exile X cards from your graveyard'
+        : `Exile ${countText(cost.count, 'card', 'cards')} from your graveyard`;
     case 'exileFromHand': {
       const colorNames: Readonly<Record<string, string>> = {
         W: 'white',

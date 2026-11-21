@@ -62,6 +62,8 @@ export function spendRestrictionOf(
     const color = source?.chosen?.color;
     return { kind: 'spellMatch', monocolored: color === undefined ? [] : [color] };
   }
+  // Issue 102 (Lord of the Forsaken, CR 106.6, 601.2a): "Spend this mana only to cast a spell from your graveyard".
+  if (only.fromGraveyard === true) return { kind: 'spellMatch', fromGraveyard: true };
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
   // CR 106.6 (issue 345): "Spend this mana only to activate abilities".

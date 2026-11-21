@@ -7,8 +7,8 @@
 import { literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
-import { defineRule, family, quietly } from '../registry';
-import { type Clauses, single } from './operands';
+import { defineRule, family, quietly, spanned } from '../registry';
+import { type Clauses, makeClause, single } from './operands';
 
 const NOT_IN_WORD = BOUNDARY;
 
@@ -82,6 +82,137 @@ export const EFFECT_EXILE_ONE_OF_THEM = defineRule<Clauses>({
     ),
     () => ({ verb: 'exileOneOfThem', args: {} }),
   ),
+});
+
+/**
+ * `effect.put-one-of-them-onto-battlefield`: "put one of them onto the battlefield" (issue 102, Colossal Grave-Reaver; CR 603.2c, 608.2d, 400.7, 110.2a): of the cards a batch of
+ * cards put into a graveyard is about, the ones still there, the controller puts one onto the battlefield under their control. Only one card, "them" (the cards of the batch) and
+ * the battlefield; the lowering reads it only in the body of a batch `putIntoGraveyard` trigger. Not read: "you may", tapped, "under its owner's control", "put them", another
+ * destination, another number.
+ */
+export const EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD = defineRule<Clauses>({
+  id: 'effect.put-one-of-them-onto-battlefield',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 400.7 (General)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: ['put one of them onto the battlefield', 'Put one of them onto the battlefield'],
+  rejects: [
+    'you may put one of them onto the battlefield',
+    'put them onto the battlefield',
+    'put one of them into your hand',
+    'put one of them onto the battlefield tapped',
+    "put one of them onto the battlefield under its owner's control",
+    'put two of them onto the battlefield',
+    'put one of those onto the battlefield',
+    'put one of them onto the battlefield and draw a card',
+    'put one of them',
+  ],
+  parse: single(
+    'effect.put-one-of-them-onto-battlefield',
+    sequence(
+      literal('put one of them onto the battlefield'),
+      pattern(/(?![\p{L}\p{N}])(?!\s+(?:and|then|tapped|under)(?![\p{L}\p{N}]))/u),
+    ),
+    () => ({ verb: 'putOneOfThem', args: {} }),
+  ),
+});
+
+/**
+ * `effect.put-one-per-graveyard`: "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102,
+ * Afterlife from the Loam; CR 115.1, 601.2c, 404.1, 110.2a): a slot of targets with none at least, one card in each player's graveyard at most (no two cards of one owner), all put onto
+ * the battlefield under the controller's control. The two sentences are one instruction (`segment.ts`). Not read: another kind of card, "each opponent", another destination, "tapped".
+ */
+export const EFFECT_PUT_ONE_PER_GRAVEYARD = defineRule<Clauses>({
+  id: 'effect.put-one-per-graveyard',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 404.1 (Graveyard)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: [
+    "for each player, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield under your control",
+  ],
+  rejects: [
+    "for each player, choose up to one target creature card in that player's graveyard",
+    "for each opponent, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield under your control",
+    "for each player, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield",
+    "for each player, choose up to one target artifact card in that player's graveyard. put those cards onto the battlefield under your control",
+    "for each player, choose up to one target creature card in that player's graveyard. put those cards onto the battlefield tapped under your control",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.put-one-per-graveyard';
+    const r = spanned(
+      pattern(
+        /for each player, choose up to one target creature card in that player['’]s graveyard\. put those cards onto the battlefield under your control(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: { types: ['creature'], zone: 'graveyard', card: true, raw: 'creature card' },
+      upTo: false,
+      plural: true,
+      other: false,
+      anyNumber: true,
+      differentControllers: true,
+      span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [makeClause(id, 'putOnePerGraveyard', { objects }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `effect.play-chosen-void-card`: "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker;
+ * CR 608.2d, 601.2, 305.1, 118.9, 122.1): the controller chooses one such card in exile and may play it this turn for no mana cost. Two sentences that `segment.ts` keeps together. The
+ * engine's `mayPlayCounterCard`. Not read: another counter, "target", your own cards, "cast" only, paying the mana cost, "until end of turn" spelled otherwise.
+ */
+export const EFFECT_PLAY_CHOSEN_VOID_CARD = defineRule<Clauses>({
+  id: 'effect.play-chosen-void-card',
+  family: 'effect',
+  leading: ['choose'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 601.2 (Casting Spells)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 122.1 (Counters)',
+  ],
+  examples: [
+    'choose an exiled card an opponent owns with a void counter on it. you may play it this turn without paying its mana cost',
+  ],
+  rejects: [
+    'choose an exiled card an opponent owns with a void counter on it',
+    'choose an exiled card an opponent owns with a void counter on it. you may play it this turn',
+    'choose an exiled card an opponent owns with a time counter on it. you may play it this turn without paying its mana cost',
+    'choose an exiled card you own with a void counter on it. you may play it this turn without paying its mana cost',
+    'choose target exiled card an opponent owns with a void counter on it. you may play it this turn without paying its mana cost',
+    'choose an exiled card an opponent owns with a void counter on it. you may cast it this turn without paying its mana cost',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.play-chosen-void-card';
+    const r = spanned(
+      pattern(
+        /choose an exiled card an opponent owns with a void counter on it\. you may play it this turn without paying its mana cost(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    return { ok: true, value: [makeClause(id, 'mayPlayVoidCard', {}, span)], pos: r.pos };
+  },
 });
 
 /**
@@ -195,6 +326,9 @@ export const EFFECT_DEAL_DAMAGE_TO_ITSELF = defineRule<Clauses>({
 export const LOREHOLD_G1_EFFECT_RULES = [
   quietly(EFFECT_REPEAT_PROCESS),
   quietly(EFFECT_EXILE_ONE_OF_THEM),
+  quietly(EFFECT_PUT_ONE_PER_GRAVEYARD),
+  quietly(EFFECT_PLAY_CHOSEN_VOID_CARD),
+  quietly(EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD),
   quietly(EFFECT_SHUFFLE_CARDS_INTO_LIBRARY),
   quietly(EFFECT_DEAL_DAMAGE_TO_ITSELF),
 ];

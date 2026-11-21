@@ -196,6 +196,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "You win the game" is not read: no effect makes a player win the game.
 - `loseGame` is not read with a delay or a condition inside its sentence.
 - A player who leaves on their own turn stays the active seat until it ends (CR 800.4j: no active player); CR 800.4e to 800.4h (damage, costs, choices of a player who left) are not built.
+- Declare blockers skips a defender who has left the game (CR 800.4e): no one blocks for attackers aimed at them. Combat damage to such a player is not checked.
 - `attackedPlayers` reads only the permanent of the ability (`this`).
 - Ascend: the city's blessing is checked with the state-based actions, so "create two tokens, then if you have the city's blessing ..." reads the answer from before the tokens (CR 702.131b says "any time").
 - Ascend on an instant or sorcery (CR 702.131a) is not built; a card with it is unsupported.
@@ -568,3 +569,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Replicate given by Hatchery Sliver is not given to a spell with {X} in its mana cost.
 - Encore given to graveyard cards is skipped for a card with an Encore of its own.
 - The Medium and Hard challenge emblems are written as AST: "if it's your first turn of the game" is not read by the Oracle text parser.
+- Tasigur's "an opponent chooses" and Dauthi Voidwalker's exile replacement use the first opponent; with several opponents the choice and the replacement order (CR 616.1) are not offered.

@@ -210,12 +210,12 @@ describe('differentControllers: any number of targets, no two of one controller 
     expect(messages(players).join('|')).toContain('names objects (permanents), not players');
   });
 
-  test('it is not a slot of cards of a graveyard', () => {
+  test('it is not a slot of cards in exile', () => {
     const graveyard = sorcery({
       targets: [
         {
           id: 't1',
-          what: { kind: 'object', filter: { zone: 'graveyard', types: ['creature'] } },
+          what: { kind: 'object', filter: { zone: 'exile', types: ['creature'] } },
           anyNumber: true,
           differentControllers: true,
         },

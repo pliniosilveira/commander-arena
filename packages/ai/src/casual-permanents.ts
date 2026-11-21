@@ -353,6 +353,15 @@ function answerClash(d: ConfirmOptionalDecision, view: GameView): Action {
 export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Action {
   if (d.purpose === 'exert') return answerExert(d, view);
   if (d.purpose === 'clash') return answerClash(d, view);
+  // Dredge (CR 702.52a, issue 102): "mill N cards instead of drawing, and return this card" trades a fresh card for a recursion spell and fills the graveyard; it is worth it only
+  // while the library is deep enough that milling it is no danger (more than 12 cards left after the mill).
+  if (d.purpose === 'dredge') {
+    const me = view.seats.find((s) => s.id === view.viewer);
+    const n = Number(/dredge (\d+)/i.exec(d.sourceOracleText)?.[1] ?? 3);
+    return me !== undefined && me.libraryCount - n > 12
+      ? { kind: 'acceptOptional' }
+      : { kind: 'declineOptional' };
+  }
   // "You may cast that card without paying its mana cost" (Cascade, CR 702.85a): a free spell, always.
   if (d.purpose === 'cascade') return { kind: 'acceptOptional' };
   // "As many times as you choose, you may exile the top card of your library" (D-662): each card exiled is a free spell if the total mana value stays at 13 or less. The agent

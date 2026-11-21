@@ -126,6 +126,8 @@ export interface LandSpec {
   /** The least of a card that shows when another lies over it, in pixels. */
   readonly minStep: number;
   readonly gap: number;
+  /** Width the row spends on attachment strips beside its lands, whatever the tile size. */
+  readonly extraW?: number;
 }
 
 export interface LandLayout {
@@ -148,8 +150,8 @@ export const clusterWidth = (count: number, width: number, step: number): number
 
 /**
  * The size of the clusters of a one-line land row: the tile is as tall as the row allows (at most
- * `maxTile`), then the overlap tightens down to `minStep`, then the tile shrinks to `minTile`, and
- * past that the row scrolls. `width` null means not measured yet: no limit.
+ * `maxTile`), then the overlap tightens down to `minStep`, and past that the row scrolls; the tile
+ * keeps its size. `width` null means not measured yet: no limit.
  */
 export function layoutLands(
   columns: readonly LandColumn[],
@@ -159,19 +161,21 @@ export function layoutLands(
 ): LandLayout {
   const widthOf = (t: number) => Math.round(t * (spec.aspect ?? 1));
   let tile = Math.max(spec.minTile, Math.min(spec.maxTile, Math.floor(height)));
+  // The tile never shrinks to fit: past the tightest overlap the row scrolls.
+  const floor = tile;
   const overlaps = columns.reduce((n, c) => n + Math.max(0, c.objects.length - 1), 0);
   if (width === null || columns.length === 0) {
     return { tile, width: widthOf(tile), step: roomyStepOf(widthOf(tile)), overflow: false };
   }
   for (;;) {
     const w = widthOf(tile);
-    const base = columns.length * w + (columns.length - 1) * spec.gap;
+    const base = columns.length * w + (columns.length - 1) * spec.gap + (spec.extraW ?? 0);
     const room = overlaps === 0 ? Infinity : Math.floor((width + 0.5 - base) / overlaps);
     const step = Math.min(roomyStepOf(w), room);
     if (base <= width + 0.5 && (overlaps === 0 || step >= spec.minStep)) {
       return { tile, width: w, step: Math.max(step, spec.minStep), overflow: false };
     }
-    if (tile <= spec.minTile) {
+    if (tile <= floor) {
       return { tile, width: w, step: spec.minStep, overflow: true };
     }
     tile -= 1;

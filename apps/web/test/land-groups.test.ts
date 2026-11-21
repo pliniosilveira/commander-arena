@@ -180,16 +180,14 @@ describe('the size of the row', () => {
     expect(layoutLands(groupLands(many('Forest', 3)), 900, 20, spec).tile).toBe(spec.minTile);
   });
 
-  test('a lot of different lands shrink the tiles to fit the width, then scroll', () => {
+  test('a lot of different lands keep their tile size and scroll when the row is full', () => {
     const lands = Array.from({ length: 14 }, (_, i) =>
       land(`Nonbasic ${String(i).padStart(2, '0')}`),
     );
-    const fit = layoutLands(groupLands(lands), 800, 80, spec);
-    expect(fit.width).toBeGreaterThan(fit.tile);
-    expect(fit.tile).toBeLessThan(70);
-    expect(fit.overflow).toBe(false);
+    const roomy = layoutLands(groupLands(lands), 2000, 80, spec);
+    expect(roomy.overflow).toBe(false);
     const scroll = layoutLands(groupLands(lands), 300, 80, spec);
-    expect(scroll.tile).toBe(spec.minTile);
+    expect(scroll.tile).toBe(roomy.tile);
     expect(scroll.overflow).toBe(true);
   });
 

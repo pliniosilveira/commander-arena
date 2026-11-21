@@ -3,7 +3,7 @@
  * trigger is about.
  */
 import { choice, literal, map, optional, pattern, satisfy, sequence } from '../../combinators';
-import type { IrDuration, IrFilter, IrNoun } from '../../ir/types';
+import type { IrArg, IrDuration, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
@@ -101,6 +101,68 @@ export const EFFECT_CAST_OWN_GRAVEYARD_CARD_FREE = defineRule<Clauses>({
       },
     }),
   ),
+});
+
+const CHOOSE_ID = 'effect.cast-chosen-graveyard-spell-free';
+
+/**
+ * `effect.cast-chosen-graveyard-spell-free`: "you may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost", with the rider "If that spell
+ * would be put into your graveyard, exile it instead" (Diviner of Mist, issue 102; CR 608.2g, 118.9, 614.1a). Not a target: the controller chooses the card as the effect resolves. The
+ * engine's `castFree` of a choice from the graveyard, with `exileInstead`. Not read: another kind of spell, a graveyard that is not yours, a mana value that is not "N or less" (N from 1 to 9),
+ * paying the mana cost, a rider about a graveyard that is not yours, another thing done to the spell.
+ */
+export const EFFECT_CAST_CHOSEN_GRAVEYARD_SPELL_FREE = defineRule<Clauses>({
+  id: CHOOSE_ID,
+  family: 'effect',
+  leading: ['cast', 'you'],
+  cites: [
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 614.1a (Replacement Effects)',
+    'CR 202.3 (Mana Value)',
+  ],
+  examples: [
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost',
+    'cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost',
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. if that spell would be put into your graveyard, exile it instead',
+  ],
+  rejects: [
+    'you may cast an instant or sorcery spell from a graveyard with mana value 4 or less without paying its mana cost',
+    'you may cast a creature spell from your graveyard with mana value 4 or less without paying its mana cost',
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or more without paying its mana cost',
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or less',
+    'you may cast an instant or sorcery spell from your graveyard without paying its mana cost',
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost and draw a card',
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. if that spell would be put into a graveyard, exile it instead',
+    'you may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `(you may )?cast an instant or sorcery spell from your graveyard with mana value ([1-9]) or less without paying its mana cost(\\. if that spell would be put into your graveyard, exile it instead)?${BOUNDARY}(?!,| and\\b| then\\b| this turn)`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, may, value, rider] = r.value.value;
+    const span = r.value.span;
+    const args: Record<string, IrArg> = {
+      limit: { kind: 'number', value: Number(value), span },
+      ...(rider === undefined ? {} : { exileInstead: flag(CHOOSE_ID, true, span) }),
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(CHOOSE_ID, 'castChosenGraveyardSpell', args, span),
+          optional: may !== undefined,
+        },
+      ],
+      pos: r.pos,
+    };
+  },
 });
 
 const TOP_ID = 'effect.exile-top-of-that-player';
@@ -295,6 +357,7 @@ export const F144_FIRST_EFFECT_RULES = [EFFECT_MAY_CAST_SPEND_ANY_COLOR].map(qui
 
 export const F144_EFFECT_RULES = [
   EFFECT_CAST_OWN_GRAVEYARD_CARD_FREE,
+  EFFECT_CAST_CHOSEN_GRAVEYARD_SPELL_FREE,
   EFFECT_PUT_EXILED_INTO_YOUR_GRAVEYARD,
   EFFECT_EXILE_TOP_OF_THAT_PLAYER,
 ].map(quietly);

@@ -14,18 +14,16 @@ export interface Attachments {
   readonly attached: ReadonlySet<ObjectId>;
 }
 
-/** Height of one strip, and how much of a stack of strips stays legible before they get thinner. */
-export const STRIP_H = 14;
-const STACK_MAX = STRIP_H * 3;
+/**
+ * Width of one strip. The strips lie behind the host's tile and show a vertical sliver of their
+ * right side, the way equal basic lands overlap in the land row (`lands.ts`). Every strip keeps
+ * this width however many there are: the row makes room for them.
+ */
+export const STRIP_W = 30;
 
-/** Distance between neighbouring strips: full height up to three, then squeezed into the same room. */
-export function stripStep(count: number): number {
-  return count <= 3 ? STRIP_H : Math.max(5, Math.floor(STACK_MAX / count));
-}
-
-/** Room a tile needs under it for `count` strips, in pixels. */
-export function stripReserve(count: number): number {
-  return count <= 0 ? 0 : count * stripStep(count);
+/** Room a tile needs beside it for `count` strips, in pixels. */
+export function stripWidth(count: number): number {
+  return count <= 0 ? 0 : count * STRIP_W;
 }
 
 /**

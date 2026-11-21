@@ -166,6 +166,38 @@ function indexOf(state: GameState): Index {
  * exile and that the filter matches, read by what is printed on the card (it is in exile: no layer but a copy effect changes a card
  * there). Null when there is none.
  */
+/** Every card the permanent exiled with its linked ability that is still in exile and that the filter describes (CR 607.2a), in the order they were exiled. */
+export function linkedCardsOf(
+  state: GameState,
+  source: GameObject,
+  from: ObjectFilter,
+): GameObject[] {
+  const out: GameObject[] = [];
+  for (const id of source.linkedExile ?? []) {
+    const card = state.objects[id];
+    if (card?.zone !== 'exile') continue;
+    const c = copiableValues(state, card).characteristics;
+    const view: FilterSubject = {
+      types: c.types,
+      supertypes: c.supertypes,
+      subtypes: c.subtypes,
+      colors: c.colors,
+    };
+    if (
+      matchesFilterWith(
+        state,
+        card,
+        () => view,
+        { ...from, zone: 'exile' },
+        { controller: controllerOf(state, source), source: source.id },
+      )
+    ) {
+      out.push(card);
+    }
+  }
+  return out;
+}
+
 export function linkedCardOf(
   state: GameState,
   source: GameObject,

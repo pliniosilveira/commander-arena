@@ -50,6 +50,8 @@ export type ManaRestriction =
        * `G`); an empty list matches no spell (no color was chosen). Never with `alsoAbilities`.
        */
       readonly monocolored?: readonly string[];
+      /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): the spell is cast from a graveyard. Never with `alsoAbilities`. */
+      readonly fromGraveyard?: true;
     };
 
 /**

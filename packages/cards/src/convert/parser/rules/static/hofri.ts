@@ -165,6 +165,8 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard.',
     'Once during each of your turns, you may cast an Aura spell from your graveyard.',
     'Once during each of your turns, you may cast an Aura, Equipment, or Vehicle spell from your graveyard.',
+    // Issue 102 (Kotis, Sibsig Champion): the spell cast exiles other cards of the graveyard as an additional cost.
+    'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs.',
   ],
   rejects: [
     'Once during each of your turns, you may cast an artifact spell from your graveyard',
@@ -190,6 +192,9 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an Aura or Aura spell from your graveyard.',
     'Once during each of your turns, you may cast Aura or Equipment spells from your graveyard.',
     'Once during each of your turns, you may cast an Aura and Equipment spell from your graveyard.',
+    'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard.',
+    'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your hand in addition to paying its other costs.',
+    'Once during each of your turns, you may cast a creature spell from your graveyard by exiling one other card from your graveyard in addition to paying its other costs.',
   ],
   parse: (ctx, pos) => {
     const id = 'static.graveyard-play-once-each-turn';
@@ -199,6 +204,7 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     let at = head.pos;
     let hasLand = false;
     let cast: IrFilter | undefined;
+    let exileOthers: number | undefined;
     if (land.ok) {
       hasLand = true;
       at = land.pos;
@@ -221,6 +227,14 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
       const yard = literal(' from your graveyard')(ctx, spell.pos);
       if (!yard.ok) return yard;
       at = yard.pos;
+      // Issue 102 (Kotis, CR 601.2f): "by exiling three other cards from your graveyard in addition to paying its other costs".
+      const extra = pattern(
+        /by exiling (two|three|four|five) other cards from your graveyard in addition to paying its other costs/iu,
+      )(ctx, at + 1);
+      if (extra.ok && ctx.text[at] === ' ') {
+        exileOthers = { two: 2, three: 3, four: 4, five: 5 }[(extra.value[1] ?? '').toLowerCase()];
+        at = extra.pos;
+      }
     }
     const stop = literal('.')(ctx, at);
     if (!stop.ok) return stop;
@@ -271,6 +285,7 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
             land: hasLand,
             entersTapped,
             ...(gains === undefined ? {} : { gains }),
+            ...(exileOthers === undefined ? {} : { exileOthers }),
           },
         ],
         span: { start: pos, end: at },

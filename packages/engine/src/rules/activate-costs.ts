@@ -218,7 +218,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         break;
       case 'exileFromGraveyard':
         exileCardsCosts += 1;
-        exileCards = { filter: cost.filter, count: cost.count };
+        // Issue 102 (CR 107.3a, 602.2b): "Exile X cards from your graveyard" is X cards, the X announced for the ability.
+        exileCards = { filter: cost.filter, count: cost.countX === true ? x : cost.count };
         break;
       case 'tapPermanents':
         tapPermanentsCosts += 1;

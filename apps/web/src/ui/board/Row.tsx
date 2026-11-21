@@ -14,7 +14,7 @@ import {
 import { useInteraction } from '../interaction';
 import { useTextScale } from '../panels/text-size';
 import { HostStack } from './Attached';
-import { stripReserve } from './attach';
+import { stripWidth } from './attach';
 import { CARD_TOP_ASPECT, cardTopHeight } from './card-top';
 import { LandRow } from './LandRow';
 import { layoutRow, type RowSpec } from './layout';
@@ -31,33 +31,32 @@ const ROW_LABEL: Readonly<Record<RowKind, string>> = {
 };
 
 /**
- * Tile proportions per row: how tall at most, how wide relative to height, the narrowest tile. Every
- * tile has the shape of the top of a card cut under its type line (`card-top.ts`), wider than tall.
+ * Tile proportions per row: how tall at most and how wide relative to height. Every tile has the
+ * shape of the top of a card cut under its type line (`card-top.ts`), wider than tall.
  */
-const ROW_SHAPE: Readonly<Record<RowKind, { maxH: number; aspect: number; minW: number }>> = {
+const ROW_SHAPE: Readonly<Record<RowKind, { maxH: number; aspect: number }>> = {
   // D-240 (issue 137): the largest tiles are a quarter bigger than they were (108, 84 and 70 before).
-  creature: { maxH: 136, aspect: CARD_TOP_ASPECT, minW: 96 },
-  other: { maxH: 105, aspect: CARD_TOP_ASPECT, minW: 84 },
-  land: { maxH: 88, aspect: CARD_TOP_ASPECT, minW: 56 },
+  creature: { maxH: 136, aspect: CARD_TOP_ASPECT },
+  other: { maxH: 105, aspect: CARD_TOP_ASPECT },
+  land: { maxH: 88, aspect: CARD_TOP_ASPECT },
 };
 
 /**
- * `reserve` is the room the row keeps under its tiles for attachment strips (`stripReserve` of the
- * busiest host); the tiles shrink to leave it.
+ * `extraW` is the width the row spends on attachment strips beside its tiles (`stripWidth` of each
+ * host); a row that cannot hold them scrolls.
  */
-export function rowSpec(kind: RowKind, availableH: number, reserve = 0, scale = 1): RowSpec {
+export function rowSpec(kind: RowKind, availableH: number, extraW = 0, scale = 1): RowSpec {
   const shape = ROW_SHAPE[kind];
   // The text size setting grows the tiles where the row has room for it (never past what is free).
-  const tileH = Math.max(
-    40,
-    Math.min(Math.round(shape.maxH * scale), availableH - 2 * PAD_Y - reserve),
-  );
+  const tileH = Math.max(40, Math.min(Math.round(shape.maxH * scale), availableH - 2 * PAD_Y));
   const preferredW = Math.round(tileH * shape.aspect);
   return {
     tileH,
     preferredW,
-    minW: Math.min(Math.round(shape.minW * scale), preferredW),
+    // A card never shrinks to fit: a full row scrolls sideways (the three rows together).
+    minW: preferredW,
     gap: GAP,
+    extraW,
   };
 }
 
@@ -143,12 +142,9 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const ix = useInteraction();
-  const reserve = Math.max(
-    0,
-    ...objects.map((o) => stripReserve(attachments.get(o.id)?.length ?? 0)),
-  );
+  const extraW = objects.reduce((n, o) => n + stripWidth(attachments.get(o.id)?.length ?? 0), 0);
   const scale = useTextScale();
-  const spec = rowSpec(kind, size?.height ?? 100, reserve, scale);
+  const spec = rowSpec(kind, size?.height ?? 100, extraW, scale);
   // Permanents that differ in what the player acts on must not hide inside one group.
   const extraKey = useCallback(
     (o: ObjectView) =>
@@ -163,10 +159,7 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
   );
   // A tile narrower than the preferred width keeps its shape, so the card's top is cut at the same line.
   const tileH = Math.min(spec.tileH, cardTopHeight(layout.tileW));
-  const style = {
-    '--row-h': `${spec.tileH}px`,
-    '--attach-reserve': `${reserve}px`,
-  } as CSSProperties;
+  const style = { '--row-h': `${spec.tileH}px` } as CSSProperties;
 
   return (
     <div
