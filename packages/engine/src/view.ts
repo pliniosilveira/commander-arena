@@ -534,6 +534,12 @@ export interface GameView {
   readonly stack: readonly ObjectView[];
   /** Attackers and blockers are public information (CR 506). Null outside combat. */
   readonly combat: CombatView | null;
+  /** Present, and `true`, while the turn is an extra turn (CR 500.7). */
+  readonly extraTurn?: true;
+  /** The extra turns that will be taken after this turn (CR 500.7), the next one first: the seat of each. Absent when there are none. */
+  readonly extraTurns?: readonly SeatId[];
+  /** How many extra turns have begun in the game (CR 500.7); absent while it is 0. `turn` counts them, the rounds of the turn order do not. */
+  readonly extraTurnsTaken?: number;
   /** The pending decision, only when it is the viewer's. */
   readonly pending: PendingDecision | null;
   readonly decidingSeat: SeatId | null;
@@ -1035,6 +1041,11 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       : { phasedOut: (state.phased ?? []).map((id) => objectView(state, id, viewer)) }),
     stack: state.stack.map((id) => objectView(state, id, viewer)),
     combat: combatView(state),
+    ...(state.turn.extra === true ? { extraTurn: true as const } : {}),
+    ...(state.extraTurnsTaken === undefined ? {} : { extraTurnsTaken: state.extraTurnsTaken }),
+    ...((state.extraTurns ?? []).length === 0
+      ? {}
+      : { extraTurns: [...(state.extraTurns ?? [])].reverse() }),
     pending:
       pending !== null && pending.seat === viewer
         ? pending.kind === 'chooseOption' &&

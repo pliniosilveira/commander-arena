@@ -3155,6 +3155,18 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'returnToHand':
       // D-139: "Return an artifact you control to its owner's hand": this permanent, or a choice among the player's own.
+      if (cost.toLibraryBottom !== undefined) {
+        // CR 401.4: "put this creature on the bottom of its owner's library": one card, so no order to choose.
+        if (cost.toLibraryBottom !== true) {
+          issue(out, `${path}.toLibraryBottom`, 'it is true or left out');
+        } else if (kindOf(cost.what) !== 'this') {
+          issue(
+            out,
+            `${path}.toLibraryBottom`,
+            'only this permanent is put on the bottom of its owner’s library',
+          );
+        }
+      }
       if (cost.count !== undefined) {
         if (!isCount(cost.count) || cost.count < 2) {
           issue(
@@ -5897,6 +5909,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
+      break;
+    case 'extraTurn':
+      // CR 500.7: each player the selector names takes an extra turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.

@@ -742,6 +742,13 @@ export interface TurnState {
    * the first one you draw in each of your draw steps" reads it. Every step that begins clears it; a draw that was skipped or replaced is not a draw.
    */
   readonly drewInDrawStep?: true;
+  /** Present, and `true`, while the turn is an extra turn an effect created (CR 500.7). */
+  readonly extra?: true;
+  /**
+   * Present during an extra turn (CR 500.7): the player whose turn the extra turns were added after. When no extra turn is left to take, the turn order goes on with
+   * the player after this one, not after the player of the extra turn.
+   */
+  readonly resumeAfter?: SeatId;
 }
 
 /**
@@ -2826,6 +2833,13 @@ export interface GameState {
   /** Top of the stack is the last element (CR 405.2). */
   readonly stack: readonly ObjectId[];
   readonly turn: TurnState;
+  /**
+   * The extra turns effects created that have not begun (CR 500.7), each the seat that takes it, in the order they were created: they are added directly after the
+   * current turn and the most recently created one is taken first, so the next turn is the last of the list. Absent when there are none.
+   */
+  readonly extraTurns?: readonly SeatId[];
+  /** How many extra turns have begun in the game (CR 500.7): what tells the rounds of the turn order from the turn counter. Absent while it is 0. */
+  readonly extraTurnsTaken?: number;
   /** Commander tax counter: times each commander card was cast from the command zone (CR 903.8). */
   readonly commanderCasts: Readonly<Record<CardId, number>>;
   /** Combat damage dealt to each seat by each commander card (CR 903.10a). */

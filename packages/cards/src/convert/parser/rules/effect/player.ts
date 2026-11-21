@@ -428,6 +428,20 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
+ * "takes an extra turn after this one" (CR 500.7) said of a player: "target player takes an extra turn after this one". Not read: a number of turns, a turn after another
+ * turn, a rider about the turn.
+ */
+const extraTurnAction: Action = (subject, you, rule) =>
+  map(
+    spanned(
+      pattern(
+        new RegExp(`take${you ? '' : 's'} an extra turn after this one(?![\\p{L}\\p{N}])`, 'iu'),
+      ),
+    ),
+    ({ span }) => actionClause(rule, 'extraTurn', { player: subject }, span),
+  );
+
+/**
  * "gains control of ~" said of "that player" (CR 613.1b, 611.2a, 110.2: a control-changing effect with no duration lasts until the game ends or another effect changes it; the player
  * who gains control is the one the subject names): the player the event of a trigger is about, taking the permanent with the ability ("that player draws three cards and gains
  * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
@@ -546,6 +560,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
   ],
   examples: [
     'you become the monarch',
+    'target player takes an extra turn after this one',
+    'you take an extra turn after this one',
     'you draw a card',
     'you gain 4 life',
     'each opponent loses 3 life',
@@ -741,6 +757,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you become the monarchy',
     'you become the monarch of the realm',
     'target player becomes the monarch',
+    'target player take an extra turn after this one',
+    'target player takes two extra turns after this one',
+    'you takes an extra turn after this one',
     'each opponent becomes the monarch',
     'its controller becomes the monarch',
     'its controller become the monarch',
@@ -778,6 +797,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.shuffle', shuffleAction),
         alone('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
+        alone('effect.player.extra-turn', extraTurnAction),
         alone('effect.player.lose-game', loseGameAction),
         alone('effect.player.gain-control-of-self', gainControlOfSelfAction),
       );

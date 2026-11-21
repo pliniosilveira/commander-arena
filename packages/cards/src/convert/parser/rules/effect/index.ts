@@ -73,6 +73,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
+import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
@@ -1433,6 +1434,8 @@ export const EFFECT_RULES = [
   ...SEEK_OUT_EFFECT_RULES,
   // Federation Fleet deck, group E (Unification, U.S.S. Stargazer): the owner draws then shuffles the creature in; the delayed exile of a token at end of combat.
   ...FLEET_E_EFFECT_RULES,
+  // Extra turns (CR 500.7): "Take an extra turn after this one."
+  ...EXTRA_TURN_EFFECT_RULES,
   // Federation Fleet deck, group F: "Until your next turn, creatures can't attack you.", the delayed return of two exiled cards, a commander into the hand, Tuvok's choice of attackers,
   // Troi's free cast (read quietly, as the rules around them).
   ...FEDERATION_F_EFFECT_RULES,
