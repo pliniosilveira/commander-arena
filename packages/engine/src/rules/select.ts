@@ -984,6 +984,23 @@ export function resolvePlayers(
         seatsInOrder(state, ctx.controller).filter((seat) => !left.includes(seat)),
       );
     }
+    case 'eachPlayerControlling': {
+      // CR 102.1, 109.4, 101.4 (Shatter the Sky): the players who control a battlefield permanent matching the filter, each read as "you" in turn.
+      const filter = {
+        ...selector.filter,
+        zone: 'battlefield' as const,
+        controller: 'you' as const,
+      };
+      const battlefield = objectsInZone(state, 'battlefield');
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter((seat) =>
+          battlefield.some((id) =>
+            matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+          ),
+        ),
+      );
+    }
     case 'all':
       // D-131: "you and target opponent": the players the members name, each once, in APNAP order (CR 101.4).
       return apnapOrder(
@@ -1108,6 +1125,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'eachOpponent' ||
     sel.kind === 'eachOtherOpponent' ||
     sel.kind === 'eachPlayerExcept' ||
+    sel.kind === 'eachPlayerControlling' ||
     sel.kind === 'all' ||
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||

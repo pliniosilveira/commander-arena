@@ -243,7 +243,11 @@ export function outcomeColor(outcome: readonly ManaColor[]): ManaColor | null {
 
 /** True when the production lets the player pick one color (any color, a list, the identity, "could produce"). */
 export function isColorChoice(production: ManaProduction): boolean {
-  return !isCombinationProduction(production) && production.kind !== 'fixed';
+  return (
+    !isCombinationProduction(production) &&
+    production.kind !== 'fixed' &&
+    production.kind !== 'eachColorAmong'
+  );
 }
 
 /**

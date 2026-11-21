@@ -6,9 +6,11 @@
 import { overloadedText } from '../ast/overload';
 import type { AlternativeCost, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
+import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { grantedEvokeOf } from './alt-cost-grant';
 import {
   alternativeOf,
   flashbackCostOf,
@@ -38,7 +40,7 @@ import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
-import { graveyardPlayPermission } from './graveyard-play';
+import { graveyardCastTypes, graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
@@ -159,14 +161,20 @@ function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): bool
  */
 /**
  * CR 305.1, 305.2a, 305.3 (D-145): whether `seat` may play the land card `obj` as the effect of a resolving spell or ability allows ("You may play
- * the exiled card without paying its mana cost"): it is the seat's own turn and they have a land play left. The card is in their hand or in exile.
+ * the exiled card without paying its mana cost"): it is the seat's own turn and they have a land play left. The card is in their hand, in exile or (a target of the effect) in their graveyard.
  * The timing of a land play (a main phase, an empty stack) is not asked: the effect is what lets them play it now.
  */
 export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObject): boolean {
-  if (obj.card === null || (obj.zone !== 'hand' && obj.zone !== 'exile')) return false;
+  if (
+    obj.card === null ||
+    (obj.zone !== 'hand' && obj.zone !== 'exile' && obj.zone !== 'graveyard')
+  ) {
+    return false;
+  }
   // D-149 (CR 702.75a, 608.2g): a card in exile is the effect's to name, whoever owns it (a Hideaway permanent that changed controller lets its
   // new controller play the card its old one exiled); a card in a hand is the player's own.
-  if (obj.zone === 'hand' && obj.owner !== seat) return false;
+  // CR 404.1 (Horde of Notions: "play target Elemental card from your graveyard"): a card of a graveyard is the player's own to play.
+  if ((obj.zone === 'hand' || obj.zone === 'graveyard') && obj.owner !== seat) return false;
   if (state.turn.activeSeat !== seat) return false;
   return getSeat(state, seat).landsPlayedThisTurn < landPlaysAllowed(state, seat);
 }
@@ -694,7 +702,12 @@ export function alternativeCostAllowed(
     (a) => a.kind === kind,
   );
   // CR 702.138a: an escape cost the face lists, or the one an effect gave the card until end of turn (`gainEscape`, rules/escape-grant.ts).
-  if (alt === undefined) return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+  if (alt === undefined) {
+    // CR 702.74a, 118.9: an evoke cost a static ability gives a spell as it is cast from the hand (`grantAlternativeCostToSpells`, rules/alt-cost-grant.ts).
+    if (kind === 'evoke')
+      return grantedEvokeOf(state, seat, castAs(obj, seat, face), obj.zone) !== null;
+    return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+  }
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
     kind === 'overload' &&
@@ -921,6 +934,18 @@ export interface FaceOption {
   readonly object: ObjectId;
   /** Present exactly when the card has more than one face to choose from. */
   readonly face?: number;
+  /** A card of the graveyard cast by `playFromGraveyardEachType` that can be cast as several permanent types: one option for each. */
+  readonly permanentType?: CardType;
+}
+
+/** A cast of a card of the graveyard that can be counted as several permanent types is one option for each (`playFromGraveyardEachType`: the player chooses one as it is cast). */
+function withTypeChoices(state: GameState, seat: SeatId, options: FaceOption[]): FaceOption[] {
+  return options.flatMap((o) => {
+    const obj = getObject(state, o.object);
+    if (obj.zone !== 'graveyard' || mayCastFromGraveyard(state, seat, obj)) return [o];
+    const types = graveyardCastTypes(state, seat, obj);
+    return types.length < 2 ? [o] : types.map((permanentType) => ({ ...o, permanentType }));
+  });
 }
 
 function faceOptions(
@@ -980,7 +1005,11 @@ export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
     ...playable,
     ...(top === undefined ? [] : [top]),
   ];
-  return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, undefined, face));
+  return withTypeChoices(
+    state,
+    seat,
+    faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, undefined, face)),
+  );
 }
 
 /**

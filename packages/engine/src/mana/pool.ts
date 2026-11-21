@@ -65,6 +65,8 @@ export function restrictionAllows(
   if (restriction.kind === 'abilitiesOnly') return isAbility;
   // CR 106.6, 107.3: a spell or an ability whose cost contains {X}.
   if (restriction.kind === 'xCost') return target.hasX === true;
+  // CR 106.6: "can't be spent to pay generic mana costs" limits which part of a cost it pays (the payment planner), not which spell or ability it is spent on.
+  if (restriction.kind === 'notGeneric') return true;
   if (isAbility) {
     // D-151: "... or activate abilities of Dragons": an ability of a permanent that matches the same card types and subtypes.
     if (restriction.kind !== 'spellMatch' || restriction.alsoAbilities !== true) return false;

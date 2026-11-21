@@ -114,6 +114,7 @@ describe('the dimensions', () => {
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
       'subjectStat',
+      'subjectGreaterThanEach',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
       'triggerPlayerIsOpponent',
@@ -124,6 +125,8 @@ describe('the dimensions', () => {
       // Lorehold group 3: "if a player has one or fewer cards in hand".
       'aPlayerCardsInHand',
       'escaped',
+      // CR 702.143a: "if this spell was foretold".
+      'foretold',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',
@@ -218,6 +221,8 @@ describe('the dimensions', () => {
       'grantKeywordToSpells',
       // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
       'grantFlashbackToGraveyardCards',
+      // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
+      'grantAlternativeCostToSpells',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
@@ -281,6 +286,7 @@ describe('the dimensions', () => {
       'unspentManaBecomesColorless',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."

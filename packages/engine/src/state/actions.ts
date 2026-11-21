@@ -4,6 +4,7 @@
  * actions the given seat may take now.
  */
 import type { CastAlternativeKind } from '../ast/features';
+import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { ChosenTarget } from './chosen';
@@ -13,7 +14,13 @@ export type Action =
   /** Answer a priority decision with one of its options. */
   | { readonly kind: 'pass' }
   /** Play a land; `face` picks the face of a modal double-faced card (see PriorityOption). */
-  | { readonly kind: 'playLand'; readonly object: ObjectId; readonly face?: number }
+  | {
+      readonly kind: 'playLand';
+      readonly object: ObjectId;
+      readonly face?: number;
+      /** `playFromGraveyardEachType`: "land", the only slot a land card is played in; left out, the engine takes it. */
+      readonly permanentType?: CardType;
+    }
   /**
    * Cast a spell; `alternative: 'flashback'` casts it from the graveyard, `alternative: 'free'`
    * without paying its mana cost, `alternative: 'overload'` (and later 'evoke', 'dash': D-121) pays that
@@ -25,6 +32,8 @@ export type Action =
       readonly object: ObjectId;
       readonly alternative?: CastAlternativeKind;
       readonly face?: number;
+      /** The permanent type a card cast from the graveyard is counted as by `playFromGraveyardEachType`, when it has more than one free; left out, the engine chooses. */
+      readonly permanentType?: CardType;
     }
   /** Activate an activated ability that is not a mana ability (CR 602.2): see PriorityOption. */
   | { readonly kind: 'activate'; readonly object: ObjectId; readonly abilityIndex: number }

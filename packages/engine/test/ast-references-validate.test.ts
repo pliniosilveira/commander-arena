@@ -121,6 +121,8 @@ describe('amounts that read an object', () => {
       'opponentCount',
       'movedCount',
       'opponentsWithMore',
+      // Slithermuse: "the difference" between the chosen player's hand and yours.
+      'chosenPlayerLead',
       'thisWay',
       // D-133.
       'triggerDamage',

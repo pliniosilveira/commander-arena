@@ -39,10 +39,13 @@ import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
+import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
+import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
@@ -56,6 +59,7 @@ import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
+import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -85,6 +89,7 @@ import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
+import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
@@ -95,6 +100,7 @@ import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
@@ -118,6 +124,7 @@ import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
+import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -128,6 +135,7 @@ import {
   EFFECT_CHOOSE_CREATURE_TYPE,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
+import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -189,6 +197,7 @@ import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
+import { REVEAL_CHOSEN_TYPE_EFFECT_RULES } from './reveal-chosen-type';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
@@ -202,6 +211,7 @@ import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
@@ -1215,6 +1225,9 @@ export const EFFECT_RULES = [
   ...GALADRIEL_G3_EFFECT_RULES,
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
+  ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...CHOOSE_OPPONENT_EFFECT_RULES,
+  ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".
@@ -1236,6 +1249,7 @@ export const EFFECT_RULES = [
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
   ...DACK_EFFECT_RULES,
+  ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
@@ -1276,6 +1290,8 @@ export const EFFECT_RULES = [
   ...NIV_EFFECT_RULES,
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
   ...QUANDRIX_EFFECT_RULES,
+  // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
+  ...BOTTOM_GRAVEYARD_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
   // Hatsune Miku deck (issue 145): "You win the game."
@@ -1288,6 +1304,8 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  // Dance of the Elements deck: "You may play target Elemental card from your graveyard without paying its mana cost".
+  ...GRAVECAST_EFFECT_RULES,
   ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
@@ -1353,6 +1371,8 @@ export const EFFECT_RULES = [
   ...PARLEY_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
+  // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
+  ...MANA_NOT_GENERIC_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
@@ -1373,6 +1393,8 @@ export const EFFECT_RULES = [
   ...HOFRI_EFFECT_RULES,
   // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
+  // CR 105.2, 605.3b (Faeburrow Elder): "for each color among permanents you control, add one mana of that color".
+  ...COLORS_AMONG_MANA_EFFECT_RULES,
   // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,
   // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
@@ -1387,6 +1409,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Ashling, the Limitless: "The token gains haste until end of turn."
+  ...THE_TOKEN_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
   ...PUMP_THOSE_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
@@ -1402,6 +1426,7 @@ export const EFFECT_RULES = [
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
   ...LOOK_ELSE_EFFECT_RULES,
+  ...LIBRARY_TOP_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,

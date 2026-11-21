@@ -45,6 +45,11 @@ export type PriorityOption =
       readonly object: ObjectId;
       readonly alternative?: CastAlternativeKind;
       readonly face?: number;
+      /**
+       * A card cast from the graveyard by `playFromGraveyardEachType` that has more than one permanent type still free (an artifact creature) has one option for each: the type the
+       * spell is cast as, whose slot it uses. Absent for every other cast. An action that leaves it out lets the engine choose.
+       */
+      readonly permanentType?: CardType;
     }
   /**
    * Activate an activated ability (CR 602) that is not a mana ability: of a permanent on the

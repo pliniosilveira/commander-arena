@@ -153,6 +153,7 @@ export interface IrNoun extends IrNode {
     | 'triggerDamagedPlayers' // "each of those opponents" (CR 603.2c): the opponents a damage batch trigger to your opponents hurt
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
+    | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
@@ -628,6 +629,13 @@ export type IrAmount =
       readonly of: readonly IrAmount[];
       readonly span: Span;
     }
+  // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
+  // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
+  | {
+      readonly kind: 'chosenPlayerLead';
+      readonly stat?: 'life' | 'cardsInHand';
+      readonly span: Span;
+    }
   // "for each opponent who has more cards in hand than you"
   | {
       readonly kind: 'opponentsWithMore';
@@ -760,6 +768,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'opponentPoisonAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
+    // "~ was foretold" (CR 702.143a): the spell was cast for its foretell cost
+    | { readonly kind: 'foretold' }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
     | { readonly kind: 'additionalCostPaid' }
@@ -910,6 +920,12 @@ export interface IrCondition extends IrNode {
         readonly kind: 'subjectStat';
         readonly stat: 'power' | 'toughness';
         readonly compare: IrComparison;
+      }
+    // Selvala, Heart of the Wilds (CR 603.10a, 208.1, 608.2c): "its power is greater than each other creature's power": the stat of the permanent the trigger is about against every other permanent of the types
+    | {
+        readonly kind: 'subjectGreaterThanEach';
+        readonly stat: 'power' | 'toughness';
+        readonly types: readonly string[];
       }
     // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
     | {
@@ -1097,6 +1113,10 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'thatColor' }
     // "X mana of any one color, where X is ~'s power" (CR 106.1b, 107.3c): `count` mana of one color chosen as the ability resolves, X what the sentence defines
     | { readonly kind: 'anyOneColorX' }
+    // "X mana in any combination of colors, where X is the greatest power among creatures you control" (Selvala, CR 106.1b, 107.3c): `count` mana, each of a color chosen on its own, X what the sentence defines
+    | { readonly kind: 'anyCombinationX' }
+    // "For each color among permanents you control, add one mana of that color" (Faeburrow Elder, CR 105.2, 605.3b): one mana of each color the permanents `of` names have between them
+    | { readonly kind: 'eachColorAmong'; readonly of: IrNoun }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }
@@ -1793,6 +1813,8 @@ export type IrStaticEffect =
   | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
+  /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1): the subject is `you`. */
+  | { readonly kind: 'graveyardPlayEachType' }
   /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
   | { readonly kind: 'activateAsThoughHaste' }
   /**
@@ -1900,6 +1922,11 @@ export type IrStaticEffect =
       readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
     }
   /**
+   * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9, 601.2b): the permanent spells the subject names (a noun with the controller
+   * `you`), cast from the hand, are given an evoke cost `cost` (a mana cost) as they are cast.
+   */
+  | { readonly kind: 'spellEvoke'; readonly cost: IrCost }
+  /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
    */
@@ -1917,6 +1944,8 @@ export type IrStaticEffect =
       readonly cause?: IrNoun;
       /** Issue 81 (Windcrag Siege): "If a creature attacking causes a triggered ability ... to trigger". */
       readonly causeAttacks?: true;
+      /** Yarok, the Desecrated: "If a permanent entering causes a triggered ability ... to trigger". */
+      readonly causeEnters?: true;
     }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }
@@ -2270,6 +2299,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'sum',
   'extreme',
   'opponentsWithMore',
+  'chosenPlayerLead',
   'thisWay',
   'triggerDamage',
   'dieResult',

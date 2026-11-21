@@ -66,6 +66,8 @@ export function spendRestrictionOf(
   if (only.fromGraveyard === true) return { kind: 'spellMatch', fromGraveyard: true };
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
+  // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
+  if (only.notGeneric === true) return { kind: 'notGeneric' };
   // CR 106.6 (issue 345): "Spend this mana only to activate abilities".
   if (only.abilitiesOnly === true) return { kind: 'abilitiesOnly' };
   // Issue 199 (CR 106.6, 607.2d): "of the chosen type" is the creature type the source chose as it entered; none chosen, an empty list (no spell matches it).
@@ -138,7 +140,11 @@ function riderSpells(
 
 /** Whether the production is chosen as a combination of mana (a filter land, "any combination of colors"): the activation names the mana (D-099, D-151). */
 export function isCombinationProduction(production: ManaProduction): boolean {
-  return production.kind === 'combination' || production.kind === 'anyCombination';
+  return (
+    production.kind === 'combination' ||
+    production.kind === 'anyCombination' ||
+    production.kind === 'anyCombinationAmount'
+  );
 }
 
 /**
@@ -194,6 +200,12 @@ function plainOutcomes(
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
       return colorMultisets(p.count, p.distinct === true);
+    case 'anyCombinationAmount': {
+      // CR 106.1b, 605.3b: "Add X mana in any combination of colors, where X is ...": every multiset of X of the five colors, X read for the controller with the permanent as "this"
+      // (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
+      const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
+      return colorMultisets(n, false);
+    }
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));
@@ -206,6 +218,18 @@ function plainOutcomes(
       // controller with the permanent as "this" (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
       const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
       return COLORS.map((c) => Array.from({ length: n }, () => c));
+    }
+    case 'eachColorAmong': {
+      // CR 105.2, 106.1b, 605.3b ("For each color among permanents you control, add one mana of that color"): one outcome with one mana of each color the permanents the
+      // filter matches have between them, read for the controller with the permanent as "this" (a mana ability resolves at once); colorless is no color, so no mana of it.
+      const colors = new Set<ManaColor>();
+      for (const id of state.battlefield) {
+        const other = state.objects[id];
+        if (other === undefined) continue;
+        if (!matchesFilter(state, other, p.filter, { controller: seat, source: obj.id })) continue;
+        for (const color of derive(state, other).colors) colors.add(color);
+      }
+      return [inTypeOrder(colors)];
     }
     case 'oneOf':
       return [...new Set(p.colors)].map((c) => [c]);

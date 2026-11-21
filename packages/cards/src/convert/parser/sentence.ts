@@ -16,6 +16,7 @@ import {
   sequence,
 } from './combinators';
 import type { IrAmount, IrClause, IrCondition, IrNoun, IrSentence } from './ir/types';
+import { CHOSEN_PLAYER_CONDITION_RULES } from './rules/condition/chosen-player';
 import { LEAD_GAME_STATE_CONDITIONS } from './rules/condition/game-state';
 import { CLAUSE_JOIN, connectorOf, listWithJoins } from './rules/effect/operands';
 import { spellPhrase, withoutZone } from './rules/noun/phrases';
@@ -70,6 +71,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.cast-from-graveyard',
   // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
   'condition.cast-in-own-main-phase',
+  // CR 702.143a (Haunting Voyage): "If this spell was foretold, return all creature cards of that type from your graveyard to the battlefield instead."
+  'condition.foretold',
   // Burning Curiosity (CR 118.8, 701.68a): "If this spell's additional cost was paid, exile the top three cards instead."
   'condition.additional-cost-paid',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
@@ -197,6 +200,8 @@ const LEAD_CONDITIONS = [
   // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
   'condition.the-player-is-opponent-with-cards',
   ...LEAD_GAME_STATE_CONDITIONS,
+  // Slithermuse: "If that player has more cards in hand than you, ..." after "Choose an opponent.".
+  ...CHOSEN_PLAYER_CONDITION_RULES.map((r) => r.id),
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
   ...RECURSION_LEAD_CONDITIONS,
@@ -275,6 +280,8 @@ const TRAILING_CONDITIONS = [
   'condition.it-attacking-opponents',
   // Issue 101 (Zurgo Stormrender): "draw a card if it was attacking" (CR 506.4, 603.10a).
   'condition.it-was-attacking',
+  // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
+  'condition.its-stat-greater-than-each-other',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(

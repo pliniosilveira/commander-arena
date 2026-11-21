@@ -44,6 +44,10 @@ export function runRevealUntil(
         {
           controller: seat,
           source: res.source,
+          // CR 608.2d, 205.3m: "Choose a creature type. Reveal cards ... until you reveal X creature cards of the chosen type": the type chosen as this effect resolves.
+          ...(res.chosenCreatureType === undefined
+            ? {}
+            : { sourceChosen: { creatureType: res.chosenCreatureType } }),
           // D-261: "that shares a creature type with it": the creature a "dies" trigger is about.
           ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
           // CR 701.21a, 113.7a (Descendants' Fury): "shares a creature type with the sacrificed creature": the permanent the effects before this one sacrificed.

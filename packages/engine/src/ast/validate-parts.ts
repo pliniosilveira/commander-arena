@@ -1551,6 +1551,20 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerControlling':
+      // CR 102.1, 109.4 (Shatter the Sky): "each player who controls a creature with power 4 or greater": the filter reads battlefield permanents, each player as "you".
+      checkFilter(sel.filter, `${path}.filter`, out);
+      if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be counted');
+      }
+      if (sel.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          "'each player who controls' names the controller itself",
+        );
+      }
+      break;
     case 'eachPlayerExcept':
       // CR 102.1 (Oft-Nabbed Goat): "each other player": the players the `except` selector does not name.
       checkPlayerSelector(sel.except, `${path}.except`, scope, out);
@@ -1685,6 +1699,7 @@ export const PLAYER_ONLY = [
   'eachOpponent',
   'eachOtherOpponent',
   'eachPlayerExcept',
+  'eachPlayerControlling',
   'all',
   'controllerOf',
   'ownerOf',
@@ -1908,7 +1923,9 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'colorsAmong':
     case 'opponentsWithMore':
+    case 'chosenPlayerLead':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
     case 'lifeGainedOrLostThisTurn':
@@ -2146,6 +2163,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         }
       }
       break;
+    case 'colorsAmong':
+      // CR 105.2 (Vivid): the colors among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'colorsAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'only permanents on the battlefield have their colors counted',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'colorsAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
     case 'differentManaValuesAmong':
       // Issue 121 (CR 202.3): the distinct mana values among the cards a filter matches in a zone outside the battlefield and the stack.
       if (a.filter === undefined || a.filter === null) {
@@ -2330,6 +2374,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       if (a.fewer !== undefined && a.fewer !== true) {
         issue(out, `${path}.fewer`, 'fewer is true when present');
+      }
+      break;
+    case 'chosenPlayerLead':
+      if (!isOneOf(a.stat, PLAYER_STATS)) {
+        issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
       }
       break;
     case 'opponentCount':
@@ -3513,6 +3562,21 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'subjectGreaterThanEach':
+      // CR 603.10a, 208.1 (Selvala): the filter describes the other permanents on the battlefield, whoever controls them.
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
+      }
+      if (!isOneOf(c.stat, ['power', 'toughness'])) {
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      break;
     case 'subjectControlledByYou':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
       break;
@@ -3718,6 +3782,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
+    case 'foretold': // CR 702.143a: the face must list a foretell cost (`checkCastFace`)
       break;
     case 'subjectGreaterPt': // D-120: where it may stand is checked with the trigger (validate.ts)
       // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
@@ -4947,6 +5012,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'subjectControlledByYou':
     case 'subjectStat':
+    case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
       if (scope.triggerSubject !== 'permanent') {
         issue(
@@ -5872,6 +5938,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
+      if (e.effect?.kind === 'unlessPays') checkCosts(e.effect.cost, `${path}.effect.cost`, out);
       checkDelayedTrigger(
         e,
         path,
@@ -6622,12 +6689,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree'])
+        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree', 'top'])
       ) {
         issue(
           out,
           `${path}.take.to`,
-          `the cards taken go to the hand, the battlefield or exile face down, or are cast, not ${JSON.stringify(e.take.to)}`,
+          `the cards taken go to the hand, the battlefield or exile face down, are cast, or stay on top, not ${JSON.stringify(e.take.to)}`,
+        );
+      }
+      // CR 401.2, 401.4: "Put one of those cards on top of your library and the rest on the bottom": one card, unrevealed, left in the library; the rest goes to the bottom or the graveyard.
+      if (
+        e.take?.to === 'top' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.hidden !== true ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.all !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          !isOneOf(e.rest, ['bottomRandom', 'bottomChosen', 'graveyard']))
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a card put on top is one card (min and max 1), hidden, with no tapped, totalManaValue, all, elseAnyToHand or revealAll, and the rest goes to the bottom or the graveyard',
         );
       }
       // CR 608.2g: "You may cast ... from among them without paying its mana cost": one spell, chosen from those that match.
@@ -6869,13 +6955,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             "the cards are in the controller's hand: no owner or stackKind",
           );
         }
-      } else if (kindOf(objects) === 'moved' || kindOf(objects) === 'linkedExile') {
+      } else if (
+        kindOf(objects) === 'moved' ||
+        kindOf(objects) === 'linkedExile' ||
+        kindOf(objects) === 'target'
+      ) {
         checkRef(objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+        // CR 115.1, 608.2b: a target card of a graveyard: one card, cast or played, with none of the several-card or other-player forms.
+        if (
+          kindOf(objects) === 'target' &&
+          (e.max !== undefined ||
+            e.perOwner !== undefined ||
+            e.player !== undefined ||
+            e.remember !== undefined ||
+            e.filter !== undefined)
+        ) {
+          issue(
+            out,
+            `${path}.objects`,
+            'a target card has no max, perOwner, player, remember or filter',
+          );
+        }
       } else {
         issue(
           out,
           `${path}.objects`,
-          "the card is chosen from the hand, or is 'moved' or 'linkedExile'",
+          "the card is chosen from the hand, or is 'moved', 'linkedExile' or a target",
         );
       }
       break;
@@ -7361,11 +7466,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'one mana of a type the tapped permanent produced is only the effect of a "tapped for mana" triggered mana ability',
         );
       }
-      if (e.mana?.kind === 'anyColorAmount') {
+      if (e.mana?.kind === 'anyColorAmount' || e.mana?.kind === 'anyCombinationAmount') {
         issue(
           out,
           `${path}.mana`,
           'only a mana ability can ask for the color of an amount of mana',
+        );
+      }
+      if (e.mana?.kind === 'eachColorAmong') {
+        issue(
+          out,
+          `${path}.mana`,
+          'only a mana ability adds a mana of each color among permanents',
         );
       }
       if (e.player !== undefined) {
@@ -7911,8 +8023,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putFromHandOnBottom':
       break;
     case 'choosePlayer':
-      // CR 608.2d (The Black Gate): the only rule for the players to choose among is the most life.
-      if (e.among !== 'mostLife') {
+      // CR 608.2d: the players to choose among are those with the most life (The Black Gate) or the opponents (Slithermuse).
+      if (e.among !== 'mostLife' && e.among !== 'opponent') {
         issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
       }
       break;

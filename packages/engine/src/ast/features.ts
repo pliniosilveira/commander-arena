@@ -122,6 +122,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyAbilities',
     // Issue 144 (Throne of Eldraine): "Spend this mana only to cast monocolored spells of that color." (`ManaAbility.spendOnly.monocoloredChosen`) and "Spend only mana of the chosen color to activate this ability." (`Cost` `mana` with `onlyChosenColor`).
     'manaSpendOnlyMonocolored',
+    // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs." (`ManaAbility.spendOnly.notGeneric`)
+    'manaSpendOnlyNotGeneric',
     // Issue 102 (Lord of the Forsaken): "Spend this mana only to cast a spell from your graveyard." (`ManaAbility.spendOnly.fromGraveyard`)
     'manaSpendOnlyFromGraveyard',
     'spendOnlyChosenColor',
@@ -834,6 +836,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add X mana in any combination of colors, where X is the greatest power among creatures you control." (`anyCombinationAmount`)
+    'anyCombinationAmount',
+    // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
+    'eachColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
     'producedType',
   ],
@@ -947,6 +953,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachOtherOpponent',
     // Oft-Nabbed Goat: "each other player" besides its owner (`eachPlayerExcept`, CR 102.1).
     'eachPlayerExcept',
+    // Shatter the Sky: "each player who controls a creature with power 4 or greater" (`eachPlayerControlling`, CR 102.1).
+    'eachPlayerControlling',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -1179,6 +1187,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
     'subjectControlledByYou',
     'subjectStat',
+    // Selvala: "if its power is greater than each other creature's power".
+    'subjectGreaterThanEach',
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
@@ -1193,6 +1203,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
+    // CR 702.143a: "if this spell was foretold".
+    'foretold',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
     'cameUnderControlSinceLastUpkeep',
     // D-131: any state-reading amount compared with a number ("total power 8 or greater", "seven or more
@@ -1327,6 +1339,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantKeywordToSpells',
     // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
     'grantFlashbackToGraveyardCards',
+    // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
+    'grantAlternativeCostToSpells',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1413,6 +1427,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
     'playFromGraveyardOnceEachTurn',
+    // CR 601.2a, 305.1: "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard."
+    'playFromGraveyardEachType',
     // CR 305.1: "You may play Forests from your graveyard."
     'playLandsFromGraveyard',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
@@ -1494,7 +1510,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
     'lifeTotalOf',
-    // D-179: "for each color among permanents you control" (a static ability's +N/+N).
+    // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
     'greatestPowerAmong',
@@ -1521,6 +1537,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
     'opponentsWithMore',
+    // Slithermuse: "draw cards equal to the difference" with the player chosen before it (`chosenPlayerLead`).
+    'chosenPlayerLead',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
@@ -1740,6 +1758,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyAbilities',
   /** "Spend this mana only to cast monocolored spells of that color" (issue 144, CR 106.6, 105.2a): `ManaAbility.spendOnly.monocoloredChosen`. */
   'manaSpendOnlyMonocolored',
+  /** "This mana can't be spent to pay generic mana costs" (CR 106.6): `ManaAbility.spendOnly.notGeneric`. */
+  'manaSpendOnlyNotGeneric',
   /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): `ManaAbility.spendOnly.fromGraveyard`. */
   'manaSpendOnlyFromGraveyard',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
@@ -1893,6 +1913,8 @@ export const SELECTOR_KINDS = [
   'eachOtherOpponent',
   /** "Each other player" besides the one a selector names (CR 102.1, Oft-Nabbed Goat): the engine's `PlayerSelector` `eachPlayerExcept`. */
   'eachPlayerExcept',
+  /** "Each player who controls a creature with power 4 or greater" (CR 102.1, 109.4, Shatter the Sky): the engine's `PlayerSelector` `eachPlayerControlling`. */
+  'eachPlayerControlling',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
@@ -2170,6 +2192,8 @@ export const CONDITION_KINDS = [
   'subjectControlledByYou',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
   'subjectStat',
+  /** "If its power is greater than each other creature's power" (CR 603.10a, 208.1, Selvala): the engine's `subjectGreaterThanEach`. */
+  'subjectGreaterThanEach',
   /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
@@ -2180,6 +2204,8 @@ export const CONDITION_KINDS = [
   'triggerPlayerStat',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
+  /** "If this spell was foretold" (CR 702.143a): the engine's `foretold`. */
+  'foretold',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */
   'cameUnderControlSinceLastUpkeep',
   /** "If creatures you control have total power 8 or greater", "if you have seven or more creature cards in your graveyard" (D-131): the engine's `amountIs`. */
@@ -2347,6 +2373,8 @@ export const STATIC_KINDS = [
   'grantKeywordToSpells',
   /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
   'grantFlashbackToGraveyardCards',
+  /** "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9). */
+  'grantAlternativeCostToSpells',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
@@ -2443,6 +2471,8 @@ export const STATIC_KINDS = [
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
   'playFromGraveyardOnceEachTurn',
+  /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard" (CR 601.2a, 305.1): `playFromGraveyardEachType`. */
+  'playFromGraveyardEachType',
   /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
   'playLandsFromGraveyard',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
@@ -2543,7 +2573,7 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** A player's current life total at resolution (CR 119.1). */
   'lifeTotalOf',
-  /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
+  /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
   'greatestPowerAmong',
@@ -2579,6 +2609,8 @@ export const AMOUNT_KINDS = [
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */
   'opponentsWithMore',
+  /** "If that player has more cards in hand than you, draw cards equal to the difference" (Slithermuse, CR 608.2c): the engine's `chosenPlayerLead`. */
+  'chosenPlayerLead',
   /** "That much" for the damage that caused a trigger (D-133): the engine's `triggerDamage`. */
   'triggerDamage',
   /** Number of targets chosen for a spell in a cast trigger (D-574). */
@@ -2710,6 +2742,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyXCost: true,
   manaSpendOnlyAbilities: true,
   manaSpendOnlyMonocolored: true,
+  manaSpendOnlyNotGeneric: true,
   manaSpendOnlyFromGraveyard: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
@@ -3151,6 +3184,8 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  anyCombinationAmount: true,
+  eachColorAmong: true,
   producedType: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {

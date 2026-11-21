@@ -12,9 +12,10 @@
  * graveyard).
  *
  * The cost is a plain mana cost, the only one the engine pays for these (`validateCard` refuses any other
- * and an {X}): the dash form ("Evoke—Exile a white card from your hand.", the real line of Solitude, Fury,
- * Grief, Endurance and Subtlety) is not read, so the line is reported as text the grammar does not read,
- * never half-executed. A hybrid symbol is not read either (`cost.mana` does not read it).
+ * and an {X}), except the evoke cost "Evoke—Exile a white card from your hand." (`keyword.evoke-exile`, the
+ * real line of Solitude, Fury, Grief, Endurance and Subtlety). Any other dash form is not read, so the line is
+ * reported as text the grammar does not read, never half-executed. A hybrid symbol is not read either
+ * (`cost.mana` does not read it).
  */
 import { literal, map, pattern, sequence } from '../../combinators';
 import type { IrCost, IrKeyword, Span } from '../../ir/types';
@@ -69,8 +70,7 @@ export const KEYWORD_OVERLOAD = defineRule<readonly IrKeyword[]>({
 /**
  * `keyword.evoke`: "Evoke {2}{U}" (CR 702.74a: "You may cast this card by paying [cost] rather than its mana
  * cost. When this permanent enters, if its evoke cost was paid, its controller sacrifices it"). The engine
- * gives the evoked permanent the sacrifice trigger. "Evoke—Exile a white card from your hand." is not read.
- * 30 cards of the owner's run.
+ * gives the evoked permanent the sacrifice trigger. The dash form is `keyword.evoke-exile`. 30 cards of the owner's run.
  */
 export const KEYWORD_EVOKE = defineRule<readonly IrKeyword[]>({
   id: 'keyword.evoke',
@@ -402,9 +402,79 @@ export const KEYWORD_IMPENDING = defineRule<readonly IrKeyword[]>({
   ),
 });
 
+/**
+ * `keyword.evoke-exile`: "Evoke—Exile a red card from your hand." (CR 702.74a: "You may cast this card by paying [cost] rather than its mana cost. If you do, ... its controller
+ * sacrifices it", CR 118.9: the cost here is the exile of a card of one color from the hand, the real line of the Elemental Incarnation cycle). The cost is the exile of exactly one
+ * card of one named color from the hand; the line ends with a period. Not read: another number of cards, no color or a color that is not one of the five, a card that is not
+ * from the hand, a cost with mana or life too. The lowering lists the evoke cost with the filter (`AlternativeCost.exileFromHand`); the engine owns the exile and the sacrifice.
+ */
+export const KEYWORD_EVOKE_EXILE = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.evoke-exile',
+  family: 'keyword',
+  leading: [],
+  cites: [
+    'CR 702.74a (Evoke)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 406.1 (Exile)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: [
+    'Evoke—Exile a red card from your hand.',
+    'Evoke—Exile a green card from your hand.',
+    'Evoke—Exile a white card from your hand.',
+    'evoke—exile a blue card from your hand.',
+  ],
+  rejects: [
+    'Evoke—Exile a red card from your hand',
+    'Evoke—Exile a card from your hand.',
+    'Evoke—Exile a purple card from your hand.',
+    'Evoke—Exile two red cards from your hand.',
+    'Evoke—Exile a red card from your graveyard.',
+    'Evoke—Exile a red creature card from your hand.',
+    'Evoke—{1}{R}, Exile a red card from your hand.',
+    'Evoke—Exile any number of red cards from your hand.',
+    'Evoke—Exile a red card from your hand. Evoke—Exile a green card from your hand.',
+    'Evoked—Exile a red card from your hand.',
+    'Dash—Exile a red card from your hand.',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/evoke—exile a (white|blue|black|red|green) card from your hand\./iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const color = (r.value.value[1] ?? '').toLowerCase();
+    const span = r.value.span;
+    const cost: IrCost = {
+      kind: 'exileFromHand',
+      what: {
+        kind: 'noun',
+        det: 'a',
+        filter: { colors: [color], zone: 'hand', card: true, raw: ctx.text.slice(pos, r.pos) },
+        upTo: false,
+        plural: false,
+        other: false,
+        span,
+        rule: 'keyword.evoke-exile',
+      },
+      span,
+      rule: 'keyword.evoke-exile',
+    };
+    const keyword: IrKeyword = {
+      kind: 'keyword',
+      name: 'evoke',
+      params: [],
+      cost: [cost],
+      span,
+      rule: 'keyword.evoke-exile',
+    };
+    return { ok: true, value: [keyword], pos: r.pos };
+  },
+});
+
 export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_OVERLOAD,
   KEYWORD_EVOKE,
+  KEYWORD_EVOKE_EXILE,
   KEYWORD_DASH,
   KEYWORD_BESTOW,
   KEYWORD_SPECTACLE,

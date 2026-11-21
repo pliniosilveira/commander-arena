@@ -80,6 +80,13 @@ export function lowerCondition(
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
       return ok({ kind: 'kicked' });
     }
+    case 'foretold': {
+      // CR 702.143a: the engine reads it from the spell; the lowering of a spell's sentence only (`validateCard` checks the face lists a foretell cost).
+      const blocked = missingFeatures(['condition:foretold']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      return ok({ kind: 'foretold' });
+    }
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
       const blocked = missingFeatures(['condition:xAtLeast']);
@@ -280,6 +287,18 @@ export function lowerCondition(
         kind: 'subjectStat',
         stat: test.stat,
         compare: { cmp: test.compare.cmp, value: test.compare.value },
+      });
+    }
+    case 'subjectGreaterThanEach': {
+      // CR 603.10a, 208.1, 608.2c (Selvala, Heart of the Wilds): "its power is greater than each other creature's power" is read as the instruction comes up (a conditional effect, not the
+      // intervening "if"), of the permanent the trigger is about.
+      const blocked = missingFeatures(['condition:subjectGreaterThanEach']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition === true) return failure(c, []);
+      return ok({
+        kind: 'subjectGreaterThanEach',
+        stat: test.stat,
+        filter: { types: test.types as CardType[] },
       });
     }
     case 'subjectGreaterPower': {
@@ -916,6 +935,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectControllerHasMore',
   'condition:subjectControlledByYou',
   'condition:subjectStat',
+  'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
   'condition:triggerPlayerHasMore',
   'condition:triggerPlayerIsOpponent',

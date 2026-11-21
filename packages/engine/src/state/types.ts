@@ -198,6 +198,11 @@ export interface GameObject {
    */
   readonly escapeGranted?: true;
   /**
+   * Present on a permanent that entered from a spell cast for an evoke cost a static ability gave it (`grantAlternativeCostToSpells`; `StackData.evokeGrant`): its `alt` of `evoke` has
+   * no evoke cost on its face to show for it. Absent otherwise.
+   */
+  readonly evokeGranted?: true;
+  /**
    * How many times the spell this permanent came from was kicked, when it was kicked with Multikicker (CR
    * 702.33c, D-110): "for each time it was kicked" reads it. Absent for a permanent that was not kicked
    * and for one that came from a spell kicked with plain Kicker (which has `kicked` and counts once).
@@ -451,6 +456,12 @@ export interface StackData {
    */
   readonly escapeGrant?: { readonly cost: readonly Cost[]; readonly exile: number };
   /**
+   * The evoke cost a card was cast for when a static ability gave its spell evoke as it was cast (`grantAlternativeCostToSpells`, CR 702.74a, 118.9): kept on the spell, so the permanent
+   * it becomes has the evoke sacrifice trigger even when the permanent that gave the cost has left the battlefield before the spell resolves. A copy of the spell has none (CR 707.10).
+   * Absent for a card with a printed evoke cost and for every other spell.
+   */
+  readonly evokeGrant?: { readonly cost: readonly Cost[] };
+  /**
    * True when cast from the graveyard by its retrace ability (CR 702.81a, D-667): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
    * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
    */
@@ -502,6 +513,8 @@ export interface StackData {
     readonly source: ObjectId;
     readonly entersTapped?: true;
     readonly gains?: Ability;
+    /** The permanent type this use of a `playFromGraveyardEachType` permission was counted as. */
+    readonly slot?: CardType;
     /** Issue 102 (Kotis): the other cards of the graveyard exiled as an additional cost of this spell. */
     readonly exileOthers?: number;
   };
@@ -1093,7 +1106,7 @@ export type Instruction =
    */
   | {
       readonly kind: 'choosePlayer';
-      readonly among: 'mostLife';
+      readonly among: 'mostLife' | 'opponent';
       readonly chosen: SeatId | null;
     }
   /**
@@ -1534,7 +1547,7 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree';
+      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
@@ -2614,6 +2627,8 @@ export type EffectEnd =
 export interface TurnLog {
   /** The permanents whose "once during each of your turns, you may ... from your graveyard" has been used this turn (D-232, `playFromGraveyardOnceEachTurn`). */
   readonly graveyardPlays?: readonly ObjectId[];
+  /** The permanent types ("land" for the land play) already played or cast this turn through each permanent's `playFromGraveyardEachType` permission. */
+  readonly graveyardSlots?: readonly { readonly source: ObjectId; readonly type: CardType }[];
   /**
    * Each activated ability activated this turn: the object it belongs to and its index among that object's abilities. `loyalty` is set
    * when the ability was a loyalty ability (D-200): CR 606.3 allows one loyalty ability of a permanent a turn, whichever it is.

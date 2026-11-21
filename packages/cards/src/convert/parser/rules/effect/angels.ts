@@ -308,6 +308,9 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
     'spend this mana only to cast artifact and creature spells',
+    // Flamebraider, Primal Beyond: the sources of the spells' creature type, in the plural or with an article.
+    'spend this mana only to cast Elemental spells or activate abilities of Elemental sources',
+    'spend this mana only to cast an Elemental spell or activate an ability of an Elemental',
   ],
   rejects: [
     'spend this mana only to cast instant and sorcery spell',
@@ -333,6 +336,9 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast creature spells or activate abilities of Dragons',
     'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of a chosen type',
     'spend this mana only to cast a creature spell of the chosen type or activate an ability',
+    'spend this mana only to cast Elemental spells or activate abilities of Dragon sources',
+    'spend this mana only to cast an Elemental spell or activate an ability of a Dragon',
+    'spend this mana only to cast an Elemental spell or activate an ability of an Elemental you control',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.spend-only';
@@ -384,6 +390,42 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
           ),
         ],
         pos: end,
+      };
+    }
+    // "... or activate abilities of Elemental sources", "... an Elemental spell or activate an ability of an Elemental" (CR 106.6, Flamebraider, Primal Beyond): the
+    // sources of the one creature type the spells are of, said as "<Type> sources" or, with an article, "an ability of a <Type>".
+    const sourcesEnd = (() => {
+      const only = filter.subtypes;
+      if (filter.types !== undefined || only === undefined || only.length !== 1) return null;
+      const m = pattern(
+        /(?: or activate abilities of ([\p{L}]+) sources| or activate an ability of an? ([\p{L}]+))(?![\p{L}\p{N}])/iu,
+      )(ctx, phrase.pos);
+      if (!m.ok) return null;
+      const word = (m.value[1] ?? m.value[2] ?? '').toLowerCase();
+      return word === only[0]?.toLowerCase() ? m.pos : null;
+    })();
+    if (sourcesEnd !== null) {
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: phrase.value.span,
+        rule: id,
+      };
+      return {
+        ok: true,
+        value: [
+          makeClause(
+            id,
+            'spendOnly',
+            { spells: noun, alsoAbilities: flag(id, { start: phrase.pos, end: sourcesEnd }) },
+            { start: pos, end: sourcesEnd },
+          ),
+        ],
+        pos: sourcesEnd,
       };
     }
     const abilities = optional(

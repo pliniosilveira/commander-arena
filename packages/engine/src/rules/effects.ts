@@ -219,8 +219,12 @@ export function runInstruction(
     const alive = Object.keys(state.seats)
       .map(Number)
       .filter((seat) => !getSeat(state, seat).hasLost);
+    // CR 102.2 (Slithermuse): "choose an opponent" is any opponent of the controller still in the game; "the most life" (The Black Gate) the players with the greatest life total.
     const top = Math.max(...alive.map((seat) => getSeat(state, seat).life));
-    const candidates = alive.filter((seat) => getSeat(state, seat).life === top);
+    const candidates =
+      instruction.among === 'opponent'
+        ? opponentsOf(state, res.controller).filter((seat) => !getSeat(state, seat).hasLost)
+        : alive.filter((seat) => getSeat(state, seat).life === top);
     const [only] = candidates;
     if (only !== undefined && candidates.length === 1) {
       return { ...done(state), front: [{ ...instruction, chosen: only }] };
@@ -1731,6 +1735,31 @@ function runEffect(
           ],
         });
       }
+      // CR 603.7c, 118.12a, 701.21a (Ashling, the Limitless): "At the beginning of your next end step, sacrifice it unless you pay {W}{U}{B}{R}{G}": the same bound sacrifice of the
+      // permanents the effects before it made, which the controller of the ability pays to keep (`unlessPays`, as the ability resolves).
+      if (
+        effect.effect.kind === 'unlessPays' &&
+        effect.effect.effect.kind === 'sacrifice' &&
+        effect.effect.effect.objects.kind === 'moved'
+      ) {
+        const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+        if (ids.length === 0) return done(state);
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: {
+            ...effect.effect,
+            effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
+          },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            { source: res.source, controller: res.controller, ability },
+          ],
+        });
+      }
       if (
         (effect.effect.kind === 'exile' ||
           effect.effect.kind === 'sacrifice' ||
@@ -3181,6 +3210,27 @@ function runEffect(
               ];
         });
         return done(state, [], asks);
+      }
+      // CR 115.1, 608.2b, 608.2g (Horde of Notions): "You may play target Elemental card from your graveyard without paying its mana cost": the question is about the target
+      // card, if it is still in a graveyard as the object it was targeted as (`cards`), and about nothing else.
+      if (effect.objects.kind === 'target') {
+        const named = resolveObjects(state, effect.objects, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'graveyard',
+        );
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'castFree',
+              objects: effect.objects,
+              play: effect.play === true,
+              cards: named,
+              cardsZone: 'graveyard',
+              chosen: null,
+            },
+          ],
+        );
       }
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
       // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).

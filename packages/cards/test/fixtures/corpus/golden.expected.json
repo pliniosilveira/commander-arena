@@ -1,5 +1,5 @@
 {
-  "parserVersion": 186,
+  "parserVersion": 187,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -197,6 +197,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "80b51581"
+    },
+    "02b6900b-219f-4832-8f93-6ef27ee76c0c": {
+      "name": "Impulsivity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bc135ba7"
     },
     "02be0b99-d40b-4287-989b-12eb2701115c": {
       "name": "Pest Rescuer",
@@ -1403,6 +1411,14 @@
       "reasons": [],
       "ast": "0d809d8f"
     },
+    "1d725121-e50c-42f0-9128-56802f07c89e": {
+      "name": "Selvala, Heart of the Wilds",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b6cf6256"
+    },
     "1d85eec2-80db-466c-bd48-d2a12866e8bd": {
       "name": "Old Stickfingers",
       "group": "acceptance",
@@ -1931,6 +1947,14 @@
       "reasons": [],
       "ast": "93e39c44"
     },
+    "2ae71e86-4400-4a30-9077-4d57a43e7395": {
+      "name": "Risen Reef",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e9d27716"
+    },
     "2b4973cc-83b0-4986-a19e-b4252706527e": {
       "name": "Icon of Ancestry",
       "group": "acceptance",
@@ -2172,6 +2196,14 @@
       "reasons": [],
       "ast": "812829a8"
     },
+    "2ffc7509-c7ce-44c4-a8cf-90ed161b5d10": {
+      "name": "Shatter the Sky",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4658eab4"
+    },
     "3029df1d-d02a-4fed-8ab4-000a2096f823": {
       "name": "Return to Dust",
       "group": "acceptance",
@@ -2341,6 +2373,14 @@
       "reasons": [],
       "ast": "d61938d8"
     },
+    "334c284e-7bc3-4c18-9f8d-4d846f80008e": {
+      "name": "Haunting Voyage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "df201eb7"
+    },
     "335a6c6a-030f-45d4-806c-467a22962eed": {
       "name": "Final Act",
       "group": "acceptance",
@@ -2388,6 +2428,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "57706398"
+    },
+    "34a1eb04-08f6-49d8-a1d1-b987a76bd8b1": {
+      "name": "Flamekin Village",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5e4466b5"
     },
     "34c572b2-dccf-43d9-a9c4-846653ad22da": {
       "name": "Spirit Mascot",
@@ -2855,6 +2903,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "22596f4a"
+    },
+    "3ceffadd-c32d-4508-b307-e03bf3c8e7b8": {
+      "name": "Mass of Mysteries",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d978945"
     },
     "3d6fa57a-aa53-4b5c-b8af-a7612c823117": {
       "name": "Faithless Looting",
@@ -3328,6 +3384,14 @@
       "reasons": [],
       "ast": "0dfcc154"
     },
+    "4b6512aa-535e-4edf-8797-43df2b8463de": {
+      "name": "Slithermuse",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4bdffd92"
+    },
     "4b8183e6-4ff2-4254-9ee0-0ebbf8cef4a3": {
       "name": "Fallen Ideal",
       "group": "acceptance",
@@ -3561,6 +3625,14 @@
       "reasons": [],
       "ast": "44646418"
     },
+    "52244c23-7680-4bed-8ef8-8d10e289d3f7": {
+      "name": "Shimmercreep",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1db8c4ec"
+    },
     "524e5098-9c6d-43ad-80cb-52fd6d14ef53": {
       "name": "Priest of the Crossing",
       "group": "acceptance",
@@ -3665,6 +3737,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b9306fd3"
+    },
+    "541744d9-449d-420a-a5a1-2fffba18450f": {
+      "name": "Primal Beyond",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fec24161"
     },
     "54175132-2c44-4749-8dfd-d08dcc63e4b3": {
       "name": "Elusive Otter // Grove's Bounty",
@@ -4632,6 +4712,14 @@
       "reasons": [],
       "ast": "7e31830e"
     },
+    "687cfdf7-8f35-464a-8d6e-9f2d769ed6b4": {
+      "name": "Subterfuge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5eb8360e"
+    },
     "68e45c07-96c5-4f87-a816-d9fa4f119740": {
       "name": "Gemcutter Buccaneer",
       "group": "acceptance",
@@ -4977,6 +5065,14 @@
       "reasons": [],
       "ast": "e50941a9"
     },
+    "70a6f08e-854d-4e2f-9d8c-c45ec3231157": {
+      "name": "Faeburrow Elder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "873d1276"
+    },
     "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
       "name": "Reality Shift",
       "group": "acceptance",
@@ -5273,6 +5369,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "11c50930"
+    },
+    "77a9e7cf-76e9-4323-8504-a5b831de00be": {
+      "name": "Ashling, the Limitless",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4963006e"
     },
     "77cf4fb1-593f-4240-96d9-6ae9084baeac": {
       "name": "Thalisse, Reverent Medium",
@@ -6234,6 +6338,14 @@
       "reasons": [],
       "ast": "7206efa3"
     },
+    "8d38194e-b607-4ff4-9c19-0e8636d463bf": {
+      "name": "Raging Ravine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae14f1e2"
+    },
     "8d3c9646-2b6b-4315-939d-5a920efc0a60": {
       "name": "Galadriel of Lothlórien",
       "group": "acceptance",
@@ -6459,6 +6571,14 @@
       "reasons": [],
       "ast": "325dd6e9"
     },
+    "934bd9f9-937b-4c6b-a849-012ae6bd3321": {
+      "name": "Incandescent Soulstoke",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dcbfd125"
+    },
     "9355db6e-d8eb-43be-9c1d-04f1806dc366": {
       "name": "Lock and Load",
       "group": "acceptance",
@@ -6531,6 +6651,14 @@
       "reasons": [],
       "ast": "8dc5ed12"
     },
+    "95b53836-18aa-451a-992d-2a111deeeab2": {
+      "name": "Yarok, the Desecrated",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5e18fbc6"
+    },
     "95d59a06-5144-4da3-8a9c-846b087975b9": {
       "name": "Gollum, Obsessed Stalker",
       "group": "acceptance",
@@ -6562,6 +6690,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1b84d472"
+    },
+    "96b909ab-55f1-4cde-a675-2504de3da772": {
+      "name": "Cavalier of Thorns",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0729557"
     },
     "96d7b761-b0b2-4ba3-98bd-3a9191ba544e": {
       "name": "Deceptive Frostkite",
@@ -7388,6 +7524,14 @@
       "reasons": [],
       "ast": "3d2e0fca"
     },
+    "a7656948-4d7d-47f7-b8a1-fc9716155e37": {
+      "name": "Horde of Notions",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "788f4e09"
+    },
     "a77b5be2-f361-4135-ba25-670a74d268ac": {
       "name": "Noxious Gearhulk",
       "group": "acceptance",
@@ -8016,6 +8160,14 @@
       "reasons": [],
       "ast": "e798f6e7"
     },
+    "b488e75f-af9c-43e2-8aca-f269fa2c720e": {
+      "name": "Kindred Summons",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3891c0fa"
+    },
     "b48a149c-aead-43b2-a99e-c964d6d28aa0": {
       "name": "Necromantic Selection",
       "group": "acceptance",
@@ -8055,6 +8207,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f4f3543d"
+    },
+    "b61a87e3-dc98-4db9-abed-b47b677d81ab": {
+      "name": "Cream of the Crop",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7bbe21e4"
     },
     "b655bee5-52d3-467e-b16c-cfc2edf2b1a1": {
       "name": "Arachnogenesis",
@@ -8649,6 +8809,14 @@
       "reasons": [],
       "ast": "1c5a33f6"
     },
+    "c552bd73-ce75-40fd-9d80-9e90b6f45274": {
+      "name": "Flamebraider",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ed52bd30"
+    },
     "c5abd58f-3e00-447b-a978-64cb88ad501b": {
       "name": "Hellkite Courser",
       "group": "acceptance",
@@ -8776,6 +8944,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bf8ebf3d"
+    },
+    "c85d824b-c190-4d04-ab99-918ad0e6516c": {
+      "name": "Endurance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c60de66c"
     },
     "c8b143ad-43ec-4e0d-a440-e348daa31391": {
       "name": "Swiftfoot Boots",
@@ -9749,6 +9925,14 @@
       "reasons": [],
       "ast": "2600e6b5"
     },
+    "dd963396-3f81-49ad-a68e-87b9764d7ac5": {
+      "name": "Elemental Spectacle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d4eb8b84"
+    },
     "dda607bd-f419-4b7f-b052-a5ce6ce22bfe": {
       "name": "Stir Up Trouble",
       "group": "acceptance",
@@ -10028,6 +10212,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8bbcb07f"
+    },
+    "e4625704-1d52-44e4-804f-2f45644d76ac": {
+      "name": "Muldrotha, the Gravetide",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ba57160"
     },
     "e4ed7935-0263-4cde-8118-ac18fffce3ef": {
       "name": "Determined Iteration",
@@ -10509,6 +10701,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f0443af4"
+    },
+    "f0587c55-06c1-4930-a62e-668f37464ce9": {
+      "name": "Jegantha, the Wellspring",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Companion — No card in your starting deck has more than one of the same mana symbol in its mana cost.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "b447009c"
     },
     "f09278dc-1e67-4cd8-977d-4b3b94430aac": {
       "name": "Ringwraiths",
@@ -11089,6 +11297,14 @@
       "reasons": [],
       "ast": "83235699"
     },
+    "fbf9f8c5-849f-45d5-8129-5fc683c21a04": {
+      "name": "Fury",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "739825da"
+    },
     "fc0707c7-d504-4ccf-a0d2-3eb6e26e7a57": {
       "name": "Bloodstained Mire",
       "group": "training",
@@ -11164,7 +11380,7 @@
           "text": "Choose an opponent. They look at the top four cards of your library and separate them into a face-down pile and a face-up pile. Put one pile into your hand and the other into your graveyard. The Ring tempts you.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
+          "closestRule": "effect.player"
         }
       ],
       "reasons": [],
@@ -11202,6 +11418,14 @@
       "reasons": [],
       "ast": "8032ef5c"
     },
+    "ffd34151-457a-4a93-82db-24b18319a06b": {
+      "name": "Omnath, Locus of the Roil",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9feab4e5"
+    },
     "name:Angel's Mercy": {
       "name": "Angel's Mercy",
       "group": "holdout",
@@ -11221,8 +11445,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1085,
-      "total": 1107
+      "supported": 1111,
+      "total": 1134
     }
   }
 }

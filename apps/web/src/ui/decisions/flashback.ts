@@ -32,6 +32,8 @@ export function castAction(option: CastOption): Extract<Action, { kind: 'castSpe
     object: option.object,
     ...(option.alternative === undefined ? {} : { alternative: option.alternative }),
     ...(option.face === undefined ? {} : { face: option.face }),
+    // `playFromGraveyardEachType`: the permanent type the card is cast as, one option for each (Muldrotha).
+    ...(option.permanentType === undefined ? {} : { permanentType: option.permanentType }),
   };
 }
 
@@ -70,6 +72,11 @@ export function castLabel(option: CastOption, card: ObjectView | undefined, name
     // CR 702.127a (Aftermath): the option names a half of a split card, "Cast Dawn from graveyard".
     const half = faceLabel(option, card)?.label;
     if (half !== undefined) return `${half} from graveyard`;
+    // A card with several permanent types is one menu entry for each: "Cast X from graveyard as an artifact".
+    if (option.permanentType !== undefined) {
+      const article = option.permanentType === 'artifact' ? 'an' : 'a';
+      return `Cast ${name} from graveyard as ${article} ${option.permanentType}${castCostSuffix(card)}`;
+    }
     return `Cast ${name} from graveyard${castCostSuffix(card)}`;
   }
   // D-151 (CR 601.3, 601.2): the top card of the library under a permission to cast it from there, and a card in exile that an

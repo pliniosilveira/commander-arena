@@ -31,6 +31,7 @@ import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
+import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -38,6 +39,7 @@ import { lowerCondition } from './conditions';
 import {
   BECOMES,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
+  CHOOSE_OPPONENT,
   CHOOSE_PLAYER,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
@@ -97,6 +99,7 @@ import {
   GAIN_STATIC_ABILITY,
   GIVE_POISON,
 } from './granted-static';
+import { GRAVECAST_LOWERINGS } from './gravecast';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
@@ -110,6 +113,7 @@ import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -147,10 +151,12 @@ import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
 import { QUICK_DRAW_LOWERINGS } from './quick-draw';
 import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
+import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
+import { THE_TOKEN_LOWERINGS } from './the-token';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -440,11 +446,15 @@ function zoneOf(clause: IrClause): IrZoneSpec | undefined {
  * engine requires `controller: 'you'`, which the noun says; a choice cannot enter the battlefield.
  */
 function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerResult<Effects> {
-  if (zone !== 'hand') return failure(clause);
+  // CR 608.2d, 110.2a (Haunting Voyage, D-139): "Return up to two creature cards of that type from your graveyard to the battlefield": the controller chooses none up to
+  // that many cards of their graveyard, which enter under their control. Only the "up to" form of cards of a graveyard is read onto the battlefield.
+  const toBattlefield = zone === 'battlefield';
+  if (zone !== 'hand' && !(toBattlefield && what.upTo === true)) return failure(clause);
   const blocked = missingFeatures(['selector:choose']);
   if (blocked.length > 0) return failure(clause, blocked);
   const filter = lowerFilter(what);
   if (!filter.ok) return filter;
+  if (toBattlefield && filter.value.zone !== 'graveyard') return failure(clause);
   if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard')
     return failure(clause);
   const count = what.count?.kind === 'number' ? what.count.value : undefined;
@@ -462,7 +472,8 @@ function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerR
           ...(count === undefined ? {} : { count }),
           ...(what.upTo === true ? { optional: true } : {}),
         },
-        to: 'hand',
+        to: zone,
+        ...(toBattlefield ? { controller: 'you' as const } : {}),
       },
     ],
     rule: clause.rule,
@@ -922,6 +933,9 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // CR 400.7, 608.2c: "That creature gains haste until end of turn. Sacrifice it at the beginning of the next end step." after "You may put a creature card from your hand onto the
+    // battlefield": the one card put (the engine's `moved`, nothing when the player puts none) is what the next sentences name, so the pronoun is let through (`ctx.searched`).
+    if (count === undefined) ctx.searched = named.ref ?? null;
     return { ok: true, value: [move], rule: clause.rule };
   },
 };
@@ -1020,6 +1034,7 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
         : { kind: 'chosenColor', or: spec.what.or };
     case 'thatColor':
     case 'anyOneColorX':
+    case 'anyCombinationX':
     case 'producedType':
       // Only the effect of a triggered mana ability, which `lowerTappedForMana` builds itself.
       return null;
@@ -1037,6 +1052,13 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
         kind: 'combination',
         options: spec.what.options.map((option) => sortedMana(option)),
       };
+    case 'eachColorAmong': {
+      // CR 105.2, 605.3b: one mana of each color among the battlefield permanents the noun names, read as the mana ability is activated.
+      const { zone, ...rest } = spec.what.of.filter;
+      if (zone !== undefined && zone !== 'battlefield') return null;
+      const filter = lowerFilter({ ...spec.what.of, filter: rest });
+      return filter.ok ? { kind: 'eachColorAmong', filter: filter.value } : null;
+    }
     case 'couldProduce':
       // CR 106.7: the permanents are the lands of one player; "any type" keeps colorless.
       return {
@@ -2579,6 +2601,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_MANA_ABILITY,
   RESTRICT,
   CHOOSE_PLAYER,
+  CHOOSE_OPPONENT,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
@@ -2642,6 +2665,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   revealEachTokenLowering(lowerCreateToken),
   // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
   ...AHOY_G8_LOWERINGS,
+  ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
@@ -2661,6 +2685,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
   ...LOOK_ELSE_LOWERINGS,
+  ...LIBRARY_TOP_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,
@@ -2674,6 +2699,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...NIV_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
+  ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
@@ -2683,6 +2709,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUICK_DRAW_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
+  ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
@@ -2697,6 +2724,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
+  ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,

@@ -291,6 +291,33 @@ function lowerSacrificeAlternative(
 }
 
 /**
+ * "Evoke—Exile a red card from your hand." (CR 702.74a, 118.9): the engine's evoke alternative cost with no mana ({0}) and the filter of the card of the hand that is exiled
+ * as the spell is cast (`AlternativeCost.exileFromHand`); the sacrifice when it enters is the engine's.
+ */
+function lowerEvokeExile(
+  ability: IrKeyword,
+  cost: Extract<IrCost, { kind: 'exileFromHand' }>,
+): SpellCostLowering {
+  // One card ("a"), not "any number of" (the optional additional cost of another rule).
+  if (cost.what.anyNumber === true || cost.what.det !== 'a' || cost.what.plural) {
+    return failure(ability);
+  }
+  const filter = lowerFilter({
+    ...cost.what,
+    filter: { ...cost.what.filter, zone: 'hand', card: true },
+  });
+  if (!filter.ok) return filter;
+  const blocked = missingFeatures(['castAlternative:evoke', 'cost:exileFromHand', 'cost:mana']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'evoke',
+    cost: [{ kind: 'mana', symbols: ['0'] }],
+    exileFromHand: filter.value,
+  };
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: 'keyword.evoke-exile' };
+}
+
+/**
  * The face costs of a static statement that says one, or null when the statement is not about the
  * cost of casting (the caller lowers it as an ability).
  */
@@ -350,6 +377,11 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
   if (!isNamedAlternative(ability.name)) return null;
   const kind = ability.name;
   const [only, ...more] = ability.cost ?? [];
+  if (kind === 'evoke' && only?.kind === 'exileFromHand') {
+    return more.length > 0 || ability.params.length > 0
+      ? failure(ability)
+      : lowerEvokeExile(ability, only);
+  }
   if (only?.kind !== 'mana' || more.length > 0) return failure(ability);
   // Escape has the number of cards as its one parameter; the others have none.
   const [count, ...rest] = ability.params;
@@ -403,4 +435,5 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:morph',
   'castAlternative:impending',
   'cost:mana',
+  'cost:exileFromHand',
 ];

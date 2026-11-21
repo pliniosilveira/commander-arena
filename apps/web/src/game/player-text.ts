@@ -32,6 +32,9 @@ export function playerSubject(
     case 'eachPlayerExcept':
       // CR 102.1: every player but the ones `except` names ("its owner draws ... and each other player loses ...").
       return { text: 'each other player', base: false };
+    case 'eachPlayerControlling':
+      // CR 102.1: the players with a battlefield permanent of a kind ("each player who controls a creature with power 4 or greater").
+      return { text: 'each player who controls one', base: false };
     case 'controllerOf':
       return { text: 'its controller', base: false };
     case 'ownerOf':

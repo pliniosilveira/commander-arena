@@ -32,6 +32,7 @@ const LOOK_TAKE_WORDS = {
   hand: ' to reveal and put into your hand',
   battlefield: ' to reveal and put onto the battlefield',
   exileFaceDown: ' to exile face down',
+  top: ' to put on top of your library',
 } as const;
 
 /**

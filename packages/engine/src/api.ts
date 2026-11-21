@@ -4,6 +4,7 @@
  * information.
  */
 
+import type { CardType } from './characteristics';
 import type { ObjectId, SeatId } from './ids';
 import { legalActionsForDecision } from './legal-actions';
 import type { ManaColor } from './mana/types';
@@ -77,7 +78,9 @@ import {
   applyGraveyardRider,
   graveyardPlayPermission,
   markGraveyardPlay,
+  permanentTypeUnavailable,
   riderOf,
+  slotOf,
 } from './rules/graveyard-play';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
@@ -167,6 +170,11 @@ export function getLegalActions(state: GameState, seat: SeatId): Action[] {
   return legalActionsForDecision(d);
 }
 
+/** The permanent type of a play from the graveyard (`playFromGraveyardEachType`): an action that names none lets the engine choose, one that names a type must be one offered. */
+function sameType(offered: CardType | undefined, asked: CardType | undefined): boolean {
+  return offered === undefined || asked === undefined || offered === asked;
+}
+
 function sameAction(a: Action, b: Action): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -193,7 +201,8 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         action.kind === 'castSpell' &&
         o.object === action.object &&
         o.alternative === action.alternative &&
-        (o.face ?? 0) === (action.face ?? 0)
+        (o.face ?? 0) === (action.face ?? 0) &&
+        sameType(o.permanentType, action.permanentType)
       );
     }
     if (o.kind === 'playLand') {
@@ -239,12 +248,17 @@ function playLand(
   entersChosen: ChosenValues | null = null,
   entersRiot: readonly string[] = [],
   entersRevealed?: ObjectId,
+  permanentType?: CardType,
 ): Result {
   const obj = getObject(state, object);
   if (!canPlayLand(state, seat, obj, face)) return fail('That land cannot be played now');
   // D-232: a land from the graveyard uses the permission of the permanent that gives it (once each turn).
   const graveyardUse =
-    obj.zone === 'graveyard' ? graveyardPlayPermission(state, seat, obj, true) : null;
+    obj.zone === 'graveyard'
+      ? graveyardPlayPermission(state, seat, obj, true, permanentType)
+      : null;
+  const graveyardSlot =
+    graveyardUse === null ? undefined : slotOf(state, seat, obj, graveyardUse, true, permanentType);
   // CR 305.1: playing a land is a special action that does not use the stack (CR 116.2a). A modal
   // double-faced card enters with the face the player chose up (CR 712.12).
   const moved = moveObject(state, {
@@ -277,8 +291,10 @@ function playLand(
   });
   if (graveyardUse !== null) {
     // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
-    if (graveyardUse.unlimited !== true) next = markGraveyardPlay(next, graveyardUse.object.id);
-    next = applyGraveyardRider(next, moved.newObject, riderOf(graveyardUse, true));
+    if (graveyardUse.unlimited !== true) {
+      next = markGraveyardPlay(next, graveyardUse.object.id, graveyardSlot);
+    }
+    next = applyGraveyardRider(next, moved.newObject, riderOf(graveyardUse, true, graveyardSlot));
   }
   const events: GameEvent[] = [
     ...moved.events,
@@ -840,9 +856,51 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           return ok(r.state, r.events);
         }
         case 'playLand':
-          return playLand(state, seat, action.object, null, action.face ?? 0);
+          if (
+            permanentTypeUnavailable(
+              state,
+              seat,
+              getObject(state, action.object),
+              true,
+              action.permanentType,
+            )
+          ) {
+            return fail('That card cannot be played from the graveyard as that permanent type');
+          }
+          return playLand(
+            state,
+            seat,
+            action.object,
+            null,
+            action.face ?? 0,
+            null,
+            [],
+            undefined,
+            action.permanentType,
+          );
         case 'castSpell':
-          return beginCast(state, seat, action.object, action.alternative, action.face ?? 0);
+          if (
+            permanentTypeUnavailable(
+              state,
+              seat,
+              getObject(state, action.object),
+              false,
+              action.permanentType,
+            )
+          ) {
+            return fail('That card cannot be cast from the graveyard as that permanent type');
+          }
+          return beginCast(
+            state,
+            seat,
+            action.object,
+            action.alternative,
+            action.face ?? 0,
+            false,
+            false,
+            {},
+            action.permanentType,
+          );
         case 'suspend':
         case 'foretell':
         case 'plot':

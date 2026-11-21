@@ -53,6 +53,7 @@ import {
   checkCostIncrease,
   checkCostPerExtraTarget,
   checkCostReduction,
+  checkNamedAlternativeCost,
 } from './validate-cost';
 import { checkCrossZoneSlots } from './validate-cross-zone';
 import { checkDinosaursFace, checkDinosaursStatic } from './validate-dinosaurs';
@@ -543,6 +544,45 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           out,
           `${path}.what`,
           'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'grantAlternativeCostToSpells':
+      // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4}": only evoke with a mana cost, for the spells of the permanent's controller a filter names,
+      // as the spells they are on the stack, cast from the hand.
+      if (s.from !== 'hand') issue(out, `${path}.from`, 'the spells are cast from the hand');
+      if (s.alt?.kind !== 'evoke') {
+        issue(out, `${path}.alt`, 'only evoke can be given to spells as an alternative cost');
+      } else {
+        checkNamedAlternativeCost(s.alt.cost, `${path}.alt.cost`, out);
+        if (Array.isArray(s.alt.cost) && s.alt.cost.length === 0) {
+          issue(out, `${path}.alt.cost`, 'the granted evoke cost is a mana cost');
+        }
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        s.what?.controller !== 'you' ||
+        filterSome(s.what, (f) => f.controller !== undefined && f.controller !== 'you')
+      ) {
+        issue(out, `${path}.what`, "the spells are the ones you cast: controller is 'you'");
+      }
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            f.keywords !== undefined ||
+            f.notKeywords !== undefined ||
+            f.targetsObject !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the spells are named by what they are: no zone, owner, stackKind, keywords, targets, combat or source',
         );
       }
       break;
@@ -2080,7 +2120,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
-        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
               out,
@@ -2179,7 +2219,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
-        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
           }

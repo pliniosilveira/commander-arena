@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'commanderCasts'
       | 'thisWay'
       | 'opponentsWithMore'
+      | 'chosenPlayerLead'
       | 'opponentCount'
       | 'movedCount'
       | 'cardsStillExiled'
@@ -59,7 +60,8 @@ type StateAmount = Extract<
       | 'exiledAsCost'
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
-      | 'differentNamesAmong';
+      | 'differentNamesAmong'
+      | 'colorsAmong';
   }
 >;
 
@@ -99,6 +101,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'commanderCasts' ||
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
+    amount.kind === 'chosenPlayerLead' ||
     amount.kind === 'opponentCount' ||
     amount.kind === 'movedCount' ||
     amount.kind === 'cardsStillExiled' ||
@@ -112,7 +115,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
-    amount.kind === 'differentNamesAmong'
+    amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'colorsAmong'
   );
 }
 
@@ -205,6 +209,21 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(derive(state, obj).name);
+  }
+  return seen.size;
+}
+
+/**
+ * CR 105.2, 105.2c (Vivid): "the number of colors among permanents you control": the colors of the battlefield permanents the filter matches, each once, as the permanents
+ * have them now (layers 1, 4 and 5, through `derive`); colorless is no color.
+ */
+function colorsAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const color of derive(state, obj).colors) seen.add(color);
   }
   return seen.size;
 }
@@ -480,6 +499,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'colorsAmong':
+      return colorsAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':
@@ -504,6 +525,15 @@ export function stateAmountOf(
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
       return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
+    case 'chosenPlayerLead': {
+      // CR 608.2c (Slithermuse): the stat of the player the resolution chose, more than the controller's, or 0.
+      if (ctx.chosenPlayer === undefined || getSeat(state, ctx.chosenPlayer).hasLost) return 0;
+      return Math.max(
+        0,
+        playerStatOf(state, ctx.chosenPlayer, amount.stat) -
+          playerStatOf(state, ctx.controller, amount.stat),
+      );
+    }
     case 'opponentCount':
       // CR 102.2, 102.3: the opponents of the controller still in the game.
       return opponentsOf(state, ctx.controller).length;

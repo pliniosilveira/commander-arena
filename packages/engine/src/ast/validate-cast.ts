@@ -90,6 +90,15 @@ function mentionsEscaped(node: unknown): boolean {
   return Object.values(record).some(mentionsEscaped);
 }
 
+/** True when `node` (any JSON) holds a condition node of kind `foretold`. */
+function mentionsForetold(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsForetold);
+  if (node === null || typeof node !== 'object') return false;
+  const record = node as Record<string, unknown>;
+  if (record.kind === 'foretold') return true;
+  return Object.values(record).some(mentionsForetold);
+}
+
 /** True when `node` (any JSON) holds a target slot that exists only if the spell was cast during its controller's main phase (issue 244). */
 function mentionsCastPhaseTarget(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(mentionsCastPhaseTarget);
@@ -187,6 +196,13 @@ export function checkCastFace(
   } else if (mentionsEscaped(abilities) || mentionsEscaped(spell)) {
     // CR 702.138b: without an escape cost nothing can have escaped; the condition would never hold.
     issue(out, path, 'the escaped condition and "escapes with" need an escape cost (CR 702.138b)');
+  }
+  // CR 702.143a: without a foretell cost no spell can have been foretold; the condition would never hold.
+  if (
+    !alternatives.some((a) => a?.kind === 'foretell') &&
+    (mentionsForetold(abilities) || mentionsForetold(spell))
+  ) {
+    issue(out, path, 'the foretold condition needs a foretell cost (CR 702.143a)');
   }
   // CR 702.180a: harmonize casts the card from the graveyard and exiles it as it leaves the stack, so it is on an instant or a sorcery (a permanent
   // spell would be exiled instead of entering); the engine does not combine it with the other ways of paying part of the cost.

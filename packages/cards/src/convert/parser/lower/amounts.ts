@@ -679,6 +679,16 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'opponentCount' }, rule };
     }
+    case 'chosenPlayerLead': {
+      // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
+      const blocked = needs('chosenPlayerLead');
+      if (blocked !== null) return blocked;
+      if (!ctx.choseAPlayer) return { ok: false, needs: [], at: amount.span, rule };
+      const stat = amount.stat ?? ctx.comparedStat;
+      if (stat === null) return { ok: false, needs: [], at: amount.span, rule };
+      ctx.comparedStat = stat;
+      return { ok: true, value: { kind: 'chosenPlayerLead', stat }, rule };
+    }
     case 'opponentsWithMore': {
       const blocked = needs('opponentsWithMore');
       if (blocked !== null) return blocked;
@@ -747,10 +757,18 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'votesFor', option: amount.option }, rule };
     }
-    case 'colorsAmong':
-      // "For each color among permanents you control" (stage P37, D-180): the engine reads it only as a static ability's "+N/+N"
-      // (`lowerStaticPtStep`); as the amount of an effect it is not lowered.
-      return { ok: false, needs: [], at: amount.span, rule };
+    case 'colorsAmong': {
+      // "The number of colors among permanents you control" (Vivid, CR 105.2): the engine's `colorsAmong`, of permanents on the battlefield, read as the instruction runs
+      // (`lowerStaticPtStep` lowers the same IR for a static ability's "+1/+1 for each").
+      const blocked = needs('colorsAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'colorsAmong', filter: filter.value }, rule };
+    }
   }
 }
 
@@ -1041,6 +1059,7 @@ export const AMOUNT_NEEDS = [
   'amount:extreme',
   'amount:opponentCount',
   'amount:opponentsWithMore',
+  'amount:chosenPlayerLead',
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',

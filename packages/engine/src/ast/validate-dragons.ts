@@ -734,6 +734,8 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
         }
       }
       return true;
+    case 'playFromGraveyardEachType':
+      return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.
       if (s.cast === undefined && s.land !== true) {

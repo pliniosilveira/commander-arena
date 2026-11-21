@@ -32,7 +32,7 @@
  * The whole pre-cast state is kept in the CastingContext. Cancelling restores it, which is also how
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
-import { COLORS } from '../characteristics';
+import { type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -50,9 +50,11 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
+import { evokeGrantData } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
+  evokeExileOf,
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
@@ -93,7 +95,7 @@ import { derive } from './derive';
 import { escapeGrantData } from './escape-grant';
 import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
 import { freeCastSlotToUse } from './free-cast';
-import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
+import { graveyardPlayPermission, markGraveyardPlay, riderOf, slotOf } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import {
   canCast,
@@ -173,6 +175,8 @@ export function beginCast(
    * paying its mana cost, from the graveyard it is in (`castCard`).
    */
   riders: { readonly anyManaType?: boolean; readonly exileInstead?: boolean } = {},
+  /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
+  permanentType?: CardType,
 ): Result {
   const obj = getObject(state, objectId);
   // CR 722.3c (D-214): the copy of a prepare spell is cast as its own face.
@@ -224,8 +228,12 @@ export function beginCast(
     alternative !== 'retrace' &&
     alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
-      ? graveyardPlayPermission(state, seat, obj, false)
+      ? graveyardPlayPermission(state, seat, obj, false, permanentType)
       : null;
+  const graveyardSlot =
+    graveyardUse === null
+      ? undefined
+      : slotOf(state, seat, obj, graveyardUse, false, permanentType);
   // CR 601.2, 118.9 (`mayCastEachType`): a card in exile cast for free by the permission of an effect uses up the permission of one of its types.
   const freeUse =
     !resolving && alternative === 'free' && obj.zone === 'exile' && obj.onAdventure !== true
@@ -272,6 +280,10 @@ export function beginCast(
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
       ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
+      // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (`grantAlternativeCostToSpells`), kept so the permanent still has it when the source has left.
+      ...(alternative === 'evoke'
+        ? evokeGrantData(state, seat, castAs(obj, seat, face), zone)
+        : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
       freeUse !== null ||
       // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
@@ -312,10 +324,14 @@ export function beginCast(
         : {}),
       // D-232: "Once during each of your turns, you may cast an artifact spell from your graveyard. If you cast a spell this way, that artifact enters tapped":
       // the card's own permission to be cast from the graveyard is used first; otherwise the permanent's, which is used up for this turn.
-      ...(graveyardUse === null ? {} : { graveyardPlay: riderOf(graveyardUse, false) }),
+      ...(graveyardUse === null
+        ? {}
+        : { graveyardPlay: riderOf(graveyardUse, false, graveyardSlot) }),
     },
   });
-  if (graveyardUse !== null) next = markGraveyardPlay(next, graveyardUse.object.id);
+  if (graveyardUse !== null) {
+    next = markGraveyardPlay(next, graveyardUse.object.id, graveyardSlot);
+  }
   if (freeUse !== null) {
     next = {
       ...next,
@@ -694,7 +710,11 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
   if (!stack) return fail('The spell is not on the stack');
   const face = faceOf(state, spell);
   const optionalExile = face?.additionalCosts?.find((cost) => cost.kind === 'exileFromHand');
-  if (optionalExile?.kind === 'exileFromHand' && stack.exiledAsCost === undefined) {
+  // CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): the exile is part of the alternative cost, so one card must be chosen.
+  const evokeExile = alternativeOfStack(stack) === 'evoke' ? evokeExileOf(face) : undefined;
+  const exileFilter =
+    evokeExile ?? (optionalExile?.kind === 'exileFromHand' ? optionalExile.filter : undefined);
+  if (exileFilter !== undefined && stack.exiledAsCost === undefined) {
     const legal = Object.values(state.objects)
       .filter(
         (object) =>
@@ -702,12 +722,15 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
           object.owner === casting.seat &&
           object.card !== null &&
           object.id !== casting.object &&
-          matchesFilter(state, object, optionalExile.filter, {
+          matchesFilter(state, object, exileFilter, {
             controller: casting.seat,
             source: casting.object,
           }),
       )
       .map((object) => object.id);
+    if (evokeExile !== undefined && legal.length === 0) {
+      return fail('There is no card in your hand to exile for the evoke cost');
+    }
     if (legal.length > 0) {
       return ok(
         setPending(
@@ -719,10 +742,13 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
             purpose: 'additionalExile',
             zone: 'hand',
             legal,
-            min: 0,
-            max: legal.length,
+            min: evokeExile === undefined ? 0 : 1,
+            max: evokeExile === undefined ? legal.length : 1,
             reveal: true,
-            prompt: 'You may exile any number of cards from your hand',
+            prompt:
+              evokeExile === undefined
+                ? 'You may exile any number of cards from your hand'
+                : 'Exile a card from your hand to pay the evoke cost',
             forCost: true,
           },
         ),

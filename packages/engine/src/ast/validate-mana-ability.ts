@@ -14,6 +14,8 @@ import {
   checkDelayedCast,
   checkEnumList,
   checkStateAmount,
+  filterSome,
+  readsCombatOrSource,
 } from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
@@ -108,7 +110,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     );
   }
   // "Add X mana of any one color, where X is this creature's power": an amount the game says now, read for the permanent itself (CR 605.1a: no X, no target).
-  if (a.production?.kind === 'anyColorAmount') {
+  if (a.production?.kind === 'anyColorAmount' || a.production?.kind === 'anyCombinationAmount') {
     const amount = a.production.amount;
     if (typeof amount === 'object' && amount !== null && amount.kind === 'powerOf') {
       if (kindOf(amount.of) !== 'this') {
@@ -126,6 +128,34 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         out,
         `${path}.cost`,
         'the amount is counted before the costs are paid: no cost that gives up a permanent or takes counters off',
+      );
+    }
+  }
+  // "For each color among permanents you control, add one mana of that color." (CR 105.2): the colors among the battlefield permanents a filter matches, counted before the costs are paid.
+  if (a.production?.kind === 'eachColorAmong') {
+    const filter = a.production.filter;
+    if (filter === undefined || filter === null) {
+      issue(out, `${path}.production.filter`, 'eachColorAmong needs a filter');
+    } else {
+      checkBattlefieldFilter(filter, `${path}.production.filter`, out);
+      if (
+        filterSome(
+          filter,
+          (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.production.filter`,
+          'eachColorAmong cannot read the combat, the source power, power or toughness',
+        );
+      }
+    }
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+      issue(
+        out,
+        `${path}.cost`,
+        'the colors are counted before the costs are paid: no cost that gives up a permanent or takes counters off',
       );
     }
   }
@@ -250,6 +280,23 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly monocoloredChosen names nothing else');
       }
+      // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs" stands alone.
+      if (only.notGeneric !== undefined && only.notGeneric !== true) {
+        issue(out, `${path}.spendOnly.notGeneric`, 'notGeneric must be true when present');
+      }
+      if (
+        only.notGeneric === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly notGeneric names nothing else');
+      }
       // Issue 102 (Lord of the Forsaken): "a spell from your graveyard" stands alone.
       if (only.fromGraveyard !== undefined && only.fromGraveyard !== true) {
         issue(out, `${path}.spendOnly.fromGraveyard`, 'fromGraveyard must be true when present');
@@ -275,7 +322,8 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         only.qualities === undefined &&
         only.xCost !== true &&
         only.abilitiesOnly !== true &&
-        only.monocoloredChosen !== true
+        only.monocoloredChosen !== true &&
+        only.notGeneric !== true
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }
