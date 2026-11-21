@@ -1061,7 +1061,11 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   const [clause, ...more] = sentence.clauses;
   // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
   // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
-  if (clause?.verb === 'castFree' && clause.optional && more.length === 0) {
+  if (
+    (clause?.verb === 'castFree' || clause?.verb === 'castChosenGraveyardSpell') &&
+    clause.optional &&
+    more.length === 0
+  ) {
     // Death Toll deck, group D (CR 608.2c): "Then if there are twenty or more cards in your graveyard, you may play the exiled card without paying its mana cost.": a test of the
     // game the sentence starts with, which the engine's `conditional` runs the free cast under (the cast is the controller's to decline, as with no test). Any other test (what an
     // offer before it did, a kicker) is still refused here, never guessed.

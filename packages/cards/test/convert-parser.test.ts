@@ -804,6 +804,7 @@ describe('unmatched abilities', () => {
       'effect.cant-cast-additional-spells',
       'effect.cast-per-opponent-graveyard-free',
       'effect.cast-own-graveyard-card-free',
+      'effect.cast-chosen-graveyard-spell-free',
       'effect.put-exiled-into-your-graveyard',
       'effect.exile-top-of-that-player',
       'effect.extra-beginning-phase',

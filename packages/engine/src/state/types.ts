@@ -1951,6 +1951,8 @@ export type Instruction =
       readonly kind: 'castFree';
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
+      /** "If that spell would be put into your graveyard, exile it instead" (`castFree.exileInstead`, issue 102): the rider of the spell cast. */
+      readonly exileInstead?: true;
       readonly filter?: ObjectFilter;
       /** D-660: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
       readonly remaining?: number | 'any';

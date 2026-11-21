@@ -654,3 +654,37 @@ describe('"For each player, choose up to one target creature card in that player
     ).toThrow();
   });
 });
+
+describe('"Whenever ~ attacks, mill four cards. You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead." (CR 608.2g, 118.9, 614.1a)', () => {
+  const diviner = parsed(
+    'SYNTHETIC Parsed Diviner',
+    'Creature — Dragon',
+    'Whenever ~ attacks, mill four cards. You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead.',
+    { manaCost: '{4}{U}', power: '4', toughness: '4', colors: ['U'] },
+  );
+  const build = () =>
+    scenario()
+      .seat(0)
+      .define(diviner)
+      .battlefield(diviner.name)
+      .graveyard('Lightning Bolt', "Angel's Mercy")
+      .library('Island', 'Island', 'Island', 'Island', 'Island')
+      .seat(1)
+      .battlefield()
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the chosen spell is cast for free and is exiled after it resolves', () => {
+    const g = build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([diviner.name]);
+    g.passAll();
+    g.act(0).chooseCards('Lightning Bolt');
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.expect.life(1, 37);
+    g.expect.zone('Lightning Bolt', 'exile');
+  });
+});

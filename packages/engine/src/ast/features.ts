@@ -158,6 +158,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealUntilGraveyard',
     // Issue 102 (Consuming Aberration): "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (`revealUntil` with `perPlayer`).
     'revealUntilEachPlayer',
+    // Issue 102 (Diviner of Mist): "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead" (`castFree` of a `choose` from the graveyard, with `exileInstead`).
+    'castFreeFromGraveyard',
     // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
     'chosenByOpponent',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
@@ -1714,6 +1716,8 @@ export const ABILITY_FEATURES = [
   'revealUntilGraveyard',
   /** "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (issue 102, CR 701.20, 101.4): the engine's `revealUntil` with `perPlayer` and `rest: 'graveyard'`. */
   'revealUntilEachPlayer',
+  /** "Cast an instant or sorcery spell from your graveyard without paying its mana cost, then exile it instead" (issue 102, CR 608.2g, 614.1a): the engine's `castFree` of a `choose` from the graveyard. */
+  'castFreeFromGraveyard',
   /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
   'chosenByOpponent',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
@@ -2617,6 +2621,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilCount: true,
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,
+  castFreeFromGraveyard: true,
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,

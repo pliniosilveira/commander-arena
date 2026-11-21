@@ -3017,6 +3017,7 @@ function runEffect(
             kind: 'castFree',
             objects: effect.objects,
             play: effect.play === true,
+            ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
             ...(caster === undefined ? {} : { seat: caster }),
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),

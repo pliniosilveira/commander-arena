@@ -4039,6 +4039,12 @@ export type Effect =
         | ChooseSelector;
       readonly play?: true;
       /**
+       * "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it
+       * instead." (issue 102, Diviner of Mist; CR 608.2g, 118.9, 614.1a): `objects` is a `choose` selector whose filter says zone `graveyard` (the cards the controller owns there, chosen as
+       * the effect resolves, not targeted); `exileInstead` is the rider of that one spell: when it would be put into a graveyard it is exiled. Only with a `choose` from the graveyard.
+       */
+      readonly exileInstead?: true;
+      /**
        * "Each player mills three cards. For each player, you may cast a card that player milled this way without paying its mana cost" (issue 81, The Ur-Sphinx, CR 608.2g, 101.4):
        * one question for each owner of the cards `moved` names (in a graveyard now), in turn order from the active player, each asking for one of that owner's cards, cast from the
        * graveyard it is in. Only with `moved`, and with neither `play`, `max` nor `filter`.

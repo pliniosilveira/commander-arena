@@ -6520,14 +6520,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkFilter(e.filter, `${path}.filter`, out);
         }
       }
+      if (e.exileInstead !== undefined && kindOf(objects) !== 'choose') {
+        issue(out, `${path}.exileInstead`, 'exileInstead is for a card chosen from the graveyard');
+      }
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
         checkFilter(choose.filter, `${path}.objects.filter`, out);
-        if (choose.filter?.zone !== 'hand') {
+        // Issue 102 (Diviner of Mist): or from the controller's graveyard, with the rider that exiles the spell.
+        if (choose.filter?.zone !== 'hand' && choose.filter?.zone !== 'graveyard') {
           issue(
             out,
             `${path}.objects.filter.zone`,
-            'the card is chosen from the hand: the filter says zone "hand"',
+            'the card is chosen from the hand or the graveyard: the filter says zone "hand" or "graveyard"',
+          );
+        }
+        if (
+          e.exileInstead !== undefined &&
+          (e.exileInstead !== true || choose.filter?.zone !== 'graveyard')
+        ) {
+          issue(
+            out,
+            `${path}.exileInstead`,
+            'exileInstead is true, only for a card chosen from the graveyard',
           );
         }
         if (

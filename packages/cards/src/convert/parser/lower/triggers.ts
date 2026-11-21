@@ -1642,6 +1642,8 @@ function lowerTriggeredAbility(
       c.verb === 'castFromAmong' ||
       // Issue 100 (Baral and Kari Zev): "you may cast a spell ... from your hand without paying its mana cost. If you don't, ...": the engine's `castFree` asks (and may be declined).
       c.verb === 'castFree' ||
+      // Issue 102 (Diviner of Mist): the engine's `castFree` of a card of the graveyard asks, and may be declined.
+      c.verb === 'castChosenGraveyardSpell' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||

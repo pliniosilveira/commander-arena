@@ -1148,6 +1148,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
   // Issue 144 (Goblin Dark-Dwellers, Glimpse the Impossible, Conspicuous Snoop).
   'effect.cast-own-graveyard-card-free': permanent((e) => `When ~ enters, ${e}.`),
+  'effect.cast-chosen-graveyard-spell-free': permanent((e) => `Whenever ~ attacks, ${e}.`),
   'amount.for-each-card-put-into-your-graveyard': spell(
     (e) =>
       `Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token ${e}.`,
