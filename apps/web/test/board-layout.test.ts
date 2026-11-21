@@ -384,15 +384,15 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(attached.size).toBe(0);
   });
 
-  test('strips take up to four full steps of room, then are squeezed into the same space', () => {
-    expect(stripStep(1)).toBe(16);
-    expect(stripStep(4)).toBe(16);
+  test('strips take up to three full steps of room, then are squeezed into the same space', () => {
+    expect(stripStep(1)).toBe(30);
+    expect(stripStep(3)).toBe(30);
     expect(stripWidth(0)).toBe(0);
-    expect(stripWidth(2)).toBe(32);
-    expect(stripWidth(4)).toBe(64);
-    expect(stripStep(8)).toBe(8);
-    expect(stripWidth(8)).toBeLessThanOrEqual(64);
-    expect(stripStep(20)).toBe(7);
+    expect(stripWidth(2)).toBe(60);
+    expect(stripWidth(3)).toBe(90);
+    expect(stripStep(6)).toBe(15);
+    expect(stripWidth(6)).toBeLessThanOrEqual(90);
+    expect(stripStep(20)).toBe(10);
   });
 
   test('strips take width, not height: the tiles keep their size and shrink only when the row is full', () => {

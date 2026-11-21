@@ -19,12 +19,12 @@ export interface Attachments {
  * strips lie behind the host's tile and show a vertical sliver of their right side, the way equal
  * basic lands overlap in the land row (`lands.ts`).
  */
-export const STRIP_W = 16;
-const STACK_MAX = STRIP_W * 4;
+export const STRIP_W = 30;
+const STACK_MAX = STRIP_W * 3;
 
-/** Distance between neighbouring strips: full width up to four, then squeezed into the same room. */
+/** Distance between neighbouring strips: full width up to three, then squeezed into the same room. */
 export function stripStep(count: number): number {
-  return count <= 4 ? STRIP_W : Math.max(7, Math.floor(STACK_MAX / count));
+  return count <= 3 ? STRIP_W : Math.max(10, Math.floor(STACK_MAX / count));
 }
 
 /** Room a tile needs beside it for `count` strips, in pixels. */
