@@ -276,6 +276,10 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         ...(cost.count > 1 ? { count: cost.count } : {}),
       });
     }
+    case 'putThisOnLibraryBottom':
+      // "Put ~ on the bottom of its owner's library" (CR 118.3, 401.4): the permanent itself, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      return ok({ kind: 'returnToHand', what: { kind: 'this' }, toLibraryBottom: true });
     case 'loyalty':
       // CR 606.2 (stage P47, D-202): the symbol of a loyalty ability, the cost of an ordinary activation on a planeswalker (the caller checks the face).
       return options.ordinary === true

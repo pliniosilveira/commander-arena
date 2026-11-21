@@ -56,10 +56,35 @@ export function TurnTracker() {
         <span
           className={`pnl-whose ${mine ? 'pnl-mine' : 'pnl-theirs'}`}
           data-turn-label
-          data-round={roundOf(view.turn, view.seats.length)}
+          data-round={roundOf(view.turn, view.seats.length, view.extraTurnsTaken)}
         >
-          {turnLabel(view.activeSeat, view.viewer, view.turn, view.seats.length)}
+          {turnLabel(
+            view.activeSeat,
+            view.viewer,
+            view.turn,
+            view.seats.length,
+            view.extraTurnsTaken,
+          )}
         </span>
+        {view.extraTurn === true && (
+          <span
+            className="pnl-chip"
+            title="An effect gave this extra turn (CR 500.7). The turn order goes on after it."
+            data-extra-turn
+          >
+            Extra turn
+          </span>
+        )}
+        {(view.extraTurns ?? []).length > 0 && (
+          <span
+            className="pnl-chip"
+            title="Extra turns are taken directly after this turn, the one made last first (CR 500.7)."
+            data-extra-turns-next
+          >
+            Next: {(view.extraTurns ?? []).map((seat) => seatName(seat, view.viewer)).join(', ')}{' '}
+            (extra turn{(view.extraTurns ?? []).length === 1 ? '' : 's'})
+          </span>
+        )}
         <span className="pnl-priority">
           Priority: <strong>{priority ?? '—'}</strong>
         </span>

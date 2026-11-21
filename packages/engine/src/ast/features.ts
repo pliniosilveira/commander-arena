@@ -372,6 +372,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cumulativeUpkeep',
     // D-127: "you become the monarch" (CR 725).
     'becomeMonarch',
+    // CR 500.7: "take an extra turn after this one".
+    'extraTurn',
     // D-131: "mill N cards" (CR 701.17).
     'mill',
     // D-309: "manifest the top card of your library" (CR 701.40), and the face-down permanent it makes.
@@ -2825,6 +2827,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   encore: true,
   cumulativeUpkeep: true,
   becomeMonarch: true,
+  extraTurn: true,
   delayedTrigger: true,
   prepare: true,
   copyCardAndCast: true,

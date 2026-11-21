@@ -1439,6 +1439,20 @@ const DELAYED_DRAW: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Take an extra turn after this one", "target player takes an extra turn after this one" (CR 500.7): the engine's `extraTurn` for the player named. */
+const EXTRA_TURN: Lowering<IrClause, Effects> = {
+  head: 'extraTurn',
+  id: 'lower.extraTurn',
+  needs: ['effect:extraTurn'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    return { ok: true, value: [{ kind: 'extraTurn', player: player.value }], rule: clause.rule };
+  },
+};
+
 /**
  * "You become the monarch" (CR 725.1, stage P25, D-127): the engine's effect names the one player, here the
  * controller (the grammar reads "you" only).
@@ -2542,6 +2556,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   MANIFEST,
   playerVerb('shuffle'),
   BECOME_MONARCH,
+  EXTRA_TURN,
   DELAYED_DRAW,
   COPY_SPELL,
   EXILE_ON_RESOLVE,

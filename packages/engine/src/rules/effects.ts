@@ -2015,6 +2015,18 @@ function runEffect(
       return done(r.state, r.events);
     }
 
+    case 'extraTurn': {
+      // CR 500.7: the turn is added directly after the current one; several players are given theirs one at a time in APNAP order, and the most recently created
+      // one is taken first (`rules/flow.ts` takes the last of the list).
+      const named = resolvePlayers(state, effect.player, ctx, targets);
+      const seats = seatsInOrder(state, state.turn.activeSeat).filter((s) => named.includes(s));
+      if (seats.length === 0) return done(state);
+      return done(
+        { ...state, extraTurns: [...(state.extraTurns ?? []), ...seats] },
+        seats.map((seat) => ({ kind: 'extraTurnAdded' as const, seat })),
+      );
+    }
+
     case 'may':
       // CR 608.2d (D-135): "you may [do something]": the controller is asked as this comes up, and what the doing of it counts
       // for "if you do" starts again at 0 (`resetPerformed`). Declining drops only this instruction.

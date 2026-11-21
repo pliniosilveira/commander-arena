@@ -14,9 +14,10 @@ import type { SeatId } from '@commander-arena/engine';
  * 1-based and counts every turn of every player, including a turn that is taken in addition (extra
  * turns), which the display counts like any other (the engine has no extra turns yet).
  */
-export function roundOf(turn: number, seatCount: number): number {
+export function roundOf(turn: number, seatCount: number, extraTurnsTaken = 0): number {
   if (turn <= 0 || seatCount <= 0) return 0;
-  return Math.floor((turn - 1) / seatCount) + 1;
+  // CR 500.7: an extra turn is no turn of the turn order, so it belongs to the round of the turn it follows.
+  return Math.floor(Math.max(0, turn - extraTurnsTaken - 1) / seatCount) + 1;
 }
 
 /** "Your" or "Opponent's": the name form the UI uses for a seat. */
@@ -25,6 +26,12 @@ export function turnOwner(seat: SeatId, viewer: SeatId): string {
 }
 
 /** "Your turn 5" or "Opponent's turn 5": whose turn it is and the round it is in. */
-export function turnLabel(seat: SeatId, viewer: SeatId, turn: number, seatCount: number): string {
-  return `${turnOwner(seat, viewer)} turn ${roundOf(turn, seatCount)}`;
+export function turnLabel(
+  seat: SeatId,
+  viewer: SeatId,
+  turn: number,
+  seatCount: number,
+  extraTurnsTaken = 0,
+): string {
+  return `${turnOwner(seat, viewer)} turn ${roundOf(turn, seatCount, extraTurnsTaken)}`;
 }

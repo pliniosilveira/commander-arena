@@ -100,8 +100,15 @@ function join(a: Outcome, b: Outcome): Outcome {
   return { state: b.state, events: [...a.events, ...b.events] };
 }
 
-/** Begins a new turn for `seat` (CR 500.1). */
-export function startTurn(state: GameState, seat: SeatId): Outcome {
+/**
+ * Begins a new turn for `seat` (CR 500.1). `extra`: the turn is an extra turn (CR 500.7) added after the turn of the player `resumeAfter`, whom the turn order goes on from
+ * once the extra turns are taken.
+ */
+export function startTurn(
+  state: GameState,
+  seat: SeatId,
+  extra?: { readonly resumeAfter: SeatId },
+): Outcome {
   const [stamp, s1] = allocateTimestamp(state);
   // CR 702.30a (D-127): the start of the seat's previous turn is kept for "since the beginning of your last upkeep".
   let next = patchSeat(s1, seat, {
@@ -130,6 +137,7 @@ export function startTurn(state: GameState, seat: SeatId): Outcome {
   }
   next = {
     ...next,
+    ...(extra === undefined ? {} : { extraTurnsTaken: (state.extraTurnsTaken ?? 0) + 1 }),
     // D-139: "once each turn" and "this turn" start over.
     turnLog: EMPTY_TURN_LOG,
     turn: {
@@ -140,13 +148,19 @@ export function startTurn(state: GameState, seat: SeatId): Outcome {
       prioritySeat: null,
       passedInSuccession: [],
       extraLandDrops: 0,
+      ...(extra === undefined ? {} : { extra: true as const, resumeAfter: extra.resumeAfter }),
     },
   };
   // CR 500.1, 611.2a (D-179): "until your next turn" ends as that turn begins.
   const expired = expireTurnStartEffects(next, seat);
   next = expired.state;
   const events: GameEvent[] = [
-    { kind: 'turnBegan', seat, turn: next.turn.number },
+    {
+      kind: 'turnBegan',
+      seat,
+      turn: next.turn.number,
+      ...(extra === undefined ? {} : { extra: true as const }),
+    },
     ...expired.events,
   ];
   return join({ state: next, events }, beginStep(next, 'untap'));
@@ -485,8 +499,23 @@ export function afterDiscard(input: GameState, prior: readonly GameEvent[] = [])
   );
 }
 
-function startNextTurn(state: GameState): Outcome {
-  const order = seatsInOrder(state, (state.turn.activeSeat + 1) % state.seats.length);
+function startNextTurn(input: GameState): Outcome {
+  // CR 500.7: the turn order goes on from the player whose turn the extra turns were added after.
+  const resumeAfter = input.turn.resumeAfter ?? input.turn.activeSeat;
+  // CR 500.7: extra turns are added directly after the current turn, and the most recently created one is taken first. A turn of a player who has left the game is
+  // not taken (CR 800.4a: nothing of that player goes on).
+  let waiting = input.extraTurns ?? [];
+  let state = input;
+  while (waiting.length > 0) {
+    const seat = waiting[waiting.length - 1];
+    waiting = waiting.slice(0, -1);
+    const { extraTurns: _taken, ...rest } = state;
+    state = waiting.length === 0 ? rest : { ...rest, extraTurns: waiting };
+    if (seat !== undefined && seatsInOrder(state, seat).includes(seat)) {
+      return startTurn(state, seat, { resumeAfter });
+    }
+  }
+  const order = seatsInOrder(state, (resumeAfter + 1) % state.seats.length);
   const next = order[0];
   if (next === undefined) return { state, events: [] };
   return startTurn(state, next);

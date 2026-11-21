@@ -43,7 +43,9 @@ function returnAll(
 ): Result {
   const going = inProgress(state);
   if (!going) return fail('No activation is in progress');
-  const { casting } = going;
+  const { casting, activation } = going;
+  // CR 401.4: "put this creature on the bottom of its owner's library" (`returnToHand.toLibraryBottom`).
+  const toBottom = breakDown(activation.ability.cost, activation.x)?.bounceToLibraryBottom === true;
   let current = state;
   let choice = answer;
   for (const [i, id] of queue.entries()) {
@@ -51,7 +53,12 @@ function returnAll(
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== casting.seat) {
       return fail("That permanent cannot be returned to its owner's hand");
     }
-    const moved = moveObject(current, { object: id, to: 'hand', commanderChoice: choice });
+    const moved = moveObject(
+      current,
+      toBottom
+        ? { object: id, to: 'library', position: 'bottom', commanderChoice: choice }
+        : { object: id, to: 'hand', commanderChoice: choice },
+    );
     choice = null;
     if (moved.kind === 'needsDecision') {
       const paused: GameState = {
