@@ -63,6 +63,7 @@ test("the opponent's spell waits for the player, with its card in the preview, a
 
 test('Settings has a switch for it, on by default', async ({ page }) => {
   await page.goto('/?autostart=white-knights,swamp-forest&seed=7');
+  await page.getByRole('button', { name: 'Keep', exact: true }).click();
   await settled(page);
   await page.locator('.settings-toggle').click();
   const box = page.getByLabel('Stop for opponent spells');

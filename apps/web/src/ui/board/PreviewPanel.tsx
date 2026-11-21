@@ -505,7 +505,8 @@ export function PreviewPanel() {
       className="preview-panel board-preview"
       aria-label="Card preview"
       aria-live="polite"
-      data-pinned={pinned || source === 'stack' ? 'true' : undefined}
+      data-pinned={pinned ? 'true' : undefined}
+      data-stack-preview={source === 'stack' ? 'true' : undefined}
       onClick={dismiss}
     >
       <div className="board-preview-bar">

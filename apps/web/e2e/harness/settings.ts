@@ -29,7 +29,7 @@ export async function toggleSetting(
 
 /** Opens the log dialog, shows every line (detail lines too) and closes the dialog again. */
 export async function showAllLogLines(page: Page): Promise<void> {
-  const toggle = page.locator('.log-toggle');
+  const toggle = page.locator('.log-toggle:not(.settings-toggle)');
   await toggle.click();
   await page
     .getByRole('group', { name: 'Log detail' })

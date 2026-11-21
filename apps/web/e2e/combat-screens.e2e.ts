@@ -63,14 +63,8 @@ test.describe('issue 92: dividing combat damage leaves the board visible', () =>
     // Not a modal: no dialog, no overlay over the battlefield.
     await expect(page.getByRole('dialog', { name: 'Divide combat damage' })).toHaveCount(0);
     await expect(page.locator('.dec-overlay')).toHaveCount(0);
-    // The panel is in the controls column, beside the board.
-    expect(
-      await page.evaluate(() => {
-        const dock = document.querySelector('.dec-damage-dock')?.getBoundingClientRect();
-        const board = document.querySelector('.board')?.getBoundingClientRect();
-        return dock !== undefined && board !== undefined && dock.left >= board.right - 0.5;
-      }),
-    ).toBe(true);
+    // The panel is in the turn panel at the right edge, over the board.
+    await expect(page.locator('.turn-panel .dec-damage-dock')).toHaveCount(1);
     // The trampler, the blocker and the player each have a row; the creatures show their card and numbers.
     await expect(panel.locator('.dec-damage-thumb')).toHaveCount(2);
     await expect(panel).toContainText('SYNTHETIC Trampler 4/4');
@@ -345,6 +339,7 @@ test.describe('issue 9: combat animations', () => {
     // Remembered: a new page load starts on Fast, and the control shows it.
     await page.reload();
     expect(await page.evaluate(() => document.documentElement.dataset.animationSpeed)).toBe('fast');
+    await page.getByRole('button', { name: 'Keep', exact: true }).click();
     await page.locator('.settings-toggle').click();
     await expect(
       page.getByRole('group', { name: 'Animation speed' }).getByRole('button', { name: 'Fast' }),

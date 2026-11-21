@@ -275,6 +275,11 @@ button {
 .game > .board-preview[data-pinned="true"] {
   pointer-events: auto;
 }
+/* The card of the stack's top takes a tap (it closes the preview); the rest of the box lets the
+   pointer through, so a target under it (your life total) stays clickable. */
+.game > .board-preview[data-stack-preview="true"] .board-preview-card {
+  pointer-events: auto;
+}
 /* On a touch screen there is no hover: a tap on the preview closes it. */
 @media (hover: none) {
   .game > .board-preview {
