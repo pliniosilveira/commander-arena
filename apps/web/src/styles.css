@@ -369,8 +369,10 @@ button {
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 30;
+  /* Above the log dialog (36). */
+  z-index: 45;
   flex: none;
+  cursor: pointer;
   width: var(--info-width);
   max-height: calc(100% - 64px);
   pointer-events: none;
@@ -378,6 +380,12 @@ button {
 }
 .game > .board-preview[data-pinned="true"] {
   pointer-events: auto;
+}
+/* On a touch screen there is no hover: a tap on the preview closes it. */
+@media (hover: none) {
+  .game > .board-preview {
+    pointer-events: auto;
+  }
 }
 
 /* The log: a button at the bottom left and, open, a dialog above it over the board. */
@@ -416,6 +424,6 @@ button {
   box-shadow: var(--shadow);
 }
 .log-dialog .pnl-log {
-  height: clamp(208px, calc((100vh - 640px) * 2), 960px);
+  height: clamp(229px, calc((100vh - 640px) * 2.2), 1056px);
   max-height: 100%;
 }

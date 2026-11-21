@@ -457,6 +457,8 @@ function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
 }
 
 export function PreviewPanel() {
+  const hover = useApp((s) => s.hover);
+  const pin = useApp((s) => s.pin);
   const view = useApp((s) => s.snapshot?.view ?? null);
   const pinnedId = useApp((s) => s.preview.pinned);
   const hoveredId = useApp((s) => s.preview.hovered);
@@ -469,10 +471,21 @@ export function PreviewPanel() {
   const pinned = source === 'pinned' && object !== null;
   // The card behind the viewer's own face-down permanent (D-315), or null.
   const real = object === null ? null : realCardOf(object);
+  // A tap on the preview closes it: it drops the pin, the hover and a reveal.
+  const dismiss = () => {
+    hover(null);
+    pin(null);
+  };
   // A reveal is read when the player holds no object (pinned or hovered) and nothing newer than it is on the stack.
   if (revealed.length > 0 && (source === 'none' || source === 'stack')) {
     return (
-      <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
+      <aside
+        className="preview-panel board-preview"
+        aria-label="Card preview"
+        aria-live="polite"
+        data-pinned="true"
+        onClick={dismiss}
+      >
         <RevealedList cards={revealed} />
       </aside>
     );
@@ -485,6 +498,7 @@ export function PreviewPanel() {
       aria-label="Card preview"
       aria-live="polite"
       data-pinned={pinned ? 'true' : undefined}
+      onClick={dismiss}
     >
       <>
         <div className="board-preview-bar">
