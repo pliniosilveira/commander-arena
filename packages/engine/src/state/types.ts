@@ -1888,6 +1888,12 @@ export type Instruction =
        * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
        */
       readonly replacedLeft?: number;
+      /**
+       * Dredge (CR 702.52a, issue 102): the card of the graveyard last declined for the draw being made (the next one asked comes after it), and the owner's answer to the card being
+       * asked (`accepted`), recorded here when given. Absent for a draw nobody was asked about. See rules/dredge.ts.
+       */
+      readonly dredgeAfter?: ObjectId;
+      readonly dredgeAnswer?: { readonly card: ObjectId; readonly accepted: boolean };
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {

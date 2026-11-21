@@ -835,3 +835,78 @@ describe('Steward of the Harvest: "When this creature enters, exile up to three 
     g.expect.pool(0, 'R');
   });
 });
+
+describe('Dredge 3: "If you would draw a card, you may instead mill three cards and return this card from your graveyard to your hand." (CR 702.52, 121.1, 614.11)', () => {
+  const loam = parsed(
+    'SYNTHETIC Parsed Loam',
+    'Sorcery',
+    'You gain 1 life.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)',
+    { manaCost: '{1}{G}', colors: ['G'] },
+  );
+  const draw = parsed('SYNTHETIC Parsed Dredge Draw', 'Sorcery', 'Draw a card.', {
+    manaCost: '{U}',
+    colors: ['U'],
+  });
+  const build = (library: number) =>
+    scenario()
+      .seat(0)
+      .define(loam)
+      .define(draw)
+      .battlefield('Island')
+      .hand(draw.name)
+      .graveyard(loam.name)
+      .library(...Array.from({ length: library }, () => 'Plains'))
+      .seat(1)
+      .library('Island', 'Island', 'Island')
+      .seat(0)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('a draw of a spell may be replaced: three cards are milled and the card returns, nothing is drawn', () => {
+    const g = build(6);
+    g.act(0).cast(draw.name, { pay: true });
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.zone(loam.name, 'hand', { seat: 0 });
+    expect(g.state.seats[0]?.graveyard.length).toBe(1 + 3);
+    expect(g.state.seats[0]?.cardsDrawnThisTurn).toBe(0);
+    expect(g.state.seats[0]?.library.length).toBe(3);
+  });
+
+  test('declining draws the card as usual', () => {
+    const g = build(6);
+    g.act(0).cast(draw.name, { pay: true });
+    g.passAll();
+    g.act(0).decline();
+    g.expect.zone(loam.name, 'graveyard', { seat: 0 });
+    expect(g.state.seats[0]?.cardsDrawnThisTurn).toBe(1);
+    expect(g.state.seats[0]?.library.length).toBe(5);
+  });
+
+  test('with fewer than three cards in the library the dredge is not offered', () => {
+    const g = build(2);
+    g.act(0).cast(draw.name, { pay: true });
+    g.passAll();
+    expect(g.state.seats[0]?.cardsDrawnThisTurn).toBe(1);
+    g.expect.zone(loam.name, 'graveyard', { seat: 0 });
+  });
+
+  test('the draw of the draw step is replaced the same way', () => {
+    const g = scenario()
+      .seat(0)
+      .define(loam)
+      .graveyard(loam.name)
+      .library(...Array.from({ length: 6 }, () => 'Plains'))
+      .seat(1)
+      .library('Island', 'Island', 'Island')
+      .seat(0)
+      .at('upkeep', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('draw');
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.zone(loam.name, 'hand', { seat: 0 });
+    expect(g.state.seats[0]?.library.length).toBe(3);
+  });
+});

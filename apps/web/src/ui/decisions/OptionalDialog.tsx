@@ -29,6 +29,7 @@ const DIALOG_LABELS: Readonly<
   suspend: 'Suspend',
   madness: 'Madness',
   miracleReveal: 'Miracle: reveal',
+  dredge: 'Dredge',
   miracle: 'Miracle',
   gift: 'Gift',
   costChoice: 'Additional cost',

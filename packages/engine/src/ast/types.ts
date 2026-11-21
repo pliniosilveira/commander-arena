@@ -5379,6 +5379,12 @@ export type Keyword =
    */
   | { readonly kind: 'afflict'; readonly count: number }
   /**
+   * CR 702.52a (Dredge, issue 102): "Dredge N" means "If you would draw a card, you may instead mill N cards and return this card from your graveyard to your hand." A static ability of a
+   * card that works in its owner's graveyard, as the draw is about to be made (`rules/dredge.ts`): offered only when the library has at least N cards (CR 702.52b), and a card returned
+   * that way is not drawn. `count` is N, a positive integer. Not grantable.
+   */
+  | { readonly kind: 'dredge'; readonly count: number }
+  /**
    * CR 702.181a (Mobilize, issue 101): "Mobilize N" means "Whenever this creature attacks, create N 1/1 red Warrior creature tokens. Those tokens enter tapped and attacking.
    * Sacrifice them at the beginning of the next end step." A triggered ability the engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance
    * triggers separately. `count` is N, a positive integer, or 'power' ("mobilize X, where X is its power": the power of the creature as the ability resolves). The sacrifice is a

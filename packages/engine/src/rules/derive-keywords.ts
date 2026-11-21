@@ -775,6 +775,9 @@ export function expansionOf(ability: Ability): Ability[] {
       return [annihilatorAbility(ability.keyword.count)];
     case 'afflict':
       return [afflictAbility(ability.keyword.count)];
+    // CR 702.52a (issue 102): a replacement of the draw read from the graveyard (`rules/dredge.ts`), not an ability the permanent has.
+    case 'dredge':
+      return [];
     case 'mobilize':
       return [mobilizeAbility(ability.keyword.count)];
     case 'fabricate':

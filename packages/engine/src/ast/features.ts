@@ -670,6 +670,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'annihilator',
     // D-472: Afflict N (CR 702.130).
     'afflict',
+    // Issue 102 (Life from the Loam): Dredge N (CR 702.52).
+    'dredge',
     // Issue 101: Mobilize N (CR 702.181).
     'mobilize',
     // Issue 101: Fabricate N (CR 702.123).
@@ -2957,6 +2959,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   exalted: true,
   annihilator: true,
   afflict: true,
+  dredge: true,
   mobilize: true,
   fabricate: true,
   backup: true,

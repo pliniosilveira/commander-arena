@@ -425,6 +425,7 @@ function lowerNumbered(
     | 'toxic'
     | 'annihilator'
     | 'afflict'
+    | 'dredge'
     | 'mobilize'
     | 'fabricate'
     | 'bushido'
@@ -581,6 +582,7 @@ export function lowerKeyword(
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
     ability.name === 'afflict' ||
+    ability.name === 'dredge' ||
     ability.name === 'mobilize' ||
     ability.name === 'fabricate' ||
     ability.name === 'bushido' ||
@@ -1156,6 +1158,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:dredge',
   'keyword:mobilize',
   'keyword:fabricate',
   'keyword:partnerWith',

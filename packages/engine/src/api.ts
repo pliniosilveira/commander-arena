@@ -65,6 +65,7 @@ import { answerDestruction } from './rules/destroy-replacement';
 import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
+  answerDredgeDraw,
   answerMiracleDraw,
   answerUntapChoice,
   discardCards,
@@ -106,6 +107,7 @@ import {
   answerResolutionCounterPick,
   answerResolutionCreatureType,
   answerResolutionDevour,
+  answerResolutionDredge,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
@@ -420,6 +422,14 @@ function answerConfirm(
       return ok(r.state, r.events);
     }
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
+  }
+  // CR 702.52a (Dredge, issue 102): "you may instead mill N cards and return this card": asked in the draw step (no resolution) or by a draw of a resolving spell or ability.
+  if (d.purpose === 'dredge' && d.subject !== undefined) {
+    if (state.resolution === null) {
+      const r = answerDredgeDraw(state, d.subject, accept);
+      return ok(r.state, r.events);
+    }
+    return finishResolutionAnswer(answerResolutionDredge(state, d.subject, accept));
   }
   // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-274): "you may play it without paying its mana cost" (Suspend), "its owner may
   // cast it by paying [cost]" (Madness) and "you may cast it by paying [its miracle cost]" (Miracle): asked while the ability resolves.
