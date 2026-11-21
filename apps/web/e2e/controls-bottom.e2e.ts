@@ -288,7 +288,7 @@ test('the same holds with the controls on the left and in the drawer below 1100p
 
   // The drawer: the stack grows, the button stays in the same place.
   await page.setViewportSize({ width: 1000, height: 720 });
-  await page.getByRole('button', { name: /Stack, controls, card and log/ }).click();
+  await page.getByRole('button', { name: /Stack and controls/ }).click();
   await settled(page);
   const two = await layout(page);
   await castAtOpponent(page);

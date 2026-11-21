@@ -228,23 +228,11 @@ button {
   background: var(--bg-raised);
 }
 
-.game-side-info {
-  order: -1;
-  width: var(--info-width);
-  border-right: 1px solid var(--line);
-}
-
 .game-side-controls {
   /* Room the stack keeps for itself: its heading and about three items. */
   --stack-min: 230px;
   order: 1;
   width: var(--controls-width);
-  border-left: 1px solid var(--line);
-}
-
-:root[data-side-panel="left"] .game-side-info {
-  order: 1;
-  border-right: 0;
   border-left: 1px solid var(--line);
 }
 
@@ -322,11 +310,11 @@ button {
   }
   /* Open, the button sits just outside the drawer, not over the stack's heading. */
   .game[data-drawer="open"] .game-drawer-toggle {
-    right: calc(var(--info-width) + var(--controls-width) + 8px);
+    right: calc(var(--controls-width) + 8px);
   }
   :root[data-side-panel="left"] .game[data-drawer="open"] .game-drawer-toggle {
     right: auto;
-    left: calc(var(--info-width) + var(--controls-width) + 8px);
+    left: calc(var(--controls-width) + 8px);
   }
 }
 
@@ -371,4 +359,73 @@ button {
 }
 .mana-hybrid {
   background: linear-gradient(135deg, var(--mana-w) 50%, var(--mana-b) 50%);
+}
+
+/* The card preview floats over the board at the left edge, centered vertically, and takes no room
+   from the battlefield. The pointer passes through it (a card under it can still be hovered)
+   until the card is pinned, when it can be scrolled. */
+.game > .board-preview {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  /* Above the log dialog (36). */
+  z-index: 45;
+  flex: none;
+  cursor: pointer;
+  width: var(--info-width);
+  max-height: calc(100% - 64px);
+  pointer-events: none;
+  box-shadow: var(--shadow);
+}
+.game > .board-preview[data-pinned="true"] {
+  pointer-events: auto;
+}
+/* On a touch screen there is no hover: a tap on the preview closes it. */
+@media (hover: none) {
+  .game > .board-preview {
+    pointer-events: auto;
+  }
+}
+
+/* The log: a button at the bottom left and, open, a dialog above it over the board. */
+.log-toggle {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 35;
+  padding: 3px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.log-toggle[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+.log-dialog {
+  position: absolute;
+  left: 8px;
+  bottom: 44px;
+  z-index: 36;
+  display: flex;
+  flex-direction: column;
+  /* Twice the width the log had in the column; as tall as about half of the screen. */
+  width: calc(var(--info-width) * 2);
+  max-width: calc(100% - 16px);
+  height: 50%;
+  max-height: calc(100% - 52px);
+  padding: var(--gap);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.log-dialog .pnl-log {
+  flex: 1;
+  height: auto;
+  min-height: 0;
 }
