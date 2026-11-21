@@ -168,7 +168,7 @@ Read-only audit of `packages/engine/src/rules/`. The selector layer is already c
 
 | Finding | Where | Issue |
 | --- | --- | --- |
-| Each-player discard, search, exile and "may" act after each choice, not after all (CR 101.4, 701.23i) | `effects.ts` | #418 |
+| Each-player search, exile and "may" act after each choice, not after all (CR 101.4, 701.23i); discard waits for the last choice now (first of the three pull requests of #418) | `effects.ts` | #418 |
 | Myriad is a no-op with 3 or more seats | `ast/features.ts:1587` | #419 |
 | Latent `resolvePlayers(...)[0]` and `[0]` sites, none reachable from real card text | `amounts.ts`, `effects.ts`, `legality.ts`, `control-effects.ts` | #422 |
 
