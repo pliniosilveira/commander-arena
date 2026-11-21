@@ -71,7 +71,28 @@ function drive(start: GameState, done: (s: GameState) => boolean): GameState {
   return state;
 }
 
+const GAIN_2: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'upkeep', whose: 'you' },
+  effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 2 },
+};
+
 describe('starting emblems', () => {
+  test('"at the beginning of your upkeep, you gain 2 life" works at every upkeep of that seat only', () => {
+    const { state } = createGame({
+      seed: 3,
+      decks: [
+        { cards: deck(), commanders: [0] },
+        { cards: deck(), commanders: [0] },
+      ],
+      startingEmblems: [{ seat: 1, abilities: [GAIN_2], text: 'gain 2' }],
+    });
+    const end = drive(state, (s) => s.turn.number >= 5);
+    // Turns 1 to 4 were played: the seat had two of them (the turns are taken in turns).
+    expect(end.seats[0]?.life).toBe(40);
+    expect(end.seats[1]?.life).toBe(44);
+  });
+
   test('the seat has the emblem in its command zone before the opening hand, the other seat has none', () => {
     const { state, events } = game(true);
     expect(events.some((e) => e.kind === 'emblemCreated' && e.seat === 1)).toBe(true);

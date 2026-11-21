@@ -5,12 +5,7 @@
  * and imports decks.
  */
 import { useMemo, useState } from 'react';
-import {
-  type ChallengeLevel,
-  deckChoices,
-  HARD_EMBLEMS,
-  startChallengeOptions,
-} from '../../precons';
+import { type ChallengeLevel, deckChoices, emblemsFor, startChallengeOptions } from '../../precons';
 import { ThemeToggle } from '../panels/ThemeToggle';
 import { useChallenges, usePrecons } from '../precons-context';
 import { useActions } from '../store-context';
@@ -36,11 +31,11 @@ export function Menu() {
   const challenges = useChallenges();
   const { choices } = useDeckChoices();
   const [level, setLevel] = useState<ChallengeLevel>('easy');
-  // Hard offers only the challenges that have emblems for it.
+  // Medium and Hard offer only the challenges that have emblems for them.
   const challengeChoices = useMemo(
     () =>
       deckChoices(challenges.list, [], []).filter(
-        (choice) => level === 'easy' || choice.id in HARD_EMBLEMS,
+        (choice) => level === 'easy' || emblemsFor(level, choice.id).length > 0,
       ),
     [challenges.list, level],
   );
@@ -168,7 +163,15 @@ export function Menu() {
           >
             Easy
           </button>
-          <button type="button" className="scr-btn scr-btn-primary" disabled>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => {
+              setLevel('medium');
+              setStep('challenge-player');
+            }}
+          >
             Medium
           </button>
           <button
