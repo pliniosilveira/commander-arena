@@ -283,6 +283,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copies-half-pt': spell(
     (e) => `Destroy target creature. If that creature dies this way, its controller creates ${e}.`,
   ),
+  // Subterfuge: one target creature gains a keyword and a triggered ability for the turn.
+  'effect.gain-keyword-and-ability': permanent((e) => `When ~ enters, ${e}.`),
   'effect.choose-player-most-life': permanent(
     (e) => `{1}{B}, {T}: ${cap(e)}. Target creature can't be blocked this turn.`,
   ),

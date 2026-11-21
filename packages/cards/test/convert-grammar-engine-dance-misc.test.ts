@@ -174,3 +174,50 @@ describe('Slithermuse: when it leaves the battlefield, choose an opponent and dr
     g.expect.handSize(0, 5);
   });
 });
+
+const subterfuge = real('Subterfuge');
+
+test('Subterfuge is a valid card', () => {
+  expect(validateCard(subterfuge)).toEqual([]);
+});
+
+describe('Subterfuge: target creature gains flying and a combat damage draw trigger until end of turn', () => {
+  const play = () => {
+    const g = scenario()
+      .define(subterfuge)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(subterfuge.name)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island', 'Grizzly Bears')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(subterfuge.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('Grizzly Bears');
+    g.passAll();
+    return g;
+  };
+
+  test('the creature has flying, and drawing as many cards as the combat damage it deals to a player', () => {
+    const g = play();
+    g.expect.derived('Grizzly Bears', { keywords: ['flying'] });
+    g.expect.handSize(0, 0);
+    g.playCombat({
+      attack: [{ attacker: 'Grizzly Bears', target: { player: 1 } }],
+      until: 'combatDamage',
+    });
+    g.passAll();
+    g.expect.life(1, 38);
+    // Grizzly Bears deals 2: two cards.
+    g.expect.handSize(0, 2);
+  });
+
+  test('another creature does not get the ability, and the grant ends with the turn', () => {
+    const g = play();
+    g.expect.derived('Subterfuge', { keywords: ['encore'] });
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.derived('Grizzly Bears', { keywords: [] });
+  });
+});
