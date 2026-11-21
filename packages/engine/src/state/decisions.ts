@@ -429,6 +429,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * an activated ability that puts -1/-1 counters on a creature the player controls ("Blight 1"), always `forCost`: `legal` are the creatures they control that can
    * have the counters put on them, `min` and `max` are 1. `'untapCost'` (CR 701.26b): the cost of an activated ability that untaps tapped permanents ("Untap two
    * tapped creatures you control"), always `forCost`: `legal` are the tapped permanents the player controls that match, `min` and `max` the number to untap.
+   * `'removeCountersCost'` (CR 118.3, 122.1): the cost of an activated ability that removes counters "from among" permanents ("Remove two +1/+1 counters from among creatures you control"),
+   * always `forCost`: `legal` are the permanents the player controls that match and have a counter of the kind, `min` and `max` are 1 (one counter at a time).
    */
   readonly purpose:
     | 'sacrifice'
@@ -454,7 +456,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'spare'
     | 'soulbond'
     | 'blight'
-    | 'untapCost';
+    | 'untapCost'
+    | 'removeCountersCost';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):

@@ -2413,7 +2413,16 @@ function runEffect(
         next = put.state;
         events.push(...put.events);
       }
-      return done(next, events);
+      // Federation Fleet group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way" counts the counters really put (a replacement or a prevention
+      // may change or stop them), one `counterAdded` event for each placement.
+      const putCount = events.reduce(
+        (n, e) => (e.kind === 'counterAdded' && e.counter === effect.counter ? n + e.count : n),
+        0,
+      );
+      return {
+        ...done(next, events),
+        ...(putCount > 0 ? { thisWay: { countersPut: putCount } } : {}),
+      };
     }
 
     case 'distributeCounters': {

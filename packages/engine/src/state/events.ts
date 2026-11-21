@@ -469,7 +469,8 @@ export type GameEvent =
         | 'bounce'
         | 'fight'
         | 'blight'
-        | 'untapCost';
+        | 'untapCost'
+        | 'removeCountersCost';
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;

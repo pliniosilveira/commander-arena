@@ -75,6 +75,7 @@ import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { FEDERATION_D_LOWERINGS } from './federation-d';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { FOOD_D_LOWERINGS } from './food-d';
@@ -1922,6 +1923,14 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     }
     const count = amountArg(clause, 'count', ctx);
     if (!count.ok) return count;
+    // Federation Fleet group D (CR 122.6): what a later "if you put ... counters on creatures this way" asks about.
+    ctx.putCounters.push({
+      counter: counter.name,
+      creatures:
+        objectsArg?.kind === 'noun' &&
+        (objectsArg.filter.types?.length ?? 0) > 0 &&
+        objectsArg.filter.types?.every((t) => t === 'creature') === true,
+    });
     return eachObject(
       clause,
       ctx,
@@ -2608,6 +2617,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
+  ...FEDERATION_D_LOWERINGS,
   ...GALADRIEL_G1_LOWERINGS,
   // Galadriel deck, group 3 (issue 43): an exchange of control, a counter unless the controller pays an amount, "draw a card and reveal it" with counters removed, "its activated
   // abilities can't be activated this turn".
@@ -2726,20 +2736,23 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   test === 'triggerSpellManaValue' ||
                   test === 'milledThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' ||
-                    test === 'discardedSpellThisWay' ||
-                    test === 'destroyedThisWay' ||
-                    test === 'searchedThisWay'
-                  ? 'thisWayAtLeast'
-                  : test === 'otherAttachedToHost' || test === 'xAtLeast'
-                    ? 'amountIs'
-                    : test === 'attackersAtYou'
-                      ? 'attackersAtYouAtLeast'
-                      : test === 'attackedHasMoreLife'
-                        ? 'attackedHasMoreLifeThanOtherOpponent'
-                        : test === 'controlsThat'
-                          ? 'subjectControlledByYou'
-                          : test;
+                : test === 'subjectGreaterPower'
+                  ? 'subjectGreaterPt'
+                  : test === 'discardedThisWay' ||
+                      test === 'putCountersThisWay' ||
+                      test === 'discardedSpellThisWay' ||
+                      test === 'destroyedThisWay' ||
+                      test === 'searchedThisWay'
+                    ? 'thisWayAtLeast'
+                    : test === 'otherAttachedToHost' || test === 'xAtLeast'
+                      ? 'amountIs'
+                      : test === 'attackersAtYou'
+                        ? 'attackersAtYouAtLeast'
+                        : test === 'attackedHasMoreLife'
+                          ? 'attackedHasMoreLifeThanOtherOpponent'
+                          : test === 'controlsThat'
+                            ? 'subjectControlledByYou'
+                            : test;
     return failure(
       clause,
       kind === 'raw' ||

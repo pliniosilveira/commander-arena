@@ -71,6 +71,7 @@ import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FEDERATION_D_EFFECT_RULES } from './federation-d';
 import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLICKER_RULES } from './flicker';
@@ -1175,6 +1176,8 @@ export const EFFECT_RULES = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
   ...LOREHOLD_G2_EFFECT_RULES,
   ...FOOD_D_EFFECT_RULES,
+  // Federation Fleet deck, group D: "you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~."
+  ...FEDERATION_D_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,

@@ -3,6 +3,7 @@ import type { Cost } from '@commander-arena/engine';
 import { amountPhrase } from './amount-text';
 import { NUMBER_WORDS, nounsOf, plural, tappedWhat } from './cost-words';
 import { beholdQuality } from './dragons-text';
+import { amongWhat, countersTaken } from './remove-counters-cost-text';
 import { untapWhat } from './untap-cost-text';
 
 /**
@@ -212,6 +213,10 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return `Exile any number of ${colors === '' ? '' : `${colors} `}cards from your hand (optional)`;
     }
     case 'removeCounters':
+      // CR 118.3, 122.1: "Remove two +1/+1 counters from among creatures you control".
+      if (cost.among !== undefined) {
+        return `Remove ${countersTaken(cost.counter, cost.count, true)} from among ${amongWhat(cost.among)}`;
+      }
       return `Remove ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)}`;
     case 'putCounters':
       // D-139: "Put a page counter on this artifact".

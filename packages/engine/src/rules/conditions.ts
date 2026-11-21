@@ -215,6 +215,8 @@ export function evaluateCondition(
       const subject = ptNow(state, ctx.triggerSubject);
       const source = ptNow(state, ctx.source);
       if (subject === null || source === null) return false;
+      // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
+      if (condition.onlyPower === true) return subject.power > source.power;
       return subject.power > source.power || subject.toughness > source.toughness;
     }
     case 'controlCommander':

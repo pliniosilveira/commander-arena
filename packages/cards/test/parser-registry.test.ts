@@ -1250,6 +1250,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
+  // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
+  'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  'condition.it-has-greater-power': permanent(
+    (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
+  ),
+  'condition.put-counters-this-way': permanent(
+    (e) =>
+      `{1}, {T}: Put a +1/+1 counter on each creature you control that entered this turn. If ${e}, draw a card.`,
+  ),
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,

@@ -12,6 +12,7 @@ import {
   answerCrewCost,
   answerDiscardCost,
   answerExileCost,
+  answerRemoveCounters,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -988,6 +989,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           ? answerCastBlight(state, action.objects)
           : answerBlight(state, action.objects);
       }
+      // CR 118.3, 122.1: the permanent a counter is removed from to pay "Remove two +1/+1 counters from among creatures you control".
+      if (d.purpose === 'removeCountersCost') return answerRemoveCounters(state, action.objects);
       // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
       if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
