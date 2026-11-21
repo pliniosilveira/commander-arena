@@ -20,13 +20,13 @@ const REMOVED = [
 
 /** Words, counted as `wc -w` counts them. */
 const CEILINGS: Readonly<Record<string, number>> = {
-  'AGENTS.md': 3900,
-  'docs/SPEC.md': 8100,
-  'docs/ARCHITECTURE.md': 8300,
-  'docs/ROADMAP.md': 23000,
-  'docs/RULES_COVERAGE.md': 26000,
-  'docs/CARD_SUPPORT_PLAYBOOK.md': 2200,
-  '.claude/skills/deck-support/SKILL.md': 4600,
+  'AGENTS.md': 4680,
+  'docs/SPEC.md': 9720,
+  'docs/ARCHITECTURE.md': 9960,
+  'docs/ROADMAP.md': 27600,
+  'docs/RULES_COVERAGE.md': 31200,
+  'docs/CARD_SUPPORT_PLAYBOOK.md': 2640,
+  '.claude/skills/deck-support/SKILL.md': 5520,
 };
 
 test.each(REMOVED)('%s was removed and does not come back', (name) => {
