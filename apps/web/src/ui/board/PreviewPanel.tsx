@@ -479,6 +479,7 @@ export function PreviewPanel() {
   // A reveal is read when the player holds no object (pinned or hovered) and nothing newer than it is on the stack.
   if (revealed.length > 0 && (source === 'none' || source === 'stack')) {
     return (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
       <aside
         className="preview-panel board-preview"
         aria-label="Card preview"
@@ -493,6 +494,7 @@ export function PreviewPanel() {
   // Nothing to read: the panel floats over the board, so it is not drawn at all.
   if (object === null) return null;
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
     <aside
       className="preview-panel board-preview"
       aria-label="Card preview"
