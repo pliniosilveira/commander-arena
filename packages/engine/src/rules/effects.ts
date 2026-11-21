@@ -2830,6 +2830,36 @@ function runEffect(
       );
     }
 
+    case 'mayPlayCounterCard': {
+      // CR 608.2d, 122.1 (issue 102, Dauthi Voidwalker): the controller chooses an exiled card an opponent owns with the counter on it, and may play it this turn.
+      const among = Object.values(state.objects)
+        .filter(
+          (o) =>
+            o.zone === 'exile' &&
+            o.card !== null &&
+            o.owner !== res.controller &&
+            (o.counters[effect.counter] ?? 0) > 0,
+        )
+        .map((o) => o.id);
+      if (among.length === 0) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'exile' as const },
+            count: 1,
+            to: 'exile' as const,
+            position: 'top' as const,
+            among,
+            permit: effect.free === true ? { free: true as const } : {},
+            chosen: null,
+          },
+        ],
+      );
+    }
+
     case 'putOneOfTriggerCards': {
       // CR 603.2c, 608.2d, 400.7, 110.2a (issue 102): the controller chooses one of the cards that triggered this ability that are still in a graveyard and puts it onto the battlefield
       // under their control; with one candidate nothing is asked, with none nothing is done.

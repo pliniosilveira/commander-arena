@@ -64,6 +64,21 @@ const PUT_ONE_PER_GRAVEYARD: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker, CR 608.2d, 601.2, 118.9, 122.1):
+ * the engine's `mayPlayCounterCard` with the void counter, for no mana cost.
+ */
+const PLAY_VOID_CARD: Lowering<IrClause, Effects> = {
+  head: 'mayPlayVoidCard',
+  id: 'lower.play-void-card',
+  needs: ['effect:mayPlayCounterCard'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'mayPlayCounterCard', counter: 'void', free: true }],
+    rule: clause.rule,
+  }),
+};
+
+/**
  * "Shuffle any number of target cards from your graveyard into your library." (CR 701.24c, 701.24d, 404.1): the engine's `moveToZone` of the targets to the library and then the
  * `shuffle` of the controller, which happens even with no target (CR 701.24d). The targets are a slot of the ability (a spell's or an ability's), any number of them for `anyNumber`.
  */
@@ -111,6 +126,7 @@ export const LOREHOLD_G1_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_ONE_OF_THEM,
   PUT_ONE_OF_THEM,
   PUT_ONE_PER_GRAVEYARD,
+  PLAY_VOID_CARD,
   SHUFFLE_INTO_LIBRARY,
   DEAL_DAMAGE_TO_SELF,
 ];

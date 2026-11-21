@@ -454,6 +454,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.conditional-suffix': asIs,
   'static.cast-from-graveyard': asIs,
   'replacement.would-die': asIs,
+  'replacement.exile-instead-of-opponent-graveyard': asIs,
   // Stage P30 (D-135, D-136): the recursion slice. "Gift a card" is a line of its own; the conditions begin a sentence or follow the
   // trigger; "enters untapped" and "dies or is put into exile" are triggers; the reduction of a cost ends an activated ability.
   'keyword.gift': asIs,

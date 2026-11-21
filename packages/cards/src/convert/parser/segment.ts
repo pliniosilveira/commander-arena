@@ -291,6 +291,13 @@ const PUT_THE_REST = /^put the rest [^.]*\.$/i;
  */
 const CHOOSE_PER_PLAYER_GRAVEYARD =
   /^for each player, choose up to one target creature card in that player['’]s graveyard\.$/i;
+/**
+ * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker, CR 608.2d, 601.2, 122.1):
+ * the second sentence is what is done with the card the first one chooses, so the two are one instruction (`effect.play-chosen-void-card`).
+ */
+const CHOOSE_EXILED_VOID_CARD =
+  /(?:^|: )choose an exiled card an opponent owns with a void counter on it\.$/i;
+const MAY_PLAY_IT_FREE = /^you may play it this turn without paying its mana cost\.$/i;
 const PUT_THOSE_CARDS_ONTO = /^put those cards onto the battlefield under your control\.$/i;
 /** "You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand." (For the Ancestors): the middle sentence of the same instruction. */
 const TAKE_ANY_OF_CHOSEN_TYPE =
@@ -1026,6 +1033,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, CHOOSE_PER_PLAYER_GRAVEYARD) && said(b, PUT_THOSE_CARDS_ONTO)) ||
+        (said(a, CHOOSE_EXILED_VOID_CARD) && said(b, MAY_PLAY_IT_FREE)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||

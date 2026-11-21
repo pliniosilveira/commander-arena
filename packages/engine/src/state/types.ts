@@ -1341,6 +1341,8 @@ export type Instruction =
       readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
+      /** Issue 102 (Dauthi Voidwalker): the card chosen is not moved; the controller may play it this turn (`mayPlay`), without paying its mana cost when `free`. */
+      readonly permit?: { readonly free?: true };
       /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
       readonly decider?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */

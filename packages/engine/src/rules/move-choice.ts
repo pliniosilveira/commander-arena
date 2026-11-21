@@ -118,6 +118,28 @@ export function runChooseMove(
       purpose: 'effect',
       automatic,
     };
+    // Issue 102 (Dauthi Voidwalker): the card chosen stays where it is, and the controller may play it this turn (`mayPlay` of what was chosen).
+    if (instruction.permit !== undefined) {
+      return {
+        ...done(
+          state,
+          [event],
+          [
+            {
+              kind: 'effect' as const,
+              effect: {
+                kind: 'mayPlay' as const,
+                objects: { kind: 'moved' as const },
+                lasts: 'endOfTurn' as const,
+                ...(instruction.permit.free === true ? { free: true as const } : {}),
+              },
+            },
+          ],
+        ),
+        lastMoved: objects,
+        ...restart,
+      };
+    }
     // D-283 (CR 603.10a): permanents put into a graveyard (or elsewhere) together keep the last-known information recorded before the first leaves.
     // CR 303.4f (issue 103): an Aura card put onto the battlefield this way chooses what it enchants as it enters.
     const together = recordTogether(
@@ -231,33 +253,35 @@ export function runChooseMove(
           ? {}
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
         prompt:
-          // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
-          decider !== chooser
-            ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
-                instruction.to
-              ].replace('your', 'their')}`
-            : `Choose ${
-                instruction.minCardTypes !== undefined
-                  ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-                  : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-              } ${
-                instruction.among !== undefined && zone === 'exile'
-                  ? 'from among the cards exiled this way'
-                  : instruction.among !== undefined
-                    ? 'from among the cards put into your graveyard'
-                    : zone === 'exile'
-                      ? 'exiled with this permanent'
-                      : instruction.alsoGraveyard === true
-                        ? 'from your hand or graveyard'
-                        : zone === 'command'
-                          ? 'from your command zone'
-                          : `from your ${zone}`
-              } to put ${WHERE[instruction.to]}`.replace(
-                'from among the cards put into your graveyard',
-                instruction.anyOwner === true
-                  ? 'from among the cards put into a graveyard'
-                  : 'from among the cards put into your graveyard',
-              ),
+          instruction.permit !== undefined
+            ? 'Choose an exiled card to play this turn'
+            : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
+              decider !== chooser
+              ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
+                  instruction.to
+                ].replace('your', 'their')}`
+              : `Choose ${
+                  instruction.minCardTypes !== undefined
+                    ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                    : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+                } ${
+                  instruction.among !== undefined && zone === 'exile'
+                    ? 'from among the cards exiled this way'
+                    : instruction.among !== undefined
+                      ? 'from among the cards put into your graveyard'
+                      : zone === 'exile'
+                        ? 'exiled with this permanent'
+                        : instruction.alsoGraveyard === true
+                          ? 'from your hand or graveyard'
+                          : zone === 'command'
+                            ? 'from your command zone'
+                            : `from your ${zone}`
+                } to put ${WHERE[instruction.to]}`.replace(
+                  'from among the cards put into your graveyard',
+                  instruction.anyOwner === true
+                    ? 'from among the cards put into a graveyard'
+                    : 'from among the cards put into your graveyard',
+                ),
       },
     };
   }

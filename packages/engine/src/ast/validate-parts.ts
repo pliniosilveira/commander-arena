@@ -5085,6 +5085,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'mayPlayCounterCard':
+      // CR 122.1 (issue 102, Dauthi Voidwalker): the kind of counter the exiled card has, and whether it is played without paying its mana cost.
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter names a kind of counter');
+      }
+      if (e.free !== undefined && e.free !== true) {
+        issue(out, `${path}.free`, 'free must be true when present');
+      }
+      break;
     case 'putOneOfTriggerCards':
       // CR 603.2c (issue 102, Colossal Grave-Reaver): the cards a batch `putIntoGraveyard` trigger saw put into a graveyard, one of which is put onto the battlefield.
       if (scope.triggerCards !== true) {

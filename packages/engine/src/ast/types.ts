@@ -2390,6 +2390,16 @@ export type Effect =
    */
   | { readonly kind: 'exileFromTriggerCards' }
   /**
+   * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker; CR 608.2d, 601.2, 305.1, 118.9,
+   * 122.1): the controller chooses one of the cards in exile that an opponent owns and that has a `counter` counter on it (nothing is asked with one; nothing happens with none), then, until
+   * end of turn, may play it (a land) or cast it (a spell) as though it were in their hand, paying no mana cost when `free` (additional costs are paid). The card chosen is what `moved` names.
+   */
+  | {
+      readonly kind: 'mayPlayCounterCard';
+      readonly counter: string;
+      readonly free?: true;
+    }
+  /**
    * "Whenever one or more creature cards are put into your graveyard from your library, put one of them onto the battlefield." (issue 102, Colossal Grave-Reaver; CR 603.2c, 608.2d,
    * 400.7, 110.2a): of the cards that triggered this ability (`triggerCards`: the cards a batch `putIntoGraveyard` trigger saw put into a graveyard, as the objects they became) the ones
    * still in a graveyard, the controller chooses one (nothing is asked with one; nothing happens with none) and puts it onto the battlefield under their control. The card put there is
@@ -6349,6 +6359,17 @@ export type Replacement =
    * several apply to one creature the one of the oldest permanent is used and no choice is offered (CR 616.1, see
    * `docs/ROADMAP.md`).
    */
+  /**
+   * "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it." (issue 102, Dauthi Voidwalker; CR 614.1a, 400.3, 122.1): a replacement
+   * effect of a permanent on the battlefield for every card (never a token) that would be put into the graveyard of an opponent of its controller, from any zone (the battlefield, a hand,
+   * a library, the stack): it is exiled instead, with one `counter` counter on it, so a creature never dies. It is the ability of a permanent on the battlefield, lost with "loses all abilities".
+   * When several apply to one card the oldest permanent's is used and no choice is offered (CR 616.1, see `docs/ROADMAP.md`).
+   */
+  | {
+      readonly kind: 'exileInsteadOfOpponentGraveyard';
+      /** The counter the card is exiled with ("with a void counter on it"). */
+      readonly counter: string;
+    }
   | {
       readonly kind: 'wouldDie';
       readonly what: ObjectFilter;

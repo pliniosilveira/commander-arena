@@ -719,3 +719,89 @@ describe('"Once during each of your turns, you may cast a creature spell from yo
     g.expect.illegal(0, { cast: 'Grizzly Bears' });
   });
 });
+
+describe('Dauthi Voidwalker’s replacement, built by hand (CR 614.1a, 122.1)', () => {
+  test('a card that would go to an opponent’s graveyard is exiled with a void counter, from any zone', () => {
+    const voidwalker = {
+      ...parsed('SYNTHETIC Parsed Voidwalker', 'Creature — Rogue', '', {
+        manaCost: '{B}{B}',
+        power: '3',
+        toughness: '2',
+        colors: ['B'],
+      }),
+    };
+    const withReplacement = {
+      ...voidwalker,
+      faces: voidwalker.faces.map((f) => ({
+        ...f,
+        abilities: [
+          {
+            kind: 'replacement' as const,
+            replacement: { kind: 'exileInsteadOfOpponentGraveyard' as const, counter: 'void' },
+          },
+        ],
+      })),
+    };
+    const mill = parsed('SYNTHETIC Parsed Void Mill', 'Sorcery', 'Target player mills two cards.', {
+      manaCost: '{U}',
+      colors: ['U'],
+    });
+    const g = scenario()
+      .seat(0)
+      .define(withReplacement)
+      .define(mill)
+      .battlefield(withReplacement.name, 'Island')
+      .hand(mill.name)
+      .library('Island', 'Island')
+      .seat(1)
+      .library('Serra Angel', 'Grizzly Bears', 'Plains')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(mill.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'exile', { seat: 1 });
+    g.expect.counters({ name: 'Serra Angel', zone: 'exile', seat: 1 }, { void: 1 });
+    // The caster's own spell goes to its owner's graveyard as usual.
+    g.expect.zone(mill.name, 'graveyard', { seat: 0 });
+  });
+});
+
+describe('Dauthi Voidwalker, whole: milled cards are exiled with void counters and one can be played for free (CR 614.1a, 608.2d, 118.9, 122.1)', () => {
+  const walker = parsed(
+    'SYNTHETIC Parsed Walker',
+    'Creature — Dauthi Rogue',
+    "Shadow\nIf a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it.\n{T}, Sacrifice ~: Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost.",
+    { manaCost: '{B}{B}', power: '3', toughness: '2', colors: ['B'] },
+  );
+  const mill = parsed('SYNTHETIC Parsed Walker Mill', 'Sorcery', 'Target player mills one card.', {
+    manaCost: '{U}',
+    colors: ['U'],
+  });
+  test('the milled card is exiled with a counter and then cast without paying its mana cost', () => {
+    const g = scenario()
+      .seat(0)
+      .define(walker)
+      .define(mill)
+      .battlefield(walker.name, 'Island')
+      .hand(mill.name)
+      .library('Island', 'Island')
+      .seat(1)
+      .library('Lightning Bolt', 'Plains')
+      .seat(0)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(mill.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.zone('Lightning Bolt', 'exile', { seat: 1 });
+    g.act(0).activate(walker.name);
+    g.passAll();
+    g.expect.zone(walker.name, 'graveyard', { seat: 0 });
+    g.act(0).cast(
+      { name: 'Lightning Bolt', zone: 'exile', seat: 1 },
+      { alternative: 'free', targets: [{ player: 1 }] },
+    );
+    g.passAll();
+    g.expect.life(1, 37);
+  });
+});

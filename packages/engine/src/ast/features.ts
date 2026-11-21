@@ -454,6 +454,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
     'exileFromTriggerCards',
+    // Issue 102 (Dauthi Voidwalker): "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost".
+    'mayPlayCounterCard',
     // Issue 102 (Colossal Grave-Reaver): "put one of them onto the battlefield" of a batch of cards put into a graveyard.
     'putOneOfTriggerCards',
     // Twilight Diviner: "create a token that's a copy of one of them" of the permanents a batch enters trigger saw (CR 603.2c, 707.2).
@@ -751,6 +753,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'asEntersChoose',
     // D-133: "If a nontoken creature an opponent controls would die, instead exile it and create a token".
     'wouldDie',
+    // Issue 102 (Dauthi Voidwalker): "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it".
+    'exileInsteadOfOpponentGraveyard',
     // D-149: "If you would gain life, you gain that much life plus 1 instead", "each other Angel you control enters with an
     // additional +1/+1 counter on it".
     'lifeGainBonus',
@@ -2791,6 +2795,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
+  mayPlayCounterCard: true,
   putOneOfTriggerCards: true,
   copyOneOfTriggerCards: true,
   fight: true,
@@ -3005,6 +3010,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersPrepared: true,
   asEntersChoose: true,
   wouldDie: true,
+  exileInsteadOfOpponentGraveyard: true,
   lifeGainBonus: true,
   lifeGainDouble: true,
   countersPlus: true,

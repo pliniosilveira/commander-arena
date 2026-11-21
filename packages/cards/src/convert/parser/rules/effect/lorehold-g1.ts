@@ -177,6 +177,45 @@ export const EFFECT_PUT_ONE_PER_GRAVEYARD = defineRule<Clauses>({
 });
 
 /**
+ * `effect.play-chosen-void-card`: "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker;
+ * CR 608.2d, 601.2, 305.1, 118.9, 122.1): the controller chooses one such card in exile and may play it this turn for no mana cost. Two sentences that `segment.ts` keeps together. The
+ * engine's `mayPlayCounterCard`. Not read: another counter, "target", your own cards, "cast" only, paying the mana cost, "until end of turn" spelled otherwise.
+ */
+export const EFFECT_PLAY_CHOSEN_VOID_CARD = defineRule<Clauses>({
+  id: 'effect.play-chosen-void-card',
+  family: 'effect',
+  leading: ['choose'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 601.2 (Casting Spells)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 122.1 (Counters)',
+  ],
+  examples: [
+    'choose an exiled card an opponent owns with a void counter on it. you may play it this turn without paying its mana cost',
+  ],
+  rejects: [
+    'choose an exiled card an opponent owns with a void counter on it',
+    'choose an exiled card an opponent owns with a void counter on it. you may play it this turn',
+    'choose an exiled card an opponent owns with a time counter on it. you may play it this turn without paying its mana cost',
+    'choose an exiled card you own with a void counter on it. you may play it this turn without paying its mana cost',
+    'choose target exiled card an opponent owns with a void counter on it. you may play it this turn without paying its mana cost',
+    'choose an exiled card an opponent owns with a void counter on it. you may cast it this turn without paying its mana cost',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.play-chosen-void-card';
+    const r = spanned(
+      pattern(
+        /choose an exiled card an opponent owns with a void counter on it\. you may play it this turn without paying its mana cost(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    return { ok: true, value: [makeClause(id, 'mayPlayVoidCard', {}, span)], pos: r.pos };
+  },
+});
+
+/**
  * `effect.shuffle-cards-into-library`: "shuffle any number of target cards from your graveyard into your library", "shuffle target card from your graveyard into your library" (CR 701.24c,
  * 701.24d, 404.1: the cards go into your library, which is shuffled even when no card is there). The cards are the targets of a phrase of your own graveyard, one or any number. Not read: a
  * graveyard that is not yours, "their library", "on top of", a list, "all", "up to", a count.
@@ -288,6 +327,7 @@ export const LOREHOLD_G1_EFFECT_RULES = [
   quietly(EFFECT_REPEAT_PROCESS),
   quietly(EFFECT_EXILE_ONE_OF_THEM),
   quietly(EFFECT_PUT_ONE_PER_GRAVEYARD),
+  quietly(EFFECT_PLAY_CHOSEN_VOID_CARD),
   quietly(EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD),
   quietly(EFFECT_SHUFFLE_CARDS_INTO_LIBRARY),
   quietly(EFFECT_DEAL_DAMAGE_TO_ITSELF),

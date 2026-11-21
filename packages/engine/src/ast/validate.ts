@@ -373,6 +373,12 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;
+    case 'exileInsteadOfOpponentGraveyard':
+      // Issue 102 (Dauthi Voidwalker): the counter the exiled card gets.
+      if (typeof r.counter !== 'string' || r.counter === '') {
+        issue(out, `${path}.counter`, 'counter names a kind of counter');
+      }
+      break;
     case 'wouldDie':
       // D-133: the creatures that would die, what happens instead, and tokens made at the same time.
       checkFilter(r.what, `${path}.what`, out);
