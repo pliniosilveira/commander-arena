@@ -46,30 +46,30 @@ test('every shipped challenge is a valid, fully supported deck', async () => {
   }
 });
 
-test('Medium gives the opponent its emblems; Easy gives none', async () => {
+test('Hard gives the opponent its emblems; Easy gives none', async () => {
   const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
   const challenges = preconsOf(CHALLENGES.snapshots);
   const base = { seed: 1, humanDeck: 'synthetic-mine', challenge: 'witch-king-of-angmar' };
-  const medium = await startChallengeOptions(precons, challenges, { ...base, level: 'medium' });
-  expect(medium.ok).toBe(true);
-  if (medium.ok) expect(medium.options.aiEmblems?.length).toBe(2);
+  const hard = await startChallengeOptions(precons, challenges, { ...base, level: 'hard' });
+  expect(hard.ok).toBe(true);
+  if (hard.ok) expect(hard.options.aiEmblems?.length).toBe(2);
   const easy = await startChallengeOptions(precons, challenges, base);
   expect(easy.ok && easy.options.aiEmblems === undefined).toBe(true);
 });
 
-test('Medium refuses a challenge that has no emblems', async () => {
+test('Hard refuses a challenge that has no emblems', async () => {
   const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
   const challenges = preconsOf([await playableSnapshot('synthetic-challenge')]);
   const result = await startChallengeOptions(precons, challenges, {
     seed: 1,
     humanDeck: 'synthetic-mine',
     challenge: 'synthetic-challenge',
-    level: 'medium',
+    level: 'hard',
   });
   expect(result.ok).toBe(false);
 });
 
-test('a Medium game against the real Witch-king deck starts with its emblems in the AI command zone', async () => {
+test('a Hard game against the real Witch-king deck starts with its emblems in the AI command zone', async () => {
   const { GameHost } = await import('../src/game/host');
   const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
   const challenges = preconsOf(CHALLENGES.snapshots);
@@ -77,7 +77,7 @@ test('a Medium game against the real Witch-king deck starts with its emblems in 
     seed: 1,
     humanDeck: 'synthetic-mine',
     challenge: 'witch-king-of-angmar',
-    level: 'medium',
+    level: 'hard',
   });
   expect(result.ok).toBe(true);
   if (!result.ok) return;

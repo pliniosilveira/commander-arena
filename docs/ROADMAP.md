@@ -569,4 +569,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Can't be blocked except by" is read for one creature type only; "its controller may ..." stays unread when the clause says "you" or "your".
 - Replicate given by Hatchery Sliver is not given to a spell with {X} in its mana cost.
 - Encore given to graveyard cards is skipped for a card with an Encore of its own.
-- The Medium challenge emblems are written as AST: "if it's your first turn of the game" and "a creature you control named X" are not read by the Oracle text parser.
+- The Hard challenge emblems are written as AST: "if it's your first turn of the game" and "a creature you control named X" are not read by the Oracle text parser.

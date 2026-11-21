@@ -59,7 +59,7 @@ export function Versus({ view }: { view: GameView }) {
   const mine = commanderOf(view.seats.find((s) => s.id === view.viewer));
   const theirSeat = view.seats.find((s) => s.id !== view.viewer);
   const theirs = commanderOf(theirSeat);
-  // The emblems the opponent starts with (the Medium challenges), beside its deck.
+  // The emblems the opponent starts with (the Hard challenges), beside its deck.
   const emblems = theirSeat?.command.filter((o) => o.emblem === true) ?? [];
   return (
     <div className="dec-versus-wrap">

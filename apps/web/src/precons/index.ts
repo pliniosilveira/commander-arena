@@ -11,8 +11,8 @@ export {
   type ChallengeEmblem,
   type ChallengeLevel,
   emblemsFor,
-  MEDIUM_EMBLEMS,
-} from './challenges/medium';
+  HARD_EMBLEMS,
+} from './challenges/hard';
 export {
   blurbOf,
   type CommanderLook,

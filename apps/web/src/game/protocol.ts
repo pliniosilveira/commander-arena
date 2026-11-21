@@ -65,7 +65,7 @@ export interface NewGameOptions {
    * the host's default, so a host built without it behaves as before M7d.
    */
   readonly ai?: AiKind;
-  /** Emblems the opponent owns from the start (the Medium level of the challenges): the engine's abilities and the text the emblem shows. */
+  /** Emblems the opponent owns from the start (the Hard level of the challenges): the engine's abilities and the text the emblem shows. */
   readonly aiEmblems?: readonly { readonly text: string; readonly abilities: readonly Ability[] }[];
 }
 
