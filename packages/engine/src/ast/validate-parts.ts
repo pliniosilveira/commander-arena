@@ -3378,6 +3378,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'triggerPlayerIsOpponent':
+    case 'triggerPlayerStat':
+      // CR 603.2b, 608.2c: read as the instruction comes up, from the player the event is about: only in a conditional effect of a trigger about a player (`checkEffectCondition`).
+      issue(
+        out,
+        path,
+        `${c.kind} reads the player the event of a trigger is about as an instruction comes up: it is only valid in a conditional effect of such a trigger, not as an intervening "if" or a static condition`,
+      );
+      break;
     case 'attackingMostLife':
       // D-151 (Dethrone): read from the combat of the source, which must be an attacking creature.
       break;
@@ -4832,6 +4841,27 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
           path,
           'didPrevious ("if you do") needs a "may" effect before it in the sequence (or an effect whose doing it can tell: discard, sacrifice, exile, move, draw, mill)',
         );
+      }
+      break;
+    case 'triggerPlayerIsOpponent':
+    case 'triggerPlayerStat':
+      // CR 603.2b, 402.1, 608.2c (Fevered Visions): "if the player is your opponent and has four or more cards in hand": the player the event is about.
+      if (scope.triggerPlayer !== true) {
+        issue(
+          out,
+          path,
+          `${c.kind} reads the player the event is about: it needs a triggered ability whose event is about a player`,
+        );
+      }
+      if (c.kind === 'triggerPlayerStat') {
+        if (!isOneOf(c.stat, PLAYER_STATS))
+          issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+        if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+          issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+        }
+        if (!Number.isSafeInteger(c.compare?.value)) {
+          issue(out, `${path}.compare.value`, 'a player stat is compared with a whole number');
+        }
       }
       break;
     case 'and':

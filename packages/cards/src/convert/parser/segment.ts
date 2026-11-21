@@ -692,6 +692,13 @@ const IF_REVEALED_CARD =
  * together for `effect.reveal-top-branches`. A list of types may hold a comma, which `IF_REVEALED_CARD` does not allow.
  */
 const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
+/**
+ * "Each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~." (Federation Fleet deck, Ambassador K'Ehleyr, CR
+ * 701.20a, 608.2c): the second sentence counts the cards the first one revealed, so the two are one instruction, kept together for `effect.each-player-reveals-then-draws`.
+ */
+const EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE =
+  /(?:^|, )each player reveals the top card of their library, then draws a card\.$/i;
+const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
@@ -1085,6 +1092,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, FOR_EACH_PERMANENT_DIFFERENT_OPPONENT) &&
       said(b, EACH_OPPONENT_GAINS_CONTROL)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE) &&
+      said(b, FOR_EACH_REVEALED_THIS_WAY)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

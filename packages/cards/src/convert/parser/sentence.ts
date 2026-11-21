@@ -190,6 +190,10 @@ const LEAD_CONDITIONS = [
   'condition.card-types-among',
   // Prize Pig: "Then if there are three or more ribbon counters on ~, remove those counters and untap it." (CR 122.1, 608.2c).
   'condition.there-are-counters-on-self',
+  // Kes, Evolving Telepath: "Then if she has nine or more time counters on her, sacrifice her." (CR 122.1, 608.2c).
+  'condition.this-counter-count',
+  // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
+  'condition.the-player-is-opponent-with-cards',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,

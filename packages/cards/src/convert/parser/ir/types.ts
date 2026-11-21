@@ -786,6 +786,13 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
     // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
     | { readonly kind: 'aPlayerCardsInHand'; readonly compare: IrComparison }
+    // "the player is your opponent and has four or more cards in hand" (Fevered Visions, CR 603.2b, 102.2, 402.1): the player the event of the trigger is about is an
+    // opponent of the controller (`opponent`) and has a hand of that size (`cardsInHand`); at least one of the two
+    | {
+        readonly kind: 'thePlayerIs';
+        readonly opponent?: true;
+        readonly cardsInHand?: IrComparison;
+      }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }

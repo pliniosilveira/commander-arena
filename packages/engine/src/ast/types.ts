@@ -5834,6 +5834,22 @@ export type Condition =
    */
   | { readonly kind: 'triggerPlayerHasMore'; readonly stat: PlayerStat }
   /**
+   * "If the player is your opponent" (Fevered Visions; CR 603.2b, 102.2, 608.2c): the player the event of the trigger is about (`triggerPlayer`: the active player of a step
+   * trigger, the player who drew, ...) is an opponent of the controller of the ability, as the instruction comes up. False when there is no such player. Only in a `conditional`
+   * effect of a triggered ability whose event is about a player, not an intervening "if" (which would read the player as the ability triggers).
+   */
+  | { readonly kind: 'triggerPlayerIsOpponent' }
+  /**
+   * "If the player ... has four or more cards in hand" (Fevered Visions; CR 402.1, 119.1, 608.2c): the player the event of the trigger is about has a `stat` that meets `compare`,
+   * as the instruction comes up (the number of cards in their hand, their life total, the creatures or lands they control). False when there is no such player. Only in a
+   * `conditional` effect of a triggered ability whose event is about a player, as `triggerPlayerIsOpponent`.
+   */
+  | {
+      readonly kind: 'triggerPlayerStat';
+      readonly stat: PlayerStat;
+      readonly compare: NumberComparison;
+    }
+  /**
    * "As long as there are fewer than eight cards in your graveyard" (D-229, CR 404.1): the number of cards in the graveyard of the controller of the thing
    * that asks meets the comparison (`atMost` 7 is "fewer than eight"). It reads no characteristic, so a static ability that works in layer 4 may have it.
    */

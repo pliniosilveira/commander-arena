@@ -147,7 +147,8 @@ function classify(raw: string): Pronoun | null {
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
   if (/^that (?:[\p{L}-]+ )+card$/u.test(word)) return { kind: 'single', type: null };
-  if (word === 'it' || word === 'her' || word === 'him') return { kind: 'single', type: null };
+  if (word === 'it' || word === 'her' || word === 'him' || word === 'she' || word === 'he')
+    return { kind: 'single', type: null };
   // "the creature you control" (stage P32, D-147): the most recent object of the text that says it is "you control".
   const controlled = /^the (\w+) you control$/.exec(word);
   if (controlled?.[1] !== undefined) {
@@ -737,7 +738,13 @@ class Binder {
             test?.kind === 'controlsThat' ||
             test?.kind === 'manaValueAtMostAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
-            : s.condition;
+            : // "Then if she has nine or more time counters on her, ..." (Kes, CR 122.1): the pronoun of the count is the permanent the sentences before it named.
+              s.condition !== undefined &&
+                test?.kind === 'amountIs' &&
+                test.amount.kind === 'countersOn' &&
+                test.amount.of.det === 'anaphor'
+              ? { ...s.condition, test: { ...test, amount: this.amount(test.amount) } }
+              : s.condition;
         // "Target opponent may have you draw three cards" (stage P52, D-210): the player asked is named before the clauses, and later sentences may say "that player".
         const mayBy =
           s.mayBy === undefined ? undefined : { ...s.mayBy, who: this.noun(s.mayBy.who) };

@@ -316,6 +316,26 @@ export function lowerCondition(
       const { cmp, value } = test.compare;
       return ok({ kind: 'aPlayerCardsInHand', compare: { cmp, value } });
     }
+    case 'thePlayerIs': {
+      // CR 603.2b, 102.2, 402.1, 608.2c (Fevered Visions): "the player" is the player the event of the trigger is about, read as the instruction comes up. A trigger that has
+      // no such player (the lowering of the trigger says which "that player" it has) leaves the condition unread.
+      if (ctx?.thatPlayer?.selector.kind !== 'triggerPlayer') return failure(c, []);
+      const terms: Condition[] = [];
+      if (test.opponent === true) {
+        const blocked = missingFeatures(['condition:triggerPlayerIsOpponent']);
+        if (blocked.length > 0) return failure(c, blocked);
+        terms.push({ kind: 'triggerPlayerIsOpponent' });
+      }
+      if (test.cardsInHand !== undefined) {
+        const blocked = missingFeatures(['condition:triggerPlayerStat']);
+        if (blocked.length > 0) return failure(c, blocked);
+        const { cmp, value } = test.cardsInHand;
+        terms.push({ kind: 'triggerPlayerStat', stat: 'cardsInHand', compare: { cmp, value } });
+      }
+      const [only, ...more] = terms;
+      if (only === undefined) return failure(c, []);
+      return ok(more.length === 0 ? only : { kind: 'and', terms });
+    }
     case 'paired': {
       // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
       // ability about the source itself (as for "it was kicked").
@@ -870,6 +890,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectStat',
   'condition:putCountersThisTurn',
   'condition:triggerPlayerHasMore',
+  'condition:triggerPlayerIsOpponent',
+  'condition:triggerPlayerStat',
   'condition:thisMatches',
   'condition:escaped',
   'condition:and',

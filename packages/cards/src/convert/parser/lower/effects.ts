@@ -122,6 +122,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
+import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
@@ -2570,6 +2571,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
   ...WITHERBLOOM_A_LOWERINGS,
+  // Federation Fleet deck, group B (Ambassador K'Ehleyr): every player reveals the top card of their library and draws a card, a counter for each nonland card revealed.
+  EACH_PLAYER_REVEALS_THEN_DRAWS,
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
@@ -2753,6 +2756,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
         kind === 'diesThisWay' ||
+        kind === 'thePlayerIs' ||
         kind === 'cardsExiledWithSelf'
         ? []
         : missingFeatures([`condition:${kind}`]),
