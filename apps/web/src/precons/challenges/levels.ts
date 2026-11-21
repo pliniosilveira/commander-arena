@@ -32,22 +32,20 @@ const FIRST_UPKEEP_BASIC_LAND: ChallengeEmblem = {
   ],
 };
 
-/** No limit per turn, on purpose: each Nazgûl that enters fetches another (an experiment). */
-const NAZGUL_FETCHES_NAZGUL: ChallengeEmblem = {
-  text: 'Whenever a creature named Nazgûl enters under your control, search your library for a card named Nazgûl, put it into your hand, then shuffle.',
+/** The first-upkeep test of the land emblem, to put a card named Nazgûl onto the battlefield. */
+const FIRST_UPKEEP_NAZGUL: ChallengeEmblem = {
+  text: 'At the beginning of your first upkeep, search your library for a card named Nazgûl, put it onto the battlefield, then shuffle.',
   abilities: [
     {
       kind: 'triggered',
-      trigger: {
-        kind: 'entersBattlefield',
-        what: { types: ['creature'], named: 'Nazgûl', controller: 'you' },
-      },
+      trigger: { kind: 'upkeep', whose: 'you' },
+      interveningIf: { kind: 'ownTurnNumber', compare: { cmp: 'equal', value: 1 } },
       effect: {
         kind: 'search',
         player: { kind: 'you' },
         filter: { named: 'Nazgûl' },
         max: 1,
-        destinations: [{ zone: 'hand', count: 1 }],
+        destinations: [{ zone: 'battlefield', count: 1 }],
         reveal: false,
         shuffle: true,
       },
@@ -95,7 +93,15 @@ const EMBLEMS: Readonly<
   Record<'medium' | 'hard', Readonly<Record<string, readonly ChallengeEmblem[]>>>
 > = {
   medium: { 'witch-king-of-angmar': [FIRST_TURN_CALL_OF_THE_RING, UPKEEP_GAIN_2] },
-  hard: { 'witch-king-of-angmar': [FIRST_UPKEEP_BASIC_LAND, NAZGUL_FETCHES_NAZGUL] },
+  // Hard: the two of Medium, a basic land and a Nazgûl on the first upkeep.
+  hard: {
+    'witch-king-of-angmar': [
+      FIRST_TURN_CALL_OF_THE_RING,
+      UPKEEP_GAIN_2,
+      FIRST_UPKEEP_BASIC_LAND,
+      FIRST_UPKEEP_NAZGUL,
+    ],
+  },
 };
 
 /** The emblems the opponent owns at `level`; none at Easy. */

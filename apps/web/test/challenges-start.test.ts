@@ -46,19 +46,19 @@ test('every shipped challenge is a valid, fully supported deck', async () => {
   }
 });
 
-test.each(['medium', 'hard'] as const)(
-  '%s gives the opponent two emblems; Easy gives none',
-  async (level) => {
-    const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
-    const challenges = preconsOf(CHALLENGES.snapshots);
-    const base = { seed: 1, humanDeck: 'synthetic-mine', challenge: 'witch-king-of-angmar' };
-    const result = await startChallengeOptions(precons, challenges, { ...base, level });
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.options.aiEmblems?.length).toBe(2);
-    const easy = await startChallengeOptions(precons, challenges, base);
-    expect(easy.ok && easy.options.aiEmblems === undefined).toBe(true);
-  },
-);
+test.each([
+  ['medium', 2],
+  ['hard', 4],
+] as const)('%s gives the opponent %i emblems; Easy gives none', async (level, count) => {
+  const precons = preconsOf([await playableSnapshot('synthetic-mine')]);
+  const challenges = preconsOf(CHALLENGES.snapshots);
+  const base = { seed: 1, humanDeck: 'synthetic-mine', challenge: 'witch-king-of-angmar' };
+  const result = await startChallengeOptions(precons, challenges, { ...base, level });
+  expect(result.ok).toBe(true);
+  if (result.ok) expect(result.options.aiEmblems?.length).toBe(count);
+  const easy = await startChallengeOptions(precons, challenges, base);
+  expect(easy.ok && easy.options.aiEmblems === undefined).toBe(true);
+});
 
 test.each(['medium', 'hard'] as const)(
   '%s refuses a challenge that has no emblems',
@@ -77,7 +77,7 @@ test.each(['medium', 'hard'] as const)(
 
 test.each([
   ['medium', ['Call of the Ring', 'gain 2 life']],
-  ['hard', ['first upkeep', 'named Nazgûl']],
+  ['hard', ['Call of the Ring', 'gain 2 life', 'basic land', 'card named Nazgûl']],
 ] as const)(
   'a %s game against the real Witch-king deck starts with its emblems in the AI command zone',
   async (level, texts) => {
