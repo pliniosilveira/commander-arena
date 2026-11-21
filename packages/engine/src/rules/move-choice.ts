@@ -200,7 +200,13 @@ export function runChooseMove(
               (id) => instruction.among === undefined || instruction.among.includes(id),
             )
           : controlledCandidates(state, chooser, res.source, instruction.filter);
-  if (legal.length === 0) return { ...done(state), lastMoved: [], ...restart };
+  // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
+  // shown it even when none can be chosen; an empty hand shows nothing.
+  const looked =
+    instruction.handOf === undefined ? [] : zoneList(state, 'hand', instruction.handOf);
+  if (legal.length === 0 && looked.length === 0) {
+    return { ...done(state), lastMoved: [], ...restart };
+  }
   const optional = instruction.optional === true;
   // CR 205.2a: "any number of cards ... with four or more card types among them": with no way to reach that many card types among the candidates nothing can be chosen,
   // so nothing is asked (and "if you do" reads that nothing was done).
@@ -242,40 +248,46 @@ export function runChooseMove(
         zone,
         ...(instruction.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
         legal,
+        // CR 402.3: every card of the hand looked at (`looked`), which only `seat` may see; `legal` are the ones that may be chosen.
+        ...(looked.length === 0 ? {} : { looked }),
         min,
         max,
         reveal: zone !== 'hand',
         ...(instruction.minCardTypes === undefined
           ? {}
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
-        prompt: `Choose ${
-          instruction.minCardTypes !== undefined
-            ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-            : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-        } ${
-          instruction.among !== undefined && zone === 'exile'
-            ? 'from among the cards exiled this way'
-            : instruction.among !== undefined
-              ? 'from among the cards put into your graveyard'
-              : zone === 'exile'
-                ? 'exiled with this permanent'
-                : instruction.graveyardOf !== undefined
-                  ? instruction.graveyardOf === chooser
-                    ? 'from your graveyard'
-                    : "from an opponent's graveyard"
-                  : instruction.alsoGraveyard === true
-                    ? 'from your hand or graveyard'
-                    : zone === 'command'
-                      ? 'from your command zone'
-                      : instruction.handOf !== undefined
-                        ? 'from their hand'
-                        : `from your ${zone}`
-        } to put ${WHERE[instruction.to]}`.replace(
-          'from among the cards put into your graveyard',
-          instruction.anyOwner === true
-            ? 'from among the cards put into a graveyard'
-            : 'from among the cards put into your graveyard',
-        ),
+        prompt:
+          legal.length === 0
+            ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
+              `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
+            : `Choose ${
+                instruction.minCardTypes !== undefined
+                  ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                  : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+              } ${
+                instruction.among !== undefined && zone === 'exile'
+                  ? 'from among the cards exiled this way'
+                  : instruction.among !== undefined
+                    ? 'from among the cards put into your graveyard'
+                    : zone === 'exile'
+                      ? 'exiled with this permanent'
+                      : instruction.graveyardOf !== undefined
+                        ? instruction.graveyardOf === chooser
+                          ? 'from your graveyard'
+                          : "from an opponent's graveyard"
+                        : instruction.alsoGraveyard === true
+                          ? 'from your hand or graveyard'
+                          : zone === 'command'
+                            ? 'from your command zone'
+                            : instruction.handOf !== undefined
+                              ? 'from their hand'
+                              : `from your ${zone}`
+              } to put ${WHERE[instruction.to]}`.replace(
+                'from among the cards put into your graveyard',
+                instruction.anyOwner === true
+                  ? 'from among the cards put into a graveyard'
+                  : 'from among the cards put into your graveyard',
+              ),
       },
     };
   }

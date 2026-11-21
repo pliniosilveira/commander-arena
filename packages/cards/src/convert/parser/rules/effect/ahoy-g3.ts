@@ -19,7 +19,7 @@ const endsSentence = (ctx: { text: string }, pos: number): boolean =>
  * `effect.look-defenders-hand-put-attacking`: "Look at defending player's hand. You may put a creature card from it onto the battlefield under your control tapped and attacking that
  * player or a planeswalker they control." (CR 508.4, 402.3, 608.2d, 110.2a: the two sentences are one instruction, kept together by `segment.ts`; the creature enters under the
  * control of the controller of the ability, tapped, and joins the combat attacking the defending player, never declared as an attacker). The engine's `moveToZone` of a `choose`
- * with `fromHandOf` the defending player, then `enterAttacking`. The choice of the planeswalker is not offered (`docs/ROADMAP.md`). Not read: another player, another card kind, a
+ * with `fromHandOf` the defending player, then `enterAttacking`. Not read: another player, another card kind, a
  * second "may", another state.
  */
 export const EFFECT_LOOK_DEFENDERS_HAND_PUT_ATTACKING = defineRule<Clauses>({

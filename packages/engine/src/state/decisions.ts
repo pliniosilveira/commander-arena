@@ -619,7 +619,10 @@ export interface ChooseCardsDecision extends DecisionBase {
    *
    * For `'lookTake'` (D-139, "Look at the top six cards of your library. You may reveal an artifact card from among them"): every card
    * looked at, top first, which only `seat` may see (`legal` are the ones that match and may be taken, `min` is 0). The others go where the
-   * effect says once the answer is in. Absent for every other question.
+   * effect says once the answer is in.
+   *
+   * For `'move'` with a hand named by `ChooseSelector.fromHandOf` (CR 402.3, "look at defending player's hand. You may put a creature card from it onto the battlefield"): every card of
+   * that hand, which only `seat` may see (`legal` are the ones that may be chosen, none when no card of the hand can be). Absent for every other question.
    */
   readonly looked?: readonly ObjectId[];
   /**

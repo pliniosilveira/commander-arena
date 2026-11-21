@@ -63,6 +63,8 @@ export function CardPickerPanel({
   const exile = decision.purpose === 'exile';
   const move = decision.purpose === 'move';
   const lookTake = decision.purpose === 'lookTake';
+  // CR 402.3: "look at defending player's hand ... put a creature card from it": the whole hand is shown, only the creature cards can be chosen.
+  const handLook = move && decision.looked !== undefined;
   // D-396 (CR 701.20a): a reveal shows the cards to everyone, a look to this player only.
   const revealedToAll = lookTakeRevealed(decision);
   // D-303 (CR 700.3): the cards to separate into two piles; the cards clicked are pile 1.
@@ -154,22 +156,26 @@ export function CardPickerPanel({
             : discardTitle(decision, objectIndex(view))}
       </h3>
       <p className="dec-sub dec-left">
-        {separate
-          ? 'Click the cards of pile 1; the other cards are pile 2. Either pile may be empty. The cards are revealed to everyone and stay in the library'
-          : cast
-            ? `Choose a card to ${castVerb(decision)} without paying its mana cost, or none`
-            : behold !== null
-              ? beholdHelp(decision, objectIndex(view)).replace(/\.$/, '')
-              : decision.orSingle === undefined
-                ? `Choose ${cardsRange(decision.min, decision.max)}`
-                : `Choose ${cardsRange(decision.max, decision.max)}, or one card marked “${ALONE}”`}
+        {handLook && decision.legal.length === 0
+          ? 'No card in their hand can be put onto the battlefield'
+          : separate
+            ? 'Click the cards of pile 1; the other cards are pile 2. Either pile may be empty. The cards are revealed to everyone and stay in the library'
+            : cast
+              ? `Choose a card to ${castVerb(decision)} without paying its mana cost, or none`
+              : behold !== null
+                ? beholdHelp(decision, objectIndex(view)).replace(/\.$/, '')
+                : decision.orSingle === undefined
+                  ? `Choose ${cardsRange(decision.min, decision.max)}`
+                  : `Choose ${cardsRange(decision.max, decision.max)}, or one card marked “${ALONE}”`}
         {exile ? ' from your graveyard' : ''}
         {lookTake ? LOOK_TAKE_WORDS[takeTo] : ''}.
         {lookTake
           ? revealedToAll
             ? ' Everyone sees these cards.'
             : ' Only you see these cards.'
-          : ''}
+          : handLook
+            ? ' Only you see their hand.'
+            : ''}
         {decision.reveal && search ? ' The cards you find are revealed.' : ''}
         {putOnTop && ordered ? ' The first you pick ends on top.' : ''}
       </p>
@@ -195,14 +201,19 @@ export function CardPickerPanel({
           )}
         </>
       )}
-      {lookTake && others.length > 0 ? (
+      {(lookTake || handLook) && others.length > 0 ? (
         <>
           <p className="dec-sub dec-left">
-            {revealedToAll
-              ? 'Also revealed (cannot be taken):'
-              : 'Also looked at (cannot be taken):'}
+            {handLook
+              ? 'Also in their hand (cannot be chosen):'
+              : revealedToAll
+                ? 'Also revealed (cannot be taken):'
+                : 'Also looked at (cannot be taken):'}
           </p>
-          <ul className="dec-pick-list" aria-label="Other cards looked at">
+          <ul
+            className="dec-pick-list"
+            aria-label={handLook ? 'Other cards in their hand' : 'Other cards looked at'}
+          >
             {others.map((card) => (
               <li key={card.id}>
                 <div className="dec-pick dec-pick-other" aria-disabled="true">
