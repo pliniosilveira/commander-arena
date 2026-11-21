@@ -264,7 +264,9 @@ export function Menu() {
           {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
           onCancel={closeFlow}
           onImport={() => actions.openImport('import')}
-          initialTab={step === 'opponent' ? 'precon' : 'saved'}
+          {...(step === 'opponent' || !choices.some((deck) => deck.kind === 'saved')
+            ? { initialTab: 'precon' as const }
+            : {})}
         />
       )}
     </main>

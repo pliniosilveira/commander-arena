@@ -1,7 +1,7 @@
 /**
  * A step of the start-game flow (issue 53): a dialog that asks for one deck, for you or for the
  * opponent. Two tabs split the choices, "My decks" (decks saved in this browser) and "Precons"
- * (the shipped precons, edited ones included, D-215); "My decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
+ * (the shipped precons, edited ones included, D-215); "My decks" opens first, or "Precons" when no deck is saved; the opponent step opens on "Precons". Decks are listed alphabetically.
  * Tapping a deck, or one of the three Random buttons, chooses it and moves to the next step at once;
  * there is no separate Select button.
  */
@@ -61,7 +61,10 @@ export function DeckDialog({
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
-  const [tab, setTab] = useState<DeckTab>(initialTab ?? 'saved');
+  // With no saved deck, "My Decks" would open empty: open on "Precons" instead.
+  const [tab, setTab] = useState<DeckTab>(
+    initialTab ?? (decks.some((deck) => deck.kind === 'saved') ? 'saved' : 'precon'),
+  );
   const [query, setQuery] = useState('');
   const [colorFilter, setColorFilter] = useState<readonly ColorFilter[]>([]);
   const needle = query.trim().toLowerCase();
