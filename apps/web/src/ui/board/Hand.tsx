@@ -1,4 +1,4 @@
-/** The human's hand, fanned (A19), and the opponent's hand as card backs with a count. */
+/** The human's hand, in a straight row that scrolls sideways (A19), and the opponent's hand as card backs with a count. */
 import type { ObjectView } from '@commander-arena/engine';
 import { type CSSProperties, useEffect, useRef } from 'react';
 import { useDraggable } from '../dnd/DragProvider';
@@ -13,8 +13,6 @@ import { useMeasure } from './measure';
 // whole printed card (488:680): it is big enough to read, so it is not cut to its top as a tile is.
 const BASE_W = 122;
 const BASE_H = 169;
-/** The fan bends at most as much as a hand of 11 cards does; a longer hand spreads the same bend. */
-const FAN_HALF_SPAN = 5;
 /** The closest two cards get, as a share of the card width: past it the hand scrolls instead. */
 const MIN_STEP_SHARE = 0.55;
 /**
@@ -54,18 +52,13 @@ function HandCard({
   const clickable = ix.clickable.has(object.id);
   const selected = ix.selected.has(object.id);
   const dimmed = ix.dimOthers && !clickable && !selected;
-  const mid = (count - 1) / 2;
-  // The bend is capped, so 50 cards do not rotate to the side: the angle and the drop are spread.
-  const span = Math.min(mid, FAN_HALF_SPAN);
-  const offset = mid === 0 ? 0 : ((index - mid) / mid) * span;
   const style = {
     '--hand-w': `${cardW}px`,
-    // The text on the card grows with the card, (the text size setting).
+    // The text on the card grows with the card (the text size setting).
     '--text-scale': scale,
     '--hand-h': `${cardH}px`,
     marginLeft: index === 0 ? 0 : `${step - cardW}px`,
-    '--fan-rot': `${(offset * 2.2).toFixed(2)}deg`,
-    '--fan-drop': `${(restDrop + Math.abs(offset) ** 1.6 * 1.2).toFixed(1)}px`,
+    '--rest-drop': `${restDrop}px`,
     '--z': index + 1,
     // The last card is fully visible; every other one shows only `step` pixels of its left edge.
     '--hand-visible': `${index === count - 1 ? cardW : Math.min(cardW, step)}px`,

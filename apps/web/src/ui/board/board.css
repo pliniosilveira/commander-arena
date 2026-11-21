@@ -1307,14 +1307,14 @@
   cursor: default;
   z-index: var(--z);
   transform-origin: 50% 100%;
-  transform: rotate(var(--fan-rot)) translateY(var(--fan-drop));
+  transform: translateY(var(--rest-drop));
   transition: transform 0.16s ease;
 }
 
 .board-hand-card:hover,
 .board-hand-card:focus-visible {
   z-index: 60;
-  transform: rotate(0deg) translateY(-14px) scale(1.2);
+  transform: translateY(-14px) scale(1.2);
 }
 
 /* ---- Card frame (hand, zone viewer, preview) ------------------------------------------- */
