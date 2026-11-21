@@ -364,7 +364,9 @@ export function pickerCards(view: GameView, decision: ChooseCardsDecision): read
     const { hand, battlefield } = beholdCards(view, decision);
     return [...hand, ...battlefield];
   }
-  if (decision.zone === 'hand') {
+  // CR 402.3: the legal cards of a hand that was looked at (another player's, "defending player's hand") are not in the viewer's hand, so the view lists them in `pendingCards`.
+  const lookedHand = decision.zone === 'hand' && decision.looked !== undefined;
+  if (decision.zone === 'hand' && !lookedHand) {
     const inHand = myHand(view).filter((o) => decision.legal.includes(o.id));
     // D-544: "a land card from your hand or graveyard": the legal cards of the graveyards are listed after those of the hand (a graveyard is public, CR 404.2).
     if (decision.alsoGraveyard !== true) return inHand;

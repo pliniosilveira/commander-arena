@@ -1,5 +1,5 @@
 {
-  "parserVersion": 184,
+  "parserVersion": 185,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -8933,19 +8933,10 @@
     "cd2720c2-522c-4fdc-9cef-9c5ce250fe7b": {
       "name": "Zara, Renegade Recruiter",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ attacks, look at defending player's hand. You may put a creature card from it onto the battlefield under your control tapped and attacking that player or a planeswalker they control. Return that creature to its owner's hand at the beginning of the next end step.",
-          "reason": "notRunnable",
-          "closestRule": "effect.look-defenders-hand-put-attacking",
-          "needs": ["ability:attackTargetChoice"]
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "00adf992"
+      "ast": "18c2c419"
     },
     "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
       "name": "Sunken Hollow",
@@ -11093,7 +11084,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1066,
+      "supported": 1067,
       "total": 1089
     }
   }
