@@ -635,6 +635,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'activatesAbilityX',
     // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" (`countersAdded` with `each`).
     'countersAddedEach',
+    // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
+    'lifeLostBatch',
   ],
   keywordKinds: [
     'flying',
@@ -1906,6 +1908,8 @@ export const TRIGGER_FEATURES = [
   'activatesAbilityX',
   /** "Whenever a -1/-1 counter is put on a creature" (CR 122.6, 603.2): the engine's `countersAdded` with `each`, once for each counter. */
   'countersAddedEach',
+  /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
+  'lifeLostBatch',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -3088,6 +3092,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   entersFromGraveyard: true,
   activatesAbilityX: true,
   countersAddedEach: true,
+  lifeLostBatch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

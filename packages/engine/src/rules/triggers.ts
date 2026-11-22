@@ -1494,6 +1494,8 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
+            // CR 603.2c: "Whenever one or more opponents lose life": one trigger for the losses of these events, however many players lost life.
+            (ability.trigger.kind === 'lifeLost' && ability.trigger.batch === true) ||
             (ability.trigger.kind === 'leftGraveyard' && ability.trigger.each !== true) ||
             ability.trigger.kind === 'exiledFromLibraryOrGraveyard' ||
             (ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true)

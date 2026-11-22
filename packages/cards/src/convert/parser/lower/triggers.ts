@@ -591,12 +591,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you lose life [for the first time each turn]" (CR 119.3, 603.2): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      const blocked = missingFeatures(['trigger:lifeLost']);
+      // "Whenever one or more opponents lose life" (CR 603.2c): one trigger for the losses of one run of events, only of other players and with no ordinal.
+      if (t.batch === true && (who === 'you' || t.firstEachTurn === true)) return failure(t);
+      const blocked = missingFeatures([
+        'trigger:lifeLost',
+        ...(t.batch === true ? (['trigger:lifeLostBatch'] as const) : []),
+      ]);
       if (blocked.length > 0) return failure(t, blocked);
       return ok({
         kind: 'lifeLost',
         who,
         ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+        ...(t.batch === true ? { batch: true as const } : {}),
       });
     }
     case 'countersAdded': {
@@ -1946,6 +1952,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:activatesAbility',
   'trigger:tappedBy',
   'trigger:tapBatch',
+  'trigger:lifeLostBatch',
   'trigger:notAsAttacker',
   'trigger:entersBattlefieldFromGraveyard',
   'trigger:scries',

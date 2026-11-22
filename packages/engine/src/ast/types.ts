@@ -5350,6 +5350,11 @@ export type Trigger =
       readonly kind: 'lifeLost';
       readonly who: 'you' | 'opponent' | 'any';
       readonly firstEachTurn?: true;
+      /**
+       * "Whenever one or more opponents lose life" (CR 603.2c, 119.3): one trigger for the whole run of events in which any player `who` names lost life, however many players
+       * lost it and however many times, not one for each player. `triggerPlayer` is the first of them. Not with `firstEachTurn`, and not with `who` "you" (one player is one event).
+       */
+      readonly batch?: true;
     }
   /**
    * "Whenever you put one or more +1/+1 counters on this creature" (CR 122.6, 122.6a, D-149): once each time counters are put on a

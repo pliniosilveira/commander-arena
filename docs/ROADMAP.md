@@ -574,3 +574,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Encore given to graveyard cards is skipped for a card with an Encore of its own.
 - The Medium and Hard challenge emblems are written as AST: "if it's your first turn of the game" is not read by the Oracle text parser.
 - Tasigur's "an opponent chooses" and Dauthi Voidwalker's exile replacement use the first opponent; with several opponents the choice and the replacement order (CR 616.1) are not offered.
+- "Whenever one or more players lose life" (any player, batched) and "one or more opponents lose life for the first time each turn" are not read; only the opponents batch is (`lifeLost` with `batch`).

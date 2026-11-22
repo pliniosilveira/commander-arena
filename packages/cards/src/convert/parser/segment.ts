@@ -682,6 +682,12 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
  */
 const CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE =
   /(?:^|, )you may cast an instant or sorcery spell from your graveyard with mana value [1-9] or less without paying its mana cost\.$/i;
+/**
+ * "Whenever one or more opponents lose life, you may cast target instant or sorcery card from your graveyard. If that spell would be put into your graveyard, exile it instead." (Scions &
+ * Spellcraft deck, group G, CR 601.2, 614.1a): the rider of a cast that pays the mana cost (`effect.cast-own-graveyard-card`), so the two sentences are one instruction.
+ */
+const CAST_FROM_YOUR_GRAVEYARD_PAID =
+  /(?:^|, )you may cast target [^.,]* cards? from your graveyard\.$/i;
 const CAST_FROM_YOUR_GRAVEYARD_FREE =
   /(?:^|, )you may cast target [^.,]* cards? [^.,]*from your graveyard without paying its mana cost\.$/i;
 
@@ -1157,6 +1163,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_FROM_YOUR_GRAVEYARD_PAID) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||

@@ -29,6 +29,14 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (t.firstEachTurn !== undefined && t.firstEachTurn !== true) {
         issue(out, `${path}.firstEachTurn`, 'firstEachTurn must be true when present');
       }
+      if (t.kind === 'lifeLost' && t.batch !== undefined) {
+        if (t.batch !== true) issue(out, `${path}.batch`, 'batch must be true when present');
+        if (t.who === 'you')
+          issue(out, `${path}.batch`, 'a batch of life loss is of other players');
+        if (t.firstEachTurn === true) {
+          issue(out, `${path}.batch`, 'batch does not go with firstEachTurn');
+        }
+      }
       return true;
     case 'countersAdded':
       checkCountersAddedSubject(t, path, out);
