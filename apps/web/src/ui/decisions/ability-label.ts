@@ -551,6 +551,10 @@ function recipientText(
     case 'combatDamagedByNamed':
       // CR 120.2a: the opponents a creature of this name has dealt combat damage to this game.
       return `each opponent dealt combat damage this game by a creature named ${to.name}`;
+    case 'lostLifeThisTurn':
+      return `each player who lost life this turn`;
+    case 'combatDamagedThisTurn':
+      return `each player who was dealt combat damage this turn`;
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
@@ -733,6 +737,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
     case 'attackedPlayers':
+    case 'lostLifeThisTurn':
+    case 'combatDamagedThisTurn':
     case 'combatDamagedByNamed':
       return { who: 'they', third: false };
     case 'all':

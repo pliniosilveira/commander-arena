@@ -88,6 +88,18 @@ export function playerSubject(
         text: `each opponent dealt combat damage this game by a creature named ${player.name}`,
         base: false,
       };
+    case 'lostLifeThisTurn':
+      // CR 119.3: "each opponent who lost life this turn".
+      return {
+        text: `${playerSubject(player.of, target).text} who lost life this turn`,
+        base: false,
+      };
+    case 'combatDamagedThisTurn':
+      // CR 120.2a: "each opponent who was dealt combat damage by this creature this turn".
+      return {
+        text: `${playerSubject(player.of, target).text} who was dealt combat damage this turn`,
+        base: false,
+      };
     case 'all':
       // "You and target opponent each draw": every member named once, then "each".
       return {
