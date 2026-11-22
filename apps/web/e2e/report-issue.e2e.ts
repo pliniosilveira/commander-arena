@@ -51,3 +51,27 @@ test('Report issue opens a dialog and Submit opens a prefilled GitHub issue', as
   expect(types).toContain('image/png');
   expect(body).toContain('paste it below');
 });
+
+/** A zone viewer (a modal dialog over the board) does not block the button: the report opens above it (issue 469). */
+test('Report issue stays clickable while a zone dialog is open', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => {
+    navigator.mediaDevices.getDisplayMedia = async () => {
+      throw new Error('no capture in this test');
+    };
+  });
+  await page.goto('/?autostart=synthetic-hasty-goblins,swamp-forest&seed=1');
+  await page.getByRole('button', { name: 'Keep', exact: true }).click();
+  await settled(page);
+
+  await page.getByRole('button', { name: /^Open You.* graveyard/i }).click();
+  const zone = page.getByRole('dialog', { name: /graveyard/i });
+  await expect(zone).toBeVisible();
+
+  await page.getByRole('button', { name: 'Report issue' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Report an issue' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox').fill('seen with the graveyard open');
+  await expect(dialog.getByRole('textbox')).toHaveValue('seen with the graveyard open');
+  await expect(zone).toBeVisible();
+});
