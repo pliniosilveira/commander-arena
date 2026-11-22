@@ -23,6 +23,7 @@ import {
 } from './rules/activate';
 import { activationRefusal } from './rules/activate-legality';
 import { isArrangement } from './rules/arrange';
+import { protectorChosenEvent, setProtector } from './rules/battle-protector';
 import { coversCardTypes } from './rules/card-types-choice';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
@@ -544,6 +545,15 @@ function answerChooseOption(
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
+    // CR 704.5y: or, for a battle already on the battlefield, the new protector the state-based actions asked for.
+    if (state.objects[d.source]?.zone === 'battlefield') {
+      const event = protectorChosenEvent(d, option);
+      const resumed = resumeAfterSbaDecision(
+        setProtector({ ...state, pending: null }, d.source, Number(option.slice('seat:'.length))),
+        [event],
+      );
+      return resumed.ok ? ok(resumed.state, [event, ...resumed.events]) : resumed;
+    }
     return finishResolutionAnswer(answerResolutionProtector(state, option));
   }
   if (d.purpose === 'playerChoice') {

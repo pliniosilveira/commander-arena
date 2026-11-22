@@ -39,7 +39,6 @@ import {
   getSeat,
   isSeatZone,
   loseLifeBy,
-  opponentsOf,
   patchObject,
   printedCard,
   removeFromZone,
@@ -53,6 +52,7 @@ import type {
   LastKnownInfo,
 } from '../state/types';
 import { historyCount } from './amounts';
+import { protectorChoices, protectorOption } from './battle-protector';
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
@@ -286,23 +286,11 @@ function recordLki(
   return { ...state, lki: { ...state.lki, [obj.id]: info } };
 }
 
-/** The option of the protector question that stands for `seat` (`seat:<n>`, as the other questions about a player). */
-const protectorOption = (seat: SeatId): string => `seat:${seat}`;
-
 /** Whether the face of `old` that enters is a battle. */
 function entersAsBattle(state: GameState, old: GameObject, faceIndex: number): boolean {
   const card = printedCard(old);
   if (card === null) return false;
   return definitionOf(state, card).faces[faceIndex]?.types.includes('battle') === true;
-}
-
-/**
- * The players who may be the protector of a battle that `controller` controls as it enters: their opponents still in the game (CR 310.12a: only an opponent of a Siege's
- * controller can be its protector, 800.4a: a player who left the game is no longer in it). The engine treats every battle as a Siege: a battle with no battle type, whose protector
- * could only be its controller (CR 310.9a), is in no real card.
- */
-function protectorChoices(state: GameState, controller: SeatId): SeatId[] {
-  return opponentsOf(state, controller);
 }
 
 /**
