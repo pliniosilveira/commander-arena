@@ -856,6 +856,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       // "return target nonland permanent card with mana value X or less from your graveyard ..., where X is ~'s power" (stage P68, D-230, CR 202.3, 601.2c):
       // the X the sentence defines becomes the limit of the filter, read as the targets are chosen.
       let atMost: ObjectFilter['manaValueAtMost'];
+      let exact = false;
       let subject: IrNoun = noun;
       if (noun.filter.manaValueAtMostAmount !== undefined) {
         const missing = missingFeatures(['selector:manaValueAtMost']);
@@ -898,8 +899,15 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           if (!counted.ok) return counted;
           atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
         }
-        const { manaValueAtMostAmount: _amount, ...rest } = noun.filter;
+        const { manaValueAtMostAmount: _amount, manaValueExact: _exact, ...rest } = noun.filter;
         void _amount;
+        void _exact;
+        // "with mana value equal to that spell's mana value" (CR 202.3): the exact value, not at most it.
+        if (noun.filter.manaValueExact === true) {
+          const exactBlocked = missingFeatures(['selector:manaValueExact']);
+          if (exactBlocked.length > 0) return failure(noun, exactBlocked);
+          exact = true;
+        }
         subject = { ...noun, filter: rest };
       }
       if (noun.filter.manaValueAtMostX === true && ctx.xIs === null && ctx.entersX) {
@@ -944,7 +952,14 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       const filter =
         atMost === undefined
           ? withExcept
-          : { ...withExcept, value: { ...withExcept.value, manaValueAtMost: atMost } };
+          : {
+              ...withExcept,
+              value: {
+                ...withExcept.value,
+                manaValueAtMost: atMost,
+                ...(exact ? { manaValueExact: true as const } : {}),
+              },
+            };
       // "target creature with mana value X" (CR 107.3a, 601.2b): the spell announces the X its target is read against (`SpellText.x`).
       if (filter.value.manaValueX === true) ctx.usesX = true;
       // "for each opponent, exile up to one target ... that player controls" (stage P33, D-150, CR 115.1, 601.2c): one slot with at most one

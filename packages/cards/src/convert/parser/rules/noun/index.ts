@@ -381,8 +381,13 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one, two, or three target creature cards from your graveyard',
     // Puca's Covenant (CR 202.3, 122.1): a limit of the counters on the permanent the trigger is about.
     'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
+    // Krile Baldesion (CR 202.3, 603.3d): exactly the mana value of the spell that caused the trigger.
+    "target creature card with mana value equal to that spell's mana value from your graveyard",
   ],
   rejects: [
+    "target creature card with mana value equal to that card's mana value from your graveyard",
+    "target creature card with mana value equal to that spell's mana value",
+
     'one, two, or three target creature card from graveyards',
     'one, two, three target creature cards from graveyards',
     'one, two, or four target creature cards from graveyards',

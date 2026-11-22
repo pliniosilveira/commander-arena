@@ -363,6 +363,8 @@ export function matchesFilterWith(
       return false;
     }
     if (d.manaValue > ctx.manaValueLimit) return false;
+    // CR 202.3: "with mana value equal to that spell's mana value": the limit is the exact value (`manaValueExact`).
+    if (filter.manaValueExact === true && d.manaValue !== ctx.manaValueLimit) return false;
   }
   // CR 107.3a, 202.3 (D-139): "with mana value X", the X of the ability that is resolving.
   if (filter.manaValueX === true) {

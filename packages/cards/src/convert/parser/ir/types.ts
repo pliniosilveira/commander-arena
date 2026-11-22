@@ -336,6 +336,8 @@ export interface IrFilter {
   readonly lesserSharingTypeWithTriggerSpell?: true;
   /** A target's mana value is at most an amount read as the spell resolves (Drown in the Loch, CR 202.3). */
   readonly manaValueAtMostAmount?: IrAmount;
+  /** "with mana value equal to that spell's mana value" (Krile Baldesion, CR 202.3): with `manaValueAtMostAmount`, the mana value is exactly the amount (the engine's `manaValueExact`). */
+  readonly manaValueExact?: true;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
@@ -1476,6 +1478,11 @@ export interface IrSentence extends IrNode {
      * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
      */
     readonly spell?: IrNoun;
+    /**
+     * `nextCast` with `repeat` (CR 603.7): "Whenever you cast a noncreature spell this turn, ..." triggers at every such cast until the end of the turn, where "When you next cast"
+     * triggers once.
+     */
+    readonly repeat?: true;
   };
   /**
    * "When you do, ..." (stage P30, CR 603.12): a reflexive triggered ability, created by the "you may" sentence before it

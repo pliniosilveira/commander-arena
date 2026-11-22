@@ -897,6 +897,11 @@ export interface ObjectFilter {
    */
   readonly manaValueAtMost?: Amount;
   /**
+   * "a creature card with mana value equal to that spell's mana value" (CR 202.3, 603.3d): with `manaValueAtMost`, the mana value of the object must be exactly the amount, not at
+   * most it. Only with `manaValueAtMost`, whose amounts it takes.
+   */
+  readonly manaValueExact?: true;
+  /**
    * "a spell with lesser mana value" (CR 202.3, Baral and Kari Zev): as `manaValueAtMost` with the limit not included: the mana value of the object is less than the amount
    * (the same amounts, `manaValueOf` of the `triggerSubject` of a `castSpell` trigger among them). A filter has one mana value limit.
    */
@@ -3182,6 +3187,11 @@ export type Effect =
       readonly kind: 'delayedCast';
       readonly filter: ObjectFilter;
       readonly effect: Effect;
+      /**
+       * "Whenever you cast a noncreature spell this turn, create a token that's a copy of a non-Saga token you control" (Summon: Good King Mog XII, CR 603.7, 603.7c, 514.2): the delayed
+       * ability triggers at every such cast until the end of the turn, not only the next one. Its effect may also choose a permanent (`chooseObjects`) and copy the one chosen.
+       */
+      readonly repeat?: true;
     }
   /**
    * CR 702.62a (Suspend, D-128): "remove a time counter from it", where "it" is the source: a card in exile that is

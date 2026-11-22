@@ -1956,7 +1956,14 @@ function runEffect(
         ...state,
         delayedTriggers: [
           ...state.delayedTriggers,
-          { source: res.source, controller: res.controller, ability, untilEndOfTurn: true },
+          {
+            source: res.source,
+            controller: res.controller,
+            ability,
+            untilEndOfTurn: true,
+            // CR 603.7: "Whenever you cast ... this turn" triggers at each cast, "when you next cast" at the next one only.
+            ...(effect.repeat === true ? { repeat: true as const } : {}),
+          },
         ],
       });
     }
