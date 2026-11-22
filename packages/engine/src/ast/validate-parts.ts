@@ -164,6 +164,8 @@ export interface Scope {
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: boolean;
+  /** True when the trigger is about exactly one attacked player (`playerAttacksOpponent`, or an `attackBatch` with `eachAttackedPlayer`): only then "that opponent" names one player (CR 508.6). */
+  readonly triggerAttackedSingle?: boolean;
   /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
   readonly triggeredAbility?: boolean;
   /** True in the effect of an activated ability too (issue 345, CR 608.2c): `abilityResolvedTimes` counts the resolutions of a triggered or an activated ability. */
@@ -1579,6 +1581,34 @@ export function checkObjectSelector(
   checkRef(sel as ObjectRef, expect, path, scope, out);
 }
 
+/**
+ * Selectors that can name more than one player (CR 101.4, 800.4): an operand that reads one player ("its life total", "that player adds", "reveals") would read the first
+ * of them and ignore the rest with 3 or 4 seats. `eachOpponent` is one player only in a 1v1 game.
+ */
+export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean {
+  switch (sel?.kind) {
+    case 'eachPlayer':
+    case 'eachOpponent':
+    case 'eachOtherOpponent':
+    case 'eachPlayerExcept':
+    case 'eachPlayerControlling':
+    case 'attackedPlayers':
+    case 'triggerDamagedPlayers':
+    case 'combatDamagedByNamed':
+    case 'opponentsAttackingTriggerPlayer':
+    case 'all':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function checkSinglePlayer(sel: PlayerSelector | undefined, path: string, what: string, out: Out) {
+  if (selectsSeveralPlayers(sel)) {
+    issue(out, path, `${what} reads one player: name a single player (a target, 'you', ...)`);
+  }
+}
+
 export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Scope, out: Out) {
   switch (sel?.kind) {
     case 'you':
@@ -1628,11 +1658,12 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
       break;
     case 'triggerAttackedPlayer':
       // D-648: "that opponent": the player a `playerAttacksOpponent` trigger is about.
-      if (scope.triggerAttacked !== true) {
+      // CR 508.6: an attack batch of a whole declaration may attack several players, so "that opponent" is one player only with `eachAttackedPlayer`.
+      if (scope.triggerAttackedSingle !== true) {
         issue(
           out,
           path,
-          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents or an attack batch",
+          "'triggerAttackedPlayer' is only valid in a triggered ability about one attacked player: a player attacking one of your opponents, or an attack batch with eachAttackedPlayer",
         );
       }
       break;
@@ -2285,9 +2316,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.player !== undefined) {
         if (a.of !== undefined) issue(out, `${path}.player`, 'player and of are two readings');
         checkPlayerSelector(a.player, `${path}.player`, scope, out);
+        checkSinglePlayer(a.player, `${path}.player`, 'commanderCasts', out);
       }
       break;
     case 'lifeTotalOf':
+      // Not held to one player: "a third of their life" (Dire Fleet Ravager) names the players the effect names and is read for each of them (`life-amounts.ts`).
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
       break;
     case 'poisonShortfall':
@@ -2296,6 +2329,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.limit`, 'limit must be a positive integer');
       }
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      checkSinglePlayer(a.player, `${path}.player`, 'poisonShortfall', out);
       break;
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the controller's own experience counters now; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
@@ -5608,7 +5642,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // D-648 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
       if (e.attacking !== undefined) {
-        checkPlayerSelector(e.attacking.at, `${path}.attacking.at`, scope, out);
+        // CR 508.4: with `controllerChooses` the first player an attack batch attacked is only where the token enters; its controller then chooses what it attacks, so a batch that
+        // attacked several players is fine there.
+        checkPlayerSelector(
+          e.attacking.at,
+          `${path}.attacking.at`,
+          e.attacking.controllerChooses === true && scope.triggerAttacked === true
+            ? { ...scope, triggerAttackedSingle: true }
+            : scope,
+          out,
+        );
       }
       // CR 303.4f, 303.4g, 701.3 (issue 89): an Aura token is created attached to a target of the ability (its host is named by the effect, never chosen), and only an Aura token is.
       checkAuraTokenAttachment(e, path, scope, out);
@@ -5980,6 +6023,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // Issue 101: the player who pays is named by `by` ("its controller"), a player selector of the ability.
       if (e.by !== undefined) {
         checkPlayerSelector(e.by, `${path}.by`, scope, out);
+        checkSinglePlayer(e.by, `${path}.by`, 'mayPay', out);
         if (e.effect?.kind === 'reflexive') {
           issue(out, `${path}.by`, 'a payment by another player has no reflexive ability');
         }
@@ -6032,6 +6076,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
       if (e.effect?.kind === 'unlessPays') checkCosts(e.effect.cost, `${path}.effect.cost`, out);
+      // The delayed draw of another player ("its controller draws a card") is bound to one player as the ability is made (CR 603.7c).
+      if (e.effect?.kind === 'draw') {
+        checkSinglePlayer(e.effect.player, `${path}.effect.player`, 'a delayed draw', out);
+      }
       checkDelayedTrigger(
         e,
         path,
@@ -6111,6 +6159,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      checkSinglePlayer(e.player, `${path}.player`, 'delayedCombatDamageToPlayer', out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
@@ -7141,6 +7190,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'revealUntil':
+      if (e.from !== undefined) {
+        checkPlayerSelector(e.from, `${path}.from`, scope, out);
+        // `perPlayer`: every player named reveals from their own library (Consuming Aberration).
+        if (e.perPlayer !== true) checkSinglePlayer(e.from, `${path}.from`, 'revealUntil', out);
+      }
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
       // CR 701.21a (Descendants' Fury): after a sacrifice (or the offer of one) in the same sequence the cards may share a creature type with what was sacrificed.
       checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true, {
@@ -7580,6 +7634,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.player !== undefined) {
         // D-229: the pool of one player a selector names; a fixed production only.
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        checkSinglePlayer(e.player, `${path}.player`, 'addMana', out);
         if (e.mana?.kind !== 'fixed')
           issue(out, `${path}.player`, 'only fixed mana is added to another player');
       }
@@ -7809,7 +7864,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'chooseOne': {
       if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
-      if (e.chooser !== undefined) checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
+      if (e.chooser !== undefined) {
+        checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
+        checkSinglePlayer(e.chooser, `${path}.chooser`, 'chooseOne chooser', out);
+      }
       if (e.optional !== undefined && e.optional !== true) {
         issue(out, `${path}.optional`, 'optional must be true when present');
       }
