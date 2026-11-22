@@ -1,5 +1,5 @@
 {
-  "parserVersion": 187,
+  "parserVersion": 188,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -10705,18 +10705,10 @@
     "f0587c55-06c1-4930-a62e-668f37464ce9": {
       "name": "Jegantha, the Wellspring",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Companion — No card in your starting deck has more than one of the same mana symbol in its mana cost.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b447009c"
+      "ast": "b9cfc0a5"
     },
     "f09278dc-1e67-4cd8-977d-4b3b94430aac": {
       "name": "Ringwraiths",
@@ -11445,7 +11437,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1111,
+      "supported": 1112,
       "total": 1134
     }
   }
