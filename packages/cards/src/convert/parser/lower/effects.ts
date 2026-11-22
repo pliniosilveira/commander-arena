@@ -19,6 +19,7 @@ import type {
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
@@ -1958,8 +1959,15 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // Canopy Gargantuan (CR 608.2c): "that creature" in the count is the creature of the group each placement is for.
+    const eachRef =
+      objectsArg?.kind === 'noun' && objectsArg.det === 'each' ? (objectsArg.ref ?? null) : null;
+    const before = ctx.eachRef;
+    ctx.eachRef = eachRef;
     const count = amountArg(clause, 'count', ctx);
+    ctx.eachRef = before;
     if (!count.ok) return count;
+    const perObject = JSON.stringify(count.value).includes('"eachObject"');
     // Federation Fleet group D (CR 122.6): what a later "if you put ... counters on creatures this way" asks about.
     ctx.putCounters.push({
       counter: counter.name,
@@ -1976,6 +1984,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         objects,
         counter: counter.name,
         count: count.value,
+        ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
       { triggerSubject: true, moved: true, token: true },
@@ -2704,6 +2713,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUANDRIX_D2_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
+  ...ABZAN_SPELLS_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,

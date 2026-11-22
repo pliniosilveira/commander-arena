@@ -449,6 +449,26 @@ function bushidoAbilities(count: number): Ability[] {
 }
 
 /**
+ * CR 702.25a, 702.25b (Flanking): "Whenever this creature becomes blocked by a creature without flanking, the blocking creature gets -1/-1 until end of turn." It triggers once for
+ * each creature that blocks it (CR 509.3d), and each instance of the keyword triggers separately (the expansion is one ability for each instance of the keyword).
+ */
+export const FLANKING_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: {
+    kind: 'becomesBlockedBy',
+    what: { kind: 'this' },
+    by: { types: ['creature'], notKeywords: ['flanking'] },
+  },
+  effect: {
+    kind: 'modifyPt',
+    objects: { kind: 'triggerSources' },
+    power: -1,
+    toughness: -1,
+    duration: 'untilEndOfTurn',
+  },
+};
+
+/**
  * CR 702.101a: "Extort" means "Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1
  * life and you gain life equal to the total life lost this way." The spell that was cast goes on the stack
  * first, so the trigger resolves before it (CR 405.5).
@@ -830,6 +850,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [EVOLVE_ABILITY];
     case 'bushido':
       return bushidoAbilities(ability.keyword.count);
+    case 'flanking':
+      return [FLANKING_ABILITY];
     case 'extort':
       return [EXTORT_ABILITY];
     case 'cascade':

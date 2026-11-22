@@ -1573,7 +1573,7 @@ function lowerDoneReflexive(
   ) {
     return refuse(sentence);
   }
-  if (next.where !== undefined || next.instead === true || next.clauses.some((c) => c.optional)) {
+  if (next.instead === true || next.clauses.some((c) => c.optional)) {
     return refuse(next);
   }
   // A reflexive ability is the last effect of its sequence (`validateCard`).
@@ -1588,8 +1588,34 @@ function lowerDoneReflexive(
   if (only === undefined || rest.length > 0 || !(MAY_KINDS.has(only.kind) || madeToken)) {
     return refuse(sentence);
   }
+  // Tip the Scales (CR 107.3c, 603.12): "When you do, all creatures get -X/-X until end of turn, where X is the sacrificed creature's toughness.": the "where X is" of the
+  // reflexive sentence defines the X its clauses read, as the main loop does for a sentence of its own.
+  const whereAmount = next.where;
+  const defined =
+    whereAmount === undefined
+      ? null
+      : {
+          amount: whereAmount,
+          used: false,
+          lower: () => {
+            const outer = ctx.xIs;
+            ctx.xIs = null;
+            try {
+              return lowerAmount(whereAmount, ctx, 'body.sentence');
+            } finally {
+              ctx.xIs = outer;
+            }
+          },
+        };
+  const outerX = ctx.xIs;
+  if (defined !== null) ctx.xIs = defined;
   const effect = lowerReflexive(next, ctx);
+  ctx.xIs = outerX;
   if (!effect.ok) return effect;
+  if (defined !== null) {
+    if (!defined.used) return refuse(next);
+    ctx.xDefined = true;
+  }
   // "... attached to that token" in the reflexive ability is the token made before it: the ability carries what that resolution made (`moved`).
   if (
     madeToken &&
@@ -1801,6 +1827,7 @@ function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] 
       case 'minus':
         visit(amount.of);
         break;
+      case 'difference':
       case 'extreme':
       case 'sum':
         amount.of.forEach(visit);
@@ -2175,7 +2202,13 @@ function lowerAtThatCombat(
 }
 
 /** How lowering one sentence went: it stopped, or the index of the last sentence it consumed. */
-type StepResult = { readonly stopped: LowerFailure } | { readonly last: number };
+type StepResult =
+  | { readonly stopped: LowerFailure }
+  | {
+      readonly last: number;
+      /** The "where X is ..." of the last sentence a step took was read by the step itself (a reflexive ability, CR 603.12). */
+      readonly whereRead?: true;
+    };
 
 /**
  * One sentence of a body (and the one after it, when an offer to pay takes both): pushes what it lowers onto `steps`.
@@ -2395,7 +2428,10 @@ function lowerStep(
   if (reflexed !== null) {
     if (!reflexed.ok) return stop(reflexed);
     steps.push({ effects: reflexed.value, replaceable: false });
-    return { last: i + 1 };
+    return {
+      last: i + 1,
+      ...(sentences[i + 1]?.where === undefined ? {} : { whereRead: true as const }),
+    };
   }
   // "creatures you control get +1/+1 until end of turn. Untap those creatures." (stage P64, D-217, CR 611.2c): the group the instruction before it named.
   if (first.verb === 'untapThose' || first.verb === 'pumpThose') {
@@ -2926,7 +2962,13 @@ export function lowerSentences(
     if ('stopped' in result) return result.stopped;
     if (defined !== null && !defined.used) return refuse(sentence);
     if (defined !== null) ctx.xDefined = true;
-    if (result.last > i && sentences[result.last]?.where !== undefined) return refuse(sentence);
+    if (
+      result.last > i &&
+      sentences[result.last]?.where !== undefined &&
+      !('whereRead' in result && result.whereRead === true)
+    ) {
+      return refuse(sentence);
+    }
     i = result.last;
   }
   const flat = steps.flatMap((s) => s.effects);

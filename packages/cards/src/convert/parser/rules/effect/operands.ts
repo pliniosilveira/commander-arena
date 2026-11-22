@@ -65,6 +65,8 @@ export const PERMANENT_OPERANDS = [
   'noun.all-tokens',
   // CR 208.1: "all creatures with power greater than target creature's power".
   'noun.all-with-power-above-target',
+  // Expel the Interlopers (CR 208.1): "all creatures with power greater than or equal to the chosen number".
+  'noun.all-with-power-at-least-chosen-number',
   // D-426 (Danitha group 3): "all creatures that aren't enchanted".
   'noun.all-enchanted',
   'noun.each-permanent',
@@ -72,12 +74,17 @@ export const PERMANENT_OPERANDS = [
   'noun.each-type-union',
   // Hylda group 3: "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers',
+  // Abzan Armor deck: "target permanent you own" and "up to two target artifacts and/or enchantments controlled by different players".
+  'noun.target-permanent-you-own',
+  'noun.up-to-targets-controlled-by-different-players',
 ] as const;
 
 /** What a verb that acts on a permanent can also say of the permanent it is on: "untap ~". */
 export const SELF_OR_PERMANENT_OPERANDS = ['noun.self', ...PERMANENT_OPERANDS] as const;
 
 export const GRAVEYARD_OPERANDS = [
+  // Reunion of the House (CR 208.1): "any number of target creature cards with total power 10 or less from your graveyard".
+  'noun.any-number-target-graveyard-cards-total-power',
   'noun.up-to-graveyard-cards',
   'noun.target-graveyard-card',
   'noun.all-graveyard-cards',

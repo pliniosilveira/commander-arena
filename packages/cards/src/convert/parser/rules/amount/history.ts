@@ -31,6 +31,15 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: destroyedOwn.pos,
     };
   }
+  // CR 119.3 (Betor): the life the controller lost this turn, as "gained" below is the life gained.
+  const lost = pattern(/the amount of life you lost this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (lost.ok) {
+    return {
+      ok: true,
+      value: { kind: 'controllerLifeLostThisTurn', span: { start: pos, end: lost.pos } },
+      pos: lost.pos,
+    };
+  }
   const gain = pattern(/the amount of life you gained this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
   if (gain.ok) {
     return {

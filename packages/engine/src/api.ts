@@ -772,7 +772,10 @@ function validPermanentChoice(
     new Set(chosen).size === chosen.length &&
     chosen.every((id) => d.legal.includes(id)) &&
     // CR 701.21a: a cost that sacrifices a permanent for each of several parts takes one different permanent for each.
-    (d.groups === undefined || matchesGroups(chosen, d.groups))
+    (d.groups === undefined || matchesGroups(chosen, d.groups)) &&
+    // CR 208.1, 608.2d (Slaughter the Strong): the permanents kept have total power of at most the limit (a negative power subtracts).
+    (d.maxTotalPower === undefined ||
+      chosen.reduce((sum, id) => sum + (d.powers?.[id] ?? 0), 0) <= d.maxTotalPower)
   );
 }
 
@@ -1198,7 +1201,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 107.3a, 601.2b, 602.2b (D-103): X is announced as the spell is cast or the ability
       // activated; the announcement can be taken back, which rewinds it (CR 733).
       // D-151: "pay any amount of {R}" is asked while an ability resolves: there is no cast to take back.
-      if ((d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo') && action.kind !== 'chooseX') {
+      if (
+        (d.purpose === 'payAnyAmount' ||
+          d.purpose === 'drawUpTo' ||
+          d.purpose === 'chooseNumber') &&
+        action.kind !== 'chooseX'
+      ) {
         return fail('Choose how many');
       }
       if (action.kind === 'cancel') return cancelCast(state);
@@ -1210,8 +1218,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         return fail('No legal target has that mana value: choose another X');
       }
       // D-151: how many times to pay in "You may pay any amount of {R}".
-      if (d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo') {
-        // D-217: how many cards "may draw up to two cards" draws.
+      if (
+        d.purpose === 'payAnyAmount' ||
+        d.purpose === 'drawUpTo' ||
+        d.purpose === 'chooseNumber'
+      ) {
+        // CR 608.2d: the number a "choose a number" effect asks for is recorded the same way. D-217: how many cards "may draw up to two cards" draws.
         return finishResolutionAnswer(answerResolutionPayAmount(state, action.value));
       }
       // CR 702.33c (D-110): the count of Multikicker is the same question with another answer.

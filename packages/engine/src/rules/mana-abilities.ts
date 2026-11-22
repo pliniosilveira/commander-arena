@@ -13,6 +13,7 @@ import { getSeat, loseLifeBy, patchObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { evaluateCondition } from './conditions';
 import { controlledSince, controllerOf } from './control';
+import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { hasteActivationSources } from './derive-statics';
 import { exertPermanent } from './exert';
@@ -225,6 +226,15 @@ export function counterCostsOf(
   );
 }
 
+/** The counters the ability's cost puts on its own permanent ("Put a -0/-1 counter on this creature: Add {G}.", CR 118.3, 122.1). */
+export function putCounterCostsOf(
+  ability: ManaAbility,
+): readonly { readonly counter: string; readonly count: number }[] {
+  return ability.cost.flatMap((c) =>
+    c.kind === 'putCounters' ? [{ counter: c.counter, count: c.count }] : [],
+  );
+}
+
 export function millCostOf(ability: ManaAbility): number {
   return ability.cost.reduce((n, c) => n + (c.kind === 'mill' ? c.count : 0), 0);
 }
@@ -403,6 +413,16 @@ export function payManaAbilityCosts(
       next = patchObject(next, given, { tapped: true });
       events.push({ kind: 'tapped', object: given, by: seat });
     }
+  }
+  // CR 118.3, 122.1, 122.6: the counters the cost puts on this permanent ("Put a -0/-1 counter on this creature"). A permanent that can't have counters of the kind gets
+  // none, and the cost is paid all the same (as for an ordinary activated ability).
+  for (const { counter, count } of putCounterCostsOf(ability)) {
+    const obj = next.objects[id];
+    if (obj === undefined || counterBlocked(next, obj, counter)) continue;
+    next = patchObject(next, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + count },
+    });
+    events.push({ kind: 'counterAdded', object: id, counter, count, by: seat });
   }
   // CR 118.3, 122.1 (issue 245): the counters the cost removes from this permanent.
   for (const { counter, count } of counterCostsOf(ability)) {

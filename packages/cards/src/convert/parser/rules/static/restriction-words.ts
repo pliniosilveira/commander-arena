@@ -102,8 +102,26 @@ const BLOCKED_BY_MONARCH: Parser<IrStaticEffect> = map(
   }),
 );
 
+/**
+ * "can attack as though it didn't have defender" and "assigns combat damage equal to its toughness rather than its power" (CR 609.4, 702.3b, 510.1a): the two rule changes of a creature the engine
+ * reads where attackers are declared and where combat damage is assigned. The pronoun agrees with the subject, singular ("it", "its", "assigns") or plural ("they", "their", "assign").
+ */
+function combatRuleWords(plural: boolean): Parser<IrStaticEffect>[] {
+  const it = plural ? 'they' : 'it';
+  const its = plural ? 'their' : 'its';
+  return [
+    phrase(`can attack as though ${it} didn['’]t have defender`, 'canAttackAsThoughNoDefender'),
+    phrase(
+      `${plural ? 'assign' : 'assigns'} combat damage equal to ${its} toughness rather than ${its} power`,
+      'assignsDamageByToughness',
+    ),
+  ];
+}
+
 export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticEffect> {
   const common = [
+    // CR 609.4, 702.3b, 510.1a (Felothar, Assault Formation): what a group, "each creature" or `~` can do or assigns, in the words of its number. Not read of the permanent an Aura or Equipment is attached to.
+    ...(subject === 'attached' ? [] : combatRuleWords(subject === 'plural')),
     // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control.", said of a group.
     ...(subject === 'plural' || subject === 'each'
       ? [
@@ -144,6 +162,11 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
   if (subject === 'self' || subject === 'selfGrant') {
     return choice(
       ...common,
+      // CR 609.4, 702.3b (Weathered Sentinels): the players the creature may attack as though it didn't have defender are those who attacked its controller during their last turn.
+      phrase(
+        "can attack players who attacked you during their last turn as though it didn['’]t have defender",
+        'canAttackAsThoughNoDefenderVsLastTurnAttackers',
+      ),
       // D-648 (Prismari deck group 2, CR 509.1b): "~ can block only creatures with flying", said of `~` itself.
       phrase('can block only creatures with flying', 'canBlockOnlyFlying'),
       // Ahoy Mateys deck, group 6 (Port Razer, CR 508.1a, 508.6): said of `~` itself.

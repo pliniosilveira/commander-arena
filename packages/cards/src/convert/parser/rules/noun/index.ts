@@ -15,9 +15,12 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
+import { HISTORY_VALUE } from '../amount/history';
 import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
+import { ABZAN_ARMOR_NOUN_RULES } from './abzan-armor';
+import { ABZAN_SPELLS_NOUN_RULES } from './abzan-spells';
 import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
 import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
 import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
@@ -354,6 +357,18 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * The limit a graveyard target's "with mana value less than or equal to ..." reads: the counters on the permanent the trigger is about (Puca's Covenant, CR 202.3, 122.1), or the amount of
+ * life the controller lost this turn (Betor, Ancestor's Voice, CR 119.3, 202.3).
+ */
+const graveyardLimit: Parser<IrAmount> = choice(
+  NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard),
+  (ctx, pos) => {
+    const r = HISTORY_VALUE(ctx, pos);
+    return r.ok && r.value.kind === 'controllerLifeLostThisTurn' ? r : fail(ctx, pos);
+  },
+);
+
 /** `noun.target-graveyard-card`: "target creature card from a graveyard" (CR 404.1). */
 export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   id: ID.targetGraveyard,
@@ -381,8 +396,11 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one, two, or three target creature cards from your graveyard',
     // Puca's Covenant (CR 202.3, 122.1): a limit of the counters on the permanent the trigger is about.
     'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
+    // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
+    'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
   ],
   rejects: [
+    'target creature card with mana value less than or equal to the amount of life you gained this turn from your graveyard',
     'one, two, or three target creature card from graveyards',
     'one, two, three target creature cards from graveyards',
     'one, two, or four target creature cards from graveyards',
@@ -404,7 +422,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   ],
   parse: targetOf(ID.targetGraveyard, (plural) =>
     // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
-    graveyardPhrase(plural, 'from', NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard)),
+    graveyardPhrase(plural, 'from', graveyardLimit),
   ),
 });
 
@@ -1003,6 +1021,8 @@ export const NOUN_RULES = [
   ...QUANDRIX_G_TARGET_NOUN_RULES,
   // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
   ...AHOY_G7_NOUN_RULES,
+  // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.
+  ...ABZAN_ARMOR_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -1011,6 +1031,7 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...ABZAN_SPELLS_NOUN_RULES,
   ...SAME_NAME_NOUN_RULES,
   ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,

@@ -40,6 +40,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'skulk',
   'battleCry',
   'mentor',
+  'flanking',
   'evolve',
   'extort',
   'convoke',

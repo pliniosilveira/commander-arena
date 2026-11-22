@@ -141,6 +141,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.
 - `anyCombinationAmount` lists every combination, C(X+4,4) of them: a large X slows the mana choice.
@@ -148,6 +149,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
 - `nextSpellPayLife`: hand, command zone only.
+- The AI's attack and block estimates use power, so they misjudge creatures that assign combat damage by toughness (`assignsDamageByToughness`); the engine's damage is correct.
 - Speed (CR 702.179) is not built; no duration lasts one combat.
 - "The copy targets that token" (CR 707.10e) takes the first legal token; no choice is asked.
 - Plot works from the hand with a mana cost; a card an effect makes plotted (CR 702.170c) and a plot ability working from another zone (CR 702.170f) are not built.

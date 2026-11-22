@@ -80,6 +80,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'putWithThis':
       // Animate Dead: the creature this permanent put onto the battlefield.
       return "that creature's";
+    case 'eachObject':
+      // Canopy Gargantuan: the creature the counters are being put on right now.
+      return "that creature's";
   }
 }
 
@@ -112,6 +115,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'linkedExile':
       return 'the exiled card';
     case 'putWithThis':
+    case 'eachObject':
       return 'that creature';
   }
 }

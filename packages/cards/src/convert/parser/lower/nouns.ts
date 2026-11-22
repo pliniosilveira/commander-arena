@@ -137,6 +137,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:enchanted',
   'selector:enchantedByYou',
   'selector:notOwnedByYou',
+  'selector:ownedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
@@ -190,6 +191,8 @@ function lowerFilterAt(
   // CR 208.1, 608.2c: "with power greater than target creature's power" is read by the group of an effect (`selectorOf`), where the targets are known.
   if (filter.powerGreaterThanNoun !== undefined) return bad(['selector:powerGreaterThan']);
   if (filter.sameNameAsNoun !== undefined) return bad(['selector:sameNameAs']);
+  // Reunion of the House (CR 208.1): "with total power 10 or less" is a limit on the targets of a slot together, which `declareTarget` takes off the filter first.
+  if (filter.totalPowerAtMost !== undefined) return bad(['selector:totalPowerAtMost']);
   // D-656: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
   if (filter.namedSelf === true) return bad([]);
   const types = filter.types ?? [];
@@ -373,6 +376,11 @@ function lowerFilterAt(
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
+  // Expel the Interlopers (CR 208.1, 608.2c): "with power greater than or equal to the chosen number", read where an effect's `each` selector is read (the engine checks the choice).
+  if (filter.powerAtLeastChosenNumber === true) {
+    if (inner) return bad([]);
+    parts.push('selector:powerAtLeastChosenNumber');
+  }
   // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
   if (filter.named !== undefined) {
     if (inner) return bad([]);
@@ -463,6 +471,8 @@ function lowerFilterAt(
   }
   // CR 108.3: "you don't own", read where the filter is matched against an object.
   if (filter.notOwnedByYou === true) parts.push('selector:notOwnedByYou');
+  // CR 108.3: "you own", read where the filter is matched against an object.
+  if (filter.ownedByYou === true) parts.push('selector:ownedByYou');
   // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
   if (filter.enchantedByYou === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -598,6 +608,9 @@ function lowerFilterAt(
     ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
+    ...(filter.powerAtLeastChosenNumber === true
+      ? { powerAtLeastChosenNumber: true as const }
+      : {}),
     ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
@@ -620,6 +633,7 @@ function lowerFilterAt(
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
     ...(filter.notOwnedByYou === true ? { notOwnedByYou: true as const } : {}),
+    ...(filter.ownedByYou === true ? { ownedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),
@@ -869,6 +883,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           if (!limit.ok) return limit;
           if (limit.value.kind !== 'triggerSubject') return failure(noun, []);
           atMost = { kind: 'manaValueOf', of: limit.value };
+        } else if (dynamic.kind === 'controllerLifeLostThisTurn') {
+          // "with mana value less than or equal to the amount of life you lost this turn" (Betor, CR 119.3, 202.3): the controller's own, read as the targets are chosen and again as it resolves.
+          const blockedLife = missingFeatures(['amount:controllerLifeLostThisTurn']);
+          if (blockedLife.length > 0) return failure(noun, blockedLife);
+          atMost = { kind: 'controllerLifeLostThisTurn' };
         } else if (dynamic.kind === 'countersOn') {
           // "with mana value less than or equal to the number of counters on that creature" (Puca's Covenant, CR 202.3, 122.1, 603.10a): the counters of the permanent the trigger
           // is about, as it last was, read as the targets are chosen and again as the ability resolves (the engine's `countersOn` of the `triggerSubject`).
@@ -936,6 +955,17 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         if (blockedExcept.length > 0) return failure(noun, blockedExcept);
         subject = { ...subject, other: false };
       }
+      // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less": the limit is the slot's, not the filter's.
+      let totalPower: number | undefined;
+      if (noun.filter.totalPowerAtMost !== undefined) {
+        const blockedTotal = missingFeatures(['selector:totalPowerAtMost']);
+        if (blockedTotal.length > 0) return failure(noun, blockedTotal);
+        if (!anyNumberTarget) return failure(noun, []);
+        totalPower = noun.filter.totalPowerAtMost;
+        const { totalPowerAtMost: _limit, ...rest } = subject.filter;
+        void _limit;
+        subject = { ...subject, filter: rest };
+      }
       const lowered = lowerFilter(subject);
       if (!lowered.ok) return lowered;
       const withExcept = exceptDying
@@ -972,8 +1002,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       if (noun.differentControllers === true) {
         const blocked = missingFeatures(['selector:differentControllers']);
         if (blocked.length > 0) return failure(noun, blocked);
-        // Only a slot of any number of objects says "with different controllers".
-        if (!anyNumberTarget) return failure(noun, []);
+        // Only a slot of any number of objects, or of up to a number of them ("up to two target artifacts and/or enchantments controlled by different players"), says it.
+        if (!anyNumberTarget && !(noun.upTo && noun.count?.kind === 'number')) {
+          return failure(noun, []);
+        }
       }
       let upToAmount: Amount | undefined;
       if (upToDefinedX) {
@@ -1003,6 +1035,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               id,
               what: { kind: 'object', filter: filter.value },
               anyNumber: true,
+              ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
               ...(noun.differentControllers === true
                 ? { differentControllers: true as const }
                 : {}),
@@ -1019,6 +1052,9 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                       id,
                       what: { kind: 'object', filter: filter.value },
                       ...boundsOf(noun),
+                      ...(noun.differentControllers === true
+                        ? { differentControllers: true as const }
+                        : {}),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
                       // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
                       ...(apart === undefined ||
@@ -1107,6 +1143,16 @@ export function objectRefOf(
       gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
     );
   }
+  // "... on each other creature you control equal to that creature's toughness" (Canopy Gargantuan, CR 608.2c): the object of the group each placement is worked out for.
+  if (noun.det === 'anaphor' && ctx.eachRef !== null && noun.ref === ctx.eachRef) {
+    return (
+      gate(noun, ['selector:eachObject']) ?? {
+        ok: true,
+        value: { kind: 'eachObject' },
+        rule: noun.rule,
+      }
+    );
+  }
   if (
     options.sacrificed === true &&
     noun.det === 'anaphor' &&
@@ -1189,6 +1235,16 @@ export function objectRefOf(
     return { ok: true, value: { kind: 'linkedExile' }, rule: noun.rule };
   }
   if (noun.det === 'sacrificed') {
+    // Tip the Scales (CR 701.21, 603.12, 608.2h): after a sacrifice of one permanent in the same text, "the sacrificed creature" is that permanent (the engine's `sacrificed`), not a cost's.
+    if (ctx.sacrificedRef !== null) {
+      return (
+        gate(noun, ['selector:sacrificed']) ?? {
+          ok: true,
+          value: { kind: 'sacrificed' },
+          rule: noun.rule,
+        }
+      );
+    }
     return (
       gate(noun, ['selector:sacrificedCost']) ?? {
         ok: true,

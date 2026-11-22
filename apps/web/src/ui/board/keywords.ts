@@ -64,6 +64,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   mentor: ['Mnt', 'Mentor'],
   evolve: ['Evo', 'Evolve'],
   bushido: ['Bus', 'Bushido'],
+  // CR 702.25a (Flanking).
+  flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
   affinity: ['Aff', 'Affinity'],
   convoke: ['Cvk', 'Convoke'],
@@ -253,6 +255,13 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   cantBeCountered: ['NoCtr', "Can't be countered"],
   // Prismari group 2: "This creature can block only creatures with flying" (CR 509.1b).
   canBlockOnlyFlying: ['BlkFly', 'Can block only creatures with flying'],
+  // Abzan Armor group A (CR 609.4, 702.3b, 510.1a).
+  canAttackAsThoughNoDefender: ['AtkDef', "Can attack as though it didn't have defender"],
+  canAttackAsThoughNoDefenderVsLastTurnAttackers: [
+    'AtkDef',
+    "Can attack players who attacked you during their last turn as though it didn't have defender",
+  ],
+  assignsDamageByToughness: ['DmgTgh', 'Assigns combat damage equal to its toughness'],
   // Galadriel group 3: "Its activated abilities can't be activated this turn" (CR 602.5).
   cantActivateAbilities: ['NoAct', "Its activated abilities can't be activated"],
 };

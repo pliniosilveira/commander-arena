@@ -134,6 +134,7 @@ import type { UiState } from './ui-state';
 import { isUntapChoice, UNTAP_PROMPT, untapButtonLabel, untapDetail } from './untap';
 import {
   drawUpToButtonText,
+  isChooseNumber,
   isDrawUpTo,
   isMultikicker,
   isPayAnyAmount,
@@ -667,7 +668,9 @@ function handlers(
                   ? payAmountButtonText(d, ui.x)
                   : isDrawUpTo(d)
                     ? drawUpToButtonText(ui.x)
-                    : `Choose X = ${ui.x}`,
+                    : isChooseNumber(d)
+                      ? `Choose ${ui.x}`
+                      : `Choose X = ${ui.x}`,
             () => act({ kind: 'chooseX', value: ui.x }),
             { primary: true },
           ),
@@ -676,7 +679,7 @@ function handlers(
           inOverlay: true,
           // D-151: paying any amount has no way back, 0 is the way out (the engine lists no `cancel`).
           cancel:
-            isPayAnyAmount(d) || isDrawUpTo(d)
+            isPayAnyAmount(d) || isDrawUpTo(d) || isChooseNumber(d)
               ? null
               : button('cancel', 'Cancel', () => act({ kind: 'cancel' })),
         },

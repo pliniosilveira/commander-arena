@@ -13,6 +13,8 @@ export type ChosenTarget =
       readonly share?: number;
       /** For a target of a slot that takes one for each opponent (`TargetSpec.onePerOpponent`, D-149): the player who controls it. */
       readonly group?: SeatId;
+      /** For a target of a slot with a total power limit (`TargetSpec.totalPowerAtMost`): the power the object has as the targets are chosen, which the answer's total is read from. */
+      readonly power?: number;
     }
   | {
       readonly kind: 'player';

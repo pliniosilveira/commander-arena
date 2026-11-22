@@ -455,6 +455,8 @@ export interface IrFilter {
   readonly enchantedByYou?: true;
   /** "but don't own", "you don't own" (CR 108.3): the engine's `notOwnedByYou`. */
   readonly notOwnedByYou?: true;
+  /** "you own" (CR 108.3): the engine's `ownedByYou`. */
+  readonly ownedByYou?: true;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
   /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
@@ -465,6 +467,13 @@ export interface IrFilter {
   readonly powerAboveBase?: true;
   /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
   readonly basePowerIs?: number;
+  /**
+   * "any number of target creature cards with total power 10 or less from your graveyard" (Reunion of the House, CR 115.1, 208.1): the powers of the targets of the slot add up to at
+   * most this number; the engine's `TargetSpec.totalPowerAtMost`. Read only by the target slot of a noun of any number of targets (`declareTarget`).
+   */
+  readonly totalPowerAtMost?: number;
+  /** "with power greater than or equal to the chosen number" (Expel the Interlopers, CR 208.1, 608.2c): the engine's `powerAtLeastChosenNumber`, read by the group of an effect. */
+  readonly powerAtLeastChosenNumber?: true;
   /**
    * "with power greater than target creature's power" (CR 208.1, 608.2c): the engine's `powerGreaterThan` of the target this noun is. A target noun of its own, numbered with
    * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
@@ -523,6 +532,8 @@ export type IrAmount =
   // "equal to the number of cards in that player's hand" (CR 402.1): each player the damage is dealt to is hurt for their own hand size
   | { readonly kind: 'cardsInHandOfAffected'; readonly span: Span }
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
+  // "the amount of life you lost this turn" (Betor, CR 119.3): the controller's own, valid anywhere an amount is
+  | { readonly kind: 'controllerLifeLostThisTurn'; readonly span: Span }
   | { readonly kind: 'lifeGainedOrLostThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
@@ -629,6 +640,8 @@ export type IrAmount =
       readonly of: readonly IrAmount[];
       readonly span: Span;
     }
+  // "the difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the positive gap between two amounts
+  | { readonly kind: 'difference'; readonly of: readonly IrAmount[]; readonly span: Span }
   // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
   // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
   | {
@@ -827,7 +840,8 @@ export interface IrCondition extends IrNode {
     // Issue 89 (CR 603.4, Animate Dead): "it's on the battlefield": the permanent the trigger is about, which is the source, is still on the battlefield
     | { readonly kind: 'thisOnBattlefield' }
     // Valakut Exploration (CR 603.4, 607.2a): "there are cards exiled with ~": at least one card the permanent exiled with its linked ability is still in exile
-    | { readonly kind: 'cardsExiledWithSelf' }
+    // `atLeast` (Colfenor's Urn, "if three or more cards have been exiled with ~"): at least that many of them; left out, one.
+    | { readonly kind: 'cardsExiledWithSelf'; readonly atLeast?: number }
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
@@ -1665,7 +1679,13 @@ export type IrRestrictionKind =
   // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
   | 'canBlockOnlyFlying'
   // "~ can't attack a player it has already attacked this turn" (Ahoy Mateys deck, group 6, CR 508.1a, 508.6): only of `~` itself.
-  | 'cantAttackPlayersAlreadyAttacked';
+  | 'cantAttackPlayersAlreadyAttacked'
+  // "Creatures you control can attack as though they didn't have defender" (CR 609.4, 702.3b): a static ability of a group or of `~`, and "target creature can attack this turn as though it didn't have defender".
+  | 'canAttackAsThoughNoDefender'
+  // "~ can attack players who attacked you during their last turn as though it didn't have defender" (CR 609.4, 702.3b): only of `~` itself.
+  | 'canAttackAsThoughNoDefenderVsLastTurnAttackers'
+  // "Each creature you control assigns combat damage equal to its toughness rather than its power" (CR 510.1a, 609.4), and the same until end of turn for a target.
+  | 'assignsDamageByToughness';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
@@ -1835,10 +1855,15 @@ export type IrStaticEffect =
   /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */
   | { readonly kind: 'crewSaddleBonus'; readonly amount: number }
   /**
-   * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`; with `self` (D-320,
+   * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3); `permanents` is "all permanents you control". The subject is `you`; with `self` (D-320,
    * "Untap ~ during each other player's untap step.") the permanent itself untaps and the subject is `~`.
    */
-  | { readonly kind: 'untapInOthersStep'; readonly self?: true }
+  | {
+      readonly kind: 'untapInOthersStep';
+      readonly self?: true;
+      /** "Untap all permanents you control during each other player's untap step." (Seedborn Muse): every permanent of the controller, not only the creatures. */
+      readonly permanents?: true;
+    }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
   | { readonly kind: 'castFromGraveyard'; readonly cost?: readonly string[] }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */
@@ -2276,6 +2301,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'attackersOfAffected',
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  'controllerLifeLostThisTurn',
   'lifeGainedOrLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -2298,6 +2324,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'minus',
   'sum',
   'extreme',
+  'difference',
   'opponentsWithMore',
   'chosenPlayerLead',
   'thisWay',
@@ -2337,6 +2364,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'multiple':
     case 'minus':
       return nounsOfAmount(amount.of);
+    case 'difference':
     case 'extreme':
     case 'sum':
       return amount.of.flatMap(nounsOfAmount);

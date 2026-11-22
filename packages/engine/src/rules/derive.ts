@@ -38,7 +38,13 @@ import { copiableValues } from './copiable';
 import { alternativeAbilitiesOf } from './derive-alt';
 import { characteristicPtOf } from './derive-count';
 import { expandKeywords, keywordKindsOf } from './derive-keywords';
-import { applyAbilityLayer, applyPtLayers, basePtOf, effectsOn } from './derive-layers';
+import {
+  applyAbilityLayer,
+  applyPtLayers,
+  basePtOf,
+  counterPtBonus,
+  effectsOn,
+} from './derive-layers';
 import { type BlockLimit, type StaticSet, staticEffectsOn } from './derive-statics';
 import { manaCostOf, typeLayersOf } from './derive-view';
 import { keywordCounterAbilities } from './keyword-counters';
@@ -235,7 +241,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
   const colors = line.colors;
   // CR 208.3: a noncreature permanent has no power or toughness, even with some printed on its card.
   const creature = obj.zone !== 'battlefield' || line.types.includes('creature');
-  const counters = (obj.counters['+1/+1'] ?? 0) - (obj.counters['-1/-1'] ?? 0);
+  const counters = counterPtBonus(obj.counters);
   // Layer 7a (CR 613.4a, 604.3): a characteristic-defining ability sets what it defines, wherever the
   // object is. Counting reads the types as layer 4 leaves them, never a power or toughness.
   const defined = characteristicPtOf(state, obj, input.abilities);

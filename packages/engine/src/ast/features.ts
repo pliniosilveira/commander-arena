@@ -213,10 +213,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'repeatWhile',
     'chooseObjects',
     'chooseCreatureType',
+    // Expel the Interlopers: "Choose a number between 0 and 10" (`chooseNumber`, CR 608.2d).
+    'chooseNumber',
     'dealDamage',
     'destroy',
     'exile',
     'sacrifice',
+    // Slaughter the Strong: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (`keepOrSacrifice`).
+    'keepOrSacrifice',
     'moveToZone',
     'counter',
     'draw',
@@ -316,6 +320,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttackSource',
     // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
     'creaturesCantAttackYou',
+    // CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender", a group effect that reaches creatures that match later.
+    'restrictGroup',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
@@ -557,6 +563,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
     'blocks',
     'becomesBlocked',
+    // CR 509.3d, 702.25a: "becomes blocked by a creature without flanking" (Flanking).
+    'becomesBlockedBy',
     // D-139: a state trigger, "when there are four or more page counters on this artifact" (CR 603.8), and the triggered mana ability
     // "whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b).
     'state',
@@ -715,6 +723,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mentor',
     'evolve',
     'bushido',
+    // CR 702.25: Flanking.
+    'flanking',
     'extort',
     'affinity',
     'convoke',
@@ -823,6 +833,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCounters',
     // Issue 144 (Arena of Glory): "{R}, {T}, Exert this land: Add {R}{R}." (CR 701.43a).
     'exert',
+    // "Put a -0/-1 counter on this creature: Add {G}." (CR 118.3, 122.1: Wall of Roots).
+    'putCounters',
   ],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
@@ -1001,6 +1013,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enchantedByYou',
     // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
     'notOwnedByYou',
+    // Staff of Compleation: "target permanent you own" (`ObjectFilter.ownedByYou`).
+    'ownedByYou',
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
@@ -1090,6 +1104,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'basePowerIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
+    // Expel the Interlopers: "with power greater than or equal to the chosen number" (`ObjectFilter.powerAtLeastChosenNumber`).
+    'powerAtLeastChosenNumber',
     // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
     'sameNameAs',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
@@ -1115,6 +1131,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificedCost',
     // D-177: "that creature" after a sacrifice of the same ability ("you may sacrifice another creature. When you do, ... that creature's power").
     'sacrificed',
+    // CR 608.2c (Canopy Gargantuan): "that creature" in the count of counters put on each creature (`ObjectRef` `eachObject`, `addCounters.perObject`).
+    'eachObject',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
     // greatest power among creatures they control" (`ChooseSelector.anyNumber` and `greatest`), "the chosen player" of a gift.
     'notSupertypes',
@@ -1132,6 +1150,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
     'differentControllers',
+    // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less" (`TargetSpec.totalPowerAtMost`).
+    'totalPowerAtMost',
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
     'greatest',
@@ -1498,6 +1518,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
+    'controllerLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
@@ -1537,6 +1558,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'minus',
     'sum',
     'extreme',
+    'difference',
     'opponentCount',
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
@@ -1670,7 +1692,12 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
 ];
 
 /** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
-export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [...GRANTABLE_KEYWORDS, 'toxic'];
+// CR 702.25a: "a creature without flanking" (Flanking reads the blocker's keywords, but a flanking creature is only printed with it).
+export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
+  ...GRANTABLE_KEYWORDS,
+  'toxic',
+  'flanking',
+];
 
 /**
  * What a `restriction` static ability may name, by the subject kinds it accepts: every restriction
@@ -1685,6 +1712,12 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
   'canBlockOnlyFlying',
+  // CR 609.4, 702.3b: "Creatures you control can attack as though they didn't have defender."
+  'canAttackAsThoughNoDefender',
+  // CR 609.4, 702.3b: "~ can attack players who attacked you during their last turn as though it didn't have defender."
+  'canAttackAsThoughNoDefenderVsLastTurnAttackers',
+  // CR 510.1a, 609.4: "Each creature you control assigns combat damage equal to its toughness rather than its power."
+  'assignsDamageByToughness',
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
   'mustBeBlocked',
@@ -1704,6 +1737,10 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBeBlocked',
   // Issue 81 (Gingerbrute): "can't be blocked this turn except by creatures with haste".
   'cantBeBlockedExceptByHaste',
+  // CR 609.4, 702.3b: "Target creature with defender can attack this turn as though it didn't have defender."
+  'canAttackAsThoughNoDefender',
+  // CR 510.1a, 609.4: "Until end of turn, target creature assigns combat damage equal to its toughness rather than its power."
+  'assignsDamageByToughness',
   'attacksEachCombat',
   'mustBeBlocked',
   // Galadriel group 3: "Its activated abilities can't be activated this turn."
@@ -1965,6 +2002,8 @@ export const SELECTOR_KINDS = [
   'enchantedByYou',
   /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */
   'notOwnedByYou',
+  /** "You own" (`ObjectFilter.ownedByYou`): the object's owner is the controller of the ability reading the filter. */
+  'ownedByYou',
   /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
@@ -2076,6 +2115,8 @@ export const SELECTOR_KINDS = [
   'basePowerIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
+  /** "With power greater than or equal to the chosen number" (CR 208.1, 608.2c, Expel the Interlopers): the engine's `ObjectFilter.powerAtLeastChosenNumber`. */
+  'powerAtLeastChosenNumber',
   /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
   'sameNameAs',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
@@ -2105,6 +2146,8 @@ export const SELECTOR_KINDS = [
   'sacrificedCost',
   /** "That creature's power" after the ability sacrificed it (CR 603.12, 608.2h, D-177): the engine's `ObjectRef` `sacrificed`. */
   'sacrificed',
+  /** "Put a number of +1/+1 counters on each creature equal to that creature's toughness" (CR 608.2c, Canopy Gargantuan): the engine's `ObjectRef` `eachObject` and `addCounters.perObject`. */
+  'eachObject',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
   'notSupertypes',
   /** "Sacrifice any number of other permanents" (D-135): the engine's `ChooseSelector.anyNumber`. */
@@ -2123,6 +2166,8 @@ export const SELECTOR_KINDS = [
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
   'differentControllers',
+  /** "Any number of target creature cards with total power 10 or less" (CR 115.1, 208.1, Reunion of the House): the engine's `TargetSpec.totalPowerAtMost`. */
+  'totalPowerAtMost',
   /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
   'ownedByTarget',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
@@ -2551,6 +2596,8 @@ export const AMOUNT_KINDS = [
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  /** "The amount of life you lost this turn" (Betor, CR 119.3): the engine's `controllerLifeLostThisTurn`, the controller's own life lost, valid anywhere an amount is. */
+  'controllerLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
   'lifeGainedAndLostThisTurn',
@@ -2604,6 +2651,8 @@ export const AMOUNT_KINDS = [
   'sum',
   /** "... or ..., whichever is greater" (CR 608.2c): the engine's `extreme`, the greater or the lesser of two or more amounts. */
   'extreme',
+  /** "The difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the engine's `difference`, the positive gap between two amounts. */
+  'difference',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
   /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */
@@ -2815,6 +2864,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   destroy: true,
   exile: true,
   sacrifice: true,
+  keepOrSacrifice: true,
   moveToZone: true,
   counter: true,
   draw: true,
@@ -2871,6 +2921,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   attackRandomOpponent: true,
   requireAttackSource: true,
   creaturesCantAttackYou: true,
+  restrictGroup: true,
   permanentsEnterTapped: true,
   doubleTokens: true,
   gainControl: true,
@@ -2952,6 +3003,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   assignControlToOpponents: true,
   chooseOne: true,
   chooseCreatureType: true,
+  chooseNumber: true,
   vote: true,
   ringTempts: true,
   pair: true,
@@ -3014,6 +3066,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leavesBattlefield: true,
   blocks: true,
   becomesBlocked: true,
+  becomesBlockedBy: true,
   state: true,
   tappedForMana: true,
   tapsForMana: true,
@@ -3121,6 +3174,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   mentor: true,
   evolve: true,
   bushido: true,
+  flanking: true,
   extort: true,
   affinity: true,
   convoke: true,

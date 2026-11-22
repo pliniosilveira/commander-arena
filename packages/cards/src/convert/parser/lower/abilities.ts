@@ -1132,6 +1132,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
     }
+    // "where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the total or greatest of a stat over a group, read as it enters.
+    if (count?.kind === 'aggregate') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:aggregate',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'aggregate') {
+        return failure(ability);
+      }
+      return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
     // "equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as it enters.
     if (count?.kind === 'diedThisTurn') {
       const blocked = gate(ability, [

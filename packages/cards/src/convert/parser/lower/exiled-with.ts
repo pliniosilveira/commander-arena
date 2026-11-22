@@ -25,6 +25,32 @@ const PUT_EXILED_WITH_GRAVEYARD: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Return those cards to the battlefield under their owner's control" (Colfenor's Urn, CR 607.2a, 400.3, 110.2a): the cards the permanent exiled with its linked ability, still in exile, each
+ * under the control of its owner. As `PUT_EXILED_WITH_GRAVEYARD`, "those cards" has an antecedent only in the intervening "if" that counted them. The ability of the permanent that was
+ * sacrificed just before ("sacrifice it. If you do, ...") reads the link the permanent had (last-known information, `ObjectRef` `linkedExile`).
+ */
+const RETURN_EXILED_WITH_BATTLEFIELD: Lowering<IrClause, Effects> = {
+  head: 'returnExiledWithBattlefield',
+  id: 'lower.return-exiled-with-battlefield',
+  needs: ['effect:moveToZone'],
+  lower(clause, ctx) {
+    if (!ctx.exiledWithCondition) return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: { kind: 'linkedExile' },
+          to: 'battlefield',
+          controller: 'owner',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Then you may exile a creature or planeswalker card from each graveyard" (CR 608.2d, 404.1, 607.2a): one optional choice for each graveyard, the cards remembered by the permanent the ability
  * belongs to. A spell is no permanent to remember them, so the clause is not lowered there.
  */
@@ -88,6 +114,7 @@ const MAY_CAST_EXILED_WITH: Lowering<IrClause, Effects> = {
 
 export const EXILED_WITH_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PUT_EXILED_WITH_GRAVEYARD,
+  RETURN_EXILED_WITH_BATTLEFIELD,
   EXILE_FROM_EACH_GRAVEYARD,
   MAY_CAST_EXILED_WITH,
 ];
