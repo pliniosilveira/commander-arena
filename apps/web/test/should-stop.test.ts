@@ -350,6 +350,45 @@ describe('the stack', () => {
   });
 });
 
+describe('special actions that are no response (Foretell, the companion)', () => {
+  // The offer of a special action does not make the priority a real decision: the stops decide, as for Foretell (hasRelevantAction reads only casts and activations).
+  const NO_STOPS = { ...DEFAULT_STOPS, myTurnStops: [], opponentTurnStops: [] };
+  const special: readonly PriorityOption[] = [
+    { kind: 'foretell', object: objectId(30) },
+    { kind: 'bringCompanion' },
+  ];
+  test.each(special)(
+    '$kind alone does not stop on a step with no stop, nor on the opponent end step',
+    (option) => {
+      expect(
+        shouldStop(view({ step: 'upkeep', options: [{ kind: 'pass' }, option] }), NO_STOPS),
+      ).toBe(false);
+      expect(
+        shouldStop(
+          view({ active: 1, step: 'end', options: [{ kind: 'pass' }, option] }),
+          DEFAULT_STOPS,
+        ),
+      ).toBe(false);
+      expect(
+        hasRelevantAction(view(), {
+          kind: 'priority',
+          id: 'd1',
+          seat: 0,
+          options: [{ kind: 'pass' }, option],
+        }),
+      ).toBe(false);
+    },
+  );
+  test.each(special)('$kind does not remove the main phase stop of the player', (option) => {
+    expect(
+      shouldStop(
+        view({ step: 'precombatMain', options: [{ kind: 'pass' }, option] }),
+        DEFAULT_STOPS,
+      ),
+    ).toBe(true);
+  });
+});
+
 describe('relevant actions', () => {
   test('a sorcery-speed card or a land is not relevant', () => {
     const decision = view({

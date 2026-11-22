@@ -196,6 +196,56 @@ describe('PreviewPanel', () => {
     store.getState().hover(null);
   });
 
+  describe('the companion (SPEC 5.8, 10)', () => {
+    const SPIDER = {
+      name: 'SYNTHETIC Companion Spider',
+      manaCost: ['2', 'G'],
+      supertypes: [],
+      types: ['creature'],
+      subtypes: ['Spider'],
+      colors: ['G'],
+      power: 2,
+      toughness: 4,
+      oracleText: 'Reach',
+    } as const;
+    const withCompanions = async (mine: boolean, theirs: boolean) => {
+      const store = await gameAfter(0);
+      const snap = store.getState().snapshot;
+      if (snap === null) throw new Error('no snapshot');
+      const seats = snap.view.seats.map((seat) => ({
+        ...seat,
+        companion: { ...SPIDER, brought: seat.id === snap.view.viewer ? mine : theirs },
+      }));
+      store.setState({ snapshot: { ...snap, view: { ...snap.view, seats } } });
+      return store;
+    };
+
+    test('each strip shows its companion with the state it is in; nothing for a deck without one', async () => {
+      const store = await withCompanions(false, true);
+      const html = render(store, <Board />);
+      expect(html).toContain('aria-label="Your companion SYNTHETIC Companion Spider, Companion"');
+      expect(html).toContain(
+        'aria-label="The opponent&#x27;s companion SYNTHETIC Companion Spider, Used: brought into the game"',
+      );
+      expect(html).toContain('data-companion-brought="false"');
+      expect(html).toContain('data-companion-brought="true"');
+      expect(render(await gameAfter(0), <Board />)).not.toContain('data-companion');
+    });
+
+    test('hovering the chip shows the card in the preview panel, with its state', async () => {
+      const store = await withCompanions(false, false);
+      store.getState().hover('o-10');
+      const html = render(store, <PreviewPanel />);
+      expect(html).toContain('SYNTHETIC Companion Spider');
+      expect(html).toContain('Your companion, outside the game');
+      expect(html).toContain('for {3}');
+      store.getState().hover(null);
+      const used = await withCompanions(true, false);
+      used.getState().hover('o-10');
+      expect(render(used, <PreviewPanel />)).toContain('was brought into the game');
+    });
+  });
+
   test('an object that is no longer visible draws nothing', async () => {
     const store = await gameAfter(0);
     store.getState().hover('o999999');

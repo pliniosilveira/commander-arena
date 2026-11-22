@@ -117,3 +117,30 @@ test('an old saved record, with no commander in its text, still loads and lists'
   // The player picks the commander again and saves again.
   expect(report.commanderChoices.map((c) => c.name)).toContain('Synthetic Commander');
 });
+
+// The companion is part of the list text, so a saved deck keeps it through Save, a reload and the
+// commander mark; a deck saved before companions existed has no Companion section and is unchanged.
+test('a companion survives marking the commander, saving and reloading', async () => {
+  const h = harness();
+  const text = `${unmarkedText()}\n\nCompanion\n1 Synthetic Companion`;
+  const store = new MemoryDeckStore(() => 1_000);
+  await store.save({ name: 'Mine', text: markCommanders(text, ['Synthetic Commander']) });
+  const [record] = await store.list();
+  expect(record?.text).toContain('Companion\n1 Synthetic Companion');
+  const reloaded = await h.service.run({ text: record?.text ?? '', deckName: 'Mine' });
+  expect(reloaded.companion?.card?.stored.name).toBe('Synthetic Companion');
+  expect(reloaded.companion?.issues).toEqual([]);
+  expect(reloaded.playable).toBe(true);
+  expect(parseDecklist(record?.text ?? '').sections.companion.map((e) => e.name)).toEqual([
+    'Synthetic Companion',
+  ]);
+});
+
+test('a deck saved before companions existed reloads with no companion and as before', async () => {
+  const store = new MemoryDeckStore(() => 1_000);
+  await store.save({ name: 'Old', text: supportedHundredText() });
+  const [record] = await store.list();
+  const reloaded = await harness().service.run({ text: record?.text ?? '', deckName: 'Old' });
+  expect(reloaded.companion).toBeNull();
+  expect(reloaded.playable).toBe(true);
+});

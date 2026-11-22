@@ -1,6 +1,7 @@
 /** A player's strip: life, poison, zone counts and the command zone with tax and damage taken. */
 import type { GameView, ObjectView, SeatView } from '@commander-arena/engine';
 import { restrictionWords, riderWords } from '../../game/angels-text';
+import { companionId, companionState } from '../../game/companion';
 import { useDraggable, useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { ManaSymbol } from '../mana';
@@ -9,6 +10,9 @@ import { CostDisplay } from './CardFace';
 import { HandBacks } from './Hand';
 import { useHoverPreview } from './hover';
 import { bandBackground, commanderDamageTaken, commanderTaxes, seatLabel } from './resolve';
+
+/** The public data of a revealed companion (the engine's `CompanionView` is not exported by name). */
+type CompanionView = NonNullable<SeatView['companion']>;
 
 export type ZoneRef =
   | { readonly kind: 'graveyard'; readonly seat: number }
@@ -162,6 +166,41 @@ function CommanderChip({ object }: { object: ObjectView }) {
 }
 
 /**
+ * A seat's companion (SPEC 5.8, CR 702.139), public: a small chip with its name, the state it is in ("Companion" while it is outside the game, "Used" once it was
+ * brought) and the hover preview of any card. Bringing it into the hand is a button of the action bar, offered only when the engine offers it.
+ */
+function CompanionChip({
+  seat,
+  companion,
+  mine,
+}: {
+  seat: number;
+  companion: CompanionView;
+  mine: boolean;
+}) {
+  const hover = useHoverPreview(companionId(seat));
+  const state = companionState(companion.brought);
+  const owner = mine ? 'Your' : "The opponent's";
+  return (
+    <button
+      type="button"
+      className={`board-cmdr board-companion${companion.brought ? ' is-used' : ''}`}
+      data-companion={seat}
+      data-companion-brought={companion.brought}
+      aria-label={`${owner} companion ${companion.name}, ${state}`}
+      title={`${owner} companion: ${companion.name}. ${state}.`}
+      {...hover}
+    >
+      <span className="board-cmdr-band" style={{ background: bandBackground(companion.colors) }} />
+      <span className="board-companion-text">
+        <span className="board-cmdr-name">{companion.name}</span>
+        <span className="board-companion-state">{state}</span>
+      </span>
+    </button>
+  );
+}
+
+/**
  * The top card of a library, shown beside the library count while a permanent lets the viewer look at
  * it (CR 401.5, D-125) or while it is revealed to every player ("Play with the top card of your library
  * revealed"). `SeatView.libraryTop` is in the viewer's own view when they may look at it, and in every
@@ -226,6 +265,9 @@ function CommandBox({
           commanders.map((o) => <CommanderChip key={o.id} object={o} />)
         )}
       </span>
+      {seat.companion !== undefined && (
+        <CompanionChip seat={seat.id} companion={seat.companion} mine={seat.id === view.viewer} />
+      )}
       <span className="board-cmdr-facts">
         <span className={taxes.some((t) => t > 0) ? '' : 'board-dim'} title="Commander tax">
           Tax {taxes.length === 0 ? 0 : taxes.map((t) => `+${t}`).join(' ')}

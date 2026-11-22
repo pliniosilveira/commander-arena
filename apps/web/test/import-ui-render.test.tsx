@@ -1,3 +1,4 @@
+import { importCard, PARSER_VERSION } from '@commander-arena/cards';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { GameHost } from '../src/game/host';
@@ -24,6 +25,7 @@ import {
   LEGACY,
   playableReport,
   SEER,
+  stored,
   UNBOUND,
   VALID,
 } from './import-ui-fixtures';
@@ -211,6 +213,42 @@ describe('ResultsView', () => {
     expect(out).toMatch(/<details[^>]*>(?!.* open)/);
     expect(out).toContain('Ignored lines (1)');
     expect(out).toContain('2 Sideboard Card');
+  });
+
+  test('a companion has a section of its own: accepted, or refused with the reason', () => {
+    const card = importCard(
+      stored({ name: 'SYNTHETIC Companion', typeLine: 'Creature — Bear', colors: ['G'] }),
+      PARSER_VERSION,
+    );
+    expect(results(playableReport())).not.toContain('import-companion');
+    const ok = results(
+      playableReport({
+        companion: { requested: 'SYNTHETIC Companion', card, issues: [], extra: [] },
+      }),
+    );
+    expect(ok).toContain('Companion</h3>');
+    expect(ok).toContain('<strong>SYNTHETIC Companion</strong> is accepted.');
+    expect(ok).not.toContain('Ignored lines');
+    const refused = results(
+      playableReport({
+        playable: false,
+        companion: {
+          requested: 'SYNTHETIC Companion',
+          card,
+          issues: [
+            {
+              severity: 'error',
+              code: 'companion-color-identity',
+              message: 'SYNTHETIC Companion is outside the commander color identity.',
+              cards: ['SYNTHETIC Companion'],
+            },
+          ],
+          extra: [],
+        },
+      }),
+    );
+    expect(refused).toContain('is refused, so the deck cannot be played.');
+    expect(refused).toContain('outside the commander color identity');
   });
 
   test('a deck with an unsupported card cannot be played, and the panel says why (D-056)', () => {

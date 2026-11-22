@@ -3,7 +3,7 @@
 // and the support cache. HTTP is faked with an injected `fetch`; nothing here is real card data.
 import { PARSER_VERSION, type SupportReport } from '@commander-arena/cards';
 import { expect, test } from 'vitest';
-import type { ImportProgress } from '../src/import';
+import { type ImportProgress, toDeckConfig, unplayableReason } from '../src/import';
 import { harness, hundredCardText, supportedHundredText } from './import-helpers';
 
 const names = (report: { entries: readonly { card: { stored: { name: string } } }[] }) =>
@@ -163,7 +163,7 @@ test('the MTGO layout (no commander, blank line before the sideboard) ignores th
   expect(asked.map((i) => i.name)).not.toContain('Synthetic Flyer 1');
 });
 
-test('sideboard, maybeboard and companion are ignored and never resolved', async () => {
+test('sideboard and maybeboard are ignored and never resolved', async () => {
   const text = [
     'Commander',
     '1 Synthetic Commander',
@@ -173,15 +173,12 @@ test('sideboard, maybeboard and companion are ignored and never resolved', async
     '1 Synthetic Vanilla 2',
     'Maybeboard',
     '2 Nonexistent Maybe Card',
-    'Companion',
-    '1 Synthetic Vanilla 3',
   ].join('\n');
   const h = harness();
   const report = await h.service.run({ text, deckName: 'I' });
   expect(report.ignored.map((i) => [i.section, i.name, i.count])).toEqual([
     ['sideboard', 'Synthetic Vanilla 2', 1],
     ['maybeboard', 'Nonexistent Maybe Card', 2],
-    ['companion', 'Synthetic Vanilla 3', 1],
   ]);
   expect(report.notFound).toEqual([]);
   expect(names(report)).toEqual(['Synthetic Commander', 'Synthetic Vanilla 1']);
@@ -395,4 +392,91 @@ test('support statuses are cached per parser version and recomputed after a chan
     status: 'unsupported',
     parserVersion: PARSER_VERSION + 1,
   });
+});
+
+// ---------------------------------------------------------------- companion (SPEC 6.1, 5.8, CR 702.139)
+
+const withCompanion = (name: string, deck = supportedHundredText()) =>
+  `${deck}\n\nCompanion\n1 ${name}`;
+
+test('a valid companion is resolved, accepted and carried to the deck config', async () => {
+  const report = await harness().service.run({
+    text: withCompanion('Synthetic Companion'),
+    deckName: 'C',
+  });
+  expect(report.ignored).toEqual([]);
+  expect(report.companion?.card?.stored.name).toBe('Synthetic Companion');
+  expect(report.companion?.issues).toEqual([]);
+  // The companion is no deck card: the deck still has its 100.
+  expect(report.entries.reduce((sum, entry) => sum + entry.count, 0)).toBe(100);
+  expect(report.playable).toBe(true);
+  const deck = toDeckConfig(report);
+  expect(deck.cards).toHaveLength(100);
+  expect(deck.companion?.name).toBe('Synthetic Companion');
+});
+
+test('a list without a companion has none, and its deck config has no companion', async () => {
+  const report = await harness().service.run({ text: supportedHundredText(), deckName: 'N' });
+  expect(report.companion).toBeNull();
+  expect('companion' in toDeckConfig(report)).toBe(false);
+});
+
+test('a card without a companion ability is refused and the deck cannot be played', async () => {
+  const report = await harness().service.run({
+    text: withCompanion('Synthetic Vanilla 60'),
+    deckName: 'C',
+  });
+  expect(report.companion?.issues.map((i) => i.code)).toEqual(['companion-ability']);
+  expect(report.validation?.ok).toBe(false);
+  expect(report.playable).toBe(false);
+  expect(unplayableReason(report)).toMatch(/companion ability/);
+});
+
+test('a companion outside the commander color identity is refused', async () => {
+  const report = await harness().service.run({
+    text: withCompanion('Synthetic Red Companion'),
+    deckName: 'C',
+  });
+  expect(report.companion?.issues.map((i) => i.code)).toEqual(['companion-color-identity']);
+  expect(report.playable).toBe(false);
+});
+
+test('a deck that breaks the companion condition is refused, naming the card', async () => {
+  const deck = supportedHundredText().replace(
+    '1 Synthetic Vanilla 1\n',
+    '1 Synthetic Double Mana\n',
+  );
+  const report = await harness().service.run({
+    text: withCompanion('Synthetic Companion', deck),
+    deckName: 'C',
+  });
+  expect(report.companion?.issues.map((i) => i.code)).toEqual(['companion-condition']);
+  expect(report.companion?.issues[0]?.cards).toEqual(['Synthetic Double Mana']);
+  expect(report.playable).toBe(false);
+});
+
+test('a companion the engine does not fully support is refused like an unsupported card', async () => {
+  const report = await harness().service.run({
+    text: withCompanion('Synthetic Odd Companion'),
+    deckName: 'C',
+  });
+  expect(report.companion?.issues.map((i) => i.code)).toContain('companion-unsupported');
+  expect(report.playable).toBe(false);
+  expect(unplayableReason(report)).toMatch(/companion/);
+});
+
+test('two companions are refused; a companion that is not found blocks the deck', async () => {
+  const two = await harness().service.run({
+    text: `${supportedHundredText()}\n\nCompanion\n1 Synthetic Companion\n1 Synthetic Red Companion`,
+    deckName: 'C',
+  });
+  expect(two.companion?.issues.map((i) => i.code)).toContain('companion-count');
+  expect(two.playable).toBe(false);
+  const missing = await harness().service.run({
+    text: withCompanion('Nonexistent Companion'),
+    deckName: 'C',
+  });
+  expect(missing.companion?.card).toBeNull();
+  expect(missing.notFound.map((n) => n.name)).toEqual(['Nonexistent Companion']);
+  expect(missing.playable).toBe(false);
 });
