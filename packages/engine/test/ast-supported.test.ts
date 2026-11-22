@@ -102,6 +102,7 @@ const EXECUTABLE_KEYWORDS = [
   'livingWeapon', // scenario-xx-living-weapon
   'jobSelect', // convert-grammar-engine-p49 (Job select, D-206)
   'readAhead', // scenario-xx-read-ahead
+  'rebound', // convert-grammar-engine-scions-e
   'dethrone', // scenario-xx-extra-combat
   'myriad', // scenario-xx-extra-combat
   'decayed', // scenario-xx-gisa-g5-decayed (D-478)
@@ -119,6 +120,14 @@ function cardWithKeyword(keyword: Keyword): CardDefinition {
     ...base,
     faces: [{ ...face, abilities: [{ kind: 'keyword', keyword }] }],
   };
+}
+
+/** CR 702.88a: rebound is on an instant or a sorcery, so its sample is a sorcery with a spell. */
+function sorceryWithKeyword(keyword: Keyword): CardDefinition {
+  const base = fixtureCard('Divination');
+  const face = base.faces[0];
+  if (!face) throw new Error('no face');
+  return { ...base, faces: [{ ...face, abilities: [{ kind: 'keyword', keyword }] }] };
 }
 
 const KEYWORD_SAMPLES: Record<string, Keyword> = {
@@ -220,6 +229,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   hideaway: { kind: 'hideaway', count: 3 },
   dethrone: { kind: 'dethrone' },
   readAhead: { kind: 'readAhead' },
+  rebound: { kind: 'rebound' },
   myriad: { kind: 'myriad' },
   decayed: { kind: 'decayed' },
   protection: { kind: 'protection', from: 'color', colors: ['R'] },
@@ -293,7 +303,9 @@ describe('supported feature gate', () => {
                           ? syntheticCard('SYNTHETIC Rite // Toll')
                           : kind === 'readAhead'
                             ? syntheticCard('SYNTHETIC Reading Rite')
-                            : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                            : kind === 'rebound'
+                              ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
+                              : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
