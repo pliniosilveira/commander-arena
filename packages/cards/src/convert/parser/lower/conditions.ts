@@ -158,6 +158,13 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });
     }
+    case 'aPlayerLostLifeThisTurn': {
+      // CR 119.3, 603.4: the life lost this turn by any player, from the seats' counters.
+      const blocked = missingFeatures(['condition:aPlayerLostLifeThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'aPlayerLostLifeThisTurn', atLeast: test.atLeast });
+    }
     case 'spellsCastThisTurn': {
       // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
       const blocked = missingFeatures(['condition:spellsCastThisTurn']);
@@ -966,6 +973,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
   'condition:lifeGainedAndLostThisTurn',
+  'condition:aPlayerLostLifeThisTurn',
   'condition:spellsCastThisTurn',
   'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',

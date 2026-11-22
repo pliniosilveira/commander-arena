@@ -1532,6 +1532,48 @@ export function checkObjectSelector(
   checkRef(sel as ObjectRef, expect, path, scope, out);
 }
 
+/**
+ * CR 120.2a, 510.2: the kind of source of combat damage a turn-log read names (`combatDamagedBy`, `combatDamagedThisTurn`): the turn log keeps only the card types, the subtypes and who
+ * controlled the source, so the filter names those and nothing else, and at least the types or the subtypes.
+ */
+function checkCombatDamageSourceKind(f: unknown, path: string, what: string, out: Out): void {
+  if (f === undefined || f === null || typeof f !== 'object') {
+    issue(out, path, `${what} needs a filter of the damage source`);
+    return;
+  }
+  const g = f as {
+    types?: unknown;
+    subtypes?: unknown;
+    controller?: unknown;
+  };
+  checkEnumList(
+    out,
+    `${path}.types`,
+    g.types as readonly unknown[] | undefined,
+    CARD_TYPES,
+    'card type',
+  );
+  if (g.subtypes !== undefined && (!Array.isArray(g.subtypes) || g.subtypes.length === 0)) {
+    issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list when present');
+  }
+  if (g.controller !== undefined && !isOneOf(g.controller, ['you', 'opponent', 'any'])) {
+    issue(out, `${path}.controller`, 'the controller is you, opponent or any');
+  }
+  const extra = Object.keys(g).filter(
+    (k) => k !== 'types' && k !== 'subtypes' && k !== 'controller',
+  );
+  if (extra.length > 0) {
+    issue(
+      out,
+      path,
+      `the turn log keeps only the types, subtypes and controller of the source: not ${extra.join(', ')}`,
+    );
+  }
+  if (g.types === undefined && g.subtypes === undefined) {
+    issue(out, path, 'name the card types or the subtypes of the source');
+  }
+}
+
 export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Scope, out: Out) {
   switch (sel?.kind) {
     case 'you':
@@ -1631,6 +1673,26 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, `${path}.name`, "'combatDamagedByNamed' needs the name of the creature");
       }
       break;
+    case 'lostLifeThisTurn':
+    case 'combatDamagedThisTurn':
+      // CR 119.3, 120.2a: the players of a group (every player or every opponent) the turn log says lost life, or were dealt combat damage by the sources named.
+      if (kindOf(sel.of) !== 'eachPlayer' && kindOf(sel.of) !== 'eachOpponent') {
+        issue(out, `${path}.of`, `'${sel.kind}' reads the group 'eachPlayer' or 'eachOpponent'`);
+      }
+      if (sel.kind === 'combatDamagedThisTurn') {
+        if (sel.byThis !== undefined && sel.byThis !== true) {
+          issue(out, `${path}.byThis`, 'byThis is true when present');
+        }
+        if (sel.byThis === undefined && sel.by === undefined) {
+          issue(out, path, "'combatDamagedThisTurn' names the source: byThis, by, or both");
+        } else if (sel.by !== undefined) {
+          checkCombatDamageSourceKind(sel.by, `${path}.by`, 'combatDamagedThisTurn', out);
+        }
+        if (sel.byThis === true && scope.owner !== 'ability') {
+          issue(out, path, "'byThis' needs an ability of a permanent, not a spell");
+        }
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -1710,6 +1772,8 @@ export const PLAYER_ONLY = [
   'triggerDamagedPlayers',
   'attackedPlayers',
   'combatDamagedByNamed',
+  'lostLifeThisTurn',
+  'combatDamagedThisTurn',
 ];
 
 export function checkDamageRecipient(
@@ -2237,6 +2301,10 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'lifeTotalOf':
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
+    case 'playerCount':
+      // CR 102.1: the number of players a selector names, read as the amount is read.
+      checkPlayerSelector(a.of, `${path}.of`, scope, out);
       break;
     case 'poisonShortfall':
       // CR 122.1, 107.1b: a positive whole number less a player's poison counters, read as the instruction runs.
@@ -3661,35 +3729,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
-    case 'combatDamagedBy': {
+    case 'combatDamagedBy':
       // D-475, CR 120.2a: the kind of source: card types, subtypes and (relative to the controller) who controlled it, nothing else.
-      const f = c.filter;
-      if (f === undefined || f === null || typeof f !== 'object') {
-        issue(out, `${path}.filter`, 'combatDamagedBy needs a filter of the damage source');
-        break;
-      }
-      checkEnumList(out, `${path}.filter.types`, f.types, CARD_TYPES, 'card type');
-      if (f.subtypes !== undefined && (!Array.isArray(f.subtypes) || f.subtypes.length === 0)) {
-        issue(out, `${path}.filter.subtypes`, 'subtypes must be a non-empty list when present');
-      }
-      if (f.controller !== undefined && !isOneOf(f.controller, ['you', 'opponent', 'any'])) {
-        issue(out, `${path}.filter.controller`, 'the controller is you, opponent or any');
-      }
-      const extra = Object.keys(f).filter(
-        (k) => k !== 'types' && k !== 'subtypes' && k !== 'controller',
-      );
-      if (extra.length > 0) {
-        issue(
-          out,
-          `${path}.filter`,
-          `the turn log keeps only the types, subtypes and controller of the source: not ${extra.join(', ')}`,
-        );
-      }
-      if (f.types === undefined && f.subtypes === undefined) {
-        issue(out, `${path}.filter`, 'name the card types or the subtypes of the source');
-      }
+      checkCombatDamageSourceKind(c.filter, `${path}.filter`, 'combatDamagedBy', out);
       break;
-    }
     case 'ownsAndControlsNamed':
       // D-278, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
       if (typeof c.name !== 'string' || c.name === '') {
@@ -3708,6 +3751,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'castFromGraveyardThisTurn':
       if (Object.keys(c).some((key) => key !== 'kind')) {
         issue(out, path, 'the cast-from-a-graveyard condition has no extra fields');
+      }
+      break;
+    case 'aPlayerLostLifeThisTurn':
+      // CR 119.3: some player lost at least this much life this turn.
+      if (!isCount(c.atLeast) || c.atLeast < 1) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
     case 'lifeGainedAndLostThisTurn':

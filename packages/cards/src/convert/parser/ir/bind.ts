@@ -121,6 +121,9 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'triggerDamagedPlayers',
   // "each opponent dealt combat damage this game by a creature named ~": several players, as above.
   'combatDamagedByNamed',
+  // "each opponent who lost life this turn", "each opponent who was dealt combat damage by ~ this turn": several players, as above.
+  'lostLifeThisTurn',
+  'combatDamagedThisTurn',
   // "each player who controls a creature with power 4 or greater": several players, as above.
   'eachPlayerControlling',
 ]);

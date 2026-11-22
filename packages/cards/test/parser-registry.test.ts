@@ -1422,6 +1422,19 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
   ),
+  // Scions & Spellcraft deck, group A: the life lost and the combat damage dealt this turn, by the players of a group.
+  'condition.a-player-lost-life-this-turn': permanent(
+    (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
+  ),
+  'noun.each-player-who-lost-life': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
+  ),
+  'noun.each-player-who-dealt-combat-damage': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
+  ),
+  'amount.for-each-player-who': permanent(
+    (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

@@ -126,6 +126,7 @@ import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
 import { SYNTHETIC_LIFE_COST_LIST } from './synthetic-life-cost';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
+import { SYNTHETIC_LIFE_LOST_GROUP_LIST } from './synthetic-life-lost-group';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
 import { SYNTHETIC_LIVING_DEATH_LIST } from './synthetic-living-death';
 import { SYNTHETIC_LOREHOLD_G1_LIST } from './synthetic-lorehold-g1';
@@ -445,6 +446,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ANGELS_SHAPES_LIST,
   ...SYNTHETIC_ANGELS_STATICS_LIST,
   ...SYNTHETIC_LIFE_GAIN_LIST,
+  ...SYNTHETIC_LIFE_LOST_GROUP_LIST,
   ...SYNTHETIC_LOREHOLD_G1_LIST,
   ...SYNTHETIC_LOREHOLD_G2_LIST,
   ...SYNTHETIC_LOREHOLD_G3_LIST,

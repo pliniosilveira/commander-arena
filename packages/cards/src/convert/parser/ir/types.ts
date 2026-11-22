@@ -153,6 +153,8 @@ export interface IrNoun extends IrNode {
     | 'triggerDamagedPlayers' // "each of those opponents" (CR 603.2c): the opponents a damage batch trigger to your opponents hurt
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
+    | 'lostLifeThisTurn' // "each opponent who lost life this turn" (CR 119.3): the players of the group `whoGroup` who lost life this turn
+    | 'combatDamagedThisTurn' // "your opponents who were dealt combat damage by ~ or a Dragon this turn" (CR 120.2a): the players of the group `whoGroup` that source hurt
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
@@ -214,6 +216,12 @@ export interface IrNoun extends IrNode {
   readonly dealtCombatDamageToYou?: true;
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
+  /** `det` `lostLifeThisTurn` and `combatDamagedThisTurn`: the group the players are of, every player or every opponent (CR 102.1, 102.2). */
+  readonly whoGroup?: 'eachPlayer' | 'eachOpponent';
+  /** `det` `combatDamagedThisTurn`: the damage was dealt by the permanent of the ability ("by ~ or a Dragon"). */
+  readonly damagedByThis?: true;
+  /** `det` `combatDamagedThisTurn`: the damage was dealt by a source of this kind ("by ~ or a Dragon": a noun of subtype Dragon), read as the engine's turn log keeps it. */
+  readonly damageSource?: IrNoun;
   /**
    * "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): a target noun whose targets are `filter`
    * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
@@ -602,6 +610,8 @@ export type IrAmount =
   | { readonly kind: 'commanderColors'; readonly span: Span }
   // "the number of opponents you have" (CR 102.2)
   | { readonly kind: 'opponentCount'; readonly span: Span }
+  // "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn" (CR 102.1): the players the noun names
+  | { readonly kind: 'playerCount'; readonly of: IrNoun; readonly span: Span }
   // "half the number of Zombies you control, rounded down" (CR 107.1a: the rounding is stated)
   | {
       readonly kind: 'half';
@@ -802,6 +812,8 @@ export interface IrCondition extends IrNode {
     // "you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2): read from the turn log
     | { readonly kind: 'castFromGraveyardThisTurn' }
     | { readonly kind: 'lifeGainedAndLostThisTurn' }
+    // "a player lost 4 or more life this turn" (CR 119.3, 603.4): some player, any player
+    | { readonly kind: 'aPlayerLostLifeThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
     // D-444 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
     | {
@@ -2291,6 +2303,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'devotion',
   'commanderColors',
   'opponentCount',
+  'playerCount',
   'commanderManaValue',
   'commanderCasts',
   'half',
