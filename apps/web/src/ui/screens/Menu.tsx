@@ -25,7 +25,7 @@ export const HOW_TO_PLAY: readonly string[] = [
   'Arrows on the screen point from a spell on the stack to its targets.',
 ];
 
-const PLAYER_COUNTS = [2, 3, 4] as const;
+const OPPONENT_COUNTS = [1, 2, 3] as const;
 
 export function Menu() {
   const actions = useActions();
@@ -34,7 +34,7 @@ export function Menu() {
   const { choices } = useDeckChoices();
   const [level, setLevel] = useState<ChallengeLevel>('easy');
   // Visual only for now: the table size does not reach the game yet.
-  const [players, setPlayers] = useState<(typeof PLAYER_COUNTS)[number]>(2);
+  const [opponents, setOpponents] = useState<(typeof OPPONENT_COUNTS)[number]>(1);
   // Medium and Hard offer only the challenges that have emblems for them.
   const challengeChoices = useMemo(
     () =>
@@ -116,20 +116,25 @@ export function Menu() {
       <section className="scr-card" aria-labelledby="scr-play-h">
         <div className="scr-card-head">
           <h2 id="scr-play-h">Play a game</h2>
-          <fieldset className="scr-seg" aria-label="Number of players">
-            {PLAYER_COUNTS.map((n) => (
-              <label key={n} className="scr-seg-opt">
-                <input
-                  type="radio"
-                  name="scr-players"
-                  value={n}
-                  checked={players === n}
-                  onChange={() => setPlayers(n)}
-                />
-                <span>{n} players</span>
-              </label>
-            ))}
-          </fieldset>
+          <div className="scr-seg-group">
+            <span id="scr-opponents-label" className="scr-seg-label">
+              Number of opponents
+            </span>
+            <fieldset className="scr-seg" aria-labelledby="scr-opponents-label">
+              {OPPONENT_COUNTS.map((n) => (
+                <label key={n} className="scr-seg-opt">
+                  <input
+                    type="radio"
+                    name="scr-opponents"
+                    value={n}
+                    checked={opponents === n}
+                    onChange={() => setOpponents(n)}
+                  />
+                  <span>{n}</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
         </div>
         <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
         <button
