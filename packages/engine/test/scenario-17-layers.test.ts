@@ -493,6 +493,17 @@ describe('layers 4 and 5: types, subtypes and colors (CR 613.1d, 613.1e)', () =>
     g.expect.pt('bear', 3, 3);
   });
 
+  test('base P/T set, then it stops being a creature: no power or toughness (CR 208.3)', () => {
+    const g = board();
+    castBy1(g, FROG, 'bear');
+    g.expect.pt('bear', 2, 2);
+    castBy1(g, RUST, 'bear');
+    g.expect.derived('bear', { types: ['artifact'] });
+    const view = g.view(0).battlefield.find((o) => o.id === g.id('bear'));
+    expect(view?.power).toBeNull();
+    expect(view?.toughness).toBeNull();
+  });
+
   test('a creature that becomes an artifact is no longer a creature: no types, subtypes or power (CR 205.1a, 208.3)', () => {
     const g = board();
     castBy1(g, RUST, 'bear');

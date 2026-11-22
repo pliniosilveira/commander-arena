@@ -314,8 +314,8 @@ export function basePtOf(
 
 /**
  * Layers 7b and 7c (CR 613.4b, 613.4c). Effects that set power and toughness apply first, in
- * timestamp order, and the last one wins; they apply even to an object with no power and toughness
- * yet (CR 208.3a). Then everything that modifies them is added: counters (CR 122.1b),
+ * timestamp order, and the last one wins; the caller does not call this for a noncreature, which
+ * has no power or toughness whatever is set on it (CR 208.3, 208.3a). Then everything that modifies them is added: counters (CR 122.1b),
  * `modifyPt` effects and the static "+N/+N" of permanents (`staticPower`, `staticToughness`).
  * Addition commutes, so the timestamp order inside layer 7c does not change the sum. An object
  * with no power or toughness after layer 7b has none (CR 208.3).
