@@ -22,6 +22,9 @@ import { tableAreas } from './table-areas';
 import { opponentLabel } from './table-label';
 import { ZoneViewer } from './ZoneViewer';
 
+/** The cards of your hand are 15 percent smaller than on the 1v1 board: the table board needs the room. */
+const HAND_CARD_SCALE = 0.85;
+
 /** `flow` fills the flow cell at the bottom right: the turn box, the decision dock and the stack (`TableGame`). */
 export function TableBoard({ flow }: { flow?: ReactNode }) {
   const view = useApp((s) => s.snapshot?.view ?? null);
@@ -86,7 +89,11 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
           />
           <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
           <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
-          <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
+          <Hand
+            cards={me.hand ?? []}
+            active={view.activeSeat === me.id}
+            cardScale={HAND_CARD_SCALE}
+          />
         </div>
         <aside
           className="table-cell table-flow"

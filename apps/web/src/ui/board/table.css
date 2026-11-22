@@ -8,7 +8,7 @@
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(30, minmax(0, 1fr));
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 2px;
   overflow: clip;
@@ -63,4 +63,16 @@
   border: 0;
   overflow: hidden;
   clip-path: inset(50%);
+}
+
+/* The sideways scroll buttons of the battlefield rows are left out here: the rows still scroll
+   (wheel, trackpad, touch), and the narrow cells would be crowded by them. */
+.table-board .board-scroll {
+  display: none;
+}
+
+/* The hand sits lower than on the 1v1 board: a shorter area, so less of each card shows at rest and
+   the battlefield above gets the room (Hand.tsx reads the area's height as the part that shows). */
+.table-board .board-hand {
+  height: clamp(88px, 10vh, 108px);
 }
