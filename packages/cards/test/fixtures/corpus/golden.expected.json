@@ -5204,19 +5204,10 @@
     "6df03db9-e4b3-4931-94e3-c582d2b04110": {
       "name": "Hildibrand Manderville // Gentleman's Rise",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ dies, you may cast it from your graveyard as an Adventure until the end of your next turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8f8824e2"
+      "ast": "4ef3b7d1"
     },
     "6df1c314-b97b-4bbc-8b7e-a07785347a49": {
       "name": "Occult Epiphany",
@@ -11846,7 +11837,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1161,
+      "supported": 1162,
       "total": 1184
     }
   }
