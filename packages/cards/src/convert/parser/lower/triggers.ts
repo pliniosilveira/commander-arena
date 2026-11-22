@@ -1571,6 +1571,17 @@ function lowerTriggeredAbility(
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
   ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
+  ctx.attackBatchThose =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) =>
+        t.kind === 'attackBatch' &&
+        t.who === 'you' &&
+        t.attackedEnchantedPlayer !== true &&
+        t.eachAttackedPlayer !== true &&
+        (t.what === undefined ||
+          JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
+    );
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');

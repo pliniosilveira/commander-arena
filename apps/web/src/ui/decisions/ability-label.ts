@@ -395,6 +395,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSources':
       // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
       return 'those creatures';
+    case 'triggerAttackers':
+      // Champions from Beyond: the creatures the attack declared.
+      return 'those creatures';
     case 'convokers':
       // Lethal Scheme (CR 702.51a): the creatures tapped to cast the spell with Convoke.
       return 'each creature that convoked this spell';
@@ -513,6 +516,7 @@ function recipientText(
     case 'triggerSubject':
       return 'it';
     case 'triggerSources':
+    case 'triggerAttackers':
       return 'those creatures';
     case 'convokers':
       return 'each creature that convoked this spell';

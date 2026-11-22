@@ -723,6 +723,9 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'triggerPlayerTurn':
+      // CR 603.4, 500.1: "that player", the player the event is about, is the active player.
+      return ctx.triggerPlayer !== undefined && state.turn.activeSeat === ctx.triggerPlayer;
     case 'triggerPlayerIsOpponent':
       // CR 603.2b, 102.2: "that player", the player the event is about, is an opponent of the controller of the ability.
       return (

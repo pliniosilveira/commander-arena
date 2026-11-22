@@ -2161,6 +2161,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
+        if (conditionHas(a.interveningIf, 'triggerPlayerTurn') && !triggerHasPlayer(a.trigger)) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'triggerPlayerTurn reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
         if (
           conditionHas(a.interveningIf, 'ringBearerChosen') &&
           a.trigger?.kind !== 'ringTempted'

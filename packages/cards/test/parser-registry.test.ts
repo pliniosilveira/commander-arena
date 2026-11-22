@@ -1074,6 +1074,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Transpose (CR 702.88a): the condition leads the sentence of a spell.
+  'condition.cast-from-hand': spell(
+    (e) => `Draw a card. If ${e}, create a 1/1 white Spirit creature token.`,
+  ),
+  // Tataru Taru: the intervening "if" of a trigger about the player who drew.
+  'condition.that-players-turn': permanent(
+    (e) => `Whenever an opponent draws a card, if ${e}, create a tapped Treasure token.`,
+  ),
   // Meren of Clan Nel Toth: the condition leads the sentence that returns the card chosen before it.
   'condition.that-mana-value-at-most': permanent(
     (e) =>

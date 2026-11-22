@@ -165,6 +165,47 @@ export const CONDITION_CAST_FROM_GRAVEYARD = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.cast-from-hand`: "~ was cast from your hand" (CR 601.2a, 603.4, 702.88a: Transpose's "If this spell was cast from your hand"; the card's own name or "this spell" reads as `~`):
+ * the spell the text belongs to was cast from its caster's hand. The engine's `castFromZone` of the hand. Not read: another zone, "a hand", "their hand", "was not cast from your hand",
+ * another spell ("that spell").
+ */
+export const CONDITION_CAST_FROM_HAND = defineRule<IrCondition>({
+  id: 'condition.cast-from-hand',
+  family: 'condition',
+  leading: ['~'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 603.4 (Handling Triggered Abilities)',
+    'CR 702.88a (Rebound)',
+  ],
+  examples: ['~ was cast from your hand'],
+  rejects: [
+    '~ was cast from your hand.',
+    '~ was cast from a hand',
+    '~ was cast from their hand',
+    '~ was cast from exile',
+    '~ was cast from your graveyard',
+    '~ was not cast from your hand',
+    '~ was cast from your hand or exile',
+    'that spell was cast from your hand',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/~ was cast from your hand(?![\p{L}\p{N}])(?! or)/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'castFromZone', zone: 'hand' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.cast-from-hand',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.it-targets`: "it targets a tapped creature" (CR 601.2c, 601.2f, stage P50, D-207: the targets are chosen before the cost is determined): the
  * spell the text belongs to has a chosen target that is a permanent of this kind. The engine's `spellTargets`, read as the total cost is determined. Not
  * read: a player ("it targets you"), a count, a plural, "it doesn't target", another spell.
@@ -263,4 +304,5 @@ export const VRASKA_CONDITION_RULES = [
   CONDITION_CARD_LEFT_GRAVEYARD,
   CONDITION_DESCENDED_THIS_TURN,
   CONDITION_CAST_FROM_GRAVEYARD,
+  CONDITION_CAST_FROM_HAND,
 ];

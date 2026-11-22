@@ -63,6 +63,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'its';
     case 'triggerSources':
+    case 'triggerAttackers':
     case 'convokers':
       return 'their';
     case 'sacrificedCost':
@@ -101,6 +102,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'it';
     case 'triggerSources':
+    case 'triggerAttackers':
       return 'those creatures';
     case 'convokers':
       return 'each creature that convoked this spell';

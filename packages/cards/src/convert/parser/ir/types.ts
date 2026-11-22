@@ -871,6 +871,8 @@ export interface IrCondition extends IrNode {
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
+    // "it isn't that player's turn" (Tataru Taru, CR 603.4, 500.1): the player the event of a trigger is about is (or, negated, is not) the active player
+    | { readonly kind: 'thatPlayersTurn'; readonly negated: boolean }
     // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability is on is paired
     // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
     | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
@@ -995,7 +997,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'descendedThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
-    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }
+    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
     // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"

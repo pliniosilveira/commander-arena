@@ -117,6 +117,7 @@ describe('the dimensions', () => {
       'subjectGreaterThanEach',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
+      'triggerPlayerTurn',
       'triggerPlayerIsOpponent',
       'triggerPlayerStat',
       'cardsInGraveyard',

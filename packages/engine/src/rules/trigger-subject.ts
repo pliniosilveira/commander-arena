@@ -61,7 +61,8 @@ export function readsTriggerPlayer(ability: Ability): boolean {
     ) ||
       // Issue 159: "each opponent attacking that player" reads the player the trigger is about.
       JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
-      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"'))
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"') ||
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerTurn"'))
   );
 }
 
@@ -92,9 +93,11 @@ export function readsTriggerDamaged(ability: Ability): boolean {
 export function readsTriggerAttackers(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"attackersGreatestPower"',
-    )
+    ) ||
+      // Champions from Beyond: "those creatures" of the attack event.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackers"'))
   );
 }
 
