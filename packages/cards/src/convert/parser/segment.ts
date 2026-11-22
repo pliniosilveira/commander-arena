@@ -541,6 +541,17 @@ const IF_ITS_CARD_PUT_ONTO = /^if it['’]s an? [^.,]* card, they put it onto th
 const LOOK_AT_TOP_CARD = /^look at the top card of your library\.$/i;
 const IF_ITS_CARD_MAY_TAKE =
   /^if it['’]s an? [^.,]* card(?: of the chosen type)?, you may reveal it and put it into your hand\.$/i;
+/**
+ * "Look at the top card of your library. You may exile it face down." (Urianger Augurelt, CR 701.20, 406.3): the second sentence says what is done with the card the first one looked at, so
+ * the two are one instruction, kept together for `effect.look-top-may-exile-face-down`.
+ */
+const YOU_MAY_EXILE_IT_FACE_DOWN = /^you may exile it face down\.$/i;
+/**
+ * "Until end of turn, you may play cards exiled with ~. Spells you cast this way cost {2} less to cast." (Urianger Augurelt, CR 601.2f): "this way" is the permission the first sentence gives,
+ * so the two are one instruction, kept together for `effect.may-play-exiled-with-self-less`.
+ */
+const UNTIL_EOT_PLAY_CARDS_EXILED_WITH = /^until end of turn, you may play cards exiled with ~\.$/i;
+const SPELLS_CAST_THIS_WAY_COST_LESS = /^spells you cast this way cost \{\d+\} less to cast\.$/i;
 /** "If you don't put the card into your hand, put it on the bottom of your library." (Vivien's Grizzly, issue 345): the third sentence of the instruction of `LOOK_AT_TOP_CARD`. */
 const ELSE_BOTTOM_OF_LIBRARY =
   /^if you don['’]t put the card into your hand, put it on the bottom of your library\.$/i;
@@ -1131,6 +1142,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
+        (said(a, LOOK_AT_TOP_CARD) && said(b, YOU_MAY_EXILE_IT_FACE_DOWN)) ||
+        (said(a, UNTIL_EOT_PLAY_CARDS_EXILED_WITH) && said(b, SPELLS_CAST_THIS_WAY_COST_LESS)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||

@@ -95,6 +95,9 @@ function hasLinkedExile(e: unknown): boolean {
       // CR 607.2a: "exile the top card of your library" whose card another ability of the face reads as "exiled with this enchantment".
       JSON.stringify(e ?? null).includes('"kind":"exileTop"')) &&
       JSON.stringify(e).includes('"linked":true')) ||
+    // Urianger Augurelt (CR 607.2a, 406.3): "Look at the top card of your library. You may exile it face down.": a `lookAtTop` taking the card into exile face down remembers it, as Hideaway does.
+    (JSON.stringify(e ?? null).includes('"kind":"lookAtTop"') &&
+      JSON.stringify(e).includes('"to":"exileFaceDown"')) ||
     // King Narfi's Betrayal (CR 607.2a): "you may exile a creature or planeswalker card from each graveyard": a `moveToZone` to exile that says linked.
     (JSON.stringify(e ?? null).includes('"kind":"moveToZone"') &&
       JSON.stringify(e).includes('"to":"exile"') &&

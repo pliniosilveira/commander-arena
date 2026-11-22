@@ -417,11 +417,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return ok({ kind: 'landfall' });
     case 'playsCard': {
       // "Whenever you play a card with two or more card types" (Death Toll deck, group D, CR 305.1, 601.2, 205.2a): the player is the controller of the ability.
-      if (t.actor?.det !== 'you' || t.atLeast === undefined) return failure(t);
+      // Urianger Augurelt: "you play a land from exile or cast a spell from exile" names no number of card types, only the zone.
+      if (t.actor?.det !== 'you' || (t.atLeast === undefined && t.fromExile !== true)) {
+        return failure(t);
+      }
       const blocked = missingFeatures(['trigger:playsCard']);
       return blocked.length > 0
         ? failure(t, blocked)
-        : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
+        : ok({
+            kind: 'playsCard',
+            ...(t.atLeast === undefined ? {} : { minCardTypes: t.atLeast }),
+            ...(t.fromExile === true ? { fromExile: true as const } : {}),
+          });
     }
     case 'doorUnlocked': {
       // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.

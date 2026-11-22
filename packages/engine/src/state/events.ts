@@ -135,6 +135,8 @@ export type GameEvent =
       readonly object: ObjectId;
       /** The face played when it is not face 0 (a modal double-faced card's back face, CR 712.12). */
       readonly face?: number;
+      /** The zone the land was played from, only when it is not the hand ("Whenever you play a land from exile", CR 305.1). */
+      readonly fromZone?: Zone;
     }
   | {
       readonly kind: 'spellCast';

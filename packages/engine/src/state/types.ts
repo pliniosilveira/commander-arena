@@ -539,6 +539,11 @@ export interface StackData {
    */
   readonly anyManaColor?: true;
   /**
+   * The generic mana the cost of this spell goes down by because of the permission it was cast with (Urianger Augurelt, "Spells you cast this way cost {2} less to cast", CR 601.2f):
+   * written as the spell is cast from exile (`rules/cast.ts`), read where its cost is determined. Absent otherwise, and for an ability.
+   */
+  readonly lessGeneric?: number;
+  /**
    * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
    * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
    * (CR 400.7). Absent otherwise, and for an ability.
@@ -2394,6 +2399,8 @@ export type ContinuousChange =
       readonly anyManaType?: true;
       /** "If that spell would be put into a graveyard, exile it instead" (`mayPlay.exileInstead`, Dire Fleet Daredevil, CR 614.1a): the spell carries `StackData.exileInstead`. */
       readonly exileInstead?: true;
+      /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
+      readonly lessGeneric?: number;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,

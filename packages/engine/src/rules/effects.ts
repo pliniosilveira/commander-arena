@@ -675,7 +675,12 @@ export function runInstruction(
       return {
         ...done(played, [
           ...moveEvents,
-          { kind: 'landPlayed', seat: res.controller, object: result.newObject },
+          {
+            kind: 'landPlayed',
+            seat: res.controller,
+            object: result.newObject,
+            ...(subject.zone === 'hand' ? {} : { fromZone: subject.zone }),
+          },
         ]),
         lastMoved,
         performed: 1,

@@ -27,6 +27,7 @@ import { AHOY_G8_LOWERINGS } from './ahoy-g8';
 import { AHOY_G10_LOWERINGS, revealEachTokenLowering } from './ahoy-g10';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
+import { ARCANUM_LOWERINGS } from './arcanum';
 import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
@@ -2746,6 +2747,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,
+  // Urianger Augurelt: "Look at the top card of your library. You may exile it face down." and "... you may play cards exiled with ~. Spells you cast this way cost {2} less to cast."
+  ...ARCANUM_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,

@@ -67,6 +67,7 @@ import type { PlanOptions } from './mana-sources';
 import { nextSpellReduction } from './next-spell';
 import { payMechanismsOf, payOptionSources } from './pay-options';
 import { playPermissionAnyColor, playPermissionAnyType } from './play-permission-color';
+import { playPermissionLess } from './play-permission-cost';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
@@ -261,6 +262,10 @@ function reductionFor(
   }
   // Issue 121: "The next instant or sorcery spell you cast this turn costs {X} less to cast" (`nextSpellModifier`).
   total += nextSpellReduction(state, seat, spell);
+  // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": the permission a card in exile is cast with, or what the spell on the stack took from it.
+  total +=
+    spell.stack?.lessGeneric ??
+    (castFrom === 'exile' ? playPermissionLess(state, seat, excluded ?? spell.id) : 0);
   return total;
 }
 

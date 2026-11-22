@@ -76,4 +76,58 @@ export const TRIGGER_PLAY_CARD = defineRule<IrTrigger>({
   },
 });
 
-export const DEATH_TOLL_D_TRIGGER_RULES = [TRIGGER_PLAY_CARD].map(quietly);
+/**
+ * `trigger.play-land-or-cast-spell-from-exile`: "you play a land from exile or cast a spell from exile" (CR 305.1, 601.2a, 603.2: a land played from exile, or a spell cast from exile, by the
+ * controller). The engine's `playsCard` with `fromExile`. Not read: another player, the past tense, only a land or only a spell, another zone ("from your graveyard"), cards of one kind.
+ */
+export const TRIGGER_PLAY_LAND_OR_CAST_SPELL_FROM_EXILE = defineRule<IrTrigger>({
+  id: 'trigger.play-land-or-cast-spell-from-exile',
+  family: 'trigger',
+  leading: ['you'],
+  cites: [
+    'CR 305.1 (Lands)',
+    'CR 601.2a (Casting Spells)',
+    'CR 603.2 (Handling Triggered Abilities)',
+  ],
+  examples: ['you play a land from exile or cast a spell from exile'],
+  rejects: [
+    'you play a land from exile',
+    'you cast a spell from exile',
+    'you cast a spell from exile or play a land from exile',
+    'an opponent plays a land from exile or casts a spell from exile',
+    'you played a land from exile or cast a spell from exile',
+    'you play a land from your graveyard or cast a spell from your graveyard',
+    'you play a land from exile or cast a spell from exile or',
+    'you play a land from exile or cast a creature spell from exile',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/you play a land from exile or cast a spell from exile(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'playsCard',
+        actor: makeNoun(
+          'trigger.play-land-or-cast-spell-from-exile',
+          { start: pos, end: pos + 3 },
+          'you',
+          { raw: 'you' },
+        ),
+        fromExile: true,
+        args: {},
+        span: { start: pos, end: r.pos },
+        rule: 'trigger.play-land-or-cast-spell-from-exile',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const DEATH_TOLL_D_TRIGGER_RULES = [
+  TRIGGER_PLAY_CARD,
+  TRIGGER_PLAY_LAND_OR_CAST_SPELL_FROM_EXILE,
+].map(quietly);

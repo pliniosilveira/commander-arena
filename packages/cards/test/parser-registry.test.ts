@@ -891,6 +891,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
+  'trigger.play-land-or-cast-spell-from-exile': whenever,
   'trigger.activate-ability': whenever,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
