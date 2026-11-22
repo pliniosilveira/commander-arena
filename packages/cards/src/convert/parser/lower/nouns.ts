@@ -191,6 +191,8 @@ function lowerFilterAt(
   // CR 208.1, 608.2c: "with power greater than target creature's power" is read by the group of an effect (`selectorOf`), where the targets are known.
   if (filter.powerGreaterThanNoun !== undefined) return bad(['selector:powerGreaterThan']);
   if (filter.sameNameAsNoun !== undefined) return bad(['selector:sameNameAs']);
+  // Reunion of the House (CR 208.1): "with total power 10 or less" is a limit on the targets of a slot together, which `declareTarget` takes off the filter first.
+  if (filter.totalPowerAtMost !== undefined) return bad(['selector:totalPowerAtMost']);
   // D-656: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
   if (filter.namedSelf === true) return bad([]);
   const types = filter.types ?? [];
@@ -374,6 +376,11 @@ function lowerFilterAt(
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
+  // Expel the Interlopers (CR 208.1, 608.2c): "with power greater than or equal to the chosen number", read where an effect's `each` selector is read (the engine checks the choice).
+  if (filter.powerAtLeastChosenNumber === true) {
+    if (inner) return bad([]);
+    parts.push('selector:powerAtLeastChosenNumber');
+  }
   // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
   if (filter.named !== undefined) {
     if (inner) return bad([]);
@@ -601,6 +608,9 @@ function lowerFilterAt(
     ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
+    ...(filter.powerAtLeastChosenNumber === true
+      ? { powerAtLeastChosenNumber: true as const }
+      : {}),
     ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
@@ -945,6 +955,17 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         if (blockedExcept.length > 0) return failure(noun, blockedExcept);
         subject = { ...subject, other: false };
       }
+      // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less": the limit is the slot's, not the filter's.
+      let totalPower: number | undefined;
+      if (noun.filter.totalPowerAtMost !== undefined) {
+        const blockedTotal = missingFeatures(['selector:totalPowerAtMost']);
+        if (blockedTotal.length > 0) return failure(noun, blockedTotal);
+        if (!anyNumberTarget) return failure(noun, []);
+        totalPower = noun.filter.totalPowerAtMost;
+        const { totalPowerAtMost: _limit, ...rest } = subject.filter;
+        void _limit;
+        subject = { ...subject, filter: rest };
+      }
       const lowered = lowerFilter(subject);
       if (!lowered.ok) return lowered;
       const withExcept = exceptDying
@@ -1014,6 +1035,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               id,
               what: { kind: 'object', filter: filter.value },
               anyNumber: true,
+              ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
               ...(noun.differentControllers === true
                 ? { differentControllers: true as const }
                 : {}),
@@ -1213,6 +1235,16 @@ export function objectRefOf(
     return { ok: true, value: { kind: 'linkedExile' }, rule: noun.rule };
   }
   if (noun.det === 'sacrificed') {
+    // Tip the Scales (CR 701.21, 603.12, 608.2h): after a sacrifice of one permanent in the same text, "the sacrificed creature" is that permanent (the engine's `sacrificed`), not a cost's.
+    if (ctx.sacrificedRef !== null) {
+      return (
+        gate(noun, ['selector:sacrificed']) ?? {
+          ok: true,
+          value: { kind: 'sacrificed' },
+          rule: noun.rule,
+        }
+      );
+    }
     return (
       gate(noun, ['selector:sacrificedCost']) ?? {
         ok: true,

@@ -20,6 +20,7 @@ import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
 import { ABZAN_ARMOR_NOUN_RULES } from './abzan-armor';
+import { ABZAN_SPELLS_NOUN_RULES } from './abzan-spells';
 import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
 import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
 import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
@@ -1030,6 +1031,7 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...ABZAN_SPELLS_NOUN_RULES,
   ...SAME_NAME_NOUN_RULES,
   ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,

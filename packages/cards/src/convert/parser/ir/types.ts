@@ -468,6 +468,13 @@ export interface IrFilter {
   /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
   readonly basePowerIs?: number;
   /**
+   * "any number of target creature cards with total power 10 or less from your graveyard" (Reunion of the House, CR 115.1, 208.1): the powers of the targets of the slot add up to at
+   * most this number; the engine's `TargetSpec.totalPowerAtMost`. Read only by the target slot of a noun of any number of targets (`declareTarget`).
+   */
+  readonly totalPowerAtMost?: number;
+  /** "with power greater than or equal to the chosen number" (Expel the Interlopers, CR 208.1, 608.2c): the engine's `powerAtLeastChosenNumber`, read by the group of an effect. */
+  readonly powerAtLeastChosenNumber?: true;
+  /**
    * "with power greater than target creature's power" (CR 208.1, 608.2c): the engine's `powerGreaterThan` of the target this noun is. A target noun of its own, numbered with
    * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
    */

@@ -144,6 +144,8 @@ export interface Scope {
    * reference `sacrificed` has a permanent to read (D-177).
    */
   readonly sacrificedEarlier?: boolean;
+  /** True after a `chooseNumber` effect in the same sequence: `powerAtLeastChosenNumber` has a number to read (Expel the Interlopers). */
+  readonly chosenNumber?: boolean;
   /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
   readonly entersX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
@@ -243,6 +245,22 @@ export function checkFilter(
       );
     } else {
       checkRef(f.powerGreaterThan, 'object', `${path}.powerGreaterThan`, ownerScope, out);
+    }
+  }
+  // CR 208.1, 608.2c (Expel the Interlopers): "with power greater than or equal to the chosen number" reads the number an earlier `chooseNumber` of the same sequence chose.
+  if (f.powerAtLeastChosenNumber !== undefined) {
+    if (f.powerAtLeastChosenNumber !== true) {
+      issue(
+        out,
+        `${path}.powerAtLeastChosenNumber`,
+        'powerAtLeastChosenNumber must be true when present',
+      );
+    } else if (ownerScope === undefined || ownerScope.chosenNumber !== true) {
+      issue(
+        out,
+        `${path}.powerAtLeastChosenNumber`,
+        "powerAtLeastChosenNumber is only read in the 'each' selector of an effect after a chooseNumber effect of the same sequence",
+      );
     }
   }
   // CR 201.2, 608.2c: "with the same name as that card" names an object the effect knows, so only an `each` selector reads it.
@@ -1255,6 +1273,29 @@ export function declareTargets(
       }
       if (isCount(spec.min) && spec.min > 0) {
         issue(out, `${p}.min`, '"up to one for each opponent" has no minimum');
+      }
+    }
+    if (spec.totalPowerAtMost !== undefined) {
+      // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less".
+      if (!Number.isInteger(spec.totalPowerAtMost) || spec.totalPowerAtMost < 0) {
+        issue(out, `${p}.totalPowerAtMost`, 'totalPowerAtMost must be a whole number, 0 or more');
+      }
+      if (what?.kind !== 'object') {
+        issue(out, `${p}.what`, 'a total power limit is for objects (cards or permanents)');
+      }
+      if (
+        spec.anyNumber !== true ||
+        spec.divide !== undefined ||
+        spec.countX !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.differentControllers !== undefined ||
+        spec.upToThatMany !== undefined
+      ) {
+        issue(
+          out,
+          `${p}.totalPowerAtMost`,
+          'a total power limit goes with any number of targets, and not with divide, countX, onePerOpponent, differentControllers or upToThatMany',
+        );
       }
     }
     if (spec.differentControllers !== undefined) {
@@ -5279,6 +5320,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
       if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
+    case 'chooseNumber':
+      // CR 608.2d (Expel the Interlopers): "Choose a number between 0 and 10": whole numbers, the least first.
+      if (!Number.isInteger(e.min) || !Number.isInteger(e.max) || e.min < 0 || e.max < e.min) {
+        issue(out, path, 'chooseNumber needs whole numbers 0 <= min <= max');
+      }
+      break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
         issue(out, `${path}.effects`, 'a sequence needs at least one effect');
@@ -5295,6 +5342,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               ...after,
               chosenObjects: new Set([...(after.chosenObjects ?? []), child.id]),
             };
+          }
+          if (child?.kind === 'chooseNumber' && after.chosenNumber !== true) {
+            after = { ...after, chosenNumber: true };
           }
           // D-120: after a `loseLife`, "the total life lost this way" can be read.
           if (child?.kind === 'loseLife' && after.lossAvailable !== true) {
@@ -5470,6 +5520,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       if (e.fromLibraryOf !== undefined) {
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
+      }
+      break;
+    case 'keepOrSacrifice':
+      // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'each player chooses among the permanents they control: leave controller out',
+        );
+      }
+      if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be sacrificed');
+      }
+      if (!Number.isInteger(e.totalPowerAtMost) || e.totalPowerAtMost < 0) {
+        issue(
+          out,
+          `${path}.totalPowerAtMost`,
+          'totalPowerAtMost must be a whole number, 0 or more',
+        );
       }
       break;
     case 'sacrifice':

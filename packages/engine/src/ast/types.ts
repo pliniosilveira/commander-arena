@@ -963,6 +963,12 @@ export interface ObjectFilter {
    */
   readonly powerGreaterThan?: ObjectRef;
   /**
+   * "Destroy all creatures with power greater than or equal to the chosen number" (Expel the Interlopers, CR 208.1, 608.2c): the object's power as it is now is at least the
+   * number a `chooseNumber` effect earlier in the same resolution had its controller choose. Read only in the filter of an `each` selector of an effect after that `chooseNumber`.
+   * An object with no power matches nothing.
+   */
+  readonly powerAtLeastChosenNumber?: true;
+  /**
    * "Return target creature card and all other cards with the same name as that card from your graveyard to your hand" (Echoing Return, CR 201.2, 608.2c): the object has the same
    * name as the object this reference names (the target card included, which has its own name), read as the effect resolves. Read only in the filter of an `each` selector of an effect,
    * which knows the targets (as `powerGreaterThan` is). A reference that names nothing matches nothing.
@@ -1412,6 +1418,14 @@ export interface TargetSpec {
    * or `upToThatMany` it is refused. The controllers are read as the targets are chosen; a later change of control does not make a target illegal (CR 608.2b reads only the filter).
    */
   readonly differentControllers?: true;
+  /**
+   * "Return any number of target creature cards with total power 10 or less from your graveyard to the battlefield" (Reunion of the House, CR 115.1, 601.2c, 208.1): the
+   * targets of this slot (`anyNumber`, objects) have total power of at most this number, each read as the creature or card it is now (a card in a graveyard has its printed
+   * power, a characteristic-defining ability's value included, CR 604.3; a negative power subtracts). As the spell or ability resolves the total is read again: if it is more
+   * than the limit the whole selection of this slot is illegal (CR 608.2b) and none of its targets is affected. A whole number, 0 or more; with `divide`, `countX`,
+   * `onePerOpponent`, `differentControllers` or `upToThatMany` it is refused.
+   */
+  readonly totalPowerAtMost?: number;
   /**
    * "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the slot's targets are cards in the graveyard of
    * the player chosen for the earlier player slot this id names (`what` is an `object` filter of `zone` `graveyard`). A target of another player's graveyard is not
@@ -2168,6 +2182,12 @@ export type Effect =
    * object matches `chosenType` with any of them; `notChosenType` with none of them).
    */
   | { readonly kind: 'chooseCreatureType'; readonly players?: PlayerSelector }
+  /**
+   * "Choose a number between 0 and 10" as the effect resolves (Expel the Interlopers, CR 608.2d, 107.1): the controller chooses a whole number from `min` to `max`, both
+   * included (a `chooseX` decision of purpose `chooseNumber`, asked even when only one number could be chosen: the choice is the player's). The number is what
+   * `powerAtLeastChosenNumber` of an object filter reads in the instructions after it, in the same resolution.
+   */
+  | { readonly kind: 'chooseNumber'; readonly min: number; readonly max: number }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   /**
@@ -3271,6 +3291,19 @@ export type Effect =
       readonly objects: SacrificeSelector;
       readonly player?: PlayerSelector;
       readonly byController?: true;
+    }
+  /**
+   * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (Slaughter the Strong, CR 608.2d,
+   * 701.21a, 101.4, 208.1): each player the selector names, in APNAP order, chooses among the permanents that match `filter` that they control (the matching permanents of one
+   * player only) any set whose power adds up to at most `totalPowerAtMost` (power as `derive` gives it as the effect resolves, a negative power subtracting, CR 208.1), the ones
+   * chosen already known to the later players. Nothing is sacrificed until the last has chosen; then every permanent that matches and was not chosen is sacrificed at once
+   * (one that can't be sacrificed, CR 101.2, stays). `filter` has no controller of its own, no zone but the battlefield, and `totalPowerAtMost` is a whole number of 0 or more.
+   */
+  | {
+      readonly kind: 'keepOrSacrifice';
+      readonly players: PlayerSelector;
+      readonly filter: ObjectFilter;
+      readonly totalPowerAtMost: number;
     }
   | {
       readonly kind: 'moveToZone';

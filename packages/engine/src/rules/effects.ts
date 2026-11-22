@@ -40,6 +40,7 @@ import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
+import { runChooseNumber } from './choose-number';
 import { runChooseOne } from './choose-one';
 import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
 import { newClash, runClash } from './clash';
@@ -348,6 +349,7 @@ export function runInstruction(
   if (instruction.kind === 'discard') return runDiscard(state, res, instruction);
   if (instruction.kind === 'arrange') return runArrange(state, res, instruction);
   if (instruction.kind === 'drawUpTo') return runDrawUpTo(state, res, instruction);
+  if (instruction.kind === 'chooseNumber') return runChooseNumber(state, res, instruction);
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
   if (instruction.kind === 'lookSplit') return runLookSplit(state, res, instruction);
   if (instruction.kind === 'pileSeparate') return runPileSeparate(state, res, instruction);
@@ -832,6 +834,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
           },
         }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
+    ...(res.chosenNumber === undefined ? {} : { chosenNumber: res.chosenNumber }),
     ...(res.chosenPlayer === undefined ? {} : { chosenPlayer: res.chosenPlayer }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
@@ -925,6 +928,21 @@ function runEffect(
               chosen: null,
               seat,
             })),
+      );
+    case 'chooseNumber':
+      // CR 608.2d (Expel the Interlopers): the controller chooses a whole number from `min` to `max`.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseNumber',
+            seat: res.controller,
+            min: effect.min,
+            max: effect.max,
+            amount: null,
+          },
+        ],
       );
     case 'sequence':
       return done(
@@ -1028,6 +1046,28 @@ function runEffect(
           }).length,
         },
       };
+    }
+
+    case 'keepOrSacrifice': {
+      // CR 101.4, 608.2d (Slaughter the Strong): every player the effect names chooses, the active player first, then nothing is sacrificed until the last has chosen.
+      const seats = resolvePlayers(state, effect.players, ctx, targets);
+      const [first, ...later] = seats;
+      if (first === undefined) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseSacrifice' as const,
+            filter: effect.filter,
+            count: 0,
+            keepPowerAtMost: effect.totalPowerAtMost,
+            chosen: null,
+            seat: first,
+            ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+          },
+        ],
+      );
     }
 
     case 'sacrifice': {

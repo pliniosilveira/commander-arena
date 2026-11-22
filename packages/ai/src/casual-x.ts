@@ -92,6 +92,32 @@ function damageX(view: GameView, text: string, max: number): number {
   return max;
 }
 
+/**
+ * "Destroy all creatures with power greater than or equal to the chosen number" (Expel the Interlopers): of the numbers the decision offers, the one after which the creatures that
+ * die are worth most to the opponents and least to the agent (a creature counts for its power plus one, so a 0/4 wall is not free), the highest number among equals so that it spares
+ * more of its own. When no number is better than none dying, the highest one (nothing dies).
+ */
+function bestSweepNumber(view: GameView, d: ChooseXDecision): number {
+  const worth = (o: ObjectView) => Math.max(0, powerOf(o)) + 1;
+  const mine = view.battlefield.filter(
+    (o) => o.controller === view.viewer && o.types.includes('creature'),
+  );
+  const theirs = opposingCreatures(view);
+  let best = d.max;
+  let bestScore = 0;
+  for (let n = d.max; n >= d.min; n -= 1) {
+    const dying = (o: ObjectView) => powerOf(o) >= n;
+    const score =
+      theirs.filter(dying).reduce((sum, o) => sum + worth(o), 0) -
+      mine.filter(dying).reduce((sum, o) => sum + worth(o), 0);
+    if (score > bestScore) {
+      best = n;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 /** The value to announce for the X of the spell or ability the decision is about. */
 export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   if (d.purpose === 'multikicker') return chooseKicksAnswer(view, d);
@@ -100,6 +126,8 @@ export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   if (d.purpose === 'payAnyAmount') return { kind: 'chooseX', value: d.max };
   // D-217: "may draw up to two cards": drawing is a gain, so as many as it may.
   if (d.purpose === 'drawUpTo') return { kind: 'chooseX', value: d.max };
+  // CR 608.2d (Expel the Interlopers): "choose a number between 0 and 10": the number that destroys the most of what the opponents have and the least of its own.
+  if (d.purpose === 'chooseNumber') return { kind: 'chooseX', value: bestSweepNumber(view, d) };
   const source = findObject(view, d.source);
   const text = source?.oracleText ?? '';
   let want = d.max;

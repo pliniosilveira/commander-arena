@@ -180,6 +180,8 @@ export interface TargetChoiceSpec {
    * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
    */
   readonly eachController?: true;
+  /** "Any number of target creature cards with total power 10 or less" (`TargetSpec.totalPowerAtMost`, CR 208.1): the targets of this slot have total power of at most this; each `legal` target says its `power`. */
+  readonly totalPowerAtMost?: number;
   /** "Up to three target cards from their graveyard" (`TargetSpec.ownedByTarget`): every target of this slot is a card of the graveyard of the player chosen for the slot with this id (its `group`). */
   readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
@@ -464,7 +466,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'soulbond'
     | 'blight'
     | 'untapCost'
-    | 'removeCountersCost';
+    | 'removeCountersCost'
+    | 'keep';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):
@@ -537,6 +540,13 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * needed is allowed. Left out for every other purpose.
    */
   readonly minTotalPower?: number;
+  /**
+   * For `'keep'` (Slaughter the Strong, CR 608.2d, 701.21a: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures
+   * they control"): `seat` chooses which of the permanents in `legal` (all they control that match) to keep; `min` is 0 and `max` is `legal.length`, and the answer must have
+   * total power of at most `maxTotalPower` (`powers` gives each one's power). The permanents of `legal` not chosen are sacrificed, together with the other players' once the
+   * last has chosen. `source` is the spell or ability.
+   */
+  readonly maxTotalPower?: number;
   /**
    * For a `forCost` sacrifice of several different permanents ("Sacrifice a Swamp and a Forest", CR 701.21a): one list for each part of the cost, the permanents that can pay it
    * (`legal` is all of them, `min` and `max` the number of parts). The answer gives each part a different permanent of its own list, so a permanent in two lists pays one of them.
@@ -1185,7 +1195,15 @@ export interface ChooseXDecision extends DecisionBase {
    * 'replicate' for the number of times its replicate cost is paid (CR 702.56a, D-129: the same, asked after the kicker
    * and before X and the targets).
    */
-  readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
+  readonly purpose:
+    | 'spell'
+    | 'ability'
+    | 'multikicker'
+    | 'replicate'
+    | 'payAnyAmount'
+    | 'drawUpTo'
+    // "Choose a number between 0 and 10" (CR 608.2d): asked while a spell or ability resolves, from `min` to `max`, with no way back.
+    | 'chooseNumber';
   readonly min: number;
   readonly max: number;
   /**

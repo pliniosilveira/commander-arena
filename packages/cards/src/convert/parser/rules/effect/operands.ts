@@ -65,6 +65,8 @@ export const PERMANENT_OPERANDS = [
   'noun.all-tokens',
   // CR 208.1: "all creatures with power greater than target creature's power".
   'noun.all-with-power-above-target',
+  // Expel the Interlopers (CR 208.1): "all creatures with power greater than or equal to the chosen number".
+  'noun.all-with-power-at-least-chosen-number',
   // D-426 (Danitha group 3): "all creatures that aren't enchanted".
   'noun.all-enchanted',
   'noun.each-permanent',
@@ -81,6 +83,8 @@ export const PERMANENT_OPERANDS = [
 export const SELF_OR_PERMANENT_OPERANDS = ['noun.self', ...PERMANENT_OPERANDS] as const;
 
 export const GRAVEYARD_OPERANDS = [
+  // Reunion of the House (CR 208.1): "any number of target creature cards with total power 10 or less from your graveyard".
+  'noun.any-number-target-graveyard-cards-total-power',
   'noun.up-to-graveyard-cards',
   'noun.target-graveyard-card',
   'noun.all-graveyard-cards',

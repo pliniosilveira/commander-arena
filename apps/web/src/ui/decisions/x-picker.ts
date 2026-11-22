@@ -28,9 +28,21 @@ export function isDrawUpTo(d: Partial<Pick<ChooseXDecision, 'purpose'>>): boolea
   return d.purpose === 'drawUpTo';
 }
 
-/** True for a question that counts how many times a cost is paid or how many cards are drawn: Multikicker, Replicate, any amount of a symbol, draw up to. */
+/** True for "choose a number between 0 and 10" (CR 608.2d, Expel the Interlopers): a whole number from the least to the most, with no way back. */
+export function isChooseNumber(d: Partial<Pick<ChooseXDecision, 'purpose'>>): boolean {
+  return d.purpose === 'chooseNumber';
+}
+
+/** True for a question that counts how many times a cost is paid or how many cards are drawn, or chooses a number: Multikicker, Replicate, any amount of a symbol, draw up to, choose a number. */
 export function isCount(d: Partial<Pick<ChooseXDecision, 'purpose'>>): boolean {
-  return isMultikicker(d) || isReplicate(d) || isPayAnyAmount(d) || isDrawUpTo(d);
+  return (
+    isMultikicker(d) || isReplicate(d) || isPayAnyAmount(d) || isDrawUpTo(d) || isChooseNumber(d)
+  );
+}
+
+/** "Expel the Interlopers: choose a number between 0 and 10." (CR 608.2d). */
+export function chooseNumberPrompt(d: Pick<ChooseXDecision, 'sourceName' | 'min' | 'max'>): string {
+  return `${d.sourceName}: choose a number between ${d.min} and ${d.max}.`;
 }
 
 /** "Draw up to 2 cards for Arcane Denial?" (D-217): the prompt of the number of cards a player may draw. */
@@ -102,12 +114,14 @@ export function xHeading(d: Pick<ChooseXDecision, 'sourceName' | 'purpose'>): st
  * reductions included), so the page never computes it.
  */
 export function xPrompt(
-  d: Pick<ChooseXDecision, 'sourceName' | 'purpose' | 'perX' | 'max' | 'cost'>,
+  d: Pick<ChooseXDecision, 'sourceName' | 'purpose' | 'perX' | 'max' | 'cost'> &
+    Partial<Pick<ChooseXDecision, 'min'>>,
 ): string {
   if (isMultikicker(d)) return multikickerPrompt(d);
   if (isReplicate(d)) return replicatePrompt(d);
   if (isPayAnyAmount(d)) return payAmountPrompt(d);
   if (isDrawUpTo(d)) return drawUpToPrompt(d);
+  if (isChooseNumber(d)) return chooseNumberPrompt({ ...d, min: d.min ?? 0 });
   // D-386: a cost that is only cards to discard says what it discards and the most X the hand and the targets allow.
   const onlyDiscard = (d.perX.discard ?? 0) > 0 && d.perX.mana + d.perX.life === 0;
   if (onlyDiscard && (d.perX.loyalty ?? 0) === 0) {

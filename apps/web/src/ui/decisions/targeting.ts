@@ -33,8 +33,21 @@ export function slotStatuses(
   picks: readonly ChosenTarget[],
 ): readonly SlotStatus[] {
   return specs.map((spec) => {
-    const count = picks.filter((p) => p.specId === spec.specId).length;
-    return { spec, count, full: count >= spec.max, ok: count >= spec.min && count <= spec.max };
+    const here = picks.filter((p) => p.specId === spec.specId);
+    const count = here.length;
+    // CR 208.1 (Reunion of the House, `TargetSpec.totalPowerAtMost`): the powers of the targets of the slot add up to at most the limit.
+    const withinPower =
+      spec.totalPowerAtMost === undefined ||
+      here.reduce((sum, p) => {
+        const found = spec.legal.find((l) => sameTarget(l, p));
+        return sum + (found?.kind === 'object' ? (found.power ?? 0) : 0);
+      }, 0) <= spec.totalPowerAtMost;
+    return {
+      spec,
+      count,
+      full: count >= spec.max,
+      ok: count >= spec.min && count <= spec.max && withinPower,
+    };
   });
 }
 

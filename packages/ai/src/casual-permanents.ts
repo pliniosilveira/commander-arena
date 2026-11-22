@@ -54,6 +54,31 @@ export function permanentValue(view: GameView, o: ObjectView): number {
   return 3 + manaValueOf(o) + powerOf(o) / 100 + counters / 10 + (o.isCommander ? 50 : 0);
 }
 
+/**
+ * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (a `choosePermanent` with `purpose: 'keep'`,
+ * CR 608.2d, 701.21a, Slaughter the Strong): the answer names the creatures kept. The agent keeps the ones it values most, one after another, as long as the total power stays within
+ * the limit (a creature with no power is always kept for free). Not a perfect packing, only a good one.
+ */
+export function chooseCreaturesToKeep(view: GameView, d: ChoosePermanentDecision): Action {
+  const limit = d.maxTotalPower ?? 0;
+  const powers = d.powers ?? {};
+  const ranked = d.legal
+    .map((id, index) => {
+      const o = findObject(view, id);
+      return { id, index, value: o === undefined ? 0 : permanentValue(view, o) };
+    })
+    .sort((a, b) => b.value - a.value || a.index - b.index);
+  const kept: ObjectId[] = [];
+  let total = 0;
+  for (const r of ranked) {
+    const power = powers[r.id] ?? 0;
+    if (total + power > limit) continue;
+    kept.push(r.id);
+    total += power;
+  }
+  return { kind: 'choosePermanents', objects: d.legal.filter((id) => kept.includes(id)) };
+}
+
 export function choosePermanentToSacrifice(view: GameView, d: ChoosePermanentDecision): Action {
   // CR 701.21a: "Sacrifice a Swamp and a Forest": a different permanent for each part; of the ways to pay it the one that gives up the least.
   if (d.groups !== undefined) {

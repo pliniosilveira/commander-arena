@@ -499,6 +499,8 @@ export const PLAYER_SUBJECTS = [
   'noun.you-and-player',
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',
+  // Will of the Abzan: "any number of target opponents each sacrifice a creature with the greatest power among creatures that player controls and lose 3 life".
+  'noun.any-number-target-opponents',
   'noun.each-other-player',
   // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
   'noun.each-player-other-than-its-controller',
