@@ -151,3 +151,50 @@ test('the last opponent left takes the whole top row', async ({ page }) => {
   const board = await page.locator('.table-board').boundingBox();
   expect((opp?.width ?? 0) / (board?.width ?? 1)).toBeCloseTo(1, 1);
 });
+
+test('the strip keeps only the commander chip, and it opens the commander popup', async ({
+  page,
+}) => {
+  await show(page, 3);
+  const strip = page.locator('.table-opp').first().locator('.board-strip');
+  // The chip: the name of the commander and nothing of the old command box.
+  const chip = strip.locator('[data-commander-cta]');
+  await expect(chip).toHaveCount(1);
+  await expect(chip).toContainText('Serra Angel');
+  await expect(strip.getByText('Tax', { exact: false })).toHaveCount(0);
+  await expect(strip.getByText('Cmdr dmg')).toHaveCount(0);
+  await expect(strip.getByText('Command', { exact: true })).toHaveCount(0);
+
+  await chip.click();
+  const popup = page.getByRole('dialog', { name: 'Opponent 1 commander' });
+  await expect(popup).toBeVisible();
+  // The card, large, and its tax.
+  await expect(popup.locator('.table-cmdr-card')).toHaveCount(1);
+  await expect(popup.getByText('Commander tax +0')).toBeVisible();
+  // Every other player, in seat order, with their commander.
+  const rows = popup.locator('.table-cmdr-list li');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText('You');
+  await expect(rows.nth(0)).toContainText('Isamaru, Hound of Konda');
+  await expect(rows.nth(1)).toContainText('Opponent 2');
+  await expect(rows.nth(1)).toContainText('Giant Spider');
+  await expect(rows.nth(2)).toContainText('Opponent 3');
+  await expect(rows.nth(2)).toContainText('Grizzly Bears');
+  await expect(popup.getByText('Commander damage taken: 0')).toBeVisible();
+  await page.screenshot({ path: 'test-results/table-commander.png' });
+  // Esc closes it.
+  await page.keyboard.press('Escape');
+  await expect(popup).toHaveCount(0);
+});
+
+test('your own commander popup shows its tax and a Cast button when it can be cast', async ({
+  page,
+}) => {
+  await show(page, 3);
+  await page.locator('.table-me [data-commander-cta]').click();
+  const popup = page.getByRole('dialog', { name: 'You commander' });
+  await expect(popup).toBeVisible();
+  await expect(popup.getByText('Commander tax +4')).toBeVisible();
+  // Cast Isamaru: {W}; the scenario gives no white mana, so only the Close button is offered.
+  await expect(popup.getByRole('button', { name: 'Close' })).toBeVisible();
+});
