@@ -20,6 +20,7 @@ import { Menu } from '../src/ui/screens/Menu';
 import {
   defaultDecks,
   matchesColorFilter,
+  opponentDeckTitle,
   parseSeed,
   pickRandomDeck,
   toggleColorFilter,
@@ -269,5 +270,28 @@ describe('the deck color filter', () => {
     expect(toggleColorFilter(['R'], 'C')).toEqual(['C']);
     expect(toggleColorFilter(['C'], 'U')).toEqual(['U']);
     expect(toggleColorFilter(['R', 'U'], 'R')).toEqual(['U']);
+  });
+});
+
+describe('the deck dialog titles with several opponents', () => {
+  test('one opponent keeps the plain title; more name each opponent', () => {
+    expect(opponentDeckTitle(0, 1)).toBe("Choose opponent's deck");
+    expect([0, 1, 2].map((i) => opponentDeckTitle(i, 3))).toEqual([
+      "Choose first opponent's deck",
+      "Choose second opponent's deck",
+      "Choose third opponent's deck",
+    ]);
+  });
+});
+
+describe('a table with several opponents', () => {
+  test('openTable shows the empty board screen and backToMenu clears it', () => {
+    const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+    store.getState().openTable({ humanDeck: 'a', opponentDecks: ['b', 'c'] });
+    expect(store.getState().screen).toBe('table');
+    expect(store.getState().table?.opponentDecks).toEqual(['b', 'c']);
+    store.getState().backToMenu();
+    expect(store.getState().screen).toBe('menu');
+    expect(store.getState().table).toBeNull();
   });
 });

@@ -1510,6 +1510,32 @@
   color: var(--text-dim);
 }
 
+/* A table with several opponents: your deck and every opponent's deck on one line, the cells
+   shrinking to share the width. */
+.dec-versus-table {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 4px;
+}
+.dec-versus-table > .dec-versus-side,
+.dec-versus-seat > .dec-versus-side {
+  flex: 1 1 0;
+  width: auto;
+  max-width: 220px;
+  min-width: 0;
+  justify-self: auto;
+}
+.dec-versus-seat {
+  display: flex;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  max-width: 244px;
+}
+
 /* The screen before the opening hand: the versus cells, then Start game and Cancel below them. */
 .dec-intro {
   padding: 8px;
