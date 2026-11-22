@@ -375,6 +375,11 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           ? `you ${have} cast ${/^[aeiou]/u.test(kinds) ? 'an' : 'a'} ${kinds} spell this turn`
           : `you ${have} cast ${condition.atLeast} or more ${kinds} spells this turn`;
       }
+      // CR 205.2a (Lyse Hext): "you've cast two or more noncreature spells this turn": the spells with none of those card types.
+      if (condition.notOfTypes !== undefined) {
+        const kinds = condition.notOfTypes.map((t) => `non${t}`).join(' and ');
+        return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more ${kinds} spells this turn`;
+      }
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
     case 'thisAttackedThisTurn':
       // CR 702.142a (Boast).
@@ -430,6 +435,16 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'cardsInGraveyard': {
       // D-229 (CR 404.1): "there are fewer than eight cards in your graveyard".
       const { cmp, value } = condition.compare;
+      // CR 404.1, 102.2 (Into the Story): "an opponent has seven or more cards in their graveyard".
+      if (condition.player === 'anOpponent') {
+        const opponentText =
+          cmp === 'atMost'
+            ? `an opponent has fewer than ${value + 1} cards in their graveyard`
+            : cmp === 'atLeast'
+              ? `an opponent has ${value} or more cards in their graveyard`
+              : `an opponent has exactly ${value} cards in their graveyard`;
+        return negate ? `it's not true that ${opponentText}` : opponentText;
+      }
       const text =
         cmp === 'atMost'
           ? `there are fewer than ${value + 1} cards in your graveyard`

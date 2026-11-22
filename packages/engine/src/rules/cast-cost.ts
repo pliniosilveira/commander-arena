@@ -147,6 +147,7 @@ export function isNamedAlternative(
     alternative === 'tapPermanents' ||
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
+    alternative === 'payLife' ||
     alternative === 'impending'
   );
 }
@@ -497,6 +498,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     (flashback === null ? 0 : lifeOf(flashback)) +
     // CR 118.9, 202.3e: "pay life equal to that spell's mana value" rather than the mana cost: an {X} counts as the X announced.
     (alternative === 'lifeForMana' ? manaValue(withX(face?.manaCost ?? [], x)) : 0) +
+    // CR 118.9, 118.4 (Snuff Out): "You may pay 4 life rather than pay this spell's mana cost": the life of the alternative cost.
+    (alternative === 'payLife' ? (alternativeOf(face, 'payLife')?.life ?? 0) : 0) +
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
@@ -906,6 +909,7 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
       cost: symbols,
       ...(exile > 0 ? { exile } : {}),
       ...(tap === null ? {} : { tap }),
+      ...(alt.kind === 'payLife' ? { life: alt.life } : {}),
       ...(exileFromHandRequired === true && exileFromHand !== null ? { exileFromHand } : {}),
       ...((alt.kind === 'sacrificeFromGraveyard' || alt.kind === 'sacrificePermanents') &&
       sacrifice !== null

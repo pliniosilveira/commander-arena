@@ -65,6 +65,8 @@ const SPELL_STATICS = [
   'static.free-cast',
   // Flare of Malice (CR 118.9, 701.21a): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost."
   'static.sacrifice-alt-cost',
+  // Snuff Out (CR 118.9, 118.4): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost."
+  'static.pay-life-alt-cost',
 ] as const;
 
 const FAMILIES: ReadonlySet<string> = new Set([

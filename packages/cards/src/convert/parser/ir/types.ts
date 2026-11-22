@@ -424,12 +424,16 @@ export interface IrFilter {
   readonly castFromHand?: true;
   /** "from a graveyard" (issue 102, River Kelpie, CR 601.2a): a spell that was cast from a graveyard (the engine's `castFromGraveyard`). */
   readonly castFromGraveyard?: true;
+  /** "from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1): a spell its caster cast from their own graveyard (the engine's `castFromOwnGraveyard`). */
+  readonly castFromOwnGraveyard?: true;
   /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
   readonly chosenByOpponent?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
   readonly firstXSpellThisTurn?: true;
+  /** "the second spell you cast each turn" (Alisaie Leveilleur, CR 601.2i): the spell is the nth (2 or more) its caster cast this turn (the engine's `nthSpellThisTurn`). */
+  readonly nthSpellThisTurn?: number;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
   /** "controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck group 7, CR 510.2): the engine's `controllerDealtCombatDamageByAtLeast`. */
@@ -808,6 +812,8 @@ export interface IrCondition extends IrNode {
         readonly kind: 'spellsCastThisTurn';
         readonly atLeast: number;
         readonly ofTypes?: readonly string[];
+        // Lyse Hext: "two or more noncreature spells": only the spells with none of these card types count
+        readonly notOfTypes?: readonly string[];
       }
     // Issue 345 (CR 601.2i): "no spells were cast last turn" (`none`), "a player cast two or more spells last turn" (`aPlayerAtLeast`)
     | {
@@ -831,7 +837,12 @@ export interface IrCondition extends IrNode {
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
-    | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
+    | {
+        readonly kind: 'cardsInGraveyard';
+        readonly compare: IrComparison;
+        // "an opponent has seven or more cards in their graveyard" (Into the Story, CR 404.1, 102.2): some opponent's graveyard instead of the controller's
+        readonly player?: 'anOpponent';
+      }
     // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
     // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
@@ -1792,6 +1803,11 @@ export type IrStaticEffect =
    * 118.9): an alternative cost of the card itself. The statement's subject is `~`.
    */
   | { readonly kind: 'freeCast'; readonly condition?: IrCondition }
+  /**
+   * "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost." (Snuff Out, CR 118.9, 118.4, 601.2b): an alternative cost of the face that pays no mana and `life` life,
+   * when the `condition` (read for the caster as the spell is cast) holds. The subject is `~`.
+   */
+  | { readonly kind: 'lifeAlternative'; readonly life: number; readonly condition?: IrCondition }
   /**
    * "You may play an additional land on each of your turns." and the forms with a number ("two additional lands")
    * and with "Each player ... on each of their turns" (stage P24, D-125, CR 305.2). The statement's subject is the

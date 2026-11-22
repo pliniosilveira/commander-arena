@@ -167,6 +167,7 @@ export function lowerCondition(
             kind: 'spellsCastThisTurn',
             atLeast: test.atLeast,
             ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
+            ...(test.notOfTypes === undefined ? {} : { notOfTypes: test.notOfTypes as CardType[] }),
           });
     }
     case 'spellsCastLastTurn': {
@@ -342,7 +343,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:cardsInGraveyard']);
       if (blocked.length > 0) return failure(c, blocked);
       const { cmp, value } = test.compare;
-      return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
+      return ok({
+        kind: 'cardsInGraveyard',
+        compare: { cmp, value },
+        ...(test.player === undefined ? {} : { player: test.player }),
+      });
     }
     case 'cardsInLibrary': {
       // CR 401.1 (issue 25, D-331): the number of cards in the library of the controller.

@@ -421,6 +421,13 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'graveyard') return false;
   }
+  // CR 601.2a, 404.1 (Emet-Selch of the Third Seat): "spells you cast from your graveyard": cast from a graveyard, the card owned by the caster (a graveyard is its owner's, CR 404.1).
+  if (filter.castFromOwnGraveyard === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'graveyard' || obj.owner !== controllerOf(state, obj)) return false;
+  }
   // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
   if (
     filter.xInManaCost === true &&
@@ -433,6 +440,16 @@ export function matchesFilterWith(
     state.turnLog.castSpells.some(
       (e) => e.hasX === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
     )
+  ) {
+    return false;
+  }
+  // CR 601.2i (Alisaie Leveilleur): "the second spell you cast each turn": exactly one other spell cast by the caster this turn so far (a copy is not cast, CR 707.10).
+  if (
+    filter.nthSpellThisTurn !== undefined &&
+    state.turnLog.castSpells.filter(
+      (e) => e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    ).length !==
+      filter.nthSpellThisTurn - 1
   ) {
     return false;
   }

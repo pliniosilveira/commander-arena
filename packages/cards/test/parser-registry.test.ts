@@ -197,6 +197,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
+  'static.nth-spell-cost-reduction': asIs,
+  'static.pay-life-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -437,6 +439,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
+  'condition.opponent-cards-in-graveyard': permanent(
+    (e) => `When ~ enters, if ${e}, you gain 1 life.`,
+  ),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
   'condition.its-stat-greater-than-each-other': permanent(

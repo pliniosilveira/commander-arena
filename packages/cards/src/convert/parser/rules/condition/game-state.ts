@@ -297,9 +297,61 @@ export const CONDITION_OPPONENT_HAS_MORE = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.opponent-cards-in-graveyard`: "an opponent has seven or more cards in their graveyard" (Into the Story; CR 404.1, 102.2, 603.4): some opponent's graveyard holds that
+ * many cards, each opponent's own graveyard counted on its own, now. The engine's `cardsInGraveyard` of `player: 'anOpponent'`. Not read: a kind of card ("creature cards"), "each
+ * opponent", "your opponents have", the sum of the graveyards, "a player", a count of one or none, a trailing period.
+ */
+export const CONDITION_OPPONENT_CARDS_IN_GRAVEYARD = defineRule<IrCondition>({
+  id: 'condition.opponent-cards-in-graveyard',
+  family: 'condition',
+  leading: ['an'],
+  cites: [
+    'CR 404.1 (Graveyard)',
+    'CR 102.2 (Players)',
+    'CR 603.4 (Handling Triggered Abilities)',
+    'CR 601.2f (Casting Spells)',
+  ],
+  examples: [
+    'an opponent has seven or more cards in their graveyard',
+    'an opponent has 7 or more cards in their graveyard',
+    'an opponent has three or fewer cards in their graveyard',
+  ],
+  rejects: [
+    'an opponent has seven or more creature cards in their graveyard',
+    'an opponent has seven or more cards in your graveyard',
+    'an opponent has seven or more cards in a graveyard',
+    'an opponent has seven cards in their graveyard',
+    'an opponent has seven or more cards in their library',
+    'each opponent has seven or more cards in their graveyard',
+    'a player has seven or more cards in their graveyard',
+    'an opponent has seven or more cards in their graveyard.',
+    'an opponent has zero or more cards in their graveyard',
+    'an opponent has more cards in their graveyard than you',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('an opponent has '),
+      numberCompare(),
+      pattern(/ cards in their graveyard(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: condition('condition.opponent-cards-in-graveyard', pos, r.pos, {
+        kind: 'cardsInGraveyard',
+        compare: r.value[1],
+        player: 'anOpponent',
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const GAME_STATE_CONDITION_RULES = [
   CONDITION_DESIGNATION,
   CONDITION_AMOUNT_COUNT,
+  CONDITION_OPPONENT_CARDS_IN_GRAVEYARD,
   CONDITION_TOTAL_STAT,
   CONDITION_OPPONENT_HAS_MORE,
 ];
