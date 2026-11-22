@@ -48,10 +48,15 @@ export function opponentPoison(view: GameView): number {
   return counts.length === 0 ? 0 : Math.max(...counts);
 }
 
-/** Whether `attackers`, all unblocked at the opponent, give them ten poison counters. */
-export function poisonLethal(view: GameView, attackers: readonly ObjectView[]): boolean {
+/** Whether `attackers`, all unblocked at the opponent (`seat`, else the one with most poison), give them ten poison counters. */
+export function poisonLethal(
+  view: GameView,
+  attackers: readonly ObjectView[],
+  seat?: SeatId,
+): boolean {
   const given = attackers.reduce((sum, o) => sum + poisonDamageOf(o), 0);
-  return given > 0 && opponentPoison(view) + given >= POISON_LOSS;
+  const have = seat === undefined ? opponentPoison(view) : poisonOf(view, seat);
+  return given > 0 && have + given >= POISON_LOSS;
 }
 
 /** Whether `attackers`, all unblocked at the agent, would give it ten poison counters. */
