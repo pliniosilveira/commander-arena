@@ -47,6 +47,32 @@ describe('a seat leaves the game (CR 800.4a)', () => {
     expect(g.state.result).toBeNull();
   });
 
+  test('a seat loses in the same check as its creature dies of 0 toughness (CR 704.3, 800.4a)', () => {
+    const g = three()
+      .seat(1)
+      .life(0)
+      .battlefield(BEARS, { label: 'doomed', counters: { '-1/-1': 2 } })
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).pass();
+    g.expect.hasLost(1);
+    g.expect.noObject(BEARS, { seat: 1 });
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    expect(g.state.result).toBeNull();
+    g.expect.invariants();
+  });
+
+  test('the mirror: the same creature dies with no seat losing', () => {
+    const g = three()
+      .seat(1)
+      .battlefield(BEARS, { label: 'doomed', counters: { '-1/-1': 2 } })
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).pass();
+    expect(g.state.seats[1]?.hasLost).toBe(false);
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+  });
+
   test('a permanent owned by the seat and controlled by another leaves the game too', () => {
     const g = three()
       .seat(1)

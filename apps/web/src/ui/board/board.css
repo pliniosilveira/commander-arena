@@ -1680,8 +1680,10 @@
 .board-modal-panel {
   display: flex;
   flex-direction: column;
-  width: min(100%, 720px);
+  /* Wide enough for four large cards beside the question column. */
+  width: min(100%, 1120px);
   max-height: 100%;
+  min-height: 0;
   background: var(--bg-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1714,12 +1716,58 @@
   border-radius: 6px;
 }
 
-.board-modal-body {
+/* The list scrolls inside the panel; the question column beside it stays in view. */
+.board-modal-main {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.board-modal-body {
+  --zone-card-w: 200px;
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(auto-fill, var(--zone-card-w));
+  gap: 14px;
+  align-content: start;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
   padding: 14px;
   overflow-y: auto;
+}
+
+.board-modal-side {
+  --preview-card-w: 240px;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 10px;
+  width: 272px;
+  padding: 14px;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+}
+
+.board-modal-source {
+  width: var(--preview-card-w);
+}
+
+.board-modal-prompt {
+  margin: 0;
+  font-weight: 600;
+}
+
+.board-modal-detail {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.board-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-top: auto;
 }
 
 .board-modal-empty {
@@ -1735,19 +1783,15 @@
      area (issue 59). */
   display: flex;
   flex-direction: column;
-  width: 135px;
+  /* The whole card (the full variant) at the width of the grid's cell. */
+  --preview-card-w: var(--zone-card-w, 135px);
+  width: var(--zone-card-w, 135px);
   height: auto;
   padding: 0;
   background: none;
   border: 0;
   text-align: left;
   cursor: default;
-}
-
-.board-zone-card > .board-card {
-  flex: none;
-  /* The top of the card, as in the hand: 135 wide over the shape of card-top.ts. */
-  height: 123px;
 }
 
 /*

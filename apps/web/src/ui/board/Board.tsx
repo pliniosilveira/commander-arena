@@ -5,6 +5,7 @@ import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useApp } from '../store-context';
 import './board.css';
+import { useZoneGate } from '../decisions/zone-decision';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
@@ -119,6 +120,19 @@ export function Board() {
       autoOpened.current = false;
     }
   }, [seatToOpen]);
+  // The picker of the question's graveyard can be closed to look at the board and opened again; the
+  // decision layer holds Confirm back while it is closed (zone-decision.ts).
+  const gate = useZoneGate();
+  const questionOpen =
+    seatToOpen !== null && zone?.kind === 'graveyard' && zone.seat === seatToOpen;
+  const { setOpen: reportOpen, request } = gate;
+  useEffect(() => reportOpen(questionOpen), [questionOpen, reportOpen]);
+  const lastRequest = useRef(request);
+  useEffect(() => {
+    if (request === lastRequest.current) return;
+    lastRequest.current = request;
+    if (seatToOpen !== null) setZone({ kind: 'graveyard', seat: seatToOpen });
+  }, [request, seatToOpen]);
   const ix = useInteraction();
   const pendingBlocks = ix.pendingBlocks;
   const roles = useMemo(
