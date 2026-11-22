@@ -375,6 +375,9 @@ class Binder {
     if (antecedent.det === 'enchanted' || antecedent.det === 'equipped') {
       return { ...noun, det: antecedent.det, filter: antecedent.filter };
     }
+    // "Draw cards equal to the sacrificed creature's toughness, then discard cards equal to its power" (CR 608.2h, 602.2c): "its" is the permanent the cost sacrificed, which the
+    // engine names `sacrificedCost`, so the pronoun takes the determiner of its antecedent.
+    if (antecedent.det === 'sacrificed') return { ...noun, det: 'sacrificed' };
     if (antecedent.ref === 'trig') return { ...noun, det: 'triggerSubject', ref: 'trig' };
     if (antecedent.ref === 'trigActor') return { ...noun, det: 'triggerActor', ref: 'trigActor' };
     const ref = pronoun?.kind === 'other' ? `${antecedent.ref ?? ''}.2` : antecedent.ref;

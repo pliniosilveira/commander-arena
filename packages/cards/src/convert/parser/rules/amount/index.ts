@@ -51,8 +51,10 @@ const NUMBER_WORDS = [
 
 const WORD_RE = new RegExp(`(${NUMBER_WORDS.join('|')})(?![\\p{L}\\p{N}])`, 'iu');
 
-/** A whole number written as digits or as a number word from one to twenty. */
+/** A whole number written as digits, as a number word from one to twenty, or "one hundred". */
 export const quantity: Parser<number> = choice(
+  // "up to one hundred target creatures" (Baldin, Century Herdmaster): the one number word above twenty the text uses.
+  map(pattern(/one hundred(?![\p{L}\p{N}])/iu), () => 100),
   map(pattern(/(\d+)(?![\p{L}\p{N}])/u), (m) => Number(m[1])),
   map(
     pattern(WORD_RE),
@@ -79,7 +81,7 @@ export const AMOUNT_NUMBER = defineRule<IrAmount>({
   family: 'amount',
   leading: [],
   cites: ['CR 107.1 (Numbers and Symbols)'],
-  examples: ['3', 'three', '12', 'ten', 'thirteen', 'twenty'],
+  examples: ['3', 'three', '12', 'ten', 'thirteen', 'twenty', 'one hundred'],
   rejects: ['X', 'a', 'zero', 'twenty-one', 'twentyone'],
   parse: amountNode(map(quantity, (value) => ({ kind: 'number' as const, value }))),
 });

@@ -185,6 +185,7 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
+import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
@@ -1284,6 +1285,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Baldin, Century Herdmaster: "up to one hundred target creatures each get +0/+X until end of turn".
+  ...PUMP_TARGETS_EFFECT_RULES,
   // Valakut Exploration: "you may play that card for as long as it remains exiled", "put them into their owner's graveyard", "~ deals that much damage to each opponent".
   ...EXILED_WITH_EFFECT_RULES,
   // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
