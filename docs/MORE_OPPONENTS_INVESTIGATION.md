@@ -4,7 +4,7 @@ Status: the engine, the cards and the AI work with two to four seats and no issu
 
 ## Where we are
 
-The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done. `createGame` takes two to four seats (#500) and `pnpm ai:arena --seats 3|4` plays tables (#502). The app does not play them yet: the menu has a number-of-opponents toggle and a deck dialog for each opponent (#519, #523), but the flow ends on an empty board and no game starts for 2 or 3 opponents. The board plan (#499) is written and none of its steps is built. Performance and soak (phase 5) are not started.
+The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done. `createGame` takes two to four seats (#500) and `pnpm ai:arena --seats 3|4` plays tables (#502). The app does not play them yet: the menu has a number-of-opponents toggle and a deck dialog for each opponent (#519, #523), but the flow ends on an empty board and no game starts for 2 or 3 opponents. The board plan (#499) is written and none of its steps is built. Performance with 3 and 4 seats is measured once, on a cloud machine (see "Performance with 3 and 4 seats"); the soak is not started.
 
 Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass; the list at the end got its first rows from the phase 2 audit), a battle whose protector left the game getting a new one (#432, CR 704.5y), #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first), the AI fixes #481 and #483 (their pull requests are #503 and #504; the casual agent's must-differ target slots are #501), a crash when a seat loses in the same check as its permanent dies (#475), the probe follow-ups (#453, see "Rerun on current main"), the latent single-opponent sites (#422), and the audit of about 380 more cards ("Phase 2 audit" below; its one failure was #506).
 
@@ -139,7 +139,7 @@ In all six runs no permanent stayed under a player who had lost, no seat that ha
 ## Remaining risks, in order of weight
 
 1. App: the host and the protocol have one AI seat, the current board draws one opponent (a separate board for three or more players is planned), and the table screen starts no game. Until they change, everything built so far cannot be played.
-2. Performance: more permanents and triggers; the decision time of the AI with three opponents (the budget is 5 s a decision) and the speed of `getView`, `getLegalActions` and `applyAction` with more seats have not been measured, because `derive-bench` and `ai:arena --precons` play two seats.
+2. Performance: more permanents and triggers; the decision time of the AI with three opponents (the budget is 5 s a decision) and the speed of `getView`, `getLegalActions` and `applyAction` with more seats are measured once on a cloud machine only (see "Performance with 3 and 4 seats"); the owner's numbers are the ones that count.
 3. Tests: no soak for three or four seats, and the scenarios of the phase 2 audit were not kept (a card of the corpus is not guaranteed to have its own 3-seat test).
 4. Rules: the CR sections listed under "What still blocks it", and cards that were checked only with the text the parser reads (the audit says which were read and not run).
 5. UI: arrows of combat and of the stack with three opponents, a choice of which opponent, and phone width (left out of the board plan).
@@ -273,6 +273,47 @@ Result: one failure and three rulings, all settled since (#507, #508, #509).
 - Needs a ruling (#507, #508, #509): the CR text was not available in the audit, so every rule number in it was UNVERIFIED. #507 was settled afterwards with the text of CR 800.4m (an effect that lasts until the next turn of a player who left lasts until that turn would have begun); #508 with the official rulings of Mindblade Render (Scryfall, source wotc, 2018-06-08), which the CR does not decide; #509 was fixed in #520.
 - Passed: monarch, goad by Aura and by spell, "defending player", "target opponent" with two opponents, "for each opponent", opponent counts, each-opponent drain and damage, APNAP order of sacrifices, discards and "may" choices, tempting offers, gifts, myriad, encore, annihilator, emblems, and the opponents who left the game.
 - Limits: part of the cards of each group were not in the corpus and ran with SYNTHETIC cost and power or toughness; a primitive that was read but not run (for instance a card whose text only repeats a tested primitive) counts as covered by reading, not by a test. The per-primitive notes and the scratch tests were not kept in the repository, so a card of the corpus is not guaranteed to have its own test.
+
+## Performance with 3 and 4 seats (#527)
+
+Measured, not optimised. Machine of this run: a cloud container, 4 cores, Intel Xeon 2.1 GHz, Node 22.23, Linux x86_64. **The numbers that count are the ones the owner runs on their own machine**; these are indicative, and the samples are small (2 to 4 seeds for the arena, 12 for `derive-bench`). Same real precons for every seat count (`apps/web/src/precons/snapshots/`).
+
+Commands (seed 1, real clock, one agent kind at every seat, decks stay with the seat when the agents rotate):
+
+- Two seats: `node tools/ai/arena.ts --a <kind> --b <kind> --games 6 --seed 1 --precons --pairing cross --real-clock --max-turns 200 --max-actions 20000`
+- Three: `node tools/ai/arena.ts --seats 3 --agents <kind> --games 6 --seed 1 --precons --real-clock --max-turns 300 --max-actions 30000`
+- Four: the same with `--seats 4 --games 8 --max-turns 400 --max-actions 40000`.
+- Engine: `node tools/perf/derive-bench.ts --seats <n> --seeds 12 --reps 15 --max-turn 20 --keep 4`
+
+AI decisions (every game finished, no fallback, no rejected action, none over the 5 s budget):
+
+| Agent, seats | Decisions | Mean | 95th percentile | Slowest | Per turn | Per round of turns |
+| --- | --- | --- | --- | --- | --- | --- |
+| casual, 2 | 2707 | 0.06 ms | 0.1 ms | 2.2 ms | 25.5 decisions, 1.5 ms | 51.1 decisions, 2.9 ms |
+| casual, 3 | 8812 | 0.04 ms | 0.1 ms | 2.1 ms | 38.3 decisions, 1.6 ms | 114.9 decisions, 4.8 ms |
+| casual, 4 | 17838 | 0.04 ms | 0.1 ms | 3.0 ms | 46.0 decisions, 1.9 ms | 183.9 decisions, 7.7 ms |
+| heuristic, 2 | 2612 | 2.92 ms | 18.5 ms | 148.9 ms | 25.6 decisions, 74.8 ms | 51.2 decisions, 149.5 ms |
+| heuristic, 3 | 8457 | 4.70 ms | 24.8 ms | 480.1 ms | 38.6 decisions, 181.7 ms | 115.8 decisions, 545.0 ms |
+| heuristic, 4 | 16472 | 5.08 ms | 19.0 ms | 1378.4 ms | 48.4 decisions, 246.0 ms | 193.8 decisions, 984.1 ms |
+
+A turn is the engine's turn counter and a round is one turn of every seat, so "per round" is the wait when every seat is an AI; with one human it is the round minus the human's turn. The heuristic agent is the slow one: its slowest decision grows with the seats (149 ms, 480 ms, 1378 ms) but stays well under the budget here.
+
+Engine, biggest boards of 12 casual games at turn 20 (precons played by `derive-bench`):
+
+| Seats | Permanents (kept) | `getView` first call | `getLegalActions` | `applyAction` (first 5 legal actions) | Whole turn of the biggest board | View size at the biggest boards |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 | 32, 31, 30, 30 | 1.3 to 2.9 ms | 0.01 to 0.02 ms | 2.2 to 3.4 ms mean, 12.3 ms p99 at most | 73.6 ms (34 actions) | 24.1 to 30.1 KB |
+| 3 | 53, 49, 37, 37 | 1.6 to 2.4 ms | 0.01 to 0.03 ms | 3.1 to 13.3 ms mean, 60.5 ms p99 at most | 393.5 ms (135 actions; combat steps 282.9 ms) | 26.5 to 45.6 KB |
+| 4 | 40, 36, 35, 35 | 1.5 to 2.0 ms | 0.01 to 0.02 ms | 2.7 to 9.4 ms mean, 102.1 ms p99 at most | 119.9 ms (53 actions) | 25.0 to 48.0 KB |
+
+What it says, and what it does not:
+
+- The engine is cheap per call at every seat count. The slowest `applyAction` seen was 102 ms (among the first five legal actions of a 40-permanent, 4-seat state); along the biggest turn it was 68 ms (the 53-permanent, 3-seat board), and that whole turn took 393 ms in the engine.
+- The view grows from about 30 KB to about 48 KB at the biggest boards, not with the seat count by itself but with the permanents on the table.
+- Not measured: the human-facing wait with a heuristic opponent at four seats on a slower machine, tables with different agents, and decks other than the five committed precons. The boards come from casual agents, which build the biggest boards; the decision-time rows come from tables of one agent kind.
+- Games between identical agents with decks tied to the seats are won mostly by the same seat (the deck, not the agent), so these tables say nothing about strength.
+
+**Decision for the owner:** what share of decisions over budget and what wait per round of AI turns the app accepts for 3 and 4 seats. In this run no decision went over the 5 s budget; the heuristic agent's round of AI turns is about 0.5 s with three seats and about 1 s with four. Each hot spot (for example the combat steps of big boards, or fewer samples for each heuristic decision when there are more opponents) would be its own issue.
 
 ## Cards not supported for more than one opponent
 
