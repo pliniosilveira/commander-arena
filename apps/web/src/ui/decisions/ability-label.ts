@@ -409,6 +409,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'putWithThis':
       // Animate Dead: "that creature", the creature this permanent put onto the battlefield.
       return 'that creature';
+    case 'eachObject':
+      // Canopy Gargantuan: the creature the counters are being put on right now.
+      return 'that creature';
   }
 }
 
@@ -566,6 +569,7 @@ function recipientText(
     case 'attached':
     case 'linkedExile':
     case 'putWithThis':
+    case 'eachObject':
     case 'each':
       return objectText(to, ability, self);
   }
