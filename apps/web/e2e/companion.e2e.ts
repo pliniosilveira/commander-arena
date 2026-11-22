@@ -77,3 +77,39 @@ for (const [label, viewport] of [
     expect(errors).toEqual([]);
   });
 }
+
+// Issue 459: with a full hand the human strip (command zone, companion chip, tax) is not covered by the hand: it ends above the hand and takes the pointer.
+for (const viewport of [
+  { width: 1366, height: 768 },
+  { width: 1280, height: 720 },
+  { width: 720, height: 740 },
+] as const) {
+  test(`companion: a full hand does not cover the human strip (${viewport.width}x${viewport.height})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/?autostart=synthetic-companion,synthetic-companion&seed=1');
+    await page.getByRole('button', { name: 'Keep', exact: true }).click();
+    const chip = page.locator('[data-companion="0"]');
+    await expect(chip).toBeVisible();
+    expect(await page.locator('.board-hand-card').count()).toBeGreaterThanOrEqual(6);
+    const covered = await page.evaluate(() => {
+      const chipBox = document.querySelector('[data-companion="0"]');
+      const hand = document.querySelector('.board-hand');
+      if (chipBox === null || hand === null) return ['missing'];
+      const r = chipBox.getBoundingClientRect();
+      const problems: string[] = [];
+      if (r.bottom > hand.getBoundingClientRect().top) problems.push('chip overlaps the hand');
+      for (const [fx, fy] of [
+        [0.1, 0.1],
+        [0.5, 0.5],
+        [0.9, 0.9],
+      ] as const) {
+        const hit = document.elementFromPoint(r.x + r.width * fx, r.y + r.height * fy);
+        if (hit === null || !chipBox.contains(hit)) problems.push(`not reachable at ${fx},${fy}`);
+      }
+      return problems;
+    });
+    expect(covered).toEqual([]);
+  });
+}
