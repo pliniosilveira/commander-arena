@@ -6,13 +6,16 @@ import { useApp } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
 
 /** One side of the versus card: the deck as the deck picker shows it (art, name, commander). */
-function Side({
+export function Side({
   who,
+  label,
   deck,
   fallbackCommander,
   fallbackColors,
 }: {
-  who: 'you' | 'opponent';
+  who: string;
+  /** The caption above the deck name. */
+  label: string;
   deck: DeckChoice | undefined;
   fallbackCommander: string;
   fallbackColors: readonly string[];
@@ -31,7 +34,7 @@ function Side({
         />
       )}
       <span className="dec-versus-text">
-        <span className="dec-versus-who">{who === 'you' ? 'You' : 'Opponent'}</span>
+        <span className="dec-versus-who">{label}</span>
         <span className="dec-versus-name">{deck?.name ?? commander}</span>
         {deck !== undefined && (
           <span className="dec-versus-commander">
@@ -66,6 +69,7 @@ export function Versus({ view }: { view: GameView }) {
       <div className="dec-versus" data-versus>
         <Side
           who="you"
+          label="You"
           deck={choices.find((d) => d.id === options?.humanDeck)}
           fallbackCommander={mine?.name ?? ''}
           fallbackColors={mine?.colors ?? []}
@@ -76,6 +80,7 @@ export function Versus({ view }: { view: GameView }) {
         <div className="dec-versus-opponent">
           <Side
             who="opponent"
+            label="Opponent"
             deck={choices.find((d) => d.id === options?.aiDeck)}
             fallbackCommander={theirs?.name ?? ''}
             fallbackColors={theirs?.colors ?? []}

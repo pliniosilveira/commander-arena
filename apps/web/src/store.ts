@@ -24,7 +24,17 @@ import {
   shouldStop,
 } from './policy/should-stop';
 
-export type Screen = 'menu' | 'import' | 'loading' | 'playing';
+export type Screen = 'menu' | 'import' | 'loading' | 'playing' | 'table';
+
+/**
+ * A game with more than one opponent (the "more opponents" project). The engine plays two seats
+ * only, so for now it is just the decks chosen and an empty board: no game is started.
+ */
+export interface TableSetup {
+  readonly humanDeck: string;
+  /** One deck per opponent, in seat order. */
+  readonly opponentDecks: readonly string[];
+}
 
 /** The sections of the import screen (M4): the importer and saved decks. */
 export type ImportTab = 'import' | 'decks';
@@ -67,6 +77,8 @@ export function untappableSources(
 
 export interface AppState {
   readonly screen: Screen;
+  /** The decks of a table with several opponents, while the `table` screen is open. */
+  readonly table: TableSetup | null;
   /** Which section the import screen opens on. */
   readonly importTab: ImportTab;
   readonly options: NewGameOptions | null;
@@ -115,6 +127,8 @@ export interface AppState {
 
 export interface AppActions {
   startGame(options: NewGameOptions): Promise<void>;
+  /** Opens the empty board of a game with several opponents (no game is played yet). */
+  openTable(setup: TableSetup): void;
   /** An explicit player action (a click). */
   act(action: Action): Promise<void>;
   /** Takes back the last small action when the Worker allows it (D-050). */
@@ -361,6 +375,7 @@ export function createAppStore(options: StoreOptions): AppStore {
 
     return {
       screen: 'menu',
+      table: null,
       importTab: 'import',
       options: null,
       snapshot: null,
@@ -376,6 +391,12 @@ export function createAppStore(options: StoreOptions): AppStore {
       manaTaps: [],
       error: null,
       stats: { humanActions: 0, autoPasses: 0 },
+
+      openTable(setup) {
+        generation += 1;
+        gate?.release();
+        set({ screen: 'table', table: setup, snapshot: null, log: [], error: null });
+      },
 
       async startGame(opts) {
         generation += 1;
@@ -481,7 +502,14 @@ export function createAppStore(options: StoreOptions): AppStore {
       backToMenu() {
         generation += 1;
         gate?.release();
-        set({ screen: 'menu', snapshot: null, log: [], passing: false, error: null });
+        set({
+          screen: 'menu',
+          table: null,
+          snapshot: null,
+          log: [],
+          passing: false,
+          error: null,
+        });
       },
 
       openImport(tab = 'import') {

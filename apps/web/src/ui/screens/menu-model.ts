@@ -14,6 +14,15 @@ export interface MenuForm {
   readonly ai?: AiKind;
 }
 
+/** The names of the opponents' deck steps, in seat order. */
+export const OPPONENT_ORDINALS = ['first', 'second', 'third'] as const;
+
+/** The title of the deck dialog of opponent `index` (from 0) at a table of `count` opponents. */
+export function opponentDeckTitle(index: number, count: number): string {
+  if (count === 1) return "Choose opponent's deck";
+  return `Choose ${OPPONENT_ORDINALS[index] ?? `#${index + 1}`} opponent's deck`;
+}
+
 export const MAX_SEED = 0xffffffff;
 
 /**
