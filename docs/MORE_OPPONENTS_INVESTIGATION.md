@@ -27,7 +27,7 @@ Can the app run free-for-all Commander games with 3 and 4 seats, what would brea
 
 - The host: `AI_SEAT` is one constant (`game/protocol.ts`), used in `host.ts` (the AI's turn loop, its emblems and `determinize`) and `slow-opponent.ts`. The app has one human (seat 0) and one AI seat with one agent; `createGame` is called with two decks.
 - The menu: the number-of-opponents toggle and the deck dialog per opponent exist (#519, #523), but nothing starts the game and the screen that follows is empty. The text of #523 says the engine still plays two seats; since #500 it does not.
-- The board: `Board.tsx` and `Versus.tsx` pick "the" opponent with `view.seats.find(s => s.id !== view.viewer)`, and `seatLabel`, `commanderDamageTaken`, `game-over-model.ts`, `TurnTracker.tsx`, `priority.ts` and `LibraryTop` speak of one opponent. The steps of "Board plan" are unbuilt.
+- The board: `Board.tsx` and `Versus.tsx` pick "the" opponent with `view.seats.find(s => s.id !== view.viewer)`, and `seatLabel`, `commanderDamageTaken`, `game-over-model.ts`, `TurnTracker.tsx`, `priority.ts` and `LibraryTop` speak of one opponent. `Board.tsx` is not going to change in this phase; the new board of "Board plan" is unbuilt.
 - Tools: `tools/perf/derive-bench.ts` replays two-seat games, `ai:arena --precons` and `--pairing` are for two seats (tables use the arena decks), and there is no soak for three or four seats.
 - Rules not built (`docs/RULES_COVERAGE.md`, `docs/ROADMAP.md`): CR 800.4c, 800.4e to 800.4i and 800.4k, 806, effects that last until a point of the next turn of a player who left (`turnEnd`, `endStep`), and the active seat of a turn in which its player left (CR 800.4j: the engine passes the priority on, but the seat stays active until the turn ends). The range of influence (CR 801) is an owner decision (below).
 
@@ -138,83 +138,85 @@ In all six runs no permanent stayed under a player who had lost, no seat that ha
 
 ## Remaining risks, in order of weight
 
-1. App: the host and the protocol have one AI seat, the board draws one opponent, and the menu flow starts no game. Until they change, everything built so far cannot be played.
+1. App: the host and the protocol have one AI seat, the current board draws one opponent (a separate board for three or more players is planned), and the table screen starts no game. Until they change, everything built so far cannot be played.
 2. Performance: more permanents and triggers; the decision time of the AI with three opponents (the budget is 5 s a decision) and the speed of `getView`, `getLegalActions` and `applyAction` with more seats have not been measured, because `derive-bench` and `ai:arena --precons` play two seats.
 3. Tests: no soak for three or four seats, and the scenarios of the phase 2 audit were not kept (a card of the corpus is not guaranteed to have its own 3-seat test).
 4. Rules: the CR sections listed under "What still blocks it", and cards that were checked only with the text the parser reads (the audit says which were read and not run).
 5. UI: arrows of combat and of the stack with three opponents, a choice of which opponent, and phone width (left out of the board plan).
 
-## Board plan: five areas (phase 4)
+## Board plan: a separate board for three or more players (phase 4)
 
-One board for every seat count from 2 to 4, not a 1v1 board plus a multiplayer one. `Board` maps over `view.seats` instead of picking "the" opponent (`Board.tsx`). The screen is a grid of five areas:
+The board for three or more players (two or more opponents) starts as a board of its own, next to today's. The current board (`Board.tsx`, the screen of `Game` in `App.tsx`) is not touched in this phase: it stays as it is for 1v1. The app already has a separate screen for a table (`screen === 'table'`, `EmptyTable` in `App.tsx`, #523), so the new board goes there and `Game` is left alone. The new board composes the components that exist (`Field`, `PlayerStrip`, `HandBacks`, the turn box, the stack, the decision dock) and does not edit them where it can avoid it. Whether the two boards become one is a later decision, after the new one works. The screen is a grid:
 
 ```
-3 opponents                 2 opponents                 1 opponent (today)
-| opp 1 | opp 2 | opp 3 |   | opp 1     | opp 2     |   | opponent          | flow |
-| you           | flow  |   | you           | flow  |   | you               |      |
+3 opponents                 2 opponents                 1 opponent
+| opp 1 | opp 2 | opp 3 |   | opp 1     | opp 2     |   today's board,
+| you           | flow  |   | you           | flow  |   not touched
 ```
 
-Opponents share the top row equally. You get the bottom left (4 of 6 columns). The flow cell (2 of 6) holds what floats today at the right edge and top left: the decision dock, the stack and the turn box. With one opponent the flow cell spans both rows, so the 1v1 screen keeps today's proportions. The template is a pure function of the opponent count (`tableAreas`, unit tested like `layout.ts`), so adding a seat count adds a row to a table, not a component.
+Opponents share the top row equally. You get the bottom left (4 of 6 columns). The flow cell (2 of 6) holds what floats today at the right edge and top left: the decision dock, the stack and the turn box. The template is a pure function of the opponent count (`tableAreas`, unit tested like `layout.ts`), so adding a seat count adds a row to a table, not a component.
 
 ### The mockup (owner, three opponents)
 
 ![Mockup of the board with three opponents: the opponents in a row on top, you at the bottom left, and the flow cell at the bottom right](images/more-opponents-board-mockup.png)
 
-The three numbered zones are the opponents (1, which holds one cell for each opponent), you (2) and the flow cell (3). The proportions are the ones above: the opponents share the top row, you take about two thirds of the bottom row and the flow cell the rest. What the mockup fixes, read from the picture:
+The mockup is about where the players sit, not a design of the strips. It fixes:
 
-- Every strip has a bar of its seat colour on its top edge (you blue, then red, teal and purple), and the same colour names the seat in the wheel of the turn box and on the stack.
-- An opponent strip shows, in this order: "Opponent N" with the name of the deck under it, the life total (large; the 12 of the third opponent is red, so the total changes colour when it is low, the threshold is not fixed here), a badge for the monarch (the "M" of the first), and three chips: commander damage `CMD x/21`, the cards in hand, and the library. Under them, the battlefield in the three rows of today (creatures, other permanents, lands) with the attackers outlined.
-- Your strip has the same header and a chip "commander damage taken" with one number for each opponent in seat order (0, 7, 14). Those are the numbers of the `CMD` chips of the opponents (0/21, 7/21, 14/21), so the chip of an opponent is the damage you took from its commander; this is read from the numbers and not stated in the picture. Your hand is below your battlefield.
-- The flow cell, from the top: the turn ("Turn 9"), the wheel (one dot for each seat in turn order, joined by arrows, the active seat ringed), the steps with the current one filled (upkeep, draw, main, combat, main 2, end), the stack, and your decision with its buttons. Each stack item has the colour of its seat on its left border and names the seats ("Attack of Opponent 1 to You"); a trigger sits under its source.
-- The log is not in the flow cell: by the owner's choice the log, the settings and "Report issue" stay at the bottom left as in 1v1 (`LogDock`, `SettingsDock` and `ReportDock` in `App.tsx`, outside the board).
-- The second opponent has a yellow border and you have an orange one. What each marks (the strip in focus, the player who must decide) is not clear from the picture: see "Open choices".
+- The opponents share the top row in equal columns, one cell each (zone 1), up to three.
+- You are at the bottom left, about two thirds of the bottom row, with your hand under your battlefield (zone 2).
+- The flow cell is at the bottom right, the rest of the bottom row (zone 3): the turn, the stack and your decision.
+- The log, the settings and "Report issue" stay at the bottom left as in 1v1 (`LogDock`, `SettingsDock` and `ReportDock` in `App.tsx`, outside the board). The flow cell has no log.
+
+Everything else in the picture (the colour of each seat, the chips, the wheel of seats, the compact strip, the highlighted borders and the Portuguese labels) is illustrative and not a requirement. The first version reuses today's components and they are adjusted afterwards ("Later adjustments").
 
 ### What is reused as it is
+
+By composition: the new board imports these and does not change them.
 
 | Today | In the new board |
 | --- | --- |
 | `Field` and `BattlefieldRow` | One per seat, unchanged. Rows measure their own cell (`useMeasure`) and pick tile height, grouping and scrolling from it, so a narrower cell is not a new code path. `ROW_ORDER_OPP` already mirrors the opponent. |
-| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Same component with a `density` of `full` or `compact`, chosen by a container query on its cell. |
+| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Unchanged at first, one for each seat. A compact density is added only if the strip does not fit its cell (decided with the screenshots of step 4). |
 | `HandBacks` | One per opponent. |
 | `BlockArrows`, `StackArrows` | Measure tiles from the DOM by `data-object-id` (`panels/arrows.ts`), so they do not care where a cell is. To confirm with a test at 3 opponents. |
-| `DecisionLayer`, `DockSlotContext`, `StackPanel` | The slot moves from `aside.turn-panel` in `Game` into the flow cell; `Board` takes it as a `flow` prop. |
+| `DecisionLayer`, `DockSlotContext`, `StackPanel` | In `Game` the dock slot is in `aside.turn-panel`; the new board gives the same slot to its flow cell. |
 | `ix.clickableSeats`, `ix.onSeat`, `AttackTargetDialog` | Already keyed by seat id and by `player:<seat>` options. They only need names. |
-| `TurnTracker` | Folds into the top of the flow cell and gains a turn-order wheel: seats in order, the active one marked, seats that left struck out. |
+| `TurnTracker` | It floats at the top left in `Game`; in the new board it sits in the flow cell, as it is. A turn-order wheel is a later adjustment. |
 | `LogDock`, `SettingsDock`, `ReportDock` | Unchanged and outside the board: the bottom left, as in 1v1. The flow cell has no log. |
 
-### What changes
+### What has to change in the first version
 
-- `seatLabel` says "Opponent" for everyone, and there are two copies of it (`ui/board/resolve.ts` and `ui/decisions/lookup.ts`): one function. It needs "Opponent 2" with the deck name under it, as in the mockup, plus a colour per seat (`--seat-1` to `--seat-3` beside `--me`) shown on the strip's top bar, the wheel and the stack, because position alone no longer names a seat.
-- `commanderDamageTaken` names the source only when there is one source (`resolve.ts`). With several opponents it must map each `"seat:card"` key to its owner and show "from Opponent 2".
-- Words that say "the opponent" in the singular: `Versus.tsx`, `game-over-model.ts`, `TurnTracker.tsx` (`stopSide`; the two stop settings stay, "opponent" meaning any opponent), `priority.ts`, `LibraryTop`.
-- A seat that left the game (`has-lost` already exists on the strip) collapses to a slim strip and its field disappears; its column width goes to the others.
-- Focus: clicking an opponent widens its column (for example 2fr 1fr 1fr), and the board does it by itself for the seat that attacks you or targets you. It is UI state, never engine state.
-- Below about 1100 px wide the opponents stack as compact strips with one expanded, using the same cells and the same focus state. Phone width is left out for now.
-- New rules go in a new `table.css`; `board.css` is already over 2000 lines. Keep the class names the e2e tests use (`board-field-opp`, `board-strip-opp`, `data-field-seat`).
-- Not part of the board: `host.ts` has one `HUMAN` and one `AI_SEAT`, and the menu has no seat count. Those belong to the app step of "How games would be run".
+These are about being correct with several opponents, not about looks. The current board is not edited: what the new board needs is new code beside it, and a shared module changes only in a way that leaves the 1v1 output exactly as it is (the tests of the 1v1 strings stay).
+
+- `seatLabel` says "Opponent" for everyone, so three opponents cannot be told apart. The new board uses its own label that numbers the opponents ("Opponent 2"); the two copies of `seatLabel` (`ui/board/resolve.ts` and `ui/decisions/lookup.ts`) are left for later.
+- `commanderDamageTaken` names the source only when there is one source (`resolve.ts`). The new board maps each `"seat:card"` key to its owner and shows "from Opponent 2", or it would show a wrong total.
+- Words that say "the opponent" in the singular and are shared by both screens: `Versus.tsx`, `game-over-model.ts` (who won, with three opponents), `TurnTracker.tsx` (`stopSide`; the two stop settings stay, "opponent" meaning any opponent), `priority.ts`, `LibraryTop`. They change by adding what several opponents need, with the 1v1 text unchanged.
+- A seat that left the game keeps its strip with `has-lost` (it exists already); what it owned has left the game (CR 800.4a), so its field is empty.
+- New rules go in a new `table.css`, with class names of their own (`table-`), so the e2e tests of the 1v1 board are not affected; `board.css` is already over 2000 lines.
+- Not part of the board: `host.ts` has one `HUMAN` and one `AI_SEAT`, and the table screen starts no game. Those belong to #526.
+
+### Later adjustments
+
+Not planned as pull requests until the board is playable; each becomes an issue when wanted: merging the two boards into one, a colour for each seat, the turn-order wheel in the flow cell, a compact strip, a badge for the monarch and the commander damage chips on the strips, widening the column of the seat that attacks or targets you (UI state, never engine state), a collapsed strip for a seat that left, opponents stacked below about 1100 px wide, and phone width.
 
 ### Developing it
 
-`createGame` takes two to four seats now (#500), but the host of the app does not start such a game, so the UI cannot wait for it. Render the board from synthetic `GameView` fixtures (marked `SYNTHETIC`) in a component test and in one e2e page, with 2 and 3 opponents, a seat that left, and an attack on you. The 1v1 game stays the regression check through the existing e2e tests.
+`createGame` takes two to four seats now (#500), but the host of the app does not start such a game, so the UI cannot wait for it. Render the new board from synthetic `GameView` fixtures (marked `SYNTHETIC`) in a component test and in one e2e page, with 2 and 3 opponents, a seat that left, and an attack on you. Because `Board.tsx` and `Game` are not edited, the 1v1 game is unaffected by construction, and the existing e2e tests stay the check of that.
 
 ### Steps
 
-None is built. Each is a pull request; the 1v1 screen must not change until step 4. Steps 1 to 3 do not need the host (#526), and the numbers of #527 decide whether the board is built for four seats or three.
+None is built. Each is a pull request, and none edits the current board. Steps 1 to 3 do not need the host (#526), and the numbers of #527 decide whether the board is built for four seats or three.
 
-1. Pure parts with tests, no visual change: `tableAreas`, one `seatLabel`, the colour of each seat, and the owner of each commander damage key.
-2. `Board` maps over the opponents (still one); the 1v1 template looks as today. Component tests with synthetic `GameView` fixtures for two and three opponents.
-3. Turn box, stack and decision dock move into the flow cell, with the turn-order wheel and the colour of the seat on each stack item; the log, settings and report docks stay put. Still the same screen in 1v1.
-4. The strip in its compact density (name and deck, life, monarch badge, the three chips), columns for two and three opponents, focus, seats that left. The first visual change, on one synthetic e2e page; screenshots at 1440, 1280 and 1024 wide.
-5. The rest of the table: arrows of combat and of the stack with three opponents (to read first: `CombatEffects`, `combat-order` and `pair-focus` may assume one defender), the names in the attack target dialog and in target choices, the singular wording of the decisions, and the end screen.
-6. The menu starts the game with the host of #526 and the empty board goes away; one e2e game with three opponents.
-7. Narrow windows: below about 1100 px the opponents stack as compact strips with one expanded.
+1. Pure parts with tests, nothing imports them yet: `tableAreas` (the positions of the mockup as a function of the opponent count) and the label that numbers the opponents.
+2. `TableBoard` (`ui/board/TableBoard.tsx`, `table.css`): the three zones with the existing `Field`, `PlayerStrip`, `HandBacks` and your hand, adjusting only what does not fit. Reachable only from a synthetic e2e page and component tests; screenshots at 1440, 1280 and 1024 wide decide whether the strip needs a compact density.
+3. The flow cell: the existing turn box, stack and decision dock placed in it, with the log, settings and report docks where they are.
+4. What must be right with several opponents: commander damage by source, arrows of combat and of the stack (to read first: `CombatEffects`, `combat-order` and `pair-focus` may assume one defender), the attack target dialog and the choices of target naming the opponent, the singular wording of the decisions, and the end screen.
+5. The table screen shows `TableBoard` instead of the empty board, the menu starts the game with the host of #526, and one e2e game has three opponents.
 
 ### Open choices
 
-- Whether 1v1 uses the same template (recommended: one path) or keeps the full-height right panel it has now.
+- When, if ever, the two boards become one (not before the new board works).
 - The narrowest window width the board must support.
-- What the two highlighted borders of the mockup mean (the yellow of the second opponent, the orange of your strip): the strip in focus, the player who must decide, or the active player. The active seat is the first opponent in that picture.
-- The language of the labels: the mockup is in Portuguese ("Vida", "Você", "Oponente") and the app's are in English; the plan uses the app's words.
 
 ## How games would be run
 
