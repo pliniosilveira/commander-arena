@@ -2,7 +2,7 @@
 // "At the beginning of your end step, if you attacked this turn, ..." (Raid, Searslicer Goblin). Cards are SYNTHETIC, written as nodes: the real Oracle text of the three cards is
 // read and played in packages/cards/test/convert-grammar-engine-issue144.test.ts.
 // Pins: CR 508.1 and 603.2c (one trigger for the declaration), CR 508.4 and 110.5b (a token that enters tapped and attacking was never declared as an attacker: no attack trigger sees it
-// and the turn log does not count it), CR 603.4 (the intervening "if" is read as the ability triggers and as it resolves), `triggerAttackedPlayer` valid in an `attackBatch` trigger.
+// and the turn log does not count it), CR 603.4 (the intervening "if" is read as the ability triggers and as it resolves), `triggerAttackedPlayer` valid in an `attackBatch` trigger only with `controllerChooses` (issue 422).
 import { describe, expect, test } from 'vitest';
 import { validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
@@ -47,7 +47,7 @@ const leader = singleFaceCard({
         token: GOBLIN_TOKEN,
         count: 1,
         tapped: true,
-        attacking: { at: { kind: 'triggerAttackedPlayer' } },
+        attacking: { at: { kind: 'triggerAttackedPlayer' }, controllerChooses: true },
       },
     },
   ],
