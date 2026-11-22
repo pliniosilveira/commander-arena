@@ -1143,6 +1143,18 @@ export type Instruction =
       readonly as?: SeatId;
       readonly otherwise?: Effect;
       readonly answer: boolean | null;
+      /**
+       * CR 101.4, 608.2d: with several players the answers are collected first, in APNAP order, and only then does anything happen (every accepted effect, and every `otherwise`): this
+       * instruction is the one of the first player; `later` are the players asked after, `held` the answers so far. Absent for one player.
+       */
+      readonly together?: {
+        readonly later: readonly { readonly seat: SeatId; readonly as?: SeatId }[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly as?: SeatId;
+          readonly answer: boolean;
+        }[];
+      };
     }
   /**
    * CR 701.21: sacrifice one permanent (checked against its controller as it runs). Emits
@@ -1399,6 +1411,20 @@ export type Instruction =
       readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
+      /**
+       * CR 101.4, 701.13 (`exileOwnGraveyardCard` with several players): the players choose in APNAP order and the cards move together once the last has chosen. This instruction is the one of
+       * the first player; `later` are the players who choose after, `held` the cards chosen so far (`automatic`: the engine chose them, there being no more candidates than needed).
+       */
+      readonly together?: {
+        readonly later: readonly SeatId[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly cards: readonly ObjectId[];
+          readonly automatic: boolean;
+        }[];
+      };
+      /** The choice in `chosen` was made by the engine (there were no more candidates than needed): the event says so. */
+      readonly automatic?: true;
       /** Issue 102 (Dauthi Voidwalker): the card chosen is not moved; the controller may play it this turn (`mayPlay`), without paying its mana cost when `free`. */
       readonly permit?: { readonly free?: true };
       /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
