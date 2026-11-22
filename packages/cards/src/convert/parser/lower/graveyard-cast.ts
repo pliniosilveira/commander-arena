@@ -3,7 +3,7 @@
  * The sentences that join them ("If you haven't cast a spell this turn, ... If you do, ...") are in `sentences.ts`.
  */
 import type { IrClause } from '../ir/types';
-import { arg, type Effects, failure, operand } from './clauses';
+import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { graveyardCardTarget } from './danitha-g1b';
 import { missingFeatures } from './features';
 import type { Lowering } from './types';
@@ -80,8 +80,51 @@ export const CANT_CAST_ADDITIONAL_SPELLS: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "You may cast it from your graveyard as an Adventure until the end of your next turn" (Hildibrand Manderville, issue 98; CR 601.2, 715.3, 611.2a, 400.7, 603.10a): the engine's
+ * `mayCast` with `adventure` on the card the permanent with the dying trigger became (`thisCard`), until the end of the controller's next turn. The permission is the offer, so no
+ * `may` of its own (`acceptsOptional`). "It" is read only as the card of a trigger about the permanent itself dying or leaving the battlefield (`ctx.itIsCard`).
+ */
+export const MAY_CAST_ADVENTURE: Lowering<IrClause, Effects> = {
+  head: 'mayCastAdventure',
+  id: 'lower.may-cast-adventure',
+  needs: ['effect:mayCast', 'selector:thisCard', 'duration:untilEndOfNextTurn'],
+  acceptsOptional: true,
+  lower(clause, ctx) {
+    const blocked = missingFeatures([
+      'effect:mayCast',
+      'selector:thisCard',
+      'duration:untilEndOfNextTurn',
+    ]);
+    if (blocked.length > 0)
+      return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    if (!ctx.itIsCard) return failure(clause);
+    const lowered = eachObject(
+      clause,
+      ctx,
+      (objects) => ({
+        kind: 'mayCast',
+        objects,
+        duration: 'untilEndOfNextTurn',
+        adventure: true,
+      }),
+      'objects',
+      { thisCard: true },
+    );
+    // Only the card the dying permanent became: another "it" (a target, an earlier object) is not read.
+    if (
+      lowered.ok &&
+      lowered.value.some((e) => e.kind !== 'mayCast' || e.objects.kind !== 'thisCard')
+    ) {
+      return failure(clause);
+    }
+    return lowered;
+  },
+};
+
 export const GRAVEYARD_CAST_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   CAST_THAT_CARD,
   CAST_THIS_FROM_GRAVEYARD,
+  MAY_CAST_ADVENTURE,
   CANT_CAST_ADDITIONAL_SPELLS,
 ];

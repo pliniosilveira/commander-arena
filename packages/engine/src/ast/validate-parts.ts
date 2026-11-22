@@ -8062,13 +8062,53 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     }
     case 'mayCast':
       // D-135: "you may cast target [card] from your graveyard this turn".
-      if (kindOf(e.objects) !== 'target') {
+      // Hildibrand Manderville (issue 98, CR 603.10a, 715.3): "When ~ dies, you may cast it from your graveyard as an Adventure until the end of your next turn": the card the
+      // permanent became, named by `thisCard` (an ability of the permanent that dies) or `triggerCard` (a trigger about a permanent that died).
+      if (e.adventure === true && kindOf(e.objects) === 'thisCard') {
+        if (scope.owner !== 'ability') {
+          issue(out, `${path}.objects`, "'thisCard' is only valid in abilities");
+        }
+      } else if (e.adventure === true && kindOf(e.objects) === 'triggerCard') {
+        if (scope.triggerSubject !== 'permanent') {
+          issue(out, `${path}.objects`, "'triggerCard' needs a trigger about a permanent");
+        }
+      } else if (kindOf(e.objects) !== 'target') {
         issue(out, `${path}.objects`, 'a cast permission names a target card');
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }
-      if (e.duration !== 'untilEndOfTurn') {
-        issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
+      if (e.duration !== 'untilEndOfTurn' && e.duration !== 'untilEndOfNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          'a cast permission lasts until end of turn or until the end of your next turn',
+        );
+      }
+      if (e.adventure !== undefined && e.adventure !== true) {
+        issue(out, `${path}.adventure`, 'adventure must be true when present');
+      }
+      if (e.adventure === true) {
+        for (const key of ['exileInstead', 'anyGraveyard', 'free', 'bottomInstead'] as const) {
+          if (e[key] !== undefined) {
+            issue(out, `${path}.${key}`, `${key} is not for a permission to cast as an Adventure`);
+          }
+        }
+        if (e.from !== undefined) {
+          issue(
+            out,
+            `${path}.from`,
+            'a permission to cast as an Adventure is for a graveyard card',
+          );
+        }
+        if (e.whenCast !== undefined) {
+          issue(out, `${path}.whenCast`, 'a permission to cast as an Adventure has no cast rider');
+        }
+      } else if (e.duration === 'untilEndOfNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          'until the end of your next turn is only for a permission to cast as an Adventure',
+        );
       }
       if (e.exileInstead !== undefined && e.exileInstead !== true) {
         issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');

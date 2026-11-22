@@ -862,6 +862,7 @@ describe('unmatched abilities', () => {
       'effect.play-target-graveyard-card-free',
       'effect.may-cast-that-card',
       'effect.may-cast-this-from-graveyard',
+      'effect.may-cast-it-as-adventure',
       'effect.cant-cast-additional-spells',
       'effect.cast-per-opponent-graveyard-free',
       'effect.cast-own-graveyard-card-free',

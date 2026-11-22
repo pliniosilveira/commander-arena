@@ -43,7 +43,7 @@ import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardCastTypes, graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
-import { asFace, castableFaces, choosesFace } from './layouts';
+import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
@@ -341,6 +341,8 @@ function grantsCast(
   obj: GameObject,
 ): boolean {
   if (e.change.kind !== 'castPermission' || e.change.seat !== seat) return false;
+  // CR 715.3 (Hildibrand Manderville): a permission to cast "as an Adventure" is the Adventure half's alone (`mayCastAdventureFromGraveyard`), never the card's normal cast.
+  if (e.change.adventureOnly === true) return false;
   if (e.change.spells === undefined) return e.objects.includes(obj.id);
   return matchesFilter(
     state,
@@ -366,6 +368,27 @@ export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameOb
         (a.condition === undefined ||
           evaluateCondition(state, a.condition, { controller: seat, source: obj.id })),
     ) ?? false
+  );
+}
+
+/**
+ * CR 715.3, 601.2 (Hildibrand Manderville): whether an effect ("you may cast it from your graveyard as an Adventure until the end of your next turn") lets `seat` cast the Adventure half
+ * of `obj`, a card in their own graveyard: a `castPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
+ */
+export function mayCastAdventureFromGraveyard(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+): boolean {
+  if (obj.zone !== 'graveyard' || obj.owner !== seat || obj.card === null) return false;
+  const def = definitionOf(state, obj.card);
+  if (def.layout !== 'adventure' || isOmenFace(def)) return false;
+  return state.continuousEffects.some(
+    (e) =>
+      e.change.kind === 'castPermission' &&
+      e.change.seat === seat &&
+      e.change.adventureOnly === true &&
+      e.objects.includes(obj.id),
   );
 }
 
@@ -538,6 +561,14 @@ export function castZone(
   if (obj.zone === 'exile' && obj.onAdventure === true) return faceIndex === 0 ? 'exile' : null;
   // CR 113.6b (D-133): "You may cast this card from your graveyard [as long as ...]": the card's own static ability.
   if (obj.zone === 'graveyard') {
+    // CR 715.3 (Hildibrand Manderville): "cast it from your graveyard as an Adventure": the Adventure half (face 1) only, paying its mana cost.
+    if (
+      faceIndex === 1 &&
+      alternative === undefined &&
+      mayCastAdventureFromGraveyard(state, seat, obj)
+    ) {
+      return 'graveyard';
+    }
     // D-232: or a permanent's "Once during each of your turns, you may cast an artifact spell from your graveyard".
     return alternative === undefined &&
       faceIndex === 0 &&
@@ -990,6 +1021,7 @@ export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
       (id) =>
         mayCastFromGraveyard(state, seat, getObject(state, id)) ||
         graveyardPlayPermission(state, seat, getObject(state, id), false) !== null ||
+        mayCastAdventureFromGraveyard(state, seat, getObject(state, id)) ||
         hasAftermathHalf(state, getObject(state, id)),
     ),
     // Issue 159: the cards of other players' graveyards that an effect lets the seat cast this turn.

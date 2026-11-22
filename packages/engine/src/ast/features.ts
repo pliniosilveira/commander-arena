@@ -1364,6 +1364,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   durationKinds: [
     'untilEndOfTurn',
     'untilYourNextTurn',
+    // CR 611.2a (Hildibrand Manderville): `mayCast.duration`, "until the end of your next turn".
+    'untilEndOfNextTurn',
     // CR 611.2b (Minas Morgul): `setTypes.whileHasCounter`, "for as long as that creature has a shadow counter on it".
     'whileHasCounter',
     'forAsLongAsYouControlThis',

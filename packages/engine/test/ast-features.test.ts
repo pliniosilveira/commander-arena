@@ -84,6 +84,8 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      // CR 611.2a (Hildibrand Manderville): `mayCast.duration`, "until the end of your next turn".
+      'untilEndOfNextTurn',
       'whileHasCounter',
       'forAsLongAsYouControlThis',
       // D-207: "for as long as this Saga remains on the battlefield".

@@ -162,6 +162,13 @@ function walkEffect(
         }
         return;
       }
+      // Hildibrand Manderville (CR 603.10a): the card the dying permanent became names itself; it is in the graveyard when the ability resolves or the permission is not given.
+      if (
+        effect.adventure === true &&
+        (effect.objects.kind === 'thisCard' || effect.objects.kind === 'triggerCard')
+      ) {
+        return;
+      }
       const zone = filter?.zone;
       if (zone !== 'graveyard') {
         out.push({
