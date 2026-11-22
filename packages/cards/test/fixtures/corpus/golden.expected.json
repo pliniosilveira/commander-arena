@@ -1,5 +1,5 @@
 {
-  "parserVersion": 190,
+  "parserVersion": 191,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -196,7 +196,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "80b51581"
+      "ast": "491af960"
     },
     "02b6900b-219f-4832-8f93-6ef27ee76c0c": {
       "name": "Impulsivity",
