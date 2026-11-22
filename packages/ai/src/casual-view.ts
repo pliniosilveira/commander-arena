@@ -69,7 +69,11 @@ export function ownLife(view: GameView): number {
   return view.seats.find((s) => s.id === view.viewer)?.life ?? 0;
 }
 
-/** Life of the opposing seat with the least life (v1 has exactly one opponent). */
+/** The opposing seats still in the game, in seat order. */
+export const livingOpponents = (view: GameView): GameView['seats'] =>
+  view.seats.filter((s) => s.id !== view.viewer && !s.hasLost);
+
+/** Life of the opposing seat with the least life. */
 export function opponentLife(view: GameView): number {
   const lives = view.seats.filter((s) => s.id !== view.viewer && !s.hasLost).map((s) => s.life);
   return lives.length === 0 ? Number.POSITIVE_INFINITY : Math.min(...lives);

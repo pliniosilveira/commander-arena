@@ -42,16 +42,14 @@ export function poisonDamageOf(o: ObjectView): number {
 export const poisonOf = (view: GameView, seat: SeatId): number =>
   view.seats.find((s) => s.id === seat)?.poison ?? 0;
 
-/** The poison counters of the opposing seat with the most (v1 has exactly one opponent). */
-export function opponentPoison(view: GameView): number {
-  const counts = view.seats.filter((s) => s.id !== view.viewer && !s.hasLost).map((s) => s.poison);
-  return counts.length === 0 ? 0 : Math.max(...counts);
-}
-
-/** Whether `attackers`, all unblocked at the opponent, give them ten poison counters. */
-export function poisonLethal(view: GameView, attackers: readonly ObjectView[]): boolean {
+/** Whether `attackers`, all unblocked at `seat`, give that seat ten poison counters (its own count). */
+export function poisonLethal(
+  view: GameView,
+  seat: SeatId,
+  attackers: readonly ObjectView[],
+): boolean {
   const given = attackers.reduce((sum, o) => sum + poisonDamageOf(o), 0);
-  return given > 0 && opponentPoison(view) + given >= POISON_LOSS;
+  return given > 0 && poisonOf(view, seat) + given >= POISON_LOSS;
 }
 
 /** Whether `attackers`, all unblocked at the agent, would give it ten poison counters. */

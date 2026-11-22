@@ -42,8 +42,8 @@ import {
   findObject,
   hasKeyword,
   isCreature,
+  livingOpponents,
   manaValueOf,
-  opponentLife,
   ownLife,
   powerOf,
   toughnessOf,
@@ -130,9 +130,6 @@ export function survivesAttack(view: GameView, attacker: ObjectView): boolean {
   return !blockers.some((b) => blockerKills(b, attacker));
 }
 
-const opposingSeat = (view: GameView): SeatId | undefined =>
-  view.seats.find((s) => s.id !== view.viewer && !s.hasLost)?.id;
-
 /** Whether `unblocked`, all reaching `seat` unhindered, would make it lose (life, poison, commander). */
 function reachesLethal(
   view: GameView,
@@ -155,9 +152,14 @@ function reachesLethal(
  * The attackers left once each untapped potential blocker group has stopped one attacker, biggest
  * attacker first (a menace attacker takes two blockers).
  */
-function leftAfterBlocks(view: GameView, attackers: readonly ObjectView[]): ObjectView[] {
+function leftAfterBlocks(
+  view: GameView,
+  attackers: readonly ObjectView[],
+  defender: SeatId,
+): ObjectView[] {
+  // Only the defending player's creatures can block attackers aimed at them (CR 509.1a).
   const free = new Set(
-    view.battlefield.filter((o) => o.controller !== view.viewer && isCreature(o) && !o.tapped),
+    view.battlefield.filter((o) => o.controller === defender && isCreature(o) && !o.tapped),
   );
   const left: ObjectView[] = [];
   for (const a of [...attackers].sort((x, y) => lifeDamageOf(y) - lifeDamageOf(x))) {
@@ -178,23 +180,27 @@ function attackTarget(view: GameView, targets: readonly AttackTarget[]): AttackT
 }
 
 export function chooseGreedyAttack(view: GameView, d: DeclareAttackersDecision): Choice {
-  const candidates = d.candidates.flatMap((c) => {
+  const found = d.candidates.flatMap((c) => {
     const object = findObject(view, c.attacker);
-    const target = attackTarget(view, c.targets);
-    return object === undefined || target === undefined ? [] : [{ object, target, c }];
+    return object === undefined ? [] : [{ object, c }];
   });
-  const opponent = opposingSeat(view);
-  const atPlayer = candidates.filter((x) => x.target.kind === 'player').map((x) => x.object);
-  const lethal =
-    opponent !== undefined &&
-    atPlayer.length > 0 &&
-    reachesLethal(
-      view,
-      opponent,
-      opponentLife(view),
-      poisonOf(view, opponent),
-      leftAfterBlocks(view, atPlayer),
+  // Each opponent is judged on its own life, poison and commander damage, by the attackers that
+  // may attack that seat, against that seat's own blockers.
+  const killSeat = livingOpponents(view).find((s) => {
+    const at = found
+      .filter((x) => x.c.targets.some((t) => t.kind === 'player' && t.seat === s.id))
+      .map((x) => x.object);
+    return (
+      at.length > 0 && reachesLethal(view, s.id, s.life, s.poison, leftAfterBlocks(view, at, s.id))
     );
+  })?.id;
+  const lethal = killSeat !== undefined;
+  const candidates = found.flatMap(({ object, c }) => {
+    const target =
+      c.targets.find((t) => t.kind === 'player' && t.seat === killSeat) ??
+      attackTarget(view, c.targets);
+    return target === undefined ? [] : [{ object, target, c }];
+  });
   // CR 508.1d: a creature that attacks each combat if able is declared whatever the agent thinks.
   const required = new Set(d.mustAttack);
   const wanted: PlannedAttack[] = candidates
