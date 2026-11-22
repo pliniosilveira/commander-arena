@@ -89,7 +89,14 @@ export function chooseCardsToLose(
  * for the real heuristic AI, which will weigh targets by what the spell does.
  */
 function targetScore(view: GameView, t: ChosenTarget): number {
-  if (t.kind === 'player') return t.seat === view.viewer ? 0 : 3;
+  if (t.kind === 'player') {
+    if (t.seat === view.viewer) return 0;
+    // Issue 481: with several opponents the one with the least life ranks first (a lethal spell
+    // included). The bonus stays below 1, so a player still ranks between a creature and a permanent,
+    // and with one opponent the answer is unchanged.
+    const life = view.seats.find((s) => s.id === t.seat)?.life ?? 0;
+    return 3 + 0.9 / (1 + Math.max(life, 0));
+  }
   const o = findObject(view, t.id);
   if (o === undefined || o.controller === view.viewer) return 0;
   return isCreature(o) ? 4 + powerOf(o) / 100 : 2;
