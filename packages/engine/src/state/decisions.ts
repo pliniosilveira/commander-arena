@@ -88,6 +88,8 @@ export type PriorityOption =
   | { readonly kind: 'suspend'; readonly object: ObjectId }
   /** Foretell a card from the hand (CR 702.143a, D-128): a special action, see the `foretell` action. */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
+  /** Bring your companion into your hand (CR 116.2g, 702.139a): a special action, see the `bringCompanion` action. */
+  | { readonly kind: 'bringCompanion' }
   /** Plot a card from the hand (CR 702.170a): a special action, see the `plot` action. */
   | { readonly kind: 'plot'; readonly object: ObjectId }
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): a special action, see the `turnFaceUp` action. */

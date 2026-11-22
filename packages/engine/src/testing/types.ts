@@ -314,6 +314,8 @@ export interface TryVerbs {
   foretell(card: CardRef): TryResult;
   /** Plot a card in the hand (CR 702.170a). */
   plot(card: CardRef): TryResult;
+  /** Bring the companion into the hand (CR 116.2g, 702.139a). */
+  bringCompanion(): TryResult;
   /** Turn a face-down permanent face up (D-310), any permanent on the battlefield the seat names. */
   turnFaceUp(card: CardRef): TryResult;
   /** Unlock the half `door` (0 the left half, 1 the right half) of a Room (CR 709.5e). */
@@ -458,6 +460,8 @@ export interface Actor {
   suspend(card: CardRef, options?: SpecialOptions): CastHandle;
   /** Foretell a card in the player's hand (CR 702.143a, 116.2h, D-128): the special action, paid as `suspend`. */
   foretell(card: CardRef, options?: SpecialOptions): CastHandle;
+  /** Bring the player's companion into their hand (CR 116.2g, 702.139a): the special action; {3} is paid at once, and no decision follows. */
+  bringCompanion(): Actor;
   /** Plot a card in the player's hand (CR 702.170a-b): the special action, paid as `suspend`. */
   plot(card: CardRef, options?: SpecialOptions): CastHandle;
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): the special action, paid as `suspend`. */
@@ -557,6 +561,7 @@ export type ActionSpec =
   | { readonly suspend: CardRef }
   | { readonly foretell: CardRef }
   | { readonly plot: CardRef }
+  | { readonly bringCompanion: true }
   | { readonly turnFaceUp: CardRef }
   | { readonly unlock: CardRef; readonly door: number }
   | {

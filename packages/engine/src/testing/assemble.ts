@@ -92,6 +92,20 @@ export function assemble(
     }
   }
 
+  // CR 103.2b: a companion is outside the game: only its card data joins the table, after the cards of the board.
+  const companions = new Map<SeatId, number>();
+  spec.seats.forEach((s, seat) => {
+    if (s.companion === null) return;
+    const def = resolveCard(s.companion, spec.custom);
+    let di = defIndex.get(def);
+    if (di === undefined) {
+      di = defs.length;
+      defs.push(def);
+      defIndex.set(def, di);
+    }
+    companions.set(seat, di);
+  });
+
   // Timestamps (CR 613.7): every non-fresh object first, then the seats' turn starts (the active
   // seat's last), then fresh objects, so fresh ones are summoning sick (CR 302.6).
   const stamp = new Map<number, number>();
@@ -336,6 +350,9 @@ export function assemble(
       commanders: commanders[id] ?? [],
       handSizeMax: s.handSizeMax,
       ...(s.ring === null || s.ring === 0 ? {} : { ring: { tempted: s.ring } }),
+      ...(companions.has(id)
+        ? { companion: { definition: companions.get(id) ?? 0, brought: false } }
+        : {}),
       ...(s.citysBlessing ? { citysBlessing: true as const } : {}),
       ...(s.speed === null ? {} : { speed: s.speed }),
     };

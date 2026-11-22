@@ -692,6 +692,12 @@ export interface SeatState {
   readonly previousTurnStartTimestamp: number;
   readonly hasLost: boolean;
   /**
+   * The companion this player revealed before the game (CR 103.2b, 702.139): `definition` indexes `GameState.definitions`, and the card is
+   * outside the game (no object, in no zone, none of the 100 cards) until `brought` is true, when a card of the game is in the hand
+   * (`rules/companion.ts`). Public. Absent when the player has none.
+   */
+  readonly companion?: { readonly definition: number; readonly brought: boolean };
+  /**
    * The emblem named The Ring (CR 701.54c, D-196): present once the Ring has tempted this player. The emblem is a record of the seat, not an
    * object (nothing else reads an emblem's characteristics and the engine has no emblem objects): `tempted` is how many times the Ring has
    * tempted the player, which turns on its four abilities (`rules/ring.ts`). The emblem stays for the rest of the game (CR 114.1).
