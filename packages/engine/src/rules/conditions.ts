@@ -21,6 +21,7 @@ import {
   lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
+  spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
@@ -576,7 +577,7 @@ export function evaluateCondition(
       // D-423, CR 400.7: the source is the object that entered the battlefield this turn (a permanent that left and came back is a new object).
       return ctx.source !== null && state.turnLog.entered.some((e) => e.object === ctx.source);
     case 'cardsInGraveyard':
-      return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
+      return cardsInGraveyardHolds(state, ctx.controller, condition);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, ctx.controller, condition.compare);
     case 'aPlayerCardsInHand':
@@ -597,19 +598,12 @@ export function evaluateCondition(
           atLeast: 1,
         }) && getSeat(state, ctx.controller).lifeLostThisTurn > 0
       );
+    case 'aPlayerLostLifeThisTurn':
+      // CR 119.3: some player still in the game has lost at least that much life this turn (the seats' per-turn counters, reset as the turn ends).
+      return state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
     case 'spellsCastThisTurn':
-      // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
-      if (condition.ofTypes === undefined) {
-        return getSeat(state, ctx.controller).spellsCastThisTurn >= condition.atLeast;
-      }
-      // D-444: only the spells with one of the card types they were cast with.
-      return (
-        state.turnLog.castSpells.filter(
-          (s) =>
-            s.seat === ctx.controller &&
-            s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
-        ).length >= condition.atLeast
-      );
+      // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10); D-444: only those with one of the card types they were cast with.
+      return spellsCastThisTurnHolds(state, ctx.controller, condition);
     case 'spellsCastLastTurn': {
       // Issue 345, CR 601.2i: the spells each player cast in the turn before this one.
       const counts = state.lastTurnSpellsCast ?? [];
@@ -729,6 +723,9 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'triggerPlayerTurn':
+      // CR 603.4, 500.1: "that player", the player the event is about, is the active player.
+      return ctx.triggerPlayer !== undefined && state.turn.activeSeat === ctx.triggerPlayer;
     case 'triggerPlayerIsOpponent':
       // CR 603.2b, 102.2: "that player", the player the event is about, is an opponent of the controller of the ability.
       return (

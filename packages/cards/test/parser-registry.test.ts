@@ -197,6 +197,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
+  'static.nth-spell-cost-reduction': asIs,
+  'static.pay-life-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -437,6 +439,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
+  'condition.opponent-cards-in-graveyard': permanent(
+    (e) => `When ~ enters, if ${e}, you gain 1 life.`,
+  ),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
   'condition.its-stat-greater-than-each-other': permanent(
@@ -885,6 +891,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
+  'trigger.play-land-or-cast-spell-from-exile': whenever,
   'trigger.activate-ability': whenever,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
@@ -1067,6 +1074,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Transpose (CR 702.88a): the condition leads the sentence of a spell.
+  'condition.cast-from-hand': spell(
+    (e) => `Draw a card. If ${e}, create a 1/1 white Spirit creature token.`,
+  ),
+  // Tataru Taru: the intervening "if" of a trigger about the player who drew.
+  'condition.that-players-turn': permanent(
+    (e) => `Whenever an opponent draws a card, if ${e}, create a tapped Treasure token.`,
+  ),
   // Meren of Clan Nel Toth: the condition leads the sentence that returns the card chosen before it.
   'condition.that-mana-value-at-most': permanent(
     (e) =>
@@ -1176,6 +1191,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // CR 603.2: a spell cast in a named turn, and two events of one sentence.
   'trigger.cast-during-your-turn': whenever,
   'trigger.cast-turn-and-when': whenever,
+  'trigger.cast-and-draw': whenever,
   'trigger.cast-x': whenever,
   // Quandrix Unlimited deck, group I (Unbound Flourishing): one trigger for a spell cast and an ability activated, and the "if" on the cost that goes with it.
   'trigger.cast-or-activate': whenever,
@@ -1227,6 +1243,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
   // Issue 144 (Goblin Dark-Dwellers, Glimpse the Impossible, Conspicuous Snoop).
   'effect.cast-own-graveyard-card-free': permanent((e) => `When ~ enters, ${e}.`),
+  // Scions & Spellcraft deck, group G: the paid cast of a card of your own graveyard.
+  'effect.cast-own-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
   'effect.cast-chosen-graveyard-spell-free': permanent((e) => `Whenever ~ attacks, ${e}.`),
   'amount.for-each-card-put-into-your-graveyard': spell(
     (e) =>
@@ -1389,6 +1407,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
   'noun.commander-creatures-you-own': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
+  'noun.other-commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,
@@ -1429,6 +1448,19 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
+  ),
+  // Scions & Spellcraft deck, group A: the life lost and the combat damage dealt this turn, by the players of a group.
+  'condition.a-player-lost-life-this-turn': permanent(
+    (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
+  ),
+  'noun.each-player-who-lost-life': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
+  ),
+  'noun.each-player-who-dealt-combat-damage': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
+  ),
+  'amount.for-each-player-who': permanent(
+    (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
   ),
   // Abzan Armor deck.
   'condition.n-cards-exiled-with-self': permanent(

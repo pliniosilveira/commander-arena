@@ -53,7 +53,7 @@ Rank the verified candidates by severity (below), then by: wrong game outcome or
 
 ## Severity
 
-Rate the finding on four levels, the usual critical, high, medium and low scale. Judge **reachability in the shipped game first**: the web app plays two seats, and `createGame` takes more only behind `allowMoreThanTwoSeats` (`docs/RULES_COVERAGE.md`, row 800.4a). A finding that needs more than two seats, or a card or shape the engine does not support, is capped at **medium**.
+Rate the finding on four levels, the usual critical, high, medium and low scale. Judge **reachability in the shipped game first**: the web app plays two seats, though `createGame` takes up to four (`docs/RULES_COVERAGE.md`, row 800.4a). A finding that needs more than two seats, or a card or shape the engine does not support, is capped at **medium**.
 
 | Level | Label | Meaning |
 | --- | --- | --- |

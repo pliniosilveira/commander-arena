@@ -153,6 +153,8 @@ export interface IrNoun extends IrNode {
     | 'triggerDamagedPlayers' // "each of those opponents" (CR 603.2c): the opponents a damage batch trigger to your opponents hurt
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
+    | 'lostLifeThisTurn' // "each opponent who lost life this turn" (CR 119.3): the players of the group `whoGroup` who lost life this turn
+    | 'combatDamagedThisTurn' // "your opponents who were dealt combat damage by ~ or a Dragon this turn" (CR 120.2a): the players of the group `whoGroup` that source hurt
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
@@ -214,6 +216,12 @@ export interface IrNoun extends IrNode {
   readonly dealtCombatDamageToYou?: true;
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
+  /** `det` `lostLifeThisTurn` and `combatDamagedThisTurn`: the group the players are of, every player or every opponent (CR 102.1, 102.2). */
+  readonly whoGroup?: 'eachPlayer' | 'eachOpponent';
+  /** `det` `combatDamagedThisTurn`: the damage was dealt by the permanent of the ability ("by ~ or a Dragon"). */
+  readonly damagedByThis?: true;
+  /** `det` `combatDamagedThisTurn`: the damage was dealt by a source of this kind ("by ~ or a Dragon": a noun of subtype Dragon), read as the engine's turn log keeps it. */
+  readonly damageSource?: IrNoun;
   /**
    * "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): a target noun whose targets are `filter`
    * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
@@ -336,6 +344,8 @@ export interface IrFilter {
   readonly lesserSharingTypeWithTriggerSpell?: true;
   /** A target's mana value is at most an amount read as the spell resolves (Drown in the Loch, CR 202.3). */
   readonly manaValueAtMostAmount?: IrAmount;
+  /** "with mana value equal to that spell's mana value" (Krile Baldesion, CR 202.3): with `manaValueAtMostAmount`, the mana value is exactly the amount (the engine's `manaValueExact`). */
+  readonly manaValueExact?: true;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
@@ -424,12 +434,16 @@ export interface IrFilter {
   readonly castFromHand?: true;
   /** "from a graveyard" (issue 102, River Kelpie, CR 601.2a): a spell that was cast from a graveyard (the engine's `castFromGraveyard`). */
   readonly castFromGraveyard?: true;
+  /** "from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1): a spell its caster cast from their own graveyard (the engine's `castFromOwnGraveyard`). */
+  readonly castFromOwnGraveyard?: true;
   /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
   readonly chosenByOpponent?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
   readonly firstXSpellThisTurn?: true;
+  /** "the second spell you cast each turn" (Alisaie Leveilleur, CR 601.2i): the spell is the nth (2 or more) its caster cast this turn (the engine's `nthSpellThisTurn`). */
+  readonly nthSpellThisTurn?: number;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
   /** "controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck group 7, CR 510.2): the engine's `controllerDealtCombatDamageByAtLeast`. */
@@ -613,6 +627,8 @@ export type IrAmount =
   | { readonly kind: 'commanderColors'; readonly span: Span }
   // "the number of opponents you have" (CR 102.2)
   | { readonly kind: 'opponentCount'; readonly span: Span }
+  // "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn" (CR 102.1): the players the noun names
+  | { readonly kind: 'playerCount'; readonly of: IrNoun; readonly span: Span }
   // "half the number of Zombies you control, rounded down" (CR 107.1a: the rounding is stated)
   | {
       readonly kind: 'half';
@@ -815,12 +831,16 @@ export interface IrCondition extends IrNode {
     // "you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2): read from the turn log
     | { readonly kind: 'castFromGraveyardThisTurn' }
     | { readonly kind: 'lifeGainedAndLostThisTurn' }
+    // "a player lost 4 or more life this turn" (CR 119.3, 603.4): some player, any player
+    | { readonly kind: 'aPlayerLostLifeThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
     // D-444 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
     | {
         readonly kind: 'spellsCastThisTurn';
         readonly atLeast: number;
         readonly ofTypes?: readonly string[];
+        // Lyse Hext: "two or more noncreature spells": only the spells with none of these card types count
+        readonly notOfTypes?: readonly string[];
       }
     // Issue 345 (CR 601.2i): "no spells were cast last turn" (`none`), "a player cast two or more spells last turn" (`aPlayerAtLeast`)
     | {
@@ -845,7 +865,12 @@ export interface IrCondition extends IrNode {
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
-    | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
+    | {
+        readonly kind: 'cardsInGraveyard';
+        readonly compare: IrComparison;
+        // "an opponent has seven or more cards in their graveyard" (Into the Story, CR 404.1, 102.2): some opponent's graveyard instead of the controller's
+        readonly player?: 'anOpponent';
+      }
     // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
     // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
@@ -860,6 +885,8 @@ export interface IrCondition extends IrNode {
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
+    // "it isn't that player's turn" (Tataru Taru, CR 603.4, 500.1): the player the event of a trigger is about is (or, negated, is not) the active player
+    | { readonly kind: 'thatPlayersTurn'; readonly negated: boolean }
     // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability is on is paired
     // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
     | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
@@ -984,7 +1011,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'descendedThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
-    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }
+    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
     // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"
@@ -1490,6 +1517,11 @@ export interface IrSentence extends IrNode {
      * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
      */
     readonly spell?: IrNoun;
+    /**
+     * `nextCast` with `repeat` (CR 603.7): "Whenever you cast a noncreature spell this turn, ..." triggers at every such cast until the end of the turn, where "When you next cast"
+     * triggers once.
+     */
+    readonly repeat?: true;
   };
   /**
    * "When you do, ..." (stage P30, CR 603.12): a reflexive triggered ability, created by the "you may" sentence before it
@@ -1593,6 +1625,8 @@ export interface IrTrigger extends IrNode {
    * types the card played has ("a card with two or more card types").
    */
   readonly atLeast?: number;
+  /** 'playsCard' (Urianger Augurelt, CR 305.1, 601.2a): "you play a land from exile or cast a spell from exile", only a card played or cast from exile. */
+  readonly fromExile?: true;
   /**
    * 'tappedForMana' "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the permanent the Aura is attached to (the `subject` says its kind) is tapped for mana by whoever
    * controls it, and the mana is theirs: the engine's `tappedForMana` with `by: 'tapper'` and `hostOfSource`.
@@ -1623,7 +1657,8 @@ export interface IrTrigger extends IrNode {
   readonly whileCondition?: IrCondition;
   /**
    * 'becomesTapped' (Hylda deck group 1, D-510, CR 603.2c): "Whenever you tap one or more untapped creatures your opponents control": one trigger for the permanents
-   * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
+   * tapped together, whatever their number. The player who taps is the `actor` ("you tap"). 'lifeLost' "Whenever one or more opponents lose life" (CR 603.2c, 119.3): one
+   * trigger for the simultaneous losses of several players; the `actor` is "each opponent".
    */
   readonly batch?: true;
   /** 'putIntoGraveyard' (Death Toll deck group B, CR 603.2): "from your library" (the cards came from the library), not "from anywhere". */
@@ -1812,6 +1847,11 @@ export type IrStaticEffect =
    * 118.9): an alternative cost of the card itself. The statement's subject is `~`.
    */
   | { readonly kind: 'freeCast'; readonly condition?: IrCondition }
+  /**
+   * "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost." (Snuff Out, CR 118.9, 118.4, 601.2b): an alternative cost of the face that pays no mana and `life` life,
+   * when the `condition` (read for the caster as the spell is cast) holds. The subject is `~`.
+   */
+  | { readonly kind: 'lifeAlternative'; readonly life: number; readonly condition?: IrCondition }
   /**
    * "You may play an additional land on each of your turns." and the forms with a number ("two additional lands")
    * and with "Each player ... on each of their turns" (stage P24, D-125, CR 305.2). The statement's subject is the
@@ -2317,6 +2357,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'devotion',
   'commanderColors',
   'opponentCount',
+  'playerCount',
   'commanderManaValue',
   'commanderCasts',
   'half',

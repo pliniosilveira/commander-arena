@@ -1,6 +1,6 @@
 // The report of `pnpm ai:arena`: one match result as plain text. Pure, so a test can pin it.
 
-import type { MatchResult } from '@commander-arena/ai';
+import type { MatchResult, TableResult } from '@commander-arena/ai';
 
 const pct = (n: number, of: number): string => (of === 0 ? '-' : `${((100 * n) / of).toFixed(1)}%`);
 
@@ -72,5 +72,33 @@ export function formatTimes(times: readonly DecisionTimes[], budgetMs: number): 
     const mean = t.decisions === 0 ? 0 : t.totalMs / t.decisions;
     return `decision time ${t.label}: ${t.decisions} decisions, mean ${mean.toFixed(2)} ms, slowest ${t.slowestMs.toFixed(1)} ms (budget ${budgetMs} ms${t.overBudget === undefined ? '' : `, ${t.overBudget} over it`})`;
   });
+  return lines.join('\n');
+}
+
+/** The report of a table of three or four seats: each agent once in every seat of every seed (`playTable`). */
+export function formatTable(r: TableResult, context: { seed: number; command: string }): string {
+  const w = [14, 16, ...r.winsBySeat.map(() => 10)];
+  const lines = [
+    `${r.labels.join(', ')}: ${r.games} games at ${r.seats} seats, ${r.games / r.seats} seeds from ${context.seed}, each played once for each rotation of the agents`,
+    `command: ${context.command}`,
+    '',
+    row(['agent', 'wins', ...r.winsBySeat.map((_, seat) => `as seat ${seat}`)], w),
+    ...r.labels.map((label, k) =>
+      row(
+        [
+          `${k} ${label}`,
+          `${r.wins[k] ?? 0} (${pct(r.wins[k] ?? 0, r.games)})`,
+          ...(r.winsByAgentSeat[k] ?? []),
+        ],
+        w,
+      ),
+    ),
+    '',
+    `wins by seat: ${r.winsBySeat.map((n, seat) => `seat ${seat} ${n}`).join(', ')}`,
+    `draws: ${r.draws}, unfinished (cap or stuck): ${r.unfinished}`,
+    `average turns: ${r.averageTurns.toFixed(1)}`,
+    `fallbacks: ${r.fallbacks}, rejected actions: ${r.rejectedActions}`,
+    ...r.labels.map((label, k) => `reasons ${k} ${label}: ${reasonLine(r.reasons[k] ?? {})}`),
+  ];
   return lines.join('\n');
 }

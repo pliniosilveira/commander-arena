@@ -102,7 +102,6 @@ describe('"When ~ enters, you may cast target instant or sorcery card from a gra
     'When this creature enters, cast target instant or sorcery card from a graveyard.',
     'When this creature enters, cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell.',
     // whose graveyard, how many cards, which riders
-    'When this creature enters, you may cast target instant or sorcery card from your graveyard.',
     "When this creature enters, you may cast target instant or sorcery card from an opponent's graveyard.",
     'When this creature enters, you may cast up to one target instant or sorcery card from a graveyard.',
     'When this creature enters, you may cast two target instant or sorcery cards from a graveyard.',

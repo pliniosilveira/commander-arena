@@ -235,9 +235,65 @@ export const CONDITION_CAST_FROM_GRAVEYARD_THIS_TURN = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.a-player-lost-life-this-turn`: "a player lost 4 or more life this turn", "a player lost life this turn" (CR 119.3, 603.4: some player, any player, lost at least that much life
+ * in all this turn, from damage, life loss and life paid, summed for the player; read as the event happens and again as the ability resolves). The engine's `aPlayerLostLifeThisTurn`.
+ * Not read: "an opponent lost ..." (another group), a count that is 0 or a variable, "lost 4 life", "less", another span, a count with no "or more".
+ */
+export const CONDITION_A_PLAYER_LOST_LIFE_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.a-player-lost-life-this-turn',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 119.3 (Life)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    'a player lost 4 or more life this turn',
+    'a player lost four or more life this turn',
+    'a player lost life this turn',
+  ],
+  rejects: [
+    'a player lost 4 or more life',
+    'a player lost 4 life this turn',
+    'a player lost 4 or less life this turn',
+    'a player lost 0 or more life this turn',
+    'a player lost X or more life this turn',
+    'a player lost life',
+    'a player lost life this turn and',
+    'a player lost 4 or more life this turn and',
+    'an opponent lost 4 or more life this turn',
+    'a player gained 4 or more life this turn',
+    'a player loses 4 or more life this turn',
+    'a players lost 4 or more life this turn',
+  ],
+  parse: (ctx, pos) => {
+    const bare = pattern(new RegExp(`a player lost life this turn${BOUNDARY}`, 'iu'))(ctx, pos);
+    const r = bare.ok
+      ? { ...bare, value: 1 }
+      : (() => {
+          const counted = sequence(
+            pattern(/a player lost /iu),
+            spanned(satisfy(quantity, (n) => n >= 1)),
+            pattern(new RegExp(` or more life this turn${BOUNDARY}`, 'iu')),
+          )(ctx, pos);
+          return counted.ok ? { ...counted, value: counted.value[1].value } : counted;
+        })();
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'aPlayerLostLifeThisTurn', atLeast: r.value },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.a-player-lost-life-this-turn',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const BRUNA_CONDITION_RULES = [
   CONDITION_LIFE_GAINED_THIS_TURN,
   CONDITION_LIFE_ABOVE_STARTING,
   CONDITION_UNLESS_RETURN,
   CONDITION_CAST_FROM_GRAVEYARD_THIS_TURN,
+  CONDITION_A_PLAYER_LOST_LIFE_THIS_TURN,
 ];

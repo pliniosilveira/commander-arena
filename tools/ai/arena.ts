@@ -4,6 +4,11 @@
 //   node tools/ai/arena.ts --a casual --b greedy --games 200 --seed 1
 //
 // --a, --b   random | casual | greedy | heuristic (default casual and greedy)
+// --seats    2 (default) | 3 | 4. With 3 or 4 seats `--agents` lists one agent for each seat of the first game
+//            (default: `--a` and `--b` cycled), every seed is played once for each rotation of the agents so each
+//            agent sits in every seat, and `--games` is a multiple of the number of seats (issue 482). Arena decks
+//            only: `--precons` and `--pairing` are for two seats.
+// --agents   with --seats 3 or 4: a comma-separated list, e.g. casual,greedy,heuristic
 // --games    total games, an even number: each seed is played twice (default 200)
 // --seed     the first game seed (default 1)
 // --precons  play on the real precons of apps/web/src/precons/snapshots instead of the arena decks (D-164)
@@ -25,7 +30,7 @@
 import '../corpus/register.ts';
 import { parseArgs } from 'node:util';
 import type { Agent, AgentFactory, MatchDeck } from '@commander-arena/ai';
-import { type DecisionTimes, formatMatch, formatTimes } from './format.ts';
+import { type DecisionTimes, formatMatch, formatTable, formatTimes } from './format.ts';
 
 const KINDS = ['random', 'casual', 'greedy', 'heuristic'] as const;
 type Kind = (typeof KINDS)[number];
@@ -38,6 +43,8 @@ const { values } = parseArgs({
     seed: { type: 'string', default: '1' },
     'real-clock': { type: 'boolean', default: false },
     'log-slow': { type: 'string' },
+    seats: { type: 'string', default: '2' },
+    agents: { type: 'string' },
     precons: { type: 'boolean', default: false },
     pairing: { type: 'string', default: 'mirror' },
     'max-turns': { type: 'string' },
@@ -52,8 +59,23 @@ if (!isKind(values.a) || !isKind(values.b)) {
   process.stderr.write(`--a and --b must be one of ${KINDS.join(', ')}\n`);
   process.exit(2);
 }
-if (!Number.isInteger(games) || games < 2 || games % 2 !== 0 || !Number.isInteger(seed)) {
-  process.stderr.write('--games must be an even number of at least 2 and --seed a whole number\n');
+const seats = Number(values.seats);
+if (seats !== 2 && seats !== 3 && seats !== 4) {
+  process.stderr.write('--seats must be 2, 3 or 4\n');
+  process.exit(2);
+}
+if (seats === 2 && values.agents !== undefined) {
+  process.stderr.write('--agents is for --seats 3 or 4; use --a and --b for two seats\n');
+  process.exit(2);
+}
+if (seats > 2 && (values.precons || values.pairing !== 'mirror')) {
+  process.stderr.write('--precons and --pairing are for two seats\n');
+  process.exit(2);
+}
+if (!Number.isInteger(games) || games < seats || games % seats !== 0 || !Number.isInteger(seed)) {
+  process.stderr.write(
+    `--games must be a multiple of the number of seats (${seats}) and --seed a whole number\n`,
+  );
   process.exit(2);
 }
 
@@ -74,8 +96,15 @@ const logSlowMs = limitOf(values['log-slow'], 'log-slow');
 const maxTurns = limitOf(values['max-turns'], 'max-turns');
 const maxActions = limitOf(values['max-actions'], 'max-actions');
 
-const { AGENT_FACTORIES, ARENA_DECKS, DEFAULT_BUDGET_MS, MATCH_LIMITS, isExplaining, playMatch } =
-  await import('@commander-arena/ai');
+const {
+  AGENT_FACTORIES,
+  ARENA_DECKS,
+  DEFAULT_BUDGET_MS,
+  MATCH_LIMITS,
+  isExplaining,
+  playMatch,
+  playTable,
+} = await import('@commander-arena/ai');
 
 /** Measures the time of every `decide` of the agents it makes, per label. */
 const stats = new Map<
@@ -138,6 +167,40 @@ if (values.precons) {
   }
   decks = values.pairing === 'cross' ? crossPairs(loaded.decks) : mirrorPairs(loaded.decks);
   deckNote = `precons (${values.pairing}): ${loaded.decks.map((d) => d.id).join(', ')}; ${decks.length} deck entries cycled by seed`;
+}
+
+if (seats > 2) {
+  const kinds = (values.agents ?? `${values.a},${values.b}`).split(',').map((k) => k.trim());
+  if (!kinds.every(isKind) || kinds.length < 2) {
+    process.stderr.write(`--agents must list agents among ${KINDS.join(', ')}\n`);
+    process.exit(2);
+  }
+  // One agent for each seat of the first game: the list cycled to the number of seats.
+  const seated = Array.from({ length: seats }, (_, seat) => kinds[seat % kinds.length] as Kind);
+  const tableResult = await playTable({
+    agents: seated.map((k) => timed(AGENT_FACTORIES[k])),
+    decks: ARENA_DECKS.map((d) => (Array.isArray(d) ? d[0] : d)),
+    limits: {
+      maxTurns: maxTurns ?? MATCH_LIMITS.maxTurns,
+      maxActions: maxActions ?? MATCH_LIMITS.maxActions,
+    },
+    games,
+    baseSeed: seed,
+    ...(values['real-clock'] ? { now: () => performance.now() } : {}),
+  });
+  const tableCommand = `node tools/ai/arena.ts --seats ${seats} --agents ${seated.join(',')} --games ${games} --seed ${seed}${values['real-clock'] ? ' --real-clock' : ''}${maxTurns === undefined ? '' : ` --max-turns ${maxTurns}`}${maxActions === undefined ? '' : ` --max-actions ${maxActions}`}${logSlowMs === undefined ? '' : ` --log-slow ${logSlowMs}`}`;
+  const tableTimes: DecisionTimes[] = [...stats].map(([label, t]) => ({ label, ...t }));
+  process.stdout.write(`${formatTable(tableResult, { seed, command: tableCommand })}\n`);
+  process.stdout.write(
+    `unfinished games: ${
+      tableResult.log
+        .filter((g) => g.end !== 'result')
+        .map((g) => `seed ${g.seed} rotation ${g.rotation} ${g.end} turn ${g.turns}`)
+        .join('; ') || 'none'
+    }\n`,
+  );
+  process.stdout.write(`${formatTimes(tableTimes, DEFAULT_BUDGET_MS)}\n`);
+  process.exit(0);
 }
 
 const result = await playMatch({

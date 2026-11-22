@@ -454,7 +454,13 @@ function lowerManaAbility(
   // `{T}`, the sacrifice of itself or a counter taken off it pays for it (a Treasure, a Gold token with no `{T}`, or "Remove a charge counter from ~": Mana Bloom).
   const shaped =
     taps <= 1 &&
-    (taps === 1 || sacrifices.length === 1 || removals === 1 || additions === 1 || lives === 1) &&
+    (taps === 1 ||
+      sacrifices.length === 1 ||
+      removals === 1 ||
+      additions === 1 ||
+      lives === 1 ||
+      // Relic of Legends (CR 605.3b): "Tap an untapped legendary creature you control: Add one mana of any color." needs no {T} of its own.
+      tapsOther.length === 1) &&
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
@@ -898,7 +904,9 @@ function lowerOrdinary(written: Activated, ctx: LowerContext): LowerResult<reado
   ctx.graveyardSource = true;
   // The sentences are lowered as the body of any other ability is, so an X that a sentence defines ("..., where X is
   // the number of creatures you control", stage P28) and what "this way" counts are read as they are everywhere.
+  ctx.activatedBody = true;
   const sentenced = lowerSentences(ability.body.sentences, ctx);
+  ctx.activatedBody = false;
   ctx.graveyardSource = false;
   const functionsInGraveyard = ctx.usedGraveyardSource;
   ctx.usedGraveyardSource = previousGraveyardSource;

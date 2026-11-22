@@ -197,6 +197,32 @@ function lowerFree(ability: Static, condition: IrCondition | undefined): LowerRe
 }
 
 /**
+ * "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost." (Snuff Out, CR 118.9, 118.4, 601.2h): the engine's alternative cost `payLife`: no mana ({0}), the life,
+ * and the condition the engine reads for the caster as the spell is cast. The life is a positive whole number.
+ */
+function lowerLifeAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'lifeAlternative';
+  },
+): LowerResult<FaceCosts> {
+  if (!Number.isSafeInteger(effect.life) || effect.life < 1) return failure(ability);
+  const blocked = missingFeatures(['castAlternative:payLife', 'cost:mana']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  let entry: AlternativeCost = {
+    kind: 'payLife',
+    cost: [{ kind: 'mana', symbols: ['0'] }],
+    life: effect.life,
+  };
+  if (effect.condition !== undefined) {
+    const lowered = lowerCondition(effect.condition);
+    if (!lowered.ok) return lowered;
+    entry = { ...entry, condition: lowered.value };
+  }
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
  * "You may pay {W} and tap four untapped creatures you control with flying rather than pay ~'s mana cost." (stage P33, D-150, CR 118.9, 118.3):
  * the engine's alternative cost `tapPermanents`: its mana, and the number of untapped permanents of the caster's that match the filter,
  * which the engine plans the mana around and asks for. The mana is plain (no X, no hybrid, as for the named alternative costs) and the
@@ -329,6 +355,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   }
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
+  if (effect.kind === 'lifeAlternative') return lowerLifeAlternative(ability, effect);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
   if (effect.kind === 'graveyardSacrificeAlternative') {
     return lowerGraveyardSacrificeAlternative(ability, effect);
@@ -434,6 +461,8 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:foretell',
   'castAlternative:morph',
   'castAlternative:impending',
+  // Snuff Out: "you may pay 4 life rather than pay ~'s mana cost".
+  'castAlternative:payLife',
   'cost:mana',
   'cost:exileFromHand',
 ];

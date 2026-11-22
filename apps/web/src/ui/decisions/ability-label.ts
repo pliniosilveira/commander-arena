@@ -395,6 +395,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSources':
       // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
       return 'those creatures';
+    case 'triggerAttackers':
+      // Champions from Beyond: the creatures the attack declared.
+      return 'those creatures';
     case 'convokers':
       // Lethal Scheme (CR 702.51a): the creatures tapped to cast the spell with Convoke.
       return 'each creature that convoked this spell';
@@ -516,6 +519,7 @@ function recipientText(
     case 'triggerSubject':
       return 'it';
     case 'triggerSources':
+    case 'triggerAttackers':
       return 'those creatures';
     case 'convokers':
       return 'each creature that convoked this spell';
@@ -554,6 +558,10 @@ function recipientText(
     case 'combatDamagedByNamed':
       // CR 120.2a: the opponents a creature of this name has dealt combat damage to this game.
       return `each opponent dealt combat damage this game by a creature named ${to.name}`;
+    case 'lostLifeThisTurn':
+      return `each player who lost life this turn`;
+    case 'combatDamagedThisTurn':
+      return `each player who was dealt combat damage this turn`;
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
@@ -742,6 +750,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
     case 'attackedPlayers':
+    case 'lostLifeThisTurn':
+    case 'combatDamagedThisTurn':
     case 'combatDamagedByNamed':
       return { who: 'they', third: false };
     case 'all':
@@ -1338,6 +1348,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? ". If that spell would be put into a graveyard, put it on the bottom of its owner's library instead"
             : '';
         return `You may cast ${object(effect.objects)} this turn${effect.free === true ? ' without paying its mana cost' : ''}${rider}`;
+      }
+      // Hildibrand Manderville (CR 601.2, 715.3): "You may cast it from your graveyard as an Adventure until the end of your next turn" (the card of a permanent that died).
+      if (effect.adventure === true) {
+        return `You may cast it from your graveyard as an Adventure ${
+          effect.duration === 'untilEndOfNextTurn' ? 'until the end of your next turn' : 'this turn'
+        }`;
       }
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
       // D-359 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".

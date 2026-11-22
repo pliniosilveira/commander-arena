@@ -28,6 +28,7 @@ import { AHOY_G8_LOWERINGS } from './ahoy-g8';
 import { AHOY_G10_LOWERINGS, revealEachTokenLowering } from './ahoy-g10';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
+import { ARCANUM_LOWERINGS } from './arcanum';
 import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
@@ -59,6 +60,8 @@ import {
 import { GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
+import { COPY_CAST_PAYING_LOWERINGS } from './copy-cast-paying';
+import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
@@ -253,6 +256,24 @@ const GOAD: Lowering<IrClause, Effects> = {
           ...(forever?.kind === 'flag' && forever.value ? { forever: true as const } : {}),
         },
       ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** "Remove enchanted creature from combat", "remove target creature from combat" (CR 506.4, Observed Stasis): the engine's `removeFromCombat` on what the operand names. */
+const REMOVE_FROM_COMBAT: Lowering<IrClause, Effects> = {
+  head: 'removeFromCombat',
+  id: 'lower.remove-from-combat',
+  needs: ['effect:removeFromCombat'],
+  lower(clause, ctx) {
+    const operandNoun = operand(clause, 'objects');
+    if (operandNoun?.kind !== 'noun') return failure(clause);
+    const object = objectSelectorOf(operandNoun, ctx, { moved: true, token: true });
+    if (!object.ok) return object;
+    return {
+      ok: true,
+      value: [{ kind: 'removeFromCombat', objects: object.value }],
       rule: clause.rule,
     };
   },
@@ -2560,6 +2581,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  REMOVE_FROM_COMBAT,
   ATTACK_RANDOM_OPPONENT,
   ATTACK_RANDOM_OPPONENT_ANY,
   simple('transform'),
@@ -2676,10 +2698,12 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...COPY_CHOSEN_TOKEN_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
   ...FEDERATION_F_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
+  ...COPY_CAST_PAYING_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
   ...PRISMARI_G3_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
@@ -2733,6 +2757,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,
+  // Urianger Augurelt: "Look at the top card of your library. You may exile it face down." and "... you may play cards exiled with ~. Spells you cast this way cost {2} less to cast."
+  ...ARCANUM_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
@@ -2825,7 +2851,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                           ? 'attackedHasMoreLifeThanOtherOpponent'
                           : test === 'controlsThat'
                             ? 'subjectControlledByYou'
-                            : test;
+                            : test === 'thatPlayersTurn'
+                              ? 'triggerPlayerTurn'
+                              : test;
     return failure(
       clause,
       kind === 'raw' ||

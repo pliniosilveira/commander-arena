@@ -163,6 +163,8 @@ const REDUCTION_CONDITIONS = [
   'condition.it-targets',
   // Octavia, Living Thesis (issue 121): "~ costs {8} less to cast if you have eight or more instant and/or sorcery cards in your graveyard".
   'condition.amount-count',
+  // Into the Story (Scions of Spellcraft deck): "~ costs {3} less to cast if an opponent has seven or more cards in their graveyard".
+  'condition.opponent-cards-in-graveyard',
 ] as const;
 
 const REDUCTION_IF: Parser<IrCondition> = map(
@@ -209,6 +211,8 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {1} less to cast for each creature you control if you control a Dragon.',
     // Stage P50 (D-207): a condition on what the spell targets.
     '~ costs {3} less to cast if it targets a tapped creature.',
+    // Into the Story: a condition on an opponent's graveyard.
+    '~ costs {3} less to cast if an opponent has seven or more cards in their graveyard.',
   ],
   rejects: [
     '~ costs {X} less to cast.',
@@ -401,6 +405,7 @@ const CAST_HEAD: Parser<{
   readonly chosen: 'type' | 'color' | undefined;
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
+  readonly ownGraveyard?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
   readonly aimed?: IrFilter;
@@ -440,6 +445,12 @@ const CAST_HEAD: Parser<{
     chosen: undefined,
     compared: undefined,
     notHand: true as const,
+  })),
+  // Emet-Selch of the Third Seat (CR 601.2a, 601.2f, 404.1): "Spells you cast from your graveyard cost {2} less to cast".
+  map(literal(' you cast from your graveyard cost '), () => ({
+    chosen: undefined,
+    compared: undefined,
+    ownGraveyard: true as const,
   })),
   // Stage P32 (D-147): "Creature spells you cast with power 4 or greater cost {2} less to cast": a spell on the stack has the power,
   // toughness and mana value of its card (CR 202.3, 208.1), which the engine compares as the cost is determined.
@@ -501,6 +512,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells without flying you cast cost {1} less to cast.',
     // Stage P75 (D-235): spells cast from anywhere other than the hand.
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
+    // Emet-Selch of the Third Seat: spells cast from the caster's own graveyard.
+    'Spells you cast from your graveyard cost {2} less to cast.',
+    'Instant and sorcery spells you cast from your graveyard cost {1} less to cast.',
     'Spells you cast with mana value 5 or greater cost {1} less to cast.',
     'Creature spells you cast with toughness 3 or less cost {1} less to cast.',
     // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
@@ -537,7 +551,11 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Creature spells you cast cost {1} less to cast for each creature.',
     '~ costs {1} less to cast.',
     'Spells you cast from anywhere other than your graveyard cost {2} less to cast.',
-    'Spells you cast from your graveyard cost {2} less to cast.',
+    'Spells you cast from a graveyard cost {2} less to cast.',
+    'Spells you cast from your graveyard cost {2} less to cast',
+    'Spells you cast from your graveyard cost {W} less to cast.',
+    'Spells your opponents cast from your graveyard cost {2} less to cast.',
+    'Spells you cast from your hand cost {2} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to cast',
     'Aura spells you cast that target equipped creature cost {3} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to activate.',
@@ -551,8 +569,10 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost, aimed }], amount] =
-      r.value;
+    const [
+      [filter, { chosen, compared, notHand, ownGraveyard, anyCaster, targetsHost, aimed }],
+      amount,
+    ] = r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -563,6 +583,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(anyCaster === true ? {} : { controller: 'you' as const }),
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
+          ...(ownGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
           // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
           ...(aimed === undefined ? {} : { castTargets: aimed }),
@@ -897,6 +918,94 @@ export const STATIC_FREE_CAST = defineRule<IrStatic>({
   },
 });
 
+/** The conditions of "If <condition>, you may pay 4 life rather than pay ~'s mana cost": what the caster controls, read as the spell is cast (CR 601.2b). */
+const LIFE_ALT_CONDITIONS = [
+  // "you control a Swamp" (a basic land type, which `condition.control-a` leaves to this rule).
+  'condition.control-land-type',
+  'condition.control-a',
+  'condition.control-at-least',
+  'condition.control-at-most',
+  'condition.control-none',
+  'condition.control-commander',
+  'condition.control-your-commander',
+] as const;
+
+/**
+ * `static.pay-life-alt-cost`: "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost." (Snuff Out; CR 118.9: an alternative cost, chosen as the spell is cast,
+ * CR 601.2b; CR 118.4, 601.2h: life is a cost paid as the spell is cast, and CR 119.4: a player can pay life only if their life total is at least that much). The condition, which is
+ * what the caster controls, is optional ("You may pay 4 life rather than pay ~'s mana cost."). The engine's alternative cost `payLife`. Not read: life that is not a number of one or
+ * more, "instead of paying", a cost with mana ("pay {B} and 4 life"), a condition about something other than what the caster controls, "as you cast", the condition after the cost.
+ */
+export const STATIC_PAY_LIFE_ALT_COST = defineRule<IrStatic>({
+  id: 'static.pay-life-alt-cost',
+  family: 'static',
+  leading: ['if', 'you'],
+  cites: [
+    'CR 118.9 (Costs)',
+    'CR 118.4 (Costs)',
+    'CR 119.4 (Life)',
+    'CR 601.2b (Casting Spells)',
+    'CR 601.2h (Casting Spells)',
+  ],
+  examples: [
+    "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost.",
+    "You may pay 2 life rather than pay ~'s mana cost.",
+    "If you control a Forest, you may pay 3 life rather than pay ~'s mana cost.",
+    "If you control a commander, you may pay 5 life rather than pay ~'s mana cost.",
+  ],
+  rejects: [
+    "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost",
+    "If you control a Swamp, you may pay 0 life rather than pay ~'s mana cost.",
+    "If you control a Swamp, you may pay X life rather than pay ~'s mana cost.",
+    "If you control a Swamp, you may pay 4 life instead of paying ~'s mana cost.",
+    "If you control a Swamp, you may pay {B} and 4 life rather than pay ~'s mana cost.",
+    'If you control a Swamp, you may pay 4 life rather than pay its mana cost.',
+    "You may pay 4 life rather than pay ~'s mana cost if you control a Swamp.",
+    "If an opponent controls a Swamp, you may pay 4 life rather than pay ~'s mana cost.",
+    "If you control a Swamp, pay 4 life rather than pay ~'s mana cost.",
+    "If you control a Swamp, you may pay 4 life rather than pay ~'s mana cost and draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.pay-life-alt-cost';
+    const lead = optional(
+      quiet(
+        map(
+          sequence(
+            literal('if '),
+            family<IrCondition>('condition', { only: LIFE_ALT_CONDITIONS }),
+            literal(', '),
+          ),
+          ([, condition]) => condition,
+        ),
+      ),
+      null,
+    )(ctx, pos);
+    if (!lead.ok) return lead;
+    const r = sequence(
+      literal('you may pay '),
+      satisfy(
+        map(pattern(/(\d+)(?![\p{L}\p{N}])/u), (m) => Number(m[1])),
+        (n) => n >= 1,
+      ),
+      literal(" life rather than pay ~'s mana cost"),
+      PERIOD,
+    )(ctx, lead.pos);
+    if (!r.ok) return r;
+    const [, life] = r.value;
+    const selfAt = ctx.text.indexOf('~', lead.pos);
+    const effect = {
+      kind: 'lifeAlternative' as const,
+      life,
+      ...(lead.value === null ? {} : { condition: lead.value }),
+    };
+    return {
+      ok: true,
+      value: statement(id, selfNoun(id, selfAt), effect, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * `static.additional-cost-sacrifice-copies`: "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this
  * way." (Plumb the Forbidden; CR 118.8, 601.2b, 601.2h, 603.12, 707.10: the optional additional cost of sacrificing any number of creatures, and the copies of the spell, one for each
@@ -1025,13 +1134,86 @@ export const STATIC_FIRST_X_SPELL_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
+const ORDINALS: Readonly<Record<string, number>> = { second: 2, third: 3, fourth: 4, fifth: 5 };
+
+/**
+ * `static.nth-spell-cost-reduction`: "The second spell you cast each turn costs {2} less to cast." (Alisaie Leveilleur; CR 118.7a, 601.2f, 601.2i, 604.2: a static ability of a
+ * permanent that reduces the generic mana of the nth spell its controller casts each turn, read as the cost is determined, when the spells cast before it are already counted and
+ * it is not). The engine's `costReduction` of the spells with `nthSpellThisTurn`. The count after the cost is read as for the other reductions. Not read: "first" (a spell with
+ * nothing before it, which `static.first-x-spell-cost-reduction` reads for an {X} spell), "sixth" and later, another caster, "each turn" missing, "more", a colored reduction.
+ */
+export const STATIC_NTH_SPELL_COST_REDUCTION = defineRule<IrStatic>({
+  id: 'static.nth-spell-cost-reduction',
+  family: 'static',
+  leading: ['The', 'the'],
+  cites: [
+    'CR 118.7a (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'The second spell you cast each turn costs {2} less to cast.',
+    'The second spell you cast each turn costs {1} less to cast.',
+    'The third spell you cast each turn costs {1} less to cast.',
+    'The second spell you cast each turn costs {1} less to cast for each +1/+1 counter on ~.',
+  ],
+  rejects: [
+    'The second spell you cast each turn costs {2} less to cast',
+    'The first spell you cast each turn costs {2} less to cast.',
+    'The sixth spell you cast each turn costs {2} less to cast.',
+    'The second spell your opponents cast each turn costs {2} less to cast.',
+    'The second spell you cast costs {2} less to cast.',
+    'The second spell you cast each turn costs {2} more to cast.',
+    'The second spell you cast each turn costs {W} less to cast.',
+    'The second spell you cast each turn costs {2} less to activate.',
+    'The second creature spell you cast each turn costs {2} less to cast.',
+    'The second spell each turn costs {2} less to cast.',
+    'Second spell you cast each turn costs {2} less to cast.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.nth-spell-cost-reduction';
+    const head = pattern(/[Tt]he (second|third|fourth|fifth) spell you cast each turn costs /u)(
+      ctx,
+      pos,
+    );
+    if (!head.ok) return head;
+    const r = sequence(reduction(), PERIOD)(ctx, head.pos);
+    if (!r.ok) return r;
+    const [amount] = r.value;
+    const nth = ORDINALS[head.value[1] ?? ''];
+    if (nth === undefined) return fail(ctx, pos);
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: {
+        controller: 'you',
+        nthSpellThisTurn: nth,
+        raw: ctx.text.slice(pos, head.pos - ' costs '.length),
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: head.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: statement(id, subject, { kind: 'costReduction', amount }, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
   STATIC_FIRST_X_SPELL_COST_REDUCTION,
+  STATIC_NTH_SPELL_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
   STATIC_SPELLS_AFFINITY,
   // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.
   STATIC_ADDITIONAL_COST_SACRIFICE_COPIES,
   STATIC_ADDITIONAL_COST,
   STATIC_FREE_CAST,
+  STATIC_PAY_LIFE_ALT_COST,
 ];

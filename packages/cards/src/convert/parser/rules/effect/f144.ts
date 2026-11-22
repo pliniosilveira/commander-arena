@@ -11,7 +11,7 @@ import { flag } from './dragons';
 import { type Clauses, makeClause, single } from './operands';
 
 /** ". If that spell would be put into your graveyard, exile it instead": the rider, the next sentence, taken with the clause (CR 614.1a). */
-const EXILE_INSTEAD = pattern(
+export const EXILE_INSTEAD = pattern(
   new RegExp(
     `\\. if that spell would be put into your graveyard, exile it instead${BOUNDARY}(?!,| and\\b| then\\b)`,
     'iu',
@@ -21,7 +21,7 @@ const EXILE_INSTEAD = pattern(
 const CAST_ID = 'effect.cast-own-graveyard-card-free';
 
 /** An instant card, a sorcery card or a choice of the two: the cards a spell can be, which the engine's cast of a card as an effect runs and tests (a permanent card is not read). */
-function isInstantOrSorcery(filter: IrFilter): boolean {
+export function isInstantOrSorcery(filter: IrFilter): boolean {
   const kinds = filter.anyOf ?? [filter];
   const one = (f: IrFilter): boolean =>
     f.anyOf === undefined &&

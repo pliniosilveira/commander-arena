@@ -539,7 +539,7 @@ describe('counted amounts: "for each ..." and "equal to the number of ..." (CR 6
   test.each([
     // The engine counts objects of a filter: a quality it cannot say, a plain "creature" with no controller.
     ['Draw a card for each creature.', '.', 'amount.for-each'],
-    ['Draw a card for each opponent.', 'opponent.', 'amount.for-each'],
+    ['Draw a card for each opponent.', '.', 'amount.for-each-player-who'],
     [
       'You gain 1 life for each creature you control with flying or reach.',
       'or reach.',

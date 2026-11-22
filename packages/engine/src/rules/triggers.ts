@@ -101,6 +101,8 @@ interface Occurrence {
   /** The damage the event dealt, for `triggerDamage` and `dealtDamage` (D-133). */
   readonly damage?: number;
   readonly targetCount?: number;
+  /** For `playsCard`: the zone the land was played from or the spell was cast from (CR 305.1, 601.2a), for "from exile". */
+  readonly fromZone?: Zone;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
   /** For `lifeLost`: whether this is the first time the player lost life this turn (CR 119.3, 603.2). */
@@ -557,8 +559,26 @@ function occurrences(
         : [];
     case 'playsCard':
       // CR 305.1, 601.2: a land played (the land is the subject, as it is on the battlefield) or a spell cast (as it is on the stack), by the player the event names.
-      return event.kind === 'landPlayed' || event.kind === 'spellCast'
-        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+      // Urianger Augurelt: "from exile": the zone a land was played from (only recorded when it is not the hand) or a spell was cast from.
+      if (event.kind === 'landPlayed') {
+        return [
+          {
+            subject: event.object,
+            seat: event.seat,
+            player: event.seat,
+            fromZone: event.fromZone ?? 'hand',
+          },
+        ];
+      }
+      return event.kind === 'spellCast'
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              player: event.seat,
+              fromZone: event.fromZone,
+            },
+          ]
         : [];
     case 'tokenCreated':
       // CR 111.2 (D-465): a token enters under the control of the player who creates it; one occurrence for each token.
@@ -1033,6 +1053,8 @@ function matches(
       return (
         subject !== null &&
         occ.seat === candidate.controller &&
+        // Urianger Augurelt (CR 305.1, 601.2a): "a land from exile or a spell from exile".
+        (trigger.fromExile !== true || occ.fromZone === 'exile') &&
         derive(state, subject).types.length >= (trigger.minCardTypes ?? 1)
       );
     case 'castSpell':
@@ -1510,6 +1532,8 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
+            // CR 603.2c: "Whenever one or more opponents lose life": one trigger for the losses of these events, however many players lost life.
+            (ability.trigger.kind === 'lifeLost' && ability.trigger.batch === true) ||
             (ability.trigger.kind === 'leftGraveyard' && ability.trigger.each !== true) ||
             ability.trigger.kind === 'exiledFromLibraryOrGraveyard' ||
             (ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true)

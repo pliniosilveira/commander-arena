@@ -177,6 +177,7 @@ export function castFreeText(effect: Extract<Effect, { kind: 'castFree' }>): str
       what = 'it';
       break;
     case 'linkedExile':
+    case 'triggerSubject':
       what = 'the exiled card';
       break;
     case 'target':

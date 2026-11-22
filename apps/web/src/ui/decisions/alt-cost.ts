@@ -25,6 +25,8 @@ export function alternativeLabel(kind: NamedAlternative, card: ObjectView | unde
   if (kind === 'sacrificeFromGraveyard' || kind === 'sacrificePermanents') {
     return sacrificeAlternativeLabel(entry);
   }
+  // CR 118.9, 118.4 (Snuff Out): "Cast by paying 4 life instead of mana" (`AlternativeCostView.life`).
+  if (kind === 'payLife') return payLifeLabel(entry);
   // CR 702.74a: "Evoke—Exile a red card from your hand": no mana, the exile of a card of the hand.
   if (entry.exileFromHand !== undefined) return evokeExileLabel(entry);
   const label = `${ALTERNATIVE_NAMES[kind]} ${symbolsText(withX(entry.cost, 0))}`;
@@ -85,6 +87,15 @@ export function sacrificeAlternativeLabel(
   return mana.length === 0
     ? `Cast by sacrificing ${what}`
     : `Cast for ${symbolsText(mana)}, sacrificing ${what}`;
+}
+
+/** "Cast by paying 4 life instead of mana": the button of the alternative cost that pays life (`AlternativeCostView.life`), with the mana it still costs, if any. */
+export function payLifeLabel(entry: NonNullable<ObjectView['alternativeCosts']>[number]): string {
+  const mana = withX(entry.cost, 0).filter((s) => s !== '0');
+  const life = `${entry.life ?? 0} life`;
+  return mana.length === 0
+    ? `Cast by paying ${life} instead of mana`
+    : `Cast for ${symbolsText(mana)} and ${life}`;
 }
 
 /** "Cast for {R}": the button of a foretold card, from its `alternativeCosts` (D-128). */

@@ -58,13 +58,21 @@ describe('validation', () => {
     }
   });
 
-  test('a static ability does not read it (its conditions are the layers plain ones)', () => {
-    const card = withAbility({
-      kind: 'static',
-      static: { kind: 'modifyPt', subject: { kind: 'this' }, power: 1, toughness: 1 },
-      condition: { kind: 'spellsCastThisTurn', atLeast: 3 },
-    });
-    expect(JSON.stringify(validateCard(card as never))).toContain('not spellsCastThisTurn');
+  test('a static ability reads it (the turn log, no layer changes it), but not a condition that reads the life lost', () => {
+    const withCondition = (condition: object) =>
+      withAbility({
+        kind: 'static',
+        static: { kind: 'modifyPt', subject: { kind: 'this' }, power: 1, toughness: 1 },
+        condition,
+      });
+    expect(
+      validateCard(withCondition({ kind: 'spellsCastThisTurn', atLeast: 3 }) as never),
+    ).toEqual([]);
+    expect(
+      JSON.stringify(
+        validateCard(withCondition({ kind: 'aPlayerLostLifeThisTurn', atLeast: 1 }) as never),
+      ),
+    ).toContain('not aPlayerLostLifeThisTurn');
   });
 });
 

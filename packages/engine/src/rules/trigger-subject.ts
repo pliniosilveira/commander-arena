@@ -63,7 +63,8 @@ export function readsTriggerPlayer(ability: Ability): boolean {
       JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
       // Issue 506 (U.S.S. Prometheus): "each other opponent" leaves out the player the event is about, so the player must stay on the stack object.
       JSON.stringify([ability.effect, ability.modes ?? []]).includes('"eachOtherOpponent"') ||
-      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"'))
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"') ||
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerTurn"'))
   );
 }
 
@@ -94,9 +95,11 @@ export function readsTriggerDamaged(ability: Ability): boolean {
 export function readsTriggerAttackers(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"attackersGreatestPower"',
-    )
+    ) ||
+      // Champions from Beyond: "those creatures" of the attack event.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackers"'))
   );
 }
 

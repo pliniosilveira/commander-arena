@@ -101,6 +101,7 @@ describe('amounts that read an object', () => {
       'commanderManaValue',
       'commanderCasts',
       'lifeTotalOf',
+      'playerCount',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
       // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).

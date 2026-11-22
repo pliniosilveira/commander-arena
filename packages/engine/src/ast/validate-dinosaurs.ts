@@ -104,6 +104,8 @@ export function checkDinosaursFace(face: CardFace, path: string, out: AstIssue[]
       (a?.kind === 'mana' && JSON.stringify(a.spentRider ?? null).includes('"exileLinked":true')) ||
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         (JSON.stringify(a.effect ?? null).includes('"linked":true') ||
+          // Urianger Augurelt (CR 607.2a, 406.3): "You may exile it face down": a `lookAtTop` that takes a card into exile face down remembers it, as Hideaway does (`rules/look-take.ts`).
+          JSON.stringify(a.effect ?? null).includes('"to":"exileFaceDown"') ||
           // D-230: a token that copies a creature and remembers the cards the effect before it exiled holds the link itself.
           JSON.stringify(a.effect ?? null).includes('"linkExiled":true'))),
   );

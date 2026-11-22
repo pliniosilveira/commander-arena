@@ -151,6 +151,7 @@ import {
   runProtectionColor,
 } from './protection-choice';
 import { runRegenerate } from './regenerate';
+import { runRemoveFromCombat } from './remove-from-combat';
 import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
@@ -677,7 +678,12 @@ export function runInstruction(
       return {
         ...done(played, [
           ...moveEvents,
-          { kind: 'landPlayed', seat: res.controller, object: result.newObject },
+          {
+            kind: 'landPlayed',
+            seat: res.controller,
+            object: result.newObject,
+            ...(subject.zone === 'hand' ? {} : { fromZone: subject.zone }),
+          },
         ]),
         lastMoved,
         performed: 1,
@@ -1666,6 +1672,7 @@ function runEffect(
               play: false,
               chosen: null,
               ...(copies.length > 1 ? { remaining: 'any' as const } : {}),
+              ...(effect.cost === undefined ? {} : { payInstead: effect.cost }),
             },
           ],
         ),
@@ -1997,7 +2004,14 @@ function runEffect(
         ...state,
         delayedTriggers: [
           ...state.delayedTriggers,
-          { source: res.source, controller: res.controller, ability, untilEndOfTurn: true },
+          {
+            source: res.source,
+            controller: res.controller,
+            ability,
+            untilEndOfTurn: true,
+            // CR 603.7: "Whenever you cast ... this turn" triggers at each cast, "when you next cast" at the next one only.
+            ...(effect.repeat === true ? { repeat: true as const } : {}),
+          },
         ],
       });
     }
@@ -3803,6 +3817,10 @@ function runEffect(
     case 'goad':
       // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
       return runGoad(state, effect, ctx, targets);
+
+    case 'removeFromCombat':
+      // CR 506.4: the creatures are taken out of the combat in progress (`rules/remove-from-combat.ts`).
+      return runRemoveFromCombat(state, effect, ctx, targets);
 
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':

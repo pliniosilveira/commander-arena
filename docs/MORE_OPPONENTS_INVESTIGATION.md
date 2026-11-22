@@ -4,16 +4,17 @@ Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for l
 
 ## Where we are
 
-Engine work (phases 1 and 2) is well advanced; the AI, `ai:arena`, performance and the UI are not started.
+Engine work (phases 1 and 2) is well advanced; the AI is being fixed, and performance and the UI are not started.
 
-Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
+Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
 
 Open, in order of work:
 
-1. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-2. #422: latent single-opponent sites, low priority; #363 closes when its children do.
+1. #481 and #483: the AI aims player-targeted spells at the best opponent, and its defensive estimates stop assuming one opponent; measure them with `ai:arena --seats 3`.
+2. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
+3. #422: latent single-opponent sites, low priority; #363 closes when its children do.
 
-Not audited: the AI and the view code. `ai:arena` still plays two seats, and `tools/perf/derive-bench.ts` measures only two. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
+Not audited: the AI and the view code. `ai:arena --seats 3|4` plays a table (#482), and `tools/perf/derive-bench.ts` measures only two seats. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
 
 ## Question
 
@@ -140,14 +141,65 @@ In all six runs no permanent stayed under a player who had lost, no seat that ha
 4. Performance: more permanents and triggers; `tools/perf/derive-bench.ts` measures only two seats.
 5. Tests: the scenario DSL, the golden and derive digests, and an exhaustive soak for 3 and 4 seats.
 
-## Board sketch
+## Board plan: five areas (phase 4)
 
-The viewer stays below. Opponents sit in a row above: two for three seats, three for four. The active player and the defender being attacked are highlighted. An opponent's strip shows life, hand count, a commander-damage matrix, the command zone and a collapsed battlefield that opens on click. On a phone the opponents become tabs or a carousel. A choice of target opponent is a clear selector when more than one target is legal. Combat arrows need a source and a defender each.
+One board for every seat count from 2 to 4, not a 1v1 board plus a multiplayer one. `Board` maps over `view.seats` instead of picking "the" opponent (`Board.tsx`). The screen is a grid of five areas:
+
+```
+3 opponents                 2 opponents                 1 opponent (today)
+| opp 1 | opp 2 | opp 3 |   | opp 1     | opp 2     |   | opponent          | flow |
+| you           | flow  |   | you           | flow  |   | you               |      |
+```
+
+Opponents share the top row equally. You get the bottom left (4 of 6 columns). The flow cell (2 of 6) holds what floats today at the right edge and top left: the decision dock, the stack and the turn box. With one opponent the flow cell spans both rows, so the 1v1 screen keeps today's proportions. The template is a pure function of the opponent count (`tableAreas`, unit tested like `layout.ts`), so adding a seat count adds a row to a table, not a component.
+
+### What is reused as it is
+
+| Today | In the new board |
+| --- | --- |
+| `Field` and `BattlefieldRow` | One per seat, unchanged. Rows measure their own cell (`useMeasure`) and pick tile height, grouping and scrolling from it, so a narrower cell is not a new code path. `ROW_ORDER_OPP` already mirrors the opponent. |
+| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Same component with a `density` of `full` or `compact`, chosen by a container query on its cell. |
+| `HandBacks` | One per opponent. |
+| `BlockArrows`, `StackArrows` | Measure tiles from the DOM by `data-object-id` (`panels/arrows.ts`), so they do not care where a cell is. To confirm with a test at 3 opponents. |
+| `DecisionLayer`, `DockSlotContext`, `StackPanel` | The slot moves from `aside.turn-panel` in `Game` into the flow cell; `Board` takes it as a `flow` prop. |
+| `ix.clickableSeats`, `ix.onSeat`, `AttackTargetDialog` | Already keyed by seat id and by `player:<seat>` options. They only need names. |
+| `TurnTracker` | Folds into the top of the flow cell and gains a turn-order wheel: seats in order, the active one marked, seats that left struck out. |
+
+### What changes
+
+- `seatLabel` says "Opponent" for everyone. It needs "Opponent 2" or the deck name, plus a colour per seat (`--seat-1` to `--seat-3` beside `--me`) shown on the strip border, the life total and the wheel, because position alone no longer names a seat.
+- `commanderDamageTaken` names the source only when there is one source (`resolve.ts`). With several opponents it must map each `"seat:card"` key to its owner and show "from Opponent 2".
+- Words that say "the opponent" in the singular: `Versus.tsx`, `game-over-model.ts`, `TurnTracker.tsx` (`stopSide`; the two stop settings stay, "opponent" meaning any opponent), `priority.ts`, `LibraryTop`.
+- A seat that left the game (`has-lost` already exists on the strip) collapses to a slim strip and its field disappears; its column width goes to the others.
+- Focus: clicking an opponent widens its column (for example 2fr 1fr 1fr), and the board does it by itself for the seat that attacks you or targets you. It is UI state, never engine state.
+- Below about 1100 px wide the opponents stack as compact strips with one expanded, using the same cells and the same focus state. Phone width is left out for now.
+- New rules go in a new `table.css`; `board.css` is already over 2000 lines. Keep the class names the e2e tests use (`board-field-opp`, `board-strip-opp`, `data-field-seat`).
+- Not part of the board: `host.ts` has one `HUMAN` and one `AI_SEAT`, and the menu has no seat count. Those belong to the app step of "How games would be run".
+
+### Developing it before the engine
+
+`createGame` still throws for more than two seats, so the UI cannot wait for it. Render the board from synthetic `GameView` fixtures (marked `SYNTHETIC`) in a component test and in one e2e page, with 2 and 3 opponents, a seat that left, and an attack on you. The 1v1 game stays the regression check through the existing e2e tests.
+
+### Steps
+
+Each is a pull request; the 1v1 screen must not change until step 4.
+
+1. Pure parts with tests: `tableAreas`, seat label and colour, commander damage source.
+2. `Board` maps over the opponents (still one); the 1v1 template looks as today.
+3. Turn box and turn panel move into the flow cell with the turn-order wheel.
+4. Compact `PlayerStrip`, columns for 2 and 3 opponents, focus, seats that left; screenshots at 1440, 1280 and 1024 wide (`AGENTS.md`, "Visual changes need pictures").
+5. Singular wording across decisions and the end screen; the menu's seat count together with phase 3.
+
+### Open choices
+
+- Whether 1v1 uses the same template (recommended: one path) or keeps the full-height right panel it has now.
+- Whether the log moves into the flow cell or stays a dock.
+- The narrowest window width the board must support.
 
 ## How games would be run
 
 1. Probe: `runGame` with one agent per seat, as above (headless, deterministic, seeds reproduce; it needs the unmerged changes described there).
-2. Arena (`pnpm ai:arena`): today it is two seats with paired seeds and swapped sides. For 3 and 4 it needs a player count, a list of agents and a rotation of the seating, so each agent sits in each position.
+2. Arena (`pnpm ai:arena`): two seats play paired seeds with swapped sides; `--seats 3|4 --agents ...` plays a table with the agents rotated through the seats (#482; arena decks only).
 3. App: the host keeps one agent per AI seat and runs the ones with a pending decision in turn; the menu chooses the seat count and a deck for each.
 4. Tests: a scenario DSL that accepts 3 and 4 seats, rule scenarios written first, a nightly soak, and the benchmark with a seat count.
 
@@ -189,7 +241,7 @@ The combat data model already supports several defenders (each attacker stores i
 
 ## Audit of the AI (phase 3, #452)
 
-About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured: the decision time with more permanents, because `ai:arena` plays two seats (#482).
+About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured yet: the decision time with more permanents; `ai:arena --seats 3|4` (#482) is the tool for it.
 
 ## Cards not supported for more than one opponent
 

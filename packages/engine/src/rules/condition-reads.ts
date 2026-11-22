@@ -16,16 +16,49 @@ type EnteredCondition = Extract<Condition, { kind: 'enteredThisTurn' }>;
 type DamageCondition = Extract<Condition, { kind: 'playerDealtDamage' }>;
 type CommanderCondition = Extract<Condition, { kind: 'controlCommander' }>;
 
-/** CR 404.1 (D-229): the number of cards in `seat`'s graveyard meets the comparison ("fewer than eight" is at most 7). */
+/**
+ * CR 404.1 (D-229): the number of cards in `seat`'s graveyard meets the comparison ("fewer than eight" is at most 7). With `player: 'anOpponent'` ("an opponent has seven or more cards
+ * in their graveyard", CR 102.2) it is the graveyard of some opponent of `seat` who is still in the game (CR 800.4a), each one counted on its own.
+ */
 export function cardsInGraveyardHolds(
   state: GameState,
   seat: SeatId,
-  compare: Extract<Condition, { kind: 'cardsInGraveyard' }>['compare'],
+  condition: Extract<Condition, { kind: 'cardsInGraveyard' }>,
 ): boolean {
-  const n = getSeat(state, seat).graveyard.length;
-  if (compare.cmp === 'atLeast') return n >= compare.value;
-  if (compare.cmp === 'atMost') return n <= compare.value;
-  return n === compare.value;
+  const { compare } = condition;
+  const meets = (n: number): boolean =>
+    compare.cmp === 'atLeast'
+      ? n >= compare.value
+      : compare.cmp === 'atMost'
+        ? n <= compare.value
+        : n === compare.value;
+  if (condition.player === 'anOpponent') {
+    return opponentsOf(state, seat).some((other) => meets(getSeat(state, other).graveyard.length));
+  }
+  return meets(getSeat(state, seat).graveyard.length);
+}
+
+/**
+ * CR 601.2i, 602.5b: the spells `seat` has cast this turn (a copy is not cast, CR 707.10) number at least `atLeast`, counting only those with one of `ofTypes` or, with
+ * `notOfTypes` ("noncreature spells"), none of those types, as they were cast. A spell counts once it is on the stack with its costs paid.
+ */
+export function spellsCastThisTurnHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'spellsCastThisTurn' }>,
+): boolean {
+  const { ofTypes, notOfTypes } = condition;
+  if (ofTypes === undefined && notOfTypes === undefined) {
+    return getSeat(state, seat).spellsCastThisTurn >= condition.atLeast;
+  }
+  return (
+    state.turnLog.castSpells.filter(
+      (s) =>
+        s.seat === seat &&
+        (ofTypes === undefined || s.types.some((t) => ofTypes.includes(t))) &&
+        (notOfTypes === undefined || !s.types.some((t) => notOfTypes.includes(t))),
+    ).length >= condition.atLeast
+  );
 }
 
 /** CR 401.1 (D-331): the number of cards in `seat`'s library meets the comparison ("no cards" is at most 0). */
@@ -187,7 +220,7 @@ export function plainConditionHolds(
     case 'lifeGainedThisTurn':
       return lifeGainedThisTurnHolds(state, controller, condition);
     case 'cardsInGraveyard':
-      return cardsInGraveyardHolds(state, controller, condition.compare);
+      return cardsInGraveyardHolds(state, controller, condition);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, controller, condition.compare);
     case 'aPlayerCardsInHand':

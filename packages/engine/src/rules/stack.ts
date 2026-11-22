@@ -49,6 +49,7 @@ import {
   type UnlessAnswer,
 } from './pay-unless';
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
+import { rebounds, reboundTrigger } from './rebound';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
@@ -519,12 +520,18 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       obj.stack?.flashback !== true &&
       obj.stack?.jumpStart !== true &&
       obj.stack?.exileInstead !== true;
+    // CR 702.88a (Rebound): a spell cast from its caster's hand is exiled instead of going to the graveyard; one that a buyback, an Adventure, an exile effect or time counters already
+    // place keeps that place.
+    const rebound = rebounds(faceOf(next, obj), obj, {
+      permanent,
+      elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen,
+    });
     const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled || timeCounters !== null
+        : adventure || exiled || timeCounters !== null || rebound
           ? 'exile'
           : boughtBack
             ? 'hand'
@@ -596,6 +603,16 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
             linkedExile: [...(owner.linkedExile ?? []), moved.newObject],
           });
         }
+      }
+      // CR 702.88a, 603.7, 603.7c: the card a rebounding spell became in exile is cast at the beginning of its caster's next upkeep (if they choose and it is still there).
+      if (rebound && moved.newObject !== null) {
+        next = {
+          ...next,
+          delayedTriggers: [
+            ...next.delayedTriggers,
+            reboundTrigger(moved.newObject, controllerOf(state, obj)),
+          ],
+        };
       }
       // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {

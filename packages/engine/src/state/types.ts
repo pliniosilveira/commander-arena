@@ -477,6 +477,10 @@ export interface StackData {
    */
   readonly free?: true;
   /**
+   * The mana the spell was cast for rather than its mana cost (CR 118.9, 601.2f: "You may cast the copy by paying {3} rather than paying its mana cost"), with `free`. Absent otherwise.
+   */
+  readonly payInstead?: readonly Cost[];
+  /**
    * True when the spell was cast as the effect of its suspend ability (CR 702.62a, D-128): if it is a creature spell
    * the permanent it becomes has haste (`GameObject.alt` `suspend`). Absent otherwise, and for an ability.
    */
@@ -534,6 +538,11 @@ export interface StackData {
    * that spell"): a mana of a color pays any colored symbol of its cost; colorless mana still pays only generic mana and {C}. Absent otherwise, and for an ability.
    */
   readonly anyManaColor?: true;
+  /**
+   * The generic mana the cost of this spell goes down by because of the permission it was cast with (Urianger Augurelt, "Spells you cast this way cost {2} less to cast", CR 601.2f):
+   * written as the spell is cast from exile (`rules/cast.ts`), read where its cost is determined. Absent otherwise, and for an ability.
+   */
+  readonly lessGeneric?: number;
   /**
    * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
    * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
@@ -2101,6 +2110,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `remember` (Cmdr. Troi): the spell cast is what `moved` names afterwards. */
       readonly remember?: true;
+      /** `copyCardAndCast.cost` (Blue Mage's Cane, CR 118.9): the mana paid rather than the mana cost. */
+      readonly payInstead?: readonly Cost[];
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -2353,6 +2364,11 @@ export type ContinuousChange =
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
        */
       readonly exileInstead?: true;
+      /**
+       * "You may cast it from your graveyard as an Adventure" (`mayCast.adventure`, Hildibrand Manderville, CR 715.3): only the Adventure half of the card may be cast with this permission
+       * (face 1), never its creature half; `legality.ts` (`mayCastAdventureFromGraveyard`) reads it, and every other reading of `castPermission` ignores it.
+       */
+      readonly adventureOnly?: true;
     }
   /**
    * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (`gainFlashbackFromManaCost`, CR 702.34a, 611.2a, 611.2c):
@@ -2406,6 +2422,8 @@ export type ContinuousChange =
       readonly anyManaType?: true;
       /** "If that spell would be put into a graveyard, exile it instead" (`mayPlay.exileInstead`, Dire Fleet Daredevil, CR 614.1a): the spell carries `StackData.exileInstead`. */
       readonly exileInstead?: true;
+      /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
+      readonly lessGeneric?: number;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,

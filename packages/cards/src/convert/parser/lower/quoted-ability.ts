@@ -13,6 +13,39 @@ function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
   return { ok: false, needs, at: node.span, rule: node.rule };
 }
 
+/**
+ * Read a quoted ability as the abilities of the creature that receives it: one, or (Astrologian's Planisphere, CR 603.2c: "Whenever you cast a noncreature spell and whenever you draw
+ * your third card each turn, ..." is two triggered abilities that share the effect) one for each event of a triggered ability that two events cause.
+ */
+export function lowerQuotedGrantedAbilities(
+  quoted: IrQuotedAbility,
+  at: At,
+  ctx: LowerContext,
+  sourceTypes: readonly string[] = ['creature'],
+): LowerResult<readonly Granted[]> {
+  const inner: IrAbility = quoted.ability;
+  if (inner.kind !== 'activated' && inner.kind !== 'triggered') return failure(at);
+  const bound = bind(inner, {});
+  if (!bound.ok) return failure(at);
+  const own = newContext('ability', sourceTypes, ctx.faceSubtypes, ctx.cardName);
+  const lowerers = lateLowerers();
+  if (lowerers === null) return failure(at);
+  const lowered =
+    bound.ability.kind === 'triggered'
+      ? lowerers.triggered(bound.ability, own)
+      : bound.ability.kind === 'activated'
+        ? lowerers.activated(bound.ability, own)
+        : null;
+  if (lowered === null) return failure(at);
+  if (!lowered.ok) return failure(at, lowered.needs);
+  const granted: Granted[] = [];
+  for (const one of lowered.value) {
+    if (one.kind !== 'activated' && one.kind !== 'triggered') return failure(at);
+    granted.push(one);
+  }
+  return granted.length === 0 ? failure(at) : { ok: true, value: granted, rule: at.rule };
+}
+
 /** Read a quoted ability as an ability of the creature that receives it. */
 export function lowerQuotedGrantedAbility(
   quoted: IrQuotedAbility,

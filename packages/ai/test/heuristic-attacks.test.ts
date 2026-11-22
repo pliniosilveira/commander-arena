@@ -3,7 +3,7 @@
 // scenario DSL; each check asserts the answer and the reason.
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { urgency } from '../src/heuristic-attacks';
+import { attackShare, urgency } from '../src/heuristic-attacks';
 import { HeuristicAgent } from '../src/index';
 import { askHeuristic, creature, lastReason } from './heuristic-helpers';
 
@@ -260,5 +260,21 @@ describe('a commander that a block would kill (issue 73)', () => {
       action.kind === 'declareAttackers' ? action.attacks.map((a) => a.attacker) : [];
     expect(attackers).not.toContain(g.id(queen.name));
     expect(lastReason(agent)).toMatchObject({ decisionKind: 'declareAttackers' });
+  });
+});
+
+describe('attackShare (issue 483)', () => {
+  test('is 1 when the agent is the only target, and shrinks when others have less life', () => {
+    const two = scenario().seat(0).seat(1).at('precombatMain', { active: 0 }).build().view(0);
+    expect(attackShare(two, 1, 0)).toBe(1);
+    const three = scenario({ seats: 3 })
+      .seat(0)
+      .seat(1)
+      .seat(2)
+      .life(5)
+      .at('precombatMain', { active: 0 })
+      .build()
+      .view(0);
+    expect(attackShare(three, 1, 0)).toBeLessThan(0.5);
   });
 });

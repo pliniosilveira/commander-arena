@@ -89,7 +89,14 @@ export function chooseCardsToLose(
  * for the real heuristic AI, which will weigh targets by what the spell does.
  */
 function targetScore(view: GameView, t: ChosenTarget): number {
-  if (t.kind === 'player') return t.seat === view.viewer ? 0 : 3;
+  if (t.kind === 'player') {
+    if (t.seat === view.viewer) return 0;
+    // Issue 481: with several opponents the one with the least life ranks first (a lethal spell
+    // included). The bonus stays below 1, so a player still ranks between a creature and a permanent,
+    // and with one opponent the answer is unchanged.
+    const life = view.seats.find((s) => s.id === t.seat)?.life ?? 0;
+    return 3 + 0.9 / (1 + Math.max(life, 0));
+  }
   const o = findObject(view, t.id);
   if (o === undefined || o.controller === view.viewer) return 0;
   return isCreature(o) ? 4 + powerOf(o) / 100 : 2;
@@ -135,7 +142,23 @@ function withOwnedTargets(d: TargetsDecision, action: Action): Action {
 
 /** Fills every slot with the best-scored legal targets: opponent first, any legal one otherwise. */
 export function chooseTargets(view: GameView, d: TargetsDecision): Action {
-  return withOwnedTargets(d, withOtherTargets(d, chooseTargetsOf(view, d)));
+  const action = withOwnedTargets(d, withOtherTargets(d, chooseTargetsOf(view, d)));
+  return cancelWhenTooFewOthers(d, action);
+}
+
+/**
+ * "Another target" slots (`differentFrom`, CR 115.3) with a minimum of 1 and fewer different legal targets than slots: no answer is legal, so the agent cancels the cast
+ * instead of sending one the engine refuses. A triggered ability, a copy or a change of targets has no cancel and is left as it is.
+ */
+function cancelWhenTooFewOthers(d: TargetsDecision, action: Action): Action {
+  if (action.kind !== 'chooseTargets' || d.forTrigger === true) return action;
+  if (d.forCopy === true || d.forChange === true) return action;
+  const short = d.specs.some(
+    (s) =>
+      s.differentFrom !== undefined &&
+      action.targets.filter((t) => t.specId === s.specId).length < s.min,
+  );
+  return short ? { kind: 'cancel' } : action;
 }
 
 function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
@@ -180,12 +203,29 @@ function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
       targets.push(own);
       continue;
     }
+    // CR 115.3: a slot that must differ from earlier ones takes none of their targets (the engine refuses a repeat), so the next best target fills it.
+    const taken = [spec.differentFrom, ...(spec.differentFromAll ?? [])];
+    const legal =
+      spec.differentFrom === undefined
+        ? spec.legal
+        : spec.legal.filter(
+            (l) =>
+              !targets.some(
+                (o) =>
+                  o.specId !== undefined &&
+                  taken.includes(o.specId) &&
+                  o.kind === l.kind &&
+                  (o.kind === 'object'
+                    ? o.id === (l as typeof o).id
+                    : o.seat === (l as typeof o).seat),
+              ),
+          );
     // Stable sort: equal scores keep the engine's order, so "first legal" is the fallback.
-    const ranked = spec.legal
+    const ranked = legal
       .map((t, index) => ({ t, index, score: targetScore(view, t) }))
       .sort((a, b) => b.score - a.score || a.index - b.index);
     const hostile = ranked.filter((r) => r.score > 0).length;
-    const count = Math.min(spec.max, spec.legal.length, Math.max(spec.min, hostile));
+    const count = Math.min(spec.max, legal.length, Math.max(spec.min, hostile));
     if (spec.onePerGroup === true) {
       // D-149, Hylda group 3: "for each opponent" and "with different controllers": at most one target of each controller, the best-scored one first.
       const seen = new Set<number>();

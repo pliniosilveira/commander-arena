@@ -1,6 +1,6 @@
-import type { MatchResult } from '@commander-arena/ai';
+import type { MatchResult, TableResult } from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { formatMatch, formatTimes } from './format.ts';
+import { formatMatch, formatTable, formatTimes } from './format.ts';
 
 const result: MatchResult = {
   a: 'casual',
@@ -62,5 +62,42 @@ describe('formatTimes', () => {
       1000,
     );
     expect(text).toContain('(budget 1000 ms, 1 over it)');
+  });
+});
+
+describe('formatTable', () => {
+  const table: TableResult = {
+    labels: ['casual', 'greedy', 'heuristic'],
+    seats: 3,
+    games: 6,
+    wins: [1, 2, 3],
+    winsByAgentSeat: [
+      [1, 0, 0],
+      [0, 1, 1],
+      [1, 1, 1],
+    ],
+    winsBySeat: [2, 2, 2],
+    draws: 0,
+    unfinished: 0,
+    averageTurns: 20.5,
+    fallbacks: 0,
+    rejectedActions: 0,
+    reasons: [{}, { land: 3 }, {}],
+    log: [],
+  };
+  const text = formatTable(table, { seed: 4, command: 'node tools/ai/arena.ts --seats 3' });
+
+  test('shows wins for each agent and seat, and the seats of the table', () => {
+    expect(text).toContain(
+      '6 games at 3 seats, 2 seeds from 4, each played once for each rotation',
+    );
+    expect(text).toMatch(/0 casual\s+1 \(16\.7%\)\s+1\s+0\s+0/);
+    expect(text).toMatch(/2 heuristic\s+3 \(50\.0%\)\s+1\s+1\s+1/);
+    expect(text).toContain('wins by seat: seat 0 2, seat 1 2, seat 2 2');
+  });
+
+  test('lists the reasons of each agent', () => {
+    expect(text).toContain('reasons 1 greedy: land 3');
+    expect(text).toContain('reasons 0 casual: (none: the agent does not explain itself)');
   });
 });

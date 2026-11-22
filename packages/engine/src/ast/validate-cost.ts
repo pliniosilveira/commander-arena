@@ -217,6 +217,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'tapPermanents',
   'sacrificeFromGraveyard',
   'sacrificePermanents',
+  'payLife',
 ];
 
 /**
@@ -268,6 +269,15 @@ export function checkAlternativeCosts(
       }
     } else if (counters !== undefined) {
       issue(out, `${p}.counters`, `only impending names counters (${alt.kind} has none)`);
+    }
+    // CR 118.9, 118.4 (Snuff Out): a payLife cost says how much life, a positive whole number; no other kind has the field.
+    const life = (alt as { readonly life?: unknown }).life;
+    if (alt.kind === 'payLife') {
+      if (!Number.isSafeInteger(life) || (life as number) < 1) {
+        issue(out, `${p}.life`, 'payLife pays a positive whole number of life');
+      }
+    } else if (life !== undefined) {
+      issue(out, `${p}.life`, `only payLife names life (${alt.kind} has none)`);
     }
     // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
     const exile = (alt as { readonly exile?: unknown }).exile;
