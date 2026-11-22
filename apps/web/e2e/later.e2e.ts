@@ -259,8 +259,8 @@ test('Foretell: the button, our own card face down, cast for the foretell cost f
   // Ours: named in the log and the strip, marked Foretold, not castable yet.
   await expect(logText(page)).toContainText(`You foretold ${giant}.`);
   await expect(exileStrip(page)).toContainText(`${giant} Foretold`);
-  await page.getByRole('button', { name: /^Open exile/ }).click();
-  const viewer = page.getByRole('dialog', { name: /^Exile/ });
+  await page.getByRole('button', { name: /^Open You exile/ }).click();
+  const viewer = page.getByRole('dialog', { name: /exile$/ });
   await expect(viewer.locator('[data-exile-mark="Foretold"]')).toHaveCount(1);
   await expect(viewer.getByText('Yours')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -298,8 +298,8 @@ test('Foretell, the other side: a face-down card, and nothing on the page names 
   await expect(chip.first()).toHaveAttribute('aria-label', /^Face-down card \(face down\)/);
   await expect(logText(page)).toContainText('Opponent foretold a card.');
   await expect(page.locator('body')).not.toContainText(giant);
-  await page.getByRole('button', { name: /^Open exile/ }).click();
-  const viewer = page.getByRole('dialog', { name: /^Exile/ });
+  await page.getByRole('button', { name: /^Open Opponent exile/ }).click();
+  const viewer = page.getByRole('dialog', { name: /exile$/ });
   const back = viewer.getByRole('button', { name: 'Face-down card (face down)' });
   await expect(back).toHaveCount(1);
   await expect(back.locator('[data-face-down]')).toBeVisible();

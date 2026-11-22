@@ -68,8 +68,6 @@ test('a drop outside every zone sends no action and the card stays in the hand',
   await toMain(page);
   const before = await hand(page).count();
   const plains = hand(page).filter({ hasText: 'Basic Land' }).first();
-  // The exile bar between the two battlefields is not a drop zone.
-  await plains.dragTo(page.locator('.board-mid'));
   // Nor is the turn bar.
   await plains.dragTo(page.locator('.pnl-tracker').first());
 
