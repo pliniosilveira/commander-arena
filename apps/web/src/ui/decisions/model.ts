@@ -10,8 +10,10 @@ import {
   handleDecision,
   type ObjectId,
   type PendingDecision,
+  type PriorityDecision,
   type SeatId,
 } from '@commander-arena/engine';
+import { BRING_COMPANION_HINT, BRING_COMPANION_LABEL } from '../../game/companion';
 import { canPassTurn } from '../../policy/should-stop';
 import type { Interaction } from '../interaction';
 import { arrangeAction, arrangeDetail, arrangementComplete, arrangePrompt } from './arrange';
@@ -227,7 +229,11 @@ function interaction(parts: Partial<Interaction>): Interaction {
  * viewer's turn with an empty stack a separate "Pass Turn" button sits next to it, also when
  * creatures could attack (it skips combat and the later steps).
  */
-function priorityButtons(view: GameView, ctl: Controller): readonly ButtonSpec[] {
+function priorityButtons(
+  view: GameView,
+  ctl: Controller,
+  decision: PriorityDecision,
+): readonly ButtonSpec[] {
   const passTurn = () => (ctl.passTurn === undefined ? ctl.act({ kind: 'pass' }) : ctl.passTurn());
   const passTurnSpec = (primary: boolean): ButtonSpec =>
     button('passTurn', PASS_TURN_LABEL, passTurn, {
@@ -235,9 +241,17 @@ function priorityButtons(view: GameView, ctl: Controller): readonly ButtonSpec[]
       ariaLabel: PASS_TURN_NAME,
       hint: passTurnHint(ctl.fullControl === true),
     });
-  if (passTurnIsPrimary(view)) return [passTurnSpec(true)];
+  // CR 116.2g, 702.139a: the special action of the companion, only when the engine offers it (it checks the phase, the stack, the {3} and the once per game).
+  const companion = decision.options.some((o) => o.kind === 'bringCompanion')
+    ? [
+        button('bringCompanion', BRING_COMPANION_LABEL, () => ctl.act({ kind: 'bringCompanion' }), {
+          hint: BRING_COMPANION_HINT,
+        }),
+      ]
+    : [];
+  if (passTurnIsPrimary(view)) return [passTurnSpec(true), ...companion];
   const one = button('pass', passLabel(view), () => ctl.act({ kind: 'pass' }), { primary: true });
-  return canPassTurn(view) ? [one, passTurnSpec(false)] : [one];
+  return canPassTurn(view) ? [one, passTurnSpec(false), ...companion] : [one, ...companion];
 }
 
 const bar = (
@@ -284,7 +298,7 @@ function handlers(
             else if (outcome.kind === 'choose' || outcome.kind === 'menu') ctl.openChooser(id);
           },
         }),
-        bar: bar(priorityPrompt(view, index), priorityButtons(view, ctl), {
+        bar: bar(priorityPrompt(view, index), priorityButtons(view, ctl, d), {
           detail: priorityDetail(view),
         }),
       };

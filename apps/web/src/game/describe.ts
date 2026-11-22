@@ -1997,5 +1997,4 @@ export function describeEvents(
   return out;
 }
 
-/** The label of the special action that brings the companion into the hand (CR 116.2g, 702.139a); the real control comes with the companion's interface. */
-export const BRING_COMPANION_LABEL = 'Bring your companion into your hand ({3})';
+export { BRING_COMPANION_LABEL } from './companion';

@@ -202,6 +202,26 @@ describe('a saved deck as the opponent or as the player (issue 108)', () => {
     }
   });
 
+  test('a saved deck with a companion starts a game that carries it; a refused one does not start', async () => {
+    const { decks, library, serviceFor } = setup();
+    const shipped = await playableSnapshot('p');
+    const good = await decks.save({
+      name: 'With companion',
+      text: `${supportedHundredText()}\n\nCompanion\n1 Synthetic Companion`,
+    });
+    const bad = await decks.save({
+      name: 'Wrong companion',
+      text: `${supportedHundredText()}\n\nCompanion\n1 Synthetic Red Companion`,
+    });
+    const precons = createPrecons([shipped], serviceFor, library);
+    const ready = await precons.prepare(savedDeckChoiceId(good.id));
+    expect(ready.ok).toBe(true);
+    if (ready.ok) expect(ready.deck.companion?.name).toBe('Synthetic Companion');
+    const refused = await precons.prepare(savedDeckChoiceId(bad.id));
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.reason).toMatch(/color identity/);
+  });
+
   test('a saved deck that was deleted, or without a library, is refused', async () => {
     const { library, serviceFor } = setup();
     const shipped = await playableSnapshot('p');

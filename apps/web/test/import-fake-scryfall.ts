@@ -13,6 +13,8 @@
  * - `Synthetic Tapland N`: land with "{T}: Add {G}." (supported); `Synthetic Odd Land N`: land with
  *   text the parser cannot read (unsupported);
  * - `Synthetic Commander` (green) and `Synthetic Red Commander`: legendary creatures;
+ * - companions: `Synthetic Companion` (green, the known condition, supported), `Synthetic Red Companion` (outside the green commander's identity),
+ *   `Synthetic Odd Companion` (a companion with a second text the parser cannot read: unsupported) and `Synthetic Double Mana` (a card with {G}{G}, which breaks the condition);
  * - `Synthetic Daybreak // Synthetic Nightfall`: a meld card (a layout the engine refuses), found by `Synthetic Daybreak`.
  */
 
@@ -149,6 +151,29 @@ export function syntheticCardNamed(
       colors: ['R'],
       color_identity: ['R'],
     });
+  }
+  const COMPANION_LINE =
+    'Companion — No card in your starting deck has more than one of the same mana symbol in its mana cost.';
+  if (key === 'synthetic companion') {
+    return creature('Synthetic Companion', COMPANION_LINE, { keywords: ['Companion'] });
+  }
+  if (key === 'synthetic red companion') {
+    return creature('Synthetic Red Companion', COMPANION_LINE, {
+      keywords: ['Companion'],
+      mana_cost: '{1}{R}',
+      colors: ['R'],
+      color_identity: ['R'],
+    });
+  }
+  if (key === 'synthetic odd companion') {
+    return creature(
+      'Synthetic Odd Companion',
+      `${COMPANION_LINE}\nWhenever Synthetic Odd Companion wanders, frobnicate the quux twice.`,
+      { keywords: ['Companion'] },
+    );
+  }
+  if (key === 'synthetic double mana') {
+    return creature('Synthetic Double Mana', '', { mana_cost: '{G}{G}', cmc: 2 });
   }
   if (key === 'synthetic daybreak' || key === 'synthetic daybreak // synthetic nightfall') {
     const face = (faceName: string, cost: string, power: string) => ({

@@ -9,6 +9,7 @@ import {
   cachedSupport,
   canonicalDeck,
   type DeckSection,
+  type DeckValidation,
   eligibleCommanders,
   type ImportedCard,
   importCard,
@@ -22,10 +23,13 @@ import {
   type ScryfallClient,
   type StoredCard,
   type SupportCache,
+  selectCompanion,
+  type ValidationIssue,
   validateDeck,
 } from '@commander-arena/cards';
 import { computeCoverage } from './coverage';
 import type {
+  CompanionImport,
   FuzzyPending,
   ImportedEntry,
   ImportInput,
@@ -47,7 +51,7 @@ export interface ImportServiceOptions {
   readonly overrides?: OverrideRegistry;
 }
 
-const IGNORED_SECTIONS: readonly DeckSection[] = ['sideboard', 'maybeboard', 'companion'];
+const IGNORED_SECTIONS: readonly DeckSection[] = ['sideboard', 'maybeboard'];
 
 interface Row {
   readonly key: string;
@@ -143,8 +147,12 @@ export function createImportService(options: ImportServiceOptions): ImportServic
         canonical[section].map((entry) => ({ name: entry.name, section, count: entry.count })),
       );
 
+      // The companion is outside the deck (SPEC 6.1, CR 702.139): its card is looked up with the others.
+      const companionRows = canonical.companion.map(rowOf);
+      const companionSelection = selectCompanion(parse);
+
       // Resolve each distinct name once, commander section first.
-      const requested = mergeRows([...commanderRows, ...mainRows]);
+      const requested = mergeRows([...commanderRows, ...mainRows, ...companionRows]);
       progress('resolving', 0, requested.length);
       const names = requested.map((row) => row.name);
       let resolved: ResolveResult;
@@ -200,6 +208,10 @@ export function createImportService(options: ImportServiceOptions): ImportServic
         imported.set(oracleId, await convert(stored, meldFaces));
         progress('converting', imported.size, distinct.size);
       }
+      const companionRow = companionRows[0];
+      const companionCard = companionRow === undefined ? undefined : cards.get(companionRow.key);
+      const companionImported =
+        companionCard === undefined ? undefined : imported.get(companionCard.oracleId);
       const importedFor = (row: Row): ImportedCard | undefined => {
         const card = cards.get(row.key);
         return card ? imported.get(card.oracleId) : undefined;
@@ -259,6 +271,8 @@ export function createImportService(options: ImportServiceOptions): ImportServic
         })),
       ];
       const coverage = computeCoverage(entries);
+      // One companion at most: with more lines the count error says it and the deck check is not asked.
+      const companionCountOk = companionSelection.issues.length === 0;
       const commanderRules =
         commanders.length === 0
           ? null
@@ -268,12 +282,30 @@ export function createImportService(options: ImportServiceOptions): ImportServic
                 card: card.stored,
                 count,
               })),
+              ...(companionImported !== undefined && companionCountOk
+                ? { companion: companionImported.stored }
+                : {}),
             });
+      // Honesty (D-056): a companion the engine cannot fully run is refused like an unsupported card.
+      const companionIssues: ValidationIssue[] = [...companionSelection.issues];
+      if (companionImported !== undefined && companionImported.support.status !== 'supported') {
+        companionIssues.push({
+          severity: 'error',
+          code: 'companion-unsupported',
+          message: `${companionImported.stored.name} has abilities the engine cannot run yet, so it cannot be the companion.`,
+          cards: [companionImported.stored.name],
+        });
+      }
+      const withCompanionIssues = (rules: DeckValidation | null): DeckValidation | null =>
+        rules === null || companionIssues.length === 0
+          ? rules
+          : { ok: false, issues: [...companionIssues, ...rules.issues] };
       // D-056: a deck with a card the engine cannot fully run is not valid, so it cannot be played.
       const unsupportedNames = coverage.unsupported.map((entry) => entry.card.stored.name);
+      const rulesChecked = withCompanionIssues(commanderRules);
       const validation =
-        commanderRules === null || unsupportedNames.length === 0
-          ? commanderRules
+        rulesChecked === null || unsupportedNames.length === 0
+          ? rulesChecked
           : {
               ok: false,
               issues: [
@@ -287,10 +319,24 @@ export function createImportService(options: ImportServiceOptions): ImportServic
                   }.`,
                   cards: unsupportedNames,
                 },
-                ...commanderRules.issues,
+                ...rulesChecked.issues,
               ],
             };
       progress('validating', 1, 1);
+
+      const companionImport: CompanionImport | null =
+        companionRow === undefined
+          ? null
+          : {
+              requested: companionRow.name,
+              card: companionImported ?? null,
+              issues: [
+                ...companionIssues,
+                ...(commanderRules?.issues.filter((issue) => issue.code.startsWith('companion')) ??
+                  []),
+              ],
+              extra: companionRows.slice(1).map((row) => row.name),
+            };
 
       const report: ImportReport = {
         deckName: input.deckName,
@@ -299,6 +345,7 @@ export function createImportService(options: ImportServiceOptions): ImportServic
         notFound,
         fuzzy,
         ignored,
+        companion: companionImport,
         commanderChoices,
         commanders,
         validation,
