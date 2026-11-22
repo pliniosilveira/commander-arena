@@ -308,6 +308,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantPlayerManaAbility',
     // D-639: "Goad target creature" (CR 701.15).
     'goad',
+    // CR 506.4 (Observed Stasis): "Remove enchanted creature from combat."
+    'removeFromCombat',
     'grantPlayerProtectionEverything',
     'preventPlayerLifeTotalChange',
     // CR 101.2: "You can't cast additional spells this turn."
@@ -641,6 +643,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'activatesAbilityX',
     // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" (`countersAdded` with `each`).
     'countersAddedEach',
+    // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
+    'lifeLostBatch',
   ],
   keywordKinds: [
     'flying',
@@ -761,6 +765,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Galadriel group 3: Buyback (CR 702.27a).
     'buyback',
     'gravestorm',
+    // CR 702.88a: Rebound.
+    'rebound',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
     // D-139: Living weapon (CR 702.92).
@@ -975,6 +981,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
     'combatDamagedByNamed',
+    // "Each opponent who lost life this turn", "your opponents who were dealt combat damage by ~ or a Dragon this turn" (CR 119.3, 120.2a).
+    'lostLifeThisTurn',
+    'combatDamagedThisTurn',
     // D-648: "that opponent" of a `playerAttacksOpponent` trigger.
     'triggerAttackedPlayer',
     'triggerDamagedPlayers',
@@ -994,9 +1003,13 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromHand',
     // Issue 102 (River Kelpie): "a spell cast from a graveyard" (`ObjectFilter.castFromGraveyard`).
     'castSpellFromGraveyard',
+    // Scions of Spellcraft deck (Emet-Selch of the Third Seat): "spells you cast from your graveyard" (`ObjectFilter.castFromOwnGraveyard`).
+    'castFromOwnGraveyard',
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
+    // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
+    'nthSpellThisTurn',
     // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (`ObjectFilter.controllerDealtCombatDamageByAtLeast`).
     'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
@@ -1078,9 +1091,13 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerCard',
     // Issue 81 (Tamiyo): "those creatures" of a combat damage batch trigger.
     'triggerSources',
+    // Champions from Beyond: "those creatures" of an attack batch trigger.
+    'triggerAttackers',
     // Lethal Scheme: "each creature that convoked this spell" (`convokers`).
     'convokers',
     'manaValueAtMost',
+    // "With mana value equal to that spell's mana value" (CR 202.3): `ObjectFilter.manaValueExact` beside `manaValueAtMost`.
+    'manaValueExact',
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
     'sharesCardTypeWith',
@@ -1216,6 +1233,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
+    // Tataru Taru: "if it isn't that player's turn" in a trigger about a player.
+    'triggerPlayerTurn',
     // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
     'triggerPlayerIsOpponent',
     'triggerPlayerStat',
@@ -1300,6 +1319,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
     'lifeGainedAndLostThisTurn',
+    // CR 119.3: "if a player lost 4 or more life this turn".
+    'aPlayerLostLifeThisTurn',
     // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
     'castFromGraveyardThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
@@ -1343,6 +1364,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   durationKinds: [
     'untilEndOfTurn',
     'untilYourNextTurn',
+    // CR 611.2a (Hildibrand Manderville): `mayCast.duration`, "until the end of your next turn".
+    'untilEndOfNextTurn',
     // CR 611.2b (Minas Morgul): `setTypes.whileHasCounter`, "for as long as that creature has a shadow counter on it".
     'whileHasCounter',
     'forAsLongAsYouControlThis',
@@ -1535,6 +1558,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
     'lifeTotalOf',
+    // CR 102.1: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
+    'playerCount',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
@@ -1638,6 +1663,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeFromGraveyard',
     // CR 118.9, 701.21a (Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost".
     'sacrificePermanents',
+    // CR 118.9, 118.4 (Snuff Out): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost".
+    'payLife',
   ],
 };
 
@@ -1926,6 +1953,8 @@ export const TRIGGER_FEATURES = [
   'activatesAbilityX',
   /** "Whenever a -1/-1 counter is put on a creature" (CR 122.6, 603.2): the engine's `countersAdded` with `each`, once for each counter. */
   'countersAddedEach',
+  /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
+  'lifeLostBatch',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -1959,6 +1988,10 @@ export const SELECTOR_KINDS = [
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
   'combatDamagedByNamed',
+  /** "Each opponent who lost life this turn" (CR 119.3): the players of a group who lost life this turn. */
+  'lostLifeThisTurn',
+  /** "Each of your opponents who was dealt combat damage by ~ or a Dragon this turn" (CR 120.2a, 510.2): the players of a group the turn log says that source hurt. */
+  'combatDamagedThisTurn',
   /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-648): the engine's `triggerAttackedPlayer`. */
   'triggerAttackedPlayer',
   /** "Each of those opponents" of a `damageBatch` trigger to your opponents (CR 603.2c): the engine's `triggerDamagedPlayers`. */
@@ -2058,10 +2091,14 @@ export const SELECTOR_KINDS = [
   'castFromHand',
   /** "A spell cast from a graveyard" (CR 601.2a, issue 102): the engine's `ObjectFilter.castFromGraveyard`. */
   'castSpellFromGraveyard',
+  /** "Spells you cast from your graveyard" (CR 601.2a, 404.1, Emet-Selch of the Third Seat): the engine's `ObjectFilter.castFromOwnGraveyard`. */
+  'castFromOwnGraveyard',
   /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
   'firstXSpellThisTurn',
+  /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
+  'nthSpellThisTurn',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -2083,10 +2120,14 @@ export const SELECTOR_KINDS = [
   'triggerCard',
   /** "Those creatures" of a combat damage batch trigger (CR 603.2c, issue 81): the engine's `triggerSources`. */
   'triggerSources',
+  /** "Those creatures" of an attack batch trigger (CR 508.1, 603.2, Champions from Beyond): the engine's `triggerAttackers`. */
+  'triggerAttackers',
   /** "Each creature that convoked this spell" (CR 702.51a, Lethal Scheme): the engine's `convokers`. */
   'convokers',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
+  /** "With mana value equal to that spell's mana value" (CR 202.3, 603.3d): the engine's `ObjectFilter.manaValueExact`, the limit of `manaValueAtMost` as an exact value. */
+  'manaValueExact',
   /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */
   'manaValueBelow',
   /** "That shares a card type with it" (CR 205.2a, issue 100): the engine's `ObjectFilter.sharesCardTypeWith`. */
@@ -2246,6 +2287,8 @@ export const CONDITION_KINDS = [
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
+  /** "If it's that player's turn", the player being the one of the event (CR 603.4, 500.1, Tataru Taru): the engine's `triggerPlayerTurn`. */
+  'triggerPlayerTurn',
   /** "If the player is your opponent", the player being the one of the event (CR 603.2b, 102.2): the engine's `triggerPlayerIsOpponent`. */
   'triggerPlayerIsOpponent',
   /** "If the player has four or more cards in hand", the player being the one of the event (CR 402.1, 608.2c): the engine's `triggerPlayerStat`. */
@@ -2334,6 +2377,8 @@ export const CONDITION_KINDS = [
   'lifeGainedThisTurn',
   /** "If you gained and lost life this turn" (D-593). */
   'lifeGainedAndLostThisTurn',
+  /** "If a player lost 4 or more life this turn" (CR 119.3, 603.4): the engine's `aPlayerLostLifeThisTurn`. */
+  'aPlayerLostLifeThisTurn',
   /** "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2): the engine's `castFromGraveyardThisTurn`. */
   'castFromGraveyardThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
@@ -2623,6 +2668,8 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** A player's current life total at resolution (CR 119.1). */
   'lifeTotalOf',
+  /** "For each player who lost life this turn" (CR 102.1, 608.2c): the engine's `playerCount` of a player selector. */
+  'playerCount',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
@@ -2737,6 +2784,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'jumpStart',
   'sacrificeFromGraveyard',
   'sacrificePermanents',
+  'payLife',
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
@@ -2917,6 +2965,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantAbility: true,
   restrict: true,
   goad: true,
+  removeFromCombat: true,
   requireAttack: true,
   attackRandomOpponent: true,
   requireAttackSource: true,
@@ -3108,6 +3157,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   entersFromGraveyard: true,
   activatesAbilityX: true,
   countersAddedEach: true,
+  lifeLostBatch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,
@@ -3197,6 +3247,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   plot: true,
   storm: true,
   gravestorm: true,
+  rebound: true,
   replicate: true,
   gift: true,
   livingWeapon: true,

@@ -441,6 +441,14 @@ const IF_THEY_DO_THEY_DRAW = /^if they do, they draw [^.]*\.$/i;
 const FOR_EACH_OPPONENT_WHO_DOES_CREATE = /^for each opponent who does, create [^.]*\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
 /**
+ * "Exile up to one target instant or sorcery card from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost." (Blue Mage's
+ * Cane, CR 707.12, 118.9): the second and third sentences are what is done with the copy of the card the first exiles, read as one instruction (`effect.exile-copy-cast-paying`).
+ */
+const EXILE_CARD_THEN_COPY = /^exile [^.]* graveyard\.$/i;
+const IF_YOU_DO_COPY_IT = /^if you do, copy it\.$/i;
+const MAY_CAST_THE_COPY_PAYING =
+  /^you may cast the copy by paying (?:\{[^}]+\})+ rather than paying its mana cost\.$/i;
+/**
  * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
  * issue 121, CR 707.12): the second sentence is what is done with the copy of each card the first exiles, read as one instruction (`effect.exile-copy-cast`).
  */
@@ -533,6 +541,17 @@ const IF_ITS_CARD_PUT_ONTO = /^if it['’]s an? [^.,]* card, they put it onto th
 const LOOK_AT_TOP_CARD = /^look at the top card of your library\.$/i;
 const IF_ITS_CARD_MAY_TAKE =
   /^if it['’]s an? [^.,]* card(?: of the chosen type)?, you may reveal it and put it into your hand\.$/i;
+/**
+ * "Look at the top card of your library. You may exile it face down." (Urianger Augurelt, CR 701.20, 406.3): the second sentence says what is done with the card the first one looked at, so
+ * the two are one instruction, kept together for `effect.look-top-may-exile-face-down`.
+ */
+const YOU_MAY_EXILE_IT_FACE_DOWN = /^you may exile it face down\.$/i;
+/**
+ * "Until end of turn, you may play cards exiled with ~. Spells you cast this way cost {2} less to cast." (Urianger Augurelt, CR 601.2f): "this way" is the permission the first sentence gives,
+ * so the two are one instruction, kept together for `effect.may-play-exiled-with-self-less`.
+ */
+const UNTIL_EOT_PLAY_CARDS_EXILED_WITH = /^until end of turn, you may play cards exiled with ~\.$/i;
+const SPELLS_CAST_THIS_WAY_COST_LESS = /^spells you cast this way cost \{\d+\} less to cast\.$/i;
 /** "If you don't put the card into your hand, put it on the bottom of your library." (Vivien's Grizzly, issue 345): the third sentence of the instruction of `LOOK_AT_TOP_CARD`. */
 const ELSE_BOTTOM_OF_LIBRARY =
   /^if you don['’]t put the card into your hand, put it on the bottom of your library\.$/i;
@@ -674,6 +693,12 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
  */
 const CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE =
   /(?:^|, )you may cast an instant or sorcery spell from your graveyard with mana value [1-9] or less without paying its mana cost\.$/i;
+/**
+ * "Whenever one or more opponents lose life, you may cast target instant or sorcery card from your graveyard. If that spell would be put into your graveyard, exile it instead." (Scions &
+ * Spellcraft deck, group G, CR 601.2, 614.1a): the rider of a cast that pays the mana cost (`effect.cast-own-graveyard-card`), so the two sentences are one instruction.
+ */
+const CAST_FROM_YOUR_GRAVEYARD_PAID =
+  /(?:^|, )you may cast target [^.,]* cards? from your graveyard\.$/i;
 const CAST_FROM_YOUR_GRAVEYARD_FREE =
   /(?:^|, )you may cast target [^.,]* cards? [^.,]*from your graveyard without paying its mana cost\.$/i;
 
@@ -1096,6 +1121,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, EXILE_CARD_THEN_COPY) &&
+      said(b, IF_YOU_DO_COPY_IT) &&
+      said(c, MAY_CAST_THE_COPY_PAYING)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
       said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
       said(c, CANT_CHOOSE_TAP_IT)
@@ -1114,6 +1148,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
+        (said(a, LOOK_AT_TOP_CARD) && said(b, YOU_MAY_EXILE_IT_FACE_DOWN)) ||
+        (said(a, UNTIL_EOT_PLAY_CARDS_EXILED_WITH) && said(b, SPELLS_CAST_THIS_WAY_COST_LESS)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
@@ -1140,6 +1176,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_FROM_YOUR_GRAVEYARD_PAID) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||

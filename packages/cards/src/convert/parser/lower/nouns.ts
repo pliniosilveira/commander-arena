@@ -69,6 +69,9 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   triggerDamagedPlayers: 'selector:triggerDamagedPlayers',
   // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
   combatDamagedByNamed: 'selector:combatDamagedByNamed',
+  // CR 119.3: "each opponent who lost life this turn"; CR 120.2a: "each opponent who was dealt combat damage by ~ this turn".
+  lostLifeThisTurn: 'selector:lostLifeThisTurn',
+  combatDamagedThisTurn: 'selector:combatDamagedThisTurn',
   // CR 102.1: "each player who controls a creature with power 4 or greater".
   eachPlayerControlling: 'selector:eachPlayerControlling',
 };
@@ -333,6 +336,16 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castSpellFromGraveyard');
   }
+  // Emet-Selch of the Third Seat: "spells you cast from your graveyard" (CR 601.2a, 404.1), a spell on the stack.
+  if (filter.castFromOwnGraveyard === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromOwnGraveyard');
+  }
+  // Alisaie Leveilleur: "the second spell you cast each turn" (CR 601.2i), a spell on the stack.
+  if (filter.nthSpellThisTurn !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:nthSpellThisTurn');
+  }
   // Quandrix Unlimited group E: "a spell with {X} in its mana cost" (CR 107.3), "your first such spell each turn" (CR 601.2i), a spell on the stack.
   if (filter.xInManaCost === true) {
     if (inner) return bad([]);
@@ -591,6 +604,8 @@ function lowerFilterAt(
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
+    ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+    ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
@@ -870,6 +885,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       // "return target nonland permanent card with mana value X or less from your graveyard ..., where X is ~'s power" (stage P68, D-230, CR 202.3, 601.2c):
       // the X the sentence defines becomes the limit of the filter, read as the targets are chosen.
       let atMost: ObjectFilter['manaValueAtMost'];
+      let exact = false;
       let subject: IrNoun = noun;
       if (noun.filter.manaValueAtMostAmount !== undefined) {
         const missing = missingFeatures(['selector:manaValueAtMost']);
@@ -917,8 +933,15 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           if (!counted.ok) return counted;
           atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
         }
-        const { manaValueAtMostAmount: _amount, ...rest } = noun.filter;
+        const { manaValueAtMostAmount: _amount, manaValueExact: _exact, ...rest } = noun.filter;
         void _amount;
+        void _exact;
+        // "with mana value equal to that spell's mana value" (CR 202.3): the exact value, not at most it.
+        if (noun.filter.manaValueExact === true) {
+          const exactBlocked = missingFeatures(['selector:manaValueExact']);
+          if (exactBlocked.length > 0) return failure(noun, exactBlocked);
+          exact = true;
+        }
         subject = { ...noun, filter: rest };
       }
       if (noun.filter.manaValueAtMostX === true && ctx.xIs === null && ctx.entersX) {
@@ -974,7 +997,14 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       const filter =
         atMost === undefined
           ? withExcept
-          : { ...withExcept, value: { ...withExcept.value, manaValueAtMost: atMost } };
+          : {
+              ...withExcept,
+              value: {
+                ...withExcept.value,
+                manaValueAtMost: atMost,
+                ...(exact ? { manaValueExact: true as const } : {}),
+              },
+            };
       // "target creature with mana value X" (CR 107.3a, 601.2b): the spell announces the X its target is read against (`SpellText.x`).
       if (filter.value.manaValueX === true) ctx.usesX = true;
       // "for each opponent, exile up to one target ... that player controls" (stage P33, D-150, CR 115.1, 601.2c): one slot with at most one
@@ -1529,6 +1559,41 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       }
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
+    }
+    case 'lostLifeThisTurn': {
+      // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.
+      if (noun.whoGroup === undefined) return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'lostLifeThisTurn', of: { kind: noun.whoGroup } });
+    }
+    case 'combatDamagedThisTurn': {
+      // CR 120.2a, 510.2: the players of the group dealt combat damage this turn by the permanent of the ability (an ability of a permanent: a spell is no source of combat damage it
+      // could name) or by a source of a kind, which the turn log keeps as card types, subtypes and controller.
+      if (noun.whoGroup === undefined) return failure(noun, []);
+      if (noun.damagedByThis !== true && noun.damageSource === undefined) return failure(noun, []);
+      if (noun.damagedByThis === true && ctx.owner !== 'ability') return failure(noun, []);
+      let by: ObjectFilter | undefined;
+      if (noun.damageSource !== undefined) {
+        const filter = lowerFilter(noun.damageSource);
+        if (!filter.ok) return filter;
+        const { types, subtypes, controller, ...rest } = filter.value;
+        if (Object.keys(rest).length > 0) return failure(noun, []);
+        by = {
+          ...(types === undefined ? {} : { types }),
+          ...(subtypes === undefined ? {} : { subtypes }),
+          ...(controller === undefined ? {} : { controller }),
+        };
+      }
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return (
+        blocked ??
+        ok({
+          kind: 'combatDamagedThisTurn',
+          of: { kind: noun.whoGroup },
+          ...(noun.damagedByThis === true ? { byThis: true as const } : {}),
+          ...(by === undefined ? {} : { by }),
+        })
+      );
     }
     case 'combatDamagedByNamed': {
       // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.

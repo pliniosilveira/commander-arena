@@ -212,6 +212,15 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     effects.push(...lowered.value);
     ctx.lowered += 1;
     ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    // CR 608.2c: "Put a +1/+1 counter on each legendary creature you control. They gain ...": "they" is that group, only right after the counters.
+    const lastLowered = lowered.value[lowered.value.length - 1];
+    ctx.lastCounteredGroup =
+      lastLowered?.kind === 'addCounters' && lastLowered.objects.kind === 'each'
+        ? lastLowered.objects
+        : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
+          lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
+          ? ctx.lastCounteredGroup
+          : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastPlayer =
@@ -820,6 +829,39 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'loseLife',
 ]);
 
+/** "Those creatures get +4/+4 until end of turn." as the first instruction of an attack batch trigger: the engine's `modifyPt` of the `triggerAttackers`. */
+function lowerThoseAttackers(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> {
+  const rule = sentence.clauses[0]?.rule ?? sentence.rule;
+  if (sentence.condition !== undefined || sentence.clauses.some((c) => c.verb !== 'pumpThose')) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures([
+    'effect:modifyPt',
+    'duration:untilEndOfTurn',
+    'selector:triggerAttackers',
+  ]);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const effects: Effect[] = [];
+  for (const clause of sentence.clauses) {
+    const pt = arg(clause, 'pt');
+    if (pt?.kind !== 'ptChange' || clause.duration?.scope !== 'untilEndOfTurn') {
+      return refuse(sentence);
+    }
+    const power = lowerPtTerm(pt.power, pt.span, ctx, pt.rule);
+    if (!power.ok) return power;
+    const toughness = lowerPtTerm(pt.toughness, pt.span, ctx, pt.rule);
+    if (!toughness.ok) return toughness;
+    effects.push({
+      kind: 'modifyPt',
+      objects: { kind: 'triggerAttackers' },
+      power: power.value,
+      toughness: toughness.value,
+      duration: 'untilEndOfTurn',
+    });
+  }
+  return { ok: true, value: effects, rule };
+}
+
 /**
  * "Untap those creatures." (stage P64, D-217, CR 701.26a, 611.2c), "..., untap those creatures and they get an additional +2/+2 until end of turn." (Food and Fellowship deck, group B,
  * CR 611.2c, 613.4c): the permanents the sentence before it gave +N/+N or a keyword, the group it named as it resolved (`each`): untapped, and given one more change, as that group
@@ -854,6 +896,10 @@ function lowerThoseGroup(
         ? e.objects
         : null,
   );
+  // Champions from Beyond (CR 508.1): with no instruction before it, "those creatures" of an attack batch trigger are the creatures the attack declared.
+  if (before === undefined && ctx.attackBatchThose) {
+    return lowerThoseAttackers(sentence, ctx);
+  }
   const [first] = group ?? [];
   if (
     before === undefined ||
@@ -920,7 +966,13 @@ function lowerOfferedSearch(
 ): LowerResult<Effects> | null {
   const [clause, ...more] = sentence.clauses;
   if (clause?.verb !== 'search' || !clause.optional) return null;
-  if (!sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'))) return null;
+  // An activated ability has no "you may" of its own (Demolition Field), so there the lone offer is the search's.
+  if (
+    !ctx.activatedBody &&
+    !sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'))
+  ) {
+    return null;
+  }
   if (
     more.length > 0 ||
     sentence.condition !== undefined ||
@@ -2158,10 +2210,24 @@ export function lowerDelayedCast(
   const effect = oneEffect(inner.value);
   const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
   const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
-  if (!(onlyCopy || onlyOwn)) return refuse(sentence);
+  // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
+  const [choice, copy, ...rest] = inner.value;
+  const copiesChosen =
+    choice?.kind === 'chooseObjects' &&
+    copy?.kind === 'createToken' &&
+    copy.token.kind === 'copyOf' &&
+    copy.token.object.kind === 'chosen' &&
+    copy.token.object.id === choice.id &&
+    rest.length === 0;
+  if (!(onlyCopy || onlyOwn || copiesChosen)) return refuse(sentence);
   return {
     ok: true,
-    value: { kind: 'delayedCast', filter: filter.value, effect },
+    value: {
+      kind: 'delayedCast',
+      filter: filter.value,
+      effect,
+      ...(sentence.delayed?.repeat === true ? { repeat: true as const } : {}),
+    },
     rule: sentence.rule,
   };
 }

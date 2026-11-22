@@ -71,6 +71,7 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { PLAYERS_WHO_NOUN_RULES } from './players-who';
 import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
@@ -396,10 +397,19 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one, two, or three target creature cards from your graveyard',
     // Puca's Covenant (CR 202.3, 122.1): a limit of the counters on the permanent the trigger is about.
     'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
+    // Krile Baldesion (CR 202.3, 603.3d): exactly the mana value of the spell that caused the trigger.
+    "target creature card with mana value equal to that spell's mana value from your graveyard",
+    // Blue Mage's Cane (CR 508.5): the graveyard of the player an attacking creature attacks.
+    "target instant or sorcery card from defending player's graveyard",
+    "up to one target instant or sorcery card from defending player's graveyard",
     // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
     'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
   ],
   rejects: [
+    "target creature card with mana value equal to that card's mana value from your graveyard",
+    "target creature card with mana value equal to that spell's mana value",
+    "target instant or sorcery card from the defending player's graveyard",
+    "target instant or sorcery card from defending players' graveyard",
     'target creature card with mana value less than or equal to the amount of life you gained this turn from your graveyard',
     'one, two, or three target creature card from graveyards',
     'one, two, three target creature cards from graveyards',
@@ -967,6 +977,8 @@ export const NOUN_RULES = [
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
   ...DESTINY_EARLY_NOUN_RULES,
   ...PLAYERS_WHO_CONTROL_NOUN_RULES,
+  // "each opponent who lost life this turn", "each opponent who was dealt combat damage by ~ this turn": first words of `noun.player` ("each opponent").
+  ...PLAYERS_WHO_NOUN_RULES,
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,

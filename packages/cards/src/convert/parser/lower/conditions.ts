@@ -158,6 +158,13 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });
     }
+    case 'aPlayerLostLifeThisTurn': {
+      // CR 119.3, 603.4: the life lost this turn by any player, from the seats' counters.
+      const blocked = missingFeatures(['condition:aPlayerLostLifeThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'aPlayerLostLifeThisTurn', atLeast: test.atLeast });
+    }
     case 'spellsCastThisTurn': {
       // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
       const blocked = missingFeatures(['condition:spellsCastThisTurn']);
@@ -167,6 +174,7 @@ export function lowerCondition(
             kind: 'spellsCastThisTurn',
             atLeast: test.atLeast,
             ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
+            ...(test.notOfTypes === undefined ? {} : { notOfTypes: test.notOfTypes as CardType[] }),
           });
     }
     case 'spellsCastLastTurn': {
@@ -266,6 +274,16 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       return ok({ kind, stat: test.stat });
     }
+    case 'thatPlayersTurn': {
+      // CR 603.4, 500.1 (Tataru Taru): "it isn't that player's turn", the player the trigger is about; read as the intervening "if" of a trigger about a player.
+      if (ctx?.thatPlayer?.selector.kind !== 'triggerPlayer' || ctx.interveningCondition !== true) {
+        return failure(c, []);
+      }
+      const blocked = missingFeatures(['condition:triggerPlayerTurn', 'condition:not']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const turn: Condition = { kind: 'triggerPlayerTurn' };
+      return ok(test.negated ? { kind: 'not', term: turn } : turn);
+    }
     case 'controlsThat': {
       // CR 603.10a, 608.2h (Auntie Ool, Cursewretch): "draw a card if you control that creature": the permanent the trigger is about, under the control it has or had as it left. "It" of
       // a trigger about the source is the source, which is the subject of its event too.
@@ -342,7 +360,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:cardsInGraveyard']);
       if (blocked.length > 0) return failure(c, blocked);
       const { cmp, value } = test.compare;
-      return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
+      return ok({
+        kind: 'cardsInGraveyard',
+        compare: { cmp, value },
+        ...(test.player === undefined ? {} : { player: test.player }),
+      });
     }
     case 'cardsInLibrary': {
       // CR 401.1 (issue 25, D-331): the number of cards in the library of the controller.
@@ -773,6 +795,8 @@ export function lowerCondition(
       // CR 601.2a (stage P49, D-206): the zone the source spell was cast from.
       const test = c.test;
       if (test.kind !== 'castFromZone') return failure(c, []);
+      // Transpose: "If this spell was cast from your hand" is the spell's own text (the engine reads the zone the spell on the stack was cast from).
+      if (test.zone === 'hand' && ctx?.owner !== 'spell') return failure(c, []);
       const blocked = missingFeatures(['condition:castFromZone']);
       return blocked.length > 0
         ? failure(c, blocked)
@@ -938,6 +962,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
   'condition:triggerPlayerHasMore',
+  'condition:triggerPlayerTurn',
   'condition:triggerPlayerIsOpponent',
   'condition:triggerPlayerStat',
   'condition:thisMatches',
@@ -966,6 +991,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
   'condition:lifeGainedAndLostThisTurn',
+  'condition:aPlayerLostLifeThisTurn',
   'condition:spellsCastThisTurn',
   'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',

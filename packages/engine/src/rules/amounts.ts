@@ -294,6 +294,10 @@ export function amountOf(
     const left = ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject];
     return (left?.auras ?? []).filter((a) => a.controller === ctx.controller).length;
   }
+  // CR 102.1, 608.2c: the number of players the selector names as the amount is read ("for each player who lost life this turn").
+  if (amount.kind === 'playerCount') {
+    return resolvePlayers(state, amount.of, ctx, targets).length;
+  }
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;

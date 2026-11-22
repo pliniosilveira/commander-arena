@@ -95,6 +95,9 @@ function hasLinkedExile(e: unknown): boolean {
       // CR 607.2a: "exile the top card of your library" whose card another ability of the face reads as "exiled with this enchantment".
       JSON.stringify(e ?? null).includes('"kind":"exileTop"')) &&
       JSON.stringify(e).includes('"linked":true')) ||
+    // Urianger Augurelt (CR 607.2a, 406.3): "Look at the top card of your library. You may exile it face down.": a `lookAtTop` taking the card into exile face down remembers it, as Hideaway does.
+    (JSON.stringify(e ?? null).includes('"kind":"lookAtTop"') &&
+      JSON.stringify(e).includes('"to":"exileFaceDown"')) ||
     // King Narfi's Betrayal (CR 607.2a): "you may exile a creature or planeswalker card from each graveyard": a `moveToZone` to exile that says linked.
     (JSON.stringify(e ?? null).includes('"kind":"moveToZone"') &&
       JSON.stringify(e).includes('"to":"exile"') &&
@@ -302,8 +305,10 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
       if (s.additive !== undefined && s.additive !== true) {
         issue(out, `${path}.additive`, 'additive must be true when present (CR 205.1b)');
       }
+      // CR 205.3d (Eye of Nidhogg): for the permanent an Aura or Equipment is attached to, creature subtypes alone replace its creature types and its card types stay, whatever they are.
       if (
         s.additive !== true &&
+        (s.subject as { kind?: unknown } | undefined)?.kind !== 'attached' &&
         Array.isArray(s.subtypes) &&
         s.subtypes.length > 0 &&
         !(Array.isArray(s.types) && (s.types.includes('creature') || s.types.includes('kindred')))

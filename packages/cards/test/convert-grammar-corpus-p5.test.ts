@@ -7,7 +7,7 @@
 // so a change that makes the grammar read less OR more than it should fails here. The kinds of
 // expectation are those of convert-grammar-corpus.test.ts.
 import { describe, expect, test } from 'vitest';
-import { type Line, NONE, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
+import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
 
 const GAINS: readonly Line[] = [
   {
@@ -189,7 +189,7 @@ const FLICKER: readonly Line[] = [
     kind: 'instant',
     text: "Exile target creature you control, then return it to the battlefield under its owner's control.",
     expect: OK,
-    note: 'backlog: 2 cards (Momentary Blink with Flashback; the other has Rebound, unread)',
+    note: 'backlog: 2 cards (Momentary Blink with Flashback; the other has Rebound)',
   },
   {
     kind: 'instant',
@@ -206,8 +206,8 @@ const FLICKER: readonly Line[] = [
   {
     kind: 'instant',
     text: "Exile target creature you control, then return it to the battlefield under its owner's control.\nRebound",
-    expect: no('Rebound', NONE),
-    note: 'backlog: 1 card; Rebound is not read',
+    expect: OK,
+    note: 'backlog: 1 card; Rebound (CR 702.88a) is read since group E of the Scions & Spellcraft deck',
   },
   {
     kind: 'instant',

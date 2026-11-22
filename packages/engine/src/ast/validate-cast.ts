@@ -252,6 +252,27 @@ export function checkCastFace(
       );
     }
   }
+  // CR 118.9 (Snuff Out): paying life rather than the mana cost is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'payLife')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'payLife is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'payLife with convoke, improvise or delve is not supported',
+      );
+    }
+  }
   // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
   if (
     alternatives.some(
@@ -344,7 +365,7 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
@@ -372,6 +393,10 @@ export function checkCastFace(
   // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
   if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'buyback is on an instant or a sorcery (CR 702.27a)');
+  }
+  // CR 702.88a: "Rebound appears on some instants and sorceries".
+  if (has('rebound') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
+    issue(out, `${path}.abilities`, 'rebound is on an instant or a sorcery (CR 702.88a)');
   }
   // D-129: "if a replicate cost was paid for it" needs a replicate ability to pay.
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');

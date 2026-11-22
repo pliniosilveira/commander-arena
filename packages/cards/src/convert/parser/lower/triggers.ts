@@ -417,11 +417,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return ok({ kind: 'landfall' });
     case 'playsCard': {
       // "Whenever you play a card with two or more card types" (Death Toll deck, group D, CR 305.1, 601.2, 205.2a): the player is the controller of the ability.
-      if (t.actor?.det !== 'you' || t.atLeast === undefined) return failure(t);
+      // Urianger Augurelt: "you play a land from exile or cast a spell from exile" names no number of card types, only the zone.
+      if (t.actor?.det !== 'you' || (t.atLeast === undefined && t.fromExile !== true)) {
+        return failure(t);
+      }
       const blocked = missingFeatures(['trigger:playsCard']);
       return blocked.length > 0
         ? failure(t, blocked)
-        : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
+        : ok({
+            kind: 'playsCard',
+            ...(t.atLeast === undefined ? {} : { minCardTypes: t.atLeast }),
+            ...(t.fromExile === true ? { fromExile: true as const } : {}),
+          });
     }
     case 'doorUnlocked': {
       // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
@@ -591,12 +598,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you lose life [for the first time each turn]" (CR 119.3, 603.2): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      const blocked = missingFeatures(['trigger:lifeLost']);
+      // "Whenever one or more opponents lose life" (CR 603.2c): one trigger for the losses of one run of events, only of other players and with no ordinal.
+      if (t.batch === true && (who === 'you' || t.firstEachTurn === true)) return failure(t);
+      const blocked = missingFeatures([
+        'trigger:lifeLost',
+        ...(t.batch === true ? (['trigger:lifeLostBatch'] as const) : []),
+      ]);
       if (blocked.length > 0) return failure(t, blocked);
       return ok({
         kind: 'lifeLost',
         who,
         ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+        ...(t.batch === true ? { batch: true as const } : {}),
       });
     }
     case 'countersAdded': {
@@ -1560,6 +1573,17 @@ function lowerTriggeredAbility(
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
   ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
+  ctx.attackBatchThose =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) =>
+        t.kind === 'attackBatch' &&
+        t.who === 'you' &&
+        t.attackedEnchantedPlayer !== true &&
+        t.eachAttackedPlayer !== true &&
+        (t.what === undefined ||
+          JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
+    );
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
@@ -1948,6 +1972,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:activatesAbility',
   'trigger:tappedBy',
   'trigger:tapBatch',
+  'trigger:lifeLostBatch',
   'trigger:notAsAttacker',
   'trigger:entersBattlefieldFromGraveyard',
   'trigger:scries',

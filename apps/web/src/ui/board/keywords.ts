@@ -92,6 +92,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
     'Gravestorm (When you cast this spell, copy it for each permanent put into a graveyard from the battlefield this turn.)',
   ],
   replicate: ['Rep', 'Replicate'],
+  // Rebound (CR 702.88a): on an instant or a sorcery.
+  rebound: ['Rbd', 'Rebound'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
   // Gift a card (D-135).

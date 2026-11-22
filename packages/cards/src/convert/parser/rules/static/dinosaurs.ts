@@ -5,6 +5,7 @@
  * 613.1d to 613.1f, 613.4b) and "Equipped creature gets +X/+X, where X is the greatest mana value among your commanders" (CR 613.4c).
  */
 import {
+  choice,
   fail,
   literal,
   map,
@@ -14,13 +15,20 @@ import {
   quiet,
   sequence,
 } from '../../combinators';
-import type { IrAmount, IrCondition, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
+import type {
+  IrAmount,
+  IrBasePt,
+  IrCondition,
+  IrNoun,
+  IrStatic,
+  IrStaticEffect,
+} from '../../ir/types';
 import { UNLESS_CONDITIONS } from '../condition/dinosaurs';
 import { BASE_PT, COLOR, CREATURE_TYPE_LIST } from '../effect/becomes';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { CARD_TYPES, typeWords } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
-import { restrictionPhrase } from './restriction-words';
+import { restrictionEffects } from './restriction-words';
 
 const PERIOD = literal('.');
 
@@ -138,15 +146,28 @@ const IS_A: Parser<IsA> = (ctx, pos) => {
       null,
     ),
     CREATURE_TYPE_LIST,
-    literal(' '),
-    typeWords(CARD_TYPES, false),
-    optional(
-      map(sequence(literal(' with '), BASE_PT('static.attached-becomes')), ([, pt]) => pt),
-      null,
+    // Eye of Nidhogg (CR 205.1a, 205.3d): "a black Dragon with base power and toughness 4/2" names no card type: the creature types are replaced and the
+    // card types stay. Only with base power and toughness, so "is a green Elk." is still not read.
+    choice(
+      map(
+        sequence(
+          literal(' '),
+          typeWords(CARD_TYPES, false),
+          optional(
+            map(sequence(literal(' with '), BASE_PT('static.attached-becomes')), ([, pt]) => pt),
+            null,
+          ),
+        ),
+        ([, cardTypes, basePt]) => ({ cardTypes, basePt }),
+      ),
+      map(sequence(literal(' with '), BASE_PT('static.attached-becomes')), ([, basePt]) => ({
+        cardTypes: [] as string[],
+        basePt: basePt as IrBasePt | null,
+      })),
     ),
   )(ctx, pos);
   if (!r.ok) return r;
-  const [, colors, subtypes, , cardTypes, basePt] = r.value;
+  const [, colors, subtypes, { cardTypes, basePt }] = r.value;
   return {
     ok: true,
     value: {
@@ -189,10 +210,18 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     'Enchanted creature loses all abilities and is a Frog creature.',
     // Stage P50 (D-207): and a restriction.
     "Enchanted creature loses all abilities and doesn't untap during its controller's untap step.",
+    // Observed Stasis: two restrictions after the loss of abilities.
+    "Enchanted creature loses all abilities and can't attack or block.",
+    // Eye of Nidhogg: no card type named, the creature types replaced, keywords given and goaded.
+    'Enchanted creature is a black Dragon with base power and toughness 4/2, has flying and deathtouch, and is goaded.',
+    'Enchanted creature is a Dragon with base power and toughness 4/2 and is goaded.',
     // Issue 89 (D-642): what the effect gives is kept, everything else is lost.
     'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types.',
   ],
   rejects: [
+    'Enchanted creature is a black Dragon with base power and toughness 4/2, has flying and deathtouch, and is goaded',
+    'Enchanted creature is a black Dragon with base power and toughness 4/2, has flying and flying.',
+    'Enchanted creature is a black Dragon with base power and toughness 4/2 and has flying.',
     'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types',
     'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible and it loses all other abilities, card types, and creature types.',
     'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities.',
@@ -221,7 +250,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     // "... and doesn't untap during its controller's untap step" (stage P50, D-207, CR 502.3): Enchanted River's Grasp. The restriction is the Aura's
     // own static ability about the creature, which losing its abilities does not take away (CR 613.11).
     const noUntap = lose.ok
-      ? sequence(literal(' and '), restrictionPhrase('attached'))(ctx, lose.pos)
+      ? sequence(literal(' and '), restrictionEffects('attached'))(ctx, lose.pos)
       : null;
     if (lose.ok && noUntap?.ok) {
       const finish = PERIOD(ctx, noUntap.pos);
@@ -231,7 +260,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
         value: staticOf(
           'static.attached-becomes',
           subject.value,
-          [{ kind: 'loseAllAbilities' }, noUntap.value[1]],
+          [{ kind: 'loseAllAbilities' }, ...noUntap.value[1]],
           pos,
           finish.pos,
         ),
@@ -266,6 +295,21 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
         end = tail.pos;
       }
     }
+    // Eye of Nidhogg (CR 613.1f, 701.15b): "..., has flying and deathtouch, and is goaded.": what the permanent has besides what it is, and that it is
+    // goaded by the controller of the Aura (the `goaded` restriction of an attached permanent).
+    let goaded = false;
+    if (what !== null && !lose.ok && !loseOthers) {
+      const has = sequence(literal(', has '), KEYWORD_WORDS)(ctx, end);
+      if (has.ok) {
+        given = has.value[1];
+        end = has.pos;
+      }
+      const goad = pattern(/(?:, and | and |, )is goaded(?![\p{L}\p{N}'’])/iu)(ctx, end);
+      if (goad.ok) {
+        goaded = true;
+        end = goad.pos;
+      }
+    }
     const finish = PERIOD(ctx, end);
     if (!finish.ok) return finish;
     const effects: IrStaticEffect[] = [];
@@ -282,6 +326,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
         });
       }
     }
+    if (goaded) effects.push({ kind: 'restriction', restriction: 'goaded' });
     return {
       ok: true,
       value: staticOf('static.attached-becomes', subject.value, effects, pos, finish.pos),

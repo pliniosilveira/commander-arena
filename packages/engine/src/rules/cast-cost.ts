@@ -67,6 +67,7 @@ import type { PlanOptions } from './mana-sources';
 import { nextSpellReduction } from './next-spell';
 import { payMechanismsOf, payOptionSources } from './pay-options';
 import { playPermissionAnyColor, playPermissionAnyType } from './play-permission-color';
+import { playPermissionLess } from './play-permission-cost';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
@@ -147,6 +148,7 @@ export function isNamedAlternative(
     alternative === 'tapPermanents' ||
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
+    alternative === 'payLife' ||
     alternative === 'impending'
   );
 }
@@ -260,6 +262,10 @@ function reductionFor(
   }
   // Issue 121: "The next instant or sorcery spell you cast this turn costs {X} less to cast" (`nextSpellModifier`).
   total += nextSpellReduction(state, seat, spell);
+  // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": the permission a card in exile is cast with, or what the spell on the stack took from it.
+  total +=
+    spell.stack?.lessGeneric ??
+    (castFrom === 'exile' ? playPermissionLess(state, seat, excluded ?? spell.id) : 0);
   return total;
 }
 
@@ -315,6 +321,11 @@ export interface CostRequest {
    * on the stack yet (the check that an effect lets it be cast).
    */
   readonly anyType?: true;
+  /**
+   * CR 118.9, 601.2f ("You may cast the copy by paying {3} rather than paying its mana cost"): with the `free` alternative, the mana paid in place of the mana cost. Left out, what the spell
+   * on the stack says (`StackData.payInstead`).
+   */
+  readonly payInstead?: readonly Cost[];
 }
 
 /**
@@ -395,9 +406,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
     zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
+  const payInstead =
+    alternative === 'free' ? (request.payInstead ?? spell.stack?.payInstead) : undefined;
   const symbols: string[] =
     alternative === 'free' || alternative === 'lifeForMana'
-      ? []
+      ? // CR 118.9: a free cast pays nothing for the mana cost, or the mana the effect names rather than it.
+        payInstead === undefined
+        ? []
+        : manaSymbolsOf(payInstead)
       : flashback !== null
         ? // CR 107.3a: a cost equal to the mana cost has the X of it; a printed flashback cost is paid as it is.
           flashbackCostOf(face) === null
@@ -497,6 +513,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     (flashback === null ? 0 : lifeOf(flashback)) +
     // CR 118.9, 202.3e: "pay life equal to that spell's mana value" rather than the mana cost: an {X} counts as the X announced.
     (alternative === 'lifeForMana' ? manaValue(withX(face?.manaCost ?? [], x)) : 0) +
+    // CR 118.9, 118.4 (Snuff Out): "You may pay 4 life rather than pay this spell's mana cost": the life of the alternative cost.
+    (alternative === 'payLife' ? (alternativeOf(face, 'payLife')?.life ?? 0) : 0) +
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
@@ -906,6 +924,7 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
       cost: symbols,
       ...(exile > 0 ? { exile } : {}),
       ...(tap === null ? {} : { tap }),
+      ...(alt.kind === 'payLife' ? { life: alt.life } : {}),
       ...(exileFromHandRequired === true && exileFromHand !== null ? { exileFromHand } : {}),
       ...((alt.kind === 'sacrificeFromGraveyard' || alt.kind === 'sacrificePermanents') &&
       sacrifice !== null

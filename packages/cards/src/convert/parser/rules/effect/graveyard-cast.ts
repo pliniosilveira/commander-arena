@@ -8,7 +8,7 @@ import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { flag } from './dragons';
-import { type Clauses, single } from './operands';
+import { type Clauses, operands, single } from './operands';
 
 const CAST_THAT_CARD = 'effect.may-cast-that-card';
 
@@ -108,6 +108,52 @@ export const EFFECT_MAY_CAST_THIS_FROM_GRAVEYARD = defineRule<Clauses>({
   ),
 });
 
+const CAST_AS_ADVENTURE = 'effect.may-cast-it-as-adventure';
+
+/**
+ * `effect.may-cast-it-as-adventure`: "you may cast it from your graveyard as an Adventure until the end of your next turn" (Hildibrand Manderville, issue 98; CR 601.2: casting from
+ * a graveyard when an effect permits it; CR 715.3: casting an adventurer card as an Adventure; CR 611.2a, 500.1: the permission lasts to the end of the controller's next turn).
+ * "It" is the card a permanent that died became; the engine's `mayCast` with `adventure`, which is the permission, so "you may" is no question of its own. Not read: another zone or owner, another duration ("this turn"), no "as an Adventure", another card, a second instruction joined to it.
+ */
+export const EFFECT_MAY_CAST_IT_AS_ADVENTURE = defineRule<Clauses>({
+  id: CAST_AS_ADVENTURE,
+  family: 'effect',
+  leading: ['you', 'cast'],
+  cites: [
+    'CR 601.2 (Casting Spells)',
+    'CR 715.3 (Adventurer Cards)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 500.1 (Beginning of Turn)',
+  ],
+  examples: [
+    'you may cast it from your graveyard as an adventure until the end of your next turn',
+    'cast it from your graveyard as an adventure until the end of your next turn',
+  ],
+  rejects: [
+    'you may cast it from your graveyard as an adventure',
+    'you may cast it from your graveyard as an adventure this turn',
+    'you may cast it from your graveyard until the end of your next turn',
+    'you may cast it from a graveyard as an adventure until the end of your next turn',
+    'you may cast it from exile as an adventure until the end of your next turn',
+    'you may cast that card from your graveyard as an adventure until the end of your next turn',
+    'you may cast it from your graveyard as an adventure until the end of your next turn and draw a card',
+    'you may cast it from your graveyard as an adventure until your next turn',
+  ],
+  parse: single(
+    CAST_AS_ADVENTURE,
+    sequence(
+      // The sentence parser takes "you may" as the clause's optional mark when it can, and leaves it in the words otherwise.
+      optional(literal('you may '), null),
+      literal('cast '),
+      operands(['noun.it'], CAST_AS_ADVENTURE),
+      literal(' from your graveyard as an adventure until the end of your next turn'),
+      // Nothing joined to the clause: a join says a second instruction, which is not read.
+      pattern(/(?=\.|$)/u),
+    ),
+    ([, , objects]) => ({ verb: 'mayCastAdventure', args: { objects } }),
+  ),
+});
+
 const CANT_CAST_MORE = 'effect.cant-cast-additional-spells';
 
 /**
@@ -144,5 +190,6 @@ export const EFFECT_CANT_CAST_ADDITIONAL_SPELLS = defineRule<Clauses>({
 export const GRAVEYARD_CAST_EFFECT_RULES = [
   EFFECT_MAY_CAST_THAT_CARD,
   EFFECT_MAY_CAST_THIS_FROM_GRAVEYARD,
+  EFFECT_MAY_CAST_IT_AS_ADVENTURE,
   EFFECT_CANT_CAST_ADDITIONAL_SPELLS,
 ].map(quietly);

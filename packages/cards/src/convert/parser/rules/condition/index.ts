@@ -76,6 +76,7 @@ import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { SUBJECT_GREATER_CONDITION_RULES } from './subject-greater';
 import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
+import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
 import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
@@ -614,6 +615,7 @@ export const CONDITION_RULES = [
   ...EDHREC_CONDITION_RULES,
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
   ...HOFRI_CONDITION_RULES,
+  ...THAT_PLAYERS_TURN_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-403): "you don't put it onto the battlefield".
   ...DANITHA_G1B_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-411): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.

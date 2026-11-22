@@ -43,6 +43,7 @@ import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 
 const COLOR_WORD = pattern(/(white|blue|black|red|green)(?![\p{L}\p{N}])/iu);
@@ -425,6 +426,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
     NUMBER_OF_COUNTERS(rule),
+    // Scions & Spellcraft deck, group A: "the number of your opponents who were dealt combat damage by ~ this turn", before the count of objects.
+    NUMBER_OF_PLAYERS_WHO,
     COUNTERS_REMOVED_THIS_WAY,
     COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
@@ -764,6 +767,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures they control',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
+    // CR 120.2a: the opponents a source dealt combat damage to this turn.
+    'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon this turn',
   ],
   rejects: [
     'where X is the total mana value of creatures destroyed this way',
@@ -793,6 +798,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the mana spent to cast it',
     'where X is your life',
     'where X is the amount of life you gain',
+    'where X is the number of your opponents who was dealt combat damage by ~ this turn',
+    'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon',
+    'where X is the number of creatures who lost life this turn',
     'where X is the amount of life you gained last turn',
   ],
   parse: (ctx, pos) => {

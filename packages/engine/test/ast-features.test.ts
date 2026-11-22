@@ -84,6 +84,8 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      // CR 611.2a (Hildibrand Manderville): `mayCast.duration`, "until the end of your next turn".
+      'untilEndOfNextTurn',
       'whileHasCounter',
       'forAsLongAsYouControlThis',
       // D-207: "for as long as this Saga remains on the battlefield".
@@ -117,6 +119,7 @@ describe('the dimensions', () => {
       'subjectGreaterThanEach',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
+      'triggerPlayerTurn',
       'triggerPlayerIsOpponent',
       'triggerPlayerStat',
       'cardsInGraveyard',
@@ -182,6 +185,8 @@ describe('the dimensions', () => {
       'lifeGainedThisTurn',
       // D-591: life gain and life loss are both recorded this turn.
       'lifeGainedAndLostThisTurn',
+      // CR 119.3: "if a player lost 4 or more life this turn".
+      'aPlayerLostLifeThisTurn',
       // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
       'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".

@@ -142,6 +142,11 @@ export interface LowerContext {
    * ordinary activated ability sets it, and "Return this card from your graveyard to the battlefield" is lowered only then.
    */
   graveyardSource: boolean;
+  /**
+   * True while the body of an ordinary activated ability is lowered (Demolition Field, CR 608.2d): an activated ability has no "you may" of its own, so a lone optional
+   * search is the engine's `search` with `optional`, asked where it comes up.
+   */
+  activatedBody: boolean;
   /** Set when a lowering used `graveyardSource`: the ability functions from the graveyard. */
   usedGraveyardSource: boolean;
   /**
@@ -216,6 +221,11 @@ export interface LowerContext {
   diesTrigger: boolean;
   /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
   damageBatchTrigger: boolean;
+  /**
+   * True in the body of "Whenever you attack with eight or more creatures" (Champions from Beyond, CR 508.1, 603.2): the trigger has no filter on the creatures but "creature", so
+   * "those creatures" are every creature of the declaration (the engine's `triggerAttackers`).
+   */
+  attackBatchThose: boolean;
   /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
   selfAttackTrigger: boolean;
   /**
@@ -334,6 +344,11 @@ export interface LowerContext {
    */
   lastEffectKind: string | null;
   /**
+   * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
+   * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  lastCounteredGroup: ObjectSelector | null;
+  /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
@@ -436,6 +451,7 @@ export function newContext(
     exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
+    lastCounteredGroup: null,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,
@@ -444,6 +460,7 @@ export function newContext(
     createdPer: null,
     movedOnto: null,
     graveyardSource: false,
+    activatedBody: false,
     usedGraveyardSource: false,
     dieSides: null,
     clashed: false,
@@ -463,6 +480,7 @@ export function newContext(
     itDied: false,
     diesTrigger: false,
     damageBatchTrigger: false,
+    attackBatchThose: false,
     selfAttackTrigger: false,
     selfEntersOrAttacksTrigger: false,
     cardName,

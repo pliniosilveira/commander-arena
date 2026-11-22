@@ -434,12 +434,20 @@ export function lowerAmount(
       if (typeof controller === 'object') {
         const missingRef = missingFeatures(['selector:controllerRef']);
         if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
-        if (controller.orPlaneswalkerController === true || controller.noun.det !== 'target') {
+        // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
+        // as the count is made.
+        const itsController = controller.noun.det === 'controllerOf';
+        if (
+          controller.orPlaneswalkerController === true ||
+          (controller.noun.det !== 'target' && !itsController)
+        ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const named = playerSelectorOf(controller.noun, ctx);
         if (!named.ok) return named;
-        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        if (named.value.kind !== (itsController ? 'controllerOf' : 'target')) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
         const { controller: _named, ...rest } = amount.of.filter;
         const plain = countFilter({ ...amount.of, filter: rest });
         if (!plain.ok) return plain;
@@ -693,6 +701,14 @@ export function lowerAmount(
       const blocked = needs('opponentCount');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'opponentCount' }, rule };
+    }
+    case 'playerCount': {
+      // CR 102.1, 608.2c: the number of players the noun names ("each player who lost life this turn"), read as the amount is read.
+      const blocked = needs('playerCount');
+      if (blocked !== null) return blocked;
+      const of = playerSelectorOf(amount.of, ctx);
+      if (!of.ok) return of;
+      return { ok: true, value: { kind: 'playerCount', of: of.value }, rule };
     }
     case 'chosenPlayerLead': {
       // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
@@ -1074,6 +1090,7 @@ export const AMOUNT_NEEDS = [
   'amount:sum',
   'amount:extreme',
   'amount:opponentCount',
+  'amount:playerCount',
   'amount:opponentsWithMore',
   'amount:chosenPlayerLead',
   'amount:thisWay',

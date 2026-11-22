@@ -37,13 +37,14 @@ import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
+import { lowerGrantedGroupStatics } from './granted-group-static';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
 import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
-import { lowerQuotedGrantedAbility } from './quoted-ability';
+import { lowerQuotedGrantedAbilities } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
 import {
   isSliverLordStatic,
@@ -170,6 +171,24 @@ function lowerGrantedAbility(
   at: At,
   ctx: LowerContext,
 ): LowerResult<Extract<Ability, { kind: 'activated' | 'triggered' }>> {
+  const many = lowerGrantedAbilities(quoted, subject, at, ctx);
+  if (!many.ok) return many;
+  const [only, ...more] = many.value;
+  return only === undefined || more.length > 0
+    ? failure(at)
+    : { ok: true, value: only, rule: many.rule };
+}
+
+/**
+ * The abilities a quoted ability grants: one, or one for each event of a trigger that two events cause (CR 603.2c). The subjects it may be given to are those of
+ * `lowerGrantedAbility`.
+ */
+function lowerGrantedAbilities(
+  quoted: Extract<IrStaticEffect, { kind: 'grantAbility' }>['ability'],
+  subject: StaticSubject,
+  at: At,
+  ctx: LowerContext,
+): LowerResult<readonly Extract<Ability, { kind: 'activated' | 'triggered' }>[]> {
   const inner = quoted.ability;
   // A refusal points at the statement that grants, as it did when the quoted text was only text.
   if (inner.kind !== 'activated' && inner.kind !== 'triggered') return failure(at);
@@ -201,7 +220,7 @@ function lowerGrantedAbility(
   }
   const grantedToPlaneswalkers =
     subject.kind === 'filter' && subject.filter.types?.includes('planeswalker') === true;
-  return lowerQuotedGrantedAbility(
+  return lowerQuotedGrantedAbilities(
     quoted,
     at,
     {
@@ -475,7 +494,8 @@ function effectOf(
       if (!types.every((t) => (CARD_TYPES as readonly string[]).includes(t))) return failure(at);
       // "~ is a Dragon" (stage P34, D-152, CR 205.1a, 205.3m): a creature type says the permanent is a creature, which the engine wants said as
       // the card type of the replacement; the permanent keeps its card types, so it is read only for a face that is a creature and nothing else.
-      if (types.length === 0 && effect.subtypes.length > 0) {
+      // Eye of Nidhogg (CR 205.3d): for the permanent an Aura is attached to, a creature type alone replaces its creature types and its card types stay.
+      if (types.length === 0 && effect.subtypes.length > 0 && subject.kind !== 'attached') {
         const onlyCreature = ctx.faceTypes.length === 1 && ctx.faceTypes[0] === 'creature';
         if (subject.kind !== 'this' || !onlyCreature) return failure(at);
         types = ['creature'];
@@ -655,6 +675,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'additionalCost':
     case 'optionalSacrificeCopies':
     case 'freeCast':
+    case 'lifeAlternative':
     case 'tapAlternative':
     case 'graveyardSacrificeAlternative':
     case 'sacrificeAlternative':
@@ -885,6 +906,41 @@ function lowerPart(
   const abilities: Ability[] = [];
   for (const effect of part.effects) {
     if (condition !== undefined && !takesCondition(effect)) return failure(ability);
+    // CR 603.2c (Astrologian's Planisphere): a granted trigger of two events ("Whenever you cast ... and whenever you draw ...") is one granted ability for each event.
+    if (
+      effect.kind === 'grantAbility' &&
+      effect.ability.ability.kind === 'triggered' &&
+      effect.ability.ability.trigger.alternatives !== undefined
+    ) {
+      const each = lowerGrantedAbilities(effect.ability, subject.value, ability, ctx);
+      if (!each.ok) return each;
+      for (const granted of each.value) {
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'grantAbility', subject: subject.value, ability: granted },
+          ...(condition === undefined ? {} : { condition }),
+        });
+      }
+      continue;
+    }
+    // Dancer's Chakrams (CR 604.1, 613.1f): "Equipped creature has \"Other commanders you control get +2/+2 and have lifelink,\"": the quoted static ability gives a group "+N/+N" and
+    // keywords; the permanent has it as its own, and each effect it has is one `grantAbility`.
+    if (
+      effect.kind === 'grantAbility' &&
+      effect.ability.ability.kind === 'static' &&
+      (subject.value.kind === 'attached' || subject.value.kind === 'this')
+    ) {
+      const each = lowerGrantedGroupStatics(effect.ability, ability, ctx, lowerStatic);
+      if (!each.ok) return each;
+      for (const granted of each.value) {
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'grantAbility', subject: subject.value, ability: granted },
+          ...(condition === undefined ? {} : { condition }),
+        });
+      }
+      continue;
+    }
     const lowered = effectOf(effect, subject.value, ability, ctx);
     if (!lowered.ok) return lowered;
     abilities.push({
@@ -1234,7 +1290,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
-  if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
+  if (
+    first.kind === 'additionalCost' ||
+    first.kind === 'freeCast' ||
+    first.kind === 'lifeAlternative'
+  ) {
+    return failure(ability);
+  }
   if (
     first.kind === 'castAsThoughFlash' ||
     first.kind === 'takeFromLinkedExile' ||
