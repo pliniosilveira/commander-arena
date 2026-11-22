@@ -57,6 +57,16 @@ describe('single-player operands refuse a selector of several players', () => {
     expect(issues).not.toContain('name a single player');
   });
 
+  test('lifeTotalOf of eachOpponent elsewhere is an issue', () => {
+    const amount = { kind: 'lifeTotalOf', player: EACH_OPP };
+    expect(JSON.stringify(validateCard(withEffect(GAIN(amount))))).toContain(
+      'name a single player',
+    );
+    // a different selector than the one the loseLife names is not read per affected player
+    const other = { kind: 'loseLife', player: { kind: 'eachPlayer' }, amount };
+    expect(JSON.stringify(validateCard(withEffect(other)))).toContain('name a single player');
+  });
+
   test('a single player passes', () => {
     const issues = JSON.stringify(
       validateCard(withEffect(GAIN({ kind: 'lifeTotalOf', player: YOU }))),
