@@ -46,6 +46,30 @@ async function run(host: GameHost, opts: Parameters<GameHost['newGame']>[0], act
   return { snap, log };
 }
 
+describe('the human is eliminated', () => {
+  test('the game ends at once for the human, as in a two-player game', async () => {
+    const host = new GameHost({ clock });
+    await host.newGame(table(3));
+    const over = await host.act({ kind: 'concede' });
+    expect(over.error).toBeNull();
+    expect(over.view.result).toMatchObject({ kind: 'win' });
+    expect(over.view.result?.kind === 'win' && over.view.result.winner).not.toBe(0);
+    expect(over.view.pending).toBeNull();
+    // The AIs do not play on, and the game accepts no more answers.
+    expect(over.steps.filter((s) => s.seat !== 0)).toEqual([]);
+    const again = await host.act({ kind: 'pass' });
+    expect(again.error).toBe('The game is over.');
+    expect(again.steps).toEqual([]);
+  });
+
+  test('a two-player game still ends through the engine', async () => {
+    const host = new GameHost({ clock });
+    await host.newGame(two);
+    const over = await host.act({ kind: 'concede' });
+    expect(over.view.result).toEqual({ kind: 'win', winner: 1 });
+  });
+});
+
 describe('several AI seats', () => {
   test.each([3, 4] as const)(
     'every AI seat of a %i-seat game is asked with its own view',

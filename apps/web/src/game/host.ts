@@ -19,6 +19,7 @@ import {
   type GameConfig,
   type GameEvent,
   type GameState,
+  type GameView,
   getView,
 } from '@commander-arena/engine';
 import { createAgent } from './agents';
@@ -202,6 +203,23 @@ function opponentsOf(options: NewGameOptions): readonly OpponentOptions[] {
   ];
 }
 
+/** True once the human has lost: the session ends then, even if two or more AIs are still alive. */
+function humanEliminated(state: GameState): boolean {
+  return state.seats[HUMAN]?.hasLost === true;
+}
+
+/**
+ * When the human has lost while the engine's game goes on, the page sees the game as over (the owner's
+ * decision, as in a two-player game): a loss for the human, with the first seat still alive as the
+ * winner the result type needs. The engine's own state is untouched.
+ */
+function endedForHuman(state: GameState, view: GameView): GameView {
+  if (state.result !== null || !humanEliminated(state)) return view;
+  const winner = state.seats.find((s) => s.id !== HUMAN && !s.hasLost)?.id;
+  if (winner === undefined) return view;
+  return { ...view, result: { kind: 'win', winner }, pending: null, decidingSeat: null };
+}
+
 /** Seat 1 plays from `seed ^ 0x5eed` as in v1; a later seat mixes its number in. */
 function agentSeed(seed: number, seat: number): number {
   const base = seed ^ 0x5eed;
@@ -283,7 +301,9 @@ export class GameHost implements GameClient {
 
   async act(action: Action): Promise<Snapshot> {
     const state = this.requireState();
-    if (state.result !== null) return this.snapshot([], [], 'The game is over.');
+    if (state.result !== null || humanEliminated(state)) {
+      return this.snapshot([], [], 'The game is over.');
+    }
     if (state.pending?.seat !== HUMAN) return this.snapshot([], [], 'It is not your decision.');
     const applied = applyAction(state, HUMAN, action);
     if (!applied.ok) return this.snapshot([], [], applied.error);
@@ -381,6 +401,7 @@ export class GameHost implements GameClient {
     while (
       this.state !== null &&
       this.state.result === null &&
+      !humanEliminated(this.state) &&
       this.state.pending !== null &&
       this.state.pending.seat !== HUMAN &&
       guard < this.maxAiSteps
@@ -463,7 +484,7 @@ export class GameHost implements GameClient {
   ): Snapshot {
     const state = this.requireState();
     this.revision += 1;
-    const view = getView(state, HUMAN);
+    const view = endedForHuman(state, getView(state, HUMAN));
     const definedPt = definedPtNotes(state, view);
     const statics = staticNotes(state, view);
     const looked = lookedCards(state, HUMAN);
