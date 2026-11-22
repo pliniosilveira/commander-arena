@@ -53,6 +53,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'aftermath',
   'storm',
   'gravestorm',
+  'rebound',
   'livingWeapon',
   'jobSelect',
 ];

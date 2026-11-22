@@ -868,6 +868,9 @@ export function resolveObjects(
     case 'triggerSources':
       // CR 400.7, 603.2c: the creatures that dealt the damage, only while each is still the permanent that did.
       return (ctx.triggerCards ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+    case 'triggerAttackers':
+      // CR 508.1, 400.7: the creatures the attack event declared, only while each is still the permanent that was declared.
+      return (ctx.triggerAttackers ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
       // CR 712.21c (D-277): for a melded permanent that died, both cards.

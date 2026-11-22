@@ -199,6 +199,8 @@ const LEAD_CONDITIONS = [
   'condition.this-counter-count',
   // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
   'condition.the-player-is-opponent-with-cards',
+  // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.
+  'condition.cast-from-hand',
   ...LEAD_GAME_STATE_CONDITIONS,
   // Slithermuse: "If that player has more cards in hand than you, ..." after "Choose an opponent.".
   ...CHOSEN_PLAYER_CONDITION_RULES.map((r) => r.id),
@@ -589,15 +591,21 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             null,
           )
         : // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add ...": "you may" after a leading test only.
-          (options.may === true || (options.may === 'afterTest' && condition !== undefined)) &&
-            !reflexive
+          (options.may === true || options.may === 'afterTest') && !reflexive
           ? optional(
               choice<'you' | NonNullable<IrSentence['mayBy']>>(
                 map(
                   (c, p) => {
                     // After a leading test only the offer of mana is read here; another "you may" is the clause's own (Conduit of Worlds: "you may cast that card").
+                    // Demolition Field (CR 701.23, 608.2d): "You may search your library for a basic land card, ...", the second instruction of an activated ability, is the controller's choice at resolution.
                     const ahead =
-                      options.may === 'afterTest' ? pattern(/(?=you may add )/iu)(c, p) : undefined;
+                      options.may === 'afterTest'
+                        ? pattern(
+                            condition === undefined
+                              ? /(?=you may search )/iu
+                              : /(?=you may (?:add|search ))/iu,
+                          )(c, p)
+                        : undefined;
                     return ahead !== undefined && !ahead.ok ? ahead : literal('you may ')(c, p);
                   },
                   () => 'you' as const,

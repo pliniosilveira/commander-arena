@@ -427,6 +427,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'triggerPlayerHasMore':
       // "if that player controls more creatures than you" (CR 603.4): the player the event is about.
       return `that player ${negate ? "doesn't control" : 'controls'} more ${condition.stat === 'lands' ? 'lands' : condition.stat === 'creatures' ? 'creatures' : 'cards'} than you`;
+    case 'triggerPlayerTurn':
+      // Tataru Taru (CR 603.4, 500.1): "if it isn't that player's turn".
+      return negate ? "it isn't that player's turn" : "it's that player's turn";
     case 'cardsInGraveyard': {
       // D-229 (CR 404.1): "there are fewer than eight cards in your graveyard".
       const { cmp, value } = condition.compare;

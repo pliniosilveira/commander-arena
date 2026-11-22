@@ -751,6 +751,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Galadriel group 3: Buyback (CR 702.27a).
     'buyback',
     'gravestorm',
+    // CR 702.88a: Rebound.
+    'rebound',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
     // D-139: Living weapon (CR 702.92).
@@ -1067,6 +1069,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerCard',
     // Issue 81 (Tamiyo): "those creatures" of a combat damage batch trigger.
     'triggerSources',
+    // Champions from Beyond: "those creatures" of an attack batch trigger.
+    'triggerAttackers',
     // Lethal Scheme: "each creature that convoked this spell" (`convokers`).
     'convokers',
     'manaValueAtMost',
@@ -1199,6 +1203,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
+    // Tataru Taru: "if it isn't that player's turn" in a trigger about a player.
+    'triggerPlayerTurn',
     // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
     'triggerPlayerIsOpponent',
     'triggerPlayerStat',
@@ -2055,6 +2061,8 @@ export const SELECTOR_KINDS = [
   'triggerCard',
   /** "Those creatures" of a combat damage batch trigger (CR 603.2c, issue 81): the engine's `triggerSources`. */
   'triggerSources',
+  /** "Those creatures" of an attack batch trigger (CR 508.1, 603.2, Champions from Beyond): the engine's `triggerAttackers`. */
+  'triggerAttackers',
   /** "Each creature that convoked this spell" (CR 702.51a, Lethal Scheme): the engine's `convokers`. */
   'convokers',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
@@ -2212,6 +2220,8 @@ export const CONDITION_KINDS = [
   'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
+  /** "If it's that player's turn", the player being the one of the event (CR 603.4, 500.1, Tataru Taru): the engine's `triggerPlayerTurn`. */
+  'triggerPlayerTurn',
   /** "If the player is your opponent", the player being the one of the event (CR 603.2b, 102.2): the engine's `triggerPlayerIsOpponent`. */
   'triggerPlayerIsOpponent',
   /** "If the player has four or more cards in hand", the player being the one of the event (CR 402.1, 608.2c): the engine's `triggerPlayerStat`. */
@@ -3158,6 +3168,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   plot: true,
   storm: true,
   gravestorm: true,
+  rebound: true,
   replicate: true,
   gift: true,
   livingWeapon: true,

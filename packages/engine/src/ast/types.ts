@@ -1110,6 +1110,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'triggerSources' }
   /**
+   * "Those creatures" in the body of an `attackBatch` trigger (Champions from Beyond: "Whenever you attack with eight or more creatures, those creatures get +4/+4 until end of turn";
+   * CR 508.1, 603.2, 400.7): the creatures the attack event declared as attackers, as long as each is still the same permanent on the battlefield (one that left is a new object, or none,
+   * and is skipped). Valid only in the effect of an `attackBatch` trigger (`validateCard`).
+   */
+  | { readonly kind: 'triggerAttackers' }
+  /**
    * "Each creature that convoked this spell" (Lethal Scheme, CR 702.51a, 702.51c, 400.7): the creatures the caster tapped to pay for the spell with Convoke (`StackData.convokedBy`), as
    * long as each is still that creature on the battlefield (one that left is a new object, or none, and is skipped). Only in the effect of a spell: an ability has no cost paid by Convoke.
    */
@@ -4297,7 +4303,10 @@ export type Effect =
        * `perOwner`, `player` or `remember`.
        */
       readonly objects:
-        | Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' | 'target' }>
+        | Extract<
+            ObjectRef,
+            { readonly kind: 'moved' | 'linkedExile' | 'target' | 'triggerSubject' }
+          >
         | ChooseSelector;
       readonly play?: true;
       /**
@@ -5879,6 +5888,13 @@ export type Keyword =
   | { readonly kind: 'storm' }
   | { readonly kind: 'gravestorm' }
   /**
+   * CR 702.88a (Rebound, Transpose): "If this spell was cast from your hand, instead of putting it into your graveyard as it resolves, exile it and, at the beginning of your next
+   * upkeep, you may cast this card from exile without paying its mana cost." A static ability of an instant or a sorcery that works while the spell is on the stack: as it resolves
+   * (not when it is countered or fizzles, which send it to the graveyard) the card is exiled and the engine creates the delayed triggered ability (`rules/rebound.ts`). Multiple instances
+   * are redundant (CR 702.88c).
+   */
+  | { readonly kind: 'rebound' }
+  /**
    * CR 702.56a (Replicate, D-129): "Replicate [cost]" means "As an additional cost to cast this spell, you may pay
    * [cost] any number of times" and "When you cast this spell, if a replicate cost was paid for it, copy it for each
    * time its replicate cost was paid. If the spell has any targets, you may choose new targets for any of the
@@ -6194,6 +6210,12 @@ export type Condition =
    * with the ability. Only the intervening "if" of a trigger whose event is about a player; fails when there is none.
    */
   | { readonly kind: 'triggerPlayerHasMore'; readonly stat: PlayerStat }
+  /**
+   * "If it isn't that player's turn" (Tataru Taru, CR 603.4, 500.1: the active player is the player whose turn it is; `not` of this): the player the event of the trigger is about
+   * (`triggerPlayer`: the player who drew, who cast, ...) is the active player. Read as the ability triggers and again as it resolves (an intervening "if"), so the player stays on the
+   * stack with the ability. Only the intervening "if" of a trigger whose event is about a player; fails when there is none.
+   */
+  | { readonly kind: 'triggerPlayerTurn' }
   /**
    * "If the player is your opponent" (Fevered Visions; CR 603.2b, 102.2, 608.2c): the player the event of the trigger is about (`triggerPlayer`: the active player of a step
    * trigger, the player who drew, ...) is an opponent of the controller of the ability, as the instruction comes up. False when there is no such player. Only in a `conditional`

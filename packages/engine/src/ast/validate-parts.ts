@@ -1440,6 +1440,12 @@ export function checkRef(
         );
       }
       break;
+    case 'triggerAttackers':
+      // Champions from Beyond: the creatures of the attack event of an `attackBatch` trigger (`scope.triggerAttackerCount` is set only there).
+      if (scope.triggerAttackerCount !== true) {
+        issue(out, path, "'triggerAttackers' needs a triggered ability of an attackBatch trigger");
+      }
+      break;
     case 'triggerCard':
       // D-230: read only where a node says so: the object of a moveToZone or an exile in a triggered ability.
       issue(
@@ -3672,6 +3678,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+      break;
+    case 'triggerPlayerTurn':
+      // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       break;
     case 'triggerPlayerIsOpponent':
     case 'triggerPlayerStat':
