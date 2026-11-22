@@ -114,7 +114,13 @@ function zoneContents(view: GameView, zone: ZoneRef, looked: readonly LookedCard
       others: looked,
     };
   }
-  if (zone.kind === 'exile') return { title: 'Exile (shared)', objects: [...view.exile] };
+  if (zone.kind === 'exile') {
+    // Exile is one shared zone in the engine; the board lists it per owner.
+    return {
+      title: `${seatLabel(view, zone.seat)} exile`,
+      objects: view.exile.filter((o) => o.owner === zone.seat),
+    };
+  }
   // D-234 (CR 702.26): the permanents that are phased out: treated as though they do not exist, but listed here.
   if (zone.kind === 'phased') return { title: 'Phased out', objects: [...(view.phasedOut ?? [])] };
   const seat = view.seats.find((s) => s.id === zone.seat);
@@ -190,16 +196,8 @@ export function Board() {
           roles={roles}
           attachments={attachments}
         />
-        <div className="board-mid">
-          <button
-            type="button"
-            className="board-zone-btn board-exile"
-            onClick={() => setZone({ kind: 'exile' })}
-            aria-label={`Open exile, ${view.exile.length} cards`}
-          >
-            <span className="board-stat-label">Exile (shared)</span> <b>{view.exile.length}</b>
-          </button>
-          {(view.phasedOut ?? []).length > 0 && (
+        {(view.phasedOut ?? []).length > 0 && (
+          <div className="board-mid">
             <button
               type="button"
               className="board-zone-btn board-exile"
@@ -209,8 +207,8 @@ export function Board() {
               <span className="board-stat-label">Phased out</span>{' '}
               <b>{(view.phasedOut ?? []).length}</b>
             </button>
-          )}
-        </div>
+          </div>
+        )}
         <Field
           view={view}
           seat={me.id}

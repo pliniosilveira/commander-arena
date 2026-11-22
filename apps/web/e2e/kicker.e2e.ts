@@ -99,9 +99,9 @@ test('a graveyard card is cast with flashback from the chip above the hand; it i
   await expect(stack.getByText('flashback', { exact: true })).toBeVisible();
 
   await primary(page).click();
-  await page.getByRole('button', { name: /^Open exile/ }).click();
+  await page.getByRole('button', { name: /^Open You exile/ }).click();
   await expect(
-    page.getByRole('dialog', { name: 'Exile (shared)' }).getByLabel('SYNTHETIC Flash Gain'),
+    page.getByRole('dialog', { name: 'You exile' }).getByLabel('SYNTHETIC Flash Gain'),
   ).toBeVisible();
   expect(errors).toEqual([]);
 });

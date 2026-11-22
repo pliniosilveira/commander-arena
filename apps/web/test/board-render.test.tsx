@@ -123,7 +123,7 @@ describe('Board', () => {
     expect(html).toContain('board-life-total');
     expect(html).toContain('Library');
     expect(html).toContain('Graveyard');
-    expect(html).toContain('Exile (shared)');
+    expect(html).toContain('Open You exile');
     expect(html).toContain('Tax +0');
     expect(html).toContain('Cmdr dmg 0');
     expect(html).toContain('Isamaru, Hound of Konda');

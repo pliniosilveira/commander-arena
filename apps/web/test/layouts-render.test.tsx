@@ -259,7 +259,7 @@ test('an Adventure card in exile: the chip row, the zone list badge and the card
   const list = renderToStaticMarkup(
     <StoreProvider store={live(session.store)}>
       <DecisionLayer>
-        <ZoneViewer title="Exile (shared)" objects={view.exile} onClose={() => {}} />
+        <ZoneViewer title="Exile" objects={view.exile} onClose={() => {}} />
       </DecisionLayer>
     </StoreProvider>,
   );

@@ -17,7 +17,7 @@ type CompanionView = NonNullable<SeatView['companion']>;
 export type ZoneRef =
   | { readonly kind: 'graveyard'; readonly seat: number }
   | { readonly kind: 'command'; readonly seat: number }
-  | { readonly kind: 'exile' }
+  | { readonly kind: 'exile'; readonly seat: number }
   | { readonly kind: 'phased' }
   /** The cards a pending chooseCards question lists (a library search): not a zone of the board. */
   | { readonly kind: 'cards' };
@@ -308,6 +308,8 @@ export function PlayerStrip({
   const active = view.activeSeat === seat.id;
   const priority = view.prioritySeat === seat.id;
   const who = seatLabel(view, seat.id);
+  // Exile is shared in the engine, but each player's strip lists the cards they own.
+  const exileCount = view.exile.filter((o) => o.owner === seat.id).length;
   // Commander damage taken sits with the life total, where it cannot be missed (issue 34).
   const taken = commanderDamageTaken(view, seat.id).filter((d) => d.amount > 0);
   const classes = [
@@ -461,6 +463,15 @@ export function PlayerStrip({
         >
           <span className="board-stat-label">Graveyard</span>
           <b>{seat.graveyard.length}</b>
+        </button>
+        <button
+          type="button"
+          className="board-count-item board-zone-btn board-exile"
+          onClick={() => onOpenZone({ kind: 'exile', seat: seat.id })}
+          aria-label={`Open ${who} exile, ${exileCount} cards`}
+        >
+          <span className="board-stat-label">Exile</span>
+          <b>{exileCount}</b>
         </button>
         <ManaPool pool={seat.manaPool} />
       </div>
