@@ -1349,6 +1349,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             : '';
         return `You may cast ${object(effect.objects)} this turn${effect.free === true ? ' without paying its mana cost' : ''}${rider}`;
       }
+      // Hildibrand Manderville (CR 601.2, 715.3): "You may cast it from your graveyard as an Adventure until the end of your next turn" (the card of a permanent that died).
+      if (effect.adventure === true) {
+        return `You may cast it from your graveyard as an Adventure ${
+          effect.duration === 'untilEndOfNextTurn' ? 'until the end of your next turn' : 'this turn'
+        }`;
+      }
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
       // D-359 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".
       // Issue 159: "in a graveyard" (any player's) and the rider "When you cast it this turn, this creature gains all activated abilities of that card until end of turn".

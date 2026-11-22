@@ -2556,8 +2556,23 @@ export type Effect =
    */
   | {
       readonly kind: 'mayCast';
+      /**
+       * A target card of a graveyard; or (Hildibrand Manderville, issue 98) the card the permanent with the ability became in its owner's graveyard: `thisCard` in an ability of
+       * a permanent that dies, `triggerCard` in a trigger about a permanent that died. Only with `adventure`.
+       */
       readonly objects: ObjectSelector;
-      readonly duration: 'untilEndOfTurn';
+      /**
+       * `untilEndOfTurn`, or `untilEndOfNextTurn` ("until the end of your next turn", CR 611.2a, 500.1, 514.2): it ends as the next turn of the controller of this effect that
+       * begins after the effect resolves ends, this turn not counted even when it is theirs. Only with `adventure`.
+       */
+      readonly duration: 'untilEndOfTurn' | 'untilEndOfNextTurn';
+      /**
+       * "When ~ dies, you may cast it from your graveyard as an Adventure until the end of your next turn" (Hildibrand Manderville, issue 98, CR 715.3, 715.3d, 601.2): the permission
+       * is to cast the Adventure half of an adventurer card, never its creature half (a card with no Adventure is not cast at all). The spell is cast as any Adventure is, paying
+       * its mana cost; as it resolves it is exiled "on an adventure" and its creature half may be cast from exile (CR 715.3d). Needs a graveyard card, not `exileInstead`,
+       * `anyGraveyard`, `from`, `free` or `bottomInstead`.
+       */
+      readonly adventure?: true;
       readonly exileInstead?: true;
       readonly from?: 'exile';
       readonly free?: true;

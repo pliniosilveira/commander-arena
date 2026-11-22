@@ -2364,6 +2364,11 @@ export type ContinuousChange =
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
        */
       readonly exileInstead?: true;
+      /**
+       * "You may cast it from your graveyard as an Adventure" (`mayCast.adventure`, Hildibrand Manderville, CR 715.3): only the Adventure half of the card may be cast with this permission
+       * (face 1), never its creature half; `legality.ts` (`mayCastAdventureFromGraveyard`) reads it, and every other reading of `castPermission` ignores it.
+       */
+      readonly adventureOnly?: true;
     }
   /**
    * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (`gainFlashbackFromManaCost`, CR 702.34a, 611.2a, 611.2c):
