@@ -55,6 +55,8 @@ export interface Scope {
   readonly chosenObjects?: ReadonlySet<string>;
   /** The `otherwise` branch of a playersMay can refer to the player whose choice was declined. */
   readonly declinedPlayer?: boolean;
+  /** The players a gainLife/loseLife names: "a third of their life" may read the life of exactly these, each as it applies (issue 497). */
+  readonly lifeAffected?: PlayerSelector;
   /** Whether the kind 'x' amount has an X to read (an X in the cost or a spell with X). */
   readonly xAllowed: boolean;
   /** Validates an ability nested in the tree, such as one a token carries (set by validate.ts). */
@@ -2403,8 +2405,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeTotalOf':
-      // Not held to one player: "a third of their life" (Dire Fleet Ravager) names the players the effect names and is read for each of them (`life-amounts.ts`).
+      // Issue 497: several players only where the amount is read per affected player ("a third of their life", Dire Fleet Ravager: the same selector as the gainLife/loseLife, `life-amounts.ts`).
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      if (
+        selectsSeveralPlayers(a.player) &&
+        JSON.stringify(a.player) !== JSON.stringify(scope.lifeAffected)
+      ) {
+        checkSinglePlayer(a.player, `${path}.player`, 'lifeTotalOf', out);
+      }
       break;
     case 'playerCount':
       // CR 102.1: the number of players a selector names, read as the amount is read.
@@ -7676,7 +7684,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       } else {
-        checkAmount(e.amount, `${path}.amount`, scope, out);
+        const lifeEffect = e.kind === 'gainLife' || e.kind === 'loseLife';
+        checkAmount(
+          e.amount,
+          `${path}.amount`,
+          lifeEffect ? { ...scope, lifeAffected: e.player } : scope,
+          out,
+        );
       }
       break;
     case 'meld':
