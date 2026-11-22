@@ -5,7 +5,7 @@
  * stack and the decision dock. It composes the pieces of today's board (`Field`, `PlayerStrip`,
  * `Hand`) and does not change them; `Board.tsx` stays the 1v1 board.
  */
-import { type CSSProperties, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, useMemo, useState } from 'react';
 import { useInteraction } from '../interaction';
 import { useApp, useLookedCards } from '../store-context';
 import './board.css';
@@ -22,7 +22,8 @@ import { tableAreas } from './table-areas';
 import { opponentLabel } from './table-label';
 import { ZoneViewer } from './ZoneViewer';
 
-export function TableBoard() {
+/** `flow` fills the flow cell at the bottom right: the turn box, the decision dock and the stack (`TableGame`). */
+export function TableBoard({ flow }: { flow?: ReactNode }) {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
   const looked = useLookedCards();
@@ -87,7 +88,14 @@ export function TableBoard() {
           <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
           <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
         </div>
-        <div className="table-cell table-flow" style={cell('flow')} data-testid="table-flow" />
+        <aside
+          className="table-cell table-flow"
+          style={cell('flow')}
+          data-testid="table-flow"
+          aria-label="Turn"
+        >
+          {flow}
+        </aside>
         {open !== null && (
           <ZoneViewer
             title={open.title}
