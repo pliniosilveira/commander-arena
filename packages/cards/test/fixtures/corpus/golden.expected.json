@@ -1,5 +1,5 @@
 {
-  "parserVersion": 188,
+  "parserVersion": 189,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -374,6 +374,14 @@
       "reasons": [],
       "ast": "47febf41"
     },
+    "060e0378-e335-4b3d-82aa-ae36639339f6": {
+      "name": "Axebane Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "299e43d2"
+    },
     "060ef981-db05-436b-b1c1-f55071375344": {
       "name": "Don Andres, the Renegade",
       "group": "acceptance",
@@ -526,6 +534,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3942760a"
+    },
+    "0903b941-82f1-4d3e-9717-29ab7d0c8cef": {
+      "name": "Weathered Sentinels",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0006d245"
     },
     "09071f5f-c9cb-43a9-b41d-faf6caf3beff": {
       "name": "Staggering Insight",
@@ -881,6 +897,14 @@
       "reasons": [],
       "ast": "a407f84a"
     },
+    "11284767-7095-4e0e-bc60-c69d58098348": {
+      "name": "Wakestone Gargoyle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "adac69d9"
+    },
     "11323af4-b8b8-4ca9-932f-377c7fd77dea": {
       "name": "The Eternity Elevator",
       "group": "training",
@@ -904,6 +928,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9f8edb4f"
+    },
+    "11c7662f-e688-40a6-98fd-6ae89d231b44": {
+      "name": "Staff of Compleation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0c05da76"
     },
     "11f1d2b7-0c2b-40df-bf90-3c55b23449af": {
       "name": "Farmer Cotton",
@@ -977,6 +1009,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "128df1de"
+    },
+    "1372dd15-cdb9-470c-b3e8-3423697e46e8": {
+      "name": "Tree of Redemption",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7264dd2d"
+    },
+    "14493624-fdc7-4630-9b1e-f35668651108": {
+      "name": "Baldin, Century Herdmaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "78008b94"
     },
     "14693689-d087-43b6-9c3f-63ab0648fc20": {
       "name": "All Is Dust",
@@ -1266,6 +1314,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "de917214"
+    },
+    "1ae29791-aa7c-4050-bf72-dd0f739b11b8": {
+      "name": "Will of the Abzan",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a5375ef5"
     },
     "1b162dd3-3be6-406d-bf86-f7cc9eff098d": {
       "name": "Eshki, Temur's Roar",
@@ -1955,6 +2011,14 @@
       "reasons": [],
       "ast": "e9d27716"
     },
+    "2b3f791a-d672-46fb-a03a-96e19f2c3121": {
+      "name": "Felothar the Steadfast",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3dda36a9"
+    },
     "2b4973cc-83b0-4986-a19e-b4252706527e": {
       "name": "Icon of Ancestry",
       "group": "acceptance",
@@ -2365,6 +2429,14 @@
       "reasons": [],
       "ast": "d40567b2"
     },
+    "331b6834-6bb4-40fa-b80b-22d67b34734f": {
+      "name": "Sidar Kondo of Jamuraa",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ffc1c412"
+    },
     "3321c134-bf5b-4f63-8035-fca0bbdfa86b": {
       "name": "Jace, Multiverse Architect",
       "group": "acceptance",
@@ -2743,6 +2815,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3178465c"
+    },
+    "3a21a6ae-b2f2-4f0c-acfd-5f3e8d63fd2f": {
+      "name": "Wall of Roots",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7a28ca69"
     },
     "3a25d1e2-63d8-4a93-b0ce-f9307736b3f9": {
       "name": "Lord of the Forsaken",
@@ -3168,6 +3248,14 @@
       "reasons": [],
       "ast": "0b9761e6"
     },
+    "4534e260-06fd-4054-8077-505c2f6c5767": {
+      "name": "Protector of the Wastes",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8791320c"
+    },
     "454a8902-8120-4373-96ee-bbf352b04e8d": {
       "name": "Hero of Bladehold",
       "group": "acceptance",
@@ -3191,6 +3279,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "92d5e38f"
+    },
+    "46327e52-b04a-4155-bda6-9559e46fb9ed": {
+      "name": "Jaws of Defeat",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2fddab66"
+    },
+    "463865bc-087e-477b-9e86-84e77f1ad931": {
+      "name": "Seedborn Muse",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "97a81ed7"
     },
     "467c9fe6-d1d3-4242-bc0c-e522b4f21d56": {
       "name": "Landroval, Horizon Witness",
@@ -3504,6 +3608,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "957736af"
+    },
+    "4d6d3e6d-f958-4c17-b117-960fb8033601": {
+      "name": "Assault Formation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "14e3e004"
     },
     "4dabba8c-0490-41ec-a03e-f7d0c9f0edb6": {
       "name": "Zenith Festival",
@@ -5241,6 +5353,14 @@
       "reasons": [],
       "ast": "c83786e7"
     },
+    "744b7e93-c893-4770-a3bb-6a45b7f8e4f7": {
+      "name": "Expel the Interlopers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fc87c83"
+    },
     "74d3277a-38e5-4732-afed-084a56148f20": {
       "name": "Mana Drain",
       "group": "training",
@@ -5489,6 +5609,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "40033eda"
+    },
+    "7a3569a0-a55f-40c9-9588-92db35e26567": {
+      "name": "Slaughter the Strong",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "53c2363e"
     },
     "7a3e50a5-c163-4c41-b62d-d52c233c55b7": {
       "name": "Dire Fleet Daredevil",
@@ -6210,6 +6338,14 @@
       "reasons": [],
       "ast": "fc58e95b"
     },
+    "8ad0d89b-beef-40f7-8ce8-65589e3970be": {
+      "name": "Walking Bulwark",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "042fbfbc"
+    },
     "8ad91f64-ccab-4edc-bd54-b2ee9267d614": {
       "name": "Lotus Cobra",
       "group": "acceptance",
@@ -6515,6 +6651,14 @@
       "reasons": [],
       "ast": "ccb59907"
     },
+    "920c4df3-9517-44cd-8304-28b1ef69d60e": {
+      "name": "Colfenor's Urn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5bd45cc5"
+    },
     "92116bbd-c7ad-4033-8d98-3ea09fea8ae7": {
       "name": "Quandrix Apprentice",
       "group": "acceptance",
@@ -6802,6 +6946,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "93a767d7"
+    },
+    "990b5e12-6e04-4832-9d64-87278f12cbda": {
+      "name": "Betor, Ancestor's Voice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "16d9d7e4"
     },
     "9965d9c5-2ebf-4a6c-930e-55c5890979be": {
       "name": "Thought Vessel",
@@ -7596,6 +7748,14 @@
       "reasons": [],
       "ast": "2b85aec8"
     },
+    "a95309ac-f920-474d-81b5-0f68c8a54f34": {
+      "name": "Towering Titan",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9f62d348"
+    },
     "a972630e-651e-439d-9412-5be50da9b934": {
       "name": "Invigorating Hot Spring",
       "group": "acceptance",
@@ -7883,6 +8043,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0876a5"
+    },
+    "ad5ff61f-79d6-4dd9-b4fe-17f7a0055c44": {
+      "name": "Reunion of the House",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1229ca7f"
     },
     "ada48353-4c86-44d6-83a5-e7e3c703b948": {
       "name": "Redcap Gutter-Dweller",
@@ -10469,6 +10637,14 @@
       "reasons": [],
       "ast": "cdf264fa"
     },
+    "ec1e69b1-f664-494b-8da2-c7199872b08b": {
+      "name": "Canopy Gargantuan",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "746d7e12"
+    },
     "ec2968fb-163d-4907-862b-b84a1f167833": {
       "name": "Volcanic Torrent",
       "group": "acceptance",
@@ -11121,6 +11297,14 @@
       "reasons": [],
       "ast": "ee188b63"
     },
+    "f7cac691-960f-4e36-8eae-f24bcdc1269b": {
+      "name": "Tip the Scales",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8d83763e"
+    },
     "f7e55117-69fb-412e-b16e-d92e0f95f629": {
       "name": "Cathartic Pyre",
       "group": "acceptance",
@@ -11437,8 +11621,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1112,
-      "total": 1134
+      "supported": 1135,
+      "total": 1157
     }
   }
 }
