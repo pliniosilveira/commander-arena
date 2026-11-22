@@ -25,7 +25,7 @@ Free and unofficial. One-on-one against a computer opponent. Nothing to install,
 
 ## Status
 
-Playable and still growing. You can play a full two-player Commander game against a computer opponent in the browser, from **Quick start** with one of the ready-made decks. Their card data ships with the game, so they start without a connection (card pictures load from Scryfall). You can also import your own Commander list from Moxfield, Archidekt, Arena or MTGO: the cards are looked up on Scryfall, checked against the Commander rules, and a report says which cards the game can play and why it cannot play the others. Only decks that follow the Commander rules and use cards the game fully supports can be played.
+Playable and still growing. You can play a full two-player Commander game against a computer opponent in the browser, from **Quick start** with one of the ready-made decks. Their card data ships with the game, so they start without a connection (card pictures load from Scryfall). You can also import your own Commander list from Moxfield, Archidekt, Arena or MTGO: the cards are looked up on Scryfall, checked against the Commander rules, and a report says which cards the game can play and why it cannot play the others. Only decks that follow the Commander rules and use cards the game fully supports can be played. A `Companion` section in the list is played too: the game checks the companion's condition and the commander's colors, and once per game you can pay {3} in your main phase to bring it into your hand.
 
 What exists today:
 
