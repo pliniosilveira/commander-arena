@@ -236,7 +236,7 @@ export function lowerCondition(
       return ok({
         kind: 'amountIs',
         amount: { kind: 'countOf', filter: { zone: 'exile', exiledWithSource: true } },
-        compare: { cmp: 'atLeast', value: 1 },
+        compare: { cmp: 'atLeast', value: test.atLeast ?? 1 },
       });
     }
     case 'thisInYourGraveyard': {

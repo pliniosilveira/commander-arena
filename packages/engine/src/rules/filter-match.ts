@@ -339,6 +339,8 @@ export function matchesFilterWith(
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 108.3 ("you don't own"): the owner of the object is not the player reading the filter.
   if (filter.notOwnedByYou === true && obj.owner === ctx.controller) return false;
+  // CR 108.3 ("you own"): the owner of the object is the player reading the filter, whoever controls it.
+  if (filter.ownedByYou === true && obj.owner !== ctx.controller) return false;
   // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.

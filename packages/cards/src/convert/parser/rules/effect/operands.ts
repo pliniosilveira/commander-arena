@@ -72,6 +72,9 @@ export const PERMANENT_OPERANDS = [
   'noun.each-type-union',
   // Hylda group 3: "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers',
+  // Abzan Armor deck: "target permanent you own" and "up to two target artifacts and/or enchantments controlled by different players".
+  'noun.target-permanent-you-own',
+  'noun.up-to-targets-controlled-by-different-players',
 ] as const;
 
 /** What a verb that acts on a permanent can also say of the permanent it is on: "untap ~". */

@@ -295,6 +295,29 @@ export function applyAbilityLayer(
 // ---- Layer 7 (CR 613.4)
 
 /**
+ * The power and toughness the counters of an object add (CR 122.1a, 613.4c): a +X/+Y counter adds X to the power and Y to the toughness and a -X/-Y counter subtracts them
+ * ("+1/+1", "-1/-1", "-0/-1": the counter is named as the engine writes it, `[+-]X/[+-]Y`). A counter of any other name (a loyalty, a keyword or a "page" counter) adds nothing.
+ */
+export function counterPtBonus(counters: Readonly<Record<string, number>>): {
+  readonly power: number;
+  readonly toughness: number;
+} {
+  let power = 0;
+  let toughness = 0;
+  for (const name of Object.keys(counters)) {
+    const n = counters[name] ?? 0;
+    if (n === 0) continue;
+    const m = PT_COUNTER.exec(name);
+    if (m === null) continue;
+    power += n * Number(m[1]);
+    toughness += n * Number(m[2]);
+  }
+  return { power, toughness };
+}
+
+const PT_COUNTER = /^([+-]\d+)\/([+-]\d+)$/;
+
+/**
  * The base power and toughness of a creature (CR 208.4b, 613.4b): what its printed or characteristic-defining values are after the effects that set
  * them (layer 7b, the last by timestamp wins), before any counter or "+N/+N" effect (layer 7c). "A creature with power greater than its base power"
  * compares the power `applyPtLayers` gives with this.
@@ -323,14 +346,14 @@ export function basePtOf(
 export function applyPtLayers(
   base: { readonly power: number | null; readonly toughness: number | null },
   effects: readonly ContinuousEffect[],
-  counterBonus: number,
+  counterBonus: { readonly power: number; readonly toughness: number },
   staticPower: number,
   staticToughness: number,
 ): { readonly power: number | null; readonly toughness: number | null } {
   const { power, toughness } = basePtOf(base, effects);
   if (power === null || toughness === null) return { power, toughness };
-  let addPower = counterBonus + staticPower;
-  let addToughness = counterBonus + staticToughness;
+  let addPower = counterBonus.power + staticPower;
+  let addToughness = counterBonus.toughness + staticToughness;
   for (const e of ofKind(effects, 'modifyPt')) {
     addPower += e.change.power;
     addToughness += e.change.toughness;

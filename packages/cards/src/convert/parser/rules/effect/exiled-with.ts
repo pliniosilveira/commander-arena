@@ -95,7 +95,49 @@ export const EFFECT_PUT_THEM_OWNERS_GRAVEYARD = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.return-those-cards-owners-control`: "return those cards to the battlefield under their owner's control" (Colfenor's Urn; CR 607.2a, 400.3, 110.2a): the cards an intervening "if
+ * three or more cards have been exiled with ~" counted go from exile to the battlefield, each under the control of its owner. The engine's `moveToZone` of the `linkedExile` cards with
+ * `controller: 'owner'`; the lowering reads "those cards" as those cards only after that condition, and refuses it anywhere else (the words would have no antecedent the engine could
+ * name). Not read: "them", "it", "tapped", another zone, "under your control", "their owners' control", a trailing word.
+ */
+export const EFFECT_RETURN_THOSE_CARDS_OWNERS_CONTROL = defineRule<Clauses>({
+  id: 'effect.return-those-cards-owners-control',
+  family: 'effect',
+  leading: ['return'],
+  cites: ['CR 607.2a (Linked Abilities)', 'CR 400.3 (General)', 'CR 110.2a (Permanents)'],
+  examples: [
+    "return those cards to the battlefield under their owner's control",
+    'return those cards to the battlefield under their owner’s control',
+  ],
+  rejects: [
+    "return those cards to the battlefield under their owner's control.",
+    "return them to the battlefield under their owner's control",
+    'return those cards to the battlefield under your control',
+    'return those cards to the battlefield',
+    "return those cards to the battlefield tapped under their owner's control",
+    "return those cards to the battlefield under their owners' control",
+    "return those cards to their owner's hand",
+    "return those cards to the battlefield under their owner's control and draw a card",
+    "return those cards to the battlefield under their owner's control at the beginning of the next end step",
+    "return that card to the battlefield under their owner's control",
+  ],
+  parse: single(
+    'effect.return-those-cards-owners-control',
+    spanned(
+      pattern(
+        new RegExp(
+          `return those cards to the battlefield under their owner['’]s control${BOUNDARY}(?!['’])(?!\\s+\\p{L})`,
+          'iu',
+        ),
+      ),
+    ),
+    () => ({ verb: 'returnExiledWithBattlefield', args: {} }),
+  ),
+});
+
 export const EXILED_WITH_EFFECT_RULES = [
   EFFECT_MAY_PLAY_WHILE_EXILED,
   EFFECT_PUT_THEM_OWNERS_GRAVEYARD,
+  EFFECT_RETURN_THOSE_CARDS_OWNERS_CONTROL,
 ];

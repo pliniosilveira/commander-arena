@@ -422,6 +422,9 @@ export function checkFilter(
   if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
     issue(out, `${path}.notOwnedByYou`, 'notOwnedByYou must be true');
   }
+  if (f.ownedByYou !== undefined && f.ownedByYou !== true) {
+    issue(out, `${path}.ownedByYou`, 'ownedByYou must be true');
+  }
   if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
     issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
   }
@@ -1436,7 +1439,7 @@ export function checkRef(
         issue(
           out,
           path,
-          "'triggerSources' needs a triggered ability of a combatDamageBatch trigger",
+          "'triggerSources' needs a triggered ability of a combatDamageBatch or becomesBlockedBy trigger",
         );
       }
       break;

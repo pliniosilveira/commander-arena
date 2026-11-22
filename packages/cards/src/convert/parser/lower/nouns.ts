@@ -137,6 +137,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:enchanted',
   'selector:enchantedByYou',
   'selector:notOwnedByYou',
+  'selector:ownedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
@@ -463,6 +464,8 @@ function lowerFilterAt(
   }
   // CR 108.3: "you don't own", read where the filter is matched against an object.
   if (filter.notOwnedByYou === true) parts.push('selector:notOwnedByYou');
+  // CR 108.3: "you own", read where the filter is matched against an object.
+  if (filter.ownedByYou === true) parts.push('selector:ownedByYou');
   // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
   if (filter.enchantedByYou === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -620,6 +623,7 @@ function lowerFilterAt(
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
     ...(filter.notOwnedByYou === true ? { notOwnedByYou: true as const } : {}),
+    ...(filter.ownedByYou === true ? { ownedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),
@@ -972,8 +976,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       if (noun.differentControllers === true) {
         const blocked = missingFeatures(['selector:differentControllers']);
         if (blocked.length > 0) return failure(noun, blocked);
-        // Only a slot of any number of objects says "with different controllers".
-        if (!anyNumberTarget) return failure(noun, []);
+        // Only a slot of any number of objects, or of up to a number of them ("up to two target artifacts and/or enchantments controlled by different players"), says it.
+        if (!anyNumberTarget && !(noun.upTo && noun.count?.kind === 'number')) {
+          return failure(noun, []);
+        }
       }
       let upToAmount: Amount | undefined;
       if (upToDefinedX) {
@@ -1019,6 +1025,9 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                       id,
                       what: { kind: 'object', filter: filter.value },
                       ...boundsOf(noun),
+                      ...(noun.differentControllers === true
+                        ? { differentControllers: true as const }
+                        : {}),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
                       // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
                       ...(apart === undefined ||

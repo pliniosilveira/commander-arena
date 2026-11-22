@@ -161,7 +161,10 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
             ? { kind: 'untapInOthersUntapStep', self: true }
             : {
                 kind: 'untapInOthersUntapStep',
-                what: { types: ['creature'], controller: 'you' },
+                what:
+                  effect.permanents === true
+                    ? { controller: 'you' }
+                    : { types: ['creature'], controller: 'you' },
               },
       });
     case 'attackTax': {

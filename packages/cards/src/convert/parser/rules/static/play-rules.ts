@@ -571,6 +571,8 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     'Untap ~ during each other player’s untap step.',
     // Issue 145 (Prop Room): "each creature", the same group as "all creatures".
     "Untap each creature you control during each other player's untap step.",
+    // CR 502.3 (Seedborn Muse): every permanent of its controller untaps in the untap step of each other player.
+    "Untap all permanents you control during each other player's untap step.",
   ],
   rejects: [
     "Untap all creatures you control during each other player's untap step",
@@ -586,6 +588,10 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     "Untap ~ during each other player's upkeep.",
     "Untap ~ during another player's untap step.",
     "Untap all lands you control during each other player's untap step.",
+    "Untap all permanents during each other player's untap step.",
+    "Untap each permanent you control during each other player's untap step.",
+    "Untap all permanents you control during each player's untap step.",
+    "Untap all permanents you control during each opponent's untap step.",
     "Untap all creatures you control during each other player's untap step if you control a Swamp.",
     "Untap all creatures during each other player's untap step.",
     'Untap all creatures you control during your untap step.',
@@ -617,11 +623,13 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
       };
     }
     const r = pattern(
-      new RegExp(`untap (?:all creatures|each creature) you control ${tail}`, 'iu'),
+      new RegExp(`untap (?:all creatures|each creature|all permanents) you control ${tail}`, 'iu'),
     )(ctx, pos);
     if (!r.ok) return r;
+    const permanents = /^untap all permanents /iu.test(ctx.text.slice(pos));
     const at =
-      /^untap (?:all creatures|each creature) /iu.exec(ctx.text.slice(pos))?.[0].length ?? 0;
+      /^untap (?:all creatures|each creature|all permanents) /iu.exec(ctx.text.slice(pos))?.[0]
+        .length ?? 0;
     const who = subject(
       'you',
       'you',
@@ -630,7 +638,14 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     );
     return {
       ok: true,
-      value: statement(rule, who, { kind: 'untapInOthersStep' }, { start: pos, end: r.pos }),
+      value: statement(
+        rule,
+        who,
+        permanents
+          ? { kind: 'untapInOthersStep', permanents: true }
+          : { kind: 'untapInOthersStep' },
+        { start: pos, end: r.pos },
+      ),
       pos: r.pos,
     };
   },

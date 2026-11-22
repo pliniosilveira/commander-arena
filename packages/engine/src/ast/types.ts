@@ -989,6 +989,11 @@ export interface ObjectFilter {
    */
   readonly notOwnedByYou?: true;
   /**
+   * "Target permanent you own" (CR 108.3, 115.1, Staff of Compleation): the object's owner (the player whose deck it started in, or who created it as a token) is the controller
+   * of the ability that reads the filter, whoever controls it now. The reverse of `notOwnedByYou`; like it, it needs no target, so a target slot, a trigger and a count may use it.
+   */
+  readonly ownedByYou?: true;
+  /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
    * `sacrificed` (CR 205.2a, 701.21a, 113.7a; Braids, Arisen Nightmare): the permanent an earlier `sacrifice` of this resolution sacrificed (the first one), with the card types it
@@ -4863,6 +4868,12 @@ export type Trigger =
    * effect exists yet).
    */
   | { readonly kind: 'becomesBlocked'; readonly what: TriggerSubject }
+  /**
+   * "Whenever [a creature] becomes blocked by a creature [without flanking]" (CR 509.3d, 702.25a, Flanking): once for each creature declared as a blocker of an attacking creature
+   * `what` names (so two blockers of one attacker are two occurrences); the attacker is the subject (`triggerSubject`) and the blocker is what `triggerSources` names in the effect
+   * ("the blocking creature"). `by` is the filter the blocker must match, read as it blocks (a blocker that has flanking is not one).
+   */
+  | { readonly kind: 'becomesBlockedBy'; readonly what: TriggerSubject; readonly by: ObjectFilter }
   /** "Whenever a land enters under your control" (landfall). */
   | { readonly kind: 'landfall' }
   /**
@@ -5785,6 +5796,11 @@ export type Keyword =
    * instance (CR 702.45b). `count` is N, a positive integer.
    */
   | { readonly kind: 'bushido'; readonly count: number }
+  /**
+   * CR 702.25a (Flanking): "Flanking" means "Whenever this creature becomes blocked by a creature without flanking, the blocking creature gets -1/-1 until end of turn."
+   * Expanded by `derive` into one `becomesBlockedBy` trigger for each instance (CR 702.25b), which triggers once for each blocking creature without flanking.
+   */
+  | { readonly kind: 'flanking' }
   /**
    * CR 702.101a (Extort): "Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life
    * and you gain life equal to the total life lost this way." Expanded by `derive`; each instance triggers

@@ -557,6 +557,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
     'blocks',
     'becomesBlocked',
+    // CR 509.3d, 702.25a: "becomes blocked by a creature without flanking" (Flanking).
+    'becomesBlockedBy',
     // D-139: a state trigger, "when there are four or more page counters on this artifact" (CR 603.8), and the triggered mana ability
     // "whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b).
     'state',
@@ -715,6 +717,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mentor',
     'evolve',
     'bushido',
+    // CR 702.25: Flanking.
+    'flanking',
     'extort',
     'affinity',
     'convoke',
@@ -823,6 +827,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCounters',
     // Issue 144 (Arena of Glory): "{R}, {T}, Exert this land: Add {R}{R}." (CR 701.43a).
     'exert',
+    // "Put a -0/-1 counter on this creature: Add {G}." (CR 118.3, 122.1: Wall of Roots).
+    'putCounters',
   ],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
@@ -1001,6 +1007,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enchantedByYou',
     // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
     'notOwnedByYou',
+    // Staff of Compleation: "target permanent you own" (`ObjectFilter.ownedByYou`).
+    'ownedByYou',
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
@@ -1670,7 +1678,12 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
 ];
 
 /** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
-export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [...GRANTABLE_KEYWORDS, 'toxic'];
+// CR 702.25a: "a creature without flanking" (Flanking reads the blocker's keywords, but a flanking creature is only printed with it).
+export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
+  ...GRANTABLE_KEYWORDS,
+  'toxic',
+  'flanking',
+];
 
 /**
  * What a `restriction` static ability may name, by the subject kinds it accepts: every restriction
@@ -1965,6 +1978,8 @@ export const SELECTOR_KINDS = [
   'enchantedByYou',
   /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */
   'notOwnedByYou',
+  /** "You own" (`ObjectFilter.ownedByYou`): the object's owner is the controller of the ability reading the filter. */
+  'ownedByYou',
   /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
@@ -3014,6 +3029,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leavesBattlefield: true,
   blocks: true,
   becomesBlocked: true,
+  becomesBlockedBy: true,
   state: true,
   tappedForMana: true,
   tapsForMana: true,
@@ -3121,6 +3137,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   mentor: true,
   evolve: true,
   bushido: true,
+  flanking: true,
   extort: true,
   affinity: true,
   convoke: true,

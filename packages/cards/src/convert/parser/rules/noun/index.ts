@@ -18,6 +18,7 @@ import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
+import { ABZAN_ARMOR_NOUN_RULES } from './abzan-armor';
 import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
 import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
 import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
@@ -1003,6 +1004,8 @@ export const NOUN_RULES = [
   ...QUANDRIX_G_TARGET_NOUN_RULES,
   // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
   ...AHOY_G7_NOUN_RULES,
+  // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.
+  ...ABZAN_ARMOR_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

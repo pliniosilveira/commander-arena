@@ -1422,6 +1422,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
   ),
+  // Abzan Armor deck.
+  'condition.n-cards-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
+  'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
+  'static.creatures-without-keywords-cant-block-low-power': asIs,
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {
