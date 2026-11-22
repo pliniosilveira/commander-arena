@@ -2,7 +2,7 @@
  * Small readers over a `GameView` shared by the CasualAgent heuristics. An agent only ever sees a
  * view, so everything here works from `ObjectView` and `SeatView`.
  */
-import { type GameView, manaValue, type ObjectView } from '@commander-arena/engine';
+import { type GameView, manaValue, type ObjectView, type SeatId } from '@commander-arena/engine';
 
 export const isCreature = (o: ObjectView): boolean => o.types.includes('creature');
 export const isLand = (o: ObjectView): boolean => o.types.includes('land');
@@ -68,6 +68,10 @@ export function fixedLifeOf(cost: { readonly kind: string; readonly amount?: unk
 export function ownLife(view: GameView): number {
   return view.seats.find((s) => s.id === view.viewer)?.life ?? 0;
 }
+
+/** Life of one seat. */
+export const seatLife = (view: GameView, seat: SeatId): number =>
+  view.seats.find((s) => s.id === seat)?.life ?? 0;
 
 /** Life of the opposing seat with the least life (v1 has exactly one opponent). */
 export function opponentLife(view: GameView): number {

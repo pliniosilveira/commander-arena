@@ -16,6 +16,7 @@ import { typeLine } from '../format';
 import { useInteraction } from '../interaction';
 import { ManaCost } from '../mana';
 import { useApp, useStaticNotes } from '../store-context';
+import { Art } from './art';
 import { CardFace } from './CardFace';
 import { useHoverPreview } from './hover';
 import { findObject } from './resolve';
@@ -72,6 +73,8 @@ function OtherCard({ card }: { card: LookedCard }) {
   return (
     <div className="board-zone-card board-zone-other" data-looked-other={card.id} {...hover}>
       <div className="board-zone-other-face">
+        {/* The picture of the card (issue 488); the text below stays as the fallback when it cannot load. */}
+        <Art name={card.name} isToken={false} version="normal" className="board-zone-other-image" />
         <p className="board-zone-other-head">
           <b>{card.name}</b>
           <ManaCost cost={card.manaCost} />

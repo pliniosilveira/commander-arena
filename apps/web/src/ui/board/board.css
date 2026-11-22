@@ -319,12 +319,37 @@
 }
 
 /* The three rows of a battlefield; beside them, at the left, the emblem strip when there is one (D-243). */
-.board-field-rows {
+.board-field-rows-wrap {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
   min-height: 0;
+}
+
+/* The one sideways scroller of the three rows (FieldRows.tsx); its width is the unit (cqw) of the
+   empty room at the ends of the rows. */
+.board-field-rows {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.board-field-rows::-webkit-scrollbar {
+  display: none;
+}
+
+/* As wide as the widest row (plus its room at the ends); the rows stretch to it, so each centres
+   its cards in the same width. */
+.board-field-track {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: max-content;
+  min-width: 100%;
 }
 
 /*
@@ -578,24 +603,26 @@
   transition: flex-basis 0.2s ease;
 }
 
-.board-row-scroll {
+.board-row-view {
   position: absolute;
-  inset: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: safe center;
-  gap: 6px;
-  /* Empty room on both sides, half the row each: the row always scrolls, and the rightmost card can
-     be brought to the middle of the screen, clear of the stack panel on the right. The cards keep
-     their size (use-row-scroll.ts centres them at rest). */
-  padding-inline: 50%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100cqw;
+  pointer-events: none;
 }
 
-.board-row-scroll::-webkit-scrollbar {
-  display: none;
+.board-row-scroll {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+  gap: 6px;
+  /* Empty room on both sides, half the view each: the rightmost card can be brought to the middle
+     of the screen, clear of the stack panel on the right. The cards keep their size. */
+  padding-inline: 50cqw;
+  box-sizing: content-box;
 }
 
 .board-scroll {
@@ -1788,6 +1815,26 @@
   background: var(--bg-sunken);
   border: 1px dashed var(--line);
   border-radius: var(--radius);
+}
+
+.board-zone-other-face {
+  position: relative;
+}
+
+.board-zone-other-image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-zone-other-image.is-loaded {
+  opacity: 1;
 }
 
 .board-zone-other-head {

@@ -99,7 +99,7 @@ describe('the emblem strip', () => {
     expect(html).not.toContain('board-emblems');
     expect(html).not.toContain('data-emblem-kind');
     // The rows are still all there.
-    expect(count(html, 'board-field-rows')).toBe(2);
+    expect(count(html, 'class="board-field-rows"')).toBe(2);
   });
 
   test('the monarch is a small card in the strip of its player, with the text of CR 725.2', async () => {

@@ -22,13 +22,6 @@ import { useMeasure } from './measure';
 import { type CombatRole, type RowKind, roleKey } from './resolve';
 import { GAP, PAD_Y, type RowProps } from './row-shape';
 import { Tile } from './Tile';
-import { useRowScroll } from './use-row-scroll';
-
-const ROW_LABEL: Readonly<Record<RowKind, string>> = {
-  creature: 'Creatures',
-  land: 'Lands',
-  other: 'Other permanents',
-};
 
 /**
  * Tile proportions per row: how tall at most and how wide relative to height. Every tile has the
@@ -110,7 +103,6 @@ function GroupTile({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: hover only widens what the button shows
     <span
-      ref={ref}
       className="board-group"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -154,9 +146,6 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
     [ix, roles],
   );
   const layout = layoutRow(objects, size === null ? null : size.width, spec, extraKey);
-  const { scroller, more, updateMore, scrollBy } = useRowScroll(
-    `${layout.entries.length}|${layout.tileW}|${size?.width}`,
-  );
   // A tile narrower than the preferred width keeps its shape, so the card's top is cut at the same line.
   const tileH = Math.min(spec.tileH, cardTopHeight(layout.tileW));
   const style = { '--row-h': `${spec.tileH}px` } as CSSProperties;
@@ -168,10 +157,10 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
       style={style}
       data-row={kind}
     >
+      {/* Measures the visible width of the field (not the wide row): the layout fits the cards to it. */}
+      <div className="board-row-view" ref={ref} aria-hidden="true" />
       <div
         className="board-row-scroll"
-        ref={scroller}
-        onScroll={updateMore}
         data-overflow={layout.overflow}
         data-grouped={layout.grouped}
       >
@@ -202,26 +191,6 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
           );
         })}
       </div>
-      {more.left && (
-        <button
-          type="button"
-          className="board-scroll board-scroll-left"
-          aria-label={`Scroll ${ROW_LABEL[kind].toLowerCase()} left`}
-          onClick={() => scrollBy(-240)}
-        >
-          ‹
-        </button>
-      )}
-      {more.right && (
-        <button
-          type="button"
-          className="board-scroll board-scroll-right"
-          aria-label={`Scroll ${ROW_LABEL[kind].toLowerCase()} right`}
-          onClick={() => scrollBy(240)}
-        >
-          ›
-        </button>
-      )}
     </div>
   );
 }

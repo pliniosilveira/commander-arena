@@ -2091,6 +2091,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
           ? { triggerAttacked: true }
           : {}),
+        ...(a.trigger?.kind === 'playerAttacksOpponent' ||
+        (a.trigger?.kind === 'attackBatch' && a.trigger.eachAttackedPlayer === true)
+          ? { triggerAttackedSingle: true }
+          : {}),
         triggeredAbility: true,
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
