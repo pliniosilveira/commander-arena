@@ -6,7 +6,7 @@
  * by accident; the value is capped so a typo cannot freeze a game.
  */
 import type { Action } from '@commander-arena/engine';
-import { AI_SEAT, type GameClient, type Snapshot } from './protocol';
+import { type GameClient, HUMAN, type Snapshot } from './protocol';
 
 /** The longest delay the URL may ask for. */
 export const MAX_AI_DELAY_MS = 10_000;
@@ -19,7 +19,7 @@ export function autostartAiDelay(params: URLSearchParams): number | null {
   return ms >= 1 ? Math.min(ms, MAX_AI_DELAY_MS) : null;
 }
 
-/** `client`, except that an `act` whose answer holds a step of the AI arrives `delayMs` late. */
+/** `client`, except that an `act` whose answer holds a step of any AI seat arrives `delayMs` late. */
 export function withSlowOpponent(
   client: GameClient,
   delayMs: number,
@@ -30,7 +30,7 @@ export function withSlowOpponent(
     undo: () => client.undo(),
     async act(action: Action): Promise<Snapshot> {
       const reply = await client.act(action);
-      if (reply.steps.some((step) => step.seat === AI_SEAT)) await sleep(delayMs);
+      if (reply.steps.some((step) => step.seat !== HUMAN)) await sleep(delayMs);
       return reply;
     },
   };
