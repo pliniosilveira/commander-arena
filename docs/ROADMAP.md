@@ -45,7 +45,7 @@ Supported play can differ from the CR here. Code comments point to this table.
 | A token copy of a double-faced permanent is single-faced | 707.8a | `rules/copiable.ts` | none |
 | Tokens are named by their subtypes ("Soldier"), not "Soldier Token" | 111.4 | parser lowering of `createToken` | every token maker (cosmetic) |
 | Unearth's haste is a derived keyword, so a later "loses all abilities" removes it | 702.84a | `rules/derive-alt.ts` | none |
-| Search by several players happens one after the other; Spectacle's "opponent" excludes a player who left | 701.23i, 702.137 | `rules/search.ts`, `alt-costs.ts` | two seats only |
+| Spectacle's "opponent" excludes a player who left | 702.137 | `alt-costs.ts` | two seats only |
 | Loops of mandatory actions are not detected (two players with "can't lose" never end the game; a runner's turn limit stops it) | 104.4b | state-based actions | none |
 | An effect added at a high layer to a card outside the battlefield, and a creature with no printed power that becomes a creature, get no P/T without `setPt` | 613 | `rules/derive-layers.ts` | none |
 | Augury picks type slots itself | 601.2 | `rules/free-cast.ts` | Aminatou's Augury |

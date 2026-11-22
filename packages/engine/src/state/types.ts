@@ -1472,6 +1472,19 @@ export type Instruction =
       readonly seat: SeatId;
       readonly accepted: boolean | null;
       readonly chosen: readonly ObjectId[] | null;
+      /**
+       * CR 701.23i, 101.4: with several players, each looks at their library, then they decide in APNAP order which cards to find, and only then do the cards move and the libraries
+       * get shuffled. This instruction is the one of the first player; `later` are the players who decide after, `held` what each did so far (`accepted` false: a "may" search they
+       * declined; `chosen`: the cards found, none being an answer too). Absent for one player.
+       */
+      readonly together?: {
+        readonly later: readonly SeatId[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly accepted: boolean;
+          readonly chosen: readonly ObjectId[];
+        }[];
+      };
     }
   /**
    * "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one
