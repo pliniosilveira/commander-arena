@@ -241,10 +241,12 @@ function CommandBox({
   view,
   seat,
   onOpenZone,
+  label,
 }: {
   view: GameView;
   seat: SeatView;
   onOpenZone: (zone: ZoneRef) => void;
+  label: string;
 }) {
   const taxes = commanderTaxes(seat);
   const damage = commanderDamageTaken(view, seat.id);
@@ -256,7 +258,7 @@ function CommandBox({
         type="button"
         className="board-zone-btn"
         onClick={() => onOpenZone({ kind: 'command', seat: seat.id })}
-        aria-label={`Open ${seatLabel(view, seat.id)} command zone`}
+        aria-label={`Open ${label} command zone`}
       >
         <span className="board-stat-label">Command</span>
       </button>
@@ -294,10 +296,13 @@ export function PlayerStrip({
   view,
   seat,
   onOpenZone,
+  label,
 }: {
   view: GameView;
   seat: SeatView;
   onOpenZone: (zone: ZoneRef) => void;
+  /** The seat's name when the board numbers its opponents (`table-label.ts`); `seatLabel` when absent. */
+  label?: string;
 }) {
   const ix = useInteraction();
   const zone = useDropZone({ kind: 'seat', seat: seat.id });
@@ -307,7 +312,7 @@ export function PlayerStrip({
   const dimmed = ix.dimOthers && !clickable && !selected;
   const active = view.activeSeat === seat.id;
   const priority = view.prioritySeat === seat.id;
-  const who = seatLabel(view, seat.id);
+  const who = label ?? seatLabel(view, seat.id);
   // Exile is shared in the engine, but each player's strip lists the cards they own.
   const exileCount = view.exile.filter((o) => o.owner === seat.id).length;
   // Commander damage taken sits with the life total, where it cannot be missed (issue 34).
@@ -475,7 +480,7 @@ export function PlayerStrip({
         </button>
         <ManaPool pool={seat.manaPool} />
       </div>
-      <CommandBox view={view} seat={seat} onOpenZone={onOpenZone} />
+      <CommandBox view={view} seat={seat} onOpenZone={onOpenZone} label={who} />
     </div>
   );
 }
