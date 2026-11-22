@@ -22,3 +22,30 @@ export function targetZoneToOpen(view: GameView): ZoneRef | null {
   }
   return found === null ? null : { kind: 'graveyard', seat: found };
 }
+
+/** The zone a question opens by itself, and what the player calls it ("Open graveyard"). */
+export interface QuestionZone {
+  readonly zone: ZoneRef;
+  readonly name: string;
+}
+
+/**
+ * The Zone Picker a question opens by itself: the graveyard of #23, or the cards of a library search
+ * (the library is hidden, so the picker lists the matching cards the engine shows the searcher).
+ */
+export function questionZoneToOpen(view: GameView): QuestionZone | null {
+  const graveyard = targetZoneToOpen(view);
+  if (graveyard !== null) return { zone: graveyard, name: 'graveyard' };
+  const pending = view.pending;
+  if (pending?.kind !== 'chooseCards' || pending.seat !== view.viewer) return null;
+  if (pending.zone !== 'library' || pending.purpose !== 'search' || pending.legal.length === 0) {
+    return null;
+  }
+  return { zone: { kind: 'cards' }, name: 'library' };
+}
+
+/** True when both name the same zone to list. */
+export function sameZone(a: ZoneRef, b: ZoneRef): boolean {
+  if (a.kind !== b.kind) return false;
+  return 'seat' in a && 'seat' in b ? a.seat === b.seat : true;
+}

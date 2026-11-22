@@ -1,7 +1,7 @@
 /** #23: when every legal target of a question is in one graveyard, that graveyard is opened. */
 import type { ChosenTarget, GameView, ObjectView, TargetsDecision } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { targetZoneToOpen } from '../src/ui/board/target-zone';
+import { questionZoneToOpen, sameZone, targetZoneToOpen } from '../src/ui/board/target-zone';
 
 const card = (id: string, zone: string, owner = 0): ObjectView =>
   ({ id, name: id, zone, owner, controller: owner }) as unknown as ObjectView;
@@ -61,5 +61,47 @@ describe('the zone to open for a targets question', () => {
       } as unknown as GameView),
     ).toBeNull();
     expect(targetZoneToOpen({ ...v, viewer: 1 })).toBeNull();
+  });
+});
+
+describe('the zone to open for a library search', () => {
+  const search = (over: Record<string, unknown> = {}, seat = 0): GameView =>
+    ({
+      viewer: 0,
+      seats: [],
+      exile: [],
+      battlefield: [],
+      stack: [],
+      pending: {
+        id: 'd1',
+        seat,
+        kind: 'chooseCards',
+        source: 's',
+        purpose: 'search',
+        zone: 'library',
+        legal: ['c1', 'c2'],
+        min: 0,
+        max: 1,
+        reveal: false,
+        prompt: '',
+        ...over,
+      },
+    }) as unknown as GameView;
+
+  test('your own search with cards to find opens the list of those cards', () => {
+    expect(questionZoneToOpen(search())).toEqual({ zone: { kind: 'cards' }, name: 'library' });
+  });
+
+  test('nothing to find, another player, another zone or another purpose: nothing is opened', () => {
+    expect(questionZoneToOpen(search({ legal: [] }))).toBeNull();
+    expect(questionZoneToOpen(search({}, 1))).toBeNull();
+    expect(questionZoneToOpen(search({ zone: 'hand' }))).toBeNull();
+    expect(questionZoneToOpen(search({ purpose: 'putOnTop' }))).toBeNull();
+  });
+
+  test('sameZone tells zones of one kind and seat apart', () => {
+    expect(sameZone({ kind: 'cards' }, { kind: 'cards' })).toBe(true);
+    expect(sameZone({ kind: 'graveyard', seat: 0 }, { kind: 'graveyard', seat: 1 })).toBe(false);
+    expect(sameZone({ kind: 'graveyard', seat: 0 }, { kind: 'command', seat: 0 })).toBe(false);
   });
 });

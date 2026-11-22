@@ -8,6 +8,8 @@ A modal that lists the cards of one zone and, while the game asks the player a q
 
 ![The Zone Picker opened for a target in a graveyard](images/zone-picker.png)
 
+![The Zone Picker opened for a library search](images/zone-picker-library.png)
+
 ### What it shows
 
 - **The list** (left): the cards of the zone as whole cards (200 px wide, the `full` card face), in a grid that scrolls inside the panel. A legal choice glows, a chosen one has a ring; a click chooses or takes it back. Hovering a card shows it in the preview panel, as everywhere else. Drag and drop of a card with flashback still works.
@@ -18,12 +20,18 @@ Without a pending question (a player opens a graveyard, the exile or the command
 
 ### When it opens
 
-`Board.tsx` opens it by itself when every legal target of a targets question is a card in one graveyard (`target-zone.ts`), and closes it when the question is answered. The player can also open any zone from its button.
+`Board.tsx` opens it by itself (`questionZoneToOpen` in `board/target-zone.ts`) when:
+
+- every legal target of a targets question is a card in one graveyard (#23); or
+- the player searches their own library (a `chooseCards` question with purpose `search`): the list is the matching cards the engine shows the searcher, titled "Search your library". The library itself stays hidden.
+
+It closes by itself when the question is answered. The player can also open any zone from its button, and reopen the question's picker from the dock ("Open graveyard", "Open library").
 
 ### Where it is meant to be used
 
-- Selections from a graveyard (today: targets, such as Meren of Clan Nel Toth's end step ability).
-- Selections from a library (a search, "look at the top N"): the same list and the same question column, with the library's cards as the list. Not wired yet; `CardPickerPanel` still draws those in the dock.
+- Selections from a graveyard (targets, such as Meren of Clan Nel Toth's end step ability).
+- Selections from a library by a search (above). The dock's card list stays beside it, so both show the same choice.
+- Not yet: the other `chooseCards` purposes (look at the top cards, discard, put on top, behold), which still use the dock's list alone.
 
 ### Rules for changing it
 

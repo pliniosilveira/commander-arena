@@ -13,6 +13,9 @@ const GAME = '/?autostart=synthetic-search,swamp-forest';
 const finder = (page: Page) => page.getByRole('region', { name: 'Cards to find' });
 const discarder = (page: Page) => page.getByRole('region', { name: 'Cards to discard' });
 const primary = (page: Page) => page.locator('[data-dec-primary]');
+// The search opens the Zone Picker (docs/BOARD_COMPONENTS.md): the cards, the question and its buttons are there.
+const picker = (page: Page) => page.getByRole('dialog', { name: 'Search your library' });
+const pickerPrimary = (page: Page) => picker(page).locator('.board-modal-actions .dec-btn-primary');
 
 /**
  * Plays on until a search question of up to `max` cards is on screen. Another search on the way is
@@ -26,7 +29,7 @@ async function playUntilSearch(page: Page, max: 'one' | 'two'): Promise<void> {
     if (await finder(page).isVisible()) {
       const prompt = await page.locator('.dec-prompt').first().innerText();
       if (prompt.startsWith(`Choose up to ${max} `)) return;
-      await primary(page).click();
+      await pickerPrimary(page).click();
     } else if (await discarder(page).isVisible()) {
       await discarder(page).locator('button[aria-pressed]').first().click();
       await primary(page).click();
@@ -49,36 +52,45 @@ test('a search lists the library cards, the choice keeps its order, and the log 
   await page.goto(`${GAME}&seed=1`);
   await playUntilSearch(page, 'two');
 
-  const panel = finder(page);
-  await expect(panel).toContainText('Search your library');
-  const rows = panel.locator('button.dec-pick');
-  expect(await rows.count()).toBeGreaterThan(1);
-  // The bar repeats the decision's words, and an empty answer is allowed.
-  await expect(page.getByText(/^Choose up to .* cards?; /)).toBeVisible();
-  await expect(primary(page)).toHaveText('Find nothing');
-  await expect(primary(page)).toBeEnabled();
+  const dialog = picker(page);
+  await expect(dialog).toBeVisible();
+  const cards = dialog.locator('.board-zone-card');
+  expect(await cards.count()).toBeGreaterThan(1);
+  // The picker repeats the decision's words, and an empty answer is allowed.
+  await expect(dialog.locator('.board-modal-prompt')).toContainText(/^Choose up to .* cards?; /);
+  await expect(pickerPrimary(page)).toHaveText('Find nothing');
+  await expect(pickerPrimary(page)).toBeEnabled();
 
-  // Pick by clicking two different rows: the order shows as 1st and 2nd, in click order.
-  const second = await rows.nth(1).locator('.dec-pick-name').innerText();
-  await rows.nth(1).click();
-  await rows.nth(0).click();
-  await expect(rows.nth(1).locator('.dec-pick-order')).toHaveText('1st');
-  await expect(rows.nth(0).locator('.dec-pick-order')).toHaveText('2nd');
-  await expect(panel).toContainText('2 of up to 2 chosen');
-  await expect(primary(page)).toHaveText('Confirm');
+  // Pick two different cards: the order shows as 1st and 2nd, in click order.
+  const second = await cards.nth(1).getAttribute('aria-label');
+  await cards.nth(1).click();
+  await cards.nth(0).click();
+  await expect(cards.nth(1).locator('.board-ibadge')).toHaveText('1st');
+  await expect(cards.nth(0).locator('.board-ibadge')).toHaveText('2nd');
+  await expect(dialog).toContainText('2 of up to 2 chosen');
+  await expect(pickerPrimary(page)).toHaveText('Confirm');
 
-  // Taking a pick back from the list moves the other one up.
-  await panel.getByRole('button', { name: /^Take back 1st/ }).click();
-  await expect(rows.nth(0).locator('.dec-pick-order')).toHaveText('1st');
-  await rows.nth(1).click();
-  await expect(rows.nth(1).locator('.dec-pick-order')).toHaveText('2nd');
+  // Taking a pick back moves the other one up.
+  await cards.nth(1).click();
+  await expect(cards.nth(0).locator('.board-ibadge')).toHaveText('1st');
+  await cards.nth(1).click();
+  await expect(cards.nth(1).locator('.board-ibadge')).toHaveText('2nd');
+
+  // The picker can be closed to look at the board; the question cannot be confirmed until it is open again.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(primary(page)).toBeDisabled();
+  await page.getByRole('button', { name: 'Open library' }).click();
+  await expect(dialog).toBeVisible();
+  await expect(cards.nth(0).locator('.board-ibadge')).toHaveText('1st');
 
   const log = page.getByRole('log');
-  await page.keyboard.press('Enter');
-  await expect(panel).toBeHidden();
+  await pickerPrimary(page).click();
+  await expect(dialog).toBeHidden();
+  await expect(finder(page)).toBeHidden();
   await expect(log).toContainText('You search your library and find 2 cards.');
   await expect(log).toContainText('You reveal ');
-  expect(second).not.toBe('');
+  expect(second ?? '').not.toBe('');
   expect(errors).toEqual([]);
 });
 
@@ -87,7 +99,7 @@ test('Find nothing ends the search without moving a card', async ({ page }) => {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(`${GAME}&seed=1`);
   await playUntilSearch(page, 'one');
-  await primary(page).click();
+  await pickerPrimary(page).click();
   await expect(finder(page)).toBeHidden();
   await expect(page.getByRole('log')).toContainText('You search your library and find nothing.');
   expect(errors).toEqual([]);
