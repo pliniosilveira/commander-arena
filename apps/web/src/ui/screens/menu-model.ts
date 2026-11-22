@@ -1,7 +1,7 @@
 /** The menu's form logic, pure so it is tested without a DOM. */
 import type { AiKind, NewGameOptions } from '../../game/protocol';
 import type { DeckChoice, Precons } from '../../precons';
-import { startOptionsFor } from '../../precons/start';
+import { startOptionsFor, startTableOptionsFor } from '../../precons/start';
 
 export interface MenuForm {
   readonly humanDeck: string;
@@ -80,6 +80,40 @@ export async function startFromForm(
     seed: parsed.seed ?? pickSeed(),
     humanDeck: form.humanDeck,
     aiDeck: form.aiDeck,
+    freeMulligan: form.freeMulligan ?? true,
+    ...(form.ai === undefined ? {} : { ai: form.ai }),
+    allowHidden: false,
+  });
+  if (!result.ok) return { started: false, kind: 'refused', reason: result.reason };
+  await startGame({ ...result.options, intro: true });
+  return { started: true };
+}
+
+/**
+ * Starts a game with several opponents from the human deck and one deck per opponent, as
+ * `startFromForm` does for one: nothing starts on an invalid seed or when a deck is refused.
+ */
+export async function startTableFromForm(
+  startGame: (options: NewGameOptions) => Promise<void>,
+  form: {
+    readonly humanDeck: string;
+    readonly opponentDecks: readonly string[];
+    readonly seed: string;
+    readonly freeMulligan?: boolean;
+    readonly ai?: AiKind;
+  },
+  precons: Precons,
+  pickSeed: () => number = randomSeed,
+): Promise<StartResult> {
+  const parsed = parseSeed(form.seed);
+  if (!parsed.ok) return { started: false, kind: 'seed' };
+  if (form.humanDeck === '' || form.opponentDecks.some((id) => id === '')) {
+    return { started: false, kind: 'refused', reason: 'No precon is installed yet.' };
+  }
+  const result = await startTableOptionsFor(precons, {
+    seed: parsed.seed ?? pickSeed(),
+    humanDeck: form.humanDeck,
+    opponentDecks: form.opponentDecks,
     freeMulligan: form.freeMulligan ?? true,
     ...(form.ai === undefined ? {} : { ai: form.ai }),
     allowHidden: false,

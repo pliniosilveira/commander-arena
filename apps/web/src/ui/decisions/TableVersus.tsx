@@ -6,7 +6,7 @@ import { Side } from './Versus';
 
 /**
  * The screen before a game with several opponents: your deck, then each opponent's deck, face to
- * face. Start game opens the (still empty) board, Cancel goes back to the menu.
+ * face. Start game goes on to the opening hand, Cancel goes back to the menu.
  */
 export function TableVersus({ onStart }: { onStart: () => void }) {
   const table = useApp((s) => s.table);

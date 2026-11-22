@@ -5,7 +5,7 @@
  * (`game/precons.ts`) is passed on by id, which is the one deliberate exception.
  */
 
-import type { AiKind, NewGameOptions } from '../game/protocol';
+import type { AiKind, NewGameOptions, OpponentOptions } from '../game/protocol';
 import type { PreconDeck, Precons } from './build';
 import { type ChallengeLevel, emblemsFor } from './challenges/levels';
 
@@ -60,6 +60,52 @@ export async function startOptionsFor(
     ...('deck' in ai ? { aiCards: ai.deck } : {}),
     ...(humanPreconName === undefined ? {} : { humanPreconName }),
     ...(aiPreconName === undefined ? {} : { aiPreconName }),
+    ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
+    ...(request.ai === undefined ? {} : { ai: request.ai }),
+  };
+  return { ok: true, options };
+}
+
+export interface TableRequest {
+  readonly seed: number;
+  readonly humanDeck: string;
+  /** One deck id per opponent, in seat order (two or three). */
+  readonly opponentDecks: readonly string[];
+  readonly freeMulligan?: boolean;
+  readonly ai?: AiKind;
+  readonly allowHidden: boolean;
+}
+
+/**
+ * The options of a game with several opponents: every deck goes through the rule of D-137 as in
+ * `startOptionsFor`, and a refusal says which opponent's deck it is. `aiDeck` carries the first
+ * opponent's id only because the type asks for it; `opponents` is what the host plays.
+ */
+export async function startTableOptionsFor(
+  precons: Precons,
+  request: TableRequest,
+): Promise<StartOptions> {
+  const human = await resolveId(precons, request.humanDeck, request.allowHidden);
+  if (!human.ok) return { ok: false, reason: human.reason };
+  const opponents: OpponentOptions[] = [];
+  for (const [index, id] of request.opponentDecks.entries()) {
+    const resolved = await resolveId(precons, id, request.allowHidden);
+    if (!resolved.ok) return { ok: false, reason: `Opponent ${index + 1}: ${resolved.reason}` };
+    const preconName = precons.list.find((info) => info.id === id)?.name;
+    opponents.push({
+      deck: id,
+      ...('deck' in resolved ? { cards: resolved.deck } : {}),
+      ...(preconName === undefined ? {} : { preconName }),
+    });
+  }
+  const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
+  const options: NewGameOptions = {
+    seed: request.seed,
+    humanDeck: request.humanDeck,
+    aiDeck: request.opponentDecks[0] ?? '',
+    opponents,
+    ...('deck' in human ? { humanCards: human.deck } : {}),
+    ...(humanPreconName === undefined ? {} : { humanPreconName }),
     ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
     ...(request.ai === undefined ? {} : { ai: request.ai }),
   };

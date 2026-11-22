@@ -37,4 +37,6 @@ export {
   type StartRequest,
   startChallengeOptions,
   startOptionsFor,
+  startTableOptionsFor,
+  type TableRequest,
 } from './start';

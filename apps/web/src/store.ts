@@ -27,8 +27,8 @@ import {
 export type Screen = 'menu' | 'import' | 'loading' | 'playing' | 'table';
 
 /**
- * A game with more than one opponent (the "more opponents" project). The engine plays two seats
- * only, so for now it is just the decks chosen and an empty board: no game is started.
+ * The decks of a game with more than one opponent (the "more opponents" project), for the versus
+ * screen before the opening hand. Set when such a game starts, cleared by `backToMenu`.
  */
 export interface TableSetup {
   readonly humanDeck: string;
@@ -77,7 +77,7 @@ export function untappableSources(
 
 export interface AppState {
   readonly screen: Screen;
-  /** The decks of a table with several opponents, while the `table` screen is open. */
+  /** The decks of a game with several opponents, while that game is on screen. */
   readonly table: TableSetup | null;
   /** Which section the import screen opens on. */
   readonly importTab: ImportTab;
@@ -128,7 +128,6 @@ export interface AppState {
 export interface AppActions {
   startGame(options: NewGameOptions): Promise<void>;
   /** Opens the empty board of a game with several opponents (no game is played yet). */
-  openTable(setup: TableSetup): void;
   /** An explicit player action (a click). */
   act(action: Action): Promise<void>;
   /** Takes back the last small action when the Worker allows it (D-050). */
@@ -392,19 +391,18 @@ export function createAppStore(options: StoreOptions): AppStore {
       error: null,
       stats: { humanActions: 0, autoPasses: 0 },
 
-      openTable(setup) {
-        generation += 1;
-        gate?.release();
-        set({ screen: 'table', table: setup, snapshot: null, log: [], error: null });
-      },
-
       async startGame(opts) {
         generation += 1;
         gate?.release();
         const gen = generation;
         seized = false;
+        const opponents = opts.opponents ?? [];
         set({
           screen: 'loading',
+          table:
+            opponents.length > 1
+              ? { humanDeck: opts.humanDeck, opponentDecks: opponents.map((o) => o.deck) }
+              : null,
           options: opts,
           snapshot: null,
           log: [],
@@ -416,7 +414,11 @@ export function createAppStore(options: StoreOptions): AppStore {
         });
         const started: GameStarted = await client.newGame(opts);
         if (gen !== generation) return;
-        set({ screen: 'playing', summary: started.summary });
+        // A game of three or more seats has a screen of its own, with the board for several opponents.
+        set({
+          screen: started.snapshot.view.seats.length > 2 ? 'table' : 'playing',
+          summary: started.summary,
+        });
         apply(started.snapshot);
         setBusy(true);
         try {
