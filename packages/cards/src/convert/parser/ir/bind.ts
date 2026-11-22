@@ -593,6 +593,16 @@ class Binder {
           ...(copyOf === undefined ? {} : { copyOf }),
         };
       }
+      case 'costList':
+        // "you may pay X life, where X is that spell's mana value" (G'raha Tia, CR 107.3c): the amount that defines X is bound like the one of a "where" of a sentence.
+        return {
+          ...arg,
+          costs: arg.costs.map((cost) =>
+            cost.kind === 'payLife' && cost.definesX === true
+              ? { ...cost, amount: this.amount(cost.amount) }
+              : cost,
+          ),
+        };
       default:
         return arg;
     }

@@ -21,6 +21,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrComparison, IrFilter } from '../../ir/types';
 import { GRANTABLE_KEYWORDS } from '../keyword/vocabulary';
+import { family } from '../registry';
 import { readCreatureType } from './creature-types';
 import { PLANESWALKER_TYPES, SUBTYPE_WORD_NUMBERED, type SubtypeWord, subtypeOf } from './subtypes';
 
@@ -1307,9 +1308,19 @@ export function graveyardPhrase(
         quiet(
           amountLimit === undefined
             ? fail
-            : map(
-                sequence(literal(' with mana value less than or equal to '), amountLimit),
-                ([, amount]) => amount,
+            : choice(
+                map(
+                  sequence(literal(' with mana value less than or equal to '), amountLimit),
+                  ([, amount]) => ({ amount, exact: false }),
+                ),
+                // Krile Baldesion (CR 202.3, 603.3d): "with mana value equal to that spell's mana value": the card has exactly the mana value of the spell that caused the trigger.
+                map(
+                  sequence(
+                    literal(' with mana value equal to '),
+                    family<IrAmount>('amount', { only: ['amount.that-spells-mana-value'] }),
+                  ),
+                  ([, amount]) => ({ amount, exact: true }),
+                ),
               ),
         ),
         undefined,
@@ -1363,7 +1374,12 @@ export function graveyardPhrase(
           ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
-          ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),
+          ...(limitAmount === undefined
+            ? {}
+            : {
+                manaValueAtMostAmount: limitAmount.amount,
+                ...(limitAmount.exact ? { manaValueExact: true as const } : {}),
+              }),
           card: true,
         },
         compared,

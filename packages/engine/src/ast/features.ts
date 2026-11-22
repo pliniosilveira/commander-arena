@@ -1070,6 +1070,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Lethal Scheme: "each creature that convoked this spell" (`convokers`).
     'convokers',
     'manaValueAtMost',
+    // "With mana value equal to that spell's mana value" (CR 202.3): `ObjectFilter.manaValueExact` beside `manaValueAtMost`.
+    'manaValueExact',
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
     'sharesCardTypeWith',
@@ -2059,6 +2061,8 @@ export const SELECTOR_KINDS = [
   'convokers',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
+  /** "With mana value equal to that spell's mana value" (CR 202.3, 603.3d): the engine's `ObjectFilter.manaValueExact`, the limit of `manaValueAtMost` as an exact value. */
+  'manaValueExact',
   /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */
   'manaValueBelow',
   /** "That shares a card type with it" (CR 205.2a, issue 100): the engine's `ObjectFilter.sharesCardTypeWith`. */

@@ -212,6 +212,15 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     effects.push(...lowered.value);
     ctx.lowered += 1;
     ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    // CR 608.2c: "Put a +1/+1 counter on each legendary creature you control. They gain ...": "they" is that group, only right after the counters.
+    const lastLowered = lowered.value[lowered.value.length - 1];
+    ctx.lastCounteredGroup =
+      lastLowered?.kind === 'addCounters' && lastLowered.objects.kind === 'each'
+        ? lastLowered.objects
+        : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
+          lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
+          ? ctx.lastCounteredGroup
+          : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastPlayer =
@@ -2131,10 +2140,24 @@ export function lowerDelayedCast(
   const effect = oneEffect(inner.value);
   const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
   const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
-  if (!(onlyCopy || onlyOwn)) return refuse(sentence);
+  // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
+  const [choice, copy, ...rest] = inner.value;
+  const copiesChosen =
+    choice?.kind === 'chooseObjects' &&
+    copy?.kind === 'createToken' &&
+    copy.token.kind === 'copyOf' &&
+    copy.token.object.kind === 'chosen' &&
+    copy.token.object.id === choice.id &&
+    rest.length === 0;
+  if (!(onlyCopy || onlyOwn || copiesChosen)) return refuse(sentence);
   return {
     ok: true,
-    value: { kind: 'delayedCast', filter: filter.value, effect },
+    value: {
+      kind: 'delayedCast',
+      filter: filter.value,
+      effect,
+      ...(sentence.delayed?.repeat === true ? { repeat: true as const } : {}),
+    },
     rule: sentence.rule,
   };
 }

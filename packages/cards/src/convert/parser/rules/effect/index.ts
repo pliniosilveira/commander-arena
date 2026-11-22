@@ -48,6 +48,7 @@ import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
+import { COPY_CHOSEN_TOKEN_EFFECT_RULES } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
@@ -184,6 +185,7 @@ import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
+import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
@@ -1413,6 +1415,8 @@ export const EFFECT_RULES = [
   ...THE_TOKEN_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
   ...PUMP_THOSE_EFFECT_RULES,
+  ...PUMP_UNBLOCKABLE_EFFECT_RULES,
+  ...COPY_CHOSEN_TOKEN_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".

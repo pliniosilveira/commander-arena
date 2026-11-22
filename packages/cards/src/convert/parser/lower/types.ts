@@ -334,6 +334,11 @@ export interface LowerContext {
    */
   lastEffectKind: string | null;
   /**
+   * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
+   * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  lastCounteredGroup: ObjectSelector | null;
+  /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
@@ -430,6 +435,7 @@ export function newContext(
     exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
+    lastCounteredGroup: null,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,

@@ -716,6 +716,9 @@ export function checkFilter(
       "sharesCardTypeWith 'sacrificed' is read in the filter of a sacrifice that follows another sacrifice (or the offer of one) in the same sequence",
     );
   }
+  if (f.manaValueExact === true && f.manaValueAtMost === undefined) {
+    issue(out, `${path}.manaValueExact`, 'manaValueExact needs the manaValueAtMost it makes exact');
+  }
   if (f.manaValueAtMost !== undefined && f.manaValueBelow !== undefined) {
     issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
   }
@@ -5215,6 +5218,11 @@ function isDelayedCastBody(e: Effect | undefined): boolean {
   if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
   if (e.kind === 'draw') return kindOf(e.player) === 'you';
   if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
+  // CR 608.2d, 707.2 (Summon: Good King Mog XII): "create a token that's a copy of a non-Saga token you control": the permanent is chosen as the ability resolves, then copied.
+  if (e.kind === 'chooseObjects') return true;
+  if (e.kind === 'createToken') {
+    return e.token?.kind === 'copyOf' && kindOf(e.token.object) === 'chosen';
+  }
   if (e.kind === 'sequence') {
     return Array.isArray(e.effects) && e.effects.length > 0 && e.effects.every(isDelayedCastBody);
   }
@@ -5239,11 +5247,14 @@ export function checkDelayedCast(
       'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
     );
   }
+  if (e.repeat !== undefined && e.repeat !== true) {
+    issue(out, `${path}.repeat`, 'repeat must be true when present');
+  }
   if (!isDelayedCastBody(e.effect)) {
     issue(
       out,
       `${path}.effect`,
-      'a delayed cast trigger copies the spell that was cast, or its controller draws cards and gains life',
+      'a delayed cast trigger copies the spell that was cast, copies a permanent it chooses, or its controller draws cards and gains life',
     );
     return;
   }
@@ -5931,7 +5942,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.duration`, 'a regeneration shield lasts until end of turn');
       }
       break;
-    case 'mayPay':
+    case 'mayPay': {
       // CR 702.101a: "you may pay [cost]. If you do, [effect]".
       // Issue 101: the player who pays is named by `by` ("its controller"), a player selector of the ability.
       if (e.by !== undefined) {
@@ -5942,9 +5953,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // D-364 (CR 119.4): the life paid may be the life that caused the trigger (`triggerDamage`, "pay that much life"), which the amount checks against
       // the trigger of the ability; any other amount is held to what a payment of life reads (`checkCost`).
+      // CR 202.3, 603.3d (G'raha Tia): "you may pay X life, where X is that spell's mana value": the amount `manaValueOf` the `triggerSubject` is read the same way, as the
+      // ability resolves, and `checkAmount` holds it to a trigger that has a spell.
+      const readsTrigger = (a: Amount): boolean =>
+        kindOf(a) === 'triggerDamage' ||
+        (kindOf(a) === 'manaValueOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject');
       if (Array.isArray(e.cost)) {
         e.cost.forEach((c, i) => {
-          if (c?.kind === 'payLife' && kindOf(c.amount) === 'triggerDamage') {
+          if (c?.kind === 'payLife' && readsTrigger(c.amount)) {
             checkAmount(c.amount, `${path}.cost[${i}].amount`, scope, out);
           }
         });
@@ -5952,9 +5968,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkCosts(
         Array.isArray(e.cost)
           ? e.cost.map((c) =>
-              c?.kind === 'payLife' && kindOf(c.amount) === 'triggerDamage'
-                ? { ...c, amount: 1 }
-                : c,
+              c?.kind === 'payLife' && readsTrigger(c.amount) ? { ...c, amount: 1 } : c,
             )
           : e.cost,
         `${path}.cost`,
@@ -5963,6 +5977,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the effect runs when the payment was made.
       checkEffect(e.effect, `${path}.effect`, { ...scope, paidAvailable: true }, out);
       break;
+    }
     case 'cumulativeUpkeep':
       // CR 702.24a (D-127): the cost for each age counter; the effect of an ability of a permanent, never a spell.
       checkCosts(e.cost, `${path}.cost`, out);
