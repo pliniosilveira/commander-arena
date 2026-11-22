@@ -132,7 +132,7 @@ describe('Priest of Forgotten Gods: "{T}, Sacrifice two other creatures: Any num
     '{T}, Sacrifice one other creature: Any number of target players each lose 2 life.',
     '{T}, Sacrifice two other creatures: Any number of target players each loses 2 life.',
     '{T}, Sacrifice two other creatures: Any number of target players lose 2 life.',
-    '{T}, Sacrifice two other creatures: Any number of target opponents each lose 2 life.',
+    '{T}, Sacrifice two other creatures: Any number of target creatures each lose 2 life.',
     '{T}, Sacrifice two other creatures: Up to two target players each lose 2 life.',
     '{T}, Sacrifice two other creatures: Any number of target players each sacrifices a creature of their choice.',
     '{T}, Sacrifice two other creatures: You may add {B}{B}.',
