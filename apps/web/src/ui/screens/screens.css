@@ -349,15 +349,19 @@
   gap: 8px;
 }
 .scr-seg-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  position: relative;
   margin-left: auto;
 }
+/* The label hangs above the toggle without adding to the row's height, so the button stays next
+   to the text above it. */
 .scr-seg-label {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 4px;
+  white-space: nowrap;
   font-size: 13px;
-  color: var(--text-dim, inherit);
+  color: var(--text-dim);
 }
 .scr-seg {
   display: inline-flex;
