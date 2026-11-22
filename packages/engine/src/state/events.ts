@@ -699,6 +699,8 @@ export type GameEvent =
    * no cost and carries no card id.
    */
   | { readonly kind: 'foretold'; readonly seat: SeatId; readonly object: ObjectId }
+  /** The companion was brought (CR 116.2g, 702.139a): `seat` paid {3} and put it into its hand; `object` is the new object there (CR 400.7). Public. */
+  | { readonly kind: 'companionBrought'; readonly seat: SeatId; readonly object: ObjectId }
   /** A card was plotted (CR 702.170a): `seat` paid its plot cost and exiled it from their hand, face up. `object` is the card in exile (public). */
   | { readonly kind: 'plotted'; readonly seat: SeatId; readonly object: ObjectId }
   /** CR 701.3 (Attach): an Aura or Equipment became attached to a permanent. */

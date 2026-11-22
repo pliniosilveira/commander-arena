@@ -14,6 +14,7 @@ import { useMemo } from 'react';
 import { activatedStackIds } from '../../game/activation';
 import { alternativeBadge } from '../../game/alt-cost';
 import { chosenLabel } from '../../game/chosen';
+import { companionSeatOf, companionState } from '../../game/companion';
 import { additionalCostChoiceText, additionalCostsText } from '../../game/cost-text';
 import { designationKind } from '../../game/designations';
 import { realCardOf } from '../../game/face-down-text';
@@ -133,7 +134,19 @@ function PreviewDetails({ object }: { object: ObjectView }) {
   const restrictionChips = chips.filter((c) => c.restriction);
   const facts: string[] = [];
   const designation = designationKind(object.id);
-  if (designation !== null && view !== null) {
+  const companionSeat = companionSeatOf(object.id);
+  if (companionSeat !== null && view !== null) {
+    // SPEC 5.8, CR 702.139: the companion is outside the game; its owner may bring it into their hand once, for {3} (CR 116.2g).
+    const brought = view.seats.find((s) => s.id === companionSeat)?.companion?.brought === true;
+    const mine = companionSeat === view.viewer;
+    facts.push(
+      brought
+        ? `${mine ? 'Your' : "The opponent's"} companion was brought into the game: it is an ordinary card now`
+        : `${mine ? 'Your' : "The opponent's"} companion, outside the game (${companionState(false)}). ${
+            mine ? 'You may bring it into your hand' : 'They may bring it into their hand'
+          } once, for {3}`,
+    );
+  } else if (designation !== null && view !== null) {
     // D-243: the monarch and the Ring are no objects in a zone: say whose they are.
     const you = object.controller === view.viewer;
     facts.push(

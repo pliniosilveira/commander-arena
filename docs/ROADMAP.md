@@ -72,7 +72,7 @@ Rules the engine does not implement and no supported card reaches (refused): sta
 - **Combat and rules.** Trample over planeswalkers (702.19c), Siege battles, "can block additional creatures".
 - **Statics and conditions.** Conditions that read characteristics or the battlefield are refused for layer 4, 5 and 7b statics (plain conditions only, CR 613.8); a group `setTypes` takes no condition; `duringStep` names combat steps only; the turn log keeps combat damage to players and activations only (no "damage dealt to a creature this turn"); the number of spells each player has cast this turn is `SeatState.spellsCastThisTurn` (read by `Condition` `spellsCastThisTurn`, D-318, and by Storm and `castSpell.nth`), not a turn log entry, and a kind of spell ("instant or sorcery spells cast this turn") is not counted.
 - **Choosing cards.** Choosing among another player's cards (701.20, "target opponent's hand"); a card chosen from the hand cannot enter with counters other than the effect's own; a play permission (`mayPlay`) does not follow a card to another exile object (400.7); linked exile only from an ability's own `exile` with `linked: true`.
-- **Deck validation.** A commander that chooses its colors (903.4b), interchangeable names (201.3), the rulebreaker rule (903.5e, the commander is flagged unsupported), Companion (listed, not played), Partner variants (Partner with, Friends forever, Background, Doctor's companion).
+- **Deck validation.** A commander that chooses its colors (903.4b), interchangeable names (201.3), the rulebreaker rule (903.5e, the commander is flagged unsupported), Companion (only Jegantha's condition is read), Partner variants (Partner with, Friends forever, Background, Doctor's companion).
 - **Vehicles and Crew.** Crew triggers and "can't crew" (702.122d, e), a crew cost combined with mana, a `crewed` event.
 - **Sagas.** Non-consecutive chapters, granting chapter abilities.
 - **Auras and Equipment.** Enchant player is run since D-629 for an Aura spell that is cast (an Aura that enchants a player and enters the battlefield another way stays where it is, CR 303.4g: no choice of player is asked, and no spell or ability can attach one to a player); Forest, several enchant abilities, equip restrictions (legendary creature, commander), Reconfigure, Fortifications, an Aura that is a creature; an Aura entering by an effect is handled for `moveToZone` of an object selector and of a `choose` from a card zone (hand, graveyard, exile, command zone) and the return of `exile.until`; other entries stay refused.
@@ -141,6 +141,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.
 - `anyCombinationAmount` lists every combination, C(X+4,4) of them: a large X slows the mana choice.
 - "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.

@@ -7,6 +7,7 @@ import type {
   SeatId,
   SeatView,
 } from '@commander-arena/engine';
+import { companionObject, companionSeatOf } from '../../game/companion';
 import { designationObject } from '../../game/designations';
 import { isInherentAbility } from '../../game/monarch-text';
 import type { DefinedPtNote } from '../../game/protocol';
@@ -16,6 +17,9 @@ export function findObject(view: GameView, id: ObjectId): ObjectView | null {
   // The monarch and the Ring are shown as small cards but are no objects of the view (D-243).
   const designation = designationObject(view, id);
   if (designation !== null) return designation;
+  // A revealed companion is outside the game: its card is built from the seat's public companion data.
+  const companionSeat = companionSeatOf(id);
+  if (companionSeat !== null) return companionObject(view, companionSeat);
   // `pendingCards` are the viewer's own library cards of a search they are making (engine view).
   const pools: (readonly ObjectView[])[] = [
     view.battlefield,

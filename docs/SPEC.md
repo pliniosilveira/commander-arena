@@ -15,7 +15,7 @@ Commander Arena is an unofficial, free, in-browser game of Magic: The Gathering 
 - Commander, 1v1: one human against one AI. It runs entirely in the browser with no backend and deploys as a static site.
 - Deck import from pasted text (Arena, MTGO, Moxfield, Archidekt formats), with card data from the Scryfall API, and built-in precons with card-data snapshots for a quick start. Every card gets a support status; the import screen shows a coverage report.
 - **v2 (designed for, not built):** free-for-all Commander (CR 806) with 2 to 6 seats. Nothing in v1 may assume exactly two players: seats are an ordered array, and "opponent" is always resolved through the rules (each opponent, target opponent, defending player), never as `players[1]`.
-- **Out of scope** (no stubs left for them): online play between humans (the engine stays pure and serializable, but there is no networking), other formats, sideboarding, ante, subgames, Un-cards, Conspiracies, Attractions, accounts and monetization. Cards that need these are flagged unsupported.
+- **Out of scope** (no stubs left for them): online play between humans (the engine stays pure and serializable, but there is no networking), other formats, sideboarding (except the companion, CR 702.139d), ante, subgames, Un-cards, Conspiracies, Attractions, accounts and monetization. Cards that need these are flagged unsupported.
 - **Removed from the product** (D-165 to D-168): player-facing save, load, resume, replay export and import; the support-request pipeline; community card definitions and per-card override files; the Easy AI level.
 
 ## 3. Priorities for trade-offs (in order)
@@ -66,6 +66,7 @@ Defaults are listed in section 17.7; deviations need the owner's approval.
 
 - 40 starting life, 100-card singleton decks, commanders start in the command zone.
 - The starting player is chosen randomly (seeded) and skips the draw on their first turn.
+- Companion (CR 103.2b, 116.2g, 702.139): a player may reveal one card with a companion ability that they own from outside the game before the game starts. It stays outside the game, in a zone of its seat that everyone can see, and counts neither in the 100 cards nor in the library. Once per game, with priority and an empty stack in a main phase of their own turn, the player may pay {3} as a special action (no stack, cannot be responded to) to put it into their hand; it stays in the game until the game ends (CR 702.139c).
 - London mulligan: draw 7, then bottom one card per mulligan taken. The free first mulligan of multiplayer (CR 103.5c) is a house-rule setting in 1v1 (`freeFirstMulligan`; the web app sets it from the menu or from `?freeMulligan=`).
 
 ### 5.2 Turn structure, priority and the stack (CR 117, 405, 500 to 514, 603, 608)
@@ -104,6 +105,7 @@ Layers 1 to 7 with sublayers, timestamps and dependencies for the cases supporte
 - Deck validation: exactly 100 cards including the commander(s); singleton except basic lands and cards that allow more; every card within the commander's color identity (Scryfall `color_identity`); nothing banned (`legalities.commander`).
 - Commander eligibility (CR 903.3): a legendary creature, a legendary Vehicle, a legendary Spacecraft with a power and toughness, or a card whose text says it can be your commander.
 - Two commanders through the partner rules of CR 702.124 (partner, partner with, partner-[text], Background, Doctor's companion); color identities combine; the variants are implemented as the CR defines them, not from a hard-coded name list.
+- Companion deck check: the companion's condition is checked against the starting deck, which includes the commander(s) (CR 702.139b). House rules, not in the CR: the companion must be within the commander's color identity, and a card banned as a companion in Commander cannot be chosen. A deck whose companion is not allowed is refused with the reason.
 - Commander tax (CR 903.8): `{2}` more per previous cast from the command zone, per commander. "Your commander" effects and mana tied to commander color identity. Emblems live in the command zone.
 
 ### 5.9 Pitfalls checklist
@@ -119,7 +121,7 @@ Layers 1 to 7 with sublayers, timestamps and dependencies for the cases supporte
 
 - Accept Arena, MTGO, Moxfield and Archidekt exports: quantities (`1`, `1x`), exact names, set codes, collector numbers, foil and etched markers, category tags, `SB:` lines and section headers (`Commander`, `Deck`, `Sideboard`, `Companion`, `Maybeboard`). Extract quantity and exact name; normalize `/`, `//` and `///` separators and curly quotes.
 - A small tokenizer with fixture tests for each format, not one regex. Unparseable lines are reported with their line numbers, never dropped.
-- Commander detection: a `Commander` section or tag, otherwise the user picks among the eligible cards. Sideboard and maybeboard lines are shown but not played.
+- Commander detection: a `Commander` section or tag, otherwise the user picks among the eligible cards. Sideboard and maybeboard lines are shown but not played; a `Companion` section line is carried into the game as the companion (at most one).
 
 ### 6.2 Scryfall
 
@@ -311,7 +313,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 
 ## 17. Amendments index
 
-Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20 and 2026-11-08. Their text is not kept: each line says what the amendment decided and where it now lives, or which decision removed or superseded it. Where an amendment disagreed with an earlier section, the amendment won; the sections above already include the result. The reasoning is in the removed log under the D-number shown (`AGENTS.md`, "Documentation duties", says how to read it).
+Thirty-five amendments (A1 to A35) were approved by the owner between 2026-10-20 and 2026-11-22. Their text is not kept: each line says what the amendment decided and where it now lives, or which decision removed or superseded it. Where an amendment disagreed with an earlier section, the amendment won; the sections above already include the result. The reasoning is in the removed log under the D-number shown (`AGENTS.md`, "Documentation duties", says how to read it).
 
 ### 17.1 Engine architecture
 
@@ -337,6 +339,7 @@ Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20
 
 ### 17.4 Smaller amendments
 
+- **A35**: the companion is the one exception to "no sideboards" (CR 702.139d). Now in 2, 5.1, 5.8 and 6.1.
 - **A14** (D-014): game end for any seat count. Now in 5.6.
 - **A15** (D-015): cite rules by number and title. Now in 5.
 - **A16** (D-016): MIT license; card data and images not committed except precon snapshots and corpus fixtures. Now in 6.2 and 11.

@@ -432,6 +432,7 @@ export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): A
   if ('activate' in spec) return activateAction(ctx, seat, spec.activate, spec.ability);
   if ('suspend' in spec) return specialAction(ctx, seat, 'suspend', spec.suspend);
   if ('foretell' in spec) return specialAction(ctx, seat, 'foretell', spec.foretell);
+  if ('bringCompanion' in spec) return { kind: 'bringCompanion' };
   if ('plot' in spec) return specialAction(ctx, seat, 'plot', spec.plot);
   if ('turnFaceUp' in spec) return specialAction(ctx, seat, 'turnFaceUp', spec.turnFaceUp);
   if ('unlock' in spec) return unlockAction(ctx, spec.unlock, spec.door);

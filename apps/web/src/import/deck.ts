@@ -21,12 +21,23 @@ export function unplayableReason(report: ImportReport): string | null {
   if (unsupportedCount > 0) {
     return `${unsupportedCount} card(s) have abilities the engine cannot run yet`;
   }
+  const companion = report.companion;
+  if (
+    companion !== null &&
+    companion.card !== null &&
+    companion.card.support.status !== 'supported'
+  ) {
+    return `the companion ${companion.card.stored.name} has abilities the engine cannot run yet`;
+  }
   if (report.commanders.length === 0) return 'no commander is set';
   if (report.validation === null) return 'the deck was not checked';
   const errors = report.validation.issues.filter((issue) => issue.severity === 'error');
   const first = errors[0];
   if (first) return first.message;
   if (!report.validation.ok) return 'the deck is not valid';
+  if (report.companion !== null && report.companion.card === null) {
+    return 'the companion was not found';
+  }
   return report.playable ? null : 'the deck is not valid';
 }
 
@@ -58,7 +69,12 @@ function deckConfigOf(report: ImportReport): DeckConfig {
     if (entry.section === 'commander') continue;
     for (let copy = 0; copy < entry.count; copy += 1) cards.push(entry.card.definition);
   }
-  return { cards, commanders: report.commanders.map((_, index) => index) };
+  const companion = report.companion?.card?.definition;
+  return {
+    cards,
+    commanders: report.commanders.map((_, index) => index),
+    ...(companion === undefined ? {} : { companion }),
+  };
 }
 
 /** How many distinct cards of the deck the engine does not fully support. */

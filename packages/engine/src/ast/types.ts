@@ -5397,6 +5397,13 @@ export type Restriction =
 
 // ---- Keywords (CR 702). Parameters where the keyword takes them.
 
+/**
+ * The condition of a Companion ability (CR 702.139a), a closed set: a card is read as a companion only when its condition is one of these. Each member is the condition of a real
+ * card's wording; the other companions are added with their own Oracle text, never from memory.
+ * - `noRepeatedManaSymbol`: "No card in your starting deck has more than one of the same mana symbol in its mana cost." The symbols are compared exactly as printed, so {X}{X} and {R/G}{R/G} count as repeats.
+ */
+export type CompanionCondition = { readonly kind: 'noRepeatedManaSymbol' };
+
 export type Keyword =
   | { readonly kind: 'flying' }
   | { readonly kind: 'firstStrike' }
@@ -5614,6 +5621,12 @@ export type Keyword =
    * `packages/cards` reads the line when it checks a commander (D-053). It cannot be granted.
    */
   | { readonly kind: 'canBeCommander' }
+  /**
+   * CR 702.139a (Companion): a deck-construction ability that functions only outside the game (it does nothing in the game); `condition` is the deck-building condition the card
+   * names (CR 702.139b: it is checked against the starting deck, which in a Commander game includes the commander(s)). Accepted so that a card with it is supported;
+   * `packages/cards` checks the deck (`validate/companion.ts`). Printed only: it cannot be granted.
+   */
+  | { readonly kind: 'companion'; readonly condition: CompanionCondition }
   /**
    * CR 702.150a (Compleated): a static ability found on some planeswalker cards: "If this permanent would enter with one or more loyalty counters on it and the player who cast it chose
    * to pay life for any part of its cost represented by Phyrexian mana symbols, it instead enters the battlefield with that many loyalty counters minus two for each of those mana

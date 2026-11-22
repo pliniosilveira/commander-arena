@@ -65,6 +65,11 @@ export type Action =
    */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
   /**
+   * Bring your companion into your hand (CR 116.2g, 702.139a): once per game, with priority and an empty stack in a main phase of your own turn, pay {3} (the payment
+   * planner chooses the sources). A special action: it does not use the stack and nothing can be done in response; you keep priority.
+   */
+  | { readonly kind: 'bringCompanion' }
+  /**
    * Plot a card from the hand (CR 702.170a-b, 116.2k): during your main phase with the stack empty, pay its plot cost and exile it; it becomes plotted. A special action. Paid with a
    * `payMana` decision.
    */

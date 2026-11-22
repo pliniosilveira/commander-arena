@@ -1,6 +1,6 @@
 // "This mana can't be spent to pay generic mana costs." (CR 106.6; Jegantha, the Wellspring): the sentence after a mana ability, read into the engine's `spendOnly.notGeneric`.
-// The mana line of Jegantha is the real Oracle wording; the rest is SYNTHETIC (near misses the grammar must not read). The real card is checked as a whole at the end: it stays
-// unsupported because its "Companion" line is not read, which this change does not touch.
+// The mana line of Jegantha is the real Oracle wording; the rest is SYNTHETIC (near misses the grammar must not read). The real card is checked as a whole at the end: both lines are
+// read since the Companion keyword (CR 702.139a), see parser-companion.test.ts.
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
@@ -65,14 +65,11 @@ describe('Jegantha, the Wellspring as a whole card', () => {
     expect(card).toBeDefined();
   });
 
-  test('stays unsupported: the Companion line is not read, the mana line is', () => {
+  test('is supported: the Companion line and the mana line are both read', () => {
     if (card === undefined) throw new Error('no card');
     const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
-    expect(imported.support.status).toBe('unsupported');
-    const texts = imported.support.unparsed.map((u) => u.text);
-    expect(texts.some((t) => t.startsWith('Companion'))).toBe(true);
-    // Only the Companion line is left over; the mana ability was read.
-    expect(texts.every((t) => t.startsWith('Companion'))).toBe(true);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.support.unparsed).toEqual([]);
     const face = imported.definition.faces[0];
     expect(face?.abilities.some((a) => a.kind === 'mana' && a.spendOnly?.notGeneric === true)).toBe(
       true,

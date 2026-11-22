@@ -456,6 +456,23 @@ export interface MeldView {
   readonly manaValue: number;
 }
 
+/**
+ * A revealed companion (CR 103.2b, 702.139): public to every viewer, as the card it is in its printed values. While `brought` is false the card is outside the
+ * game (in no zone, in no count); once true it is an ordinary card of the game, in whichever zone it is in now.
+ */
+export interface CompanionView {
+  readonly name: string;
+  readonly manaCost: readonly string[] | null;
+  readonly supertypes: readonly Supertype[];
+  readonly types: readonly CardType[];
+  readonly subtypes: readonly Subtype[];
+  readonly colors: readonly Color[];
+  readonly power: number | null;
+  readonly toughness: number | null;
+  readonly oracleText: string;
+  readonly brought: boolean;
+}
+
 export interface SeatView {
   readonly id: SeatId;
   readonly life: number;
@@ -482,6 +499,8 @@ export interface SeatView {
   readonly lifeLostThisTurn: number;
   /** How many spells this player has cast this turn (CR 601.2i; copies are not cast): what Storm counts (D-129). */
   readonly spellsCastThisTurn: number;
+  /** This player's companion (CR 103.2b, 702.139), public. Absent when they have none. */
+  readonly companion?: CompanionView;
   readonly commanderTax: Readonly<Record<string, number>>;
   /** The amount of life replacing each commander's mana tax at the current cast count. */
   readonly commanderTaxLife: Readonly<Record<string, number>>;
@@ -941,6 +960,30 @@ function combatView(state: GameState): CombatView | null {
   };
 }
 
+function companionViewOf(
+  state: GameState,
+  seat: SeatId,
+): { companion: CompanionView } | Record<string, never> {
+  const companion = state.seats[seat]?.companion;
+  const face =
+    companion === undefined ? undefined : state.definitions[companion.definition]?.faces[0];
+  if (companion === undefined || face === undefined) return {};
+  return {
+    companion: {
+      name: face.name,
+      manaCost: face.manaCost,
+      supertypes: face.supertypes,
+      types: face.types,
+      subtypes: face.subtypes,
+      colors: face.colors,
+      power: typeof face.power === 'number' ? face.power : null,
+      toughness: typeof face.toughness === 'number' ? face.toughness : null,
+      oracleText: face.oracleText,
+      brought: companion.brought,
+    },
+  };
+}
+
 export function getView(state: GameState, viewer: SeatId): GameView {
   const seats: SeatView[] = state.seats.map((s) => {
     // CR 401.5: only the player who may look sees it, or everyone while it is revealed.
@@ -976,6 +1019,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
             : [[c, face.commanderTaxLife * (state.commanderCasts[c] ?? 0)]];
         }),
       ),
+      ...companionViewOf(state, s.id),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
       ...(s.speed === undefined ? {} : { speed: s.speed }),

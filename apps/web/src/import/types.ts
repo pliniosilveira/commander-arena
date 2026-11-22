@@ -9,6 +9,7 @@ import type {
   ScryfallClient,
   StoredCard,
   SupportReport,
+  ValidationIssue,
 } from '@commander-arena/cards';
 
 export type ImportPhase = 'parsing' | 'resolving' | 'converting' | 'validating' | 'done';
@@ -55,6 +56,20 @@ export interface Coverage {
   readonly unsupported: readonly ImportedEntry[];
 }
 
+/**
+ * The companion a decklist names (SPEC 6.1, 5.8, CR 702.139): a card outside the 100, checked against the deck. `card` is null when
+ * its name did not resolve (the name problem is in `notFound` or `fuzzy`). A companion with `issues` is refused and the deck cannot be played.
+ */
+export interface CompanionImport {
+  /** The name as the list spells it. */
+  readonly requested: string;
+  readonly card: ImportedCard | null;
+  /** Why it is refused: the companion errors of the deck check, and the unsupported-card one. Empty when it is accepted. */
+  readonly issues: readonly ValidationIssue[];
+  /** Further names of the Companion section: a deck has only one companion. */
+  readonly extra: readonly string[];
+}
+
 export interface ImportReport {
   readonly deckName: string;
   readonly parse: ParsedDecklist;
@@ -62,12 +77,14 @@ export interface ImportReport {
   readonly entries: readonly ImportedEntry[];
   readonly notFound: readonly NameProblem[];
   readonly fuzzy: readonly FuzzyPending[];
-  /** Names of sideboard, maybeboard and companion lines, shown for information. */
+  /** Names of sideboard and maybeboard lines, shown for information (the companion has its own field). */
   readonly ignored: readonly {
     readonly name: string;
     readonly section: string;
     readonly count: number;
   }[];
+  /** The companion of the list, or null when it names none. */
+  readonly companion: CompanionImport | null;
   /** Eligible commanders among the list, when the list did not mark one. Empty otherwise. */
   readonly commanderChoices: readonly StoredCard[];
   /** The commanders in use: marked in the list, or chosen by the player. May be empty. */

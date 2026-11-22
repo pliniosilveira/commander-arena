@@ -288,6 +288,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
       suspend: (card) => tryApply(seat, specialAction(ctx, seat, 'suspend', card)),
       foretell: (card) => tryApply(seat, specialAction(ctx, seat, 'foretell', card)),
       plot: (card) => tryApply(seat, specialAction(ctx, seat, 'plot', card)),
+      bringCompanion: () => tryApply(seat, { kind: 'bringCompanion' }),
       turnFaceUp: (card) => tryApply(seat, specialAction(ctx, seat, 'turnFaceUp', card)),
       unlock: (card, door) => tryApply(seat, unlockAction(ctx, card, door)),
       pass: () => tryApply(seat, { kind: 'pass' }),
@@ -357,6 +358,9 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
         const h = handle();
         if (o.pay && state.pending?.kind === 'payMana') h.pay();
         return h;
+      },
+      bringCompanion() {
+        return run({ kind: 'bringCompanion' });
       },
       plot(card, o: SpecialOptions = {}) {
         apply(seat, specialAction(ctx, seat, 'plot', card));

@@ -672,6 +672,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 100.2a: "A deck can have up to nine cards named ~": a deck-construction line with no effect in a game.
     'deckLimit',
     'chooseBackground',
+    // CR 702.139a: Companion functions outside the game: a deck-construction line with no effect in a game.
+    'companion',
     // D-200: "~ can be your commander".
     'canBeCommander',
     // CR 702.150a: Compleated.
@@ -3089,6 +3091,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   partnerWith: true,
   deckLimit: true,
   chooseBackground: true,
+  companion: true,
   canBeCommander: true,
   compleated: true,
   ascend: true,

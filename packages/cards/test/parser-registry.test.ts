@@ -1283,6 +1283,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'keyword.partner-with': asIs,
   'keyword.deck-limit': asIs,
+  'keyword.companion': asIs,
   // D-492: the optional sacrifice and the copies are one statement of a spell.
   'static.additional-cost-sacrifice-copies': spell((e) => e),
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of

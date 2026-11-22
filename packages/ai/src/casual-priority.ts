@@ -38,6 +38,7 @@ import {
   isAura,
   isEnchanted,
 } from './casual-attachments';
+import { chooseBringCompanion } from './casual-companion';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
 import {
   additionalCostsWorthPaying,
@@ -476,6 +477,10 @@ export function choosePriorityAction(
   // 2f. A locked half of a Room of ours (CR 709.5e, `casual-rooms.ts`): unlocked with the mana left after the spells.
   const unlock = chooseUnlockDoor(view, d);
   if (unlock !== null) return unlock;
+
+  // 2g. The companion (CR 702.139a, `casual-companion.ts`): the {3} comes out of mana nothing else used this turn.
+  const companion = chooseBringCompanion(view, d);
+  if (companion !== null) return companion;
 
   // 3. A land to cycle, or a pump that changes the combat (see casual-activations.ts).
   const activation = chooseActivation(view, d, activations);

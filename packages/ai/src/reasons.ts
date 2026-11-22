@@ -76,6 +76,8 @@ export const REASONS = [
   'target-best',
   /** A face-down permanent of the agent's was turned face up because it is worth more as the card (D-313). */
   'face-up',
+  /** The companion was brought into the hand with mana nothing else used (CR 702.139a). */
+  'companion',
   /** A loyalty ability of a planeswalker of the agent's was activated (D-203). */
   'loyalty',
   /** The decision was answered by the casual handlers (choices, targets, payments, ...). */
