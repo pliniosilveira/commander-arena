@@ -543,3 +543,113 @@ describe('Combustible Gearhulk: "target opponent may have you draw three cards"'
     g.expect.pending('confirmOptional', 2);
   });
 });
+
+describe('Parapet Thrasher: "choose one that hasn’t been chosen this turn ... 4 damage to each other opponent"', () => {
+  const THRASHER = real('Parapet Thrasher');
+  test('the mode damages the opponent that was not hit by the Dragon', () => {
+    const b = scenario({ seats: 3 })
+      .define(THRASHER)
+      .seat(0)
+      .battlefield(THRASHER.name, { label: 't' });
+    b.library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 't', target: { player: 1 } }]);
+    g.advanceTo('combatDamage', { block: false });
+    g.expect.pending('chooseModes', 0);
+    g.act(0).chooseModes(1);
+    g.passAll();
+    // Seat 1 took the Dragon's 4 combat damage; "each other opponent" is seat 2, who takes 4.
+    g.expect.life(1, 36);
+    g.expect.life(2, 36);
+    g.expect.life(0, 40);
+  });
+});
+
+describe('Angel of Destiny: "each player this creature attacked this turn loses the game"', () => {
+  const ANGEL = real('Angel of Destiny');
+  test('only the player the Angel attacked loses, not the one another creature attacked', () => {
+    const b = scenario({ seats: 3 }).define(ANGEL).seat(0).life(55);
+    b.battlefield(ANGEL.name, { label: 'angel' }).battlefield(BEARS, { label: 'bears' });
+    b.library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([
+      { attacker: 'angel', target: { player: 1 } },
+      { attacker: 'bears', target: { player: 2 } },
+    ]);
+    // Each damage step has triggers of the Angel to order; the end step trigger needs 15 life more than the starting 40.
+    for (let i = 0; i < 12; i += 1) {
+      const d = g.state.pending;
+      if (d?.kind === 'orderTriggers') {
+        g.act(0).orderTriggers(...d.triggers.map((_, index) => index));
+      } else if (g.state.seats[1]?.hasLost === true) {
+        break;
+      } else {
+        g.passAll();
+      }
+    }
+    expect(g.state.seats[1]?.hasLost).toBe(true);
+    expect(g.state.seats[2]?.hasLost).toBe(false);
+  });
+});
+
+describe('Selvala’s Stampede: "each player votes for wild or free"', () => {
+  const STAMPEDE = real("Selvala's Stampede");
+  test('two wild votes put two creatures onto the battlefield, one free vote may put a permanent from the hand', () => {
+    const b = scenario({ seats: 3 }).define(STAMPEDE).seat(0).hand(STAMPEDE.name).pool('GGGGGG');
+    b.hand('Sol Ring', { label: 'ring' });
+    b.library('Island', BEARS, 'Island', 'Giant Spider', ...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(STAMPEDE.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseOption('wild');
+    g.act(1).chooseOption('free');
+    g.act(2).chooseOption('wild');
+    g.passAll();
+    expect(count(g, BEARS, 0)).toBe(1);
+    expect(count(g, 'Giant Spider', 0)).toBe(1);
+    // One "free" vote: the controller may put the Sol Ring from hand onto the battlefield.
+    const d = g.state.pending;
+    if (d !== null && d.kind === 'confirmOptional') g.act(0).accept();
+    if (g.state.pending?.kind === 'chooseCards') g.act(0).chooseCards('ring');
+    expect(zone(g, 'ring')).toBe('battlefield');
+  });
+});
+
+describe('Witch-king of Angmar: "each opponent sacrifices a creature of their choice that dealt combat damage to you"', () => {
+  const KING = real('Witch-king of Angmar');
+  test('the attacking opponent sacrifices one of the creatures that hit, the other opponent is not asked', () => {
+    const b = scenario({ seats: 3 }).define(KING).seat(0).battlefield(KING.name);
+    b.library(...FILLER);
+    b.seat(1)
+      .battlefield(BEARS, { label: 'a' })
+      .battlefield(BEARS, { label: 'b' })
+      .library(...FILLER);
+    b.seat(2)
+      .battlefield('Giant Spider', { label: 'spider' })
+      .library(...FILLER);
+    const g = b.at('precombatMain', { active: 1, turn: 4 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(1).declareAttackers([
+      { attacker: 'a', target: { player: 0 } },
+      { attacker: 'b', target: { player: 0 } },
+    ]);
+    g.advanceTo('declareBlockers', { attack: false, block: false });
+    g.act(0).declareBlockers([]);
+    g.advanceTo('combatDamage', { block: false });
+    g.passAll();
+    // Seat 1 chooses which of the two that dealt damage goes; seat 2 had none that dealt damage and is not touched.
+    g.act(1).choosePermanents('a');
+    g.passAll();
+    expect(zone(g, 'a')).toBe('graveyard');
+    expect(zone(g, 'b')).toBe('battlefield');
+    expect(zone(g, 'spider')).toBe('battlefield');
+  });
+});
