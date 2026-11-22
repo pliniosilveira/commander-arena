@@ -39,6 +39,7 @@ export type SimpleKeyword = Extract<
   | 'skulk'
   | 'battleCry'
   | 'mentor'
+  | 'flanking'
   | 'evolve'
   | 'extort'
   | 'convoke'
@@ -118,6 +119,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['skulk', 'skulk'],
   ['battle cry', 'battleCry'],
   ['mentor', 'mentor'],
+  // CR 702.25a (Flanking): a printed ability with no parameter (Sidar Kondo of Jamuraa), never granted.
+  ['flanking', 'flanking'],
   ['evolve', 'evolve'],
   ['extort', 'extort'],
   ['convoke', 'convoke'],

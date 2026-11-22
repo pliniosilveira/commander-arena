@@ -162,7 +162,10 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
       restriction !== 'cantBeBlocked' &&
       restriction !== 'attacksEachCombat' &&
       restriction !== 'mustBeBlocked' &&
-      restriction !== 'mustBlock'
+      restriction !== 'mustBlock' &&
+      // CR 609.4, 702.3b, 510.1a: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
+      restriction !== 'canAttackAsThoughNoDefender' &&
+      restriction !== 'assignsDamageByToughness'
     ) {
       return failure(clause);
     }
@@ -189,6 +192,29 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     // One chosen creature (the engine's `restrict` of a target, as its fixtures write it), or every
     // creature of a group as the effect begins (`each`, CR 611.2c).
     const noun = operand(clause, 'objects');
+    // CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender": the group is read when the rule asks, not fixed as the
+    // effect resolves, so the engine's `restrictGroup` (a creature that matches later in the turn is affected too).
+    if (
+      (restriction === 'canAttackAsThoughNoDefender' ||
+        restriction === 'assignsDamageByToughness') &&
+      noun?.kind === 'noun' &&
+      noun.det === 'each'
+    ) {
+      if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn') return failure(clause);
+      const blocked = missingFeatures(['effect:restrictGroup']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+      const { zone: _zone, ...rest } = noun.filter;
+      const creatures = lowerFilter({ ...noun, filter: rest });
+      if (!creatures.ok) return creatures;
+      const effect: Effect = {
+        kind: 'restrictGroup',
+        creatures: creatures.value,
+        restriction,
+        duration: END,
+      };
+      return { ok: true, value: [effect], rule: clause.rule };
+    }
     // Stage P53 (D-212): "~ and that creature each ... attack this turn if able": each of the nouns of a list is one of those.
     const named = noun === undefined ? [] : noun.kind === 'nounList' ? noun.items : [noun];
     if (

@@ -49,6 +49,10 @@ export function targetsWord(spec: TargetChoiceSpec): string {
   if (spec.onePerGroup === true) {
     return `${spec.min === 0 ? 'up to one target' : 'one target'} for each opponent`;
   }
+  // Reunion of the House (CR 208.1): "any number of target creature cards with total power 10 or less".
+  if (spec.totalPowerAtMost !== undefined) {
+    return `any number of targets with total power ${spec.totalPowerAtMost} or less`;
+  }
   // D-151 (CR 115.3): "each of up to two other targets": the slot that has to differ from an earlier one says "other".
   if (spec.differentFrom !== undefined) {
     if (spec.max === 1) return spec.min === 0 ? 'up to one other target' : 'another target';

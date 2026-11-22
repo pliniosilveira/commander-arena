@@ -85,6 +85,8 @@ describe('amounts that read an object', () => {
       // CR 402.1: the cards in that player's hand, read for each player a dealDamage hurts.
       'cardsInHandOfAffected',
       'lifeGainedThisTurn',
+      // CR 119.3 (Betor): the controller's own life lost this turn.
+      'controllerLifeLostThisTurn',
       'lifeGainedOrLostThisTurn',
       'enteredThisTurn',
       'diedThisTurn',
@@ -118,6 +120,8 @@ describe('amounts that read an object', () => {
       'minus',
       'sum',
       'extreme',
+      // CR 608.2c (Jaws of Defeat): the positive gap between two amounts.
+      'difference',
       'opponentCount',
       'movedCount',
       'opponentsWithMore',

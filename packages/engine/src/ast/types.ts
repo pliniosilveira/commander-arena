@@ -170,6 +170,11 @@ export type Amount =
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
   /**
+   * "The amount of life you lost this turn" (Betor, Ancestor's Voice; CR 119.3, 608.2h): the life the controller of the ability has lost this turn (`SeatState.lifeLostThisTurn`: damage, life
+   * loss and life paid), read as the instruction runs or as a filter's limit is read. Unlike `lifeLostThisTurn` it is always the controller's own and valid anywhere an amount is.
+   */
+  | { readonly kind: 'controllerLifeLostThisTurn' }
+  /**
    * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
    * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
    */
@@ -338,6 +343,11 @@ export type Amount =
       readonly pick: 'greater' | 'lesser';
       readonly of: readonly Amount[];
     }
+  /**
+   * "The difference between that creature's power and its toughness" (Jaws of Defeat, CR 107.1, 608.2c): the larger of the two amounts less the smaller, so never below 0. The
+   * words are the same for either order, so an amount that is smaller than the other one still gives the positive gap.
+   */
+  | { readonly kind: 'difference'; readonly of: readonly [Amount, Amount] }
   /**
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
@@ -977,6 +987,12 @@ export interface ObjectFilter {
    */
   readonly powerGreaterThan?: ObjectRef;
   /**
+   * "Destroy all creatures with power greater than or equal to the chosen number" (Expel the Interlopers, CR 208.1, 608.2c): the object's power as it is now is at least the
+   * number a `chooseNumber` effect earlier in the same resolution had its controller choose. Read only in the filter of an `each` selector of an effect after that `chooseNumber`.
+   * An object with no power matches nothing.
+   */
+  readonly powerAtLeastChosenNumber?: true;
+  /**
    * "Return target creature card and all other cards with the same name as that card from your graveyard to your hand" (Echoing Return, CR 201.2, 608.2c): the object has the same
    * name as the object this reference names (the target card included, which has its own name), read as the effect resolves. Read only in the filter of an `each` selector of an effect,
    * which knows the targets (as `powerGreaterThan` is). A reference that names nothing matches nothing.
@@ -1012,6 +1028,11 @@ export interface ObjectFilter {
    * ability, a trigger and a count may use it.
    */
   readonly notOwnedByYou?: true;
+  /**
+   * "Target permanent you own" (CR 108.3, 115.1, Staff of Compleation): the object's owner (the player whose deck it started in, or who created it as a token) is the controller
+   * of the ability that reads the filter, whoever controls it now. The reverse of `notOwnedByYou`; like it, it needs no target, so a target slot, a trigger and a count may use it.
+   */
+  readonly ownedByYou?: true;
   /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
@@ -1146,6 +1167,11 @@ export type ObjectRef =
    * (`validateCard`); for a cost of "sacrifice two artifacts" the first one is read.
    */
   | { readonly kind: 'sacrificedCost' }
+  /**
+   * "That creature", for the object an `addCounters` with `perObject` is putting counters on right now (Canopy Gargantuan: "put a number of +1/+1 counters on each other creature you control
+   * equal to that creature's toughness", CR 608.2c): read in an amount only (`validateCard`), as the permanent as it is as that placement is worked out.
+   */
+  | { readonly kind: 'eachObject' }
   /**
    * The engine's own form of `moved` inside a delayed triggered ability (D-639, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
@@ -1441,6 +1467,14 @@ export interface TargetSpec {
    * or `upToThatMany` it is refused. The controllers are read as the targets are chosen; a later change of control does not make a target illegal (CR 608.2b reads only the filter).
    */
   readonly differentControllers?: true;
+  /**
+   * "Return any number of target creature cards with total power 10 or less from your graveyard to the battlefield" (Reunion of the House, CR 115.1, 601.2c, 208.1): the
+   * targets of this slot (`anyNumber`, objects) have total power of at most this number, each read as the creature or card it is now (a card in a graveyard has its printed
+   * power, a characteristic-defining ability's value included, CR 604.3; a negative power subtracts). As the spell or ability resolves the total is read again: if it is more
+   * than the limit the whole selection of this slot is illegal (CR 608.2b) and none of its targets is affected. A whole number, 0 or more; with `divide`, `countX`,
+   * `onePerOpponent`, `differentControllers` or `upToThatMany` it is refused.
+   */
+  readonly totalPowerAtMost?: number;
   /**
    * "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the slot's targets are cards in the graveyard of
    * the player chosen for the earlier player slot this id names (`what` is an `object` filter of `zone` `graveyard`). A target of another player's graveyard is not
@@ -2214,6 +2248,12 @@ export type Effect =
    * object matches `chosenType` with any of them; `notChosenType` with none of them).
    */
   | { readonly kind: 'chooseCreatureType'; readonly players?: PlayerSelector }
+  /**
+   * "Choose a number between 0 and 10" as the effect resolves (Expel the Interlopers, CR 608.2d, 107.1): the controller chooses a whole number from `min` to `max`, both
+   * included (a `chooseX` decision of purpose `chooseNumber`, asked even when only one number could be chosen: the choice is the player's). The number is what
+   * `powerAtLeastChosenNumber` of an object filter reads in the instructions after it, in the same resolution.
+   */
+  | { readonly kind: 'chooseNumber'; readonly min: number; readonly max: number }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   /**
@@ -3333,6 +3373,19 @@ export type Effect =
       readonly player?: PlayerSelector;
       readonly byController?: true;
     }
+  /**
+   * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (Slaughter the Strong, CR 608.2d,
+   * 701.21a, 101.4, 208.1): each player the selector names, in APNAP order, chooses among the permanents that match `filter` that they control (the matching permanents of one
+   * player only) any set whose power adds up to at most `totalPowerAtMost` (power as `derive` gives it as the effect resolves, a negative power subtracting, CR 208.1), the ones
+   * chosen already known to the later players. Nothing is sacrificed until the last has chosen; then every permanent that matches and was not chosen is sacrificed at once
+   * (one that can't be sacrificed, CR 101.2, stays). `filter` has no controller of its own, no zone but the battlefield, and `totalPowerAtMost` is a whole number of 0 or more.
+   */
+  | {
+      readonly kind: 'keepOrSacrifice';
+      readonly players: PlayerSelector;
+      readonly filter: ObjectFilter;
+      readonly totalPowerAtMost: number;
+    }
   | {
       readonly kind: 'moveToZone';
       /**
@@ -3699,6 +3752,11 @@ export type Effect =
        * The only amount that reads the player this way is `exiledPowerOwn` (`validateCard` refuses it elsewhere).
        */
       readonly perController?: true;
+      /**
+       * "Put a number of +1/+1 counters on each other creature you control equal to that creature's toughness" (Canopy Gargantuan, CR 608.2c, 122.6): `count` is worked out once for
+       * each object `objects` names, with the object `eachObject` reading that very object. A creature that gets no counters (an amount of 0) is skipped. Not with `perController`.
+       */
+      readonly perObject?: true;
     }
   /**
    * "Double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, CR 122.6): each object `objects` names that has
@@ -4050,6 +4108,17 @@ export type Effect =
       readonly kind: 'creaturesCantAttackYou';
       readonly creatures: ObjectFilter;
       readonly duration: 'untilYourNextTurn';
+    }
+  /**
+   * "Creatures you control with defender can attack this turn as though they didn't have defender." (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2; Wakestone Gargoyle): a rule-changing effect on a
+   * group of creatures that is not a set fixed as the effect resolved (it does not modify characteristics, so a creature that matches later in the turn is affected too): each creature
+   * `creatures` matches (read for the controller of the effect as "you") has the restriction `restriction` (`canAttackAsThoughNoDefender` or `assignsDamageByToughness`) until end of turn.
+   */
+  | {
+      readonly kind: 'restrictGroup';
+      readonly creatures: ObjectFilter;
+      readonly restriction: 'canAttackAsThoughNoDefender' | 'assignsDamageByToughness';
+      readonly duration: 'untilEndOfTurn';
     }
   /**
    * "Choose an opponent at random that this creature didn't attack during your last combat. This creature attacks that player this combat if able. If you can't choose an opponent this
@@ -4953,6 +5022,12 @@ export type Trigger =
    * effect exists yet).
    */
   | { readonly kind: 'becomesBlocked'; readonly what: TriggerSubject }
+  /**
+   * "Whenever [a creature] becomes blocked by a creature [without flanking]" (CR 509.3d, 702.25a, Flanking): once for each creature declared as a blocker of an attacking creature
+   * `what` names (so two blockers of one attacker are two occurrences); the attacker is the subject (`triggerSubject`) and the blocker is what `triggerSources` names in the effect
+   * ("the blocking creature"). `by` is the filter the blocker must match, read as it blocks (a blocker that has flanking is not one).
+   */
+  | { readonly kind: 'becomesBlockedBy'; readonly what: TriggerSubject; readonly by: ObjectFilter }
   /** "Whenever a land enters under your control" (landfall). */
   | { readonly kind: 'landfall' }
   /**
@@ -5478,6 +5553,12 @@ export type Trigger =
  *   haste"; the blocker's haste is read as the blockers are declared);
  * - `cantAttackPlayersAlreadyAttacked`: it can't be declared attacking a player it has already attacked this turn (CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn",
  *   read from `turnLog.attackedPlayers`; an attack on a planeswalker or a battle is not an attack on a player);
+ * - `canAttackAsThoughNoDefender`: it can attack as though it didn't have defender (CR 609.4, 702.3b, 508.1a: "Creatures you control can attack as though they didn't have defender"; a permission,
+ *   read where attackers are declared: only the defender keyword is set aside, haste and the rest of the rules about attacking still apply);
+ * - `canAttackAsThoughNoDefenderVsLastTurnAttackers`: the same, but only against players who attacked its controller during their last turn (CR 609.4, 702.3b, 508.1a: "~ can attack players who
+ *   attacked you during their last turn as though it didn't have defender", `GameState.attackedLastTurn`); "you" is the controller of the creature;
+ * - `assignsDamageByToughness`: it assigns combat damage equal to its toughness rather than its power (CR 510.1a, 609.4: "Each creature you control assigns combat damage equal to its toughness
+ *   rather than its power"); it changes only the amount assigned, never the creature's power, so every other rule reads the real values;
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -5497,6 +5578,9 @@ export type Restriction =
   | 'cantBeBlockedExceptByHaste'
   | 'cantAttackPlayersAlreadyAttacked'
   | 'canBlockOnlyFlying'
+  | 'canAttackAsThoughNoDefender'
+  | 'canAttackAsThoughNoDefenderVsLastTurnAttackers'
+  | 'assignsDamageByToughness'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
   | 'mustBlock'
@@ -5888,6 +5972,11 @@ export type Keyword =
    * instance (CR 702.45b). `count` is N, a positive integer.
    */
   | { readonly kind: 'bushido'; readonly count: number }
+  /**
+   * CR 702.25a (Flanking): "Flanking" means "Whenever this creature becomes blocked by a creature without flanking, the blocking creature gets -1/-1 until end of turn."
+   * Expanded by `derive` into one `becomesBlockedBy` trigger for each instance (CR 702.25b), which triggers once for each blocking creature without flanking.
+   */
+  | { readonly kind: 'flanking' }
   /**
    * CR 702.101a (Extort): "Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life
    * and you gain life equal to the total life lost this way." Expanded by `derive`; each instance triggers
@@ -6808,6 +6897,8 @@ export type Replacement =
         | CountAmount
         /** "... equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as the permanent enters. */
         | Extract<Amount, { readonly kind: 'diedThisTurn' }>
+        /** "... where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the greatest or the total of a stat over a group, read as the permanent enters, without it. */
+        | Extract<Amount, { readonly kind: 'aggregate' }>
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
         | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
       /**

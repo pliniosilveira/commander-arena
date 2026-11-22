@@ -366,6 +366,11 @@ export interface LowerContext {
    */
   sacrificedRef: string | null;
   /**
+   * What "that creature" means in the count of "put a number of +1/+1 counters on each other creature you control equal to that creature's toughness" (Canopy Gargantuan, CR 608.2c): the
+   * reference of the "each" noun the counters go on, which the engine's `eachObject` names. Null outside the count of such an instruction.
+   */
+  eachRef: string | null;
+  /**
    * True when the text of the card puts its own name inside a quotation (stage P36, D-178): there `~` may be the card and not the permanent that
    * has the quoted ability, so an ability granted to a group is not read from it.
    */
@@ -435,6 +440,7 @@ export function newContext(
     putCounters: [],
     searched: null,
     sacrificedRef: null,
+    eachRef: null,
     madeToken: null,
     chosenExiled: false,
     milled: false,

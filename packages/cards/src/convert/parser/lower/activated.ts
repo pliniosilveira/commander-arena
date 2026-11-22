@@ -347,7 +347,11 @@ function lowerManaAbility(
     const amount = lowerAmount(counted as IrAmount, trial, spec.rule);
     if (!amount.ok) return amount;
     // The amount is counted before the costs are paid, so no cost may change what it reads (CR 605.3a, 605.3b).
-    if (costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')) {
+    if (
+      costs.value.some(
+        (c) => c.kind === 'sacrifice' || c.kind === 'removeCounters' || c.kind === 'putCounters',
+      )
+    ) {
       return failure(ability);
     }
     production =
@@ -368,7 +372,9 @@ function lowerManaAbility(
     if (!times.ok) return times;
     if (
       trial.usesX ||
-      costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')
+      costs.value.some(
+        (c) => c.kind === 'sacrifice' || c.kind === 'removeCounters' || c.kind === 'putCounters',
+      )
     ) {
       return failure(ability);
     }
@@ -435,6 +441,8 @@ function lowerManaAbility(
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
   // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
   const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
+  // CR 118.3, 122.1 (Wall of Roots): "Put a -0/-1 counter on ~", one such cost, the permanent itself; it pays for the ability like a counter taken off it.
+  const additions = costs.value.filter((c) => c.kind === 'putCounters').length;
   // Issue 144 (Arena of Glory, CR 701.43a): "Exert ~", the permanent itself, once.
   const exerts = costs.value.filter((c) => c.kind === 'exert').length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
@@ -449,6 +457,7 @@ function lowerManaAbility(
     (taps === 1 ||
       sacrifices.length === 1 ||
       removals === 1 ||
+      additions === 1 ||
       lives === 1 ||
       // Relic of Legends (CR 605.3b): "Tap an untapped legendary creature you control: Add one mana of any color." needs no {T} of its own.
       tapsOther.length === 1) &&
@@ -456,13 +465,22 @@ function lowerManaAbility(
     lives <= 1 &&
     mills <= 1 &&
     removals <= 1 &&
+    additions <= 1 &&
     exerts <= 1 &&
     sacrifices.length <= 1 &&
     tapsOther.length <= 1 &&
     (tapsOther.length === 0 ||
       (sacrifices.length === 0 && tapsOther.every((c) => c.count === 1))) &&
     selfOnly &&
-    taps + manas + lives + mills + removals + exerts + sacrifices.length + tapsOther.length ===
+    taps +
+      manas +
+      lives +
+      mills +
+      removals +
+      additions +
+      exerts +
+      sacrifices.length +
+      tapsOther.length ===
       costs.value.length &&
     effects.every(isAlso) &&
     rest.every(plainClause);

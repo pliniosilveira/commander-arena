@@ -50,6 +50,7 @@ import {
 } from './pay-unless';
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
 import { rebounds, reboundTrigger } from './rebound';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { TIME_COUNTER } from './time-counter';
@@ -697,6 +698,22 @@ export function answerResolutionChoice(
   ) {
     return null;
   }
+  // CR 608.2d, 701.21a (Slaughter the Strong): the answer names the permanents kept; the rest of the ones the player controls that match are sacrificed (the ones that can't be, stay).
+  const asked = state.pending;
+  if (head.kind === 'chooseSacrifice' && head.keepPowerAtMost !== undefined) {
+    if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
+    const sacrificed = asked.legal.filter(
+      (id) => !chosen.includes(id) && !cantBeSacrificed(state, id),
+    );
+    return continueResolution(
+      {
+        ...state,
+        pending: null,
+        resolution: { ...res, queue: [{ ...head, chosen: sacrificed }, ...res.queue.slice(1)] },
+      },
+      [],
+    );
+  }
   // CR 701.34a (D-149): a proliferate also names the players chosen.
   const updated: Instruction =
     head.kind === 'proliferate' ? { ...head, chosen, players } : { ...head, chosen };
@@ -760,11 +777,36 @@ export function answerResolutionCards(
 export function answerResolutionPayAmount(state: GameState, amount: number): ResolveOutcome | null {
   const res = state.resolution;
   const head = res?.queue[0];
-  if (!res || (head?.kind !== 'payAmount' && head?.kind !== 'drawUpTo')) return null;
+  if (
+    !res ||
+    (head?.kind !== 'payAmount' && head?.kind !== 'drawUpTo' && head?.kind !== 'chooseNumber')
+  )
+    return null;
   const updated: Instruction = { ...head, amount };
+  const asked = state.pending;
   return continueResolution(
-    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
-    [],
+    {
+      ...state,
+      pending: null,
+      resolution: {
+        ...res,
+        // CR 608.2d (Expel the Interlopers): the number chosen is kept for the instructions after it.
+        ...(head.kind === 'chooseNumber' ? { chosenNumber: amount } : {}),
+        queue: [updated, ...res.queue.slice(1)],
+      },
+    },
+    // The choice of a number is public.
+    head.kind === 'chooseNumber' && asked?.kind === 'chooseX'
+      ? [
+          {
+            kind: 'optionChosen',
+            seat: asked.seat,
+            source: asked.source,
+            purpose: 'number',
+            option: String(amount),
+          },
+        ]
+      : [],
   );
 }
 

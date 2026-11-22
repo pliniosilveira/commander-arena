@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
@@ -47,6 +48,7 @@ import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
+import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { COPY_CAST_PAYING_EFFECT_RULES } from './copy-cast-paying';
@@ -187,6 +189,7 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
+import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
@@ -468,6 +471,7 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to two target creatures',
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
+    'destroy target permanent you own',
   ],
   rejects: [
     'destroy it',
@@ -521,6 +525,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
     'exile up to two target artifacts and/or enchantments',
+    // Protector of the Wastes (CR 115.1, 601.2c): at most two targets, no two controlled by the same player.
+    'exile up to two target artifacts and/or enchantments controlled by different players',
     // D-270 (CR 115.1, 404.1): one slot of targets in two zones.
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).
@@ -1236,6 +1242,8 @@ export const EFFECT_RULES = [
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
+  // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
+  ...ABZAN_SPELLS_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
@@ -1286,6 +1294,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Baldin, Century Herdmaster: "up to one hundred target creatures each get +0/+X until end of turn".
+  ...PUMP_TARGETS_EFFECT_RULES,
   // Valakut Exploration: "you may play that card for as long as it remains exiled", "put them into their owner's graveyard", "~ deals that much damage to each opponent".
   ...EXILED_WITH_EFFECT_RULES,
   // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
@@ -1474,6 +1484,8 @@ export const EFFECT_RULES = [
   // Federation Fleet deck, group F: "Until your next turn, creatures can't attack you.", the delayed return of two exiled cards, a commander into the hand, Tuvok's choice of attackers,
   // Troi's free cast (read quietly, as the rules around them).
   ...FEDERATION_F_EFFECT_RULES,
+  // Abzan Armor deck, group A: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
+  ...COMBAT_RULE_EFFECT_RULES,
   ...COUNTER_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,

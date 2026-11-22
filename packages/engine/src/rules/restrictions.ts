@@ -36,6 +36,20 @@ function restrictedUnless(state: GameState, obj: GameObject, restriction: Restri
   return false;
 }
 
+/**
+ * CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender": a group rule change has no fixed set of
+ * objects, so the creature is matched when the rule asks, for the controller of the effect as "you". Only a battlefield permanent is matched.
+ */
+function groupRestriction(state: GameState, obj: GameObject, restriction: Restriction): boolean {
+  if (obj.zone !== 'battlefield') return false;
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'groupRestriction' || e.change.restriction !== restriction) continue;
+    const ctx = { controller: e.change.controller, source: null };
+    if (matchesFilter(state, obj, { ...e.change.filter, zone: 'battlefield' }, ctx)) return true;
+  }
+  return false;
+}
+
 export function hasRestriction(
   state: GameState,
   obj: GameObject,
@@ -43,7 +57,8 @@ export function hasRestriction(
 ): boolean {
   return (
     derive(state, obj).restrictions.includes(restriction) ||
-    restrictedUnless(state, obj, restriction)
+    restrictedUnless(state, obj, restriction) ||
+    groupRestriction(state, obj, restriction)
   );
 }
 

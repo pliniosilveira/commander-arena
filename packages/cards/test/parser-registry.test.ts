@@ -1308,6 +1308,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
   'noun.all-with-power-above-target': spell((e) => `Destroy ${e}.`),
+  // Abzan Armor, group C (Expel the Interlopers, Reunion of the House, Will of the Abzan).
+  'noun.all-with-power-at-least-chosen-number': spell(
+    (e) => `Choose a number between 0 and 10. Destroy ${e}.`,
+  ),
+  'noun.any-number-target-graveyard-cards-total-power': spell(
+    (e) => `Return ${e} to the battlefield.`,
+  ),
+  'noun.any-number-target-opponents': spell((e) => `${cap(e)} lose 2 life.`),
   'noun.each-permanent-of-target-player': spell((e) => `Goad ${e}.`),
   'noun.group-of-target-player': spell((e) => `${cap(e)} get +1/+1 until end of turn.`),
   'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
@@ -1453,6 +1461,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-player-who': permanent(
     (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
   ),
+  // Abzan Armor deck.
+  'condition.n-cards-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
+  'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
+  'static.creatures-without-keywords-cant-block-low-power': asIs,
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

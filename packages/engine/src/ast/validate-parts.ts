@@ -129,6 +129,8 @@ export interface Scope {
   readonly triggeredMana?: boolean;
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
+  /** True in the count of an `addCounters` with `perObject`: `eachObject` names the object the counters go on (Canopy Gargantuan). */
+  readonly eachObject?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
   readonly tappedCost?: boolean;
   /** True in the effect of a triggered ability of a `combatDamageBatch` trigger: `triggerSources` names the creatures that dealt the damage. */
@@ -142,6 +144,8 @@ export interface Scope {
    * reference `sacrificed` has a permanent to read (D-177).
    */
   readonly sacrificedEarlier?: boolean;
+  /** True after a `chooseNumber` effect in the same sequence: `powerAtLeastChosenNumber` has a number to read (Expel the Interlopers). */
+  readonly chosenNumber?: boolean;
   /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
   readonly entersX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
@@ -241,6 +245,22 @@ export function checkFilter(
       );
     } else {
       checkRef(f.powerGreaterThan, 'object', `${path}.powerGreaterThan`, ownerScope, out);
+    }
+  }
+  // CR 208.1, 608.2c (Expel the Interlopers): "with power greater than or equal to the chosen number" reads the number an earlier `chooseNumber` of the same sequence chose.
+  if (f.powerAtLeastChosenNumber !== undefined) {
+    if (f.powerAtLeastChosenNumber !== true) {
+      issue(
+        out,
+        `${path}.powerAtLeastChosenNumber`,
+        'powerAtLeastChosenNumber must be true when present',
+      );
+    } else if (ownerScope === undefined || ownerScope.chosenNumber !== true) {
+      issue(
+        out,
+        `${path}.powerAtLeastChosenNumber`,
+        "powerAtLeastChosenNumber is only read in the 'each' selector of an effect after a chooseNumber effect of the same sequence",
+      );
     }
   }
   // CR 201.2, 608.2c: "with the same name as that card" names an object the effect knows, so only an `each` selector reads it.
@@ -430,6 +450,9 @@ export function checkFilter(
   if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
     issue(out, `${path}.notOwnedByYou`, 'notOwnedByYou must be true');
   }
+  if (f.ownedByYou !== undefined && f.ownedByYou !== true) {
+    issue(out, `${path}.ownedByYou`, 'ownedByYou must be true');
+  }
   if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
     issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
   }
@@ -479,6 +502,7 @@ export function checkFilter(
       // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
       (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
+      a?.kind === 'controllerLifeLostThisTurn' ||
       // CR 107.3m: "with mana value X or less" in the enters trigger of the permanent itself: the X of the spell it came from (`validateCard` checks the trigger and the cost).
       a?.kind === 'enteredX' ||
       // CR 122.1, 603.10a (Puca's Covenant): "with mana value less than or equal to the number of counters on that creature": the permanent the trigger is about, as it last was.
@@ -1262,6 +1286,29 @@ export function declareTargets(
         issue(out, `${p}.min`, '"up to one for each opponent" has no minimum');
       }
     }
+    if (spec.totalPowerAtMost !== undefined) {
+      // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less".
+      if (!Number.isInteger(spec.totalPowerAtMost) || spec.totalPowerAtMost < 0) {
+        issue(out, `${p}.totalPowerAtMost`, 'totalPowerAtMost must be a whole number, 0 or more');
+      }
+      if (what?.kind !== 'object') {
+        issue(out, `${p}.what`, 'a total power limit is for objects (cards or permanents)');
+      }
+      if (
+        spec.anyNumber !== true ||
+        spec.divide !== undefined ||
+        spec.countX !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.differentControllers !== undefined ||
+        spec.upToThatMany !== undefined
+      ) {
+        issue(
+          out,
+          `${p}.totalPowerAtMost`,
+          'a total power limit goes with any number of targets, and not with divide, countX, onePerOpponent, differentControllers or upToThatMany',
+        );
+      }
+    }
     if (spec.differentControllers !== undefined) {
       // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers".
       if (spec.differentControllers !== true) {
@@ -1447,7 +1494,7 @@ export function checkRef(
         issue(
           out,
           path,
-          "'triggerSources' needs a triggered ability of a combatDamageBatch trigger",
+          "'triggerSources' needs a triggered ability of a combatDamageBatch or becomesBlockedBy trigger",
         );
       }
       break;
@@ -1957,6 +2004,10 @@ function checkAmountObject(
       scope,
       out,
     );
+  } else if (kindOf(ref) === 'eachObject') {
+    if (scope.eachObject !== true) {
+      issue(out, path, "'eachObject' is only read in the count of an addCounters with perObject");
+    }
   } else if (kindOf(ref) === 'sacrificedCost') checkSacrificedCost(path, scope, out);
   else if (kindOf(ref) === 'sacrificed') checkSacrificedEarlier(path, scope, out);
   else checkRef(ref, 'object', path, scope, out);
@@ -2009,6 +2060,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'chosenPlayerLead':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
+    case 'controllerLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -2367,6 +2419,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeGainedThisTurn':
+    case 'controllerLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
@@ -2435,6 +2488,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'sum':
       if (!Array.isArray(a.of) || a.of.length < 2) {
         issue(out, `${path}.of`, 'a sum needs at least two amounts');
+      } else {
+        a.of.forEach((part, i) => {
+          checkAmount(part, `${path}.of[${i}]`, scope, out);
+        });
+      }
+      break;
+    case 'difference':
+      if (!Array.isArray(a.of) || a.of.length !== 2) {
+        issue(out, `${path}.of`, 'a difference needs exactly two amounts');
       } else {
         a.of.forEach((part, i) => {
           checkAmount(part, `${path}.of[${i}]`, scope, out);
@@ -5354,6 +5416,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
       if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
+    case 'chooseNumber':
+      // CR 608.2d (Expel the Interlopers): "Choose a number between 0 and 10": whole numbers, the least first.
+      if (!Number.isInteger(e.min) || !Number.isInteger(e.max) || e.min < 0 || e.max < e.min) {
+        issue(out, path, 'chooseNumber needs whole numbers 0 <= min <= max');
+      }
+      break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
         issue(out, `${path}.effects`, 'a sequence needs at least one effect');
@@ -5370,6 +5438,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               ...after,
               chosenObjects: new Set([...(after.chosenObjects ?? []), child.id]),
             };
+          }
+          if (child?.kind === 'chooseNumber' && after.chosenNumber !== true) {
+            after = { ...after, chosenNumber: true };
           }
           // D-120: after a `loseLife`, "the total life lost this way" can be read.
           if (child?.kind === 'loseLife' && after.lossAvailable !== true) {
@@ -5545,6 +5616,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       if (e.fromLibraryOf !== undefined) {
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
+      }
+      break;
+    case 'keepOrSacrifice':
+      // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'each player chooses among the permanents they control: leave controller out',
+        );
+      }
+      if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be sacrificed');
+      }
+      if (!Number.isInteger(e.totalPowerAtMost) || e.totalPowerAtMost < 0) {
+        issue(
+          out,
+          `${path}.totalPowerAtMost`,
+          'totalPowerAtMost must be a whole number, 0 or more',
+        );
       }
       break;
     case 'sacrifice':
@@ -7617,7 +7710,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
-      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.perObject !== undefined && e.perObject !== true) {
+        issue(out, `${path}.perObject`, 'perObject is true when present');
+      }
+      if (e.perObject === true && e.perController === true) {
+        issue(out, `${path}.perObject`, 'perObject and perController cannot both be set');
+      }
+      checkAmount(
+        e.count,
+        `${path}.count`,
+        e.perObject === true ? { ...scope, eachObject: true } : scope,
+        out,
+      );
       // Oversimplify: only an `addCounters` that reads its count for the controller of each object can read one player's total.
       if (e.perController !== undefined && e.perController !== true) {
         issue(out, `${path}.perController`, 'perController is true when present');
@@ -7752,6 +7856,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.duration !== 'untilYourNextTurn') {
         issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
+      }
+      break;
+    case 'restrictGroup':
+      // CR 609.4, 611.2c: a group rule change read where the rule acts: a filter of creatures, as for `requireAttack`.
+      checkFilter(e.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          e.creatures,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'a group rule change names creatures by type, color, keyword, controller and the like (the battlefield, as they are when the rule acts): no zone, owner, stackKind, combat or trigger player',
+        );
+      }
+      if (!isOneOf(e.restriction, ['canAttackAsThoughNoDefender', 'assignsDamageByToughness'])) {
+        issue(
+          out,
+          `${path}.restriction`,
+          `a group rule change gives canAttackAsThoughNoDefender or assignsDamageByToughness, not ${JSON.stringify(e.restriction)}`,
+        );
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a group rule change lasts until end of turn');
       }
       break;
     case 'attach':

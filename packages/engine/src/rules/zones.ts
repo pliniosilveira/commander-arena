@@ -51,7 +51,7 @@ import type {
   GameState,
   LastKnownInfo,
 } from '../state/types';
-import { historyCount } from './amounts';
+import { amountOf, historyCount } from './amounts';
 import { protectorChoices, protectorOption } from './battle-protector';
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
@@ -835,7 +835,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       (a) =>
         a.kind === 'diedThisTurn'
           ? historyCount(nextBefore, a, enterController)
-          : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+          : a.kind === 'aggregate'
+            ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
+              amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
+            : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.

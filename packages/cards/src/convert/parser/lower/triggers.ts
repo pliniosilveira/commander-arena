@@ -1120,6 +1120,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'difference':
       case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };
@@ -1242,6 +1243,7 @@ function conditionAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'difference':
       case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };

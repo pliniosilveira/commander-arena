@@ -10,7 +10,7 @@ import type { ObjectId } from './ids';
 import { arrangementActions, orderedChoices } from './rules/arrange-choices';
 import { cardTypeCovers } from './rules/card-types-choice';
 import { defaultDivision } from './rules/combat-flow';
-import { crewChoices } from './rules/crew-choices';
+import { crewChoices, keepChoices } from './rules/crew-choices';
 import { distinctAssignments } from './rules/sacrifice-groups';
 import { sharesLandType } from './rules/share-type';
 import { targetAnswerError } from './rules/target-choice';
@@ -241,8 +241,14 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
                 n,
                 MAX_LISTED_CHOICES,
                 (picks) =>
-                  spec.onePerGroup !== true ||
-                  groupsOf(picks).every((g, i, all) => g === undefined || all.indexOf(g) === i),
+                  (spec.onePerGroup !== true ||
+                    groupsOf(picks).every(
+                      (g, i, all) => g === undefined || all.indexOf(g) === i,
+                    )) &&
+                  // CR 208.1: "with total power 10 or less".
+                  (spec.totalPowerAtMost === undefined ||
+                    picks.reduce((sum, t) => sum + (t.kind === 'object' ? (t.power ?? 0) : 0), 0) <=
+                      spec.totalPowerAtMost),
               ),
             );
           }
@@ -301,12 +307,14 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
               kind: 'choosePermanents' as const,
               objects: [...objects],
             }))
-          : d.minTotalPower === undefined
-            ? range(d.min, d.max)
-                .flatMap((n) => firstCombinations(d.legal, n, MAX_LISTED_CHOICES))
-                .slice(0, MAX_LISTED_CHOICES)
-                .map((objects) => ({ kind: 'choosePermanents' as const, objects }))
-            : crewChoices(d)),
+          : d.maxTotalPower !== undefined
+            ? keepChoices(d)
+            : d.minTotalPower === undefined
+              ? range(d.min, d.max)
+                  .flatMap((n) => firstCombinations(d.legal, n, MAX_LISTED_CHOICES))
+                  .slice(0, MAX_LISTED_CHOICES)
+                  .map((objects) => ({ kind: 'choosePermanents' as const, objects }))
+              : crewChoices(d)),
         // A sacrifice paid as a cost can be taken back (CR 733): the activation is rewound.
         ...(d.forCost ? [{ kind: 'cancel' as const }] : []),
         { kind: 'concede' },
@@ -410,7 +418,7 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           value,
         })),
         // D-151: "pay any amount of {R}" is asked while an ability resolves: there is no cast to rewind.
-        ...(d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo'
+        ...(d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo' || d.purpose === 'chooseNumber'
           ? []
           : [{ kind: 'cancel' as const }]),
         { kind: 'concede' },

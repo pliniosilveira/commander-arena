@@ -80,6 +80,27 @@ export function countersTail(
         return { ok: true, value: { count: amount, counter }, pos: counted.pos };
       }
     }
+    // Towering Titan (CR 614.12, 107.3c): "~ enters with X +1/+1 counters on it, where X is the total toughness of other creatures you control.": X is what the clause says it is,
+    // worked out as the permanent enters.
+    if (allowEach) {
+      const defined = sequence(
+        literal(' with X '),
+        spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+        pattern(/ counters on it, /i),
+        family<IrAmount>('amount', { only: ['amount.where-x'] }),
+        literal('.'),
+      )(ctx, pos);
+      if (defined.ok) {
+        const [, kind, , amount] = defined.value;
+        const counter: IrCounterSpec = {
+          kind: 'counterSpec',
+          name: kind.value[0].toLowerCase(),
+          span: kind.span,
+          rule,
+        };
+        return { ok: true, value: { count: amount, counter }, pos: defined.pos };
+      }
+    }
     const r = sequence(
       literal(' with '),
       count,

@@ -880,7 +880,14 @@ function lowerPart(
   if (
     subject.value.kind === 'filter' &&
     comparesPowerOrToughness(subject.value.filter) &&
-    part.effects.some((e) => e.kind !== 'pt' && e.kind !== 'ptCount' && e.kind !== 'restriction')
+    part.effects.some(
+      (e) =>
+        e.kind !== 'pt' &&
+        e.kind !== 'ptCount' &&
+        e.kind !== 'restriction' &&
+        // CR 509.1b, 613.11 (Sidar Kondo of Jamuraa): "can't block creatures with power 2 or less" is read where blockers are declared, after the layers.
+        e.kind !== 'cantBeBlockedBy',
+    )
   ) {
     return failure(part.subject);
   }

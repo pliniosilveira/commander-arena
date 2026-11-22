@@ -59,6 +59,8 @@ interface ArtProps {
   readonly tokenDefinition?: TokenDefinition;
   /** A commander is drawn with a special printing when Scryfall has one (issue 366). */
   readonly commander?: boolean;
+  /** Load at once instead of when scrolled near (a battlefield tile: Safari never loads those it deems offscreen, issue 474). */
+  readonly eager?: boolean;
 }
 
 /** An image that stays invisible until it has loaded and removes itself if it cannot. */
@@ -71,6 +73,7 @@ export function Art({
   style,
   tokenDefinition,
   commander = false,
+  eager = false,
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
   const special = useCommanderArt(commander && !isToken ? name : null, version);
@@ -92,14 +95,16 @@ export function Art({
           ? (listed.url ?? imageUrl(name, isToken, version, back))
           : tokenUrl;
   if (url === null) return null;
-  return <LoadedArt key={url} url={url} className={className} style={style} />;
+  return <LoadedArt key={url} url={url} className={className} style={style} eager={eager} />;
 }
 
 function LoadedArt({
   url,
   className,
   style,
+  eager,
 }: {
+  readonly eager: boolean;
   readonly url: string;
   readonly className: string;
   readonly style?: CSSProperties | undefined;
@@ -115,7 +120,7 @@ function LoadedArt({
       src={url}
       alt=""
       aria-hidden="true"
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
       decoding="async"
       draggable={false}
       onLoad={() => setState('loaded')}

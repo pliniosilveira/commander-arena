@@ -638,7 +638,8 @@ export type GameEvent =
         | 'clashOpponent'
         | 'playerChoice'
         | 'chooseOpponent'
-        | 'protector';
+        | 'protector'
+        | 'number';
       readonly option: string;
     }
   /**

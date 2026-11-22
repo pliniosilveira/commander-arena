@@ -261,7 +261,10 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     }
     case 'putCounters':
       // "Put a page counter on ~" (stage P31, D-140, CR 118.3): counters on the permanent itself, a cost of an ordinary activated ability.
-      if (options.ordinary !== true || cost.count < 1) return failure(cost);
+      // CR 118.3, 122.1: also the cost of a mana ability ("Put a -0/-1 counter on this creature: Add {G}.").
+      if ((options.ordinary !== true && options.mana !== true) || cost.count < 1) {
+        return failure(cost);
+      }
       return ok({ kind: 'putCounters', counter: cost.counter, count: cost.count });
     case 'returnToHand': {
       // "Return an artifact you control to its owner's hand" (stage P31, D-140, CR 118.3): the permanent itself, or `count` of the

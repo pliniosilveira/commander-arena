@@ -153,7 +153,8 @@ const ANY_EVENT = choice(
 const OR_SUBJECTS_EVENT = choice(ANY_EVENT, EVENT_WORDS.leavesBattlefield);
 
 /** The events of `trigger.or`: those of any trigger of one subject, and (stage P36, D-178) "becomes the target of a spell". */
-const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell);
+// CR 701.37a (Protector of the Wastes): "enters or becomes monstrous".
+const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell, EVENT_WORDS.becomesMonstrous);
 
 function trigger(
   rule: string,
@@ -515,8 +516,11 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     '~ attacks, blocks, or becomes the target of a spell',
     '~ enters, attacks, or dies',
     'another creature you control attacks, blocks, or dies',
+    // CR 701.37a (Monstrosity), 603.2: the monstrosity action is an event like any other of the subject.
+    '~ enters or becomes monstrous',
   ],
   rejects: [
+    '~ becomes monstrous or becomes monstrous',
     '~ attacks or becomes the target of a spell or ability',
     '~ becomes the target of a spell or becomes the target of a spell',
     '~ enters',

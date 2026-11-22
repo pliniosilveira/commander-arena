@@ -38,7 +38,7 @@ function statSource(
 ): LowerResult<
   Extract<
     ObjectRef,
-    { kind: 'this' | 'target' | 'triggerSubject' | 'sacrificedCost' | 'sacrificed' }
+    { kind: 'this' | 'target' | 'triggerSubject' | 'sacrificedCost' | 'sacrificed' | 'eachObject' }
   >
 > {
   const ref = objectRefOf(of, ctx, { triggerSubject: true, sacrificed: true });
@@ -59,7 +59,8 @@ function statSource(
     ref.value.kind === 'this' ||
     ref.value.kind === 'triggerSubject' ||
     ref.value.kind === 'sacrificedCost' ||
-    ref.value.kind === 'sacrificed'
+    ref.value.kind === 'sacrificed' ||
+    ref.value.kind === 'eachObject'
   ) {
     return { ok: true, value: ref.value, rule };
   }
@@ -335,6 +336,7 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
     }
     case 'lifeGainedOrLostThisTurn':
+    case 'controllerLifeLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -669,6 +671,19 @@ export function lowerAmount(
       }
       if (parts.length < 2) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'sum', of: parts }, rule };
+    }
+    case 'difference': {
+      const blocked = needs('difference');
+      if (blocked !== null) return blocked;
+      const [one, other] = amount.of;
+      if (one === undefined || other === undefined || amount.of.length !== 2) {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const first = lowerAmount(one, ctx, rule);
+      if (!first.ok) return first;
+      const second = lowerAmount(other, ctx, rule);
+      if (!second.ok) return second;
+      return { ok: true, value: { kind: 'difference', of: [first.value, second.value] }, rule };
     }
     case 'extreme': {
       const blocked = needs('extreme');
@@ -1044,6 +1059,7 @@ export const AMOUNT_NEEDS = [
   'amount:lifeLostThisTurn',
   'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
+  'amount:controllerLifeLostThisTurn',
   'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',

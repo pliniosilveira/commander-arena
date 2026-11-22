@@ -722,6 +722,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   delayed: true,
   // D-525 (CR 706.3): the rows of a results table.
   dieRows: true,
+  // Tip the Scales (CR 603.12): "Sacrifice a creature. When you do, ...": the lowering reads a reflexive ability only after an instruction it can tell was done.
+  reflexive: true,
 });
 
 /**

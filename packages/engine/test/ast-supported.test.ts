@@ -73,6 +73,7 @@ const EXECUTABLE_KEYWORDS = [
   'mentor', // scenario-xx-keywords2-combat
   'evolve', // scenario-xx-keywords2-combat
   'bushido', // scenario-xx-keywords2-combat
+  'flanking', // ast-abzan-armor-validate
   'extort', // scenario-xx-keywords2-extort
   'affinity', // scenario-xx-keywords2-affinity
   'convoke', // scenario-xx-pay-options
@@ -187,6 +188,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   mentor: { kind: 'mentor' },
   evolve: { kind: 'evolve' },
   bushido: { kind: 'bushido', count: 1 },
+  flanking: { kind: 'flanking' },
   extort: { kind: 'extort' },
   affinity: { kind: 'affinity', filter: { types: ['artifact'] } },
   convoke: { kind: 'convoke' },
@@ -330,6 +332,7 @@ describe('supported feature gate', () => {
         'attackBatch',
         'attacks',
         'becomesBlocked',
+        'becomesBlockedBy',
         'becomesMonstrous',
         'becomesTapped',
         'becomesUntapped',
@@ -453,6 +456,8 @@ describe('supported feature gate', () => {
       'removeCounters',
       // Issue 144: "{R}, {T}, Exert this land: Add {R}{R}" (Arena of Glory).
       'exert',
+      // "Put a -0/-1 counter on this creature: Add {G}" (CR 118.3, 122.1).
+      'putCounters',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

@@ -6,13 +6,12 @@ Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for l
 
 Engine work (phases 1 and 2) is well advanced; the AI, `ai:arena`, performance and the UI are not started.
 
-Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
+Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
 
 Open, in order of work:
 
-1. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
-2. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-3. #422: latent single-opponent sites, low priority; #363 closes when its children do.
+1. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
+2. #422: latent single-opponent sites, low priority; #363 closes when its children do.
 
 Not audited: the AI and the view code. `ai:arena` still plays two seats, and `tools/perf/derive-bench.ts` measures only two. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
 
@@ -172,7 +171,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 - The turn caps of the random run and the active seat that left (CR 800.4j): #453.
 - Read how the 21-point commander loss is checked with several defenders (CR 903.10a and 104.3j: 21 or more combat damage from the same commander; the key `"seat:card"` is per defender in `lossReasons`, covered by 3-seat tests now: #421).
 - The rejected actions (`You cannot pay that cost`, Overflowing Basin with an empty pool): #453.
-- The AI for 3 and 4 seats: #452.
+- The AI for 3 and 4 seats: audited in #452; the fixes are #479 to #483.
 - Inventory of `'opponent'`: done for the rules; the parser is left as card-pipeline limits (see "Audit of the one-opponent assumptions").
 - Scenario DSL with 3 and 4 seats.
 
@@ -187,6 +186,10 @@ Read-only audit of `packages/engine/src/rules/`. The selector layer is already c
 A battle's protector is now chosen by its controller among their living opponents (CR 310.9a, 310.12a; #415), and so is the opponent in "an opponent separates, chooses or copies" (Demonstrate, piles, Coin of Fate; #416, CR 608.2d, 801.5b), each asked only with more than one. "An opponent has N or less life" now ignores opponents who left the game (CR 800.4a; #417).
 
 The combat data model already supports several defenders (each attacker stores its own target and defender, and `defending.ts` derives the defending player per creature, CR 508.5a); the defending players now declare blockers one after the other, each against the attackers aimed at them (CR 802.4; #414). Tests for annihilator, `reselectAttack`, goad and commander damage with 3 seats: #421. Not audited: the AI, the UI and the view code.
+
+## Audit of the AI (phase 3, #452)
+
+About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured: the decision time with more permanents, because `ai:arena` plays two seats (#482).
 
 ## Cards not supported for more than one opponent
 

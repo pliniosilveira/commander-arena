@@ -40,6 +40,7 @@ import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
+import { runChooseNumber } from './choose-number';
 import { runChooseOne } from './choose-one';
 import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
 import { newClash, runClash } from './clash';
@@ -56,6 +57,7 @@ import {
   runEntersTappedGroup,
   runRequireAttack,
   runRequireAttackSource,
+  runRestrictGroup,
 } from './continuous';
 import { controllerOf } from './control';
 import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
@@ -348,6 +350,7 @@ export function runInstruction(
   if (instruction.kind === 'discard') return runDiscard(state, res, instruction);
   if (instruction.kind === 'arrange') return runArrange(state, res, instruction);
   if (instruction.kind === 'drawUpTo') return runDrawUpTo(state, res, instruction);
+  if (instruction.kind === 'chooseNumber') return runChooseNumber(state, res, instruction);
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
   if (instruction.kind === 'lookSplit') return runLookSplit(state, res, instruction);
   if (instruction.kind === 'pileSeparate') return runPileSeparate(state, res, instruction);
@@ -837,6 +840,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
           },
         }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
+    ...(res.chosenNumber === undefined ? {} : { chosenNumber: res.chosenNumber }),
     ...(res.chosenPlayer === undefined ? {} : { chosenPlayer: res.chosenPlayer }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
@@ -930,6 +934,21 @@ function runEffect(
               chosen: null,
               seat,
             })),
+      );
+    case 'chooseNumber':
+      // CR 608.2d (Expel the Interlopers): the controller chooses a whole number from `min` to `max`.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseNumber',
+            seat: res.controller,
+            min: effect.min,
+            max: effect.max,
+            amount: null,
+          },
+        ],
       );
     case 'sequence':
       return done(
@@ -1033,6 +1052,28 @@ function runEffect(
           }).length,
         },
       };
+    }
+
+    case 'keepOrSacrifice': {
+      // CR 101.4, 608.2d (Slaughter the Strong): every player the effect names chooses, the active player first, then nothing is sacrificed until the last has chosen.
+      const seats = resolvePlayers(state, effect.players, ctx, targets);
+      const [first, ...later] = seats;
+      if (first === undefined) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseSacrifice' as const,
+            filter: effect.filter,
+            count: 0,
+            keepPowerAtMost: effect.totalPowerAtMost,
+            chosen: null,
+            seat: first,
+            ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+          },
+        ],
+      );
     }
 
     case 'sacrifice': {
@@ -2551,8 +2592,10 @@ function runEffect(
     }
 
     case 'addCounters': {
-      const count = amountOf(state, effect.count, ctx, targets);
-      if (count <= 0 && effect.perController !== true) return done(state);
+      const count = effect.perObject === true ? 0 : amountOf(state, effect.count, ctx, targets);
+      if (count <= 0 && effect.perController !== true && effect.perObject !== true) {
+        return done(state);
+      }
       const blockers = counterBlockers(state);
       const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
@@ -2572,7 +2615,10 @@ function runEffect(
                 },
                 targets,
               )
-            : count;
+            : effect.perObject === true
+              ? // Canopy Gargantuan (CR 608.2c): the count is worked out for each object, with that object as "that creature".
+                amountOf(state, effect.count, { ...ctx, eachObject: id }, targets)
+              : count;
         if (own <= 0) continue;
         const put = putCountersOn(
           state,
@@ -3791,6 +3837,10 @@ function runEffect(
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.
       return runCreaturesCantAttackYou(state, effect, ctx);
+
+    case 'restrictGroup':
+      // CR 609.4, 611.2c: a rule change on a group of creatures, read where the rule acts (attackers declared, combat damage assigned).
+      return runRestrictGroup(state, effect, ctx);
 
     case 'choosePlayer':
       // CR 608.2d (The Black Gate): the controller chooses a player with the most life; the answer is what "that player" means for the rest of the resolution.

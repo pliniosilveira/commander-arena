@@ -101,6 +101,20 @@ function join(a: Outcome, b: Outcome): Outcome {
   return { state: b.state, events: [...a.events, ...b.events] };
 }
 
+/**
+ * CR 508.6: the players the seat whose turn has just ended attacked, kept for "players who attacked you during their last turn". A seat that attacked nobody and has no earlier entry adds
+ * nothing, so the state of a game where nobody ever attacked is as it was.
+ */
+function rolledAttackedLastTurn(state: GameState): Pick<GameState, 'attackedLastTurn'> {
+  const seat = state.turn.activeSeat;
+  const attacked = [...new Set(state.turnLog.attackedPlayers.map((a) => a.player))];
+  const before = state.attackedLastTurn;
+  if (attacked.length === 0 && before?.[seat] === undefined) {
+    return before === undefined ? {} : { attackedLastTurn: before };
+  }
+  return { attackedLastTurn: { ...(before ?? {}), [seat]: attacked } };
+}
+
 /** Begins a new turn for `seat` (CR 500.1). */
 export function startTurn(state: GameState, seat: SeatId): Outcome {
   const [stamp, s1] = allocateTimestamp(state);
@@ -120,6 +134,8 @@ export function startTurn(state: GameState, seat: SeatId): Outcome {
     lastTurnSpellsCast: next.seats.map((s) => s.spellsCastThisTurn),
     // CR 502.2, 731.2: whose turn it was, for the day and night check of the untap step.
     lastTurnActiveSeat: state.turn.activeSeat,
+    // CR 508.6: the players the seat whose turn has just ended attacked, kept for "players who attacked you during their last turn".
+    ...rolledAttackedLastTurn(state),
   };
   for (const s of next.seats) {
     next = patchSeat(next, s.id, {

@@ -4,8 +4,9 @@
  * only as the intervening "if" of a triggered ability, and leaves the cards for "put them into their owner's graveyard" to name. Not read: "a card exiled with ~", "no cards exiled with ~",
  * "cards exiled with it", another source, "there are three or more cards exiled with ~", "cards in exile".
  */
-import { pattern } from '../../combinators';
+import { literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrCondition } from '../../ir/types';
+import { quantity } from '../amount/index';
 import { defineRule, quietly, spanned } from '../registry';
 
 export const CONDITION_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
@@ -43,4 +44,53 @@ export const CONDITION_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
   },
 });
 
-export const EXILED_WITH_CONDITION_RULES = [CONDITION_CARDS_EXILED_WITH_SELF].map(quietly);
+/**
+ * `condition.n-cards-exiled-with-self`: "three or more cards have been exiled with ~" (Colfenor's Urn; CR 603.4 intervening "if", 607.2a linked abilities): at least that many cards
+ * the permanent exiled with its linked ability are still in exile, read as the ability triggers and again as it resolves. The engine's `amountIs` of the count of the cards
+ * `exiledWithSource`, as `condition.cards-exiled-with-self` with a larger least; the cards are what "those cards" names after it. Not read: "one or more" (a plain "a card"), "fewer",
+ * "exactly", another verb ("were exiled"), another source, a kind of card ("creature cards"), a trailing word.
+ */
+export const CONDITION_N_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
+  id: 'condition.n-cards-exiled-with-self',
+  family: 'condition',
+  leading: ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 607.2a (Linked Abilities)'],
+  examples: [
+    'three or more cards have been exiled with ~',
+    'two or more cards have been exiled with ~',
+  ],
+  rejects: [
+    'one or more cards have been exiled with ~',
+    'three or fewer cards have been exiled with ~',
+    'three cards have been exiled with ~',
+    'three or more cards were exiled with ~',
+    'three or more cards have been exiled with it',
+    'three or more cards have been exiled with target creature',
+    'three or more creature cards have been exiled with ~',
+    'three or more cards have been exiled with ~.',
+    'three or more cards have been exiled with ~ and',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(satisfy(quantity, (n) => n >= 2)),
+      literal(' or more cards have been exiled with ~'),
+      pattern(/(?![\p{L}\p{N}'’])(?!\s+(?:and|or)\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'cardsExiledWithSelf', atLeast: r.value[0].value },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.n-cards-exiled-with-self',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const EXILED_WITH_CONDITION_RULES = [
+  CONDITION_CARDS_EXILED_WITH_SELF,
+  CONDITION_N_CARDS_EXILED_WITH_SELF,
+].map(quietly);

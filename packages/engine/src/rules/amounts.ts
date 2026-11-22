@@ -277,6 +277,9 @@ export function amountOf(
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  if (amount.kind === 'controllerLifeLostThisTurn') {
+    return getSeat(state, ctx.controller).lifeLostThisTurn;
+  }
   if (amount.kind === 'lifeGainedOrLostThisTurn') {
     return Math.max(
       state.turnLog.lifeGainedTotal[ctx.controller] ?? 0,
@@ -419,6 +422,11 @@ export function amountOf(
   if (amount.kind === 'multiple') return amount.factor * amountOf(state, amount.of, ctx, targets);
   if (amount.kind === 'sum') {
     return amount.of.reduce<number>((n, part) => n + amountOf(state, part, ctx, targets), 0);
+  }
+  if (amount.kind === 'difference') {
+    // The positive difference of two numbers (Jaws of Defeat's rulings: subtract the smaller from the larger).
+    const [a, b] = amount.of.map((part) => amountOf(state, part, ctx, targets));
+    return Math.abs((a ?? 0) - (b ?? 0));
   }
   if (amount.kind === 'extreme') {
     const values = amount.of.map((part) => amountOf(state, part, ctx, targets));

@@ -336,6 +336,9 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'aggregate') {
+        // Towering Titan: the total of a stat over a group, read as the permanent enters.
+        checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
       } else if (kindOf(r.count) === 'diedThisTurn') {
         // Issue 101: the creatures that died this turn, read from the history as the permanent enters; no state of the game is read, so nothing more to check.
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
@@ -941,7 +944,28 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesBlockedBy':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
+      // CR 509.3d (Flanking): the filter the blocking creature must match, on the battlefield, no zone, owner or combat.
+      if (t.kind === 'becomesBlockedBy') {
+        checkFilter(t.by, `${path}.by`, out);
+        if (
+          filterSome(
+            t.by,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.by`,
+            'the creature that blocks is on the battlefield: no zone, owner, stackKind or combat',
+          );
+        }
+      }
       if (t.kind === 'becomesTapped') checkBecomesTapped(t, path, out);
       // D-135: "enters untapped" / "enters tapped" belongs to the enters trigger.
       if (
@@ -1584,6 +1608,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesBlockedBy':
     case 'landfall':
     case 'diesBatch':
     case 'entersBatch':
@@ -1989,7 +2014,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.trigger.kind === 'entersBatch'
           ? { triggerCards: true }
           : {}),
-        ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
+        // CR 509.3d (Flanking): "the blocking creature" is the creature that blocked, `triggerSources`.
+        ...(a.trigger.kind === 'combatDamageBatch' || a.trigger.kind === 'becomesBlockedBy'
+          ? { triggerSources: true }
+          : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'

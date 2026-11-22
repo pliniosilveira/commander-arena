@@ -502,6 +502,8 @@ export const PLAYER_SUBJECTS = [
   'noun.you-and-player',
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',
+  // Will of the Abzan: "any number of target opponents each sacrifice a creature with the greatest power among creatures that player controls and lose 3 life".
+  'noun.any-number-target-opponents',
   'noun.each-other-player',
   // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
   'noun.each-player-other-than-its-controller',
@@ -871,6 +873,7 @@ export const EFFECT_DISCARD = defineRule<Clauses>({
     'discard two cards unless you discard a creature card',
     'discard a card at random',
     'discard two cards at random',
+    'discard cards equal to the number of creatures you control',
   ],
   rejects: [
     'discards a card',
@@ -886,11 +889,25 @@ export const EFFECT_DISCARD = defineRule<Clauses>({
   parse: (ctx, pos) =>
     map(
       spanned(
-        sequence(
-          verbWord('discard', true),
-          family<IrArg>('amount'),
-          CARDS,
-          optional(RANDOM_OR_UNLESS, null),
+        choice(
+          map(
+            sequence(
+              verbWord('discard', true),
+              family<IrArg>('amount'),
+              CARDS,
+              optional(RANDOM_OR_UNLESS, null),
+            ),
+            ([, amount, , rest]) => ({ amount, rest }),
+          ),
+          // "discard cards equal to its power" (CR 701.9, 107.1): the number comes from the amount.
+          map(
+            sequence(
+              verbWord('discard', true),
+              literal('cards '),
+              family<IrArg>('amount', { only: EQUAL_AMOUNTS }),
+            ),
+            ([, , amount]) => ({ amount, rest: null }),
+          ),
         ),
       ),
       ({ value, span }): Clauses => [
@@ -899,12 +916,12 @@ export const EFFECT_DISCARD = defineRule<Clauses>({
           'discard',
           {
             player: impliedYou('effect.discard', pos),
-            amount: value[1],
-            ...(value[3] === null
+            amount: value.amount,
+            ...(value.rest === null
               ? {}
-              : typeof value[3] === 'string'
+              : typeof value.rest === 'string'
                 ? { random: { kind: 'flag', value: true, span, rule: 'effect.discard' } }
-                : { unless: value[3] }),
+                : { unless: value.rest }),
           },
           span,
         ),

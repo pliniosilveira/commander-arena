@@ -136,6 +136,14 @@ describe('the other new kinds', () => {
   test.each([
     [{ kind: 'blocks', what: { kind: 'this' } }, 'Whenever Pyre Hound blocks'],
     [{ kind: 'becomesBlocked', what: { kind: 'this' } }, 'Whenever Pyre Hound becomes blocked'],
+    [
+      {
+        kind: 'becomesBlockedBy',
+        what: { kind: 'this' },
+        by: { types: ['creature'], notKeywords: ['flanking'] },
+      },
+      'Whenever Pyre Hound becomes blocked by a creature without flanking',
+    ],
     [{ kind: 'blocks', what: CREATURE_YOU }, 'Whenever a creature you control blocks'],
     [
       { kind: 'becomesBlocked', what: { types: ['creature'], controller: 'you', other: true } },
@@ -193,6 +201,11 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   attacks: { kind: 'attacks', what: { kind: 'this' } },
   blocks: { kind: 'blocks', what: { kind: 'this' } },
   becomesBlocked: { kind: 'becomesBlocked', what: { kind: 'this' } },
+  becomesBlockedBy: {
+    kind: 'becomesBlockedBy',
+    what: { kind: 'this' },
+    by: { types: ['creature'], notKeywords: ['flanking'] },
+  },
   castSpell: { kind: 'castSpell', filter: {}, by: 'you' },
   landfall: { kind: 'landfall' },
   cycled: { kind: 'cycled' },

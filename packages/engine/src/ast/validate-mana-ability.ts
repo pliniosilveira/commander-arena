@@ -93,7 +93,11 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       out,
       'the mana a mana ability makes',
     );
-    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+    if (
+      (a.cost ?? []).some(
+        (c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters' || c?.kind === 'putCounters',
+      )
+    ) {
       issue(
         out,
         `${path}.production.times`,
@@ -123,7 +127,11 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     } else {
       checkStateAmount(amount, `${path}.production.amount`, out, 'the mana a mana ability makes');
     }
-    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+    if (
+      (a.cost ?? []).some(
+        (c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters' || c?.kind === 'putCounters',
+      )
+    ) {
       issue(
         out,
         `${path}.cost`,
@@ -151,7 +159,11 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         );
       }
     }
-    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+    if (
+      (a.cost ?? []).some(
+        (c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters' || c?.kind === 'putCounters',
+      )
+    ) {
       issue(
         out,
         `${path}.cost`,
