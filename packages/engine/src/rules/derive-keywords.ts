@@ -175,6 +175,13 @@ const DETHRONE_ABILITY: Ability = {
  * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
  * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
  */
+/** CR 702.116a (Myriad): "Whenever this creature attacks, ..." (the effect is `rules/myriad.ts`); each instance triggers separately (CR 702.116b). */
+const MYRIAD_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  effect: { kind: 'myriad' },
+};
+
 const DECAYED_ABILITY: Ability = {
   kind: 'triggered',
   trigger: { kind: 'attacks', what: { kind: 'this' } },
@@ -856,6 +863,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [DETHRONE_ABILITY];
     case 'decayed':
       return [DECAYED_ABILITY];
+    case 'myriad':
+      return [MYRIAD_ABILITY];
     default:
       return [];
   }

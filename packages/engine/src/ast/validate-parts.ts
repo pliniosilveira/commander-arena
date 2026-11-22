@@ -6316,6 +6316,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
       break;
+    case 'myriad':
+      // CR 702.116a: the effect of the triggered ability the keyword stands for, which the engine writes; a card says "Myriad".
+      issue(out, path, "myriad is the engine's own effect for the keyword Myriad");
+      break;
     case 'delayedSacrifice':
       // CR 701.54c (D-196): the effect of the third ability of the Ring, which the engine writes; a card says "the Ring tempts you".
       issue(out, path, "delayedSacrifice is part of the engine's own abilities of the Ring");
