@@ -1235,6 +1235,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
   // Issue 144 (Goblin Dark-Dwellers, Glimpse the Impossible, Conspicuous Snoop).
   'effect.cast-own-graveyard-card-free': permanent((e) => `When ~ enters, ${e}.`),
+  // Scions & Spellcraft deck, group G: the paid cast of a card of your own graveyard.
+  'effect.cast-own-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
   'effect.cast-chosen-graveyard-spell-free': permanent((e) => `Whenever ~ attacks, ${e}.`),
   'amount.for-each-card-put-into-your-graveyard': spell(
     (e) =>

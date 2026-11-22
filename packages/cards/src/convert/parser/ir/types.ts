@@ -1641,7 +1641,8 @@ export interface IrTrigger extends IrNode {
   readonly whileCondition?: IrCondition;
   /**
    * 'becomesTapped' (Hylda deck group 1, D-510, CR 603.2c): "Whenever you tap one or more untapped creatures your opponents control": one trigger for the permanents
-   * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
+   * tapped together, whatever their number. The player who taps is the `actor` ("you tap"). 'lifeLost' "Whenever one or more opponents lose life" (CR 603.2c, 119.3): one
+   * trigger for the simultaneous losses of several players; the `actor` is "each opponent".
    */
   readonly batch?: true;
   /** 'putIntoGraveyard' (Death Toll deck group B, CR 603.2): "from your library" (the cards came from the library), not "from anywhere". */

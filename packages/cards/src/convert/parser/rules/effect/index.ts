@@ -158,6 +158,7 @@ import {
   single,
   UNDER_CONTROL,
 } from './operands';
+import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
@@ -1319,6 +1320,8 @@ export const EFFECT_RULES = [
   ...PRIMORDIAL_EFFECT_RULES,
   // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
   ...F144_EFFECT_RULES,
+  // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
+  ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,

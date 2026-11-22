@@ -437,6 +437,8 @@ describe('supported feature gate', () => {
       'activatesAbilityX',
       // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature".
       'countersAddedEach',
+      // "Whenever one or more opponents lose life".
+      'lifeLostBatch',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',
