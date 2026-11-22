@@ -211,6 +211,8 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with three charge counters on it.',
     '~ enters with X +1/+1 counters on it.',
     '~ enters with twice X +1/+1 counters on it.',
+    // Towering Titan (CR 614.12): X is defined by the clause and read as the permanent enters.
+    '~ enters with X +1/+1 counters on it, where X is the total toughness of other creatures you control.',
     '~ enters with X charge counters on it.',
     '~ enters the battlefield with X +1/+1 counters on it.',
     '~ enters with a +1/+1 counter on it for each Zombie card in your graveyard.',
@@ -227,6 +229,8 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with two +1/+1 counters on it for each creature you control.',
     '~ enters with two +1/+1 counters on it for each time it was kicked.',
     '~ enters with X +1/+1 counters on it for each creature you control.',
+    '~ enters with X +1/+1 counters on it, where X is the total toughness of other creatures you control',
+    '~ enters with X +1/+1 counters on it, where Y is the total toughness of other creatures you control.',
     '~ enters with a +1/+1 counter on it for each creature.',
     '~ enters with a +1/+1 counter on it for each creature you control and each.',
     '~ enters with a +1/+1 counter on it for each creature you control and creature cards in your graveyard.',

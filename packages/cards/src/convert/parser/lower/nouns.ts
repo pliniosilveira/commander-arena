@@ -869,6 +869,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           if (!limit.ok) return limit;
           if (limit.value.kind !== 'triggerSubject') return failure(noun, []);
           atMost = { kind: 'manaValueOf', of: limit.value };
+        } else if (dynamic.kind === 'controllerLifeLostThisTurn') {
+          // "with mana value less than or equal to the amount of life you lost this turn" (Betor, CR 119.3, 202.3): the controller's own, read as the targets are chosen and again as it resolves.
+          const blockedLife = missingFeatures(['amount:controllerLifeLostThisTurn']);
+          if (blockedLife.length > 0) return failure(noun, blockedLife);
+          atMost = { kind: 'controllerLifeLostThisTurn' };
         } else if (dynamic.kind === 'countersOn') {
           // "with mana value less than or equal to the number of counters on that creature" (Puca's Covenant, CR 202.3, 122.1, 603.10a): the counters of the permanent the trigger
           // is about, as it last was, read as the targets are chosen and again as the ability resolves (the engine's `countersOn` of the `triggerSubject`).
@@ -1105,6 +1110,16 @@ export function objectRefOf(
   ) {
     return (
       gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
+    );
+  }
+  // "... on each other creature you control equal to that creature's toughness" (Canopy Gargantuan, CR 608.2c): the object of the group each placement is worked out for.
+  if (noun.det === 'anaphor' && ctx.eachRef !== null && noun.ref === ctx.eachRef) {
+    return (
+      gate(noun, ['selector:eachObject']) ?? {
+        ok: true,
+        value: { kind: 'eachObject' },
+        rule: noun.rule,
+      }
     );
   }
   if (

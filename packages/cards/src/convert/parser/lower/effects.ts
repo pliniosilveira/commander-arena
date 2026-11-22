@@ -1958,8 +1958,15 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // Canopy Gargantuan (CR 608.2c): "that creature" in the count is the creature of the group each placement is for.
+    const eachRef =
+      objectsArg?.kind === 'noun' && objectsArg.det === 'each' ? (objectsArg.ref ?? null) : null;
+    const before = ctx.eachRef;
+    ctx.eachRef = eachRef;
     const count = amountArg(clause, 'count', ctx);
+    ctx.eachRef = before;
     if (!count.ok) return count;
+    const perObject = JSON.stringify(count.value).includes('"eachObject"');
     // Federation Fleet group D (CR 122.6): what a later "if you put ... counters on creatures this way" asks about.
     ctx.putCounters.push({
       counter: counter.name,
@@ -1976,6 +1983,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         objects,
         counter: counter.name,
         count: count.value,
+        ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
       { triggerSubject: true, moved: true, token: true },

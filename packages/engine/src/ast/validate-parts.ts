@@ -129,6 +129,8 @@ export interface Scope {
   readonly triggeredMana?: boolean;
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
+  /** True in the count of an `addCounters` with `perObject`: `eachObject` names the object the counters go on (Canopy Gargantuan). */
+  readonly eachObject?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
   readonly tappedCost?: boolean;
   /** True in the effect of a triggered ability of a `combatDamageBatch` trigger: `triggerSources` names the creatures that dealt the damage. */
@@ -471,6 +473,7 @@ export function checkFilter(
       // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
       (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
+      a?.kind === 'controllerLifeLostThisTurn' ||
       // CR 107.3m: "with mana value X or less" in the enters trigger of the permanent itself: the X of the spell it came from (`validateCard` checks the trigger and the cost).
       a?.kind === 'enteredX' ||
       // CR 122.1, 603.10a (Puca's Covenant): "with mana value less than or equal to the number of counters on that creature": the permanent the trigger is about, as it last was.
@@ -1876,6 +1879,10 @@ function checkAmountObject(
       scope,
       out,
     );
+  } else if (kindOf(ref) === 'eachObject') {
+    if (scope.eachObject !== true) {
+      issue(out, path, "'eachObject' is only read in the count of an addCounters with perObject");
+    }
   } else if (kindOf(ref) === 'sacrificedCost') checkSacrificedCost(path, scope, out);
   else if (kindOf(ref) === 'sacrificed') checkSacrificedEarlier(path, scope, out);
   else checkRef(ref, 'object', path, scope, out);
@@ -1928,6 +1935,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'chosenPlayerLead':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
+    case 'controllerLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -2282,6 +2290,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeGainedThisTurn':
+    case 'controllerLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
@@ -2350,6 +2359,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'sum':
       if (!Array.isArray(a.of) || a.of.length < 2) {
         issue(out, `${path}.of`, 'a sum needs at least two amounts');
+      } else {
+        a.of.forEach((part, i) => {
+          checkAmount(part, `${path}.of[${i}]`, scope, out);
+        });
+      }
+      break;
+    case 'difference':
+      if (!Array.isArray(a.of) || a.of.length !== 2) {
+        issue(out, `${path}.of`, 'a difference needs exactly two amounts');
       } else {
         a.of.forEach((part, i) => {
           checkAmount(part, `${path}.of[${i}]`, scope, out);
@@ -7500,7 +7518,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
-      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.perObject !== undefined && e.perObject !== true) {
+        issue(out, `${path}.perObject`, 'perObject is true when present');
+      }
+      if (e.perObject === true && e.perController === true) {
+        issue(out, `${path}.perObject`, 'perObject and perController cannot both be set');
+      }
+      checkAmount(
+        e.count,
+        `${path}.count`,
+        e.perObject === true ? { ...scope, eachObject: true } : scope,
+        out,
+      );
       // Oversimplify: only an `addCounters` that reads its count for the controller of each object can read one player's total.
       if (e.perController !== undefined && e.perController !== true) {
         issue(out, `${path}.perController`, 'perController is true when present');

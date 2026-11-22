@@ -1115,6 +1115,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificedCost',
     // D-177: "that creature" after a sacrifice of the same ability ("you may sacrifice another creature. When you do, ... that creature's power").
     'sacrificed',
+    // CR 608.2c (Canopy Gargantuan): "that creature" in the count of counters put on each creature (`ObjectRef` `eachObject`, `addCounters.perObject`).
+    'eachObject',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
     // greatest power among creatures they control" (`ChooseSelector.anyNumber` and `greatest`), "the chosen player" of a gift.
     'notSupertypes',
@@ -1498,6 +1500,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
+    'controllerLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
@@ -1537,6 +1540,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'minus',
     'sum',
     'extreme',
+    'difference',
     'opponentCount',
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
@@ -2105,6 +2109,8 @@ export const SELECTOR_KINDS = [
   'sacrificedCost',
   /** "That creature's power" after the ability sacrificed it (CR 603.12, 608.2h, D-177): the engine's `ObjectRef` `sacrificed`. */
   'sacrificed',
+  /** "Put a number of +1/+1 counters on each creature equal to that creature's toughness" (CR 608.2c, Canopy Gargantuan): the engine's `ObjectRef` `eachObject` and `addCounters.perObject`. */
+  'eachObject',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
   'notSupertypes',
   /** "Sacrifice any number of other permanents" (D-135): the engine's `ChooseSelector.anyNumber`. */
@@ -2551,6 +2557,8 @@ export const AMOUNT_KINDS = [
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  /** "The amount of life you lost this turn" (Betor, CR 119.3): the engine's `controllerLifeLostThisTurn`, the controller's own life lost, valid anywhere an amount is. */
+  'controllerLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
   'lifeGainedAndLostThisTurn',
@@ -2604,6 +2612,8 @@ export const AMOUNT_KINDS = [
   'sum',
   /** "... or ..., whichever is greater" (CR 608.2c): the engine's `extreme`, the greater or the lesser of two or more amounts. */
   'extreme',
+  /** "The difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the engine's `difference`, the positive gap between two amounts. */
+  'difference',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
   /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */

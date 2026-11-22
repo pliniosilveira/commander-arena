@@ -390,9 +390,31 @@ const COUNTERS_REMOVED_THIS_WAY: Parser<IrAmount> = (ctx, pos) => {
   };
 };
 
+/**
+ * "the difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the positive gap between two numbers read from objects (`STAT_OF`), the engine's
+ * `difference`. Only two stats of objects, joined by " and ".
+ */
+const DIFFERENCE = (rule: string): Parser<IrAmount> => {
+  const stat = STAT_OF(rule);
+  return (ctx, pos) => {
+    const r = spanned(sequence(literal('the difference between '), stat, literal(' and '), stat))(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const [, first, , second] = r.value.value;
+    return {
+      ok: true,
+      value: { kind: 'difference', of: [first, second], span: r.value.span },
+      pos: r.pos,
+    };
+  };
+};
+
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
+    DIFFERENCE(rule),
     HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
     VOTES_AMOUNT,
@@ -602,6 +624,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the greatest mana value among artifacts you control',
     "equal to that creature's toughness",
     'equal to its toughness',
+    // CR 608.2c: the positive gap between two numbers.
+    "equal to the difference between that creature's power and its toughness",
     "equal to the sacrificed creature's power",
     'equal to your devotion to black',
     'equal to your devotion to black and red',
@@ -631,6 +655,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of opponents',
     'equal to the number of opponents you control',
     'equal to its power',
+    "equal to the difference between that creature's power",
+    "equal to the difference between that creature's power and its",
+    "equal to the difference between that creature's power and its toughness and",
     "equal to that creature's power",
     'equal to its mana value',
     'equal to the total life lost this way',
