@@ -87,7 +87,8 @@ const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 /**
  * What the opponent's next attack could cost the agent in this position (a score penalty, 0 or more):
  * all the opponent's creatures attack, the agent's untapped creatures block (`breakthrough`). Used on the
- * view after a simulated combat, where the agent's attackers are tapped.
+ * view after a simulated combat, where the agent's attackers are tapped. With several opponents each one's
+ * loss is weighted by `attackShare`, how likely it is to turn on the agent rather than on the others.
  */
 export function crackBackPenalty(view: GameView, me: SeatId): number {
   const seat = view.seats.find((s) => s.id === me);
@@ -97,11 +98,26 @@ export function crackBackPenalty(view: GameView, me: SeatId): number {
     if (other.id === me || other.hasLost) continue;
     const b = breakthrough(view, futureAttackers(view, other.id), untappedCreatures(view, me));
     const v = verdict(view, me, b);
+    // A lethal crack-back is still lethal when the opponent also has others to choose from.
     if (v.lethal) return CRACK_LETHAL;
     penalty +=
-      CRACK_WEIGHT * (lifeValue(seat.life) - lifeValue(seat.life - b.life)) + (v.danger ? 3 : 0);
+      attackShare(view, other.id, me) *
+      (CRACK_WEIGHT * (lifeValue(seat.life) - lifeValue(seat.life - b.life)) + (v.danger ? 3 : 0));
   }
   return penalty;
+}
+
+/**
+ * How likely `attacker` is to attack `me` rather than another seat, from 0 to 1: its targets (every living
+ * seat but itself) weighted by 1 / life, so the one with the least life draws the most attacks. With one
+ * possible target (two seats) it is 1.
+ */
+export function attackShare(view: GameView, attacker: SeatId, me: SeatId): number {
+  const targets = view.seats.filter((s) => s.id !== attacker && !s.hasLost);
+  const weight = (life: number): number => 1 / Math.max(life, 1);
+  const total = targets.reduce((sum, s) => sum + weight(s.life), 0);
+  const mine = targets.find((s) => s.id === me);
+  return mine === undefined || total === 0 ? 1 : weight(mine.life) / total;
 }
 
 /**
@@ -177,6 +193,8 @@ export interface AttackContext extends BlockContext {
    * agent has seen of it, `heuristic-model.ts`).
    */
   readonly passiveWeight: number;
+  /** The same chance for one defending seat (issue 483); `passiveWeight` when absent. */
+  readonly passiveWeightFor?: (seat: SeatId) => number;
 }
 
 const keyOf = (cs: readonly Candidate[], targets: ReadonlyMap<ObjectId, AttackTarget>): string =>
@@ -338,7 +356,7 @@ export function chooseHeuristicAttack(
       dealt: Math.max(oppLife - (v.seats.find((x) => x.id === opp)?.life ?? oppLife), 0),
     };
   };
-  const weight = ctx.passiveWeight;
+  const weight = ctx.passiveWeightFor?.(opp) ?? ctx.passiveWeight;
   // The stay-home candidate and the safe one are always scored; the others while time is left.
   const order = [...options].sort((x, y) => x.cs.length - y.cs.length);
   for (const [i, o] of order.entries()) {

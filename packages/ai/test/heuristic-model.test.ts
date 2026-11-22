@@ -63,3 +63,16 @@ describe('OpponentModel', () => {
     expect(other.counts).toEqual([0, 0]);
   });
 });
+
+describe('OpponentModel per seat (issue 483)', () => {
+  test('an unseen seat starts at the prior', () => {
+    expect(new OpponentModel().passiveWeightFor(1)).toBe(0.5);
+  });
+
+  test('the seat that let the attacker through is the passive one', () => {
+    const model = new OpponentModel();
+    model.observe(afterBlocks([SPIDER], false));
+    expect(model.passiveWeightFor(1)).toBeGreaterThan(0.5);
+    expect(model.passiveWeightFor(2)).toBe(0.5);
+  });
+});

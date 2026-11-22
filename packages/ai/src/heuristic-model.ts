@@ -8,10 +8,13 @@
  * against a sensible opponent and one against one that blocks only when it is in danger, weighted by
  * `passiveWeight`.
  *
+ * One count is kept per defending seat (issue 483): with 3 or 4 seats a passive and a careful opponent are
+ * not averaged, `passiveWeightFor(seat)` reads one seat's; `passiveWeight` is the whole table's.
+ *
  * Only public information is read: the combat of the view, in the declare-blockers step of the agent's own
  * turn. The count lives as long as the agent (one game).
  */
-import type { GameView, ObjectView } from '@commander-arena/engine';
+import type { GameView, ObjectView, SeatId } from '@commander-arena/engine';
 import { hasKeyword } from './casual-view';
 import { creatureValue } from './evaluate';
 import { potentialBlockers } from './greedy-combat';
@@ -26,6 +29,7 @@ function sensible(attacker: ObjectView, blocker: ObjectView): boolean {
 export class OpponentModel {
   private offered = 0;
   private made = 0;
+  private readonly bySeat = new Map<SeatId, { offered: number; made: number }>();
   private seenTurn = -1;
 
   /** Reads the declare-blockers step of the agent's own turn, once per turn. */
@@ -44,9 +48,19 @@ export class OpponentModel {
       if (attacker === undefined || attacker.controller !== view.viewer) continue;
       if (hasKeyword(attacker, 'menace') || attacker.power === null || attacker.power <= 0)
         continue;
-      if (!potentialBlockers(view, attacker).some((b) => sensible(attacker, b))) continue;
+      // The defender is the player attacked; an attack on a permanent has no seat to credit.
+      const defender = a.target.kind === 'player' ? a.target.seat : null;
+      const offered = potentialBlockers(view, attacker).filter(
+        (b) => (defender === null || b.controller === defender) && sensible(attacker, b),
+      );
+      if (offered.length === 0) continue;
       this.offered += 1;
       if (a.blocked) this.made += 1;
+      if (defender === null) continue;
+      const row = this.bySeat.get(defender) ?? { offered: 0, made: 0 };
+      row.offered += 1;
+      if (a.blocked) row.made += 1;
+      this.bySeat.set(defender, row);
     }
   }
 
@@ -57,6 +71,12 @@ export class OpponentModel {
    */
   get passiveWeight(): number {
     return (this.offered - this.made + 1) / (this.offered + 2);
+  }
+
+  /** The same chance for one defending seat, with the same prior (1/2 before anything is seen of it). */
+  passiveWeightFor(seat: SeatId): number {
+    const row = this.bySeat.get(seat);
+    return row === undefined ? 0.5 : (row.offered - row.made + 1) / (row.offered + 2);
   }
 
   /** What was counted, for the tests: `[sensible blocks offered, made]`. */

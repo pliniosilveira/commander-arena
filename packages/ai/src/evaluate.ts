@@ -6,7 +6,7 @@
  *
  * `evaluate(view, seat)` is the ADVANTAGE of `seat` over the other seats still in the game:
  * strength(seat) minus the sum of strength(opponent). Every term of the seat counts as it is; every
- * term of an opponent counts negated. In a two-seat game that makes it antisymmetric:
+ * term of an opponent counts negated. In a two-seat game (only there) that makes it antisymmetric:
  * `evaluate(v, a).score === -evaluate(v, b).score` for the same view, so a search can maximise for one
  * seat and minimise for the other with one function. It uses public data only (the view lists
  * `handCount` for every seat), so the opponent's hidden hand is a count, never a guess.
