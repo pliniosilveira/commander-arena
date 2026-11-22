@@ -10,7 +10,7 @@ import type { SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { addToZone, allocateObjectId, allocateTimestamp, setObject } from '../state/ops';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
-import { historyCount } from './amounts';
+import { amountOf, historyCount } from './amounts';
 import { entryCounters } from './counter-bonus';
 import { quietFlow } from './damage-order';
 import { entersAsSaga, entersTapped, entersWithCounters } from './enters';
@@ -109,7 +109,9 @@ export function makeTokens(
       entersWithCounters(abilities, {}, 0, false, (a) =>
         a.kind === 'diedThisTurn'
           ? historyCount(state, a, seat)
-          : countMatching(state, a.filter, { controller: seat, source: id }),
+          : a.kind === 'aggregate'
+            ? amountOf(state, a, { controller: seat, source: id }, [])
+            : countMatching(state, a.filter, { controller: seat, source: id }),
       ),
       abilities,
       chosen ?? null,

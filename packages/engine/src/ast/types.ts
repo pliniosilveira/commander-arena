@@ -170,6 +170,11 @@ export type Amount =
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
   /**
+   * "The amount of life you lost this turn" (Betor, Ancestor's Voice; CR 119.3, 608.2h): the life the controller of the ability has lost this turn (`SeatState.lifeLostThisTurn`: damage, life
+   * loss and life paid), read as the instruction runs or as a filter's limit is read. Unlike `lifeLostThisTurn` it is always the controller's own and valid anywhere an amount is.
+   */
+  | { readonly kind: 'controllerLifeLostThisTurn' }
+  /**
    * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
    * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
    */
@@ -332,6 +337,11 @@ export type Amount =
       readonly pick: 'greater' | 'lesser';
       readonly of: readonly Amount[];
     }
+  /**
+   * "The difference between that creature's power and its toughness" (Jaws of Defeat, CR 107.1, 608.2c): the larger of the two amounts less the smaller, so never below 0. The
+   * words are the same for either order, so an amount that is smaller than the other one still gives the positive gap.
+   */
+  | { readonly kind: 'difference'; readonly of: readonly [Amount, Amount] }
   /**
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
@@ -1116,6 +1126,11 @@ export type ObjectRef =
    * (`validateCard`); for a cost of "sacrifice two artifacts" the first one is read.
    */
   | { readonly kind: 'sacrificedCost' }
+  /**
+   * "That creature", for the object an `addCounters` with `perObject` is putting counters on right now (Canopy Gargantuan: "put a number of +1/+1 counters on each other creature you control
+   * equal to that creature's toughness", CR 608.2c): read in an amount only (`validateCard`), as the permanent as it is as that placement is worked out.
+   */
+  | { readonly kind: 'eachObject' }
   /**
    * The engine's own form of `moved` inside a delayed triggered ability (D-639, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
@@ -3618,6 +3633,11 @@ export type Effect =
        * The only amount that reads the player this way is `exiledPowerOwn` (`validateCard` refuses it elsewhere).
        */
       readonly perController?: true;
+      /**
+       * "Put a number of +1/+1 counters on each other creature you control equal to that creature's toughness" (Canopy Gargantuan, CR 608.2c, 122.6): `count` is worked out once for
+       * each object `objects` names, with the object `eachObject` reading that very object. A creature that gets no counters (an amount of 0) is skipped. Not with `perController`.
+       */
+      readonly perObject?: true;
     }
   /**
    * "Double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, CR 122.6): each object `objects` names that has
@@ -6674,6 +6694,8 @@ export type Replacement =
         | CountAmount
         /** "... equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as the permanent enters. */
         | Extract<Amount, { readonly kind: 'diedThisTurn' }>
+        /** "... where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the greatest or the total of a stat over a group, read as the permanent enters, without it. */
+        | Extract<Amount, { readonly kind: 'aggregate' }>
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
         | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
       /**

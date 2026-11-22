@@ -56,6 +56,8 @@ export interface SelectContext {
   readonly moved?: readonly ObjectId[];
   /** What the `triggerSubject` reference means: the object whose event caused this trigger. */
   readonly triggerSubject?: ObjectId;
+  /** What `eachObject` means: the object an `addCounters` with `perObject` is working out its count for. */
+  readonly eachObject?: ObjectId;
   /** What `sacrificedCost` means (D-133): the permanents sacrificed to pay the cost of the ability that is resolving. */
   readonly costSacrificed?: readonly ObjectId[];
   /** What `tappedAsCostPower` means (CR 702.184a): the power of the creatures tapped to pay the cost of the ability that is resolving. */
@@ -476,6 +478,9 @@ function manaValueLimitOf(
   // CR 119.3, 202.3: "mana value X or less, where X is the amount of life you gained this turn" (Moseo), read from the turn log of the ability's controller.
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  // CR 119.3, 202.3 (Betor): "mana value less than or equal to the amount of life you lost this turn", the ability's controller's own.
+  if (amount.kind === 'controllerLifeLostThisTurn')
+    return getSeat(state, ctx.controller).lifeLostThisTurn;
   // CR 107.3m: the X of the spell the permanent that has the ability came from, which the permanent remembers (`castX`), or its last-known information.
   if (amount.kind === 'enteredX') {
     const source =
@@ -820,6 +825,8 @@ export function resolveObjects(
     case 'sacrificed':
       // D-177, CR 608.2h: the permanents sacrificed earlier in this resolution, gone now: read through their old ids.
       return [...(ctx.sacrificed ?? [])];
+    case 'eachObject':
+      return ctx.eachObject === undefined ? [] : [ctx.eachObject];
     case 'sacrificedCost':
       // D-133, CR 602.2c: the permanents sacrificed as the cost of the ability that is resolving (gone now: last-known
       // information is read through their old ids).

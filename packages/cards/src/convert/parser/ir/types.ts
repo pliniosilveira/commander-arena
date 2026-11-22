@@ -523,6 +523,8 @@ export type IrAmount =
   // "equal to the number of cards in that player's hand" (CR 402.1): each player the damage is dealt to is hurt for their own hand size
   | { readonly kind: 'cardsInHandOfAffected'; readonly span: Span }
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
+  // "the amount of life you lost this turn" (Betor, CR 119.3): the controller's own, valid anywhere an amount is
+  | { readonly kind: 'controllerLifeLostThisTurn'; readonly span: Span }
   | { readonly kind: 'lifeGainedOrLostThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
@@ -629,6 +631,8 @@ export type IrAmount =
       readonly of: readonly IrAmount[];
       readonly span: Span;
     }
+  // "the difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the positive gap between two amounts
+  | { readonly kind: 'difference'; readonly of: readonly IrAmount[]; readonly span: Span }
   // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
   // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
   | {
@@ -2276,6 +2280,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'attackersOfAffected',
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  'controllerLifeLostThisTurn',
   'lifeGainedOrLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -2298,6 +2303,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'minus',
   'sum',
   'extreme',
+  'difference',
   'opponentsWithMore',
   'chosenPlayerLead',
   'thisWay',
@@ -2337,6 +2343,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'multiple':
     case 'minus':
       return nounsOfAmount(amount.of);
+    case 'difference':
     case 'extreme':
     case 'sum':
       return amount.of.flatMap(nounsOfAmount);

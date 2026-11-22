@@ -2537,8 +2537,10 @@ function runEffect(
     }
 
     case 'addCounters': {
-      const count = amountOf(state, effect.count, ctx, targets);
-      if (count <= 0 && effect.perController !== true) return done(state);
+      const count = effect.perObject === true ? 0 : amountOf(state, effect.count, ctx, targets);
+      if (count <= 0 && effect.perController !== true && effect.perObject !== true) {
+        return done(state);
+      }
       const blockers = counterBlockers(state);
       const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
@@ -2558,7 +2560,10 @@ function runEffect(
                 },
                 targets,
               )
-            : count;
+            : effect.perObject === true
+              ? // Canopy Gargantuan (CR 608.2c): the count is worked out for each object, with that object as "that creature".
+                amountOf(state, effect.count, { ...ctx, eachObject: id }, targets)
+              : count;
         if (own <= 0) continue;
         const put = putCountersOn(
           state,
