@@ -239,6 +239,8 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
   // Layer 7a (CR 613.4a, 604.3): a characteristic-defining ability sets what it defines, wherever the
   // object is. Counting reads the types as layer 4 leaves them, never a power or toughness.
   const defined = characteristicPtOf(state, obj, input.abilities);
+  // CR 208.3a: effects that set or modify the power and toughness of a noncreature stay in the list but do nothing until it is a creature.
+  const NO_PT = { power: null, toughness: null };
   const ptBase = !creature
     ? { power: null, toughness: null }
     : defined === null
@@ -250,7 +252,9 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
   // Layer 7b of static abilities (D-139): "base power and toughness 5/3" is a `setPt` with its permanent's timestamp, in order with the
   // ones resolved spells made (CR 613.7).
   const ptWith = (power: number, toughness: number, sets: readonly StaticSet[] = []) =>
-    applyPtLayers(ptBase, withStaticSets(obj, effects, sets), counters, power, toughness);
+    creature
+      ? applyPtLayers(ptBase, withStaticSets(obj, effects, sets), counters, power, toughness)
+      : NO_PT;
   // Layer 6 (CR 613.1f) starts from the printed abilities and the expansions of their keywords,
   // which are appended, so every ability keeps the index it had (triggers and activations refer
   // to indexes). Grants and "loses all abilities" follow in timestamp order.
@@ -284,7 +288,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
   });
   const abilities = applyAbilityLayer(start, fx.grants, effects);
   // CR 208.4b (D-431): the base power and toughness are what layer 7b leaves, before any counter or "+N/+N" effect of layer 7c.
-  const baseValues = basePtOf(ptBase, withStaticSets(obj, effects, fx.sets));
+  const baseValues = creature ? basePtOf(ptBase, withStaticSets(obj, effects, fx.sets)) : NO_PT;
   const typed: Derived = {
     ...input,
     basePower: baseValues.power,
