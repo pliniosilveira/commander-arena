@@ -25,12 +25,16 @@ export const HOW_TO_PLAY: readonly string[] = [
   'Arrows on the screen point from a spell on the stack to its targets.',
 ];
 
+const OPPONENT_COUNTS = [1, 2, 3] as const;
+
 export function Menu() {
   const actions = useActions();
   const precons = usePrecons();
   const challenges = useChallenges();
   const { choices } = useDeckChoices();
   const [level, setLevel] = useState<ChallengeLevel>('easy');
+  // Visual only for now: the table size does not reach the game yet.
+  const [opponents, setOpponents] = useState<(typeof OPPONENT_COUNTS)[number]>(1);
   // Medium and Hard offer only the challenges that have emblems for them.
   const challengeChoices = useMemo(
     () =>
@@ -112,14 +116,35 @@ export function Menu() {
       <section className="scr-card" aria-labelledby="scr-play-h">
         <h2 id="scr-play-h">Play a game</h2>
         <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
-        <button
-          type="button"
-          className="scr-btn scr-btn-primary"
-          disabled={!seedValid || !installed}
-          onClick={() => setStep('player')}
-        >
-          Start game
-        </button>
+        <div className="scr-card-row">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => setStep('player')}
+          >
+            Start game
+          </button>
+          <div className="scr-seg-group">
+            <span id="scr-opponents-label" className="scr-seg-label">
+              Number of opponents
+            </span>
+            <fieldset className="scr-seg" aria-labelledby="scr-opponents-label">
+              {OPPONENT_COUNTS.map((n) => (
+                <label key={n} className="scr-seg-opt">
+                  <input
+                    type="radio"
+                    name="scr-opponents"
+                    value={n}
+                    checked={opponents === n}
+                    onChange={() => setOpponents(n)}
+                  />
+                  <span>{n}</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        </div>
         {!installed && (
           <p className="scr-note scr-no-precon" role="note">
             No precon is installed yet. You can still import your own deck.
