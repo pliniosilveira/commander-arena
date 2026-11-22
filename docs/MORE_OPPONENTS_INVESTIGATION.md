@@ -4,16 +4,17 @@ Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for l
 
 ## Where we are
 
-Engine work (phases 1 and 2) is well advanced; the AI, `ai:arena`, performance and the UI are not started.
+Engine work (phases 1 and 2) is well advanced; the AI is being fixed, and performance and the UI are not started.
 
-Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
+Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
 
 Open, in order of work:
 
-1. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-2. #422: latent single-opponent sites, low priority; #363 closes when its children do.
+1. #481 and #483: the AI aims player-targeted spells at the best opponent, and its defensive estimates stop assuming one opponent; measure them with `ai:arena --seats 3`.
+2. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
+3. #422: latent single-opponent sites, low priority; #363 closes when its children do.
 
-Not audited: the AI and the view code. `ai:arena` still plays two seats, and `tools/perf/derive-bench.ts` measures only two. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
+Not audited: the AI and the view code. `ai:arena --seats 3|4` plays a table (#482), and `tools/perf/derive-bench.ts` measures only two seats. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
 
 ## Question
 
@@ -198,7 +199,7 @@ Each is a pull request; the 1v1 screen must not change until step 4.
 ## How games would be run
 
 1. Probe: `runGame` with one agent per seat, as above (headless, deterministic, seeds reproduce; it needs the unmerged changes described there).
-2. Arena (`pnpm ai:arena`): today it is two seats with paired seeds and swapped sides. For 3 and 4 it needs a player count, a list of agents and a rotation of the seating, so each agent sits in each position.
+2. Arena (`pnpm ai:arena`): two seats play paired seeds with swapped sides; `--seats 3|4 --agents ...` plays a table with the agents rotated through the seats (#482; arena decks only).
 3. App: the host keeps one agent per AI seat and runs the ones with a pending decision in turn; the menu chooses the seat count and a deck for each.
 4. Tests: a scenario DSL that accepts 3 and 4 seats, rule scenarios written first, a nightly soak, and the benchmark with a seat count.
 
@@ -240,7 +241,7 @@ The combat data model already supports several defenders (each attacker stores i
 
 ## Audit of the AI (phase 3, #452)
 
-About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured: the decision time with more permanents, because `ai:arena` plays two seats (#482).
+About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured yet: the decision time with more permanents; `ai:arena --seats 3|4` (#482) is the tool for it.
 
 ## Cards not supported for more than one opponent
 
