@@ -417,13 +417,17 @@ button {
   overflow-y: auto;
 }
 
-/* The report button: at the bottom right; its dialog opens above it. */
+/* The report button: at the bottom right; its dialog opens above it. Both sit above the board's modal
+   dialogs (the zone viewer, z-index 100, and the game-over backdrop, 80), so a problem seen in one of
+   them can be reported without closing it. */
 .report-toggle {
   left: auto;
   right: 8px;
   bottom: 8px;
+  z-index: 101;
 }
 .report-dialog {
+  z-index: 102;
   left: auto;
   right: 8px;
   bottom: 44px;
