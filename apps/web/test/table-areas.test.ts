@@ -32,13 +32,16 @@ describe('tableAreas', () => {
     ]);
   });
 
-  test.each([2, 3])('with %i opponents you take 22 of 30 columns and the flow cell 8 below', (n) => {
-    const bottom = tableAreas(n).cells.filter((c) => c.row === 2);
-    expect(bottom).toEqual([
-      { key: 'me', row: 2, col: 1, colSpan: 22 },
-      { key: 'flow', row: 2, col: 23, colSpan: 8 },
-    ]);
-  });
+  test.each([2, 3])(
+    'with %i opponents you take 22 of 30 columns and the flow cell 8 below',
+    (n) => {
+      const bottom = tableAreas(n).cells.filter((c) => c.row === 2);
+      expect(bottom).toEqual([
+        { key: 'me', row: 2, col: 1, colSpan: 22 },
+        { key: 'flow', row: 2, col: 23, colSpan: 8 },
+      ]);
+    },
+  );
 
   test('the flow cell is a fifth narrower than the third of the width it had', () => {
     const flow = tableAreas(3).cells.find((c) => c.key === 'flow');
