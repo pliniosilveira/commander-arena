@@ -15,6 +15,7 @@ import { combatOrder, keptOrder } from './combat-order';
 import { EmblemStrip } from './EmblemStrip';
 import { ExilePlayStrip } from './ExilePlayStrip';
 import { type ExilePlayable, exilePlayable } from './exile-play';
+import { FieldRows } from './FieldRows';
 import { Hand } from './Hand';
 import { OtherZonesStrip } from './OtherZonesStrip';
 import { PlayerStrip, type ZoneRef } from './PlayerStrip';
@@ -74,7 +75,7 @@ function Field({
     >
       {/* The monarch, the Ring and the emblems of this player: a strip of small cards of their own (D-243). */}
       <EmblemStrip view={view} seat={seat} />
-      <div className="board-field-rows">
+      <FieldRows>
         {order.map((kind) => (
           <BattlefieldRow
             key={kind}
@@ -84,7 +85,7 @@ function Field({
             attachments={attachments.byHost}
           />
         ))}
-      </div>
+      </FieldRows>
       {/* The cards the viewer may play from exile, over the right side of their own battlefield, apart from the emblems at the left (issue 49). */}
       {seat === view.viewer && (
         <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
