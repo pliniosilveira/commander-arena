@@ -10,11 +10,16 @@ import { type AgentFactory, MATCH_LIMITS, type ReasonCounts } from './arena';
 import { isExplaining, type Reason, type ReasonRecord, reasonHistogram } from './reasons';
 import { type EndReason, type RunOptions, runGame } from './runner';
 
+/** One deck for every seat (a mirror), or one deck for each seat, in seat order (issue 527: a precon for each seat). */
+export type TableDeck = DeckConfig | readonly DeckConfig[];
+
 export interface TableOptions {
   /** One factory for each seat of the first game: two to four. */
   readonly agents: readonly AgentFactory[];
-  /** Decks, cycled by seed; every seat plays the deck of its seed (a mirror). At least one. */
-  readonly decks: readonly DeckConfig[];
+  /**
+   * Decks, cycled by seed. A `DeckConfig` is played by every seat (a mirror); an array gives each seat its own, in seat order, and stays with the SEAT when the agents rotate. At least one.
+   */
+  readonly decks: readonly TableDeck[];
   /** A positive multiple of the number of agents: each seed is played once for each rotation. */
   readonly games: number;
   readonly baseSeed: number;
@@ -57,6 +62,14 @@ export interface TableResult {
   readonly log: readonly TableGame[];
 }
 
+const decksOf = (entry: TableDeck, seats: number): DeckConfig[] => {
+  if (!Array.isArray(entry)) return Array.from({ length: seats }, () => entry as DeckConfig);
+  if (entry.length !== seats) {
+    throw new Error(`playTable has ${seats} seats but a deck entry lists ${entry.length} decks`);
+  }
+  return [...(entry as readonly DeckConfig[])];
+};
+
 const recordsOf = (agent: Agent): readonly ReasonRecord[] =>
   isExplaining(agent) ? agent.reasons : [];
 
@@ -88,7 +101,8 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
   for (let i = 0; i < options.games / seats; i += 1) {
     const seed = options.baseSeed + i;
     const deckIndex = i % options.decks.length;
-    const deck = options.decks[deckIndex] as DeckConfig;
+    const entry = options.decks[deckIndex] as TableDeck;
+    const decks = decksOf(entry, seats);
     for (let rotation = 0; rotation < seats; rotation += 1) {
       const made = options.agents.map((factory, k) => factory.create(seats * seed + k + 1));
       // Agent k sits in seat (k + rotation) % seats.
@@ -96,7 +110,7 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
         const k = (seat - rotation + seats) % seats;
         return made[k] as Agent;
       });
-      const game = await runGame({ seed, decks: made.map(() => deck) }, bySeatAgent, run);
+      const game = await runGame({ seed, decks }, bySeatAgent, run);
       turns += game.state.turn.number;
       fallbacks += game.counters.fallbacks;
       rejectedActions += game.counters.rejectedActions;

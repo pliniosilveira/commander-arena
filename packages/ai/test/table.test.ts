@@ -52,6 +52,16 @@ describe('playTable', () => {
     expect(r.log.map((g) => g.rotation)).toEqual([0, 1, 2, 3]);
   }, 60_000);
 
+  test('a deck entry with one deck for each seat stays with the seat when the agents rotate, and its length must match the seats', async () => {
+    const [a, b, c] = deck;
+    if (a === undefined || b === undefined || c === undefined) throw new Error('three arena decks');
+    const r = await playTable({ ...options(three, 3), decks: [[a, b, c]] });
+    expect(r.log.map((g) => g.rotation)).toEqual([0, 1, 2]);
+    await expect(playTable({ ...options(three, 3), decks: [[a, b]] })).rejects.toThrow(
+      /3 seats but a deck entry lists 2/,
+    );
+  }, 60_000);
+
   test('refuses a game count that is not a multiple of the seats, and a table of one or five', async () => {
     await expect(playTable(options(three, 4))).rejects.toThrow(/multiple of 3/);
     await expect(playTable(options([AGENT_FACTORIES.random], 1))).rejects.toThrow(/two to four/);
