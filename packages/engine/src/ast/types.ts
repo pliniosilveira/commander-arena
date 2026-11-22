@@ -2877,6 +2877,11 @@ export type Effect =
        * "If that spell would be put into a graveyard, exile it instead" (Dire Fleet Daredevil, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`. Needs `castOnly`.
        */
       readonly exileInstead?: true;
+      /**
+       * "Spells you cast this way cost {2} less to cast" (Urianger Augurelt, CR 601.2f, 118.7a): a spell cast from exile with this permission costs this much generic mana less (a
+       * reduction of the total cost, never below the colored and hybrid symbols). A land card is played as usual. A positive whole number; not with `free` (there is nothing to reduce).
+       */
+      readonly lessGeneric?: number;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -4870,7 +4875,15 @@ export type Trigger =
    * spell (cast). The card is the subject (`triggerSubject`): the land as it is on the battlefield, the spell as it is on the stack. `minCardTypes` is the least number of card types
    * (artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, sorcery: not supertypes or subtypes) the card has, 1 or more; none is any card.
    */
-  | { readonly kind: 'playsCard'; readonly minCardTypes?: number }
+  | {
+      readonly kind: 'playsCard';
+      readonly minCardTypes?: number;
+      /**
+       * "Whenever you play a land from exile or cast a spell from exile" (Urianger Augurelt, CR 305.1, 601.2a, 603.2): only the land played from exile, or the spell cast from exile,
+       * triggers it; a card played or cast from anywhere else does not.
+       */
+      readonly fromExile?: true;
+    }
   /**
    * "Whenever the Ring tempts you" (CR 701.54d, D-196): once each time the Ring tempts the controller of the ability, as they have done what
    * CR 701.54a says, even when some or all of it was impossible (no creature to choose). The creature they chose is in the event, not the

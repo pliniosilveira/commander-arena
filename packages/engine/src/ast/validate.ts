@@ -1039,6 +1039,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.minCardTypes !== undefined && (!isCount(t.minCardTypes) || t.minCardTypes < 1)) {
         issue(out, `${path}.minCardTypes`, 'minCardTypes must be a positive integer when present');
       }
+      if (t.fromExile !== undefined && t.fromExile !== true) {
+        issue(out, `${path}.fromExile`, 'fromExile must be true when present');
+      }
       break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {

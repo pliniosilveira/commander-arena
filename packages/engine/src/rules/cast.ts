@@ -136,6 +136,7 @@ import {
   playPermissionAnyType,
   playPermissionExiles,
 } from './play-permission-color';
+import { playPermissionLess } from './play-permission-cost';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -307,6 +308,10 @@ export function beginCast(
       // Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead" of the permission the card is cast with from exile.
       (zone === 'exile' && !resolving && playPermissionExiles(state, seat, obj.id))
         ? { exileInstead: true as const }
+        : {}),
+      // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast" of the permission the card is cast with.
+      ...(zone === 'exile' && !resolving && playPermissionLess(state, seat, obj.id) > 0
+        ? { lessGeneric: playPermissionLess(state, seat, obj.id) }
         : {}),
       // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" of the permission the card is cast with.
       ...(zone === 'exile' && !resolving && playPermissionAnyColor(state, seat, obj.id)

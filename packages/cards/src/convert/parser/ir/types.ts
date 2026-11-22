@@ -1579,6 +1579,8 @@ export interface IrTrigger extends IrNode {
    * types the card played has ("a card with two or more card types").
    */
   readonly atLeast?: number;
+  /** 'playsCard' (Urianger Augurelt, CR 305.1, 601.2a): "you play a land from exile or cast a spell from exile", only a card played or cast from exile. */
+  readonly fromExile?: true;
   /**
    * 'tappedForMana' "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the permanent the Aura is attached to (the `subject` says its kind) is tapped for mana by whoever
    * controls it, and the mana is theirs: the engine's `tappedForMana` with `by: 'tapper'` and `hostOfSource`.

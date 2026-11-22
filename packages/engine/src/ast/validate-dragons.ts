@@ -9,7 +9,7 @@ import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
-import { isOneOf, kindOf, triggerHasPlayer } from './validate-base';
+import { isCount, isOneOf, kindOf, triggerHasPlayer } from './validate-base';
 import {
   type AstIssue,
   checkAmount,
@@ -119,6 +119,15 @@ export function checkDragonsEffect(
       }
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
+      }
+      // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": generic mana off the cost, so a cost that is not free.
+      if (e.lessGeneric !== undefined) {
+        if (!isCount(e.lessGeneric) || e.lessGeneric < 1) {
+          issue(out, `${path}.lessGeneric`, 'lessGeneric must be a positive whole number');
+        }
+        if (e.free === true) {
+          issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
+        }
       }
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {

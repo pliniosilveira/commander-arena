@@ -301,7 +301,14 @@ function playLand(
   }
   const events: GameEvent[] = [
     ...moved.events,
-    { kind: 'landPlayed', seat, object: moved.newObject, ...(face === 0 ? {} : { face }) },
+    {
+      kind: 'landPlayed',
+      seat,
+      object: moved.newObject,
+      ...(face === 0 ? {} : { face }),
+      // CR 305.1: "Whenever you play a land from exile": the zone it was played from, when that is not the hand.
+      ...(obj.zone === 'hand' ? {} : { fromZone: obj.zone }),
+    },
   ];
   next = { ...next, pending: null, turn: { ...next.turn, passedInSuccession: [] } };
   const granted = grantPriority(next, seat, events);
