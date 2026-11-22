@@ -57,7 +57,8 @@ export function TurnTracker() {
   const side = stopSide(view);
   const stops = stopSteps(view, settings);
   const mine = side === 'mine';
-  const priority = view.prioritySeat === null ? null : seatName(view.prioritySeat, view.viewer);
+  const priority =
+    view.prioritySeat === null ? null : seatName(view.prioritySeat, view.viewer, view.seats.length);
 
   return (
     <header className="pnl-tracker">

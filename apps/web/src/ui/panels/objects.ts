@@ -1,5 +1,6 @@
 /** Lookups over a `GameView` shared by the stack and log panels. */
 import type { GameView, ObjectId, ObjectView, SeatId } from '@commander-arena/engine';
+import { seatNameOf } from '../../game/seat-name';
 
 export type StackTarget = ObjectView['targets'][number];
 
@@ -21,8 +22,8 @@ export function objectIndex(view: GameView): ReadonlyMap<ObjectId, ObjectView> {
   return map;
 }
 
-export function seatName(seat: SeatId, viewer: SeatId): string {
-  return seat === viewer ? 'You' : 'Opponent';
+export function seatName(seat: SeatId, viewer: SeatId, seatCount = 2): string {
+  return seatNameOf(seat, viewer, seatCount);
 }
 
 /** "Serra Angel", "You", "Opponent", or "a permanent that left" for an object that is gone. */
@@ -30,7 +31,8 @@ export function targetLabel(
   target: StackTarget,
   index: ReadonlyMap<ObjectId, ObjectView>,
   viewer: SeatId,
+  seatCount = 2,
 ): string {
-  if (target.kind === 'player') return seatName(target.seat, viewer);
+  if (target.kind === 'player') return seatName(target.seat, viewer, seatCount);
   return index.get(target.id)?.name ?? 'an object that left';
 }

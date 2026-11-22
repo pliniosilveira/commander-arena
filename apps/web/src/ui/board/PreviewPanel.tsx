@@ -407,7 +407,7 @@ function StackWords({ object }: { object: ObjectView }) {
   const activated = useMemo(() => activatedStackIds(log), [log]);
   const index = useMemo(() => (view === null ? new Map() : objectIndex(view)), [view]);
   if (view === null || object.zone !== 'stack') return null;
-  const w = stackWording(object, index, view.viewer, activated.has(object.id));
+  const w = stackWording(object, index, view.viewer, activated.has(object.id), view.seats.length);
   const lines: string[] = [];
   if (w.when !== null)
     lines.push(

@@ -6,6 +6,7 @@
  * and counts every player's turn; this module only converts it for display.
  */
 import type { SeatId } from '@commander-arena/engine';
+import { possessiveOf } from './seat-name';
 
 /**
  * The round a turn belongs to: the number of rounds started, so with `seatCount` players the turns
@@ -19,12 +20,12 @@ export function roundOf(turn: number, seatCount: number): number {
   return Math.floor((turn - 1) / seatCount) + 1;
 }
 
-/** "Your" or "Opponent's": the name form the UI uses for a seat. */
-export function turnOwner(seat: SeatId, viewer: SeatId): string {
-  return seat === viewer ? 'Your' : "Opponent's";
+/** "Your", "Opponent's" or, with more than two seats, "Opponent 2's": the name form the UI uses for a seat. */
+export function turnOwner(seat: SeatId, viewer: SeatId, seatCount = 2): string {
+  return possessiveOf(seat, viewer, seatCount);
 }
 
 /** "Your turn 5" or "Opponent's turn 5": whose turn it is and the round it is in. */
 export function turnLabel(seat: SeatId, viewer: SeatId, turn: number, seatCount: number): string {
-  return `${turnOwner(seat, viewer)} turn ${roundOf(turn, seatCount)}`;
+  return `${turnOwner(seat, viewer, seatCount)} turn ${roundOf(turn, seatCount)}`;
 }
