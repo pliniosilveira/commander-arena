@@ -573,6 +573,7 @@ describe('the chips', () => {
     expect(chip('Improvise', ['improvise'])).toEqual(['Imp|Improvise']);
     expect(chip('Delve', ['delve'])).toEqual(['Dlv|Delve']);
     expect(chip('Cascade', ['cascade'])).toEqual(['Csc|Cascade']);
+    expect(chip('Flanking', ['flanking'])).toEqual(['Flk|Flanking']);
   });
 
   test('Bushido N and Affinity for X read their number and their words from the text', () => {

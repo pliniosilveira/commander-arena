@@ -116,6 +116,8 @@ interface Occurrence {
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
+  /** For `becomesBlockedBy` (CR 509.3d, 702.25a): the creature that was declared as a blocker of the subject, the one `triggerSources` names in the effect. */
+  readonly blocker?: ObjectId;
   /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
 }
@@ -327,6 +329,11 @@ function occurrences(
             subject: attacker,
             seat: null,
           }))
+        : [];
+    case 'becomesBlockedBy':
+      // CR 509.3d, 702.25a: an attacking creature becomes blocked by each creature declared as its blocker, once for each of them.
+      return event.kind === 'blockersDeclared'
+        ? event.blocks.map((b) => ({ subject: b.attacker, seat: null, blocker: b.blocker }))
         : [];
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
@@ -928,6 +935,15 @@ function matches(
     case 'blocks':
     case 'becomesBlocked':
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'becomesBlockedBy': {
+      // CR 702.25a: "a creature without flanking": the blocker as it is when it is declared.
+      const blocker = occ.blocker === undefined ? null : objectOrLki(state, occ.blocker);
+      return (
+        blocker !== null &&
+        matchesWhat(state, trigger.what, subject, candidate) &&
+        matchesFilter(state, blocker, trigger.by, ctx)
+      );
+    }
     case 'state':
     case 'tappedForMana':
     case 'combatDamageBatch':
@@ -1562,6 +1578,8 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
                 }
               : {}),
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
+            // CR 702.25a: "the blocking creature" is the creature this occurrence is about.
+            ...(occ.blocker === undefined ? {} : { cards: [occ.blocker] }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
             ...(occ.attackers === undefined || ability.trigger.kind !== 'attackBatch'

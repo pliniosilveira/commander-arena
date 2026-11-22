@@ -450,6 +450,20 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes blocked`;
     }
+    case 'becomesBlockedBy': {
+      // CR 509.3d, 702.25a (Flanking): once for each creature that blocks it; only the creature without flanking has words.
+      const what = subjectPhrase(trigger.what, ctx);
+      const { types, notKeywords, ...rest } = trigger.by;
+      const flankless =
+        types?.length === 1 &&
+        types[0] === 'creature' &&
+        notKeywords?.length === 1 &&
+        notKeywords[0] === 'flanking' &&
+        Object.keys(rest).length === 0;
+      return what === null || !flankless
+        ? null
+        : `Whenever ${what} becomes blocked by a creature without flanking`;
+    }
     case 'becomesTapped': {
       // D-510 (CR 701.26a, 603.2c): "Whenever you tap an untapped creature an opponent controls", "Whenever you tap one or more untapped creatures ...".
       if (trigger.by !== undefined || trigger.batch === true) {

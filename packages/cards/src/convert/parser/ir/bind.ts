@@ -244,7 +244,13 @@ class Binder {
    */
   seedSelfCondition(trigger: IrTrigger, condition: IrCondition | undefined): void {
     const test = condition?.test;
-    if (trigger.subject !== undefined || test?.kind !== 'amountIs') return;
+    if (trigger.subject !== undefined) return;
+    // "At the beginning of the end step, if three or more cards have been exiled with ~, sacrifice it." (Colfenor's Urn, CR 603.4, 607.2a): the permanent whose linked exile the "if" counts.
+    if (condition !== undefined && test?.kind === 'cardsExiledWithSelf') {
+      this.seed(selfNoun(condition), 'triggerSubject', true);
+      return;
+    }
+    if (test?.kind !== 'amountIs') return;
     if (test.amount.kind !== 'countersOn' || test.amount.of.det !== 'self') return;
     this.seed(test.amount.of, 'triggerSubject', true);
   }

@@ -9,6 +9,7 @@
 import { pattern } from '../../combinators';
 import type { IrStatic } from '../../ir/types';
 import { defineRule } from '../registry';
+import { ABZAN_ARMOR_STATIC_RULES } from './abzan-armor';
 import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
@@ -126,6 +127,8 @@ export const STATIC_RULES = [
   ...DINOSAUR_STATIC_RULES,
   // Issue 160 (D-628): "Creatures with power less than ~'s power can't block creatures you control."
   ...BLOCK_POWER_STATIC_RULES,
+  // Abzan Armor deck: "Creatures your opponents control without flying or reach can't block creatures with power 2 or less."
+  ...ABZAN_ARMOR_STATIC_RULES,
   // Stage P33 (D-150): protections of a player, damage prevented to ~, a card that can't be cast early, a tax on blocking, permanents that
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,

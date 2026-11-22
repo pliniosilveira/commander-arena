@@ -455,6 +455,8 @@ export interface IrFilter {
   readonly enchantedByYou?: true;
   /** "but don't own", "you don't own" (CR 108.3): the engine's `notOwnedByYou`. */
   readonly notOwnedByYou?: true;
+  /** "you own" (CR 108.3): the engine's `ownedByYou`. */
+  readonly ownedByYou?: true;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
   /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
@@ -831,7 +833,8 @@ export interface IrCondition extends IrNode {
     // Issue 89 (CR 603.4, Animate Dead): "it's on the battlefield": the permanent the trigger is about, which is the source, is still on the battlefield
     | { readonly kind: 'thisOnBattlefield' }
     // Valakut Exploration (CR 603.4, 607.2a): "there are cards exiled with ~": at least one card the permanent exiled with its linked ability is still in exile
-    | { readonly kind: 'cardsExiledWithSelf' }
+    // `atLeast` (Colfenor's Urn, "if three or more cards have been exiled with ~"): at least that many of them; left out, one.
+    | { readonly kind: 'cardsExiledWithSelf'; readonly atLeast?: number }
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
@@ -1845,10 +1848,15 @@ export type IrStaticEffect =
   /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */
   | { readonly kind: 'crewSaddleBonus'; readonly amount: number }
   /**
-   * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`; with `self` (D-320,
+   * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3); `permanents` is "all permanents you control". The subject is `you`; with `self` (D-320,
    * "Untap ~ during each other player's untap step.") the permanent itself untaps and the subject is `~`.
    */
-  | { readonly kind: 'untapInOthersStep'; readonly self?: true }
+  | {
+      readonly kind: 'untapInOthersStep';
+      readonly self?: true;
+      /** "Untap all permanents you control during each other player's untap step." (Seedborn Muse): every permanent of the controller, not only the creatures. */
+      readonly permanents?: true;
+    }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
   | { readonly kind: 'castFromGraveyard'; readonly cost?: readonly string[] }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */

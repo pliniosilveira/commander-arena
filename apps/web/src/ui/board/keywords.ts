@@ -64,6 +64,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   mentor: ['Mnt', 'Mentor'],
   evolve: ['Evo', 'Evolve'],
   bushido: ['Bus', 'Bushido'],
+  // CR 702.25a (Flanking).
+  flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
   affinity: ['Aff', 'Affinity'],
   convoke: ['Cvk', 'Convoke'],

@@ -464,6 +464,7 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to two target creatures',
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
+    'destroy target permanent you own',
   ],
   rejects: [
     'destroy it',
@@ -517,6 +518,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
     'exile up to two target artifacts and/or enchantments',
+    // Protector of the Wastes (CR 115.1, 601.2c): at most two targets, no two controlled by the same player.
+    'exile up to two target artifacts and/or enchantments controlled by different players',
     // D-270 (CR 115.1, 404.1): one slot of targets in two zones.
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).

@@ -166,7 +166,7 @@ export function validatePlacement(p: Placement, def: CardDefinition, seatCount =
         `${p.name} is not a permanent card and cannot be on the battlefield (CR 110.1)`,
       );
     }
-    if (o.controller !== undefined && (o.controller < 0 || o.controller > 1)) {
+    if (o.controller !== undefined && (o.controller < 0 || o.controller >= seatCount)) {
       throw new ScenarioError(`${where}: controller ${o.controller} is not a seat`);
     }
     const types = face.types;
