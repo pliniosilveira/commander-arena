@@ -169,7 +169,7 @@ const HAS_WHAT: Parser<Effects> = choice(
  * the plural, that a group has as well as its own. Stage P33 (D-150): "is an Angel in addition to its other types", the singular of the
  * same, said of a permanent an Aura or an Equipment is attached to.
  */
-function areTypes(plural: boolean): Parser<Effects> {
+export function areTypes(plural: boolean): Parser<Effects> {
   const typeEffect = (word: { subtype: string }): Effects => [
     { kind: 'addTypes', subtypes: [word.subtype] },
   ];
