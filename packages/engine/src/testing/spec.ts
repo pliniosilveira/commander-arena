@@ -30,6 +30,8 @@ export interface SeatSpec {
   handSizeMax: number | null;
   /** How many times the Ring has tempted this seat (D-196); null: never, and no emblem. */
   ring: number | null;
+  /** The name of the seat's companion, outside the game at the start (CR 103.2b, 702.139); null: none. */
+  companion: string | null;
   /** The seat has the city's blessing at the start (CR 702.131c, D-264). */
   citysBlessing: boolean;
   /** The seat's speed at the start (CR 702.179b); null: it has none. */
@@ -57,6 +59,7 @@ export function emptySeatSpec(): SeatSpec {
     landsPlayed: 0,
     handSizeMax: null,
     ring: null,
+    companion: null,
     citysBlessing: false,
     speed: null,
     commanderDamage: [],

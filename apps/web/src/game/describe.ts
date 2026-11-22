@@ -1758,6 +1758,15 @@ export function describeEvent(
         [event.object],
         'CR 702.170a',
       );
+    case 'companionBrought':
+      // CR 116.2g, 702.139a: the companion is public, so the card is named.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'bring', 'brings')} the companion ${name(event.object)} into ${verb(event.seat, 'your', 'their')} hand.`,
+        event.seat,
+        [event.object],
+        'CR 702.139a',
+      );
     default: {
       const unreachable: never = event;
       return unreachable;
@@ -1987,3 +1996,6 @@ export function describeEvents(
   }
   return out;
 }
+
+/** The label of the special action that brings the companion into the hand (CR 116.2g, 702.139a); the real control comes with the companion's interface. */
+export const BRING_COMPANION_LABEL = 'Bring your companion into your hand ({3})';

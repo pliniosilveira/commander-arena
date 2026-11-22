@@ -29,6 +29,12 @@ export interface DeckConfig {
   readonly cards: readonly CardDefinition[];
   /** Indices into `cards` of the commander(s) (CR 903.3, 702.124 for two). */
   readonly commanders: readonly number[];
+  /**
+   * The companion the player reveals from outside the game (CR 103.2b, 702.139). It is not one of `cards`: it counts neither in the 100 cards
+   * (CR 903.5a) nor in the library, and stays outside the game until the player brings it (`rules/companion.ts`). The engine does not check the
+   * companion's deck condition (the cards layer does).
+   */
+  readonly companion?: CardDefinition;
 }
 
 export interface GameConfig {
@@ -140,6 +146,22 @@ export function createGame(config: GameConfig): Outcome {
       if (isCommander) commanderCards.push(cid);
     });
     seats = seats.map((s) => (s.id === seat ? { ...s, commanders: commanderCards } : s));
+  });
+
+  // CR 103.2b: a revealed companion stays outside the game, so only its card data is kept (after every deck card: a game without one is unchanged).
+  config.decks.forEach((deck, seat) => {
+    const companion = deck.companion;
+    if (companion === undefined) return;
+    let di = defIndex.get(companion);
+    if (di === undefined) {
+      di = definitions.length;
+      definitions.push(companion);
+      defIndex.set(companion, di);
+    }
+    const definition = di;
+    seats = seats.map((s) =>
+      s.id === seat ? { ...s, companion: { definition, brought: false } } : s,
+    );
   });
 
   let state: GameState = {

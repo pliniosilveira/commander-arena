@@ -510,6 +510,18 @@ export function checkInvariants(state: GameState): string[] {
     if (n !== 1) problems.push(`card ${card} has ${n} objects, expected 1`);
   }
   for (const s of state.seats) {
+    // CR 103.2b, 702.139c: a companion has card data, and once brought it is a card of the game its owner owns (until then it is outside the game).
+    if (s.companion !== undefined) {
+      const { definition, brought } = s.companion;
+      if (state.definitions[definition] === undefined)
+        problems.push(`seat${s.id} has a companion with no card data`);
+      else if (
+        brought &&
+        !Object.values(state.cards).some((c) => c.owner === s.id && c.definition === definition)
+      ) {
+        problems.push(`seat${s.id} brought its companion but it is not a card of the game`);
+      }
+    }
     if (s.manaPool.length < 0) problems.push(`seat${s.id} has a negative pool`);
     if (s.landsPlayedThisTurn < 0) problems.push(`seat${s.id} has negative land plays`);
     if (s.cardsDrawnThisTurn < 0) problems.push(`seat${s.id} has a negative count of cards drawn`);

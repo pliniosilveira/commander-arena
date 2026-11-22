@@ -62,6 +62,7 @@ import {
   answerDamage,
   answerExert,
 } from './rules/combat-flow';
+import { bringCompanion } from './rules/companion';
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import { answerDestruction } from './rules/destroy-replacement';
 import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
@@ -220,6 +221,7 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
     ) {
       return action.kind === o.kind && action.object === o.object;
     }
+    if (o.kind === 'bringCompanion') return action.kind === 'bringCompanion';
     if (o.kind === 'unlockDoor') {
       return action.kind === 'unlockDoor' && action.object === o.object && action.door === o.door;
     }
@@ -906,6 +908,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         case 'plot':
           // CR 116.2f, 116.2h (D-128): a special action; it asks for its payment, then exiles the card.
           return beginSpecialAction(state, seat, action.kind, action.object);
+        case 'bringCompanion':
+          // CR 116.2g, 702.139a: a special action; it pays {3} and puts the companion into the hand at once.
+          return bringCompanion(state, seat);
         case 'turnFaceUp':
           // CR 116.2b, 701.40b (D-310): a special action; it asks for its payment, then turns the permanent face up.
           return beginTurnFaceUp(state, seat, action.object);
