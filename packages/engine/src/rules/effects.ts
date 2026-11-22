@@ -857,6 +857,34 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
   };
 }
 
+/**
+ * The `search` instructions of an effect: one per player it names; with several, the first carries the others (CR 701.23i, 101.4: they decide in APNAP order, then the cards move
+ * together).
+ */
+function searchInstructions(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'search' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): Instruction[] {
+  const seats = resolvePlayers(state, effect.player, ctx, targets);
+  const search =
+    // D-626 (CR 608.2c): "up to X" is read as the search begins.
+    effect.maxAmount === undefined
+      ? effect
+      : { ...effect, max: Math.max(0, amountOf(state, effect.maxAmount, ctx, targets)) };
+  const one = (seat: SeatId) => ({
+    kind: 'search' as const,
+    search,
+    seat,
+    accepted: effect.optional === true ? null : true,
+    chosen: null,
+  });
+  const [first, ...later] = seats;
+  if (first === undefined) return [];
+  return [later.length === 0 ? one(first) : { ...one(first), together: { later, held: [] } }];
+}
+
 function runEffect(
   state: GameState,
   res: ResolutionContext,
@@ -3402,21 +3430,7 @@ function runEffect(
       // finds is "it" for the instructions after it ("Then if you control four or more lands, untap that land"): `moved`
       // starts empty and each card the search puts somewhere is added as it moves.
       return {
-        ...done(
-          state,
-          [],
-          resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
-            kind: 'search' as const,
-            // D-626 (CR 608.2c): "up to X" is read as the search begins.
-            search:
-              effect.maxAmount === undefined
-                ? effect
-                : { ...effect, max: Math.max(0, amountOf(state, effect.maxAmount, ctx, targets)) },
-            seat,
-            accepted: effect.optional === true ? null : true,
-            chosen: null,
-          })),
-        ),
+        ...done(state, [], searchInstructions(state, effect, ctx, targets)),
         lastMoved: [],
       };
 

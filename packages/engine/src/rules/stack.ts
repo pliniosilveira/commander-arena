@@ -831,9 +831,12 @@ export function answerResolutionSearchMay(
   const events: GameEvent[] = [
     { kind: 'optionalAnswered', seat: d.seat, source: res.source, accepted: accept },
   ];
+  // CR 701.23i, 101.4: in a group the "no" of a player is held with the others' answers, so the next player is asked.
   const queue: readonly Instruction[] = accept
     ? [{ ...head, accepted: true }, ...res.queue.slice(1)]
-    : res.queue.slice(1);
+    : head.together !== undefined
+      ? [{ ...head, accepted: false }, ...res.queue.slice(1)]
+      : res.queue.slice(1);
   return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
 }
 
