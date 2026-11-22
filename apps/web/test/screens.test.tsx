@@ -284,14 +284,34 @@ describe('the deck dialog titles with several opponents', () => {
   });
 });
 
-describe('a table with several opponents', () => {
-  test('openTable shows the empty board screen and backToMenu clears it', () => {
+describe('a game with several opponents', () => {
+  const three = {
+    seed: 7,
+    humanDeck: 'white-knights',
+    aiDeck: 'swamp-forest',
+    opponents: [{ deck: 'swamp-forest' }, { deck: 'white-knights' }],
+  };
+
+  test('starting it opens the table screen with every deck; backToMenu clears it', async () => {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
-    store.getState().openTable({ humanDeck: 'a', opponentDecks: ['b', 'c'] });
+    await store.getState().startGame(three);
     expect(store.getState().screen).toBe('table');
-    expect(store.getState().table?.opponentDecks).toEqual(['b', 'c']);
+    expect(store.getState().snapshot?.view.seats).toHaveLength(3);
+    expect(store.getState().table).toEqual({
+      humanDeck: 'white-knights',
+      opponentDecks: ['swamp-forest', 'white-knights'],
+    });
     store.getState().backToMenu();
     expect(store.getState().screen).toBe('menu');
+    expect(store.getState().table).toBeNull();
+  });
+
+  test('a two-player game stays on the playing screen with no table', async () => {
+    const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+    await store
+      .getState()
+      .startGame({ seed: 7, humanDeck: 'white-knights', aiDeck: 'swamp-forest' });
+    expect(store.getState().screen).toBe('playing');
     expect(store.getState().table).toBeNull();
   });
 });

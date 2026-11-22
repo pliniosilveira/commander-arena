@@ -4,7 +4,7 @@ Status: the engine, the cards and the AI work with two to four seats and no issu
 
 ## Where we are
 
-The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done. `createGame` takes two to four seats (#500) and `pnpm ai:arena --seats 3|4` plays tables (#502). The app does not play them yet: the menu has a number-of-opponents toggle and a deck dialog for each opponent (#519, #523), but the flow ends on an empty board and no game starts for 2 or 3 opponents. The board plan (#499) is written and none of its steps is built. Performance with 3 and 4 seats is measured once, on a cloud machine (see "Performance with 3 and 4 seats"); the soak is not started.
+The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done. `createGame` takes two to four seats (#500) and `pnpm ai:arena --seats 3|4` plays tables (#502). The app plays them: the menu has a number-of-opponents toggle and a deck dialog for each opponent (#519, #523), the host runs one agent for each AI seat (#526) and the table screen shows the board of the plan (#499). Commander damage by source, the singular texts and the arrows are open (#535, #537, #538). Performance with 3 and 4 seats is measured once, on a cloud machine (see "Performance with 3 and 4 seats"); the soak is not started.
 
 Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass; the list at the end got its first rows from the phase 2 audit), a battle whose protector left the game getting a new one (#432, CR 704.5y), #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first), the AI fixes #481 and #483 (their pull requests are #503 and #504; the casual agent's must-differ target slots are #501), a crash when a seat loses in the same check as its permanent dies (#475), the probe follow-ups (#453, see "Rerun on current main"), the latent single-opponent sites (#422), and the audit of about 380 more cards ("Phase 2 audit" below; its one failure was #506).
 
@@ -222,7 +222,7 @@ None is built. Each is a pull request, and none edits the current board. Steps 1
 
 1. Probe: `runGame` with one agent per seat, as above (headless, deterministic, seeds reproduce; `tools/ai/multiplayer-probe.ts`). Done.
 2. Arena (`pnpm ai:arena`): two seats play paired seeds with swapped sides; `--seats 3|4 --agents ...` plays a table with the agents rotated through the seats (#482; arena decks only). Done.
-3. App: the host keeps one agent per AI seat and runs the ones with a pending decision in turn; the menu chooses the seat count and a deck for each. The menu part is built up to the empty board (#519, #523); the host is not.
+3. App: the host keeps one agent per AI seat and runs the ones with a pending decision in turn; the menu chooses the seat count and a deck for each. The menu, the host and the table screen are built (#519, #523, #526).
 4. Tests: a scenario DSL that accepts 3 and 4 seats and the rule scenarios written first are done (#362, phase 2); a nightly soak and the benchmark with a seat count are not.
 
 ## Plan in phases
@@ -231,7 +231,7 @@ None is built. Each is a pull request, and none edits the current board. Steps 1
 1. Engine: leaving the game, a player who loses during their own turn (priority only), several defenders, APNAP, commander damage with several defenders: done (#336, #414 to #419, #432), with the rules of "What still blocks it" left out.
 2. Cards: the supported cards that depend on the number of opponents were re-tested with 3 and 4 seats (#420, "Phase 2 audit"): done; the table of cards not supported for several opponents is empty.
 3. AI: a target policy, lethal checks, defenses and several hidden-hand samples (#452 and its fixes), and `ai:arena` with 3 and 4 seats (#482): done; its decision time is not measured.
-4. UI: the board plan (#499) and the menu flow up to the empty board (#519, #523) are done; the host, the board, arrows, target choice, commander damage and the end screen are not.
+4. UI: the board plan (#499), the menu flow, the host, the table screen and the end screen are done; the arrows, the singular texts and commander damage by source are open (#538, #537, #535).
 5. Performance, soak and the release in the menu: not started.
 
 ## Decisions that are the owner's

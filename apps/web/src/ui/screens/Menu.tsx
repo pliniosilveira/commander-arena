@@ -20,6 +20,7 @@ import {
   parseSeed,
   randomSeed,
   startFromForm,
+  startTableFromForm,
 } from './menu-model';
 import './screens.css';
 
@@ -41,8 +42,8 @@ export function Menu() {
   const challenges = useChallenges();
   const { choices } = useDeckChoices();
   const [level, setLevel] = useState<ChallengeLevel>('easy');
-  // With more than one opponent the deck dialog repeats, once per opponent; the game itself is
-  // not played yet, only an empty board opens (`openTable`).
+  // With more than one opponent the deck dialog repeats, once per opponent, and the last deck starts
+  // the game (`startTableFromForm`).
   const [opponents, setOpponents] = useState<(typeof OPPONENT_COUNTS)[number]>(1);
   const [opponentIndex, setOpponentIndex] = useState(0);
   const [opponentDecks, setOpponentDecks] = useState<readonly string[]>([]);
@@ -88,9 +89,18 @@ export function Menu() {
         setOpponentIndex(decks.length);
         return;
       }
-      // The last opponent's deck ends the flow: the versus screen, then the empty board.
-      setStep('home');
-      actions.openTable({ humanDeck: form.humanDeck, opponentDecks: decks });
+      // The last opponent's deck ends the flow: the game starts with every deck chosen.
+      setRefused(null);
+      setStarting(true);
+      void startTableFromForm(
+        actions.startGame,
+        { ...form, opponentDecks: decks, ai: 'normal' },
+        precons,
+      )
+        .then((result) => {
+          if (!result.started && result.kind === 'refused') setRefused(result.reason);
+        })
+        .finally(() => setStarting(false));
       return;
     }
     // The opponent's deck ends the flow: the game starts with the two decks chosen.

@@ -2,9 +2,10 @@
 // only from a deck that is a valid Commander deck of fully supported cards. The cards are
 // SYNTHETIC (invented "Synthetic ..." names from the import tests' fake Scryfall).
 import { expect, test } from 'vitest';
+import type { NewGameOptions } from '../src/game/protocol';
 import { checkPlayable, MemoryDeckStore } from '../src/import';
 import { createPrecons, snapshotClient, startOptionsFor } from '../src/precons';
-import { startFromForm } from '../src/ui/screens/menu-model';
+import { startFromForm, startTableFromForm } from '../src/ui/screens/menu-model';
 import { harness, hundredCardText, supportedHundredText } from './import-helpers';
 import {
   playableSnapshot,
@@ -186,4 +187,59 @@ test('issue 7: a nonbasic card repeated in an import is not playable, and basic 
   // The 39 Forests of the list are legal repeats (CR 903.5b: basic lands are the exception).
   const legal = await harness().service.run({ text: supportedHundredText(), deckName: 'Legal' });
   expect(checkPlayable(legal).ok).toBe(true);
+});
+
+// ------------------------------------------------------------ a table with several opponents
+
+test('the menu starts a game with several opponents: one list entry per opponent, in seat order', async () => {
+  const precons = preconsOf([
+    await playableSnapshot('synthetic-a'),
+    await playableSnapshot('synthetic-b'),
+    await playableSnapshot('synthetic-c'),
+  ]);
+  const seen: NewGameOptions[] = [];
+  const result = await startTableFromForm(
+    async (options) => {
+      seen.push(options);
+    },
+    { humanDeck: 'synthetic-a', opponentDecks: ['synthetic-b', 'synthetic-c'], seed: ' 42 ' },
+    precons,
+  );
+  expect(result).toEqual({ started: true });
+  const options = seen[0];
+  expect(options).toMatchObject({ seed: 42, humanDeck: 'synthetic-a', intro: true });
+  expect(options?.opponents?.map((o) => o.deck)).toEqual(['synthetic-b', 'synthetic-c']);
+  expect(options?.opponents?.every((o) => o.cards !== undefined)).toBe(true);
+  expect(options?.humanCards).toBeDefined();
+});
+
+test('a refused opponent deck says which opponent it is, and nothing starts', async () => {
+  const precons = preconsOf([
+    await playableSnapshot('synthetic-a'),
+    await playableSnapshot('synthetic-b'),
+    await unsupportedSnapshot('synthetic-bad'),
+  ]);
+  let started = false;
+  const result = await startTableFromForm(
+    async () => {
+      started = true;
+    },
+    { humanDeck: 'synthetic-a', opponentDecks: ['synthetic-b', 'synthetic-bad'], seed: '' },
+    precons,
+  );
+  expect(started).toBe(false);
+  expect(result).toMatchObject({ started: false, kind: 'refused' });
+  expect(result.started === false && result.kind === 'refused' && result.reason).toMatch(
+    /^Opponent 2: /,
+  );
+});
+
+test('an invalid seed starts nothing', async () => {
+  const precons = preconsOf([await playableSnapshot('synthetic-a')]);
+  const result = await startTableFromForm(
+    async () => {},
+    { humanDeck: 'synthetic-a', opponentDecks: ['synthetic-a', 'synthetic-a'], seed: 'x' },
+    precons,
+  );
+  expect(result).toEqual({ started: false, kind: 'seed' });
 });

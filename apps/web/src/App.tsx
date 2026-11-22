@@ -2,9 +2,9 @@ import { lazy, Suspense, useState } from 'react';
 import { Board } from './ui/board/Board';
 import { CombatEffects } from './ui/board/CombatEffects';
 import { PreviewPanel } from './ui/board/PreviewPanel';
+import { TableGame } from './ui/board/TableGame';
 import { DecisionLayer } from './ui/decisions/DecisionLayer';
 import { DockSlotContext } from './ui/decisions/dock-slot';
-import { TableVersus } from './ui/decisions/TableVersus';
 import { LogDock } from './ui/panels/LogDock';
 import { ReportDock } from './ui/panels/ReportDock';
 import { SettingsDock } from './ui/panels/SettingsDock';
@@ -78,27 +78,13 @@ function Game() {
   );
 }
 
-/**
- * A table with several opponents: the engine does not play it yet, so after the versus screen the
- * board is empty, with only the log, the settings and the report button where they are in a game.
- */
-function EmptyTable() {
-  const [started, setStarted] = useState(false);
-  return (
-    <div className="game" data-testid="game-table">
-      <LogDock />
-      <SettingsDock />
-      <ReportDock />
-      {!started && <TableVersus onStart={() => setStarted(true)} />}
-    </div>
-  );
-}
-
 export function App() {
   const screen = useApp((s) => s.screen);
   // `data-settled` is true when a game is on screen and nothing is in flight: the view is the one
   // the game waits on. The Playwright tests act only then (e2e/harness/settle.ts).
-  const settled = useApp((s) => s.screen === 'playing' && s.snapshot !== null && !s.busy);
+  const settled = useApp(
+    (s) => (s.screen === 'playing' || s.screen === 'table') && s.snapshot !== null && !s.busy,
+  );
   const revision = useApp((s) => s.snapshot?.revision ?? 0);
   return (
     <div className="app" data-screen={screen} data-settled={settled} data-revision={revision}>
@@ -111,7 +97,7 @@ export function App() {
       ) : screen === 'loading' ? (
         <p className="loading">Shuffling…</p>
       ) : screen === 'table' ? (
-        <EmptyTable />
+        <TableGame />
       ) : (
         <Game />
       )}
