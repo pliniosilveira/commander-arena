@@ -2498,6 +2498,16 @@ export type ContinuousChange =
       readonly controller: SeatId;
     }
   /**
+   * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each
+   * creature `filter` matches when the rule asks (with `controller` as "you") has the restriction `restriction`, read by `hasRestriction` (`rules/restrictions.ts`).
+   */
+  | {
+      readonly kind: 'groupRestriction';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+      readonly restriction: 'canAttackAsThoughNoDefender' | 'assignsDamageByToughness';
+    }
+  /**
    * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (`requireAttackSource`, CR 508.1d, 611.2c): no layer and no
    * fixed set (`objects` is empty): read where `seat` declares attackers (`rules/combat-legality.ts`), for each creature `seat` controls then; a creature that is able to
    * attack `permanent` attacks it. Moot when `permanent` is not on the battlefield or cannot be attacked.
@@ -2885,6 +2895,11 @@ export interface GameState {
   readonly lastTurnSpellsCast?: readonly number[];
   /** The active player of the turn before the current one (CR 502.2, 731.2): the seat whose count in `lastTurnSpellsCast` the day and night check reads. Written with it. */
   readonly lastTurnActiveSeat?: SeatId;
+  /**
+   * The players each seat declared attackers attacking in the last turn that seat took (CR 508.6, 609.4: "players who attacked you during their last turn"), by the seat that attacked, each player
+   * once. Rolled as a turn ends (`startTurn`) from `turnLog.attackedPlayers`: an attack on a planeswalker or a battle is not an attack on a player. Absent until a turn has ended.
+   */
+  readonly attackedLastTurn?: Readonly<Record<number, readonly SeatId[]>>;
   /**
    * The day or night designation the game has (CR 731.1): absent while it is neither, as the game starts. Once set it is always one of the two (CR 731.1), changed at each untap
    * step by the spells the previous turn's active player cast (CR 502.2, 731.2) and by Daybound and Nightbound permanents (CR 702.145d, 702.145g), see `rules/day-night.ts`.

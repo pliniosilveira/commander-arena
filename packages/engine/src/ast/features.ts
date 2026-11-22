@@ -316,6 +316,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttackSource',
     // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
     'creaturesCantAttackYou',
+    // CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender", a group effect that reaches creatures that match later.
+    'restrictGroup',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
@@ -1689,6 +1691,12 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
   'canBlockOnlyFlying',
+  // CR 609.4, 702.3b: "Creatures you control can attack as though they didn't have defender."
+  'canAttackAsThoughNoDefender',
+  // CR 609.4, 702.3b: "~ can attack players who attacked you during their last turn as though it didn't have defender."
+  'canAttackAsThoughNoDefenderVsLastTurnAttackers',
+  // CR 510.1a, 609.4: "Each creature you control assigns combat damage equal to its toughness rather than its power."
+  'assignsDamageByToughness',
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
   'mustBeBlocked',
@@ -1708,6 +1716,10 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBeBlocked',
   // Issue 81 (Gingerbrute): "can't be blocked this turn except by creatures with haste".
   'cantBeBlockedExceptByHaste',
+  // CR 609.4, 702.3b: "Target creature with defender can attack this turn as though it didn't have defender."
+  'canAttackAsThoughNoDefender',
+  // CR 510.1a, 609.4: "Until end of turn, target creature assigns combat damage equal to its toughness rather than its power."
+  'assignsDamageByToughness',
   'attacksEachCombat',
   'mustBeBlocked',
   // Galadriel group 3: "Its activated abilities can't be activated this turn."
@@ -2881,6 +2893,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   attackRandomOpponent: true,
   requireAttackSource: true,
   creaturesCantAttackYou: true,
+  restrictGroup: true,
   permanentsEnterTapped: true,
   doubleTokens: true,
   gainControl: true,

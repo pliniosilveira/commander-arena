@@ -7666,6 +7666,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
       }
       break;
+    case 'restrictGroup':
+      // CR 609.4, 611.2c: a group rule change read where the rule acts: a filter of creatures, as for `requireAttack`.
+      checkFilter(e.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          e.creatures,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'a group rule change names creatures by type, color, keyword, controller and the like (the battlefield, as they are when the rule acts): no zone, owner, stackKind, combat or trigger player',
+        );
+      }
+      if (!isOneOf(e.restriction, ['canAttackAsThoughNoDefender', 'assignsDamageByToughness'])) {
+        issue(
+          out,
+          `${path}.restriction`,
+          `a group rule change gives canAttackAsThoughNoDefender or assignsDamageByToughness, not ${JSON.stringify(e.restriction)}`,
+        );
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a group rule change lasts until end of turn');
+      }
+      break;
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
       // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura or Equipment the trigger is about.
