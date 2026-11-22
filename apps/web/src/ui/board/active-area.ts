@@ -16,7 +16,7 @@ export function areaClass(view: GameView, seat: SeatId): 'is-active-area' | 'is-
  * turn, so the highlight is not conveyed by colour alone.
  */
 export function battlefieldLabel(view: GameView, seat: SeatId): string {
-  const owner = turnOwner(seat, view.viewer);
+  const owner = turnOwner(seat, view.viewer, view.seats.length);
   return view.activeSeat === seat
     ? `${owner} battlefield, ${owner.toLowerCase()} turn`
     : `${owner} battlefield`;

@@ -21,12 +21,14 @@ function StackItem({
   item,
   top,
   viewer,
+  seatCount,
   index,
   activated,
 }: {
   item: ObjectView;
   top: boolean;
   viewer: SeatId;
+  seatCount: number;
   activated: boolean;
   index: ReadonlyMap<ObjectId, ObjectView>;
 }) {
@@ -48,7 +50,7 @@ function StackItem({
     modes,
     targets,
     shares,
-  } = stackWording(item, index, viewer, activated);
+  } = stackWording(item, index, viewer, activated, seatCount);
   const kind = triggered
     ? abilityTypeLine(activated)
     : item.types.length > 0
@@ -80,7 +82,7 @@ function StackItem({
         </span>
         <span className="pnl-stack-who">
           {top ? 'Top · ' : ''}
-          {seatName(item.controller, viewer)}
+          {seatName(item.controller, viewer, seatCount)}
         </span>
       </div>
       {when === null ? null : (
@@ -153,6 +155,7 @@ export function StackPanel() {
               item={item}
               top={i === 0}
               viewer={view.viewer}
+              seatCount={view.seats.length}
               index={index}
               activated={activated.has(item.id)}
             />

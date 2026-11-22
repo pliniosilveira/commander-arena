@@ -1,4 +1,5 @@
 /** Pure lookups over a `GameView` for the board: objects by id, combat roles, commander facts. */
+
 import type {
   Color,
   GameView,
@@ -11,6 +12,7 @@ import { companionObject, companionSeatOf } from '../../game/companion';
 import { designationObject } from '../../game/designations';
 import { isInherentAbility } from '../../game/monarch-text';
 import type { DefinedPtNote } from '../../game/protocol';
+import { seatNameOf } from '../../game/seat-name';
 
 /** Every object the viewer may look at, for the preview panel and zone viewers. */
 export function findObject(view: GameView, id: ObjectId): ObjectView | null {
@@ -73,7 +75,7 @@ export function previewChoice(
 }
 
 export function seatLabel(view: GameView, seat: SeatId): string {
-  return seat === view.viewer ? 'You' : 'Opponent';
+  return seatNameOf(seat, view.viewer, view.seats.length);
 }
 
 /** One block a creature makes: the attacker it blocks, by its number (`pairing.ts`). */
