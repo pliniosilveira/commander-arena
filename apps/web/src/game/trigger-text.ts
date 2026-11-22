@@ -737,7 +737,13 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       if (core === null) return null;
       const things = `${core.endsWith('s') ? core : `${core}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
       const words = SMALL_COUNT_WORDS[trigger.atLeast ?? 1] ?? String(trigger.atLeast);
-      return `Whenever ${words} or more ${things} deal combat damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
+      const whom =
+        trigger.to === 'opponents'
+          ? 'your opponents'
+          : trigger.to === 'opponent'
+            ? 'an opponent'
+            : 'a player';
+      return `Whenever ${words} or more ${things} deal combat damage to ${whom}`;
     }
     case 'damageBatch': {
       // CR 120.2, 603.2c: "Whenever one or more Pirates you control deal damage to a player | to your opponents".

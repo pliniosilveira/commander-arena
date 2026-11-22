@@ -60,9 +60,9 @@ export const TRIGGER_ATTACK_WITH_SELF_OR_COMMANDER = defineRule<IrTrigger>({
 });
 
 /**
- * `trigger.opponents-dealt-combat-damage`: "your opponents are dealt combat damage" (CR 510.2, 603.2c; Mindblade Render): one occurrence for each opponent dealt combat damage in one
- * damage event, whatever dealt it. The engine's `combatDamageBatch` with `to: 'opponent'`; "if any of that damage was dealt by a Warrior" is the type in the filter of the sources
- * (`condition.damage-dealt-by-type`, folded by the lowering of the trigger).
+ * `trigger.opponents-dealt-combat-damage`: "your opponents are dealt combat damage" (CR 510.2, 603.2c; Mindblade Render): one occurrence for the whole damage event, however many
+ * opponents were dealt damage (issue 508: the official ruling of the card). The engine's `combatDamageBatch` with `to: 'opponents'`; "if any of that damage was dealt by a Warrior" is the
+ * type in the filter of the sources (`condition.damage-dealt-by-type`, folded by the lowering of the trigger).
  */
 export const TRIGGER_OPPONENTS_DEALT_COMBAT_DAMAGE = defineRule<IrTrigger>({
   id: 'trigger.opponents-dealt-combat-damage',
@@ -93,7 +93,7 @@ export const TRIGGER_OPPONENTS_DEALT_COMBAT_DAMAGE = defineRule<IrTrigger>({
         kind: 'trigger',
         event: 'combatDamageBatch',
         subject: { ...subject, plural: true },
-        damaged: 'opponent',
+        damaged: 'opponents',
         args: {},
         span,
         rule: 'trigger.opponents-dealt-combat-damage',
