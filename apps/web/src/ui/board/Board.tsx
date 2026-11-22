@@ -11,6 +11,7 @@ import { useZoneGate } from '../decisions/zone-decision';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
+import { CommanderPopup } from './CommanderPopup';
 import { combatOrder, keptOrder } from './combat-order';
 import { EmblemStrip } from './EmblemStrip';
 import { ExilePlayStrip } from './ExilePlayStrip';
@@ -137,6 +138,8 @@ export function zoneContents(
 export function Board() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
+  // The seat whose commander popup is open.
+  const [commanderSeat, setCommanderSeat] = useState<number | null>(null);
   const looked = useLookedCards();
   useCloseOnDecision(view, () => setZone(null));
   // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
@@ -192,7 +195,12 @@ export function Board() {
   return (
     <PairFocusProvider>
       <section className="board" aria-label="Battlefield">
-        <PlayerStrip view={view} seat={opponent} onOpenZone={setZone} />
+        <PlayerStrip
+          view={view}
+          seat={opponent}
+          onOpenZone={setZone}
+          onOpenCommander={setCommanderSeat}
+        />
         <Field
           view={view}
           seat={opponent.id}
@@ -221,9 +229,21 @@ export function Board() {
           attachments={attachments}
           exile={exile}
         />
-        <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
+        <PlayerStrip
+          view={view}
+          seat={me}
+          onOpenZone={setZone}
+          onOpenCommander={setCommanderSeat}
+        />
         <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
         <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
+        {commanderSeat !== null && (
+          <CommanderPopup
+            view={view}
+            seatId={commanderSeat}
+            onClose={() => setCommanderSeat(null)}
+          />
+        )}
         <BlockArrows roles={roles} />
         {open !== null && (
           <ZoneViewer
