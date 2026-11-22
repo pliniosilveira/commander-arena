@@ -432,12 +432,20 @@ export function lowerAmount(
       if (typeof controller === 'object') {
         const missingRef = missingFeatures(['selector:controllerRef']);
         if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
-        if (controller.orPlaneswalkerController === true || controller.noun.det !== 'target') {
+        // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
+        // as the count is made.
+        const itsController = controller.noun.det === 'controllerOf';
+        if (
+          controller.orPlaneswalkerController === true ||
+          (controller.noun.det !== 'target' && !itsController)
+        ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const named = playerSelectorOf(controller.noun, ctx);
         if (!named.ok) return named;
-        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        if (named.value.kind !== (itsController ? 'controllerOf' : 'target')) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
         const { controller: _named, ...rest } = amount.of.filter;
         const plain = countFilter({ ...amount.of, filter: rest });
         if (!plain.ok) return plain;

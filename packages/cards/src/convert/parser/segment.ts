@@ -441,6 +441,14 @@ const IF_THEY_DO_THEY_DRAW = /^if they do, they draw [^.]*\.$/i;
 const FOR_EACH_OPPONENT_WHO_DOES_CREATE = /^for each opponent who does, create [^.]*\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
 /**
+ * "Exile up to one target instant or sorcery card from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost." (Blue Mage's
+ * Cane, CR 707.12, 118.9): the second and third sentences are what is done with the copy of the card the first exiles, read as one instruction (`effect.exile-copy-cast-paying`).
+ */
+const EXILE_CARD_THEN_COPY = /^exile [^.]* graveyard\.$/i;
+const IF_YOU_DO_COPY_IT = /^if you do, copy it\.$/i;
+const MAY_CAST_THE_COPY_PAYING =
+  /^you may cast the copy by paying (?:\{[^}]+\})+ rather than paying its mana cost\.$/i;
+/**
  * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
  * issue 121, CR 707.12): the second sentence is what is done with the copy of each card the first exiles, read as one instruction (`effect.exile-copy-cast`).
  */
@@ -1090,6 +1098,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, REVEAL_TOP_CARD) &&
       said(b, MAY_CAST_IF_LESSER) &&
       said(c, ELSE_CAST_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EXILE_CARD_THEN_COPY) &&
+      said(b, IF_YOU_DO_COPY_IT) &&
+      said(c, MAY_CAST_THE_COPY_PAYING)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

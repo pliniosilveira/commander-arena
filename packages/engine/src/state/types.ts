@@ -477,6 +477,10 @@ export interface StackData {
    */
   readonly free?: true;
   /**
+   * The mana the spell was cast for rather than its mana cost (CR 118.9, 601.2f: "You may cast the copy by paying {3} rather than paying its mana cost"), with `free`. Absent otherwise.
+   */
+  readonly payInstead?: readonly Cost[];
+  /**
    * True when the spell was cast as the effect of its suspend ability (CR 702.62a, D-128): if it is a creature spell
    * the permanent it becomes has haste (`GameObject.alt` `suspend`). Absent otherwise, and for an ability.
    */
@@ -2085,6 +2089,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `remember` (Cmdr. Troi): the spell cast is what `moved` names afterwards. */
       readonly remember?: true;
+      /** `copyCardAndCast.cost` (Blue Mage's Cane, CR 118.9): the mana paid rather than the mana cost. */
+      readonly payInstead?: readonly Cost[];
       readonly chosen: readonly ObjectId[] | null;
     };
 

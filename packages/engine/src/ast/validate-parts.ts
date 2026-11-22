@@ -2612,11 +2612,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         // Hylda group 3 (CR 109.4, 608.2c): "for each tapped creature target opponent controls": the player is a target the effect declared, read as the amount is
         // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
         const { controlledBy, ...rest } = a.filter;
-        if (kindOf(controlledBy) !== 'target') {
+        // CR 109.4, 608.2c (Observed Stasis): "for each tapped creature its controller controls": `controllerOf` of the permanent an Aura is attached to, counted the same way.
+        if (kindOf(controlledBy) !== 'target' && kindOf(controlledBy) !== 'controllerOf') {
           issue(
             out,
             `${path}.filter.controlledBy`,
-            'a count names the player whose objects it counts by a target of the ability or spell (controlledBy: target)',
+            'a count names the player whose objects it counts by a target of the ability or spell, or the controller of an object (controlledBy: target or controllerOf)',
           );
         } else {
           checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
@@ -5875,6 +5876,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.forever`, 'forever must be true when present');
       }
       break;
+    case 'removeFromCombat':
+      // CR 506.4: each creature the selector names is taken out of the combat in progress.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'regenerate':
       // CR 701.19a: a shield for each permanent the selector names, until end of turn.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -6846,6 +6851,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+      }
+      // Blue Mage's Cane (CR 118.9, 601.2f): "by paying {3} rather than paying its mana cost": mana only, at least one symbol.
+      if (e.cost !== undefined) {
+        const costs = e.cost as readonly { kind?: unknown; symbols?: unknown }[];
+        if (
+          !Array.isArray(costs) ||
+          costs.length === 0 ||
+          costs.some(
+            (c) => c.kind !== 'mana' || !Array.isArray(c.symbols) || c.symbols.length === 0,
+          )
+        ) {
+          issue(out, `${path}.cost`, 'the cost a copy is cast for is mana only');
+        }
       }
       break;
     case 'castFree': {

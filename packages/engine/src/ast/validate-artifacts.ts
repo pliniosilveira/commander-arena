@@ -302,8 +302,10 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
       if (s.additive !== undefined && s.additive !== true) {
         issue(out, `${path}.additive`, 'additive must be true when present (CR 205.1b)');
       }
+      // CR 205.3d (Eye of Nidhogg): for the permanent an Aura or Equipment is attached to, creature subtypes alone replace its creature types and its card types stay, whatever they are.
       if (
         s.additive !== true &&
+        (s.subject as { kind?: unknown } | undefined)?.kind !== 'attached' &&
         Array.isArray(s.subtypes) &&
         s.subtypes.length > 0 &&
         !(Array.isArray(s.types) && (s.types.includes('creature') || s.types.includes('kindred')))

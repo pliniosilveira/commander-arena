@@ -48,6 +48,7 @@ import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
+import { COPY_CAST_PAYING_EFFECT_RULES } from './copy-cast-paying';
 import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
@@ -1190,6 +1191,8 @@ export const EFFECT_RULES = [
   // Prismari deck, group 2 (issue 87, D-647 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
+  // Blue Mage's Cane: "exile ... from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost."
+  ...COPY_CAST_PAYING_EFFECT_RULES,
   ...PRISMARI_G2_EFFECT_RULES,
   ...MARDU_SURGE_EFFECT_RULES,
   // Prismari deck, group 3 (issue 87, D-660 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into

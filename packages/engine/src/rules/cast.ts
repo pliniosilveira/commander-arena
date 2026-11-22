@@ -32,6 +32,8 @@
  * The whole pre-cast state is kept in the CastingContext. Cancelling restores it, which is also how
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
+
+import type { Cost } from '../ast/types';
 import { type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
@@ -174,7 +176,12 @@ export function beginCast(
    * `exileInstead` ("If that spell would be put into a graveyard, exile it instead", CR 614.1a). With `resolving` and no alternative cost the spell is cast
    * paying its mana cost, from the graveyard it is in (`castCard`).
    */
-  riders: { readonly anyManaType?: boolean; readonly exileInstead?: boolean } = {},
+  riders: {
+    readonly anyManaType?: boolean;
+    readonly exileInstead?: boolean;
+    /** CR 118.9 (Blue Mage's Cane): with the `free` alternative, the mana paid rather than the mana cost. */
+    readonly payInstead?: readonly Cost[];
+  } = {},
   /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
   permanentType?: CardType,
 ): Result {
@@ -195,6 +202,7 @@ export function beginCast(
                 ? 'freeGraveyard' // CR 118.9: "cast target ... card from a graveyard without paying its mana cost"
                 : 'free',
           riders.anyManaType === true,
+          riders.payInstead,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -275,6 +283,9 @@ export function beginCast(
       // CR 702.133a: cast from the graveyard by its jump-start ability.
       ...(alternative === 'jumpStart' ? { jumpStart: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
+      ...(alternative === 'free' && riders.payInstead !== undefined
+        ? { payInstead: riders.payInstead }
+        : {}),
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
@@ -351,6 +362,7 @@ export function beginCast(
     alternative,
     excluded: obj.id,
     kicked: false,
+    ...(riders.payInstead === undefined ? {} : { payInstead: riders.payInstead }),
   });
   next = {
     ...next,

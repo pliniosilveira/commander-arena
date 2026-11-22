@@ -148,6 +148,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
 - `nextSpellPayLife`: hand, command zone only.
+- A granted static ability that gives something to other permanents (Dancer's Chakrams: "Other commanders you control get +2/+2") is not run: `grantAbility` takes only mana, activated, triggered and cost-increase abilities.
 - Speed (CR 702.179) is not built; no duration lasts one combat.
 - "The copy targets that token" (CR 707.10e) takes the first legal token; no choice is asked.
 - Plot works from the hand with a mana cost; a card an effect makes plotted (CR 702.170c) and a plot ability working from another zone (CR 702.170f) are not built.

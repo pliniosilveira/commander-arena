@@ -1176,6 +1176,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // CR 603.2: a spell cast in a named turn, and two events of one sentence.
   'trigger.cast-during-your-turn': whenever,
   'trigger.cast-turn-and-when': whenever,
+  'trigger.cast-and-draw': whenever,
   'trigger.cast-x': whenever,
   // Quandrix Unlimited deck, group I (Unbound Flourishing): one trigger for a spell cast and an ability activated, and the "if" on the cost that goes with it.
   'trigger.cast-or-activate': whenever,
