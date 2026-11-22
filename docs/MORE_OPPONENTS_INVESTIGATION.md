@@ -176,7 +176,7 @@ By composition: the new board imports these and does not change them.
 | Today | In the new board |
 | --- | --- |
 | `Field` and `BattlefieldRow` | One per seat, unchanged. Rows measure their own cell (`useMeasure`) and pick tile height, grouping and scrolling from it, so a narrower cell is not a new code path. `ROW_ORDER_OPP` already mirrors the opponent. |
-| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Unchanged at first, one for each seat. A compact density is added only if the strip does not fit its cell (decided with the screenshots of step 4). |
+| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Unchanged at first, one for each seat. A compact density is added only if the strip does not fit its cell (decided with the screenshots of step 2). |
 | `HandBacks` | One per opponent. |
 | `BlockArrows`, `StackArrows` | Measure tiles from the DOM by `data-object-id` (`panels/arrows.ts`), so they do not care where a cell is. To confirm with a test at 3 opponents. |
 | `DecisionLayer`, `DockSlotContext`, `StackPanel` | In `Game` the dock slot is in `aside.turn-panel`; the new board gives the same slot to its flow cell. |
