@@ -87,6 +87,7 @@ import {
   loyaltyOffPlaneswalkerIssues,
   readsCombatOrSource,
   readsCombatOrSourceBesidesCommander,
+  readsKeywords,
   type Scope,
 } from './validate-parts';
 import {
@@ -858,11 +859,72 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
             'a granted cost increase has no condition and works on the battlefield',
           );
         }
+      } else if (
+        s.ability?.kind === 'static' &&
+        (s.ability.static?.kind === 'modifyPt' || s.ability.static?.kind === 'grantKeyword')
+      ) {
+        // Dancer's Chakrams (CR 604.1, 613.1f, 613.8): the one "+N/+N" or keyword a static ability gives, to a group. `derive` applies it after layer 6 in a second pass, reading
+        // the group against the permanent that has the ability (`rules/granted-statics.ts`), so the group is named by what no layer changes, the amount is a number, and the
+        // ability has no condition (the engine would not check it) and works on the battlefield.
+        checkAbility(s.ability, `${path}.ability`, out);
+        const inner = s.ability.static;
+        if (inner.subject?.kind !== 'filter') {
+          issue(
+            out,
+            `${path}.ability.static.subject`,
+            'a granted "+N/+N" or keyword ability gives to a group of permanents (a filter subject)',
+          );
+        } else if (
+          filterSome(
+            inner.subject.filter,
+            (f) =>
+              readsKeywords(f) ||
+              f.power !== undefined ||
+              f.toughness !== undefined ||
+              readsCombatOrSourceBesidesCommander(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.ability.static.subject`,
+            'the group a granted static ability gives to is not named by a keyword, power, toughness or combat: they are read after the layer it applies in (CR 613.8)',
+          );
+        }
+        if (
+          inner.kind === 'modifyPt' &&
+          (typeof inner.power !== 'number' || typeof inner.toughness !== 'number')
+        ) {
+          issue(
+            out,
+            `${path}.ability.static`,
+            'a granted "+N/+N" is a fixed number, not an amount counted on the board',
+          );
+        }
+        if (
+          inner.kind === 'grantKeyword' &&
+          (inner.keyword?.kind === 'riot' ||
+            (inner.keyword?.kind === 'protection' &&
+              inner.keyword.from !== 'color' &&
+              inner.keyword.from !== 'cardType'))
+        ) {
+          issue(
+            out,
+            `${path}.ability.static.keyword`,
+            'a granted keyword is one with no choice and no source to read: not riot, and a protection only from colors or card types',
+          );
+        }
+        if (s.ability.condition !== undefined || s.ability.functionsIn !== undefined) {
+          issue(
+            out,
+            `${path}.ability`,
+            'a granted static ability has no condition and works on the battlefield',
+          );
+        }
       } else {
         issue(
           out,
           `${path}.ability`,
-          `a static ability can grant a mana, an activated, a triggered ability or a cost increase, not ${kindOf(s.ability)}`,
+          `a static ability can grant a mana, an activated, a triggered ability, a cost increase, a "+N/+N" or a keyword to a group, not ${kindOf(s.ability)}`,
         );
       }
       break;

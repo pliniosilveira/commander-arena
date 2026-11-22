@@ -3,7 +3,8 @@
 // Astrologian's Planisphere ("Whenever you cast a noncreature spell and whenever you draw your third card each turn", CR 603.2c: two granted triggered abilities that share the
 // effect), Blue Mage's Cane (copy of an exiled card cast for {3} rather than its mana cost, CR 707.12, 118.9, 508.5: defending player's graveyard), Eye of Nidhogg (a black Dragon with
 // base power and toughness 4/2, flying, deathtouch and goaded, CR 205.3d, 613, 701.15b) and Observed Stasis ("remove enchanted creature from combat", CR 506.4; loses all abilities and
-// can't attack or block). Dancer's Chakrams stays unsupported: a static ability granted to a permanent that gives something to other permanents is not run (docs/ROADMAP.md).
+// can't attack or block) and Dancer's Chakrams (job select; "Equipped creature gets +2/+2, has lifelink and \"Other commanders you control get +2/+2 and have lifelink,\"", CR 604.1, 613.1f,
+// 613.8, 903.3: the creature has the quoted static ability as its own, so "you" is its controller and "other" leaves it out).
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
@@ -33,6 +34,7 @@ const planisphere = real("Astrologian's Planisphere");
 const cane = real("Blue Mage's Cane");
 const eye = real('Eye of Nidhogg');
 const stasis = real('Observed Stasis');
+const chakrams = real("Dancer's Chakrams");
 
 const BEARS = 'Grizzly Bears';
 const BOLT = 'Lightning Bolt'; // {R} instant, 3 damage to any target
@@ -42,17 +44,11 @@ const LIBRARY = Array.from({ length: 14 }, () => 'Island');
 const pendingKind = (g: ScenarioGame) => g.state.pending?.kind;
 
 describe('the four cards are valid and supported', () => {
-  for (const def of [planisphere, cane, eye, stasis]) {
+  for (const def of [planisphere, cane, eye, stasis, chakrams]) {
     test(def.name, () => {
       expect(validateCard(def)).toEqual([]);
     });
   }
-
-  test("Dancer's Chakrams is still unsupported, and says why", () => {
-    const imported = importReal("Dancer's Chakrams");
-    expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.unparsed.map((u) => u.closestRule)).toEqual(['static.attached']);
-  });
 });
 
 describe("Astrologian's Planisphere", () => {
@@ -374,3 +370,80 @@ describe('Observed Stasis', () => {
 // A shared note for the lead: the pieces above (an attached grant with "is a ... in addition to its other types", a quoted ability and a restriction) are read by `static.attached`
 // and `static.attached-becomes`, which a statement such as Reaper's Scythe's "Equipped creature gets +1/+1 for each soul counter on it and is an Assassin in addition to its other types."
 // can reuse.
+
+describe("Dancer's Chakrams", () => {
+  const COMMANDER = 'Isamaru, Hound of Konda'; // a 2/2 commander
+  // Four seats: seat 0 casts the Equipment (the Hero token it makes is equipped), has a commander and a plain creature; seats 1 and 3 have commanders of their own.
+  const board = (seats: 3 | 4 = 4) => {
+    const b = scenario({ seats })
+      .define(chakrams)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(chakrams.name)
+      .battlefield(COMMANDER, { label: 'mine', commander: true })
+      .battlefield(BEARS, { label: 'plain' })
+      .battlefield('Plains', { count: 4 })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(COMMANDER, { label: 'theirs', commander: true })
+      .seat(2)
+      .library(...LIBRARY);
+    if (seats === 4) {
+      b.seat(3)
+        .library(...LIBRARY)
+        .battlefield(COMMANDER, { label: 'fourth', commander: true });
+    }
+    return b.at('precombatMain', { active: 0 }).build();
+  };
+
+  const cast = (g: ScenarioGame) => {
+    g.act(0).cast(chakrams.name, { pay: true });
+    g.passAll();
+  };
+
+  test('job select equips a Hero: it gets +2/+2 and lifelink, and the commander of its controller too', () => {
+    const g = board();
+    cast(g);
+    g.expect.attached(chakrams.name, 'Hero');
+    g.expect.derived('mine', { keywords: ['lifelink'] });
+    g.expect.pt('mine', 4, 4);
+    g.expect.pt('plain', 2, 2);
+    g.expect.invariants();
+  });
+
+  test('the other commanders on the table are not affected, in three and four seats', () => {
+    for (const seats of [3, 4] as const) {
+      const g = board(seats);
+      cast(g);
+      g.expect.pt('mine', 4, 4);
+      g.expect.derived('theirs', { keywords: [] });
+      g.expect.pt('theirs', 2, 2);
+      if (seats === 4) {
+        g.expect.derived('fourth', { keywords: [] });
+        g.expect.pt('fourth', 2, 2);
+      }
+    }
+  });
+
+  test('the creature is a Performer in addition to its other types, and 3/3 with lifelink', () => {
+    const g = board();
+    cast(g);
+    g.expect.derived('Hero', { subtypes: ['Hero', 'Performer'], keywords: ['lifelink'] });
+    g.expect.pt('Hero', 3, 3);
+  });
+
+  test('the commander equipped itself gets the +2/+2 once ("other" leaves it out)', () => {
+    const g = scenario()
+      .define(chakrams)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(COMMANDER, { label: 'mine', commander: true })
+      .battlefield(chakrams.name, { attachedTo: 'mine' })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.expect.pt('mine', 4, 4);
+    g.expect.derived('mine', { keywords: ['lifelink'] });
+  });
+});

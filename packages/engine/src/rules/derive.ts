@@ -45,8 +45,15 @@ import {
   counterPtBonus,
   effectsOn,
 } from './derive-layers';
-import { type BlockLimit, type StaticSet, staticEffectsOn } from './derive-statics';
+import {
+  type BlockLimit,
+  hasStaticGrantSources,
+  type StaticBase,
+  type StaticSet,
+  staticEffectsOn,
+} from './derive-statics';
 import { manaCostOf, typeLayersOf } from './derive-view';
+import { grantedStaticSources, grantedStaticsOn } from './granted-statics';
 import { keywordCounterAbilities } from './keyword-counters';
 import { landTypeAbilities, landTypeSetIds } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
@@ -147,7 +154,12 @@ export function keywordsAfterLayer6(state: GameState, obj: GameObject): readonly
   return hit;
 }
 
-function deriveFresh(state: GameState, obj: GameObject, layer6Only = false): Derived {
+function deriveFresh(
+  state: GameState,
+  obj: GameObject,
+  layer6Only = false,
+  secondPass = true,
+): Derived {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) {
     // Abilities on the stack are not cards; they carry no characteristics here. A copy of a spell is a spell
     // with the values of the face it copies (CR 707.10, D-129), read by `copiableValues`.
@@ -167,6 +179,7 @@ function deriveFresh(state: GameState, obj: GameObject, layer6Only = false): Der
         abilities: [],
       },
       layer6Only,
+      secondPass,
     );
   }
   // Layer 1 (CR 613.2a): the copiable values, which a copy effect replaces (rules/copiable.ts).
@@ -187,6 +200,7 @@ function deriveFresh(state: GameState, obj: GameObject, layer6Only = false): Der
       abilities,
     },
     layer6Only,
+    secondPass,
   );
 }
 
@@ -223,7 +237,13 @@ function turnLimited(
   return mine ? effects : effects.filter((e) => !limited(e));
 }
 
-function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only = false): Derived {
+function finish(
+  state: GameState,
+  obj: GameObject,
+  base: DerivedBase,
+  layer6Only = false,
+  secondPass = true,
+): Derived {
   // CR 701.54c (D-196): "Your Ring-bearer is legendary", an ability of the Ring (an emblem): a supertype added in layer 4, which no
   // creature's loss of abilities removes.
   const input: DerivedBase =
@@ -276,7 +296,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
     own.length === 0 ? printed : [...printed, ...own],
   );
   const start = land.gained.length === 0 ? counted : [...counted, ...land.gained];
-  const fx = staticEffectsOn(state, obj, {
+  const staticBase: StaticBase = {
     ...input,
     types: line.types,
     subtypes: line.subtypes,
@@ -291,8 +311,24 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
     keywordsOf: (other) => keywordsAfterLayer6(state, other),
     layer6Only,
     ptWith,
-  });
-  const abilities = applyAbilityLayer(start, fx.grants, effects);
+  };
+  const fx = staticEffectsOn(state, obj, staticBase);
+  // Second pass (CR 604.1, 613.1f, 613.8; Dancer's Chakrams): the "+N/+N" and keywords that static abilities given to other permanents give to this one, read from what each permanent
+  // has after layer 6. Skipped while that list is being made (`secondPass` false), which is the first pass it reads.
+  const given =
+    secondPass && obj.zone === 'battlefield' && hasStaticGrantSources(state)
+      ? grantedStaticsOn(
+          state,
+          obj,
+          staticBase,
+          grantedStaticSources(state, (other) => deriveFresh(state, other, true, false).abilities),
+        )
+      : null;
+  const abilities = applyAbilityLayer(
+    start,
+    given === null || given.grants.length === 0 ? fx.grants : [...fx.grants, ...given.grants],
+    effects,
+  );
   // CR 208.4b (D-431): the base power and toughness are what layer 7b leaves, before any counter or "+N/+N" effect of layer 7c.
   const baseValues = creature ? basePtOf(ptBase, withStaticSets(obj, effects, fx.sets)) : NO_PT;
   const typed: Derived = {
@@ -305,7 +341,10 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
     abilities,
     restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
     goadedBy: fx.goadedBy,
-    affectedBy: fx.affectedBy,
+    affectedBy:
+      given === null || given.affectedBy.length === 0
+        ? fx.affectedBy
+        : [...fx.affectedBy, ...given.affectedBy.filter((id) => !fx.affectedBy.includes(id))],
     blockLimits: blockLimitsOf(state, obj, fx.blockLimits, effects),
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,
@@ -313,7 +352,11 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
   // `keywordsAfterLayer6` stops here: the keywords are in `abilities`, nothing of layer 7 is read.
   if (layer6Only) return typed;
   // Layers 7b and 7c (CR 613.4b, 613.4c).
-  const pt = ptWith(fx.power, fx.toughness, fx.sets);
+  const pt = ptWith(
+    fx.power + (given?.power ?? 0),
+    fx.toughness + (given?.toughness ?? 0),
+    fx.sets,
+  );
   if (pt.power === typed.power && pt.toughness === typed.toughness) return typed;
   return { ...typed, power: pt.power, toughness: pt.toughness };
 }

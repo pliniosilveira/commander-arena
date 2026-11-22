@@ -1407,6 +1407,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
   'noun.commander-creatures-you-own': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
+  'noun.other-commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

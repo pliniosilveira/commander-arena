@@ -276,6 +276,8 @@ interface BoardIndex {
   readonly reductions: readonly CostReductionSource[];
   /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
   readonly hasCostIncrease: boolean;
+  /** Whether any permanent has a `grantAbility` that gives a "+N/+N" or a keyword to a group (Dancer's Chakrams): only then does `derive` make its second pass (`rules/granted-statics.ts`). */
+  readonly hasStaticGrants: boolean;
   /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
   readonly abilityReductions: readonly AbilityReductionSource[];
   /** Permanents with a `castAsThoughFlash` static ability, in battlefield order (D-139). */
@@ -579,6 +581,7 @@ function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
   let hasCostIncrease = false;
+  let hasStaticGrants = false;
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
@@ -600,6 +603,7 @@ function buildIndex(state: GameState): BoardIndex {
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
     if (printed.some(givesCostIncrease)) hasCostIncrease = true;
+    if (printed.some(givesGroupStatic)) hasStaticGrants = true;
     reductions.push(...costReductionsOf(object, printed));
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
@@ -683,6 +687,7 @@ function buildIndex(state: GameState): BoardIndex {
     late: listEntries(late),
     reductions,
     hasCostIncrease,
+    hasStaticGrants,
     abilityReductions,
     flashes,
     libraryCasts,
@@ -722,6 +727,21 @@ function givesCostIncrease(a: Ability): boolean {
         a.static.ability.kind === 'static' &&
         a.static.ability.static.kind === 'costIncrease'))
   );
+}
+
+/** Whether an ability is a static `grantAbility` that gives a "+N/+N" or a keyword to a group (Dancer's Chakrams, CR 613.1f). */
+function givesGroupStatic(a: Ability): boolean {
+  return (
+    a.kind === 'static' &&
+    a.static.kind === 'grantAbility' &&
+    a.static.ability.kind === 'static' &&
+    (a.static.ability.static.kind === 'modifyPt' || a.static.ability.static.kind === 'grantKeyword')
+  );
+}
+
+/** Whether a permanent on the battlefield gives a "+N/+N" or a keyword to a group through an ability it gives to another permanent: `derive` then makes a second pass (`rules/granted-statics.ts`). */
+export function hasStaticGrantSources(state: GameState): boolean {
+  return indexOf(state).hasStaticGrants;
 }
 
 /** Whether a permanent on the battlefield may have a spell tax (`costIncrease`) after the layers (D-149); read before looking at any permanent's derived abilities. */

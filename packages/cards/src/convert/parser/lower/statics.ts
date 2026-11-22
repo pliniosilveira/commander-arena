@@ -37,6 +37,7 @@ import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
+import { lowerGrantedGroupStatics } from './granted-group-static';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
@@ -912,6 +913,24 @@ function lowerPart(
       effect.ability.ability.trigger.alternatives !== undefined
     ) {
       const each = lowerGrantedAbilities(effect.ability, subject.value, ability, ctx);
+      if (!each.ok) return each;
+      for (const granted of each.value) {
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'grantAbility', subject: subject.value, ability: granted },
+          ...(condition === undefined ? {} : { condition }),
+        });
+      }
+      continue;
+    }
+    // Dancer's Chakrams (CR 604.1, 613.1f): "Equipped creature has \"Other commanders you control get +2/+2 and have lifelink,\"": the quoted static ability gives a group "+N/+N" and
+    // keywords; the permanent has it as its own, and each effect it has is one `grantAbility`.
+    if (
+      effect.kind === 'grantAbility' &&
+      effect.ability.ability.kind === 'static' &&
+      (subject.value.kind === 'attached' || subject.value.kind === 'this')
+    ) {
+      const each = lowerGrantedGroupStatics(effect.ability, ability, ctx, lowerStatic);
       if (!each.ok) return each;
       for (const granted of each.value) {
         abilities.push({

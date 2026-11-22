@@ -7605,6 +7605,12 @@ export type StaticEffect =
         // D-149 (CR 604.1, 613.1f): a static ability of the kind `costIncrease`, the only static ability a static ability gives.
         | (Extract<Ability, { readonly kind: 'static' }> & {
             readonly static: Extract<StaticEffect, { readonly kind: 'costIncrease' }>;
+          })
+        // Dancer's Chakrams (CR 604.1, 613.1f, 613.8): "Equipped creature ... has \"Other commanders you control get +2/+2 and have lifelink,\"": a "+N/+N" or a keyword the
+        // permanent that has the ability gives to a group (a filter subject, "other" and "you" read against that permanent and its controller). `derive` reads it from the abilities the
+        // permanent has after layer 6 and applies it in a second pass, so a creature that loses all abilities loses what it gave.
+        | (Extract<Ability, { readonly kind: 'static' }> & {
+            readonly static: Extract<StaticEffect, { readonly kind: 'modifyPt' | 'grantKeyword' }>;
           });
     }
   /**

@@ -32,6 +32,7 @@ import {
 } from '../keyword/protection';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
+import { QUOTED_GROUP_STATIC } from './granted-group-static';
 import { QUOTED_ABILITY } from './quoted';
 import { AND_RESTRICTION, type RestrictionSubject, restrictionEffects } from './restriction-words';
 import { QUOTED_COST_INCREASE } from './skybonder';
@@ -158,6 +159,7 @@ const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
   QUOTED_ABILITY,
   QUOTED_COST_INCREASE,
+  QUOTED_GROUP_STATIC,
   QUOTED,
   BASE_PT,
   PROTECTION,
@@ -246,7 +248,13 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
           map(
             sequence(
               pattern(/(?: and |, and |, )/iu),
-              choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED_COST_INCREASE, QUOTED),
+              choice(
+                QUOTED_MANA,
+                QUOTED_ABILITY,
+                QUOTED_COST_INCREASE,
+                QUOTED_GROUP_STATIC,
+                QUOTED,
+              ),
             ),
             ([, what]) => what,
           ),
@@ -398,6 +406,9 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     // CR 508.1a, 506.3 (Vow of Duty): the creature may not attack the Aura's controller or the planeswalkers they control.
     "Enchanted creature can't attack you or planeswalkers you control.",
     "Enchanted creature gets +2/+2, has vigilance, and can't attack you or planeswalkers you control.",
+    // Dancer's Chakrams (CR 604.1, 613.1f): a static ability the creature is given, that gives "+N/+N" and a keyword to a group.
+    'Equipped creature has "Other commanders you control get +2/+2 and have lifelink."',
+    'Equipped creature gets +2/+2, has lifelink and "Other commanders you control get +2/+2 and have lifelink," and is a Performer in addition to its other types.',
   ],
   rejects: [
     'Enchanted creature gets +2/+2',
@@ -474,6 +485,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
+    'Other commanders you control get +2/+2 and have lifelink.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
     'Zombie tokens you control get +1/+1.',
@@ -535,6 +547,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.token-permanents',
       // D-369: "Zombie tokens you control have hexproof and menace."
       'noun.subtype-token-permanents',
+      // Dancer's Chakrams (CR 903.3): "Other commanders you control get +2/+2 and have lifelink." (the ability that card gives, read as its own).
+      'noun.other-commanders-you-control',
     ],
     'plural',
   ),
