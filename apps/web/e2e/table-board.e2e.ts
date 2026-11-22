@@ -86,3 +86,18 @@ for (const [width, height] of [
     await page.screenshot({ path: `test-results/table-3-opponents-${width}.png` });
   });
 }
+
+test('the flow cell holds the turn box and the decision dock, at the bottom right', async ({
+  page,
+}) => {
+  await show(page, 3);
+  const flow = page.getByTestId('table-flow');
+  await expect(flow.locator('.pnl-tracker')).toBeVisible();
+  await expect(flow.locator('.game-dock-slot .dec-bar')).toBeVisible();
+  const box = await flow.boundingBox();
+  const me = await page.locator('.table-me').boundingBox();
+  if (box === null || me === null) throw new Error('no boxes');
+  expect(box.x).toBeGreaterThanOrEqual(me.x + me.width - 1);
+  expect(box.y).toBeGreaterThanOrEqual(me.y - 1);
+  await page.screenshot({ path: 'test-results/table-flow.png' });
+});

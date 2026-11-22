@@ -6,7 +6,7 @@ import { scenario } from '@commander-arena/engine/testing';
 import { createRoot } from 'react-dom/client';
 import { GameHost } from '../../src/game/host';
 import { createAppStore } from '../../src/store';
-import { TableBoard } from '../../src/ui/board/TableBoard';
+import { TableGame } from '../../src/ui/board/TableGame';
 import { StoreProvider } from '../../src/ui/store-context';
 import '../../src/styles.css';
 
@@ -47,11 +47,7 @@ export function mount(opponents: number): void {
   document.body.replaceChildren(container);
   createRoot(container).render(
     <StoreProvider store={{ ...store, getInitialState: store.getState }}>
-      <div className="game" data-testid="game-table-board">
-        <div className="game-main">
-          <TableBoard />
-        </div>
-      </div>
+      <TableGame />
     </StoreProvider>,
   );
 }

@@ -31,3 +31,36 @@
 .table-flow {
   border-left: 1px solid var(--border, currentColor);
 }
+
+/*
+ * The flow cell: the same pieces as the floating panels of the 1v1 screen (styles.css `.turn-panel`,
+ * `.game > .pnl-tracker`), laid out in a column that scrolls inside the cell.
+ */
+.table-flow {
+  gap: var(--gap);
+  padding: var(--gap);
+  overflow-y: auto;
+  background: var(--bg-raised);
+}
+.table-flow .pnl-tracker {
+  flex: none;
+}
+.table-flow .pnl-stack {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.table-flow .pnl-stack-list {
+  overflow: visible;
+}
+/* An empty stack is out of sight, and shows while a card is dragged (the place a spell is dropped). */
+:root:not([data-dnd-stack]) .table-flow .pnl-stack-empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
