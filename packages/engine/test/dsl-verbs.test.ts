@@ -367,7 +367,7 @@ describe('verbs: the log, events and checks', () => {
 
   test('startGame wraps createGame and keeps its events', () => {
     const deck = { cards: [], commanders: [] as number[] };
-    expect(() => startGame({ seed: 1, decks: [deck] })).toThrow(/exactly two seats/);
+    expect(() => startGame({ seed: 1, decks: [deck] })).toThrow(/two to four seats/);
   });
 
   test('view hides what the viewer may not know', () => {
