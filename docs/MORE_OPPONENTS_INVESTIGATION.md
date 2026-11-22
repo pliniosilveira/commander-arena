@@ -10,7 +10,7 @@ Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not
 
 Open, in order of work:
 
-1. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported.
+1. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported. A first batch of 13 passes (`packages/cards/test/scenario-three-seat-cards.test.ts`: opponent counts, "for each opponent", the monarch, goad, a vote, myriad); the vote, Ring, `eachAttackedPlayer` and `opponentsWithMore` cards are next.
 2. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
 3. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
 4. #422: latent single-opponent sites, low priority; #363 closes when its children do.
