@@ -150,7 +150,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
 - `nextSpellPayLife`: hand, command zone only.
-- A granted static ability that gives something to other permanents (Dancer's Chakrams: "Other commanders you control get +2/+2") is not run: `grantAbility` takes only mana, activated, triggered and cost-increase abilities.
 - The AI's attack and block estimates use power, so they misjudge creatures that assign combat damage by toughness (`assignsDamageByToughness`); the engine's damage is correct.
 - Speed (CR 702.179) is not built; no duration lasts one combat.
 - "The copy targets that token" (CR 707.10e) takes the first legal token; no choice is asked.
