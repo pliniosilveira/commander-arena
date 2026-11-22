@@ -40,8 +40,11 @@ export function bugReportBody(input: BugReportInput): string {
     .join('\n\n');
 }
 
+/** The label the issue gets (GitHub's "new issue" page applies an existing label named in `labels`). */
+export const REPORT_LABEL = 'possible-issue';
+
 const issueUrl = (title: string, body: string): string =>
-  `${ISSUES_NEW_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  `${ISSUES_NEW_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(REPORT_LABEL)}`;
 
 export function bugReport(input: BugReportInput): BugReport {
   const title = reportTitle(input.description);

@@ -21,6 +21,12 @@ describe('bug report', () => {
     expect(r.body).not.toContain('Stack');
   });
 
+  it('asks GitHub to label the issue possible-issue, also in the short link', () => {
+    expect(bugReport(input()).url).toContain('&labels=possible-issue');
+    const long = bugReport(input({ description: 'x'.repeat(9000) }));
+    expect(long.url).toContain('&labels=possible-issue');
+  });
+
   it('leaves the screenshot note out when there is no screenshot', () => {
     expect(bugReport(input({ screenshot: false })).body).not.toContain('paste it below');
   });
