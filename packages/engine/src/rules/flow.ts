@@ -27,6 +27,7 @@ import {
   expireEndOfCombatEffects,
   expireEndOfTurnEffects,
   expireEndStepEffects,
+  expireLeftSeatTurnStartEffects,
   expireTurnStartEffects,
   expireUntapStepEffects,
 } from './continuous';
@@ -537,10 +538,16 @@ export function afterDiscard(input: GameState, prior: readonly GameEvent[] = [])
 }
 
 function startNextTurn(state: GameState): Outcome {
-  const order = seatsInOrder(state, (state.turn.activeSeat + 1) % state.seats.length);
-  const next = order[0];
+  const count = state.seats.length;
+  const first = (state.turn.activeSeat + 1) % count;
+  const next = seatsInOrder(state, first)[0];
   if (next === undefined) return { state, events: [] };
-  return startTurn(state, next);
+  // CR 800.4m (issue 507): the seats passed over on the way to `next` have left the game, and the turn each would have had begins now, so what lasted until it ends.
+  const passedOver: SeatId[] = [];
+  for (let i = 0; i < count && (first + i) % count !== next; i += 1)
+    passedOver.push((first + i) % count);
+  const expired = expireLeftSeatTurnStartEffects(state, passedOver);
+  return join({ state: expired.state, events: expired.events }, startTurn(expired.state, next));
 }
 
 /** The seat holding priority passes (CR 117.3d, 117.4). */

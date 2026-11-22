@@ -568,6 +568,24 @@ export function expireTurnStartEffects(
 }
 
 /**
+ * CR 800.4m (issue 507): when a player leaves the game, an effect that lasts until that player's next turn "will last until that turn would have begun": it neither ends at once nor
+ * lasts for ever. `seats` are the players who have left the game and whose turn has just been passed over, so each of their `turnStart` effects ends now. A seat that has left takes
+ * no turn, so it never reaches the turn count the effect waits for, which is why `expireTurnStartEffects` cannot end them. The effects that last until a point in that turn
+ * (`turnEnd`, `endStep`) are left as they are: see ROADMAP.
+ */
+export function expireLeftSeatTurnStartEffects(
+  state: GameState,
+  seats: readonly SeatId[],
+): { state: GameState; events: GameEvent[] } {
+  if (seats.length === 0) return { state, events: [] };
+  return dropEffects(
+    state,
+    (e) =>
+      typeof e.until === 'object' && e.until.kind === 'turnStart' && seats.includes(e.until.seat),
+  );
+}
+
+/**
  * "Doesn't untap during its controller's next untap step" (D-517, CR 502.3, 611.2a): as the untap step of `active` has run, each permanent the
  * effects of that duration named is let go if `active` controls it (it was tapped or not: the step has come), and an effect with no permanent left ends.
  */
