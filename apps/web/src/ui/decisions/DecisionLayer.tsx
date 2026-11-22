@@ -23,6 +23,7 @@ import { DockPanel, ModalOverlay } from './Overlays';
 import { useOpponentThinking } from './thinking';
 import { initialUi, type UiState, uiFor } from './ui-state';
 import { withManaUntap } from './untap-mana';
+import { ZoneDecisionProvider } from './zone-decision';
 
 /** Decisions whose overlay shows the engine's refusal itself; the toast would repeat it. */
 const INLINE_ERROR = new Set(['payMana', 'assignDamage']);
@@ -174,10 +175,21 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
       </div>
     );
 
+  // The Zone Picker (a graveyard or a library opened for a choice) shows the prompt, the count and
+  // the buttons of the bar itself, with the card that asks.
+  const zoneDecision =
+    interactive &&
+    !model.bar.inOverlay &&
+    (pending?.kind === 'targets' || pending?.kind === 'chooseCards')
+      ? { bar: model.bar, source: pending.source }
+      : null;
+
   return (
     <div className="decision-layer" ref={layer}>
       <InteractionProvider value={interaction}>
-        <DragProvider plan={dnd}>{children}</DragProvider>
+        <ZoneDecisionProvider value={zoneDecision}>
+          <DragProvider plan={dnd}>{children}</DragProvider>
+        </ZoneDecisionProvider>
       </InteractionProvider>
       {overlayProps === null ? null : <ModalOverlay {...overlayProps} />}
       {showToast ? (
