@@ -326,7 +326,7 @@ Every place where the engine knowingly differs from the CR, in one table (cleanu
 | DEV-19 | 106.7, 106.12 | Replacement effects of mana and triggers on tapping for mana beyond the built ones (audit) | Known limit (audit) | none |
 | DEV-20 | 701.23i, 101.4 | A search by several players is performed one after the other; nothing is observable with two seats (audit) | Known limit (audit) | none; ROADMAP |
 | DEV-21 | 702.137 | Spectacle: "opponent" excludes a player who left; no ruling was checked (audit) | Known limit (audit) | none |
-| DEV-22 | 903.4b, 201.3, 903.5e | Commander deck rules not enforced: a commander that chooses its colors, interchangeable names, the rulebreaker rule, Companion, partner variants (audit) | Known limit (audit, refused honestly) | none |
+| DEV-22 | 903.4b, 201.3, 903.5e | Commander deck rules not enforced: a commander that chooses its colors, interchangeable names, the rulebreaker rule, partner variants (audit) | Known limit (audit, refused honestly) | none |
 | DEV-23 | 601.2b, 605.3b | A mana ability that sacrifices a permanent of a kind (Kykar's "Sacrifice a Spirit") gave up the permanent the engine chose; the web had no way to name it | Fixed (the player chooses by hand, at priority and when paying; auto-pay is the planner's default) | D-222 |
 | DEV-24 | 616.1, 616.1f, 614.5 | The replacement effects of the creation of tokens (Draconic Visitor, Stridehangar Automaton) applied oldest first without asking the creator | Fixed (asked when the order changes the result) | D-221 |
 | DEV-25 | 701.50b, 701.50c | Several permanents that connive at once: no APNAP order or choice, and a permanent that had left was skipped | Fixed | D-223 |
