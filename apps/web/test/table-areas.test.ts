@@ -12,30 +12,40 @@ function viewWith(seats: number, viewer = 0): GameView {
 }
 
 describe('tableAreas', () => {
+  const words = (key: string, n: number) => Array.from({ length: n }, () => key).join(' ');
+
   test('three opponents share the top row in equal thirds', () => {
     const t = tableAreas(3);
-    expect(t.columns).toBe(6);
+    expect(t.columns).toBe(30);
     expect(t.cells.filter((c) => c.row === 1)).toEqual([
-      { key: 'opp1', row: 1, col: 1, colSpan: 2 },
-      { key: 'opp2', row: 1, col: 3, colSpan: 2 },
-      { key: 'opp3', row: 1, col: 5, colSpan: 2 },
+      { key: 'opp1', row: 1, col: 1, colSpan: 10 },
+      { key: 'opp2', row: 1, col: 11, colSpan: 10 },
+      { key: 'opp3', row: 1, col: 21, colSpan: 10 },
     ]);
   });
 
   test('two opponents share the top row in equal halves', () => {
     const t = tableAreas(2);
     expect(t.cells.filter((c) => c.row === 1)).toEqual([
-      { key: 'opp1', row: 1, col: 1, colSpan: 3 },
-      { key: 'opp2', row: 1, col: 4, colSpan: 3 },
+      { key: 'opp1', row: 1, col: 1, colSpan: 15 },
+      { key: 'opp2', row: 1, col: 16, colSpan: 15 },
     ]);
   });
 
-  test.each([2, 3])('with %i opponents you take 4 columns and the flow cell 2 below', (n) => {
-    const bottom = tableAreas(n).cells.filter((c) => c.row === 2);
-    expect(bottom).toEqual([
-      { key: 'me', row: 2, col: 1, colSpan: 4 },
-      { key: 'flow', row: 2, col: 5, colSpan: 2 },
-    ]);
+  test.each([2, 3])(
+    'with %i opponents you take 22 of 30 columns and the flow cell 8 below',
+    (n) => {
+      const bottom = tableAreas(n).cells.filter((c) => c.row === 2);
+      expect(bottom).toEqual([
+        { key: 'me', row: 2, col: 1, colSpan: 22 },
+        { key: 'flow', row: 2, col: 23, colSpan: 8 },
+      ]);
+    },
+  );
+
+  test('the flow cell is a fifth narrower than the third of the width it had', () => {
+    const flow = tableAreas(3).cells.find((c) => c.key === 'flow');
+    expect((flow?.colSpan ?? 0) / 30).toBeCloseTo((2 / 6) * 0.8, 2);
   });
 
   test.each([2, 3])('the cells of %i opponents tile the grid without overlap', (n) => {
@@ -44,16 +54,16 @@ describe('tableAreas', () => {
       const used = t.cells
         .filter((c) => c.row === row)
         .flatMap((c) => Array.from({ length: c.colSpan }, (_, i) => c.col + i));
-      expect(used).toEqual([1, 2, 3, 4, 5, 6]);
+      expect(used).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
     }
   });
 
   test('grid-template-areas names every cell by its key', () => {
     expect(tableAreas(3).gridTemplateAreas).toBe(
-      '"opp1 opp1 opp2 opp2 opp3 opp3" "me me me me flow flow"',
+      `"${words('opp1', 10)} ${words('opp2', 10)} ${words('opp3', 10)}" "${words('me', 22)} ${words('flow', 8)}"`,
     );
     expect(tableAreas(2).gridTemplateAreas).toBe(
-      '"opp1 opp1 opp1 opp2 opp2 opp2" "me me me me flow flow"',
+      `"${words('opp1', 15)} ${words('opp2', 15)}" "${words('me', 22)} ${words('flow', 8)}"`,
     );
   });
 

@@ -91,16 +91,19 @@ function HandCard({
 export function Hand({
   cards,
   active = false,
+  cardScale = 1,
 }: {
   cards: readonly ObjectView[];
   /** It is the viewer's turn: the hand is part of the highlighted area (D-153). */
   active?: boolean;
+  /** A factor on the size of the cards (and their text), on top of the text size setting: the table board draws them smaller. */
+  cardScale?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const width = size === null ? 800 : size.width;
   // The cards never shrink to fit: a long hand scrolls sideways instead.
-  const scale = useTextScale();
+  const scale = useTextScale() * cardScale;
   const cardW = Math.round(BASE_W * scale);
   const step = handStep(
     cards.length,

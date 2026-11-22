@@ -101,3 +101,19 @@ test('the flow cell holds the turn box and the decision dock, at the bottom righ
   expect(box.y).toBeGreaterThanOrEqual(me.y - 1);
   await page.screenshot({ path: 'test-results/table-flow.png' });
 });
+
+test('the table board has no scroll buttons, a smaller hand and a narrower flow cell', async ({
+  page,
+}) => {
+  await show(page, 3);
+  // The scroll buttons are not drawn, though the rows still hold their arrows' place in the DOM.
+  for (const button of await page.locator('.board-scroll').all()) await expect(button).toBeHidden();
+  // A card of the hand is 85 percent of the 1v1 board's: 122 px at the default text size (1.2).
+  const card = await page.locator('.board-hand-card').first().boundingBox();
+  expect(card?.width ?? 0).toBeCloseTo(0.85 * 122 * 1.2, -1);
+  // The flow cell is about 8 of 30 columns of the board (it was 2 of 6).
+  const board = await page.locator('.table-board').boundingBox();
+  const flow = await page.getByTestId('table-flow').boundingBox();
+  expect((flow?.width ?? 0) / (board?.width ?? 1)).toBeCloseTo(8 / 30, 1);
+  await page.screenshot({ path: 'test-results/table-polish.png' });
+});
