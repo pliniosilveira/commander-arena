@@ -241,7 +241,9 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   // once, and as a card put into the graveyard (no destruction for a regeneration shield to replace).
   const inGraveyardBatch = new Set([...toGraveyard, ...fallenAuras].map((o) => o.id));
   const destroyedOnce = destroyed.filter((o) => !inGraveyardBatch.has(o.id));
-  const batch = [...toGraveyard, ...fallenAuras, ...destroyedOnce];
+  // CR 800.4a: an object of a seat that lost in this check left the game with it, so it has no zone change to perform.
+  const stillInGame = (o: GameObject) => state.objects[o.id] !== undefined;
+  const batch = [...toGraveyard, ...fallenAuras, ...destroyedOnce].filter(stillInGame);
   if (batch.length > 1) {
     const departedTogether = batch.map((obj) => obj.id);
     for (const obj of batch) state = recordLastKnown(state, obj, departedTogether);
@@ -249,7 +251,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   // CR 704.5m: an Aura is put into the graveyard, not destroyed; the creature it enchanted may be
   // dying in the same check, which the next pass of the caller's loop settles.
   let waiting: NewDecision | null = null;
-  for (const obj of [...toGraveyard, ...fallenAuras, ...destroyedOnce].sort(order)) {
+  for (const obj of batch.sort(order)) {
     // CR 701.19a, 704.5g (D-120): a regeneration shield replaces the destruction by lethal damage or
     // deathtouch with: remove the damage, tap it, remove it from combat. So does the Umbra armor of an Aura
     // on it (CR 702.89a, D-417): remove the damage and destroy the Aura. Only a destruction is replaced,
