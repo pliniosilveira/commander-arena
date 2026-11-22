@@ -1786,6 +1786,26 @@
   border-radius: var(--radius);
 }
 
+.board-zone-other-face {
+  position: relative;
+}
+
+.board-zone-other-image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-zone-other-image.is-loaded {
+  opacity: 1;
+}
+
 .board-zone-other-head {
   display: flex;
   gap: 6px;
