@@ -1,7 +1,7 @@
 /**
  * "An opponent separates those cards into two piles", "an opponent chooses one of those piles", "choose an opponent. That player copies the spell" with more than one opponent left in
  * the game (CR 608.2d, 702.144a, 801.5b): the CR gives the choice of which opponent to the controller of the effect (its example for a limited range of influence has the caster choose
- * Carissa to make the choice). The effects that name one (`asksWhichOpponent`) are preceded by a `chooseOpponent` instruction that asks the controller, a `chooseOption` decision of
+ * Carissa to make the choice; "a card of an opponent's choice" is the same). The effects that name one (`asksWhichOpponent`) are preceded by a `chooseOpponent` instruction that asks the controller, a `chooseOption` decision of
  * purpose `chooseOpponent`, unless only one opponent is left; the answer is `ResolutionContext.chosenOpponent`, which the effect reads as it starts (`opponentOf`) and the resolution
  * forgets afterwards.
  */
@@ -27,6 +27,9 @@ export function asksWhichOpponent(effect: Effect): boolean {
       return true;
     case 'copySpell':
       return effect.copier === 'opponent';
+    // Issue 509 (Tasigur: "a nonland card of an opponent's choice"): the opponent who chooses the card is the controller's choice too (CR 801.5a example).
+    case 'moveToZone':
+      return effect.objects.kind === 'choose' && effect.objects.chosenBy === 'opponent';
     default:
       return false;
   }
