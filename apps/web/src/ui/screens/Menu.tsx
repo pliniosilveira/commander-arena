@@ -114,8 +114,17 @@ export function Menu() {
       </header>
 
       <section className="scr-card" aria-labelledby="scr-play-h">
-        <div className="scr-card-head">
-          <h2 id="scr-play-h">Play a game</h2>
+        <h2 id="scr-play-h">Play a game</h2>
+        <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
+        <div className="scr-card-row">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => setStep('player')}
+          >
+            Start game
+          </button>
           <div className="scr-seg-group">
             <span id="scr-opponents-label" className="scr-seg-label">
               Number of opponents
@@ -136,15 +145,6 @@ export function Menu() {
             </fieldset>
           </div>
         </div>
-        <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
-        <button
-          type="button"
-          className="scr-btn scr-btn-primary"
-          disabled={!seedValid || !installed}
-          onClick={() => setStep('player')}
-        >
-          Start game
-        </button>
         {!installed && (
           <p className="scr-note scr-no-precon" role="note">
             No precon is installed yet. You can still import your own deck.
