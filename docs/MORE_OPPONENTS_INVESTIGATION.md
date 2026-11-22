@@ -4,11 +4,11 @@ Status: the issues of phases 1 to 3 are closed except the three of "Open" below;
 
 ## Where we are
 
-The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done apart from one open ruling; the board (phase 4) has started, and performance and soak (phase 5) are not started.
+The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done, with no ruling left open; the board (phase 4) has started, and performance and soak (phase 5) are not started.
 
 Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass; the list at the end got its first rows from the phase 2 audit), a battle whose protector left the game getting a new one (#432, CR 704.5y), #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first), the AI fixes #481 and #483, the probe follow-ups (#453) and the latent single-opponent sites (#422), and the audit of about 380 more cards ("Phase 2 audit" below; its one failure was #506).
 
-Open: #508 (Mindblade Render with two opponents hit in one combat), which needs a ruling on the Comprehensive Rules before a test can be written and fills the table at the end. #507 (a goad that never ended when its goader left the game) is fixed by CR 800.4m, and #509 (Tasigur asked the first opponent only) by #520.
+Open: nothing from the audit. #507 (a goad that never ended when its goader left the game) is fixed by CR 800.4m, #508 (Mindblade Render with two opponents hit in one combat) by the official ruling of the card (the ability triggers once however many opponents are dealt damage), and #509 (Tasigur asked the first opponent only) by #520.
 
 Not audited: the view code. `ai:arena --seats 3|4` plays a table (#482), and `tools/perf/derive-bench.ts` measures only two seats. The probe tables above are from before #414 to #418 and have not been rerun.
 
@@ -243,10 +243,10 @@ About 40 places in `packages/ai/src` look up another seat. Wrong with several op
 
 The inventory ran the parser over the golden corpus and the precon snapshots (2,210 distinct cards, 2,169 supported). 483 supported cards have text that reads opponents or players (opponent, each player, monarch, vote, goad, myriad and similar); 104 were already in a 3-seat test, and the other 379 were grouped by the engine primitive they depend on and played with 3 and 4 seats, with a 1v1 control. Support is proven per primitive, so each group has one scenario per primitive and names the cards it stands for.
 
-Result: one failure and three rulings; two of them have been settled since (#507, #509).
+Result: one failure and three rulings, all settled since (#507, #508, #509).
 
 - Failure, fixed (#506, #510): "each other opponent" also damaged the opponent the event was about, because `readsTriggerPlayer` did not know `eachOtherOpponent`. It happened with two seats as well.
-- Needs a ruling (#507, #508, #509): the CR text was not available in the audit, so every rule number in it was UNVERIFIED. #507 was settled afterwards with the text of CR 800.4m (an effect that lasts until the next turn of a player who left lasts until that turn would have begun); #509 was fixed in #520; #508 is the row of the table below.
+- Needs a ruling (#507, #508, #509): the CR text was not available in the audit, so every rule number in it was UNVERIFIED. #507 was settled afterwards with the text of CR 800.4m (an effect that lasts until the next turn of a player who left lasts until that turn would have begun); #508 with the official rulings of Mindblade Render (Scryfall, source wotc, 2018-06-08), which the CR does not decide; #509 was fixed in #520.
 - Passed: monarch, goad by Aura and by spell, "defending player", "target opponent" with two opponents, "for each opponent", opponent counts, each-opponent drain and damage, APNAP order of sacrifices, discards and "may" choices, tempting offers, gifts, myriad, encore, annihilator, emblems, and the opponents who left the game.
 - Limits: part of the cards of each group were not in the corpus and ran with SYNTHETIC cost and power or toughness; a primitive that was read but not run (for instance a card whose text only repeats a tested primitive) counts as covered by reading, not by a test. The per-primitive notes and the scratch tests were not kept in the repository, so a card of the corpus is not guaranteed to have its own test.
 
@@ -256,4 +256,3 @@ Support is one flag per card today, so a card here is marked supported in the go
 
 | Card | What fails with 3 or more seats | Issue |
 | --- | --- | --- |
-| Mindblade Render | Two Warriors that hit two opponents in one combat give two triggers; whether the plural wording should give one is not verified. | #508 |

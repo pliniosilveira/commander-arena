@@ -1664,6 +1664,21 @@ function batchTriggers(
         continue;
       }
       if (trigger.kind !== 'combatDamageBatch' || damage.length === 0) continue;
+      if (trigger.to === 'opponents') {
+        found.push(
+          ...opponentsCombatBatchTriggers(
+            state,
+            events,
+            damage,
+            id,
+            index,
+            ability,
+            trigger,
+            candidate,
+          ),
+        );
+        continue;
+      }
       const seats = [...new Set(damage.map((d) => d.seat))];
       for (const seat of seats) {
         if (trigger.to === 'opponent' && seat === candidate.controller) continue;
@@ -1725,6 +1740,68 @@ function batchTriggers(
     }
   }
   return found;
+}
+
+/**
+ * Issue 508 (Mindblade Render, CR 510.2, 603.2c): "whenever your opponents are dealt combat damage, if any of that damage was dealt by a Warrior": once for the whole event, not once for
+ * each opponent. All combat damage is dealt at once (CR 510.2) and the official ruling of the card says the ability "triggers only once, regardless of how many opponents were dealt
+ * damage, how much damage they were dealt, or how many Warriors dealt damage". The sources are any player's: a Warrior of one opponent that damages another opponent counts. The
+ * damage the controller of the ability is dealt is not part of it (they are not their own opponent). `damage` is all the damage those sources dealt to the opponents.
+ */
+function opponentsCombatBatchTriggers(
+  state: GameState,
+  events: readonly GameEvent[],
+  damage: readonly { readonly source: ObjectId; readonly seat: SeatId; readonly amount: number }[],
+  id: ObjectId,
+  index: number,
+  ability: TriggeredAbility,
+  trigger: Extract<Trigger, { kind: 'combatDamageBatch' }>,
+  candidate: Candidate,
+): PendingTrigger[] {
+  // CR 725.2: "while you're the monarch" is true as the damage is dealt, before the monarch moves to the player who dealt it.
+  if (trigger.whileMonarch === true) {
+    const moved = events.find((e) => e.kind === 'monarchChanged');
+    const monarchThen = moved?.kind === 'monarchChanged' ? moved.from : state.monarch;
+    if (monarchThen !== candidate.controller) return [];
+  }
+  const toOpponents = damage.filter((d) => d.seat !== candidate.controller);
+  const sources = [...new Set(toOpponents.map((d) => d.source))].filter((source) => {
+    const obj = objectOrLki(state, source);
+    return (
+      obj !== null &&
+      matchesFilter(state, obj, trigger.what, {
+        controller: candidate.controller,
+        source: candidate.id,
+      })
+    );
+  });
+  if (sources.length < (trigger.atLeast ?? 1)) return [];
+  const [first] = toOpponents;
+  if (first === undefined) return [];
+  const context = { controller: candidate.controller, source: id };
+  if (
+    (ability.interveningIf !== undefined &&
+      !evaluateCondition(state, ability.interveningIf, context)) ||
+    (ability.triggerCondition !== undefined &&
+      !evaluateCondition(state, ability.triggerCondition, context))
+  ) {
+    return [];
+  }
+  const dealt = toOpponents
+    .filter((d) => sources.includes(d.source))
+    .reduce((sum, d) => sum + d.amount, 0);
+  return [
+    {
+      source: id,
+      controller: candidate.controller,
+      abilityIndex: index,
+      ability,
+      subject: null,
+      player: first.seat,
+      cards: sources,
+      ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
+    },
+  ];
 }
 
 /**

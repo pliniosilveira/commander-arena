@@ -1206,7 +1206,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the source of the damage is on the battlefield: no zone, owner or stackKind',
         );
       }
-      if (!isOneOf(t.to, ['player', 'opponent', 'you'])) {
+      if (!isOneOf(t.to, ['player', 'opponent', 'opponents', 'you'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       if (t.whileMonarch !== undefined && t.whileMonarch !== true) {

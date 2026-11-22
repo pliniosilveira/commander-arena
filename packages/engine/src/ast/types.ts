@@ -5373,12 +5373,15 @@ export type Trigger =
    * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged and `triggerDamage` (issue 103, "that damage")
    * all the combat damage those sources dealt to that player in the event. The
    * damage of a first strike step and of the regular step are different events: each can trigger it.
+   * `opponents` (issue 508, Mindblade Render, "whenever your opponents are dealt combat damage, if any of that damage was dealt by a Warrior"): once for the whole event if any opponent
+   * of the controller was dealt combat damage by sources `what` names, however many opponents, sources or points of damage (the official ruling of that card); `triggerDamage` is all of it
+   * and there is no `triggerPlayer`, as with `damageBatch` to `opponents`. The sources may be any player's, so `what` carries no controller.
    */
   | {
       readonly kind: 'combatDamageBatch';
       readonly what: ObjectFilter;
       /** `you`: only the controller of this ability ("deal combat damage to you", Tamiyo, Upriser Crowned); the others as above. */
-      readonly to: 'player' | 'opponent' | 'you';
+      readonly to: 'player' | 'opponent' | 'opponents' | 'you';
       readonly atLeast?: number;
       /**
        * "... while you're the monarch" (CR 725.2, 603.2: part of the event): the controller of this ability was the monarch as the damage was dealt, before the damage moved the

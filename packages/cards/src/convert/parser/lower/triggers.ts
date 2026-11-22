@@ -301,8 +301,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'dealsCombatDamage': {
       const what = whatOf(t, ctx);
-      // `you` is the recipient of the batch trigger only (`combatDamageBatch`).
-      if (t.damaged === 'you') return failure(t);
+      // `you` and `opponents` are recipients of the batch trigger only (`combatDamageBatch`).
+      if (t.damaged === 'you' || t.damaged === 'opponents') return failure(t);
       return what.ok
         ? ok({ kind: 'dealsCombatDamage', what: what.value, to: t.damaged ?? 'any' })
         : what;
@@ -339,7 +339,10 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // for each player damaged in one damage event, the creatures named by a filter of the controller's permanents.
       if (
         t.subject === undefined ||
-        (t.damaged !== 'player' && t.damaged !== 'opponent' && t.damaged !== 'you')
+        (t.damaged !== 'player' &&
+          t.damaged !== 'opponent' &&
+          t.damaged !== 'opponents' &&
+          t.damaged !== 'you')
       ) {
         return failure(t);
       }
