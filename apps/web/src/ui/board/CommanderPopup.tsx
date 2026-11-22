@@ -43,19 +43,30 @@ export function CommanderPopup({
         {popup.label === 'You' ? 'Your commander' : `${popup.label}'s commander`}
       </h2>
       <div className="table-cmdr-main">
-        {popup.commanders.length === 0 ? (
-          <p className="board-dim">The commander is not in a zone you can see.</p>
-        ) : (
-          popup.commanders.map((o, i) => (
-            <figure className="table-cmdr-card" key={o.id} data-object-id={o.id}>
-              <CardFace object={o} variant="full" />
-              <figcaption className={(popup.taxes[i] ?? 0) > 0 ? '' : 'board-dim'}>
-                Commander tax +{popup.taxes[i] ?? 0}
-              </figcaption>
-            </figure>
-          ))
-        )}
-        <div className="table-cmdr-side">
+        <section className="table-cmdr-section" aria-labelledby="table-cmdr-h-commander">
+          <h3 className="table-cmdr-heading" id="table-cmdr-h-commander">
+            Commander
+          </h3>
+          {popup.commanders.length === 0 ? (
+            <p className="board-dim">The commander is not in a zone you can see.</p>
+          ) : (
+            popup.commanders.map((o, i) => (
+              <figure className="table-cmdr-card" key={o.id} data-object-id={o.id}>
+                <CardFace object={o} variant="full" />
+                <figcaption className={(popup.taxes[i] ?? 0) > 0 ? '' : 'board-dim'}>
+                  Commander tax +{popup.taxes[i] ?? 0}
+                </figcaption>
+              </figure>
+            ))
+          )}
+        </section>
+        <section
+          className="table-cmdr-section table-cmdr-damage"
+          aria-labelledby="table-cmdr-h-damage"
+        >
+          <h3 className="table-cmdr-heading" id="table-cmdr-h-damage">
+            Commander Damage Taken
+          </h3>
           <p
             className={popup.damageTaken > 0 ? 'board-warn' : 'board-dim'}
             title={`Commander damage taken from every commander together. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`}
@@ -73,7 +84,7 @@ export function CommanderPopup({
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       </div>
       <div className="dec-buttons">
         {castable.map((o) => (

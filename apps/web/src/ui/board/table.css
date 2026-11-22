@@ -99,11 +99,34 @@
   text-align: center;
 }
 .table-cmdr-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+}
+/* Two sections with a vertical line between them: the commander, and the damage taken. */
+.table-cmdr-section {
+  min-width: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+}
+.table-cmdr-section:first-child {
+  padding-left: 0;
+}
+.table-cmdr-section + .table-cmdr-section {
+  align-items: stretch;
+  padding-right: 0;
+  border-left: 1px solid var(--line);
+}
+.table-cmdr-heading {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
 .table-cmdr-card {
   margin: 0;
@@ -117,14 +140,7 @@
   width: 244px;
   height: 340px;
 }
-.table-cmdr-side {
-  flex: 1 1 220px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.table-cmdr-side p {
+.table-cmdr-section p {
   margin: 0;
 }
 .table-cmdr-list {

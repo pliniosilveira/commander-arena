@@ -168,8 +168,25 @@ test('the strip keeps only the commander chip, and it opens the commander popup'
   await chip.click();
   const popup = page.getByRole('dialog', { name: 'Opponent 1 commander' });
   await expect(popup).toBeVisible();
-  // The card, large, and its tax.
-  await expect(popup.locator('.table-cmdr-card')).toHaveCount(1);
+  // Two sections side by side with a vertical line between them: the commander, and the damage taken.
+  const sections = popup.locator('.table-cmdr-section');
+  await expect(sections).toHaveCount(2);
+  await expect(sections.nth(0).getByRole('heading', { name: 'Commander' })).toBeVisible();
+  await expect(
+    sections.nth(1).getByRole('heading', { name: 'Commander Damage Taken' }),
+  ).toBeVisible();
+  const [left, right] = await sections.evaluateAll((els) =>
+    els.map((el) => ({
+      x: el.getBoundingClientRect().x,
+      border: getComputedStyle(el).borderLeftWidth,
+    })),
+  );
+  expect(right?.x ?? 0).toBeGreaterThan(left?.x ?? 0);
+  expect(right?.border).toBe('1px');
+  expect(left?.border).toBe('0px');
+  // The card, large, and its tax, in the first section; the others in the second.
+  await expect(sections.nth(0).locator('.table-cmdr-card')).toHaveCount(1);
+  await expect(sections.nth(1).locator('.table-cmdr-list li')).toHaveCount(3);
   await expect(popup.getByText('Commander tax +0')).toBeVisible();
   // Every other player, in seat order, with their commander.
   const rows = popup.locator('.table-cmdr-list li');
