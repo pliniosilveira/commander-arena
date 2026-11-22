@@ -1,20 +1,16 @@
 # Adding more opponents: investigation (3 and 4 seats)
 
-Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for later. Nothing here is a decision; the SPEC (section 2, "v2") only says that nothing in v1 may assume exactly two players. This note records what was read in the code and what the first probe found, so the next step starts from facts. Counts and timings depend on the machine and the seeds listed below.
+Status: the issues of phases 1 to 3 are closed except the three of "Open" below; the board (phase 4) has started (see "Where we are"). Nothing here is a decision; the SPEC (section 2, "v2") only says that nothing in v1 may assume exactly two players. This note records what was read in the code and what the first probe found, so the next step starts from facts. Counts and timings depend on the machine and the seeds listed below.
 
 ## Where we are
 
-Engine work (phases 1 and 2) is well advanced; the AI is being fixed, and performance and the UI are not started.
+The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done apart from three open rulings; the board (phase 4) has started, and performance and soak (phase 5) are not started.
 
-Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
+Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass; the list at the end got its first rows from the phase 2 audit), a battle whose protector left the game getting a new one (#432, CR 704.5y), #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first), the AI fixes #481 and #483, the probe follow-ups (#453) and the latent single-opponent sites (#422), and the audit of about 380 more cards ("Phase 2 audit" below; its one failure was #506).
 
-Open, in order of work:
+Open: three issues that need a ruling on the Comprehensive Rules before a test can be written, and which also fill the table at the end: #507 (a goad that never ends when its goader left the game), #508 (Mindblade Render with two opponents hit in one combat) and #509 (Tasigur asks the first opponent only).
 
-1. #481 and #483: the AI aims player-targeted spells at the best opponent, and its defensive estimates stop assuming one opponent; measure them with `ai:arena --seats 3`.
-2. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-3. #422: latent single-opponent sites, low priority; #363 closes when its children do.
-
-Not audited: the AI and the view code. `ai:arena --seats 3|4` plays a table (#482), and `tools/perf/derive-bench.ts` measures only two seats. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
+Not audited: the view code. `ai:arena --seats 3|4` plays a table (#482), and `tools/perf/derive-bench.ts` measures only two seats. The probe tables above are from before #414 to #418 and have not been rerun.
 
 ## Question
 
@@ -225,7 +221,7 @@ Each is a pull request; the 1v1 screen must not change until step 4.
 - The rejected actions (`You cannot pay that cost`, Overflowing Basin with an empty pool): #453.
 - The AI for 3 and 4 seats: audited in #452; the fixes are #479 to #483.
 - Inventory of `'opponent'`: done for the rules; the parser is left as card-pipeline limits (see "Audit of the one-opponent assumptions").
-- Scenario DSL with 3 and 4 seats.
+- The scenario DSL plays 3 and 4 seats (`scenario({ seats })`), with limits seen in the phase 2 audit: `expect.canBlock` and the default attack target throw with more than two seats (`testing/expect-combat.ts`, `testing/combat-refs.ts`), `concede()` works only while that seat holds the decision, and a second concede with the default invariant check fails with "card cN has 0 objects".
 
 ## Audit of the one-opponent assumptions (step 3, #363)
 
@@ -243,9 +239,23 @@ The combat data model already supports several defenders (each attacker stores i
 
 About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured yet: the decision time with more permanents; `ai:arena --seats 3|4` (#482) is the tool for it.
 
+## Phase 2 audit: the cards with 3 and 4 seats
+
+The inventory ran the parser over the golden corpus and the precon snapshots (2,210 distinct cards, 2,169 supported). 483 supported cards have text that reads opponents or players (opponent, each player, monarch, vote, goad, myriad and similar); 104 were already in a 3-seat test, and the other 379 were grouped by the engine primitive they depend on and played with 3 and 4 seats, with a 1v1 control. Support is proven per primitive, so each group has one scenario per primitive and names the cards it stands for.
+
+Result: one failure and three open rulings.
+
+- Failure, fixed (#506, #510): "each other opponent" also damaged the opponent the event was about, because `readsTriggerPlayer` did not know `eachOtherOpponent`. It happened with two seats as well.
+- Needs a ruling (#507, #508, #509): the rows of the table below. The CR text was not available in the audit, so every rule number in it is UNVERIFIED.
+- Passed: monarch, goad by Aura and by spell, "defending player", "target opponent" with two opponents, "for each opponent", opponent counts, each-opponent drain and damage, APNAP order of sacrifices, discards and "may" choices, tempting offers, gifts, myriad, encore, annihilator, emblems, and the opponents who left the game.
+- Limits: part of the cards of each group were not in the corpus and ran with SYNTHETIC cost and power or toughness; a primitive that was read but not run (for instance a card whose text only repeats a tested primitive) counts as covered by reading, not by a test. The per-primitive notes and the scratch tests were not kept in the repository, so a card of the corpus is not guaranteed to have its own test.
+
 ## Cards not supported for more than one opponent
 
 Support is one flag per card today, so a card here is marked supported in the golden corpus and is known not to work with 3 or 4 seats. 1v1 support is unchanged. Add a card with what fails and the issue that fixes it; delete the row when the fix is merged. The 3-seat re-test that fills this list is #420.
 
 | Card | What fails with 3 or more seats | Issue |
 | --- | --- | --- |
+| Goad cards that goad with a spell or an ability (Taunting Sliver and others) | The goaded creature stays forced to attack for the rest of the game when the goading player leaves the game, because the effect ends at that player's next turn. Needs a ruling. | #507 |
+| Tasigur, the Golden Fang | "Of an opponent's choice" always asks the first opponent in turn order. Needs a ruling. | #509 |
+| Mindblade Render | Two Warriors that hit two opponents in one combat give two triggers; whether the plural wording should give one is not verified. | #508 |
