@@ -10,6 +10,8 @@ A modal that lists the cards of one zone and, while the game asks the player a q
 
 ![The Zone Picker opened for a library search](images/zone-picker-library.png)
 
+![The Zone Picker opened for the top cards looked at](images/zone-picker-look.png)
+
 ### What it shows
 
 - **The list** (left): the cards of the zone as whole cards (200 px wide, the `full` card face), in a grid that scrolls inside the panel. A legal choice glows, a chosen one has a ring; a click chooses or takes it back. Hovering a card shows it in the preview panel, as everywhere else. Drag and drop of a card with flashback still works.
@@ -23,15 +25,16 @@ Without a pending question (a player opens a graveyard, the exile or the command
 `Board.tsx` opens it by itself (`questionZoneToOpen` in `board/target-zone.ts`) when:
 
 - every legal target of a targets question is a card in one graveyard (#23); or
-- the player searches their own library (a `chooseCards` question with purpose `search`): the list is the matching cards the engine shows the searcher, titled "Search your library". The library itself stays hidden.
+- the player searches their own library (a `chooseCards` question with purpose `search`): the list is the matching cards the engine shows the searcher, titled "Search your library". The library itself stays hidden; or
+- the player looks at or reveals the top cards of their library and may take one (purpose `lookTake`, Hideaway and the like): the cards that can be taken are the list, and the others looked at follow as dimmed text cards marked "Cannot be taken" (their faces only, as the dock shows them). Titled "Cards looked at" or "Cards revealed".
 
 It closes by itself when the question is answered. The player can also open any zone from its button, and reopen the question's picker from the dock ("Open graveyard", "Open library").
 
 ### Where it is meant to be used
 
 - Selections from a graveyard (targets, such as Meren of Clan Nel Toth's end step ability).
-- Selections from a library by a search (above). The dock's card list stays beside it, so both show the same choice.
-- Not yet: the other `chooseCards` purposes (look at the top cards, discard, put on top, behold), which still use the dock's list alone.
+- Selections from a library by a search, and the top cards looked at (above). The dock's card list stays beside it, so both show the same choice.
+- Not yet: the other `chooseCards` purposes (discard, put on top, behold, look and split, free cast), which still use the dock's list alone.
 
 ### Rules for changing it
 

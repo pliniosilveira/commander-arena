@@ -9,9 +9,12 @@
 import type { ObjectView } from '@commander-arena/engine';
 import { useEffect, useRef } from 'react';
 import { FACE_DOWN_NAME, isHiddenFaceDown } from '../../game/later-text';
+import type { LookedCard } from '../../game/looked-cards';
 import { useZoneDecision } from '../decisions/zone-decision';
 import { useDraggable } from '../dnd/DragProvider';
+import { typeLine } from '../format';
 import { useInteraction } from '../interaction';
+import { ManaCost } from '../mana';
 import { useApp, useStaticNotes } from '../store-context';
 import { CardFace } from './CardFace';
 import { useHoverPreview } from './hover';
@@ -63,9 +66,29 @@ function ZoneCard({ object }: { object: ObjectView }) {
   );
 }
 
+/** A card looked at that cannot be taken: its face only, not clickable. */
+function OtherCard({ card }: { card: LookedCard }) {
+  const hover = useHoverPreview(card.id);
+  return (
+    <div className="board-zone-card board-zone-other" data-looked-other={card.id} {...hover}>
+      <div className="board-zone-other-face">
+        <p className="board-zone-other-head">
+          <b>{card.name}</b>
+          <ManaCost cost={card.manaCost} />
+        </p>
+        <p className="board-dim">{typeLine(card)}</p>
+        {card.oracleText === '' ? null : <p className="board-zone-other-text">{card.oracleText}</p>}
+      </div>
+      <span className="board-zone-marks">Cannot be taken</span>
+    </div>
+  );
+}
+
 export interface ZoneViewerProps {
   readonly title: string;
   readonly objects: readonly ObjectView[];
+  /** Cards looked at that cannot be taken (a "look at the top cards" question), after the others. */
+  readonly others?: readonly LookedCard[];
   readonly onClose: () => void;
 }
 
@@ -111,7 +134,7 @@ function QuestionSide() {
   );
 }
 
-export function ZoneViewer({ title, objects, onClose }: ZoneViewerProps) {
+export function ZoneViewer({ title, objects, others = [], onClose }: ZoneViewerProps) {
   const close = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -159,10 +182,17 @@ export function ZoneViewer({ title, objects, onClose }: ZoneViewerProps) {
         </header>
         <div className="board-modal-main">
           <div className="board-modal-body">
-            {objects.length === 0 ? (
+            {objects.length === 0 && others.length === 0 ? (
               <p className="board-modal-empty">Nothing here.</p>
             ) : (
-              objects.map((o) => <ZoneCard key={o.id} object={o} />)
+              <>
+                {objects.map((o) => (
+                  <ZoneCard key={o.id} object={o} />
+                ))}
+                {others.map((c) => (
+                  <OtherCard key={c.id} card={c} />
+                ))}
+              </>
             )}
           </div>
           <QuestionSide />

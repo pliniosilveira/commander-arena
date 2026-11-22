@@ -30,18 +30,20 @@ export interface QuestionZone {
 }
 
 /**
- * The Zone Picker a question opens by itself: the graveyard of #23, or the cards of a library search
- * (the library is hidden, so the picker lists the matching cards the engine shows the searcher).
+ * The Zone Picker a question opens by itself: the graveyard of #23, the cards of a library search
+ * (the library is hidden, so the picker lists the matching cards the engine shows the searcher), or
+ * the cards looked at or revealed from the top of the library.
  */
 export function questionZoneToOpen(view: GameView): QuestionZone | null {
   const graveyard = targetZoneToOpen(view);
   if (graveyard !== null) return { zone: graveyard, name: 'graveyard' };
   const pending = view.pending;
   if (pending?.kind !== 'chooseCards' || pending.seat !== view.viewer) return null;
-  if (pending.zone !== 'library' || pending.purpose !== 'search' || pending.legal.length === 0) {
-    return null;
-  }
-  return { zone: { kind: 'cards' }, name: 'library' };
+  if (pending.zone !== 'library' || pending.legal.length === 0) return null;
+  if (pending.purpose === 'search') return { zone: { kind: 'cards' }, name: 'library' };
+  // "Look at the top six cards ... you may take one": the cards that can be taken, and the others beside them.
+  if (pending.purpose === 'lookTake') return { zone: { kind: 'cards' }, name: 'cards' };
+  return null;
 }
 
 /** True when both name the same zone to list. */

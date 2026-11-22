@@ -97,6 +97,15 @@ describe('the zone to open for a library search', () => {
     expect(questionZoneToOpen(search({}, 1))).toBeNull();
     expect(questionZoneToOpen(search({ zone: 'hand' }))).toBeNull();
     expect(questionZoneToOpen(search({ purpose: 'putOnTop' }))).toBeNull();
+    expect(questionZoneToOpen(search({ purpose: 'discard' }))).toBeNull();
+  });
+
+  test('the top cards looked at open the same list, named "cards"', () => {
+    expect(questionZoneToOpen(search({ purpose: 'lookTake' }))).toEqual({
+      zone: { kind: 'cards' },
+      name: 'cards',
+    });
+    expect(questionZoneToOpen(search({ purpose: 'lookTake', legal: [] }))).toBeNull();
   });
 
   test('sameZone tells zones of one kind and seat apart', () => {
