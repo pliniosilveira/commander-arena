@@ -1,6 +1,6 @@
 ---
 name: fix-issue
-description: Take one open GitHub issue labelled possible-issue (the ones the find-issue routine reports), confirm it, fix it with a test, open a pull request and close the issue once the fix is on main. Use when asked to run the fix-issue routine, to fix a possible issue, or by a scheduled task that fires it.
+description: Take one open GitHub issue labelled possible-issue (the ones the find-issue routine reports), confirm it, fix it with a test, open a pull request and close the issue once the fix is on main; with no such issue it runs find-issue to look for one. Use when asked to run the fix-issue routine, to fix a possible issue, or by a scheduled task that fires it.
 ---
 
 # Fix issue routine
@@ -14,8 +14,8 @@ A `possible-issue` is **not yet confirmed**. Reproduce it before you change code
 ## Step 0: find the work
 
 1. Close finished issues first (see "After the merge").
-2. List the open issues: `gh api 'repos/pliniosilveira/commander-arena/issues?labels=possible-issue&state=open&per_page=100'` (page with `per_page=100&page=N`; entries with a `pull_request` key are not issues). Skip an issue labelled `fix-issue:in-progress` whose branch or pull request had activity in the last 6 hours. If none is left, say "nothing to do" in one line and stop.
-3. Budget: read the weekly use as `deck-support` Step 0.2 does and apply the same day table. At or over the limit, or unreadable: stop with one line.
+2. Budget (before anything else, find-issue included): read the weekly use as `deck-support` Step 0.2 does and apply the same day table. At or over the limit, or unreadable: stop with one line.
+3. List the open issues: `gh api 'repos/pliniosilveira/commander-arena/issues?labels=possible-issue&state=open&per_page=100'` (page with `per_page=100&page=N`; entries with a `pull_request` key are not issues). Skip an issue labelled `fix-issue:in-progress` whose branch or pull request had activity in the last 6 hours. If none is left, run the `find-issue` skill (Skill tool) once instead, and stop after it: the issue it reports is fixed by the next firing, not this one. Its own rules apply (time box, at most one issue, read-only).
 4. **Choose one.** Highest severity first (`severity:critical`, `high`, `medium`, `low`; no severity label counts as low), then the oldest. The owner may name an issue in chat: take that one.
 5. Read `AGENTS.md`, the CR rules the issue cites (`pnpm rule <n>`; CR text as `AGENTS.md`, section "Network", says; without it say "CR text not checked" in the pull request), and the files the issue names.
 
@@ -49,4 +49,4 @@ The owner merges. When the pull request is merged (the `pull_request.closed` eve
 
 - Public text, written for a stranger: no personal details, no e-mail addresses, no session links, no model names.
 - Never merge, never push to `main`, never change `docs/SPEC.md`.
-- One firing, one issue. When done, stop with one line: the issue, the result (fixed with PR, not a bug, blocked, nothing to do).
+- One firing, one issue. When done, stop with one line: the issue, the result (fixed with PR, not a bug, blocked, or find-issue run with its result).

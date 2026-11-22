@@ -82,7 +82,7 @@ Scripts under `tools/` are TypeScript run with `node file.ts` (Node type strippi
 | `tools/public` | `preflight.ts`: the check of the tracked files for what must not be in a public repository (run it before every push). |
 | `tools/precon` | `pnpm precon:from-issue` and `pnpm precon:from-comment` (the snapshot of a precon issue and its decoding), `pnpm precon:snapshot`: the card-data snapshot of a precon, from the bulk file and a decklist of `decks/` (D-137). |
 | `.claude/skills/deck-support` | The routine that builds a complete "deck support" issue from anyone, oldest first, when the token budget allows (D-251); `tools/corpus/check-issue.ts` and `.github/workflows/deck-support-triage.yml` decide whether the issue is complete. |
-| `.claude/skills/find-issue`, `.claude/skills/fix-issue` | find-issue reports one `possible-issue` per run; fix-issue takes one, reproduces it, fixes it with a test, opens a pull request and closes the issue after the merge. |
+| `.claude/skills/find-issue`, `.claude/skills/fix-issue` | find-issue reports one `possible-issue` per run; fix-issue takes one, reproduces it, fixes it with a test, opens a pull request and closes the issue after the merge, and runs find-issue when none is open. |
 | `decks/` | Real decklists the owner supplies, one `.txt` per deck, for `pnpm corpus:decks`; `README.md` says how. |
 | `docs/` | `SPEC.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `RULES_COVERAGE.md`, `CARD_SUPPORT_PLAYBOOK.md`, `CORPUS.md`, `rules/` (CR version record, bulletins). Working notes (status reports, build checklists, design drafts) are not kept in the repository: they live in the issue, the pull request description and its comments, and the git history has the earlier ones. |
 
