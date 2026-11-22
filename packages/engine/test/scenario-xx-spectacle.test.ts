@@ -408,3 +408,47 @@ describe('determinism and replay', () => {
     expect(state.seats[1]?.lifeLostThisTurn).toBe(3);
   });
 });
+
+describe('an opponent who has left the game (three seats, issue 495)', () => {
+  // Policy: a player who has left the game is no longer an opponent (CR 102.2, 800.4a), so the life
+  // they lost does not enable Spectacle. The CR does not rule on this history; the choice is recorded in
+  // docs/RULES_COVERAGE.md (702.137a) and pinned here.
+  const boltFirst = (bolts: number) => {
+    const g = scenario({ seats: 3 })
+      .seat(0)
+      .hand(RAIDER, ...Array<string>(bolts).fill('Lightning Bolt'))
+      .battlefield('Mountain', { count: 3 + bolts })
+      .seat(1)
+      .seat(2)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    return g;
+  };
+
+  test('life lost by a living opponent enables the spectacle option', () => {
+    const g = boltFirst(1);
+    g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.legal(0, { cast: RAIDER, alternative: 'spectacle' });
+  });
+
+  test('life lost by an opponent who then left does not', () => {
+    const g = boltFirst(1);
+    g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.act(0).pass();
+    g.act(1).concede();
+    g.expect.illegal(0, { cast: RAIDER, alternative: 'spectacle' });
+  });
+
+  test('another opponent who is still in the game and lost life does', () => {
+    const g = boltFirst(2);
+    g.act(0).cast('Lightning Bolt[1]', { targets: [{ player: 2 }], pay: true });
+    g.passAll();
+    g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
+    g.act(0).pass();
+    g.act(1).concede();
+    g.passAll();
+    g.expect.legal(0, { cast: RAIDER, alternative: 'spectacle' });
+  });
+});
