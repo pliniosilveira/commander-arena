@@ -6,18 +6,17 @@ Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for l
 
 Engine work (phases 1 and 2) is well advanced; the AI, `ai:arena`, performance and the UI are not started.
 
-Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), and part 1 of #418 (a discard by several players collects every choice first).
+Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), a battle whose protector left the game getting a new one (#432, CR 704.5y), and part 1 of #418 (a discard by several players collects every choice first).
 
 Open, in order of work:
 
 1. #421: 3-seat tests for annihilator, `reselectAttack`, goad and commander damage (tests only; the cheapest, and the one most likely to find a bug).
-2. #432: a battle whose protector left the game (CR 704.5y).
-3. #418, parts 2 and 3: `exileOwnGraveyardCard` and `playersMay`, then `search` (CR 701.23i).
-4. #419: Myriad with 3 or more seats (three cards wait for it, see the last table).
-5. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported.
-6. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
-7. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-8. #422: latent single-opponent sites, low priority; #363 closes when its children do.
+2. #418, parts 2 and 3: `exileOwnGraveyardCard` and `playersMay`, then `search` (CR 701.23i).
+3. #419: Myriad with 3 or more seats (three cards wait for it, see the last table).
+4. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported.
+5. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
+6. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
+7. #422: latent single-opponent sites, low priority; #363 closes when its children do.
 
 Not audited: the AI and the view code. `ai:arena` still plays two seats, and `tools/perf/derive-bench.ts` measures only two. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
 
