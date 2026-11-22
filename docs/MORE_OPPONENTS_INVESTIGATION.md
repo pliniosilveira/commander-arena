@@ -6,16 +6,15 @@ Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for l
 
 Engine work (phases 1 and 2) is well advanced; the AI, `ai:arena`, performance and the UI are not started.
 
-Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), a battle whose protector left the game getting a new one (#432, CR 704.5y), and parts 1 and 2 of #418 (a discard, an exile from a graveyard or a "may" by several players collects every choice or answer first).
+Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
 
 Open, in order of work:
 
-1. #418, part 3: `search` (CR 701.23i).
-2. #419: Myriad with 3 or more seats (three cards wait for it, see the last table).
-3. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported.
-4. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
-5. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-6. #422: latent single-opponent sites, low priority; #363 closes when its children do.
+1. #419: Myriad with 3 or more seats (three cards wait for it, see the last table).
+2. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported.
+3. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
+4. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
+5. #422: latent single-opponent sites, low priority; #363 closes when its children do.
 
 Not audited: the AI and the view code. `ai:arena` still plays two seats, and `tools/perf/derive-bench.ts` measures only two. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
 
@@ -186,7 +185,6 @@ Read-only audit of `packages/engine/src/rules/`. The selector layer is already c
 
 | Finding | Where | Issue |
 | --- | --- | --- |
-| A search by several players acts after each choice, not after all (CR 101.4, 701.23i); discard, exile from a graveyard and "may" wait for the last choice now (parts 1 and 2 of #418) | `effects.ts` | #418 |
 | Myriad is a no-op with 3 or more seats | `ast/features.ts:1587` | #419 |
 | Latent `resolvePlayers(...)[0]` and `[0]` sites, none reachable from real card text | `amounts.ts`, `effects.ts`, `legality.ts`, `control-effects.ts` | #422 |
 
