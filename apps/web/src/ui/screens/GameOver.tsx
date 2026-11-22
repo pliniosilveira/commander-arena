@@ -2,11 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { HUMAN } from '../../game/protocol';
 import { useActions, useApp } from '../store-context';
-import { lossReason, OUTCOME_TITLE, outcomeFor } from './game-over-model';
+import { eliminationNote, lossReason, OUTCOME_TITLE, outcomeFor } from './game-over-model';
 import './screens.css';
 
 export function GameOver() {
   const result = useApp((s) => s.snapshot?.view.result ?? null);
+  const seatCount = useApp((s) => s.snapshot?.view.seats.length ?? 2);
   const log = useApp((s) => s.log);
   const { backToMenu } = useActions();
   const [dismissed, setDismissed] = useState(false);
@@ -19,7 +20,8 @@ export function GameOver() {
 
   if (result === null) return null;
   const outcome = outcomeFor(result, HUMAN);
-  const reason = lossReason(log, result, HUMAN);
+  const reason = lossReason(log, result, HUMAN, seatCount);
+  const note = eliminationNote(outcome, seatCount);
 
   if (dismissed) {
     return (
@@ -45,6 +47,7 @@ export function GameOver() {
           {OUTCOME_TITLE[outcome]}
         </h2>
         {reason !== null && <p className="scr-over-reason">{reason}</p>}
+        {note !== null && <p className="scr-over-reason">{note}</p>}
         <div className="scr-over-actions">
           <button
             type="button"
