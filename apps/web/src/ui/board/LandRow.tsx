@@ -13,7 +13,6 @@ import { clusterWidth, groupLands, type LandColumn, type LandSpec, layoutLands }
 import { useMeasure } from './measure';
 import { GAP, PAD_Y, type RowProps } from './row-shape';
 import { Tile } from './Tile';
-import { useRowScroll } from './use-row-scroll';
 
 /** The space between neighbouring clusters of the land row, a little wider than a plain row's. */
 export const LAND_GAP = GAP + 6;
@@ -96,9 +95,6 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
     const layout = layoutLands(columns, size === null ? null : size.width, height, spec);
     return { columns, layout };
   }, [objects, attachments, size, scale, extraW]);
-  const { scroller, more, updateMore, scrollBy } = useRowScroll(
-    `${columns.length}|${layout.tile}|${size?.width}`,
-  );
   // The clusters hang from the top of one band, centred in the row as a whole.
   const pad = Math.max(0, Math.floor(((size?.height ?? 100) - layout.tile) / 2));
   const style = {
@@ -109,14 +105,13 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
   return (
     <div
       className={`board-row board-row-land${objects.length === 0 ? ' is-empty' : ''}`}
-      ref={ref}
       style={style}
       data-row="land"
     >
+      {/* Measures the visible width of the field (not the wide row): the layout fits the cards to it. */}
+      <div className="board-row-view" ref={ref} aria-hidden="true" />
       <div
         className="board-row-scroll"
-        ref={scroller}
-        onScroll={updateMore}
         data-overflow={layout.overflow}
         data-stacked={columns.some((c) => c.objects.length > 1)}
       >
@@ -132,26 +127,6 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
           />
         ))}
       </div>
-      {more.left && (
-        <button
-          type="button"
-          className="board-scroll board-scroll-left"
-          aria-label="Scroll lands left"
-          onClick={() => scrollBy(-240)}
-        >
-          ‹
-        </button>
-      )}
-      {more.right && (
-        <button
-          type="button"
-          className="board-scroll board-scroll-right"
-          aria-label="Scroll lands right"
-          onClick={() => scrollBy(240)}
-        >
-          ›
-        </button>
-      )}
     </div>
   );
 }
