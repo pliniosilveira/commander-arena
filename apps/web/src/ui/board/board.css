@@ -585,6 +585,10 @@
   align-items: center;
   justify-content: safe center;
   gap: 6px;
+  /* Empty room on both sides, half the row each: the row always scrolls, and the rightmost card can
+     be brought to the middle of the screen, clear of the stack panel on the right. The cards keep
+     their size (use-row-scroll.ts centres them at rest). */
+  padding-inline: 50%;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -1786,6 +1790,26 @@
   border-radius: var(--radius);
 }
 
+.board-zone-other-face {
+  position: relative;
+}
+
+.board-zone-other-image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-zone-other-image.is-loaded {
+  opacity: 1;
+}
+
 .board-zone-other-head {
   display: flex;
   gap: 6px;
@@ -2163,6 +2187,7 @@
   gap: 12px; /* LAND_GAP in LandRow.tsx */
   padding-top: var(--land-pad, 0px);
   padding-bottom: 0;
+  padding-inline: 50%;
 }
 
 .board-land-col {
