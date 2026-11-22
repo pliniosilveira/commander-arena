@@ -9,6 +9,7 @@
  * 704.5m an Aura attached to an illegal object or to nothing, 704.5n an Equipment attached to an
  * illegal permanent, 704.5p any other attached permanent (rules/attach.ts).
  * 704.5j the legend rule (rules/legend-rule.ts): a `choosePermanent` decision for the controller.
+ * 704.5y a battle whose protector can't be its protector (rules/battle-protector.ts): its controller chooses a new one, or it goes to its owner's graveyard.
  * 704.5g, 704.5h a regeneration shield replaces the destruction (rules/regenerate.ts, CR 701.19a).
  * 704.5s a Saga with as many lore counters as its final chapter number is sacrificed once none of
  * its chapter abilities is waiting or on the stack (rules/saga.ts; CR 714.4).
@@ -27,6 +28,7 @@ import {
 } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { duplicateRoles, illegalAttachments, illegalAuras, unattach } from './attach';
+import { newProtectorChoices, protectorDecision, setProtector } from './battle-protector';
 import { gainCitysBlessings } from './city-blessing';
 import { controllerOf } from './control';
 import { endLostControlEffects } from './control-effects';
@@ -158,6 +160,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const unattached = illegalAttachments(state); // CR 704.5n, 704.5p
   const legendary: LegendCandidate[] = []; // CR 704.5j
   const finishedSagas: GameObject[] = []; // CR 704.5s
+  const reprotected: { readonly object: GameObject; readonly seat: SeatId }[] = []; // CR 704.5y
 
   for (const obj of Object.values(state.objects)) {
     // CR 704.5d: a token in a zone other than the battlefield; an emblem is not one of those tokens, it stays in the command zone (CR 114.5, D-201).
@@ -194,6 +197,17 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       (obj.counters.defense ?? 0) === 0
     ) {
       toGraveyard.push(obj);
+    }
+    // CR 704.5y: a battle whose protector can't be its protector (left the game, or became its controller): its controller chooses another among their opponents; with none to
+    // choose, the battle is put into its owner's graveyard; with more than one the question is asked below, when nothing else was performed.
+    const protectors = newProtectorChoices(state, obj);
+    if (protectors !== null) {
+      const only = protectors[0];
+      if (protectors.length === 0) {
+        if (!toGraveyard.includes(obj)) toGraveyard.push(obj);
+      } else if (protectors.length === 1 && only !== undefined) {
+        reprotected.push({ object: obj, seat: only });
+      }
     }
   }
 
@@ -305,6 +319,13 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     performed = true;
   }
 
+  // CR 704.5y: the one player left who can protect a battle does so, and what attacked it stops attacking it.
+  for (const { object, seat } of reprotected) {
+    if (state.objects[object.id]?.zone !== 'battlefield') continue;
+    state = setProtector(state, object.id, seat);
+    performed = true;
+  }
+
   // 3. CR 704.5j: the legend rule is a choice, asked when nothing else was performed in this check;
   // the caller checks again after the answer. Then CR 903.9a: a commander that went to a graveyard
   // or exile since the last check. Entries that put a commander there during step 2 are handled on
@@ -314,6 +335,9 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   if (!performed) {
     const duplicates = legendRuleDecision(state, legendary);
     if (duplicates !== null) return { state, events, performed: false, decision: duplicates };
+    // CR 704.5y: the controller of a battle chooses its new protector among two or more opponents.
+    const protector = protectorDecision(state);
+    if (protector !== null) return { state, events, performed: false, decision: protector };
     const live = state.commanderWatch.filter((id) => {
       const o = state.objects[id];
       return o !== undefined && (o.zone === 'graveyard' || o.zone === 'exile');
