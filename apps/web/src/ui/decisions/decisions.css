@@ -1519,7 +1519,7 @@
   gap: 4px;
 }
 .dec-versus-table > .dec-versus-side {
-  width: 220px;
+  width: 190px;
   justify-self: auto;
 }
 .dec-versus-seat {
@@ -1528,7 +1528,7 @@
   gap: 4px;
 }
 .dec-versus-seat > .dec-versus-side {
-  width: 220px;
+  width: 190px;
   flex: 0 0 auto;
 }
 
