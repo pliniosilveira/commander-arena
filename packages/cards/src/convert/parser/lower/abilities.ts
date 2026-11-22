@@ -632,6 +632,24 @@ export function lowerKeyword(
       rule: 'keyword.deck-limit',
     };
   }
+  // CR 702.139a: "Companion — [condition]": a deck-construction line, no effect in a game; the condition is one of the closed set.
+  if (ability.name === 'companion') {
+    const [named] = ability.params;
+    if (ability.params.length !== 1 || named?.kind !== 'name') return failure(ability);
+    if (named.name !== 'noRepeatedManaSymbol') return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:companion']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: { kind: 'companion', condition: { kind: 'noRepeatedManaSymbol' } },
+        },
+      ],
+      rule: 'keyword.companion',
+    };
+  }
   if (ability.name === 'protection') return lowerProtection(ability);
   // A creature type ("Halflingcycling {4}", D-538) names its type in `quality`; the five land types and "basic land" are in the table.
   const typeSearch: ObjectFilter | undefined =
@@ -1225,6 +1243,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:fabricate',
   'keyword:partnerWith',
   'keyword:deckLimit',
+  'keyword:companion',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',

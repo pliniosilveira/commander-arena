@@ -281,6 +281,7 @@ describe('unmatched abilities', () => {
     expect(DEFAULT_RULES.map((r) => r.id)).toEqual([
       'keyword.partner-with',
       'keyword.deck-limit',
+      'keyword.companion',
       'keyword.line',
       'keyword.cycling',
       'keyword.typecycling',
