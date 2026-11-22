@@ -61,6 +61,8 @@ export function readsTriggerPlayer(ability: Ability): boolean {
     ) ||
       // Issue 159: "each opponent attacking that player" reads the player the trigger is about.
       JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
+      // Issue 506 (U.S.S. Prometheus): "each other opponent" leaves out the player the event is about, so the player must stay on the stack object.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"eachOtherOpponent"') ||
       JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"') ||
       JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerTurn"'))
   );
