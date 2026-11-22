@@ -197,7 +197,7 @@ test('the strip keeps only the commander chip, and it opens the commander popup'
   await expect(rows.nth(1)).toContainText('Giant Spider');
   await expect(rows.nth(2)).toContainText('Opponent 3');
   await expect(rows.nth(2)).toContainText('Grizzly Bears');
-  await expect(popup.getByText('Commander damage taken: 0')).toBeVisible();
+  await expect(popup.getByText('Total from all commanders: 0')).toBeVisible();
   await page.screenshot({ path: 'test-results/table-commander.png' });
   // Esc closes it.
   await page.keyboard.press('Escape');
@@ -211,6 +211,7 @@ test('your own commander popup shows its tax and a Cast button when it can be ca
   await page.locator('.table-me [data-commander-cta]').click();
   const popup = page.getByRole('dialog', { name: 'You commander' });
   await expect(popup).toBeVisible();
+  await expect(popup.getByRole('heading', { name: 'Your Commander' })).toBeVisible();
   await expect(popup.getByText('Commander tax +4')).toBeVisible();
   // Cast Isamaru: {W}; the scenario gives no white mana, so only the Close button is offered.
   await expect(popup.getByRole('button', { name: 'Close' })).toBeVisible();

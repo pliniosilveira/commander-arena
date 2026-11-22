@@ -4,7 +4,6 @@
  */
 .cmdr-cta {
   cursor: pointer;
-  padding-right: 4px;
   background: var(--bg-raised);
   border-color: color-mix(in srgb, var(--accent, var(--line)) 60%, var(--line));
   transition:
@@ -12,30 +11,11 @@
     border-color 0.12s ease,
     transform 0.12s ease;
 }
-/* A chevron at the right says the chip opens something. */
-.cmdr-cta-chevron {
-  flex: none;
-  align-self: stretch;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  margin-left: 2px;
-  font-size: 1.3rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--accent, var(--text-dim));
-  border-left: 1px solid var(--line);
-  transition: color 0.12s ease;
-}
 .cmdr-cta:hover,
 .cmdr-cta:focus-visible {
   background: color-mix(in srgb, var(--accent, var(--text)) 14%, var(--bg-raised));
   border-color: var(--accent, var(--text));
   transform: translateY(-1px);
-}
-.cmdr-cta:hover .cmdr-cta-chevron,
-.cmdr-cta:focus-visible .cmdr-cta-chevron {
-  color: var(--text);
 }
 .cmdr-cta:active {
   transform: translateY(0);
@@ -55,11 +35,6 @@
   max-height: 100%;
   overflow-y: auto;
   align-items: stretch;
-}
-.cmdr-title {
-  margin: 0;
-  font-size: 1.1rem;
-  text-align: center;
 }
 .cmdr-main {
   display: grid;
@@ -84,12 +59,11 @@
   border-left: 1px solid var(--line);
 }
 .cmdr-heading {
-  margin: 0;
-  font-size: 0.8rem;
+  margin: 0 0 4px;
+  font-size: 1.1rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  line-height: 1.2;
+  text-align: center;
 }
 .cmdr-card {
   margin: 0;

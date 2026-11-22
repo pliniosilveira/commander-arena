@@ -266,9 +266,6 @@ function CommanderCta({ object, onOpen }: { object: ObjectView; onOpen: () => vo
       <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
       <span className="board-cmdr-name">{object.name}</span>
       <CostDisplay object={object} />
-      <span className="cmdr-cta-chevron" aria-hidden="true">
-        ›
-      </span>
     </button>
   );
 }

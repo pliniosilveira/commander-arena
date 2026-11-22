@@ -40,14 +40,11 @@ export function CommanderPopup({
   const castable = popup.commanders.filter((o) => ix.clickable.has(o.id));
   return (
     <Dialog label={`${popup.label} commander`} className="cmdr-dialog">
-      <h2 className="cmdr-title">
-        {popup.label === 'You' ? 'Your commander' : `${popup.label}'s commander`}
-      </h2>
       <div className="cmdr-main">
         <section className="cmdr-section" aria-labelledby="cmdr-h-commander">
-          <h3 className="cmdr-heading" id="cmdr-h-commander">
-            Commander
-          </h3>
+          <h2 className="cmdr-heading" id="cmdr-h-commander">
+            {popup.label === 'You' ? 'Your Commander' : `${popup.label}'s Commander`}
+          </h2>
           {popup.commanders.length === 0 ? (
             <p className="board-dim">The commander is not in a zone you can see.</p>
           ) : (
@@ -62,14 +59,14 @@ export function CommanderPopup({
           )}
         </section>
         <section className="cmdr-section cmdr-damage" aria-labelledby="cmdr-h-damage">
-          <h3 className="cmdr-heading" id="cmdr-h-damage">
+          <h2 className="cmdr-heading" id="cmdr-h-damage">
             Commander Damage Taken
-          </h3>
+          </h2>
           <p
             className={popup.damageTaken > 0 ? 'board-warn' : 'board-dim'}
             title={`Commander damage taken from every commander together. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`}
           >
-            Commander damage taken: {popup.damageTaken}
+            Total from all commanders: {popup.damageTaken}
           </p>
           <ul className="cmdr-list" aria-label="The other players and their commanders">
             {popup.others.map((o) => (
