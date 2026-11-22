@@ -21,3 +21,49 @@ export const ZoneDecisionProvider = ZoneDecisionContext.Provider;
 export function useZoneDecision(): ZoneDecision | null {
   return useContext(ZoneDecisionContext);
 }
+
+/**
+ * The Zone Picker can be closed to look at the board and opened again while its question is pending,
+ * but the question can only be confirmed with it open. The decision layer owns this state: the board
+ * reports whether the picker of the question's zone is open and obeys a request to open it again;
+ * the layer disables Confirm while it is closed and offers the button that opens it.
+ */
+export interface ZoneGate {
+  /** True while the picker of the question's zone is open. */
+  readonly open: boolean;
+  setOpen(open: boolean): void;
+  /** Changes each time the player asks to open the picker again. */
+  readonly request: number;
+}
+
+const NO_GATE: ZoneGate = { open: false, setOpen: () => {}, request: 0 };
+
+const ZoneGateContext = createContext<ZoneGate>(NO_GATE);
+
+export const ZoneGateProvider = ZoneGateContext.Provider;
+
+export function useZoneGate(): ZoneGate {
+  return useContext(ZoneGateContext);
+}
+
+/** The bar while the picker is closed: Confirm and the other buttons wait, and one opens the picker. */
+export function barWhileClosed(bar: BarModel, zoneName: string, reopen: () => void): BarModel {
+  return {
+    ...bar,
+    buttons: [
+      ...bar.buttons.map((b) => ({
+        ...b,
+        disabled: true,
+        hint: `Open the ${zoneName} to choose and confirm`,
+      })),
+      {
+        key: 'open-zone',
+        label: `Open ${zoneName}`,
+        variant: 'secondary' as const,
+        disabled: false,
+        hint: null,
+        run: reopen,
+      },
+    ],
+  };
+}

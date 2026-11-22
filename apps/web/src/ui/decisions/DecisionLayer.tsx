@@ -6,6 +6,7 @@ import type { Action } from '@commander-arena/engine';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { untappableSources } from '../../store';
+import { targetZoneToOpen } from '../board/target-zone';
 import { attachDeps, startAndTarget } from '../dnd/attach-flow';
 import { type DndPlan, DragProvider, NO_DND } from '../dnd/DragProvider';
 import { dragSpec, resolveDrop } from '../dnd/model';
@@ -23,7 +24,7 @@ import { DockPanel, ModalOverlay } from './Overlays';
 import { useOpponentThinking } from './thinking';
 import { initialUi, type UiState, uiFor } from './ui-state';
 import { withManaUntap } from './untap-mana';
-import { ZoneDecisionProvider } from './zone-decision';
+import { barWhileClosed, ZoneDecisionProvider, ZoneGateProvider } from './zone-decision';
 
 /** Decisions whose overlay shows the engine's refusal itself; the toast would repeat it. */
 const INLINE_ERROR = new Set(['payMana', 'assignDamage']);
@@ -63,6 +64,9 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
     };
   }, [dockSlot]);
   const [stored, setStored] = useState<UiState>(() => initialUi(null));
+  // The Zone Picker of a question about one graveyard: open or closed, and "open it again" requests.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRequest, setPickerRequest] = useState(0);
 
   const pending = view?.pending ?? null;
   const ui = uiFor(stored, pending);
@@ -99,8 +103,18 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
     },
   };
 
-  const model =
+  const builtModel =
     view !== null && pending !== null ? buildModel(view, pending, ui, controller) : null;
+  // Confirm waits while the picker is closed: the choice is made with the cards in view.
+  const questionZone = view === null ? null : targetZoneToOpen(view);
+  const waitsForPicker = builtModel !== null && questionZone !== null && !pickerOpen;
+  const model =
+    builtModel !== null && waitsForPicker
+      ? {
+          ...builtModel,
+          bar: barWhileClosed(builtModel.bar, 'graveyard', () => setPickerRequest((n) => n + 1)),
+        }
+      : builtModel;
   const interactive = model !== null && !passing;
   // A land tapped for mana whose mana is unspent can be clicked to take the tap back (issue 19).
   const interaction = interactive
@@ -179,16 +193,21 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   // the buttons of the bar itself, with the card that asks.
   const zoneDecision =
     interactive &&
-    !model.bar.inOverlay &&
+    builtModel !== null &&
+    !builtModel.bar.inOverlay &&
     (pending?.kind === 'targets' || pending?.kind === 'chooseCards')
-      ? { bar: model.bar, source: pending.source }
+      ? { bar: builtModel.bar, source: pending.source }
       : null;
 
   return (
     <div className="decision-layer" ref={layer}>
       <InteractionProvider value={interaction}>
         <ZoneDecisionProvider value={zoneDecision}>
-          <DragProvider plan={dnd}>{children}</DragProvider>
+          <ZoneGateProvider
+            value={{ open: pickerOpen, setOpen: setPickerOpen, request: pickerRequest }}
+          >
+            <DragProvider plan={dnd}>{children}</DragProvider>
+          </ZoneGateProvider>
         </ZoneDecisionProvider>
       </InteractionProvider>
       {overlayProps === null ? null : <ModalOverlay {...overlayProps} />}

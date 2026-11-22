@@ -1724,7 +1724,7 @@
 }
 
 .board-modal-body {
-  --zone-card-w: 190px;
+  --zone-card-w: 200px;
   display: grid;
   flex: 1 1 auto;
   grid-template-columns: repeat(auto-fill, var(--zone-card-w));
@@ -1783,6 +1783,8 @@
      area (issue 59). */
   display: flex;
   flex-direction: column;
+  /* The whole card (the full variant) at the width of the grid's cell. */
+  --preview-card-w: var(--zone-card-w, 135px);
   width: var(--zone-card-w, 135px);
   height: auto;
   padding: 0;
@@ -1790,12 +1792,6 @@
   border: 0;
   text-align: left;
   cursor: default;
-}
-
-.board-zone-card > .board-card {
-  flex: none;
-  /* The top of the card, as in the hand: 135 wide over the shape of card-top.ts (123 / 135). */
-  height: calc(var(--zone-card-w, 135px) * 0.9111);
 }
 
 /*

@@ -9,7 +9,7 @@ import { GameHost } from '../src/game/host';
 import { createAppStore } from '../src/store';
 import { ZoneViewer } from '../src/ui/board/ZoneViewer';
 import type { BarModel } from '../src/ui/decisions/model';
-import { ZoneDecisionProvider } from '../src/ui/decisions/zone-decision';
+import { barWhileClosed, ZoneDecisionProvider } from '../src/ui/decisions/zone-decision';
 import { StoreProvider } from '../src/ui/store-context';
 import { OPPONENT } from './alt-costs-decks';
 
@@ -60,5 +60,20 @@ describe('Zone Picker', () => {
     expect(asking).toContain('Choose a target for the ability.');
     expect(asking).toContain('0 of 1 chosen');
     expect(asking).toContain('Confirm');
+  });
+});
+
+describe('Zone Picker gate', () => {
+  test('a closed picker holds every button back and offers to open it again', () => {
+    let opened = 0;
+    const held = barWhileClosed(bar, 'graveyard', () => {
+      opened += 1;
+    });
+    const confirm = held.buttons.find((b) => b.key === 'confirm');
+    const open = held.buttons.find((b) => b.key === 'open-zone');
+    expect(confirm?.disabled).toBe(true);
+    expect(open?.disabled).toBe(false);
+    open?.run();
+    expect(opened).toBe(1);
   });
 });

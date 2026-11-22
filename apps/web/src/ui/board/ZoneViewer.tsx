@@ -46,7 +46,7 @@ function ZoneCard({ object }: { object: ObjectView }) {
       }}
       {...hover}
     >
-      <CardFace object={object} variant="hand" />
+      <CardFace object={object} variant="full" />
       {badge !== null && <span className="board-ibadge">{badge}</span>}
       {fromGraveyard !== null && (
         <span className="board-zone-marks" data-graveyard-ability title={fromGraveyard.join(' ')}>

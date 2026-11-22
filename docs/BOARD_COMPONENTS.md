@@ -10,9 +10,9 @@ A modal that lists the cards of one zone and, while the game asks the player a q
 
 ### What it shows
 
-- **The list** (left): the cards of the zone as large cards (190 px wide), in a grid that scrolls inside the panel. A legal choice glows, a chosen one has a ring; a click chooses or takes it back. Hovering a card shows it in the preview panel, as everywhere else. Drag and drop of a card with flashback still works.
+- **The list** (left): the cards of the zone as whole cards (200 px wide, the `full` card face), in a grid that scrolls inside the panel. A legal choice glows, a chosen one has a ring; a click chooses or takes it back. Hovering a card shows it in the preview panel, as everywhere else. Drag and drop of a card with flashback still works.
 - **The question** (right, only while a targets or chooseCards question is pending): the card that asks (the spell or ability on the stack, drawn whole), the prompt ("Choose a target for ..."), the count ("0 of 1 chosen") and the buttons (Confirm, Cancel). They are the action bar's own model, so the dock and the picker always agree.
-- **Close (Esc)** closes the list only; the question stays pending and is answered from the dock or by opening the zone again.
+- **Close (Esc)** closes the list only, to look at the board; the question stays pending. While it is closed the dock's Confirm (and Enter) wait, and an "Open graveyard" button opens it again. A question can only be confirmed with the picker open (`ZoneGate` in `zone-decision.ts`, held by the decision layer).
 
 Without a pending question (a player opens a graveyard, the exile or the command zone to read it) the picker is the list alone.
 
