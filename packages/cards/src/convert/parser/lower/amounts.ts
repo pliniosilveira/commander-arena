@@ -679,6 +679,14 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'opponentCount' }, rule };
     }
+    case 'playerCount': {
+      // CR 102.1, 608.2c: the number of players the noun names ("each player who lost life this turn"), read as the amount is read.
+      const blocked = needs('playerCount');
+      if (blocked !== null) return blocked;
+      const of = playerSelectorOf(amount.of, ctx);
+      if (!of.ok) return of;
+      return { ok: true, value: { kind: 'playerCount', of: of.value }, rule };
+    }
     case 'chosenPlayerLead': {
       // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
       const blocked = needs('chosenPlayerLead');
@@ -1058,6 +1066,7 @@ export const AMOUNT_NEEDS = [
   'amount:sum',
   'amount:extreme',
   'amount:opponentCount',
+  'amount:playerCount',
   'amount:opponentsWithMore',
   'amount:chosenPlayerLead',
   'amount:thisWay',

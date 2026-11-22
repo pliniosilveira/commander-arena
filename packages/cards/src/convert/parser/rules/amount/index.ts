@@ -21,6 +21,7 @@ import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
@@ -514,6 +515,8 @@ export const AMOUNT_RULES = [
   ...SPELLS_CAST_EACH_AMOUNT_RULES,
   // Ahoy Mateys deck, group 1 (Malcolm): "for each opponent dealt damage".
   ...DAMAGED_PLAYERS_AMOUNT_RULES,
+  // Scions & Spellcraft deck, group A: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
+  ...PLAYERS_WHO_AMOUNT_RULES,
   ...CHOSEN_PLAYER_LEAD_AMOUNT_RULES,
   // Lock and Load (issue 121): "for each other instant and sorcery spell you've cast this turn".
   AMOUNT_FOR_EACH_OTHER_SPELL_CAST,

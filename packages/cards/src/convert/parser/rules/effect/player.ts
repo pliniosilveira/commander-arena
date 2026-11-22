@@ -496,6 +496,9 @@ export const PLAYER_SUBJECTS = [
   'noun.each-opponent-dealt-combat-damage-by-named',
   // Shatter the Sky: "each player who controls a creature with power 4 or greater draws a card".
   'noun.each-player-who-controls',
+  // Papalymo Totolymo: "each opponent who lost life this turn sacrifices a creature with the greatest power among creatures they control".
+  'noun.each-player-who-lost-life',
+  'noun.each-player-who-dealt-combat-damage',
   'noun.you-and-player',
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',

@@ -963,6 +963,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
     'combatDamagedByNamed',
+    // "Each opponent who lost life this turn", "your opponents who were dealt combat damage by ~ or a Dragon this turn" (CR 119.3, 120.2a).
+    'lostLifeThisTurn',
+    'combatDamagedThisTurn',
     // D-648: "that opponent" of a `playerAttacksOpponent` trigger.
     'triggerAttackedPlayer',
     'triggerDamagedPlayers',
@@ -1280,6 +1283,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
     'lifeGainedAndLostThisTurn',
+    // CR 119.3: "if a player lost 4 or more life this turn".
+    'aPlayerLostLifeThisTurn',
     // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
     'castFromGraveyardThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
@@ -1514,6 +1519,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
     'lifeTotalOf',
+    // CR 102.1: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
+    'playerCount',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
@@ -1922,6 +1929,10 @@ export const SELECTOR_KINDS = [
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
   'combatDamagedByNamed',
+  /** "Each opponent who lost life this turn" (CR 119.3): the players of a group who lost life this turn. */
+  'lostLifeThisTurn',
+  /** "Each of your opponents who was dealt combat damage by ~ or a Dragon this turn" (CR 120.2a, 510.2): the players of a group the turn log says that source hurt. */
+  'combatDamagedThisTurn',
   /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-648): the engine's `triggerAttackedPlayer`. */
   'triggerAttackedPlayer',
   /** "Each of those opponents" of a `damageBatch` trigger to your opponents (CR 603.2c): the engine's `triggerDamagedPlayers`. */
@@ -2289,6 +2300,8 @@ export const CONDITION_KINDS = [
   'lifeGainedThisTurn',
   /** "If you gained and lost life this turn" (D-593). */
   'lifeGainedAndLostThisTurn',
+  /** "If a player lost 4 or more life this turn" (CR 119.3, 603.4): the engine's `aPlayerLostLifeThisTurn`. */
+  'aPlayerLostLifeThisTurn',
   /** "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2): the engine's `castFromGraveyardThisTurn`. */
   'castFromGraveyardThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
@@ -2576,6 +2589,8 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** A player's current life total at resolution (CR 119.1). */
   'lifeTotalOf',
+  /** "For each player who lost life this turn" (CR 102.1, 608.2c): the engine's `playerCount` of a player selector. */
+  'playerCount',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */

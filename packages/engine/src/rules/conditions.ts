@@ -597,6 +597,9 @@ export function evaluateCondition(
           atLeast: 1,
         }) && getSeat(state, ctx.controller).lifeLostThisTurn > 0
       );
+    case 'aPlayerLostLifeThisTurn':
+      // CR 119.3: some player still in the game has lost at least that much life this turn (the seats' per-turn counters, reset as the turn ends).
+      return state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
       if (condition.ofTypes === undefined) {

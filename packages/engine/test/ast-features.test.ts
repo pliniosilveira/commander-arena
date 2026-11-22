@@ -182,6 +182,8 @@ describe('the dimensions', () => {
       'lifeGainedThisTurn',
       // D-591: life gain and life loss are both recorded this turn.
       'lifeGainedAndLostThisTurn',
+      // CR 119.3: "if a player lost 4 or more life this turn".
+      'aPlayerLostLifeThisTurn',
       // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
       'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".

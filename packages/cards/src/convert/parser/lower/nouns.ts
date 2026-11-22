@@ -69,6 +69,9 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   triggerDamagedPlayers: 'selector:triggerDamagedPlayers',
   // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
   combatDamagedByNamed: 'selector:combatDamagedByNamed',
+  // CR 119.3: "each opponent who lost life this turn"; CR 120.2a: "each opponent who was dealt combat damage by ~ this turn".
+  lostLifeThisTurn: 'selector:lostLifeThisTurn',
+  combatDamagedThisTurn: 'selector:combatDamagedThisTurn',
   // CR 102.1: "each player who controls a creature with power 4 or greater".
   eachPlayerControlling: 'selector:eachPlayerControlling',
 };
@@ -1473,6 +1476,41 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       }
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
+    }
+    case 'lostLifeThisTurn': {
+      // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.
+      if (noun.whoGroup === undefined) return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'lostLifeThisTurn', of: { kind: noun.whoGroup } });
+    }
+    case 'combatDamagedThisTurn': {
+      // CR 120.2a, 510.2: the players of the group dealt combat damage this turn by the permanent of the ability (an ability of a permanent: a spell is no source of combat damage it
+      // could name) or by a source of a kind, which the turn log keeps as card types, subtypes and controller.
+      if (noun.whoGroup === undefined) return failure(noun, []);
+      if (noun.damagedByThis !== true && noun.damageSource === undefined) return failure(noun, []);
+      if (noun.damagedByThis === true && ctx.owner !== 'ability') return failure(noun, []);
+      let by: ObjectFilter | undefined;
+      if (noun.damageSource !== undefined) {
+        const filter = lowerFilter(noun.damageSource);
+        if (!filter.ok) return filter;
+        const { types, subtypes, controller, ...rest } = filter.value;
+        if (Object.keys(rest).length > 0) return failure(noun, []);
+        by = {
+          ...(types === undefined ? {} : { types }),
+          ...(subtypes === undefined ? {} : { subtypes }),
+          ...(controller === undefined ? {} : { controller }),
+        };
+      }
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return (
+        blocked ??
+        ok({
+          kind: 'combatDamagedThisTurn',
+          of: { kind: noun.whoGroup },
+          ...(noun.damagedByThis === true ? { byThis: true as const } : {}),
+          ...(by === undefined ? {} : { by }),
+        })
+      );
     }
     case 'combatDamagedByNamed': {
       // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.

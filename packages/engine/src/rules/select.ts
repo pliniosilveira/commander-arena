@@ -1097,6 +1097,40 @@ export function resolvePlayers(
             (state.combatDamagedByNames?.[seat] ?? []).includes(selector.name),
         ),
       );
+    case 'lostLifeThisTurn':
+      // CR 119.3, 101.4: the players of the group who have lost life this turn, still in the game, in the order of CR 101.4.
+      return apnapOrder(
+        state,
+        resolvePlayers(state, selector.of, ctx, targets).filter(
+          (seat) => !getSeat(state, seat).hasLost && getSeat(state, seat).lifeLostThisTurn > 0,
+        ),
+      );
+    case 'combatDamagedThisTurn': {
+      // CR 120.2a, 510.2: the players of the group dealt combat damage this turn by the permanent of the ability or by a source of the kind, as it was when it dealt it.
+      const by = selector.by;
+      const damaged = new Set(
+        state.turnLog.combatDamaged
+          .filter(
+            (d) =>
+              (selector.byThis === true && ctx.source !== null && d.source === ctx.source) ||
+              (by !== undefined &&
+                (by.types === undefined || by.types.every((t) => d.types.includes(t))) &&
+                (by.subtypes === undefined || by.subtypes.every((t) => d.subtypes.includes(t))) &&
+                (by.controller === undefined ||
+                  by.controller === 'any' ||
+                  (by.controller === 'you'
+                    ? d.controller === ctx.controller
+                    : d.controller !== ctx.controller))),
+          )
+          .map((d) => d.player),
+      );
+      return apnapOrder(
+        state,
+        resolvePlayers(state, selector.of, ctx, targets).filter(
+          (seat) => !getSeat(state, seat).hasLost && damaged.has(seat),
+        ),
+      );
+    }
     case 'giftRecipient': {
       // CR 702.174a (D-135): "the chosen player": the opponent the gift was promised to, read from the spell, from the
       // permanent that came from it, or from last-known information once either has left (CR 113.7a).
@@ -1137,6 +1171,8 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'couldntSacrificeThisWay' ||
     sel.kind === 'attackedPlayers' ||
     sel.kind === 'combatDamagedByNamed' ||
+    sel.kind === 'lostLifeThisTurn' ||
+    sel.kind === 'combatDamagedThisTurn' ||
     sel.kind === 'giftRecipient'
   );
 }

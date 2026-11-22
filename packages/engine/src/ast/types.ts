@@ -300,6 +300,12 @@ export type Amount =
   /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
   | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
+   * "For each player who lost life this turn", "the number of your opponents who were dealt combat damage by this creature or a Dragon this turn" (CR 102.1, 608.2c): how many players
+   * `of` names, as the amount is read (the player selectors that read the game: `lostLifeThisTurn`, `combatDamagedThisTurn`, `eachPlayer`, `eachOpponent`, ...). Not a static
+   * ability's power or toughness.
+   */
+  | { readonly kind: 'playerCount'; readonly of: PlayerSelector }
+  /**
    * "Half the number of ..., rounded down" (D-131): `of` divided by two and rounded as `round` says (CR 107.1a:
    * the rounding is stated; a fraction is never left).
    */
@@ -1288,7 +1294,26 @@ export type PlayerSelector =
    * are still in the game and have been dealt combat damage by a creature with this name at any time this game, whoever controlled that creature, in the order CR 101.4 gives. The
    * name is the one the creature had as it dealt the damage (`GameState.combatDamagedByNames`). Read from the game history, so it works in a spell or an ability.
    */
-  | { readonly kind: 'combatDamagedByNamed'; readonly name: string };
+  | { readonly kind: 'combatDamagedByNamed'; readonly name: string }
+  /**
+   * "Each opponent who lost life this turn", "each player who lost life this turn" (CR 119.3, 102.1, 102.2): the players `of` names (`eachPlayer` or `eachOpponent`) who have lost life
+   * this turn (`SeatState.lifeLostThisTurn`, from damage, life loss and life paid, kept by `loseLifeBy`), still in the game, in the order of CR 101.4. Read as the effect applies, so
+   * life lost after the ability went on the stack counts.
+   */
+  | { readonly kind: 'lostLifeThisTurn'; readonly of: PlayerSelector }
+  /**
+   * "Each of your opponents who was dealt combat damage by this creature or a Dragon this turn" (CR 120.2a, 510.2): the players `of` names (`eachPlayer` or `eachOpponent`) who were
+   * dealt combat damage this turn by `byThis` (the permanent of the ability, read under the id it has, CR 608.2h) or by a source that matches `by` as it was when it dealt the damage
+   * (its card types, subtypes and, with `controller`, who controlled it relative to the controller of the ability: `you` or `opponent`), still in the game, in the order of CR 101.4.
+   * Read from the turn log (`TurnLog.combatDamaged`); damage that was entirely prevented is not there. At least one of `byThis` and `by` is given, and `by` names `types`, `subtypes`
+   * and `controller` and nothing else.
+   */
+  | {
+      readonly kind: 'combatDamagedThisTurn';
+      readonly of: PlayerSelector;
+      readonly byThis?: true;
+      readonly by?: ObjectFilter;
+    };
 
 /**
  * A target declaration (CR 115). "any target" is a creature, player, planeswalker or battle
@@ -6505,6 +6530,11 @@ export type Condition =
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
   /** "If you gained and lost life this turn": at least one gain and one life lost by this player. */
   | { readonly kind: 'lifeGainedAndLostThisTurn' }
+  /**
+   * "If a player lost 4 or more life this turn" (CR 119.3, 603.4): some player still in the game, any player, lost at least `atLeast` life in all this turn (damage, life loss and life paid,
+   * summed: `SeatState.lifeLostThisTurn`). Reads the seats' counters only, so it is read as the event happens and again as the ability resolves. Not for a static ability.
+   */
+  | { readonly kind: 'aPlayerLostLifeThisTurn'; readonly atLeast: number }
   /**
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
