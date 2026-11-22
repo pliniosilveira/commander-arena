@@ -111,7 +111,7 @@ describe('triggerPlayerTurn', () => {
         trigger: { kind: 'enters', what: { kind: 'this' } },
         interveningIf: { kind: 'triggerPlayerTurn' },
         effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
-      } as Ability),
+      } as unknown as Ability),
     );
     expect(upkeepless.join('\n')).toContain('triggerPlayerTurn');
   });
