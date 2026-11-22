@@ -55,3 +55,4 @@ export type {
   RunOptions,
 } from './runner';
 export { replayGame, runGame } from './runner';
+export { playTable, type TableGame, type TableOptions, type TableResult } from './table';
