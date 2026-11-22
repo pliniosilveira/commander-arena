@@ -1,4 +1,4 @@
-// N-seat harness (issue 362): createGame behind `allowMoreThanTwoSeats`, and a scenario with 3 seats.
+// N-seat harness (issue 362): createGame with two to four seats, and a scenario with 3 seats.
 import { describe, expect, test } from 'vitest';
 import { createGame, type DeckConfig, fixtureCard } from '../src/index';
 import { ScenarioError, scenario } from './dsl-helpers';
@@ -12,37 +12,17 @@ function deck(): DeckConfig {
 }
 
 describe('createGame seat count', () => {
-  test('refuses more than two decks unless the flag is on', () => {
-    for (const n of [3, 4]) {
-      const decks = Array.from({ length: n }, deck);
-      expect(() => createGame({ seed: 1, decks })).toThrow(/exactly two seats/);
-      expect(() => createGame({ seed: 1, decks, allowMoreThanTwoSeats: false })).toThrow(
-        /exactly two seats/,
-      );
-    }
-  });
-
-  test('still refuses one deck and five decks with the flag on', () => {
+  test('refuses one deck and five decks', () => {
     for (const n of [1, 5]) {
       const decks = Array.from({ length: n }, deck);
-      expect(() => createGame({ seed: 1, decks, allowMoreThanTwoSeats: true })).toThrow(
-        /two to four seats/,
-      );
+      expect(() => createGame({ seed: 1, decks })).toThrow(/two to four seats/);
     }
-  });
-
-  test('the flag does not change a two-seat game', () => {
-    const decks = [deck(), deck()];
-    const off = createGame({ seed: 7, decks }).state;
-    const on = createGame({ seed: 7, decks, allowMoreThanTwoSeats: true }).state;
-    expect(on).toEqual(off);
   });
 
   test.each([3, 4])('builds a legal %i-seat game', (n) => {
     const { state } = createGame({
       seed: 3,
       decks: Array.from({ length: n }, deck),
-      allowMoreThanTwoSeats: true,
     });
     expect(state.seats.map((s) => s.id)).toEqual(Array.from({ length: n }, (_, i) => i));
     for (const s of state.seats) {

@@ -8,7 +8,6 @@ const configFor = (seats: number, seed: number) => ({
   decks: Array.from({ length: seats }, (_, i) => ARENA_DECKS[i % ARENA_DECKS.length]).filter(
     (d): d is NonNullable<typeof d> => d !== undefined,
   ),
-  allowMoreThanTwoSeats: true,
 });
 const agents = (seats: number, seed: number) =>
   Array.from({ length: seats }, (_, s) => AGENT_FACTORIES.random.create(seed * 10 + s));
