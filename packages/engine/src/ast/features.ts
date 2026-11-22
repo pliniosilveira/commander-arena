@@ -987,9 +987,13 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromHand',
     // Issue 102 (River Kelpie): "a spell cast from a graveyard" (`ObjectFilter.castFromGraveyard`).
     'castSpellFromGraveyard',
+    // Scions of Spellcraft deck (Emet-Selch of the Third Seat): "spells you cast from your graveyard" (`ObjectFilter.castFromOwnGraveyard`).
+    'castFromOwnGraveyard',
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
+    // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
+    'nthSpellThisTurn',
     // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (`ObjectFilter.controllerDealtCombatDamageByAtLeast`).
     'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
@@ -1627,6 +1631,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeFromGraveyard',
     // CR 118.9, 701.21a (Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost".
     'sacrificePermanents',
+    // CR 118.9, 118.4 (Snuff Out): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost".
+    'payLife',
   ],
 };
 
@@ -2034,10 +2040,14 @@ export const SELECTOR_KINDS = [
   'castFromHand',
   /** "A spell cast from a graveyard" (CR 601.2a, issue 102): the engine's `ObjectFilter.castFromGraveyard`. */
   'castSpellFromGraveyard',
+  /** "Spells you cast from your graveyard" (CR 601.2a, 404.1, Emet-Selch of the Third Seat): the engine's `ObjectFilter.castFromOwnGraveyard`. */
+  'castFromOwnGraveyard',
   /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
   'firstXSpellThisTurn',
+  /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
+  'nthSpellThisTurn',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -2709,6 +2719,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'jumpStart',
   'sacrificeFromGraveyard',
   'sacrificePermanents',
+  'payLife',
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',

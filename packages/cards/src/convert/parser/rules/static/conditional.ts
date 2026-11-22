@@ -46,6 +46,8 @@ const STATIC_CONDITIONS = [
   'condition.host-is-color',
   'condition.other-attached-to-host',
   'condition.this-entered-this-turn',
+  // Lyse Hext (CR 601.2i, 611.3a): "you've cast two or more noncreature spells this turn", a read of the turn log.
+  'condition.spells-cast-this-turn',
   // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
   'condition.this-has-counter-count',
   // Quest for the Goblin Lord (CR 122.1, 611.3a): "~ has five or more quest counters on it".

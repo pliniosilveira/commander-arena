@@ -378,6 +378,7 @@ export function checkFilter(
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
+    'castFromOwnGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
     'enteredThisTurn',
@@ -389,6 +390,13 @@ export function checkFilter(
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
+  }
+  // CR 601.2i: "the second spell you cast each turn" is the 2nd or a later one: a whole number of 2 or more.
+  if (
+    f.nthSpellThisTurn !== undefined &&
+    (!Number.isInteger(f.nthSpellThisTurn) || f.nthSpellThisTurn < 2)
+  ) {
+    issue(out, `${path}.nthSpellThisTurn`, 'nthSpellThisTurn must be a whole number of 2 or more');
   }
   // CR 208.4b: "with base power 0" is a whole number of power.
   if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
@@ -3723,6 +3731,13 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!Number.isSafeInteger(c.compare?.value)) {
         issue(out, `${path}.compare.value`, 'a card count is compared with a whole number');
       }
+      // CR 404.1, 102.2 (Into the Story): only a graveyard condition names whose graveyard: an opponent's.
+      if (
+        (c as { readonly player?: unknown }).player !== undefined &&
+        !(c.kind === 'cardsInGraveyard' && c.player === 'anOpponent')
+      ) {
+        issue(out, `${path}.player`, 'only cardsInGraveyard names a player, and only anOpponent');
+      }
       break;
     case 'playerDealtDamage':
       // D-151, CR 120.3: damage dealt to the controller or to an opponent this turn.
@@ -3789,6 +3804,17 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
           issue(out, `${path}.ofTypes`, 'ofTypes names at least one card type');
         } else {
           checkEnumList(out, `${path}.ofTypes`, c.ofTypes, CARD_TYPES, 'card type');
+        }
+      }
+      // CR 205.2a (Lyse Hext): "noncreature spells": the spells with none of these card types; not with `ofTypes`.
+      if (c.notOfTypes !== undefined) {
+        if (!Array.isArray(c.notOfTypes) || c.notOfTypes.length === 0) {
+          issue(out, `${path}.notOfTypes`, 'notOfTypes names at least one card type');
+        } else {
+          checkEnumList(out, `${path}.notOfTypes`, c.notOfTypes, CARD_TYPES, 'card type');
+        }
+        if (c.ofTypes !== undefined) {
+          issue(out, `${path}.notOfTypes`, 'ofTypes and notOfTypes are not read together');
         }
       }
       break;

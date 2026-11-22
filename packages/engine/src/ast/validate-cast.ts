@@ -252,6 +252,27 @@ export function checkCastFace(
       );
     }
   }
+  // CR 118.9 (Snuff Out): paying life rather than the mana cost is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'payLife')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'payLife is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'payLife with convoke, improvise or delve is not supported',
+      );
+    }
+  }
   // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
   if (
     alternatives.some(

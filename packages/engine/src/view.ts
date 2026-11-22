@@ -439,6 +439,8 @@ export interface AlternativeCostView {
   readonly tap?: { readonly filter: ObjectFilter; readonly count: number };
   /** For an evoke cost that exiles a card of the hand (CR 702.74a, "Evoke—Exile a red card from your hand"): the kind of card exiled as part of the cost. */
   readonly exileFromHand?: ObjectFilter;
+  /** For `payLife` (CR 118.9, Snuff Out): the life paid as part of the cost. */
+  readonly life?: number;
   /** For `sacrificeFromGraveyard` (issue 159): how many permanents of this filter are sacrificed as part of the cost. */
   readonly sacrifice?: { readonly filter: ObjectFilter; readonly count: number };
 }

@@ -674,6 +674,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'additionalCost':
     case 'optionalSacrificeCopies':
     case 'freeCast':
+    case 'lifeAlternative':
     case 'tapAlternative':
     case 'graveyardSacrificeAlternative':
     case 'sacrificeAlternative':
@@ -1263,7 +1264,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
-  if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
+  if (
+    first.kind === 'additionalCost' ||
+    first.kind === 'freeCast' ||
+    first.kind === 'lifeAlternative'
+  ) {
+    return failure(ability);
+  }
   if (
     first.kind === 'castAsThoughFlash' ||
     first.kind === 'takeFromLinkedExile' ||

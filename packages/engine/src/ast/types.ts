@@ -739,6 +739,12 @@ export interface ObjectFilter {
    */
   readonly castFromGraveyard?: true;
   /**
+   * "Spells you cast from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1, 108.3): the spell on the stack was cast from the caster's own graveyard, that is, from a
+   * graveyard and the card is owned by its caster (a graveyard is its owner's). Read from the spell itself as it is cast (the zone it came from, `castFrom`), so only a spell is
+   * matched; in a cost reduction (`costReduction.spells`) it is read as the cost is determined. Not with `notCastFromHand`, `castFromHand` or `castFromGraveyard`.
+   */
+  readonly castFromOwnGraveyard?: true;
+  /**
    * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
    * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -749,6 +755,13 @@ export interface ObjectFilter {
    * trigger) or as its cost is determined (a cost reduction, where the spell is not yet logged); refused in a static ability that nothing refreshes (a layer effect).
    */
   readonly firstXSpellThisTurn?: true;
+  /**
+   * "The second spell you cast each turn" (Alisaie Leveilleur, CR 601.2f, 601.2i, 604.2): the spell is the `nthSpellThisTurn`th spell its caster casts this turn, that is, exactly
+   * `nthSpellThisTurn - 1` other spells were cast by that caster before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10, and the spell itself is left out of the count
+   * whether or not it is logged yet). A whole number of 2 or more. Read from the turn log, so it is read as the cost is determined (a cost reduction, where the spell is not yet
+   * logged); refused in a static ability that nothing refreshes (a layer effect).
+   */
+  readonly nthSpellThisTurn?: number;
   /**
    * "That entered this turn" (group 4 of the Vraska deck, CR 400.7, 110.1): the permanent entered the battlefield during this turn and is still the same
    * object (one that left and came back is a new object). Read from the turn log where the filter is matched against the game (a target slot, an `each`
@@ -1734,6 +1747,7 @@ export type NamedAlternativeKind =
   | 'tapPermanents'
   | 'sacrificeFromGraveyard'
   | 'sacrificePermanents'
+  | 'payLife'
   | 'impending';
 
 /**
@@ -1812,6 +1826,9 @@ export type PermanentAlternativeKind =
  * - `sacrificePermanents` (CR 118.9, 601.2h, 701.21a, Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost": cast from the hand (or any zone the
  *   card is cast from), the `cost` (mana only, no X, possibly none) is paid instead of the mana cost, and the caster also sacrifices `count` permanents they control that match `filter`
  *   as part of it, chosen as the sacrifice of an additional cost is. Not on a land; not with Convoke, Improvise or Delve.
+ * - `payLife` (CR 118.9, 118.4, 119.4, 601.2b, 601.2h, Snuff Out): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost": cast from the hand (or any zone the card
+ *   is cast from), the `cost` (mana only, {0} when there is none besides the life) is paid instead of the mana cost, and the caster also pays `life` life as part of it (a player can pay
+ *   life only if their life total is at least that much, CR 119.4). The spell is an ordinary spell otherwise. Not on a land; not with Convoke, Improvise or Delve.
  * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
  *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
  *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
@@ -1828,7 +1845,12 @@ export type AlternativeCost =
   | {
       readonly kind: Exclude<
         NamedAlternativeKind,
-        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'sacrificePermanents' | 'impending'
+        | 'escape'
+        | 'tapPermanents'
+        | 'sacrificeFromGraveyard'
+        | 'sacrificePermanents'
+        | 'payLife'
+        | 'impending'
       >;
       readonly cost: readonly Cost[];
       /**
@@ -1872,6 +1894,14 @@ export type AlternativeCost =
       readonly filter: ObjectFilter;
       /** How many: at least 1. */
       readonly count: number;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'payLife';
+      /** The mana paid besides the life: {0} for "You may pay 4 life rather than pay this spell's mana cost" (Snuff Out). */
+      readonly cost: readonly Cost[];
+      /** The life paid as part of the cost (CR 118.4): a positive whole number. */
+      readonly life: number;
       readonly condition?: Condition;
     }
   | {
@@ -6235,7 +6265,15 @@ export type Condition =
    * "As long as there are fewer than eight cards in your graveyard" (D-229, CR 404.1): the number of cards in the graveyard of the controller of the thing
    * that asks meets the comparison (`atMost` 7 is "fewer than eight"). It reads no characteristic, so a static ability that works in layer 4 may have it.
    */
-  | { readonly kind: 'cardsInGraveyard'; readonly compare: NumberComparison }
+  | {
+      readonly kind: 'cardsInGraveyard';
+      readonly compare: NumberComparison;
+      /**
+       * "If an opponent has seven or more cards in their graveyard" (Into the Story, CR 404.1, 102.2): instead of the controller's graveyard, some opponent still in the game (CR 800.4a)
+       * has a graveyard whose number of cards meets the comparison, each opponent's own graveyard counted separately, never the sum. Left out, the controller's.
+       */
+      readonly player?: 'anOpponent';
+    }
   /**
    * "As long as there are no cards in your library", "while your library has no cards in it" (D-331, CR 401.1): the number of cards in the library of the
    * controller of the thing that asks meets the comparison (`atMost` 0 is "no cards"). Like `cardsInGraveyard` it reads no characteristic, so a static
@@ -6560,13 +6598,18 @@ export type Condition =
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
    * resolved or was countered; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's). Reads a count, so it is read as
-   * the ability is activated. Not for a static ability. `ofTypes` (D-444, "Activate only if you've cast an instant or sorcery spell this turn"): only the
+   * the ability is activated; a static ability may have it as an "as long as" (Lyse Hext: the turn log, which no layer changes). `ofTypes` (D-444, "Activate only if you've cast an instant or sorcery spell this turn"): only the
    * spells that have at least one of those card types, as they were cast, count (`TurnLog.castSpells`); left out, every spell counts.
    */
   | {
       readonly kind: 'spellsCastThisTurn';
       readonly atLeast: number;
       readonly ofTypes?: readonly CardType[];
+      /**
+       * "As long as you've cast two or more noncreature spells this turn" (Lyse Hext, CR 601.2i, 205.2a): only the spells that have none of these card types, as they were cast,
+       * count (`TurnLog.castSpells`). Not with `ofTypes`. Being a read of the turn log, it is a condition a static ability may have (no layer changes what was cast, CR 613.8).
+       */
+      readonly notOfTypes?: readonly CardType[];
     }
   /**
    * "If no spells were cast last turn", "if a player cast two or more spells last turn" (issue 345, CR 601.2i, 603.4): read from `GameState.lastTurnSpellsCast`, the spells each player cast in

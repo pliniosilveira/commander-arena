@@ -333,6 +333,16 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castSpellFromGraveyard');
   }
+  // Emet-Selch of the Third Seat: "spells you cast from your graveyard" (CR 601.2a, 404.1), a spell on the stack.
+  if (filter.castFromOwnGraveyard === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromOwnGraveyard');
+  }
+  // Alisaie Leveilleur: "the second spell you cast each turn" (CR 601.2i), a spell on the stack.
+  if (filter.nthSpellThisTurn !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:nthSpellThisTurn');
+  }
   // Quandrix Unlimited group E: "a spell with {X} in its mana cost" (CR 107.3), "your first such spell each turn" (CR 601.2i), a spell on the stack.
   if (filter.xInManaCost === true) {
     if (inner) return bad([]);
@@ -584,6 +594,8 @@ function lowerFilterAt(
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
+    ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+    ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
