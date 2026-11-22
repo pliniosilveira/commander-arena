@@ -99,16 +99,17 @@ function targetScore(view: GameView, t: ChosenTarget): number {
  * "Each of up to two other targets" (`differentFrom`, CR 115.3, D-151): a target the slot this one differs from has is taken out of it. An answer
  * that breaks the rule is refused by the engine, so the agent leaves the repeated target out (the slot is "up to" when it has a minimum of 0).
  */
+const sameTarget = (a: ChosenTarget, b: ChosenTarget): boolean =>
+  a.kind === b.kind &&
+  (a.kind === 'object' ? a.id === (b as typeof a).id : a.seat === (b as typeof a).seat);
+
 function withOtherTargets(d: TargetsDecision, action: Action): Action {
   if (action.kind !== 'chooseTargets' || !d.specs.some((s) => s.differentFrom !== undefined)) {
     return action;
   }
-  const same = (a: ChosenTarget, b: ChosenTarget): boolean =>
-    a.kind === b.kind &&
-    (a.kind === 'object' ? a.id === (b as typeof a).id : a.seat === (b as typeof a).seat);
   const targets = action.targets.filter((t) => {
     const from = d.specs.find((s) => s.specId === t.specId)?.differentFrom;
-    return from === undefined || !action.targets.some((o) => o.specId === from && same(o, t));
+    return from === undefined || !action.targets.some((o) => o.specId === from && sameTarget(o, t));
   });
   return { ...action, targets };
 }
@@ -180,12 +181,17 @@ function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
       targets.push(own);
       continue;
     }
+    // CR 115.3 (D-151): a slot that must differ from others cannot take what they took; with a minimum of 1 it needs a creature of its own.
+    const taken = targets.filter(
+      (t) => t.specId === spec.differentFrom || spec.differentFromAll?.includes(t.specId ?? ''),
+    );
+    const open = spec.legal.filter((t) => !taken.some((o) => sameTarget(o, t)));
     // Stable sort: equal scores keep the engine's order, so "first legal" is the fallback.
-    const ranked = spec.legal
+    const ranked = open
       .map((t, index) => ({ t, index, score: targetScore(view, t) }))
       .sort((a, b) => b.score - a.score || a.index - b.index);
     const hostile = ranked.filter((r) => r.score > 0).length;
-    const count = Math.min(spec.max, spec.legal.length, Math.max(spec.min, hostile));
+    const count = Math.min(spec.max, open.length, Math.max(spec.min, hostile));
     if (spec.onePerGroup === true) {
       // D-149, Hylda group 3: "for each opponent" and "with different controllers": at most one target of each controller, the best-scored one first.
       const seen = new Set<number>();
