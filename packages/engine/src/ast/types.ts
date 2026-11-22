@@ -3971,6 +3971,17 @@ export type Effect =
       readonly duration: 'untilYourNextTurn';
     }
   /**
+   * "Creatures you control with defender can attack this turn as though they didn't have defender." (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2; Wakestone Gargoyle): a rule-changing effect on a
+   * group of creatures that is not a set fixed as the effect resolved (it does not modify characteristics, so a creature that matches later in the turn is affected too): each creature
+   * `creatures` matches (read for the controller of the effect as "you") has the restriction `restriction` (`canAttackAsThoughNoDefender` or `assignsDamageByToughness`) until end of turn.
+   */
+  | {
+      readonly kind: 'restrictGroup';
+      readonly creatures: ObjectFilter;
+      readonly restriction: 'canAttackAsThoughNoDefender' | 'assignsDamageByToughness';
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
    * "Choose an opponent at random that this creature didn't attack during your last combat. This creature attacks that player this combat if able. If you can't choose an opponent this
    * way, tap this creature." (CR 508.1d, 508.6, 506.1, 701.26a): the controller of the effect "chooses" among their opponents still in the game that `creature` was not declared
    * attacking in the last combat phase of that controller before this one (`GameState.lastCombatAttacks`; the combat of a creature that was not there is a combat it did not attack in),
@@ -5375,6 +5386,12 @@ export type Trigger =
  *   haste"; the blocker's haste is read as the blockers are declared);
  * - `cantAttackPlayersAlreadyAttacked`: it can't be declared attacking a player it has already attacked this turn (CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn",
  *   read from `turnLog.attackedPlayers`; an attack on a planeswalker or a battle is not an attack on a player);
+ * - `canAttackAsThoughNoDefender`: it can attack as though it didn't have defender (CR 609.4, 702.3b, 508.1a: "Creatures you control can attack as though they didn't have defender"; a permission,
+ *   read where attackers are declared: only the defender keyword is set aside, haste and the rest of the rules about attacking still apply);
+ * - `canAttackAsThoughNoDefenderVsLastTurnAttackers`: the same, but only against players who attacked its controller during their last turn (CR 609.4, 702.3b, 508.1a: "~ can attack players who
+ *   attacked you during their last turn as though it didn't have defender", `GameState.attackedLastTurn`); "you" is the controller of the creature;
+ * - `assignsDamageByToughness`: it assigns combat damage equal to its toughness rather than its power (CR 510.1a, 609.4: "Each creature you control assigns combat damage equal to its toughness
+ *   rather than its power"); it changes only the amount assigned, never the creature's power, so every other rule reads the real values;
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -5394,6 +5411,9 @@ export type Restriction =
   | 'cantBeBlockedExceptByHaste'
   | 'cantAttackPlayersAlreadyAttacked'
   | 'canBlockOnlyFlying'
+  | 'canAttackAsThoughNoDefender'
+  | 'canAttackAsThoughNoDefenderVsLastTurnAttackers'
+  | 'assignsDamageByToughness'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
   | 'mustBlock'

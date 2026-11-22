@@ -598,6 +598,11 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   doesntUntap: "doesn't untap",
   cantBeCountered: "can't be countered",
   canBlockOnlyFlying: 'can block only creatures with flying',
+  // Abzan Armor group A (CR 609.4, 702.3b, 510.1a).
+  canAttackAsThoughNoDefender: "can attack as though it didn't have defender",
+  canAttackAsThoughNoDefenderVsLastTurnAttackers:
+    "can attack players who attacked you during their last turn as though it didn't have defender",
+  assignsDamageByToughness: 'assigns combat damage equal to its toughness rather than its power',
   cantActivateAbilities: "can't have its activated abilities activated",
 };
 
@@ -1552,6 +1557,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'creaturesCantAttackYou':
       // Federation Fleet group F (CR 508.1a): "Until your next turn, creatures can't attack you".
       return "Until your next turn, creatures can't attack you";
+    case 'restrictGroup': {
+      // Abzan Armor group A (CR 609.4, 611.2c): "Creatures you control with defender can attack this turn as though they didn't have defender".
+      const group = groupPhrase(effect.creatures);
+      if (group === null) return UNSAID;
+      return effect.restriction === 'canAttackAsThoughNoDefender'
+        ? `${capital(group)} can attack this turn as though they didn't have defender`
+        : `Until end of turn, ${group} assign combat damage equal to their toughness rather than their power`;
+    }
     case 'doubleTokens':
       // Issue 101 (CR 614.1a): "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead".
       return 'until end of turn, twice as many tokens are created under your control';

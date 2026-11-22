@@ -56,6 +56,7 @@ import {
   runEntersTappedGroup,
   runRequireAttack,
   runRequireAttackSource,
+  runRestrictGroup,
 } from './continuous';
 import { controllerOf } from './control';
 import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
@@ -3773,6 +3774,10 @@ function runEffect(
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.
       return runCreaturesCantAttackYou(state, effect, ctx);
+
+    case 'restrictGroup':
+      // CR 609.4, 611.2c: a rule change on a group of creatures, read where the rule acts (attackers declared, combat damage assigned).
+      return runRestrictGroup(state, effect, ctx);
 
     case 'choosePlayer':
       // CR 608.2d (The Black Gate): the controller chooses a player with the most life; the answer is what "that player" means for the rest of the resolution.

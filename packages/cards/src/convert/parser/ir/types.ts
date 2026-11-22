@@ -1665,7 +1665,13 @@ export type IrRestrictionKind =
   // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
   | 'canBlockOnlyFlying'
   // "~ can't attack a player it has already attacked this turn" (Ahoy Mateys deck, group 6, CR 508.1a, 508.6): only of `~` itself.
-  | 'cantAttackPlayersAlreadyAttacked';
+  | 'cantAttackPlayersAlreadyAttacked'
+  // "Creatures you control can attack as though they didn't have defender" (CR 609.4, 702.3b): a static ability of a group or of `~`, and "target creature can attack this turn as though it didn't have defender".
+  | 'canAttackAsThoughNoDefender'
+  // "~ can attack players who attacked you during their last turn as though it didn't have defender" (CR 609.4, 702.3b): only of `~` itself.
+  | 'canAttackAsThoughNoDefenderVsLastTurnAttackers'
+  // "Each creature you control assigns combat damage equal to its toughness rather than its power" (CR 510.1a, 609.4), and the same until end of turn for a target.
+  | 'assignsDamageByToughness';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
