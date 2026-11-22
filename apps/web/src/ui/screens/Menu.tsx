@@ -12,7 +12,15 @@ import { useActions } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
 import { ChallengeDialog } from './ChallengeDialog';
 import { DeckDialog } from './DeckDialog';
-import { defaultDecks, type MenuForm, parseSeed, randomSeed, startFromForm } from './menu-model';
+import {
+  defaultDecks,
+  type MenuForm,
+  OPPONENT_ORDINALS,
+  opponentDeckTitle,
+  parseSeed,
+  randomSeed,
+  startFromForm,
+} from './menu-model';
 import './screens.css';
 
 export const HOW_TO_PLAY: readonly string[] = [
@@ -33,8 +41,11 @@ export function Menu() {
   const challenges = useChallenges();
   const { choices } = useDeckChoices();
   const [level, setLevel] = useState<ChallengeLevel>('easy');
-  // Visual only for now: the table size does not reach the game yet.
+  // With more than one opponent the deck dialog repeats, once per opponent; the game itself is
+  // not played yet, only an empty board opens (`openTable`).
   const [opponents, setOpponents] = useState<(typeof OPPONENT_COUNTS)[number]>(1);
+  const [opponentIndex, setOpponentIndex] = useState(0);
+  const [opponentDecks, setOpponentDecks] = useState<readonly string[]>([]);
   // Medium and Hard offer only the challenges that have emblems for them.
   const challengeChoices = useMemo(
     () =>
@@ -60,12 +71,26 @@ export function Menu() {
   const choose = (id: string) => {
     if (step === 'player') {
       setForm({ ...form, humanDeck: id });
+      setOpponentIndex(0);
+      setOpponentDecks([]);
       setStep('opponent');
       return;
     }
     if (step === 'challenge-player') {
       setForm({ ...form, humanDeck: id });
       setStep('challenge-pick');
+      return;
+    }
+    if (opponents > 1) {
+      const decks = [...opponentDecks.slice(0, opponentIndex), id];
+      setOpponentDecks(decks);
+      if (decks.length < opponents) {
+        setOpponentIndex(decks.length);
+        return;
+      }
+      // The last opponent's deck ends the flow: the versus screen, then the empty board.
+      setStep('home');
+      actions.openTable({ humanDeck: form.humanDeck, opponentDecks: decks });
       return;
     }
     // The opponent's deck ends the flow: the game starts with the two decks chosen.
@@ -275,18 +300,27 @@ export function Menu() {
 
       {step !== 'home' && step !== 'challenge-pick' && (
         <DeckDialog
-          key={step}
-          title={step === 'opponent' ? "Choose opponent's deck" : 'Choose your deck'}
+          key={step === 'opponent' ? `opponent-${opponentIndex}` : step}
+          title={
+            step === 'opponent' ? opponentDeckTitle(opponentIndex, opponents) : 'Choose your deck'
+          }
           prompt={
             step !== 'opponent'
               ? "Select the deck you'll play in this game."
-              : 'Select the deck your opponent will play.'
+              : opponents === 1
+                ? 'Select the deck your opponent will play.'
+                : `Select the deck the ${OPPONENT_ORDINALS[opponentIndex] ?? ''} opponent will play.`
           }
           decks={choices}
           error={step === 'opponent' ? refused : null}
           busy={starting}
           onChoose={choose}
-          {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
+          {...(step === 'opponent'
+            ? {
+                onBack: () =>
+                  opponentIndex > 0 ? setOpponentIndex(opponentIndex - 1) : setStep('player'),
+              }
+            : {})}
           onCancel={closeFlow}
           onImport={() => actions.openImport('import')}
           {...(step === 'opponent' || !choices.some((deck) => deck.kind === 'saved')
