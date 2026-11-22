@@ -1396,6 +1396,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
+    case 'myriad':
+      // CR 702.116a: the ability the keyword Myriad stands for, as the keyword's reminder text writes it.
+      return effect.opponent === undefined
+        ? "For each opponent other than defending player, you may create a token that's a copy of this creature that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat"
+        : 'Create a token that is a copy of this creature, tapped and attacking that opponent';
     case 'delayedSacrifice':
       // D-478 (CR 702.147a, 701.54c): the sacrifice at end of combat of the ability of Decayed, and of the third level of the Ring.
       return delayedSacrificeText(effect.of);

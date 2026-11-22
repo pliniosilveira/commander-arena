@@ -9,7 +9,7 @@
  * - "this" means the object the ability belongs to; "thisSpell" the spell being cast.
  */
 import type { CardType, Characteristics, Color, Subtype, Supertype } from '../characteristics';
-import type { CardId, ObjectId } from '../ids';
+import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaSymbol } from '../mana/types';
 
 // ---- Zones (CR 400.1)
@@ -3925,6 +3925,13 @@ export type Effect =
    */
   | { readonly kind: 'delayedSacrifice'; readonly of?: 'this' }
   /**
+   * The engine's own effect of Myriad (CR 702.116a, D-151): "for each opponent other than defending player, you may create a token that's a copy of this creature that's tapped and
+   * attacking that player or a planeswalker they control. If one or more tokens are created this way, exile the tokens at end of combat." Written only by `derive` for the keyword
+   * (`validateCard` refuses it anywhere else). Without `opponent` it asks the controller about each opponent other than the defending player; with `opponent` (a seat, set by the
+   * engine for the answer it asks) it makes that opponent's token.
+   */
+  | { readonly kind: 'myriad'; readonly opponent?: SeatId }
+  /**
    * "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6, D-459): the second half of a reanimation like
    * Whip of Erebos', after the effect of the same sequence that put the permanents onto the battlefield (`moveToZone`, `objects` is `moved`): each permanent it names that is
    * on the battlefield is marked (`GameObject.exileIfLeaves`), and from then on, whatever would move it from the battlefield to another zone moves it to exile instead
@@ -5965,9 +5972,8 @@ export type Keyword =
   | { readonly kind: 'decayed' }
   /**
    * CR 702.116a (Myriad, D-151): "Whenever this creature attacks, for each opponent other than defending player, you may create a token that's a
-   * copy of this creature that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat." The engine
-   * has two players, so there is never an opponent other than the defending player and the ability does nothing: it has no ability to expand
-   * (`docs/ROADMAP.md`).
+   * copy of this creature that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat." `derive` expands
+   * it into a triggered ability of the engine's own `myriad` effect (`rules/myriad.ts`); with two players there is no opponent other than the defending player, so nothing is asked.
    */
   | { readonly kind: 'myriad' }
   /**

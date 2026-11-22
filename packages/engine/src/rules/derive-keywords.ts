@@ -182,6 +182,18 @@ const DECAYED_ABILITY: Ability = {
 };
 
 /**
+ * CR 702.116a (Myriad): "Whenever this creature attacks, ..." (the effect is `rules/myriad.ts`); each instance triggers separately (CR 702.116b). With one opponent there is no
+ * opponent other than the defending player, so the ability could do nothing and could not be told from not having triggered; it is not put on the stack then (the condition is read
+ * as the creature attacks), which keeps a two-player game as it was: no extra trigger to order or respond to.
+ */
+const MYRIAD_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  triggerCondition: { kind: 'opponentsAtLeast', count: 2 },
+  effect: { kind: 'myriad' },
+};
+
+/**
  * CR 702.86a: "Annihilator N" means "Whenever this creature attacks, defending player sacrifices N
  * permanents." The defending player (CR 508.5) chooses which, among the permanents they control.
  */
@@ -856,6 +868,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [DETHRONE_ABILITY];
     case 'decayed':
       return [DECAYED_ABILITY];
+    case 'myriad':
+      return [MYRIAD_ABILITY];
     default:
       return [];
   }

@@ -43,6 +43,7 @@ import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside
 import { runChooseOne } from './choose-one';
 import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
 import { newClash, runClash } from './clash';
+import { enterCombatAttacking } from './combat-enter';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
@@ -126,6 +127,7 @@ import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
+import { runMyriad } from './myriad';
 import { nextMainStep } from './next-main';
 import { runNextSpellModifier } from './next-spell';
 import { runNextSpellPayLife } from './next-spell-life';
@@ -784,42 +786,6 @@ export function runImmediateEffects(
  * CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). CR 712.21c
  * (D-277): a melded permanent that died became two cards, and an effect that finds the new object finds both.
  */
-/**
- * CR 508.4 (D-648): the creature tokens `created` that are on the battlefield and not attacking yet start attacking `defender` while a combat is on; they were never declared as
- * attackers, so nothing that triggers on an attack sees them and the turn log does not count them.
- */
-function enterCombatAttacking(
-  state: GameState,
-  created: readonly ObjectId[],
-  defender: SeatId,
-): GameState {
-  const combat = state.combat;
-  if (combat === null) return state;
-  const entering = created.filter((id) => {
-    const obj = state.objects[id];
-    return (
-      obj !== undefined &&
-      obj.zone === 'battlefield' &&
-      derive(state, obj).types.includes('creature') &&
-      !combat.attackers.some((a) => a.object === id)
-    );
-  });
-  return {
-    ...state,
-    combat: {
-      ...combat,
-      attackers: [
-        ...combat.attackers,
-        ...entering.map((object) => ({
-          object,
-          target: { kind: 'player' as const, seat: defender },
-          blocked: false,
-        })),
-      ],
-    },
-  };
-}
-
 function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[] {
   const found = successorsOf(state, id, (o) => o.zone === 'graveyard');
   return found.length > 0 ? found : [id];
@@ -2086,6 +2052,15 @@ function runEffect(
     case 'ringTempts':
       // CR 701.54a (D-196): the controller's Ring-bearer is chosen as this comes up (rules/ring.ts).
       return done(state, [], [{ kind: 'ringTempts', chosen: null }]);
+
+    case 'myriad':
+      return runMyriad(
+        state,
+        res,
+        effect,
+        resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets),
+        flow,
+      );
 
     case 'delayedSacrifice': {
       // CR 603.7, 701.54c (D-196): about the creature whose event triggered the ability (the blocker): at the end of combat its controller
