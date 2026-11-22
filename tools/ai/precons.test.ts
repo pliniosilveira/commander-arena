@@ -5,7 +5,7 @@
 // are `node tools/ai/arena.ts --precons` (docs/progress/M7.md).
 import { AGENT_FACTORIES, MATCH_LIMITS, playMatch } from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { crossPairs, loadPreconDecks, mirrorPairs, readSnapshots } from './precons.ts';
+import { crossPairs, loadPreconDecks, mirrorPairs, readSnapshots, tableSets } from './precons.ts';
 
 const GAMES = 8;
 const TIMEOUT_MS = 600_000;
@@ -33,6 +33,20 @@ describe('the precon decks of the AI tools', () => {
     const cross = crossPairs(decks);
     expect(cross).toHaveLength(decks.length * (decks.length - 1));
     for (const [x, y] of cross) expect(x).not.toBe(y);
+  }, 120_000);
+
+  test('table sets give each seat its own precon, every precon starts one set, and too few precons are refused', async () => {
+    const { decks } = await loadPreconDecks();
+    for (const seats of [3, 4]) {
+      const sets = tableSets(decks, seats);
+      expect(sets).toHaveLength(decks.length);
+      for (const [i, set] of sets.entries()) {
+        expect(set).toHaveLength(seats);
+        expect(new Set(set).size).toBe(seats);
+        expect(set[0]).toBe(decks[i]?.deck);
+      }
+    }
+    expect(() => tableSets(decks.slice(0, 2), 3)).toThrow(/needs 3 precons/);
   }, 120_000);
 });
 

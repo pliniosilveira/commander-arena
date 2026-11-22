@@ -1,6 +1,6 @@
 import type { MatchResult, TableResult } from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { formatMatch, formatTable, formatTimes } from './format.ts';
+import { formatMatch, formatRound, formatTable, formatTimes, percentile } from './format.ts';
 
 const result: MatchResult = {
   a: 'casual',
@@ -99,5 +99,37 @@ describe('formatTable', () => {
   test('lists the reasons of each agent', () => {
     expect(text).toContain('reasons 1 greedy: land 3');
     expect(text).toContain('reasons 0 casual: (none: the agent does not explain itself)');
+  });
+});
+
+describe('percentile and formatRound', () => {
+  test('the percentile is taken by rank and an empty list is 0', () => {
+    expect(percentile([], 0.95)).toBe(0);
+    expect(percentile([5, 1, 3, 2, 4], 0.5)).toBe(3);
+    expect(
+      percentile(
+        Array.from({ length: 100 }, (_, i) => i + 1),
+        0.95,
+      ),
+    ).toBe(96);
+    expect(percentile([7], 0.99)).toBe(7);
+  });
+
+  test('a round is one turn of every seat: the decisions and the time are per turn and per round', () => {
+    const text = formatRound({ decisions: 600, ms: 3000, turns: 60, seats: 3 });
+    expect(text).toBe(
+      'per turn: 10.0 decisions, 50.0 ms; per round of 3 turns: 30.0 decisions, 150.0 ms',
+    );
+    expect(formatRound({ decisions: 0, ms: 0, turns: 0, seats: 3 })).toBe(
+      'per turn: no turns played',
+    );
+  });
+
+  test('the times line shows the 95th percentile when it is given', () => {
+    const line = formatTimes(
+      [{ label: 'casual', decisions: 10, totalMs: 20, slowestMs: 9, p95Ms: 5.5 }],
+      5000,
+    );
+    expect(line).toContain('95th percentile 5.5 ms');
   });
 });
