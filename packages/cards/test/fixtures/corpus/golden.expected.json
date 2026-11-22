@@ -5509,18 +5509,10 @@
     "7465d02f-3eee-483c-8de3-404381aa21eb": {
       "name": "Dancer's Chakrams",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Equipped creature gets +2/+2, has lifelink and \"Other commanders you control get +2/+2 and have lifelink,\" and is a Performer in addition to its other types.",
-          "reason": "notRunnable",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1687ee77"
+      "ast": "52c23e37"
     },
     "74d3277a-38e5-4732-afed-084a56148f20": {
       "name": "Mana Drain",
@@ -11854,7 +11846,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1160,
+      "supported": 1161,
       "total": 1184
     }
   }
