@@ -1,11 +1,12 @@
 /** The battlefield, both players' strips, the command zones and the human's hand (SPEC 10, A19). */
 import type { GameView, ObjectView } from '@commander-arena/engine';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { LookedCard } from '../../game/looked-cards';
 import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
-import { useApp } from '../store-context';
+import { useApp, useLookedCards } from '../store-context';
 import './board.css';
-import { pickerCards } from '../decisions/cards-picker';
+import { lookTakeRevealed, pickerCards } from '../decisions/cards-picker';
 import { useZoneGate } from '../decisions/zone-decision';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
@@ -92,13 +93,24 @@ function Field({
   );
 }
 
-function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: ObjectView[] } {
-  // A library search: the matching cards the engine shows the searcher (the library itself is hidden).
+interface ZoneContents {
+  readonly title: string;
+  readonly objects: ObjectView[];
+  /** Cards looked at that cannot be taken (shown beside the ones that can). */
+  readonly others?: readonly LookedCard[];
+}
+
+function zoneContents(view: GameView, zone: ZoneRef, looked: readonly LookedCard[]): ZoneContents {
+  // The cards of a question: a library search (the matching cards the engine shows the searcher, the library itself is hidden) or the cards looked at or revealed from the top.
   if (zone.kind === 'cards') {
     const pending = view.pending;
+    if (pending?.kind !== 'chooseCards') return { title: 'Cards', objects: [] };
+    const objects = [...pickerCards(view, pending)];
+    if (pending.purpose !== 'lookTake') return { title: 'Search your library', objects };
     return {
-      title: 'Search your library',
-      objects: pending?.kind === 'chooseCards' ? [...pickerCards(view, pending)] : [],
+      title: lookTakeRevealed(pending) ? 'Cards revealed' : 'Cards looked at',
+      objects,
+      others: looked,
     };
   }
   if (zone.kind === 'exile') return { title: 'Exile (shared)', objects: [...view.exile] };
@@ -114,6 +126,7 @@ function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: 
 export function Board() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
+  const looked = useLookedCards();
   useCloseOnDecision(view, () => setZone(null));
   // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
   // when the question is answered is the board's doing too, not the player's chore.
@@ -163,7 +176,7 @@ export function Board() {
   const me = view.seats.find((s) => s.id === view.viewer);
   const opponent = view.seats.find((s) => s.id !== view.viewer);
   if (me === undefined || opponent === undefined) return null;
-  const open = zone === null ? null : zoneContents(view, zone);
+  const open = zone === null ? null : zoneContents(view, zone, looked);
 
   return (
     <PairFocusProvider>
@@ -210,7 +223,12 @@ export function Board() {
         <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
         <BlockArrows roles={roles} />
         {open !== null && (
-          <ZoneViewer title={open.title} objects={open.objects} onClose={() => setZone(null)} />
+          <ZoneViewer
+            title={open.title}
+            objects={open.objects}
+            {...(open.others === undefined ? {} : { others: open.others })}
+            onClose={() => setZone(null)}
+          />
         )}
       </section>
     </PairFocusProvider>
