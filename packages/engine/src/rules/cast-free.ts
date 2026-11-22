@@ -36,7 +36,10 @@ export function isLandCard(state: GameState, id: ObjectId): boolean {
 export function freeCandidates(
   state: GameState,
   res: ResolutionContext,
-  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards' | 'cardsZone' | 'seat'>,
+  ins: Pick<
+    CastFreeInstruction,
+    'objects' | 'play' | 'filter' | 'cards' | 'cardsZone' | 'seat' | 'payInstead'
+  >,
 ): ObjectId[] {
   // "... then they may cast that card": the player the effect names casts it, not always its controller.
   const seat = ins.seat ?? res.controller;
@@ -92,6 +95,8 @@ export function freeCandidates(
       seat,
       card,
       card.zone === 'graveyard' ? 'freeGraveyard' : 'free',
+      false,
+      ins.payInstead,
     );
   });
 }
@@ -163,7 +168,7 @@ export function runCastFree(
                         ? 'a card from your graveyard'
                         : 'a card from your hand'
                       : 'the exiled card'
-            } without paying its mana cost`
+            } ${ins.payInstead === undefined ? 'without paying its mana cost' : 'by paying its alternative cost'}`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${
               ins.remaining === 'any'

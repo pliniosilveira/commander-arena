@@ -2202,6 +2202,11 @@ export type Effect =
         ObjectRef,
         { readonly kind: 'moved' | 'boundObjects' | 'linkedExile' }
       >;
+      /**
+       * "You may cast the copy by paying {3} rather than paying its mana cost." (Blue Mage's Cane, CR 118.9, 601.2f, 707.12): the alternative cost the copy is cast for, mana only, in place of
+       * the cost of not paying one. Left out, the copy is cast without paying its mana cost. A copy the controller cannot pay for is not offered (CR 601.2h).
+       */
+      readonly cost?: readonly Cost[];
     }
   | {
       readonly kind: 'delayedCombatDamage';
@@ -4037,6 +4042,12 @@ export type Effect =
    * `forever` (CR 701.15a, 611.2b): "The tokens are goaded for the rest of the game": the goad has no end, so the creatures stay goaded as long as they are in the game.
    */
   | { readonly kind: 'goad'; readonly objects: ObjectSelector; readonly forever?: true }
+  /**
+   * "Remove enchanted creature from combat" (CR 506.4, Observed Stasis): each creature `objects` names that is attacking or blocking is taken out of the combat in progress, as a
+   * permanent that changes controller is (`rules/combat-removal.ts`): it stops attacking or blocking, a creature it blocked stays blocked (CR 509.1h) and no combat damage is dealt by or
+   * to it. It is not tapped, untapped or dealt anything else. A permanent that is in no combat, or is not on the battlefield, is not changed.
+   */
+  | { readonly kind: 'removeFromCombat'; readonly objects: ObjectSelector }
   /**
    * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (issue 81, Dack Fayden, CR 613.1b, 611.2a, 101.4):
    * for each permanent `objects` names (the ones an earlier effect moved), in order, the controller of the effect chooses an opponent not yet chosen for another one of them (a

@@ -4,7 +4,7 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import type { AlternativeCost, ObjectFilter, TargetSpec } from '../ast/types';
+import type { AlternativeCost, Cost, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
@@ -870,6 +870,8 @@ export function canCastDuringResolution(
   alternative: 'free' | 'freeGraveyard' | 'normal' | 'madness' | 'miracle' = 'free',
   /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
   anyManaType = false,
+  /** CR 118.9 (Blue Mage's Cane): the mana paid rather than the mana cost of a `free` cast, which has to be payable. */
+  payInstead?: readonly Cost[],
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
@@ -924,6 +926,7 @@ export function canCastDuringResolution(
           // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-433).
           ...modes,
           ...(anyManaType ? { anyType: true as const } : {}),
+          ...(payInstead === undefined ? {} : { payInstead }),
         }),
       ),
   );

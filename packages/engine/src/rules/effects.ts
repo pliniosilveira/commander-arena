@@ -149,6 +149,7 @@ import {
   runProtectionColor,
 } from './protection-choice';
 import { runRegenerate } from './regenerate';
+import { runRemoveFromCombat } from './remove-from-combat';
 import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
@@ -1625,6 +1626,7 @@ function runEffect(
               play: false,
               chosen: null,
               ...(copies.length > 1 ? { remaining: 'any' as const } : {}),
+              ...(effect.cost === undefined ? {} : { payInstead: effect.cost }),
             },
           ],
         ),
@@ -3764,6 +3766,10 @@ function runEffect(
     case 'goad':
       // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
       return runGoad(state, effect, ctx, targets);
+
+    case 'removeFromCombat':
+      // CR 506.4: the creatures are taken out of the combat in progress (`rules/remove-from-combat.ts`).
+      return runRemoveFromCombat(state, effect, ctx, targets);
 
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':

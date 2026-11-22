@@ -315,6 +315,11 @@ export interface CostRequest {
    * on the stack yet (the check that an effect lets it be cast).
    */
   readonly anyType?: true;
+  /**
+   * CR 118.9, 601.2f ("You may cast the copy by paying {3} rather than paying its mana cost"): with the `free` alternative, the mana paid in place of the mana cost. Left out, what the spell
+   * on the stack says (`StackData.payInstead`).
+   */
+  readonly payInstead?: readonly Cost[];
 }
 
 /**
@@ -395,9 +400,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
     zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
+  const payInstead =
+    alternative === 'free' ? (request.payInstead ?? spell.stack?.payInstead) : undefined;
   const symbols: string[] =
     alternative === 'free' || alternative === 'lifeForMana'
-      ? []
+      ? // CR 118.9: a free cast pays nothing for the mana cost, or the mana the effect names rather than it.
+        payInstead === undefined
+        ? []
+        : manaSymbolsOf(payInstead)
       : flashback !== null
         ? // CR 107.3a: a cost equal to the mana cost has the X of it; a printed flashback cost is paid as it is.
           flashbackCostOf(face) === null

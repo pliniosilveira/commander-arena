@@ -1068,7 +1068,7 @@ export function graveyardPhrase(
   // Issue 102 (Tasigur): "a nonland card from your graveyard", read only by a caller that asks for it (a target's "nonland card" is another rule's reading).
   allowNonland = false,
 ): Parser<IrFilter> {
-  const owner: Parser<'you' | 'opponent' | undefined> =
+  const owner: Parser<'you' | 'opponent' | 'defendingPlayer' | undefined> =
     preposition === 'fromTheirs'
       ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
         // graveyard, so no owner. The caller reads it only after "each player".
@@ -1091,6 +1091,11 @@ export function graveyardPhrase(
                   map(literal(' from your graveyard'), () => 'you' as const),
                   map(literal(' from a graveyard'), () => undefined),
                   map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                  // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
+                  map(
+                    pattern(/ from defending player['’]s graveyard/i),
+                    () => 'defendingPlayer' as const,
+                  ),
                   // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
                   ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
                   // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.

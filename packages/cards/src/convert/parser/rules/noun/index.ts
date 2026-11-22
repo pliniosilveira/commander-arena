@@ -384,11 +384,15 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
     // Krile Baldesion (CR 202.3, 603.3d): exactly the mana value of the spell that caused the trigger.
     "target creature card with mana value equal to that spell's mana value from your graveyard",
+    // Blue Mage's Cane (CR 508.5): the graveyard of the player an attacking creature attacks.
+    "target instant or sorcery card from defending player's graveyard",
+    "up to one target instant or sorcery card from defending player's graveyard",
   ],
   rejects: [
     "target creature card with mana value equal to that card's mana value from your graveyard",
     "target creature card with mana value equal to that spell's mana value",
-
+    "target instant or sorcery card from the defending player's graveyard",
+    "target instant or sorcery card from defending players' graveyard",
     'one, two, or three target creature card from graveyards',
     'one, two, three target creature cards from graveyards',
     'one, two, or four target creature cards from graveyards',
