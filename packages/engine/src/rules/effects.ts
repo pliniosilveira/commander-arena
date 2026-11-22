@@ -1259,9 +1259,9 @@ function runEffect(
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
               filter: sel.filter,
-              // Issue 102 (Tasigur): "of an opponent's choice": the first opponent in turn order is asked (CR 101.4, as for `opponentChoosesCard`).
-              ...(sel.chosenBy === 'opponent' && opponentsOf(state, res.controller)[0] !== undefined
-                ? { decider: opponentsOf(state, res.controller)[0] as SeatId }
+              // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
+              ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined
+                ? { decider: opponentOf(state, res) as SeatId }
                 : {}),
               count: amountOf(state, sel.count ?? 1, ctx, targets),
               to: effect.to,
