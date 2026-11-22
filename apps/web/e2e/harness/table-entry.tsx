@@ -18,15 +18,21 @@ const FIELDS: readonly (readonly string[])[] = [
   ['Island', 'Forest', 'Giant Spider'],
 ];
 
-export function mount(opponents: number): void {
+export function mount(opponents: number, lost: readonly number[] = []): void {
   const b = scenario({ seats: opponents + 1 });
   for (let seat = 0; seat <= opponents; seat++) {
     b.seat(seat)
+      .life(lost.includes(seat) ? 0 : 40)
       .library(...FILLER)
       .battlefield(...(FIELDS[seat] ?? []));
     if (seat === 0) b.hand('Lightning Bolt', 'Grizzly Bears', 'Island', 'Sol Ring');
   }
-  const view = getView(b.at('precombatMain').build().state, 0);
+  const g = b.at('precombatMain', { active: 0 }).build();
+  if (lost.length > 0) {
+    // A seat at 0 life loses the game at the next check of state-based actions (CR 704.5a): pass once.
+    g.act(0).pass();
+  }
+  const view = getView(g.state, 0);
   const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
   store.setState({
     screen: 'table',

@@ -1,6 +1,6 @@
 import type { GameView } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { tableAreas } from '../src/ui/board/table-areas';
+import { shownOpponents, tableAreas } from '../src/ui/board/table-areas';
 import { opponentLabel } from '../src/ui/board/table-label';
 
 /** SYNTHETIC: only the fields the label reads. */
@@ -67,9 +67,39 @@ describe('tableAreas', () => {
     );
   });
 
-  test('one opponent is today board and more than three is not built', () => {
-    expect(() => tableAreas(1)).toThrow(RangeError);
+  test('the last opponent left takes the whole top row', () => {
+    const t = tableAreas(1);
+    expect(t.cells.filter((c) => c.row === 1)).toEqual([
+      { key: 'opp1', row: 1, col: 1, colSpan: 30 },
+    ]);
+    expect(t.cells.filter((c) => c.row === 2)).toEqual([
+      { key: 'me', row: 2, col: 1, colSpan: 22 },
+      { key: 'flow', row: 2, col: 23, colSpan: 8 },
+    ]);
+  });
+
+  test('no opponents and more than three are not drawn', () => {
+    expect(() => tableAreas(0)).toThrow(RangeError);
     expect(() => tableAreas(4)).toThrow(RangeError);
+  });
+});
+
+describe('shownOpponents', () => {
+  const seat = (id: number, hasLost: boolean) => ({ id, hasLost });
+
+  test('an opponent who lost is left out, and the others keep their order', () => {
+    const seats = [seat(1, false), seat(2, true), seat(3, false)];
+    expect(shownOpponents(seats).map((s) => s.id)).toEqual([1, 3]);
+  });
+
+  test('everyone is shown while nobody has lost', () => {
+    const seats = [seat(1, false), seat(2, false)];
+    expect(shownOpponents(seats)).toEqual(seats);
+  });
+
+  test('when every opponent has lost (the game is over) all are shown, not an empty board', () => {
+    const seats = [seat(1, true), seat(2, true)];
+    expect(shownOpponents(seats)).toEqual(seats);
   });
 });
 

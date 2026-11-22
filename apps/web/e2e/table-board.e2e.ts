@@ -35,14 +35,22 @@ test.beforeAll(async () => {
   if (script === '') throw new Error('the table board bundle was not built');
 });
 
-async function show(page: Page, opponents: number, width = 1440, height = 900): Promise<void> {
+async function show(
+  page: Page,
+  opponents: number,
+  width = 1440,
+  height = 900,
+  conceded: readonly number[] = [],
+): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.setViewportSize({ width, height });
   await page.goto('about:blank');
   await page.setContent('<!doctype html><html><head></head><body></body></html>');
   if (css !== '') await page.addStyleTag({ content: css });
-  await page.addScriptTag({ content: `${script}\nTableEntry.mount(${opponents});` });
+  await page.addScriptTag({
+    content: `${script}\nTableEntry.mount(${opponents}, ${JSON.stringify(conceded)});`,
+  });
   expect(errors).toEqual([]);
   await expect(page.getByTestId('game-table-board')).toBeVisible();
 }
@@ -116,4 +124,30 @@ test('the table board has no scroll buttons, a smaller hand and a narrower flow 
   const flow = await page.getByTestId('table-flow').boundingBox();
   expect((flow?.width ?? 0) / (board?.width ?? 1)).toBeCloseTo(8 / 30, 1);
   await page.screenshot({ path: 'test-results/table-polish.png' });
+});
+
+test('an opponent who lost is taken off the board and the others share the room', async ({
+  page,
+}) => {
+  await show(page, 3, 1440, 900, [2]);
+  // Opponent 2 lost: two cells are left, side by side, and the numbering of the others stays.
+  await expect(page.locator('.table-opp')).toHaveCount(2);
+  await expect(page.getByText('Opponent 2', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Opponent 1', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Opponent 3', { exact: true }).first()).toBeVisible();
+  const [a, b] = await page
+    .locator('.table-opp')
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+  const board = await page.locator('.table-board').boundingBox();
+  expect((a ?? 0) / (board?.width ?? 1)).toBeCloseTo(0.5, 1);
+  expect(b ?? 0).toBeCloseTo(a ?? 0, 0);
+  await page.screenshot({ path: 'test-results/table-eliminated.png' });
+});
+
+test('the last opponent left takes the whole top row', async ({ page }) => {
+  await show(page, 3, 1440, 900, [1, 3]);
+  await expect(page.locator('.table-opp')).toHaveCount(1);
+  const opp = await page.locator('.table-opp').boundingBox();
+  const board = await page.locator('.table-board').boundingBox();
+  expect((opp?.width ?? 0) / (board?.width ?? 1)).toBeCloseTo(1, 1);
 });

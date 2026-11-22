@@ -18,7 +18,7 @@ import { OtherZonesStrip } from './OtherZonesStrip';
 import { PlayerStrip, type ZoneRef } from './PlayerStrip';
 import { PairFocusProvider } from './pair-focus';
 import { combatRoles } from './resolve';
-import { tableAreas } from './table-areas';
+import { shownOpponents, tableAreas } from './table-areas';
 import { opponentLabel } from './table-label';
 import { ZoneViewer } from './ZoneViewer';
 
@@ -43,7 +43,8 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
   if (view === null)
     return <section className="table-board table-empty">No game in progress.</section>;
   const me = view.seats.find((s) => s.id === view.viewer);
-  const opponents = view.seats.filter((s) => s.id !== view.viewer);
+  // An opponent who lost is not drawn: the others share the room.
+  const opponents = shownOpponents(view.seats.filter((s) => s.id !== view.viewer));
   if (me === undefined) return null;
   const areas = tableAreas(opponents.length);
   const cell = (key: string): CSSProperties => ({ gridArea: key });
