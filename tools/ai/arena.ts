@@ -193,7 +193,7 @@ if (values.precons) {
 
 if (seats > 2) {
   const kinds = (values.agents ?? `${values.a},${values.b}`).split(',').map((k) => k.trim());
-  if (!kinds.every(isKind) || kinds.length < 2) {
+  if (!kinds.every(isKind) || kinds.length < 1) {
     process.stderr.write(`--agents must list agents among ${KINDS.join(', ')}\n`);
     process.exit(2);
   }
