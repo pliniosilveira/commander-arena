@@ -7,4 +7,4 @@
  * What each version added: `git log -p -- packages/cards/src/version.ts`.
  * Keep this file to the one constant: a comment per version made every parser pull request conflict.
  */
-export const PARSER_VERSION = 189;
+export const PARSER_VERSION = 190;
