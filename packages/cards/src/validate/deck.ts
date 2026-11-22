@@ -12,6 +12,7 @@ import {
   offIdentityColors,
   oracleTextOf,
 } from './card-facts';
+import { companionIssues } from './companion';
 import { canPair, describePairFailure } from './partner';
 
 export interface DeckMainEntry {
@@ -22,6 +23,8 @@ export interface DeckMainEntry {
 export interface DeckValidationInput {
   readonly commanders: readonly StoredCard[];
   readonly main: readonly DeckMainEntry[];
+  /** The companion chosen from outside the game, not one of the 100 cards (CR 702.139, SPEC 5.8); checked by `companionIssues`. */
+  readonly companion?: StoredCard;
 }
 
 export const COMMANDER_DECK_SIZE = 100;
@@ -227,6 +230,10 @@ export function validateDeck(input: DeckValidationInput): DeckValidation {
 
   const allCards = [...copies.values()].map((entry) => entry.card);
   issues.push(...legalityIssues(allCards));
+
+  if (input.companion !== undefined) {
+    issues.push(...companionIssues({ companion: input.companion, commanders, main: entries }));
+  }
 
   const gameChangers = allCards.filter((card) => card.gameChanger === true).map((c) => c.name);
   if (gameChangers.length > 0) {

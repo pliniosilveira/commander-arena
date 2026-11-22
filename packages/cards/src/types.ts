@@ -37,6 +37,16 @@ export interface ParsedDecklist {
   readonly errors: readonly ParseError[];
 }
 
+/**
+ * The companion a decklist names (SPEC 6.1, CR 702.139): its `Companion` section holds at most one card, once. `entry` is that card (the first line when there are more, so the
+ * caller can still show it); `issues` carries an error `companion-count` when the section names more than one card or a count above one.
+ */
+export interface CompanionSelection {
+  readonly entry: DeckEntry | null;
+  readonly extra: readonly DeckEntry[];
+  readonly issues: readonly ValidationIssue[];
+}
+
 // ---------------------------------------------------------------- stored Scryfall data (SPEC 6.2)
 
 export type ColorLetter = 'W' | 'U' | 'B' | 'R' | 'G';

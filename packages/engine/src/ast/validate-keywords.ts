@@ -117,6 +117,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         issue(out, `${path}.limit`, 'deckLimit needs a whole number of at least 2');
       }
       return true;
+    case 'companion':
+      // CR 702.139a: the condition is one of the closed set of companion conditions.
+      if (k.condition?.kind !== 'noRepeatedManaSymbol') {
+        issue(out, `${path}.condition`, 'companion needs a known companion condition');
+      }
+      return true;
     case 'partnerWith':
       // CR 702.124j (D-490): the name of the card the other commander is, and the card the enters trigger searches for.
       if (typeof k.name !== 'string' || k.name.trim() === '') {

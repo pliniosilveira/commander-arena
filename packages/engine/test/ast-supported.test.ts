@@ -45,6 +45,7 @@ const EXECUTABLE_KEYWORDS = [
   'partnerWith', // scenario-xx-gisa-g3-sacrifice-x
   'deckLimit', // convert-grammar-engine-witch-king (a deck-construction line, no effect in a game)
   'chooseBackground', // scenario-xx-choose-background
+  'companion', // parser-companion (CR 702.139a: functions outside the game, no effect in a game)
   'canBeCommander', // scenario-xx-planeswalker-commander
   'ascend', // scenario-xx-ascend
   'soulbond', // scenario-xx-soulbond (D-286)
@@ -154,6 +155,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   partnerWith: { kind: 'partnerWith', name: 'SYNTHETIC Partner Quarry' },
   deckLimit: { kind: 'deckLimit', limit: 9 },
   chooseBackground: { kind: 'chooseBackground' },
+  companion: { kind: 'companion', condition: { kind: 'noRepeatedManaSymbol' } },
   canBeCommander: { kind: 'canBeCommander' },
   ascend: { kind: 'ascend' },
   soulbond: { kind: 'soulbond' },
