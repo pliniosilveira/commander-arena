@@ -16,8 +16,8 @@
  *    takes, 40% of a loss when it is lethal.
  * 3. The best score wins; an attack must beat staying home by `ATTACK_MARGIN`. Ties go to fewer attackers.
  *
- * Targets: every attacker goes at the opposing player (the only opponent in v1 is the controller of the
- * opposing commander); one candidate sends the safe attackers at an opposing planeswalker, which is
+ * Targets: every attacker goes at one opposing player, chosen by `rankOpponents` (`attack-targets.ts`:
+ * the one the attackers can kill, else the weakest); one candidate sends the safe attackers at an opposing planeswalker, which is
  * scored like any other. Battles are never attacked.
  *
  * Attack taxes (CR 508.1h, `payForAttacks`): every candidate is trimmed to what can be paid for BEFORE it
@@ -38,6 +38,7 @@ import {
   type ObjectView,
   type SeatId,
 } from '@commander-arena/engine';
+import { rankOpponents, targetFor } from './attack-targets';
 import { isUnblockable } from './casual-evasion';
 import { type PlannedAttack, payForAttacks } from './casual-play-rules';
 import { findObject, hasKeyword, powerOf } from './casual-view';
@@ -82,9 +83,6 @@ interface Candidate {
 }
 
 const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
-const opposingSeat = (view: GameView): SeatId | undefined =>
-  view.seats.find((s) => s.id !== view.viewer && !s.hasLost)?.id;
 
 /**
  * What the opponent's next attack could cost the agent in this position (a score penalty, 0 or more):
@@ -151,14 +149,16 @@ function guardHome(
   required: ReadonlySet<ObjectId>,
 ): Candidate[] {
   let going = [...safe];
-  const opp = opposingSeat(view);
-  while (opp !== undefined && going.length > 0) {
+  const opps = view.seats.filter((s) => s.id !== me && !s.hasLost).map((s) => s.id);
+  while (opps.length > 0 && going.length > 0) {
     const out = new Set(going.map((c) => c.attacker));
     const home = untappedCreatures(view, me).filter(
       (o) => !out.has(o.id) || hasKeyword(o, 'vigilance'),
     );
-    const b = breakthrough(view, futureAttackers(view, opp), home);
-    if (!verdict(view, me, b).danger) break;
+    const inDanger = opps.some(
+      (opp) => verdict(view, me, breakthrough(view, futureAttackers(view, opp), home)).danger,
+    );
+    if (!inDanger) break;
     const best = going
       .filter((c) => !required.has(c.attacker))
       .sort(
@@ -191,10 +191,19 @@ export function chooseHeuristicAttack(
   ctx: AttackContext,
 ): AttackChoice {
   const me = view.viewer;
-  const opp = opposingSeat(view);
+  // Issue 479: the opponent the attackers can kill, else the weakest, is the one attacked; the lethal
+  // check and the play-outs below are about that opponent.
+  const ranked = rankOpponents(
+    view,
+    d.candidates.flatMap((c) => {
+      const o = findObject(view, c.attacker);
+      return o === undefined || powerOf(o) <= 0 ? [] : [o];
+    }),
+  );
+  const opp = ranked[0];
   const candidates: Candidate[] = d.candidates.flatMap((c) => {
     const object = findObject(view, c.attacker);
-    const target = c.targets.find((t) => t.kind === 'player' && t.seat !== me) ?? c.targets[0];
+    const target = targetFor(view, c.targets, ranked);
     return object === undefined || target === undefined
       ? []
       : [{ attacker: c.attacker, object, targets: c.targets, target }];
