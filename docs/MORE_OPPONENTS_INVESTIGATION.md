@@ -140,9 +140,60 @@ In all six runs no permanent stayed under a player who had lost, no seat that ha
 4. Performance: more permanents and triggers; `tools/perf/derive-bench.ts` measures only two seats.
 5. Tests: the scenario DSL, the golden and derive digests, and an exhaustive soak for 3 and 4 seats.
 
-## Board sketch
+## Board plan: five areas (phase 4)
 
-The viewer stays below. Opponents sit in a row above: two for three seats, three for four. The active player and the defender being attacked are highlighted. An opponent's strip shows life, hand count, a commander-damage matrix, the command zone and a collapsed battlefield that opens on click. On a phone the opponents become tabs or a carousel. A choice of target opponent is a clear selector when more than one target is legal. Combat arrows need a source and a defender each.
+One board for every seat count from 2 to 4, not a 1v1 board plus a multiplayer one. `Board` maps over `view.seats` instead of picking "the" opponent (`Board.tsx`). The screen is a grid of five areas:
+
+```
+3 opponents                 2 opponents                 1 opponent (today)
+| opp 1 | opp 2 | opp 3 |   | opp 1     | opp 2     |   | opponent          | flow |
+| you           | flow  |   | you           | flow  |   | you               |      |
+```
+
+Opponents share the top row equally. You get the bottom left (4 of 6 columns). The flow cell (2 of 6) holds what floats today at the right edge and top left: the decision dock, the stack and the turn box. With one opponent the flow cell spans both rows, so the 1v1 screen keeps today's proportions. The template is a pure function of the opponent count (`tableAreas`, unit tested like `layout.ts`), so adding a seat count adds a row to a table, not a component.
+
+### What is reused as it is
+
+| Today | In the new board |
+| --- | --- |
+| `Field` and `BattlefieldRow` | One per seat, unchanged. Rows measure their own cell (`useMeasure`) and pick tile height, grouping and scrolling from it, so a narrower cell is not a new code path. `ROW_ORDER_OPP` already mirrors the opponent. |
+| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Same component with a `density` of `full` or `compact`, chosen by a container query on its cell. |
+| `HandBacks` | One per opponent. |
+| `BlockArrows`, `StackArrows` | Measure tiles from the DOM by `data-object-id` (`panels/arrows.ts`), so they do not care where a cell is. To confirm with a test at 3 opponents. |
+| `DecisionLayer`, `DockSlotContext`, `StackPanel` | The slot moves from `aside.turn-panel` in `Game` into the flow cell; `Board` takes it as a `flow` prop. |
+| `ix.clickableSeats`, `ix.onSeat`, `AttackTargetDialog` | Already keyed by seat id and by `player:<seat>` options. They only need names. |
+| `TurnTracker` | Folds into the top of the flow cell and gains a turn-order wheel: seats in order, the active one marked, seats that left struck out. |
+
+### What changes
+
+- `seatLabel` says "Opponent" for everyone. It needs "Opponent 2" or the deck name, plus a colour per seat (`--seat-1` to `--seat-3` beside `--me`) shown on the strip border, the life total and the wheel, because position alone no longer names a seat.
+- `commanderDamageTaken` names the source only when there is one source (`resolve.ts`). With several opponents it must map each `"seat:card"` key to its owner and show "from Opponent 2".
+- Words that say "the opponent" in the singular: `Versus.tsx`, `game-over-model.ts`, `TurnTracker.tsx` (`stopSide`; the two stop settings stay, "opponent" meaning any opponent), `priority.ts`, `LibraryTop`.
+- A seat that left the game (`has-lost` already exists on the strip) collapses to a slim strip and its field disappears; its column width goes to the others.
+- Focus: clicking an opponent widens its column (for example 2fr 1fr 1fr), and the board does it by itself for the seat that attacks you or targets you. It is UI state, never engine state.
+- Below about 1100 px wide the opponents stack as compact strips with one expanded, using the same cells and the same focus state. Phone width is left out for now.
+- New rules go in a new `table.css`; `board.css` is already over 2000 lines. Keep the class names the e2e tests use (`board-field-opp`, `board-strip-opp`, `data-field-seat`).
+- Not part of the board: `host.ts` has one `HUMAN` and one `AI_SEAT`, and the menu has no seat count. Those belong to the app step of "How games would be run".
+
+### Developing it before the engine
+
+`createGame` still throws for more than two seats, so the UI cannot wait for it. Render the board from synthetic `GameView` fixtures (marked `SYNTHETIC`) in a component test and in one e2e page, with 2 and 3 opponents, a seat that left, and an attack on you. The 1v1 game stays the regression check through the existing e2e tests.
+
+### Steps
+
+Each is a pull request; the 1v1 screen must not change until step 4.
+
+1. Pure parts with tests: `tableAreas`, seat label and colour, commander damage source.
+2. `Board` maps over the opponents (still one); the 1v1 template looks as today.
+3. Turn box and turn panel move into the flow cell with the turn-order wheel.
+4. Compact `PlayerStrip`, columns for 2 and 3 opponents, focus, seats that left; screenshots at 1440, 1280 and 1024 wide (`AGENTS.md`, "Visual changes need pictures").
+5. Singular wording across decisions and the end screen; the menu's seat count together with phase 3.
+
+### Open choices
+
+- Whether 1v1 uses the same template (recommended: one path) or keeps the full-height right panel it has now.
+- Whether the log moves into the flow cell or stays a dock.
+- The narrowest window width the board must support.
 
 ## How games would be run
 
