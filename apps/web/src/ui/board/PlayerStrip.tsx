@@ -1,4 +1,5 @@
 /** A player's strip: life, poison, zone counts and the command zone with tax and damage taken. */
+import './commander.css';
 import type { GameView, ObjectView, SeatId, SeatView } from '@commander-arena/engine';
 import { restrictionWords, riderWords } from '../../game/angels-text';
 import { companionId, companionState } from '../../game/companion';
@@ -255,7 +256,7 @@ function CommanderCta({ object, onOpen }: { object: ObjectView; onOpen: () => vo
   return (
     <button
       type="button"
-      className={`board-cmdr table-cmdr-cta${clickable ? ' is-clickable' : ''}`}
+      className={`board-cmdr cmdr-cta${clickable ? ' is-clickable' : ''}`}
       data-commander-cta={object.owner}
       aria-label={`Open commander ${object.name}${clickable ? ', can be cast' : ''}`}
       title={`${object.name}: open the commander${clickable ? ' (can be cast)' : ''}`}
@@ -265,6 +266,9 @@ function CommanderCta({ object, onOpen }: { object: ObjectView; onOpen: () => vo
       <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
       <span className="board-cmdr-name">{object.name}</span>
       <CostDisplay object={object} />
+      <span className="cmdr-cta-chevron" aria-hidden="true">
+        ›
+      </span>
     </button>
   );
 }
@@ -521,7 +525,7 @@ export function PlayerStrip({
       {onOpenCommander === undefined ? (
         <CommandBox view={view} seat={seat} onOpenZone={onOpenZone} label={who} />
       ) : (
-        <div className="board-command table-cmdr-strip" data-seat-zone={seat.id}>
+        <div className="board-command cmdr-strip" data-seat-zone={seat.id}>
           {commandersOf(view, seat.id).map((o) => (
             <CommanderCta key={o.id} object={o} onOpen={() => onOpenCommander(seat.id)} />
           ))}

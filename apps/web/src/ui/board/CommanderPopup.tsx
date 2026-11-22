@@ -7,6 +7,7 @@
  */
 import type { GameView } from '@commander-arena/engine';
 import { useEffect } from 'react';
+import './commander.css';
 import { Dialog } from '../decisions/Dialog';
 import { useInteraction } from '../interaction';
 import { CardFace } from './CardFace';
@@ -38,20 +39,20 @@ export function CommanderPopup({
   const popup = commanderPopup(view, seat);
   const castable = popup.commanders.filter((o) => ix.clickable.has(o.id));
   return (
-    <Dialog label={`${popup.label} commander`} className="table-cmdr-dialog">
-      <h2 className="table-cmdr-title">
+    <Dialog label={`${popup.label} commander`} className="cmdr-dialog">
+      <h2 className="cmdr-title">
         {popup.label === 'You' ? 'Your commander' : `${popup.label}'s commander`}
       </h2>
-      <div className="table-cmdr-main">
-        <section className="table-cmdr-section" aria-labelledby="table-cmdr-h-commander">
-          <h3 className="table-cmdr-heading" id="table-cmdr-h-commander">
+      <div className="cmdr-main">
+        <section className="cmdr-section" aria-labelledby="cmdr-h-commander">
+          <h3 className="cmdr-heading" id="cmdr-h-commander">
             Commander
           </h3>
           {popup.commanders.length === 0 ? (
             <p className="board-dim">The commander is not in a zone you can see.</p>
           ) : (
             popup.commanders.map((o, i) => (
-              <figure className="table-cmdr-card" key={o.id} data-object-id={o.id}>
+              <figure className="cmdr-card" key={o.id} data-object-id={o.id}>
                 <CardFace object={o} variant="full" />
                 <figcaption className={(popup.taxes[i] ?? 0) > 0 ? '' : 'board-dim'}>
                   Commander tax +{popup.taxes[i] ?? 0}
@@ -60,11 +61,8 @@ export function CommanderPopup({
             ))
           )}
         </section>
-        <section
-          className="table-cmdr-section table-cmdr-damage"
-          aria-labelledby="table-cmdr-h-damage"
-        >
-          <h3 className="table-cmdr-heading" id="table-cmdr-h-damage">
+        <section className="cmdr-section cmdr-damage" aria-labelledby="cmdr-h-damage">
+          <h3 className="cmdr-heading" id="cmdr-h-damage">
             Commander Damage Taken
           </h3>
           <p
@@ -73,7 +71,7 @@ export function CommanderPopup({
           >
             Commander damage taken: {popup.damageTaken}
           </p>
-          <ul className="table-cmdr-list" aria-label="The other players and their commanders">
+          <ul className="cmdr-list" aria-label="The other players and their commanders">
             {popup.others.map((o) => (
               <li key={o.seat} className={o.lost ? 'board-dim' : ''} data-popup-seat={o.seat}>
                 <b>{o.label}</b>

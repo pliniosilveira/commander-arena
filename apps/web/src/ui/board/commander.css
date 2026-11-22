@@ -1,0 +1,130 @@
+/*
+ * The commander chip of a strip (the button that opens the commander popup) and the popup itself
+ * (`CommanderPopup.tsx`), on the table board and on the 1v1 board.
+ */
+.cmdr-cta {
+  cursor: pointer;
+  padding-right: 4px;
+  background: var(--bg-raised);
+  border-color: color-mix(in srgb, var(--accent, var(--line)) 60%, var(--line));
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.12s ease;
+}
+/* A chevron at the right says the chip opens something. */
+.cmdr-cta-chevron {
+  flex: none;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  margin-left: 2px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent, var(--text-dim));
+  border-left: 1px solid var(--line);
+  transition: color 0.12s ease;
+}
+.cmdr-cta:hover,
+.cmdr-cta:focus-visible {
+  background: color-mix(in srgb, var(--accent, var(--text)) 14%, var(--bg-raised));
+  border-color: var(--accent, var(--text));
+  transform: translateY(-1px);
+}
+.cmdr-cta:hover .cmdr-cta-chevron,
+.cmdr-cta:focus-visible .cmdr-cta-chevron {
+  color: var(--text);
+}
+.cmdr-cta:active {
+  transform: translateY(0);
+}
+.cmdr-cta:focus-visible {
+  outline: 2px solid var(--accent, var(--text));
+  outline-offset: 1px;
+}
+.cmdr-strip {
+  flex: 0 1 auto;
+  margin-left: auto;
+}
+
+/* The commander popup: the card large with its tax, the damage taken and the other players. */
+.cmdr-dialog {
+  width: min(640px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  align-items: stretch;
+}
+.cmdr-title {
+  margin: 0;
+  font-size: 1.1rem;
+  text-align: center;
+}
+.cmdr-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+}
+/* Two sections with a vertical line between them: the commander, and the damage taken. */
+.cmdr-section {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+}
+.cmdr-section:first-child {
+  padding-left: 0;
+}
+.cmdr-section + .cmdr-section {
+  align-items: stretch;
+  padding-right: 0;
+  border-left: 1px solid var(--line);
+}
+.cmdr-heading {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.cmdr-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 244px;
+}
+.cmdr-card .board-card {
+  width: 244px;
+  height: 340px;
+}
+.cmdr-section p {
+  margin: 0;
+}
+.cmdr-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cmdr-list li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 8px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.cmdr-list em {
+  font-size: 0.8em;
+  font-style: normal;
+}
