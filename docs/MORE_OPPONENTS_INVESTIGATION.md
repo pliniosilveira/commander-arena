@@ -6,14 +6,13 @@ Status: phases 0 to 2 are in progress (see "Where we are"); the UI is left for l
 
 Engine work (phases 1 and 2) is well advanced; the AI, `ai:arena`, performance and the UI are not started.
 
-Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
+Done: the N-seat harness (#362), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 22 real cards (#420: all pass, so the list at the end is empty), a battle whose protector left the game getting a new one (#432, CR 704.5y), and #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first).
 
 Open, in order of work:
 
-1. #420: 3-seat scenarios for 20 to 30 supported cards; a card that fails is reclassified as unsupported. A first batch of 13 passes (`packages/cards/test/scenario-three-seat-cards.test.ts`: opponent counts, "for each opponent", the monarch, goad, a vote, myriad); the vote, Ring, `eachAttackedPlayer` and `opponentsWithMore` cards are next.
-2. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
-3. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
-4. #422: latent single-opponent sites, low priority; #363 closes when its children do.
+1. #452: audit of the AI for 3 and 4 seats (phase 3), read-only first.
+2. #453: probe follow-ups (turn caps, rejected actions, CR 800.4j).
+3. #422: latent single-opponent sites, low priority; #363 closes when its children do.
 
 Not audited: the AI and the view code. `ai:arena` still plays two seats, and `tools/perf/derive-bench.ts` measures only two. The probe tables above are from before #414 to #418; rerun them when the open engine issues close.
 
@@ -176,7 +175,6 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 - The AI for 3 and 4 seats: #452.
 - Inventory of `'opponent'`: done for the rules; the parser is left as card-pipeline limits (see "Audit of the one-opponent assumptions").
 - Scenario DSL with 3 and 4 seats.
-- Choose 20 to 30 cards that depend on the number of opponents and write a scenario for each: #420.
 
 ## Audit of the one-opponent assumptions (step 3, #363)
 

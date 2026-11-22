@@ -4,6 +4,7 @@
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { real } from './agatha-helpers';
+import { parsed } from './convert-grammar-helpers';
 
 const BEARS = 'Grizzly Bears';
 const FILLER = Array.from({ length: 12 }, () => 'Island');
@@ -286,5 +287,259 @@ describe('Breena, the Demagogue: "if that opponent has more life than another of
     g.passAll();
     expect(hand(g, 1)).toBe(before);
     g.expect.counters('br', {});
+  });
+});
+
+describe('Syphon Mind: "each other player discards a card. You draw a card for each card discarded this way"', () => {
+  const SYPHON = real('Syphon Mind');
+  test('every other player discards, and the caster draws one card for each', () => {
+    const b = scenario({ seats: 3 }).define(SYPHON).seat(0).hand(SYPHON.name).pool('BBBB');
+    b.library(...FILLER);
+    b.seat(1)
+      .hand(BEARS, { label: 'a' })
+      .library(...FILLER);
+    b.seat(2)
+      .hand(BEARS, { label: 'b' })
+      .library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    const before = hand(g, 0);
+    g.act(0).cast(SYPHON.name, { pay: true });
+    g.passAll();
+    expect(zone(g, 'a')).toBe('graveyard');
+    expect(zone(g, 'b')).toBe('graveyard');
+    expect(hand(g, 0)).toBe(before - 1 + 2);
+  });
+});
+
+describe('Fateful Tempest: "starting with you, each player votes for past or present"', () => {
+  const TEMPEST = real('Fateful Tempest');
+  test('three votes, damage to each opponent from the cards milled, and the top card exiled for the present vote', () => {
+    const b = scenario({ seats: 3 }).define(TEMPEST).seat(0).hand(TEMPEST.name).pool('RRR');
+    b.library(BEARS, BEARS, BEARS, ...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(TEMPEST.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseOption('past');
+    g.act(1).chooseOption('present');
+    g.act(2).chooseOption('past');
+    g.passAll();
+    // Two "past" votes mill two Grizzly Bears (mana value 2 each): 4 damage to each opponent.
+    g.expect.life(1, 36);
+    g.expect.life(2, 36);
+    g.expect.life(0, 40);
+    expect(g.find({ name: BEARS, zone: 'graveyard', seat: 0 })).toHaveLength(2);
+    expect(g.find({ name: BEARS, zone: 'exile', seat: 0 })).toHaveLength(1);
+  });
+});
+
+describe('Nazgûl: "the Ring tempts you" with three seats', () => {
+  const NAZGUL = real('Nazgûl');
+  test('the Ring tempts the controller: a Ring-bearer is chosen and the Wraith grows', () => {
+    const b = scenario({ seats: 3 }).define(NAZGUL).seat(0).hand(NAZGUL.name).pool('BBB');
+    b.library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(NAZGUL.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.counters(NAZGUL.name, { '+1/+1': 1 });
+  });
+});
+
+describe('Archon of Cruelty: "target opponent sacrifices a creature or planeswalker, discards a card, and loses 3 life"', () => {
+  const ARCHON = real('Archon of Cruelty');
+  test('only the targeted opponent is affected; the other is not', () => {
+    const b = scenario({ seats: 3 }).define(ARCHON).seat(0).hand(ARCHON.name).pool('BBBBBBBB');
+    b.library(...FILLER);
+    b.seat(1)
+      .battlefield(BEARS, { label: 'one' })
+      .hand(BEARS, { label: 'h1' })
+      .library(...FILLER);
+    b.seat(2)
+      .battlefield(BEARS, { label: 'two' })
+      .hand(BEARS, { label: 'h2' })
+      .library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(ARCHON.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ player: 2 });
+    g.passAll();
+    g.passAll();
+    expect(zone(g, 'two')).toBe('graveyard');
+    expect(zone(g, 'h2')).toBe('graveyard');
+    g.expect.life(2, 37);
+    expect(zone(g, 'one')).toBe('battlefield');
+    expect(zone(g, 'h1')).toBe('hand');
+    g.expect.life(1, 40);
+  });
+});
+
+describe('Rot Hulk: "up to X target Zombie cards ..., where X is the number of opponents you have"', () => {
+  const HULK = real('Rot Hulk');
+  const ZOMBIE = parsed('SYNTHETIC Test Zombie', 'Creature — Zombie', '', {
+    manaCost: '{B}',
+    power: '1',
+    toughness: '1',
+    colors: ['B'],
+  });
+  test('with two opponents X is 2: at most two of the three Zombie cards return', () => {
+    const b = scenario({ seats: 3 })
+      .define(HULK)
+      .define(ZOMBIE)
+      .seat(0)
+      .hand(HULK.name)
+      .pool('BBBBBBB');
+    b.graveyard(ZOMBIE.name, { label: 'z1' })
+      .graveyard(ZOMBIE.name, { label: 'z2' })
+      .graveyard(ZOMBIE.name, { label: 'z3' })
+      .library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(HULK.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('z1', 'z2');
+    g.passAll();
+    expect(zone(g, 'z1')).toBe('battlefield');
+    expect(zone(g, 'z2')).toBe('battlefield');
+    expect(zone(g, 'z3')).toBe('graveyard');
+  });
+});
+
+describe('Scourge of the Throne: dethrone reads "the player with the most life or tied for most life"', () => {
+  const SCOURGE = real('Scourge of the Throne');
+  function attack(target: 1 | 2): ScenarioGame {
+    const b = scenario({ seats: 3 })
+      .define(SCOURGE)
+      .seat(0)
+      .battlefield(SCOURGE.name, { label: 's' });
+    b.library(...FILLER);
+    b.seat(1)
+      .library(...FILLER)
+      .life(40);
+    b.seat(2)
+      .library(...FILLER)
+      .life(30);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 's', target: { player: target } }]);
+    // Dethrone and the first-attack trigger both trigger for the attack of seat 0 on the opponent with the most life.
+    if (g.state.pending?.kind === 'orderTriggers') g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    return g;
+  }
+  test('attacking the opponent with the most life: a +1/+1 counter', () => {
+    const g = attack(1);
+    g.expect.counters('s', { '+1/+1': 1 });
+  });
+  test('attacking the opponent with less life than another: nothing', () => {
+    const g = attack(2);
+    g.expect.counters('s', {});
+  });
+});
+
+describe('Dismantling Wave: "for each opponent, destroy up to one target artifact or enchantment that player controls"', () => {
+  const WAVE = real('Dismantling Wave');
+  test('one artifact or enchantment of each opponent can be destroyed', () => {
+    const b = scenario({ seats: 3 }).define(WAVE).seat(0).hand(WAVE.name).pool('WWW');
+    b.library(...FILLER);
+    b.seat(1)
+      .battlefield('Sol Ring', { label: 'ring' })
+      .library(...FILLER);
+    b.seat(2)
+      .battlefield('Sol Ring', { label: 'ring2' })
+      .library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(WAVE.name, { targets: ['ring', 'ring2'], pay: true });
+    g.passAll();
+    expect(zone(g, 'ring')).toBe('graveyard');
+    expect(zone(g, 'ring2')).toBe('graveyard');
+  });
+});
+
+describe('Coveted Jewel: "whenever one or more creatures an opponent controls attack you and aren’t blocked"', () => {
+  const JEWEL = real('Coveted Jewel');
+  test('an opponent attacking its controller unblocked draws three cards and takes the Jewel', () => {
+    const b = scenario({ seats: 3 }).define(JEWEL).seat(0).battlefield(JEWEL.name, { label: 'j' });
+    b.library(...FILLER);
+    b.seat(1)
+      .battlefield(BEARS, { label: 'c' })
+      .library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 1, turn: 4 }).build();
+    const before = hand(g, 1);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(1).declareAttackers([{ attacker: 'c', target: { player: 0 } }]);
+    g.advanceTo('declareBlockers', { attack: false, block: false });
+    g.advanceTo('combatDamage', { block: false });
+    g.passAll();
+    expect(hand(g, 1)).toBe(before + 3);
+    // Control is a layer 2 effect, so it is read as the engine reads it: through the query's seat.
+    expect(count(g, JEWEL.name, 1)).toBe(1);
+    expect(count(g, JEWEL.name, 0)).toBe(0);
+  });
+});
+
+describe('Impulsive Pilferer: encore "for each opponent, create a token copy that attacks that opponent this turn if able"', () => {
+  const PILFERER = real('Impulsive Pilferer');
+  test('one token for each opponent, each required to attack its own opponent', () => {
+    const b = scenario({ seats: 3 }).define(PILFERER).seat(0).graveyard(PILFERER.name);
+    b.battlefield('Mountain', { count: 4 });
+    b.library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).activate(PILFERER.name, { pay: true });
+    g.passAll();
+    expect(count(g, PILFERER.name, 0)).toBe(2);
+    g.advanceTo('declareAttackers', { attack: false });
+    const tokens = g.find({ name: PILFERER.name, zone: 'battlefield', seat: 0 }).map((o) => o.id);
+    const [first, second] = tokens;
+    // Both at the same opponent is not allowed: each must attack the one it was made for.
+    expect(() =>
+      g.act(0).declareAttackers(tokens.map((attacker) => ({ attacker, target: { player: 1 } }))),
+    ).toThrow();
+    g.act(0).declareAttackers([
+      { attacker: first as string, target: { player: 1 } },
+      { attacker: second as string, target: { player: 2 } },
+    ]);
+  });
+});
+
+describe('Port Razer: "can’t attack a player it has already attacked this turn"', () => {
+  const RAZER = real('Port Razer');
+  test('in the extra combat it may attack the other opponent, and not the one it already attacked', () => {
+    const b = scenario({ seats: 3 }).define(RAZER).seat(0).battlefield(RAZER.name, { label: 'r' });
+    b.library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 'r', target: { player: 1 } }]);
+    g.advanceTo('declareBlockers', { attack: false, block: false });
+    g.advanceTo('combatDamage', { block: false });
+    g.passAll();
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(() => g.act(0).declareAttackers([{ attacker: 'r', target: { player: 1 } }])).toThrow();
+    g.act(0).declareAttackers([{ attacker: 'r', target: { player: 2 } }]);
+  });
+});
+
+describe('Combustible Gearhulk: "target opponent may have you draw three cards"', () => {
+  const GEARHULK = real('Combustible Gearhulk');
+  test('the opponent that is targeted is the one asked', () => {
+    const b = scenario({ seats: 3 }).define(GEARHULK).seat(0).hand(GEARHULK.name).pool('RRRRRR');
+    b.library(...FILLER);
+    b.seat(1).library(...FILLER);
+    b.seat(2).library(...FILLER);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(GEARHULK.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ player: 2 });
+    g.passAll();
+    g.expect.pending('confirmOptional', 2);
   });
 });
