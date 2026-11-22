@@ -18,7 +18,9 @@ export type ZoneRef =
   | { readonly kind: 'graveyard'; readonly seat: number }
   | { readonly kind: 'command'; readonly seat: number }
   | { readonly kind: 'exile' }
-  | { readonly kind: 'phased' };
+  | { readonly kind: 'phased' }
+  /** The cards a pending chooseCards question lists (a library search): not a zone of the board. */
+  | { readonly kind: 'cards' };
 
 /** Poison counters (CR 122.1) and the rule that ends the game on them (CR 704.5c). */
 export const POISON_TITLE =

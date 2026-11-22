@@ -5,6 +5,7 @@ import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useApp } from '../store-context';
 import './board.css';
+import { pickerCards } from '../decisions/cards-picker';
 import { useZoneGate } from '../decisions/zone-decision';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
@@ -19,7 +20,7 @@ import { PlayerStrip, type ZoneRef } from './PlayerStrip';
 import { PairFocusProvider } from './pair-focus';
 import { BattlefieldRow } from './Row';
 import { combatRoles, type RowKind, rowKindOf, seatLabel } from './resolve';
-import { targetZoneToOpen } from './target-zone';
+import { questionZoneToOpen, sameZone } from './target-zone';
 import { useCloseOnDecision } from './useCloseOnDecision';
 import { ZoneViewer } from './ZoneViewer';
 
@@ -92,6 +93,14 @@ function Field({
 }
 
 function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: ObjectView[] } {
+  // A library search: the matching cards the engine shows the searcher (the library itself is hidden).
+  if (zone.kind === 'cards') {
+    const pending = view.pending;
+    return {
+      title: 'Search your library',
+      objects: pending?.kind === 'chooseCards' ? [...pickerCards(view, pending)] : [],
+    };
+  }
   if (zone.kind === 'exile') return { title: 'Exile (shared)', objects: [...view.exile] };
   // D-234 (CR 702.26): the permanents that are phased out: treated as though they do not exist, but listed here.
   if (zone.kind === 'phased') return { title: 'Phased out', objects: [...(view.phasedOut ?? [])] };
@@ -108,31 +117,34 @@ export function Board() {
   useCloseOnDecision(view, () => setZone(null));
   // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
   // when the question is answered is the board's doing too, not the player's chore.
-  const toOpen = view === null ? null : targetZoneToOpen(view);
-  const seatToOpen = toOpen?.kind === 'graveyard' ? toOpen.seat : null;
+  const toOpen = view === null ? null : (questionZoneToOpen(view)?.zone ?? null);
+  // What the effects below depend on: the zone as a key, so a new view of the same question does not reopen it.
+  const toOpenKey = toOpen === null ? null : `${toOpen.kind}${'seat' in toOpen ? toOpen.seat : ''}`;
+  const toOpenRef = useRef(toOpen);
+  toOpenRef.current = toOpen;
   const autoOpened = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `toOpenKey` is what tells a new question; the zone itself is read from the ref
   useEffect(() => {
-    if (seatToOpen !== null) {
-      setZone({ kind: 'graveyard', seat: seatToOpen });
+    if (toOpenRef.current !== null) {
+      setZone(toOpenRef.current);
       autoOpened.current = true;
     } else if (autoOpened.current) {
       setZone(null);
       autoOpened.current = false;
     }
-  }, [seatToOpen]);
+  }, [toOpenKey]);
   // The picker of the question's graveyard can be closed to look at the board and opened again; the
   // decision layer holds Confirm back while it is closed (zone-decision.ts).
   const gate = useZoneGate();
-  const questionOpen =
-    seatToOpen !== null && zone?.kind === 'graveyard' && zone.seat === seatToOpen;
+  const questionOpen = toOpen !== null && zone !== null && sameZone(zone, toOpen);
   const { setOpen: reportOpen, request } = gate;
   useEffect(() => reportOpen(questionOpen), [questionOpen, reportOpen]);
   const lastRequest = useRef(request);
   useEffect(() => {
     if (request === lastRequest.current) return;
     lastRequest.current = request;
-    if (seatToOpen !== null) setZone({ kind: 'graveyard', seat: seatToOpen });
-  }, [request, seatToOpen]);
+    if (toOpenRef.current !== null) setZone(toOpenRef.current);
+  }, [request]);
   const ix = useInteraction();
   const pendingBlocks = ix.pendingBlocks;
   const roles = useMemo(

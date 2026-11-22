@@ -6,7 +6,7 @@ import type { Action } from '@commander-arena/engine';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { untappableSources } from '../../store';
-import { targetZoneToOpen } from '../board/target-zone';
+import { questionZoneToOpen } from '../board/target-zone';
 import { attachDeps, startAndTarget } from '../dnd/attach-flow';
 import { type DndPlan, DragProvider, NO_DND } from '../dnd/DragProvider';
 import { dragSpec, resolveDrop } from '../dnd/model';
@@ -106,13 +106,15 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const builtModel =
     view !== null && pending !== null ? buildModel(view, pending, ui, controller) : null;
   // Confirm waits while the picker is closed: the choice is made with the cards in view.
-  const questionZone = view === null ? null : targetZoneToOpen(view);
+  const questionZone = view === null ? null : questionZoneToOpen(view);
   const waitsForPicker = builtModel !== null && questionZone !== null && !pickerOpen;
   const model =
     builtModel !== null && waitsForPicker
       ? {
           ...builtModel,
-          bar: barWhileClosed(builtModel.bar, 'graveyard', () => setPickerRequest((n) => n + 1)),
+          bar: barWhileClosed(builtModel.bar, questionZone.name, () =>
+            setPickerRequest((n) => n + 1),
+          ),
         }
       : builtModel;
   const interactive = model !== null && !passing;
