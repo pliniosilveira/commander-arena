@@ -1,0 +1,57 @@
+// Mounts the board for three or more players on a store holding a view built with the engine's
+// scenario DSL (real fixture cards; no game is played), so the layout can be drawn and photographed
+// before the app starts such a game. `mount(opponents)` draws one human and that many opponents.
+import { getView } from '@commander-arena/engine';
+import { scenario } from '@commander-arena/engine/testing';
+import { createRoot } from 'react-dom/client';
+import { GameHost } from '../../src/game/host';
+import { createAppStore } from '../../src/store';
+import { TableBoard } from '../../src/ui/board/TableBoard';
+import { StoreProvider } from '../../src/ui/store-context';
+import '../../src/styles.css';
+
+const FILLER = Array.from({ length: 12 }, () => 'Island');
+const FIELDS: readonly (readonly string[])[] = [
+  ['Island', 'Island', 'Island', 'Grizzly Bears', 'Serra Angel', 'Sol Ring'],
+  ['Forest', 'Forest', 'Giant Spider', 'Grizzly Bears'],
+  ['Swamp', 'Swamp', 'Swamp', 'Serra Angel', 'Grizzly Bears'],
+  ['Island', 'Forest', 'Giant Spider'],
+];
+
+export function mount(opponents: number): void {
+  const b = scenario({ seats: opponents + 1 });
+  for (let seat = 0; seat <= opponents; seat++) {
+    b.seat(seat)
+      .library(...FILLER)
+      .battlefield(...(FIELDS[seat] ?? []));
+    if (seat === 0) b.hand('Lightning Bolt', 'Grizzly Bears', 'Island', 'Sol Ring');
+  }
+  const view = getView(b.at('precombatMain').build().state, 0);
+  const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+  store.setState({
+    screen: 'table',
+    snapshot: {
+      revision: 1,
+      view,
+      steps: [],
+      log: [],
+      actionCount: 0,
+      aiFallbacks: 0,
+      error: null,
+      undoDepth: 0,
+      logReset: null,
+    },
+  });
+  const container = document.createElement('div');
+  container.className = 'app';
+  document.body.replaceChildren(container);
+  createRoot(container).render(
+    <StoreProvider store={{ ...store, getInitialState: store.getState }}>
+      <div className="game" data-testid="game-table-board">
+        <div className="game-main">
+          <TableBoard />
+        </div>
+      </div>
+    </StoreProvider>,
+  );
+}

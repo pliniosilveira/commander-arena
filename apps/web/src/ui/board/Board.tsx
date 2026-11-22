@@ -26,11 +26,11 @@ import { questionZoneToOpen, sameZone } from './target-zone';
 import { useCloseOnDecision } from './useCloseOnDecision';
 import { ZoneViewer } from './ZoneViewer';
 
-const ROW_ORDER_ME: readonly RowKind[] = ['creature', 'other', 'land'];
+export const ROW_ORDER_ME: readonly RowKind[] = ['creature', 'other', 'land'];
 // Mirrored: the creatures of both players meet in the middle.
-const ROW_ORDER_OPP: readonly RowKind[] = ['land', 'other', 'creature'];
+export const ROW_ORDER_OPP: readonly RowKind[] = ['land', 'other', 'creature'];
 
-function Field({
+export function Field({
   view,
   seat,
   order,
@@ -94,14 +94,18 @@ function Field({
   );
 }
 
-interface ZoneContents {
+export interface ZoneContents {
   readonly title: string;
   readonly objects: ObjectView[];
   /** Cards looked at that cannot be taken (shown beside the ones that can). */
   readonly others?: readonly LookedCard[];
 }
 
-function zoneContents(view: GameView, zone: ZoneRef, looked: readonly LookedCard[]): ZoneContents {
+export function zoneContents(
+  view: GameView,
+  zone: ZoneRef,
+  looked: readonly LookedCard[],
+): ZoneContents {
   // The cards of a question: a library search (the matching cards the engine shows the searcher, the library itself is hidden) or the cards looked at or revealed from the top.
   if (zone.kind === 'cards') {
     const pending = view.pending;

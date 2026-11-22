@@ -1,0 +1,33 @@
+/*
+ * The board for three or more players. Class names start with `table-`; the pieces inside (strips,
+ * fields, the hand) keep the `board-` rules of board.css. The grid areas come from `tableAreas`.
+ */
+.table-board {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2px;
+  overflow: clip;
+  background: var(--bg);
+}
+
+.table-empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.table-cell {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+}
+
+.table-flow {
+  border-left: 1px solid var(--border, currentColor);
+}
