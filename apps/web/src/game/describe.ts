@@ -1156,6 +1156,16 @@ export function describeEvent(
           'CR 702.16a',
         );
       }
+      // CR 608.2d (Expel the Interlopers): "You choose the number 3 for Expel the Interlopers." The number is public: it decides which creatures die.
+      if (event.purpose === 'number') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} the number ${event.option} for ${label(event.source)}.`,
+          event.seat,
+          [],
+          'CR 608.2d',
+        );
+      }
       // CR 119.4, 614.12: "You choose to pay 4 life for Phyrexian Processor." The payment is public; the life lost is logged by its own line.
       if (event.purpose === 'lifePaid') {
         const subject =

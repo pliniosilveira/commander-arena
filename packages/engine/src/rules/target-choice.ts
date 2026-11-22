@@ -188,6 +188,7 @@ export function targetChoiceSpecs(
         : {}),
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
+      ...(spec.totalPowerAtMost === undefined ? {} : { totalPowerAtMost: spec.totalPowerAtMost }),
       ...(spec.ownedByTarget === undefined ? {} : { ownedBy: spec.ownedByTarget }),
       ...(slotMode?.differentFrom === undefined && spec.alsoDifferentFrom === undefined
         ? {}
@@ -261,6 +262,16 @@ export function targetAnswerError(
       const owners = groups.map((l) => (l?.kind === 'object' ? l.group : undefined));
       if (owners.some((g, i) => g !== undefined && owners.indexOf(g) !== i)) {
         return 'Choose at most one target for each opponent';
+      }
+    }
+    // CR 115.1, 208.1 (Reunion of the House): "with total power 10 or less": the powers of the targets chosen for the slot add up to no more than the limit.
+    if (spec.totalPowerAtMost !== undefined) {
+      const total = picks.reduce((sum, t) => {
+        const found = spec.legal.find((l) => sameTarget(l, t));
+        return sum + (found?.kind === 'object' ? (found.power ?? 0) : 0);
+      }, 0);
+      if (total > spec.totalPowerAtMost) {
+        return `The targets must have total power ${spec.totalPowerAtMost} or less`;
       }
     }
     // CR 601.2d: the division is announced with the targets, each of them gets at least 1 and all of it is given out.

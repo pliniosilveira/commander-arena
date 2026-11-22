@@ -213,10 +213,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'repeatWhile',
     'chooseObjects',
     'chooseCreatureType',
+    // Expel the Interlopers: "Choose a number between 0 and 10" (`chooseNumber`, CR 608.2d).
+    'chooseNumber',
     'dealDamage',
     'destroy',
     'exile',
     'sacrifice',
+    // Slaughter the Strong: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (`keepOrSacrifice`).
+    'keepOrSacrifice',
     'moveToZone',
     'counter',
     'draw',
@@ -1090,6 +1094,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'basePowerIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
+    // Expel the Interlopers: "with power greater than or equal to the chosen number" (`ObjectFilter.powerAtLeastChosenNumber`).
+    'powerAtLeastChosenNumber',
     // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
     'sameNameAs',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
@@ -1132,6 +1138,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
     'differentControllers',
+    // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less" (`TargetSpec.totalPowerAtMost`).
+    'totalPowerAtMost',
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
     'greatest',
@@ -2076,6 +2084,8 @@ export const SELECTOR_KINDS = [
   'basePowerIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
+  /** "With power greater than or equal to the chosen number" (CR 208.1, 608.2c, Expel the Interlopers): the engine's `ObjectFilter.powerAtLeastChosenNumber`. */
+  'powerAtLeastChosenNumber',
   /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
   'sameNameAs',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
@@ -2123,6 +2133,8 @@ export const SELECTOR_KINDS = [
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
   'differentControllers',
+  /** "Any number of target creature cards with total power 10 or less" (CR 115.1, 208.1, Reunion of the House): the engine's `TargetSpec.totalPowerAtMost`. */
+  'totalPowerAtMost',
   /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
   'ownedByTarget',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
@@ -2815,6 +2827,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   destroy: true,
   exile: true,
   sacrifice: true,
+  keepOrSacrifice: true,
   moveToZone: true,
   counter: true,
   draw: true,
@@ -2952,6 +2965,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   assignControlToOpponents: true,
   chooseOne: true,
   chooseCreatureType: true,
+  chooseNumber: true,
   vote: true,
   ringTempts: true,
   pair: true,

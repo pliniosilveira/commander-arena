@@ -41,7 +41,17 @@ export function togglePermanent(
 }
 
 /** The fields a crew choice adds to the sacrifice ones; a plain `{ min, max }` is not a crew. */
-type CrewFields = Partial<Pick<ChoosePermanentDecision, 'purpose' | 'powers' | 'minTotalPower'>>;
+type CrewFields = Partial<
+  Pick<ChoosePermanentDecision, 'purpose' | 'powers' | 'minTotalPower' | 'maxTotalPower'>
+>;
+
+/**
+ * True for "choose any number of creatures with total power 4 or less, then sacrifice the others" (CR 608.2d, 701.21a, Slaughter the Strong): the permanents clicked are the ones kept, with
+ * a total power of at most `maxTotalPower`; every other one on the list is sacrificed.
+ */
+export function isKeep(decision: CrewFields): boolean {
+  return decision.purpose === 'keep';
+}
 
 /** True for the cost of a crew ability (CR 702.122a): tap creatures with enough total power. */
 export function isCrew(decision: CrewFields): boolean {
@@ -83,6 +93,7 @@ export function permanentsReady(
   decision: Pick<ChoosePermanentDecision, 'min' | 'max'> & CrewFields,
 ): boolean {
   if (chosen.length < decision.min || chosen.length > decision.max) return false;
+  if (isKeep(decision) && crewTotal(chosen, decision) > (decision.maxTotalPower ?? 0)) return false;
   return !isCrew(decision) || crewTotal(chosen, decision) >= crewNeeded(decision);
 }
 
@@ -92,6 +103,8 @@ export function permanentsHint(
   decision: Pick<ChoosePermanentDecision, 'min' | 'max'> & CrewFields,
 ): string | null {
   if (permanentsReady(chosen, decision)) return null;
+  if (isKeep(decision))
+    return `Keep creatures with total power ${decision.maxTotalPower ?? 0} or less`;
   if (isCrew(decision)) {
     return `Choose creatures with total power ${crewNeeded(decision)} or greater`;
   }
@@ -120,6 +133,9 @@ export function permanentsDetail(
   decision: CrewFields & Partial<Pick<ChoosePermanentDecision, 'min' | 'devourQuality'>>,
 ): string {
   if (isCrew(decision)) return crewTotalText(chosen, decision);
+  if (isKeep(decision)) {
+    return `Keeping ${plural(chosen.length, 'creature')}, total power ${crewTotal(chosen, decision)} of at most ${decision.maxTotalPower ?? 0}. The others are sacrificed.`;
+  }
   if (decision.purpose === 'devour') return devourDetail(chosen.length, decision.devourQuality);
   // D-139: "you may tap any number of untapped Myr you control".
   if (decision.purpose === 'effect' && decision.min === 0) {
@@ -351,10 +367,14 @@ export function choosePermanentPrompt(
     ChoosePermanentDecision,
     'purpose' | 'min' | 'max' | 'source' | 'forCost' | 'legal' | 'minTotalPower' | 'subject'
   > &
-    Partial<Pick<ChoosePermanentDecision, 'seat' | 'spare' | 'devourQuality'>>,
+    Partial<Pick<ChoosePermanentDecision, 'seat' | 'spare' | 'devourQuality' | 'maxTotalPower'>>,
   index: Index,
 ): string {
   if (isFight(decision)) return fightPrompt(decision, index);
+  // Slaughter the Strong (CR 608.2d, 701.21a): the creatures clicked are kept, the others sacrificed.
+  if (isKeep(decision)) {
+    return `Choose any number of creatures you control to keep, with total power ${decision.maxTotalPower ?? 0} or less. Your other creatures are sacrificed (${nameOf(index, decision.source)}).`;
+  }
   if (isDevour(decision)) {
     // A token has no object yet: the question is about the token that the ability on the stack makes.
     const source = index.get(decision.source);

@@ -122,6 +122,8 @@ export interface FilterContext {
    * Absent fails the comparison closed.
    */
   readonly powerLimit?: number | null;
+  /** The number a `chooseNumber` effect of the resolving spell or ability had its controller choose (CR 608.2d), for `powerAtLeastChosenNumber`; absent fails the comparison closed. */
+  readonly chosenNumber?: number;
   /** The name of the object `sameNameAs` names, read by the caller as the effect resolves (CR 201.2); null when it names nothing. Absent fails the filter closed. */
   readonly nameLimit?: string | null;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
@@ -459,6 +461,12 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power > limit)) return false;
+  }
+  // CR 208.1, 608.2c (Expel the Interlopers): "with power greater than or equal to the chosen number".
+  if (filter.powerAtLeastChosenNumber === true) {
+    const chosen = ctx.chosenNumber;
+    if (chosen === undefined || d.power === null || d.power === undefined) return false;
+    if (!(d.power >= chosen)) return false;
   }
   // CR 201.2, 608.2c (Echoing Return): "with the same name as that card": the name of the object the effect names.
   if (filter.sameNameAs !== undefined) {

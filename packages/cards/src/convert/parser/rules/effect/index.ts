@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
@@ -1227,6 +1228,8 @@ export const EFFECT_RULES = [
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
+  // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
+  ...ABZAN_SPELLS_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,

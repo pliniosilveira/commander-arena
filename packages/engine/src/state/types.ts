@@ -1193,6 +1193,11 @@ export type Instruction =
       readonly fromTriggerSources?: true;
       /** "That dealt combat damage to you this turn" (`ChooseSelector.dealtCombatDamageToYou`): only the permanents that dealt combat damage to the controller of the ability this turn. */
       readonly dealtCombatDamageToYou?: true;
+      /**
+       * `keepOrSacrifice` (Slaughter the Strong, CR 608.2d, 701.21a): the player chooses which of the permanents that match to keep, with total power at most this number
+       * (a `choosePermanent` decision of purpose 'keep'), and the others (not the ones that can't be sacrificed) are sacrificed; `chosen` is then the ones to sacrifice. `count` is 0.
+       */
+      readonly keepPowerAtMost?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1633,6 +1638,17 @@ export type Instruction =
   | {
       readonly kind: 'drawUpTo';
       readonly seat: SeatId;
+      readonly max: number;
+      readonly amount: number | null;
+    }
+  /**
+   * "Choose a number between 0 and 10" (`chooseNumber`, CR 608.2d): `amount` is the number `seat` chose, null until they have answered the `chooseX` decision (purpose
+   * 'chooseNumber') between `min` and `max`. The answer is kept in `ResolutionContext.chosenNumber`. See rules/choose-number.ts.
+   */
+  | {
+      readonly kind: 'chooseNumber';
+      readonly seat: SeatId;
+      readonly min: number;
       readonly max: number;
       readonly amount: number | null;
     }
@@ -2103,6 +2119,8 @@ export interface ResolutionContext {
   readonly controller: SeatId;
   /** Creature type chosen by a resolving instruction such as "choose a creature type". */
   readonly chosenCreatureType?: string;
+  /** The number a resolving `chooseNumber` effect had its controller choose (CR 608.2d), what `powerAtLeastChosenNumber` reads. */
+  readonly chosenNumber?: number;
   /** The player a `choosePlayer` instruction of this resolution chose, which the selector `chosenPlayer` ("that player") reads. */
   readonly chosenPlayer?: SeatId;
   /** The opponent the controller chose for the effect that is about to start ("an opponent separates ..."), read when it starts and cleared once it did (rules/choose-opponent.ts). */

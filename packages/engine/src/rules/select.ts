@@ -62,6 +62,8 @@ export interface SelectContext {
   readonly costTappedPower?: number;
   /** What `sacrificed` means (D-177): the permanents the earlier `sacrifice` instructions of this resolution sacrificed. */
   readonly sacrificed?: readonly ObjectId[];
+  /** The number a `chooseNumber` effect of this resolution had its controller choose (`powerAtLeastChosenNumber`, see `FilterContext.chosenNumber`). */
+  readonly chosenNumber?: number;
   /** What `chosenPlayer` ("that player" after "choose a player ...") means in this resolution (The Black Gate). */
   readonly chosenPlayer?: SeatId;
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
@@ -620,6 +622,15 @@ export function legalTargets(
   spec: TargetSpec,
   ctx: SelectContext,
 ): ChosenTarget[] {
+  const targets = legalTargetsOf(state, spec, ctx);
+  if (spec.totalPowerAtMost === undefined) return targets;
+  // CR 208.1 (Reunion of the House): the power each object has now, for the total of the targets chosen.
+  return targets.map((t) =>
+    t.kind === 'object' ? { ...t, power: powerOfObject(state, t.id) ?? 0 } : t,
+  );
+}
+
+function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext): ChosenTarget[] {
   const out: ChosenTarget[] = [];
   const specId = spec.id;
   const playersFor = (filter: 'any' | 'opponent' | 'opponentWhoseTurn'): ChosenTarget[] =>
@@ -783,7 +794,18 @@ export function stillLegalTargets(
   for (const spec of specs) {
     legalBySpec.set(spec.id, legalTargets(state, spec, { ...ctx, targets: chosen }));
   }
-  return chosen.filter((t) => (legalBySpec.get(t.specId) ?? []).some((l) => sameTarget(l, t)));
+  const legal = chosen.filter((t) =>
+    (legalBySpec.get(t.specId) ?? []).some((l) => sameTarget(l, t)),
+  );
+  // CR 608.2b, 208.1 (Reunion of the House): the total power of the targets of a slot is read again now; if it is more than the limit the whole selection is illegal.
+  return legal.filter((t) => {
+    const limit = specs.find((s) => s.id === t.specId)?.totalPowerAtMost;
+    if (limit === undefined) return true;
+    const total = legal
+      .filter((o) => o.specId === t.specId)
+      .reduce((sum, o) => sum + (o.kind === 'object' ? (powerOfObject(state, o.id) ?? 0) : 0), 0);
+    return total <= limit;
+  });
 }
 
 function targetObjects(refId: string, targets: readonly ChosenTarget[]): ObjectId[] {

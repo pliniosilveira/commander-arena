@@ -410,6 +410,12 @@ const MANA_VALUE_X: Parser<boolean> = map(
   () => true,
 );
 
+/** " with total power 10 or less" (Reunion of the House, CR 208.1): the cards chosen together have power adding up to at most the number. */
+const TOTAL_POWER_OR_LESS: Parser<number> = map(
+  pattern(new RegExp(` with total power (\\d{1,3}) or less${BOUNDARY}`, 'u')),
+  (m) => Number(m[1]),
+);
+
 /** " with mana value X or less" (stage P68, D-230, CR 202.3): the mana value is at most the X a "where X is ..." defines. */
 const MANA_VALUE_X_OR_LESS: Parser<boolean> = map(
   pattern(new RegExp(` with mana value X or less${BOUNDARY}`, 'u')),
@@ -1066,6 +1072,8 @@ export function graveyardPhrase(
   amountLimit?: Parser<IrAmount>,
   // Issue 102 (Tasigur): "a nonland card from your graveyard", read only by a caller that asks for it (a target's "nonland card" is another rule's reading).
   allowNonland = false,
+  // Reunion of the House: "any number of target creature cards with total power 10 or less from your graveyard", read only where the caller asks for it.
+  allowTotalPower = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
     preposition === 'fromTheirs'
@@ -1303,6 +1311,8 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X_OR_LESS), false),
       // "Saga card with mana value X from your graveyard" (CR 107.3a, 202.3): the mana value is the X announced for the ability.
       optional(quiet(MANA_VALUE_X), false),
+      // Reunion of the House (CR 208.1): "creature cards with total power 10 or less from your graveyard".
+      optional(allowTotalPower ? quiet(TOTAL_POWER_OR_LESS) : fail, undefined),
       optional(
         quiet(
           amountLimit === undefined
@@ -1328,6 +1338,7 @@ export function graveyardPhrase(
       compared,
       atMostX,
       equalsX,
+      totalPower,
       limitAmount,
       byOpponent,
       controller,
@@ -1363,6 +1374,7 @@ export function graveyardPhrase(
           ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
+          ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
           ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),
           card: true,
         },
