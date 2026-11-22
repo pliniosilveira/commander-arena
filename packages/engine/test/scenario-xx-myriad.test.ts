@@ -32,6 +32,7 @@ const attackedBy = (g: ScenarioGame, id: string) =>
 describe('myriad: a token copy attacks each opponent other than the defending player', () => {
   test('two seats: nobody else to attack, so no token and no question', () => {
     const g = attacking(2);
+    expect(g.state.stack).toHaveLength(0); // nothing to do, so the trigger is not put on the stack
     g.passAll();
     expect(copies(g)).toHaveLength(0);
     expect(g.state.pending?.kind).not.toBe('confirmOptional');

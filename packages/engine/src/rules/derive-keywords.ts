@@ -175,17 +175,22 @@ const DETHRONE_ABILITY: Ability = {
  * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
  * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
  */
-/** CR 702.116a (Myriad): "Whenever this creature attacks, ..." (the effect is `rules/myriad.ts`); each instance triggers separately (CR 702.116b). */
-const MYRIAD_ABILITY: Ability = {
-  kind: 'triggered',
-  trigger: { kind: 'attacks', what: { kind: 'this' } },
-  effect: { kind: 'myriad' },
-};
-
 const DECAYED_ABILITY: Ability = {
   kind: 'triggered',
   trigger: { kind: 'attacks', what: { kind: 'this' } },
   effect: { kind: 'delayedSacrifice', of: 'this' },
+};
+
+/**
+ * CR 702.116a (Myriad): "Whenever this creature attacks, ..." (the effect is `rules/myriad.ts`); each instance triggers separately (CR 702.116b). With one opponent there is no
+ * opponent other than the defending player, so the ability could do nothing and could not be told from not having triggered; it is not put on the stack then (the condition is read
+ * as the creature attacks), which keeps a two-player game as it was: no extra trigger to order or respond to.
+ */
+const MYRIAD_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  triggerCondition: { kind: 'opponentsAtLeast', count: 2 },
+  effect: { kind: 'myriad' },
 };
 
 /**
