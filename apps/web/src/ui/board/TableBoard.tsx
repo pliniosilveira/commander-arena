@@ -22,6 +22,7 @@ import { PairFocusProvider } from './pair-focus';
 import { combatRoles } from './resolve';
 import { shownOpponents, tableAreas } from './table-areas';
 import { opponentLabel } from './table-label';
+import { useQuestionZone } from './useQuestionZone';
 import { ZoneViewer } from './ZoneViewer';
 
 /** The cards of your hand are 15 percent smaller than on the 1v1 board: the table board needs the room. */
@@ -34,6 +35,7 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
   // The seat whose commander popup is open.
   const [commanderSeat, setCommanderSeat] = useState<number | null>(null);
   const looked = useLookedCards();
+  useQuestionZone(view, zone, setZone);
   const ix = useInteraction();
   const roles = useMemo(
     () => (view === null ? new Map() : combatRoles(view, ix.pendingBlocks)),

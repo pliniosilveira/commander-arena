@@ -104,3 +104,20 @@ test('Find nothing ends the search without moving a card', async ({ page }) => {
   await expect(page.getByRole('log')).toContainText('You search your library and find nothing.');
   expect(errors).toEqual([]);
 });
+
+// Issue 548: on the board for three or more players the question's picker never opened, and Confirm
+// waited for it ("Open library to choose and confirm"), so the game could not go on.
+test('a search at a table of four opens the picker and can be answered', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?autostart=synthetic-search,swamp-forest,swamp-forest,swamp-forest&seed=1');
+  await playUntilSearch(page, 'two');
+  const dialog = picker(page);
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('[data-testid="table-flow"]')).toBeVisible();
+  await expect(pickerPrimary(page)).toBeEnabled();
+  await dialog.locator('.board-zone-card').first().click();
+  await pickerPrimary(page).click();
+  await expect(dialog).toBeHidden();
+  expect(errors).toEqual([]);
+});
