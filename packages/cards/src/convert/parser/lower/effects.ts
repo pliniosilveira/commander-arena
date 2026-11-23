@@ -117,6 +117,7 @@ import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
+import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
@@ -2795,6 +2796,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DAMAGE_BATCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
+  ...KEEPS_UP_TO_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,

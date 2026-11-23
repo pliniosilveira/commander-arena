@@ -1218,6 +1218,8 @@ export type Instruction =
        * (a `choosePermanent` decision of purpose 'keep'), and the others (not the ones that can't be sacrificed) are sacrificed; `chosen` is then the ones to sacrifice. `count` is 0.
        */
       readonly keepPowerAtMost?: number;
+      /** `keepOrSacrifice` with `keepAtMost` (Archfiend of Depravity): the player keeps at most this many of the permanents that match, instead of a total power. */
+      readonly keepCountAtMost?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;

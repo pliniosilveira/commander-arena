@@ -1070,7 +1070,10 @@ function runEffect(
             kind: 'chooseSacrifice' as const,
             filter: effect.filter,
             count: 0,
-            keepPowerAtMost: effect.totalPowerAtMost,
+            ...(effect.totalPowerAtMost === undefined
+              ? {}
+              : { keepPowerAtMost: effect.totalPowerAtMost }),
+            ...(effect.keepAtMost === undefined ? {} : { keepCountAtMost: effect.keepAtMost }),
             chosen: null,
             seat: first,
             ...(later.length === 0 ? {} : { together: { later, held: [] } }),

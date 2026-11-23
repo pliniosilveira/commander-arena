@@ -109,7 +109,7 @@ export function runChooseSacrifice(
   }
   // CR 608.2d, 701.21a (Slaughter the Strong): "chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control": the
   // player chooses the ones to keep among all the creatures they control; with none there is nothing to choose.
-  if (instruction.keepPowerAtMost !== undefined) {
+  if (instruction.keepPowerAtMost !== undefined || instruction.keepCountAtMost !== undefined) {
     const all = controlledCandidates(state, seat, res.source, instruction.filter);
     if (all.length === 0) return proceed([], []);
     const powers: Record<ObjectId, number> = {};
@@ -127,10 +127,11 @@ export function runChooseSacrifice(
         source: res.object,
         purpose: 'keep',
         min: 0,
-        max: all.length,
+        max: Math.min(all.length, instruction.keepCountAtMost ?? all.length),
         legal: all,
-        maxTotalPower: instruction.keepPowerAtMost,
-        powers,
+        ...(instruction.keepPowerAtMost === undefined
+          ? {}
+          : { maxTotalPower: instruction.keepPowerAtMost, powers }),
       },
     };
   }

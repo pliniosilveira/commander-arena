@@ -5706,12 +5706,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be sacrificed');
       }
-      if (!Number.isInteger(e.totalPowerAtMost) || e.totalPowerAtMost < 0) {
-        issue(
-          out,
-          `${path}.totalPowerAtMost`,
-          'totalPowerAtMost must be a whole number, 0 or more',
-        );
+      if ((e.totalPowerAtMost === undefined) === (e.keepAtMost === undefined)) {
+        issue(out, path, 'name exactly one of totalPowerAtMost and keepAtMost');
+      }
+      for (const key of ['totalPowerAtMost', 'keepAtMost'] as const) {
+        const limit = e[key];
+        if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
+          issue(out, `${path}.${key}`, `${key} must be a whole number, 0 or more`);
+        }
       }
       break;
     case 'sacrifice':

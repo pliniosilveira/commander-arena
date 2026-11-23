@@ -32,6 +32,20 @@ describe('the keep choice of Slaughter the Strong', () => {
   });
 });
 
+describe('the keep choice of "up to two creatures" (Archfiend of Depravity)', () => {
+  const keep = { purpose: 'keep' as const, min: 0, max: 2 };
+
+  test('Confirm is ready for none, one or two creatures and not for more, with no power limit', () => {
+    expect(permanentsReady([], keep)).toBe(true);
+    expect(permanentsReady([o(1), o(2)], keep)).toBe(true);
+    expect(permanentsReady([o(1), o(2), o(3)], keep)).toBe(false);
+  });
+
+  test('the detail line says what is kept and that the others are sacrificed', () => {
+    expect(permanentsDetail([o(2)], keep)).toBe('Keeping 1 creature. The others are sacrificed.');
+  });
+});
+
 describe('the targets of Reunion of the House', () => {
   const spec: TargetChoiceSpec = {
     specId: 't1',

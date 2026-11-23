@@ -3437,7 +3437,13 @@ export type Effect =
       readonly kind: 'keepOrSacrifice';
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
-      readonly totalPowerAtMost: number;
+      /** The limit on the total power of what is kept; exactly one of this and `keepAtMost`. */
+      readonly totalPowerAtMost?: number;
+      /**
+       * "That player chooses up to two creatures they control, then sacrifices the rest" (CR 608.2d, 701.21a, 101.4; Archfiend of Depravity): the limit is on how many are kept, 0 or more,
+       * instead of on their total power. The player may keep fewer; one who controls no more than that many sacrifices nothing.
+       */
+      readonly keepAtMost?: number;
     }
   | {
       readonly kind: 'moveToZone';

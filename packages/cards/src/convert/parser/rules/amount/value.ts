@@ -336,10 +336,9 @@ const MANA_VALUE_OF =
   (rule: string): Parser<IrAmount> =>
   (ctx, pos) => {
     // "the mana value of the sacrificed permanent" (Shadow, Mysterious Assassin; CR 202.3, 113.7a): the same value, as the permanent last existed on the battlefield.
-    const lead = pattern(/the mana value of (the sacrificed (?:creature|permanent|artifact))(?![\p{L}\p{N}'’])/iu)(
-      ctx,
-      pos,
-    );
+    const lead = pattern(
+      /the mana value of (the sacrificed (?:creature|permanent|artifact))(?![\p{L}\p{N}'’])/iu,
+    )(ctx, pos);
     if (lead.ok) {
       const name = lead.value[1] ?? '';
       const of: IrNoun = {
