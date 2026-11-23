@@ -84,3 +84,63 @@ describe('Legions to Ashes', () => {
     g.expect.invariants();
   });
 });
+
+describe('Sepulchral Primordial', () => {
+  const primordial = real('Sepulchral Primordial');
+  const ELVES = 'Llanowar Elves';
+  const ANGEL = 'Serra Angel';
+  const LIBRARY = Array.from({ length: 12 }, () => 'Swamp');
+
+  /** Seat 0 has the creature in hand and seven Swamps; seats 1 and 2 have the given cards in their graveyards. */
+  const board = (one: readonly string[], two: readonly string[]) =>
+    scenario({ seats: 3 })
+      .define(primordial)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(primordial.name)
+      .battlefield('Swamp', { count: 7 })
+      .seat(1)
+      .library(...LIBRARY)
+      .graveyard(...one)
+      .seat(2)
+      .library(...LIBRARY)
+      .graveyard(...two)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  const enter = (g: ReturnType<typeof board>) => {
+    g.act(0).cast(primordial.name, { pay: true });
+    g.passAll();
+    g.expect.pending('targets', 0);
+  };
+
+  test('one creature card from each opponent graveyard enters under my control, together', () => {
+    const g = board([BEARS, ANGEL], [ELVES]);
+    enter(g);
+    g.act(0).chooseTargets(ANGEL, ELVES);
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.zone(ANGEL, 'battlefield', { seat: 0 });
+    g.expect.zone(ELVES, 'battlefield', { seat: 0 });
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('up to one: a single target is enough, and declining puts nothing onto the battlefield', () => {
+    const g = board([BEARS], [ELVES]);
+    enter(g);
+    g.act(0).chooseTargets(BEARS);
+    g.passAll();
+    g.act(0).decline();
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.zone(ELVES, 'graveyard', { seat: 2 });
+    g.expect.invariants();
+  });
+
+  test('two cards of one opponent graveyard cannot both be chosen', () => {
+    const g = board([BEARS, ANGEL], []);
+    enter(g);
+    expect(() => g.act(0).chooseTargets(BEARS, ANGEL)).toThrow();
+  });
+});
