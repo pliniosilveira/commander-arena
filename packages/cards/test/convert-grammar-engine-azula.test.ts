@@ -68,3 +68,40 @@ describe('Mystical Teachings: a search for an instant card or a card with flash 
     expect(() => g.act(0).chooseCards(g.id('Grizzly Bears'))).toThrow();
   });
 });
+
+describe('Bulk Up: "Double target creature\'s power until end of turn" (CR 701.10)', () => {
+  const BULK = 'Bulk Up';
+  const bulk = real(BULK);
+
+  const board = () =>
+    scenario()
+      .define(bulk)
+      .seat(0)
+      .hand(BULK)
+      .battlefield('Mountain', 'Mountain', 'Grizzly Bears')
+      .seat(1)
+      .library('Swamp', 'Swamp')
+      .battlefield('Llanowar Elves')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('is valid', () => {
+    expect(validateCard(bulk)).toEqual([]);
+  });
+
+  test('doubles the power of the target and leaves its toughness alone', () => {
+    const g = board();
+    g.act(0).cast(BULK, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.pt('Grizzly Bears', 4, 2);
+    g.expect.pt('Llanowar Elves', 1, 1);
+    g.expect.invariants();
+  });
+
+  test('it can be a creature an opponent controls', () => {
+    const g = board();
+    g.act(0).cast(BULK, { targets: ['Llanowar Elves'], pay: true });
+    g.passAll();
+    g.expect.pt('Llanowar Elves', 2, 1);
+  });
+});
