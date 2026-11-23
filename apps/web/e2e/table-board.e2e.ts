@@ -41,7 +41,7 @@ async function show(
   width = 1440,
   height = 900,
   conceded: readonly number[] = [],
-  combat = false,
+  combat: boolean | 'stack' = false,
 ): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -50,7 +50,7 @@ async function show(
   await page.setContent('<!doctype html><html><head></head><body></body></html>');
   if (css !== '') await page.addStyleTag({ content: css });
   await page.addScriptTag({
-    content: `${script}\nTableEntry.mount(${opponents}, ${JSON.stringify(conceded)}, ${combat});`,
+    content: `${script}\nTableEntry.mount(${opponents}, ${JSON.stringify(conceded)}, ${JSON.stringify(combat)});`,
   });
   expect(errors).toEqual([]);
   await expect(page.getByTestId('game-table-board')).toBeVisible();
@@ -273,4 +273,23 @@ test('a declared block on the table board draws one block arrow between the tile
   await show(page, 3, 1440, 900, [], true);
   await expect(page.locator('.block-arrow')).toHaveCount(1);
   await expect(page.locator('.block-arrow .pnl-arrow-shaft')).toHaveAttribute('d', /.+/);
+});
+
+test('combat on the table board marks each attacker with the player it attacks', async ({
+  page,
+}) => {
+  await show(page, 3, 1440, 900, [], true);
+  const ribbon = (name: string) =>
+    page.locator('.board-tile', { hasText: name }).locator('.board-ribbon-attacker');
+  await expect(ribbon('Grizzly Bears').locator('b')).toHaveText('Attacking');
+  await expect(ribbon('Grizzly Bears').locator('i')).toHaveText('You');
+  await expect(ribbon('Serra Angel').locator('i')).toHaveText('Opponent 2');
+});
+
+test('a stack spell that targets a player draws an arrow to that player strip', async ({
+  page,
+}) => {
+  await show(page, 3, 1440, 900, [], 'stack');
+  await expect(page.locator('[data-seat="2"]').first()).toBeVisible();
+  await expect(page.locator('.pnl-arrow')).toHaveCount(1);
 });
