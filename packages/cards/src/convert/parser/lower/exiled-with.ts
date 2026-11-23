@@ -3,7 +3,7 @@
  * cards exiled with ~". "Them" are the cards that condition counted, which the engine names `linkedExile`, and "that much" is how many of them were put there (`movedCount`).
  */
 import type { IrClause } from '../ir/types';
-import { type Effects, failure, operand } from './clauses';
+import { arg, type Effects, failure, operand } from './clauses';
 import type { FeatureRef } from './features';
 import { lowerFilter } from './nouns';
 import type { Lowering } from './types';
@@ -74,7 +74,8 @@ const EXILE_FROM_EACH_GRAVEYARD: Lowering<IrClause, Effects> = {
             kind: 'choose',
             filter: { ...filter.value, zone: 'graveyard', controller: 'you' },
             count: 1,
-            optional: true,
+            // "Exile an instant or sorcery card from each graveyard" (Summon: Esper Valigarmanda) has no "you may": a graveyard with a card gives one.
+            ...(arg(clause, 'mandatory') === undefined ? { optional: true as const } : {}),
             eachGraveyard: true,
           },
           to: 'exile',
@@ -112,11 +113,42 @@ const MAY_CAST_EXILED_WITH: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "You may cast an instant or sorcery card exiled with ~, and mana of any type can be spent to cast that spell" (Summon: Esper Valigarmanda, CR 608.2g, 607.2a, 609.4b): as the ability resolves
+ * the controller may cast one such card the permanent exiled with its linked ability, paying its mana cost with any mana (the engine's `castFree` with `paying`). The engine asks the
+ * controller, and the question may be declined, so the "you may" is that question (`acceptsOptional`). Only in an ability of a permanent: a spell exiles nothing it can remember.
+ */
+const CAST_EXILED_WITH_PAYING: Lowering<IrClause, Effects> = {
+  head: 'castExiledWithPaying',
+  id: 'lower.cast-exiled-with-paying',
+  needs: ['effect:castFree', 'ability:castPayingFromLinkedExile'],
+  acceptsOptional: true,
+  lower(clause, ctx) {
+    if (ctx.owner !== 'ability' || arg(clause, 'anyManaType') === undefined) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'castFree',
+          objects: { kind: 'linkedExile' },
+          filter: { anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }] },
+          paying: true,
+          anyManaType: true,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const EXILED_WITH_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PUT_EXILED_WITH_GRAVEYARD,
   RETURN_EXILED_WITH_BATTLEFIELD,
   EXILE_FROM_EACH_GRAVEYARD,
   MAY_CAST_EXILED_WITH,
+  CAST_EXILED_WITH_PAYING,
 ];
 
 /** The features the lowerings of this file name, for the dimension test. */

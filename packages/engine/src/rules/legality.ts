@@ -921,8 +921,10 @@ export function canCastDuringResolution(
   if (obj.card === null && obj.cardCopy !== true) return false;
   if (alternative === 'normal' || alternative === 'freeGraveyard') {
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
-    // effect names it); the spell is cast from there and its owner stays the card's owner.
-    if (obj.zone !== 'graveyard') return false;
+    // effect names it); the spell is cast from there and its owner stays the card's owner. Summon: Esper Valigarmanda (`castFree.paying`): or a card in exile, as the effect names it.
+    if (obj.zone !== 'graveyard' && !(alternative === 'normal' && obj.zone === 'exile')) {
+      return false;
+    }
   } else if (obj.zone !== 'exile' && obj.zone !== 'hand' && obj.zone !== 'library') {
     // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
     // its mana cost"); Cascade, Suspend and Madness cast cards from exile; "reveal the top card of your library. You may cast it" (`revealTopCast`)

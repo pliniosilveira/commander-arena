@@ -641,6 +641,8 @@ describe('unmatched abilities', () => {
       'effect.may-cast-any-type',
       'effect.may-exile-card-from-each-graveyard',
       'effect.may-cast-exiled-with-self-any-color',
+      'effect.exile-instant-or-sorcery-from-each-graveyard',
+      'effect.may-cast-exiled-with-self-paying-any-type',
       'effect.exile-top-of-each-of-those-opponents',
       'effect.may-play-any-color',
       'effect.may-cast-while-exiled',

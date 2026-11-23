@@ -236,6 +236,7 @@ import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
+import { VALIGARMANDA_EFFECT_RULES } from './valigarmanda';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 import { WIN_GAME_EFFECT_RULES } from './win-game';
@@ -1211,6 +1212,8 @@ export const EFFECT_RULES = [
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
   ...AHOY_G2_EFFECT_RULES,
+  // Summon: Esper Valigarmanda (issue 97): "exile an instant or sorcery card from each graveyard" and "you may cast an instant or sorcery card exiled with ~, and mana of any type ...".
+  ...VALIGARMANDA_EFFECT_RULES,
   // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
   ...AHOY_G1B_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.

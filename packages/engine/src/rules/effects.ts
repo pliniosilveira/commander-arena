@@ -3508,6 +3508,8 @@ function runEffect(
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
             ...(effect.remember === true ? { remember: true as const } : {}),
+            ...(effect.paying === true ? { paying: true as const } : {}),
+            ...(effect.anyManaType === true ? { anyManaType: true as const } : {}),
             ...(fixed === undefined ? {} : { cards: fixed, cardsZone: 'exile' as const }),
             chosen: null,
           },

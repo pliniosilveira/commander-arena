@@ -164,6 +164,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealUntilEachPlayer',
     // Issue 102 (Diviner of Mist): "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead" (`castFree` of a `choose` from the graveyard, with `exileInstead`).
     'castFreeFromGraveyard',
+    // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
+    'castPayingFromLinkedExile',
     // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
     'chosenByOpponent',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
@@ -1920,6 +1922,8 @@ export const ABILITY_FEATURES = [
   'revealUntilEachPlayer',
   /** "Cast an instant or sorcery spell from your graveyard without paying its mana cost, then exile it instead" (issue 102, CR 608.2g, 614.1a): the engine's `castFree` of a `choose` from the graveyard. */
   'castFreeFromGraveyard',
+  /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
+  'castPayingFromLinkedExile',
   /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
   'chosenByOpponent',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
@@ -2932,6 +2936,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
+  castPayingFromLinkedExile: true,
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,

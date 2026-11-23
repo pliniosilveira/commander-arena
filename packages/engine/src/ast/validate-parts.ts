@@ -6824,7 +6824,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             eachGy.eachGraveyard !== true ||
             e.to !== 'exile' ||
             zone !== 'graveyard' ||
-            eachGy.optional !== true ||
+            (eachGy.optional !== undefined && eachGy.optional !== true) ||
             (eachGy.count !== undefined && eachGy.count !== 1) ||
             eachGy.fromMoved !== undefined ||
             eachGy.alsoGraveyard !== undefined ||
@@ -6833,7 +6833,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             issue(
               out,
               `${path}.objects.eachGraveyard`,
-              "eachGraveyard is true, with an optional choice of one card from the graveyard, to 'exile'",
+              "eachGraveyard is true, with a choice (optional or not) of one card from the graveyard, to 'exile'",
             );
           }
         }
@@ -7249,6 +7249,27 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.remember`,
             "remember with max reads the cards an effect before moved ('moved')",
+          );
+        }
+      }
+      // Summon: Esper Valigarmanda (CR 608.2g, 609.4b): the card exiled with this permanent is cast paying its mana cost, with any mana when the effect says so.
+      if (e.paying !== undefined || e.anyManaType !== undefined) {
+        if (
+          (e.paying !== undefined && e.paying !== true) ||
+          (e.anyManaType !== undefined && (e.anyManaType !== true || e.paying !== true)) ||
+          e.paying !== true ||
+          kindOf(e.objects) !== 'linkedExile' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.player !== undefined ||
+          e.remember !== undefined ||
+          e.exileInstead !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.paying`,
+            "paying is true, on the cards exiled with this permanent ('linkedExile'), with no play, max, perOwner, player, remember or exileInstead; anyManaType needs paying",
           );
         }
       }

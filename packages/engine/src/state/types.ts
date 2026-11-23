@@ -2138,6 +2138,9 @@ export type Instruction =
       readonly remember?: true;
       /** `copyCardAndCast.cost` (Blue Mage's Cane, CR 118.9): the mana paid rather than the mana cost. */
       readonly payInstead?: readonly Cost[];
+      /** `castFree.paying` (Summon: Esper Valigarmanda): the spell is cast paying its mana cost, with `anyManaType` as a rider of that spell. */
+      readonly paying?: true;
+      readonly anyManaType?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
