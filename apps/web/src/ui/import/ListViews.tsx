@@ -27,22 +27,24 @@ export function SavedDecksView({
         <p>No saved decks yet. Paste a list on the Import tab and choose "Save deck".</p>
       ) : (
         <ul className="imp-list imp-saved">
-          {decks.map((deck) => (
-            <li key={deck.id}>
-              <span>
-                <strong>{deck.name}</strong>{' '}
-                <span className="scr-help">saved {deck.savedAt.slice(0, 10)}</span>
-              </span>
-              <span className="imp-row-actions">
-                <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
-                  Open<span className="imp-sr"> {deck.name}</span>
-                </button>
-                <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
-                  Delete<span className="imp-sr"> {deck.name}</span>
-                </button>
-              </span>
-            </li>
-          ))}
+          {[...decks]
+            .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+            .map((deck) => (
+              <li key={deck.id}>
+                <span>
+                  <strong>{deck.name}</strong>{' '}
+                  <span className="scr-help">saved {deck.savedAt.slice(0, 10)}</span>
+                </span>
+                <span className="imp-row-actions">
+                  <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
+                    Open<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                  <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
+                    Delete<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                </span>
+              </li>
+            ))}
         </ul>
       )}
     </section>
