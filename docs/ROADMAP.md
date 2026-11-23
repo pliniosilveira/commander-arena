@@ -166,7 +166,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A prepared copy of a spell (CR 722.3c) was offered, then the engine refused `payAuto` ("You cannot pay that cost"); cause not traced. The agents cancel it and do not cast it again that turn.
 - The CasualAgent sometimes casts a spell with "creature with mana value X" that the engine refuses ("No creature has a mana value that X could be"); one refused answer, then the fallback.
 - The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.
-- A station symbol is read with one ability line each; its power and toughness box (CR 721.2b) only when the Station reminder text names the symbol; a line after a symbol with none is left unread.
+- The power and toughness box of a station symbol (CR 721.2b) is read only when the Station reminder text names the symbol.
 - The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment cannot.
 - "Total power of creatures they controlled that were exiled this way" (Oversimplify) counts only creatures an `exile` effect exiled, for each player's own tokens; other exiles (`exileTop`, until-leaves) and "you" or opponent phrasings are not read.
 - A card given flashback with the cost equal to its mana cost does not show the keyword in the view, and one that also prints flashback is offered only for its printed cost.

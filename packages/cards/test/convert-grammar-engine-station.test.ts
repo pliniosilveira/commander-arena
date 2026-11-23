@@ -108,10 +108,42 @@ describe('what the grammar refuses, as a whole and flagged', () => {
     expect(r.support.status).toBe('unsupported');
   });
 
-  test('a line after a station symbol that carries no symbol: it may be in the striation, which the text does not say', () => {
+  // CR 721.2: the abilities printed in the striation of a station symbol are part of its static ability, and the text gives the symbol once, at the head of the striation.
+  test('a line after a station symbol that carries no symbol is in the striation of that symbol: it is read at its threshold, never as an ability of every count', () => {
     const r = read('Land — Planet', `${STATION_REMINDER}\n3+ | {T}: Add {G}.\n{T}: Add {C}{C}.`);
+    expect(r.support.status).toBe('supported');
+    const abilities = r.definition.faces[0]?.abilities ?? [];
+    const levels = abilities.filter((a) => a.kind === 'stationLevel');
+    expect(levels).toHaveLength(1);
+    const [level] = levels;
+    if (level?.kind !== 'stationLevel') throw new Error('no station symbol');
+    expect(level.threshold).toBe(3);
+    expect(level.abilities.map((a) => a.kind)).toEqual(['mana', 'mana']);
+    expect(abilities.some((a) => a.kind === 'mana')).toBe(false);
+  });
+
+  test('a line of a striation that is not read makes the card unsupported: the symbol is never left with half its abilities', () => {
+    const r = read(
+      'Land — Planet',
+      `${STATION_REMINDER}\n3+ | {T}: Add {G}.\nFrobnicate the gizmo.`,
+    );
     expect(r.support.status).toBe('unsupported');
-    expect(r.support.unparsed.map((u) => u.text)).toEqual(['{T}: Add {C}{C}.']);
+    expect(r.support.unparsed.map((u) => u.text)).toEqual(['Frobnicate the gizmo.']);
+  });
+
+  test('a symbol after a striation of two lines starts its own striation', () => {
+    const r = read(
+      'Land — Planet',
+      `${STATION_REMINDER}\n3+ | {T}: Add {G}.\n{T}: Add {C}{C}.\n8+ | {T}: Add {G}{G}{G}.`,
+    );
+    expect(r.support.status).toBe('supported');
+    const levels = (r.definition.faces[0]?.abilities ?? []).flatMap((a) =>
+      a.kind === 'stationLevel' ? [[a.threshold, a.abilities.length]] : [],
+    );
+    expect(levels).toEqual([
+      [3, 2],
+      [8, 1],
+    ]);
   });
 
   test('"for each" mana of a choice of colors, and with a sacrifice cost: never read as one mana', () => {

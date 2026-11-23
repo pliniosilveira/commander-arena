@@ -1,22 +1,20 @@
 // Federation Fleet deck, group E (Spacecraft and chapters): the REAL Oracle text of Geordi La Forge, Innovator and Unification (golden.jsonl, taken from the issue) goes through the
 // grammar as a card with no override, is defined in an engine scenario and is played through applyAction. The attack trigger of U.S.S. Stargazer, Here and There is read and played on a
-// synthetic creature; the real card stays unsupported (its station striation, last pin of the Stargazer group). Pins: CR 509.1b (an evasion restriction: a
+// synthetic creature and on the real card, whose two lines after the Station keyword are one striation (CR 721.2). Pins: CR 509.1b (an evasion restriction: a
 // creature that can't be blocked), CR 611.3a (a static ability applies while its condition holds), CR 508.4 (a token put onto the battlefield attacking is never declared as an attacker),
 // CR 110.5b (tapped as it enters), CR 603.7 and 603.7c (the delayed exile of that token only), CR 108.3 (the owner of a permanent), CR 701.24 (shuffle), CR 121.1 (draw), CR 400.7
 // (a card put onto the battlefield from a hand or graveyard), CR 608.2d (the player chooses the card). The rule numbers are the ones the repository's own comments already use for these
 // mechanics; docs/rules was not read for this file.
-import { readFileSync } from 'node:fs';
 import { validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { fromGoldenCard, importCard, parseGolden } from '../src/index';
 import { real } from './agatha-helpers';
-import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
+import { parsed } from './convert-grammar-helpers';
 
 const GEORDI = real('Geordi La Forge, Innovator');
 const MANEUVER =
   'Whenever ~ attacks, create a tapped and attacking 4/3 colorless Spacecraft Illusion artifact creature token with flying. Exile that token at end of combat.';
-// The attack trigger of U.S.S. Stargazer, Here and There on a creature that needs no station: the card itself stays unsupported (see the last test of the group).
+// The attack trigger of U.S.S. Stargazer, Here and There on a creature that needs no station; the real card is played in its own group below.
 const STARGAZER = parsed(
   'SYNTHETIC Stargazer',
   'Legendary Artifact Creature — Spacecraft',
@@ -129,21 +127,57 @@ describe('Picard Maneuver, the attack trigger of U.S.S. Stargazer, Here and Ther
   });
 });
 
-describe('U.S.S. Stargazer, Here and There itself', () => {
-  // CR 721.2b (Station): a Spacecraft is an artifact creature, with the power and toughness of its box, from the charge counters of the striation that holds the box. The engine does not
-  // build that (docs/ROADMAP.md: a symbol is read with no power and toughness box), so a Spacecraft with 6 counters stays a plain artifact, never attacks, and the trigger above can
-  // never happen: the card is flagged unsupported rather than guessed. This pin goes when the station creature is built.
-  test('stays unsupported: its trigger sits after a station symbol line, in a striation the engine does not read', () => {
-    const golden = parseGolden(
-      readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
-    ).find((card) => card.name === 'U.S.S. Stargazer, Here and There');
-    expect(golden).toBeDefined();
-    if (golden === undefined) return;
-    const imported = importCard(fromGoldenCard(golden), undefined, NO_OVERRIDES);
-    expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.unparsed.map((u) => u.text)).toEqual([
-      expect.stringContaining('Picard Maneuver'),
-    ]);
+describe('U.S.S. Stargazer, Here and There itself (the real card)', () => {
+  // CR 721.2, 721.2b (Station): "6+ | Flying" and the line after it are one striation: from 6 charge counters the Spacecraft is an artifact creature 4/3 with flying and the
+  // attack trigger; below that it is a plain artifact with neither.
+  const card = real('U.S.S. Stargazer, Here and There');
+  const TOKEN = 'Spacecraft Illusion';
+
+  const game = (charge: number) =>
+    scenario()
+      .define(card)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(card.name, { counters: { charge } })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is supported and valid, and its two lines are one station symbol', () => {
+    expect(validateCard(card)).toEqual([]);
+    const levels = (card.faces[0]?.abilities ?? []).filter((a) => a.kind === 'stationLevel');
+    expect(levels).toHaveLength(1);
+    const [level] = levels;
+    if (level?.kind !== 'stationLevel') throw new Error('no station symbol');
+    expect(level.threshold).toBe(6);
+    expect(level.abilities.some((a) => a.kind === 'triggered')).toBe(true);
+    // Nothing of the striation is an ability the card has at every count (CR 721.4).
+    expect((card.faces[0]?.abilities ?? []).some((a) => a.kind === 'triggered')).toBe(false);
+  });
+
+  test('below 6 charge counters it is a plain artifact: no power, no flying, it cannot attack', () => {
+    const g = game(5);
+    g.expect.derived(card.name, { types: ['artifact'], keywords: ['station'] });
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(g.act(0).try.declareAttackers([{ attacker: card.name }]).ok).toBe(false);
+  });
+
+  test('at 6 it is a 4/3 artifact creature with flying, and attacking makes the tapped and attacking token, exiled at end of combat', () => {
+    const g = game(6);
+    g.expect.derived(card.name, { types: ['artifact', 'creature'] });
+    g.expect.pt(card.name, 4, 3);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: card.name }]);
+    g.passAll();
+    g.expect.zone(TOKEN, 'battlefield', { seat: 0, count: 1 });
+    g.expect.tapped(TOKEN);
+    g.expect.pt(TOKEN, 4, 3);
+    g.expect.combat({ attackers: [card.name, TOKEN] });
+    g.advanceTo('postcombatMain');
+    g.expect.zone(TOKEN, 'battlefield', { count: 0 });
+    g.expect.life(1, 40 - 8); // both 4/3 fliers hit
+    g.expect.invariants();
   });
 });
 
