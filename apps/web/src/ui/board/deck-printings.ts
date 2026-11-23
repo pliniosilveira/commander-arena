@@ -9,7 +9,12 @@ export interface CardPrinting {
   /** Lower-case set code. */
   readonly set: string;
   readonly collector: string;
+  /** The player chose this printing for the deck (`CHOSEN_TAG`): it beats the special commander art of issue 366. */
+  readonly explicit: boolean;
 }
+
+/** The tag a printing chosen on the deck screen carries on its line: `1 Name (fdc) 6 ^Chosen printing^`. */
+export const CHOSEN_TAG = 'Chosen printing';
 
 const known = new Map<string, CardPrinting>();
 const keyOf = (name: string): string => frontFaceName(name).toLowerCase();
@@ -18,7 +23,14 @@ const keyOf = (name: string): string => frontFaceName(name).toLowerCase();
 export function commanderPrintingOf(text: string): { name: string; printing: CardPrinting } | null {
   for (const entry of parseDecklist(text).sections.commander) {
     if (entry.set !== null && entry.collector !== null) {
-      return { name: entry.name, printing: { set: entry.set, collector: entry.collector } };
+      return {
+        name: entry.name,
+        printing: {
+          set: entry.set,
+          collector: entry.collector,
+          explicit: entry.tags.includes(CHOSEN_TAG),
+        },
+      };
     }
   }
   return null;
@@ -29,7 +41,11 @@ export function registerDeckPrintings(text: string): void {
   const { sections } = parseDecklist(text);
   for (const entry of [...sections.commander, ...sections.main]) {
     if (entry.set !== null && entry.collector !== null) {
-      known.set(keyOf(entry.name), { set: entry.set, collector: entry.collector });
+      known.set(keyOf(entry.name), {
+        set: entry.set,
+        collector: entry.collector,
+        explicit: entry.tags.includes(CHOSEN_TAG),
+      });
     }
   }
 }

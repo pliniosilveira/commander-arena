@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import type { ImportReport, ImportService } from '../../import/types';
 import { CardPrintsDialog } from './CardPrintsDialog';
+import type { CardPrint } from './card-prints';
+import { printingInText, withPrinting } from './deck-text';
 import { groupEntries, imageOf } from './deck-view-model';
 
 export function DeckScreen({
@@ -9,15 +11,21 @@ export function DeckScreen({
   text,
   service,
   onBack,
+  onSave,
 }: {
   name: string;
   text: string;
   service: ImportService;
   onBack: () => void;
+  /** Stores the deck's new text (a printing was chosen); absent when this deck cannot be changed. */
+  onSave?: (text: string) => Promise<void>;
 }) {
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // The deck's text as last saved, and the printings chosen in this visit (the grid shows them at once).
+  const [current, setCurrent] = useState(text);
+  const [picked, setPicked] = useState<ReadonlyMap<string, CardPrint>>(new Map());
 
   useEffect(() => {
     let live = true;
@@ -55,7 +63,8 @@ export function DeckScreen({
             </h2>
             <ul className="deck-grid">
               {entries.map(({ card, count: copies }) => {
-                const url = imageOf(card.stored, 'normal');
+                const url =
+                  picked.get(card.stored.oracleId)?.normal ?? imageOf(card.stored, 'normal');
                 return (
                   <li key={card.stored.oracleId}>
                     <button
@@ -77,7 +86,30 @@ export function DeckScreen({
           </section>
         ))}
       </div>
-      {shown !== undefined && <CardPrintsDialog card={shown} onClose={() => setOpen(null)} />}
+      {shown !== undefined && (
+        <CardPrintsDialog
+          card={shown}
+          listed={printingInText(current, shown.name)}
+          onClose={() => setOpen(null)}
+          {...(onSave === undefined
+            ? {}
+            : {
+                onUse: async (print: CardPrint) => {
+                  const next = withPrinting(
+                    current,
+                    shown.name,
+                    print.setCode.toLowerCase(),
+                    print.collector,
+                  );
+                  if (next === null)
+                    throw new Error('This card’s line in the list cannot hold a printing.');
+                  await onSave(next);
+                  setCurrent(next);
+                  setPicked((now) => new Map(now).set(shown.oracleId, print));
+                },
+              })}
+        />
+      )}
     </main>
   );
 }

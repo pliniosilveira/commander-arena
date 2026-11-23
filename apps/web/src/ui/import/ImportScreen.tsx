@@ -47,6 +47,7 @@ export function ImportScreen() {
     readonly name: string;
     readonly text: string;
     readonly service: ImportService;
+    readonly onSave: (text: string) => Promise<void>;
   } | null>(null);
   const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
@@ -137,6 +138,8 @@ export function ImportScreen() {
       name: precon.name,
       text: mine?.text ?? defaultListOf(precon.id),
       service: precons.editorService(precon.id),
+      // A printing chosen for a built-in deck is kept as the player's edited list of it (D-215), which "Reset to default" undoes.
+      onSave: (text) => env.decks.saveOverride(precon.id, precon.name, text).then(refreshChoices),
     });
   };
 
@@ -224,7 +227,12 @@ export function ImportScreen() {
             loading={decks === null}
             onOpen={openSaved}
             onView={(deck) =>
-              setViewing({ name: deck.name, text: deck.text, service: env.service })
+              setViewing({
+                name: deck.name,
+                text: deck.text,
+                service: env.service,
+                onSave: (text) => env.decks.save({ name: deck.name, text }).then(refreshDecks),
+              })
             }
             onRemove={(deck) => void env.decks.remove(deck.id).then(refreshDecks)}
           />

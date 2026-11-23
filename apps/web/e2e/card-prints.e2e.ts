@@ -77,5 +77,17 @@ test.describe('card printings', () => {
       'src',
       /large\/front\/p1\.jpg/,
     );
+
+    // Using a printing writes it into the deck: the built-in deck becomes the player's edited one, and a reload keeps the choice.
+    await dialog.getByRole('button', { name: 'Use in this deck' }).click();
+    await expect(dialog.getByRole('status')).toContainText('Saved');
+    await expect(dialog.getByRole('button', { name: 'Use in this deck' })).toBeDisabled();
+    await page.reload();
+    await page.getByRole('button', { name: 'My decks' }).click();
+    const row = page.locator(`[data-precon="${PRECON}"]`);
+    await expect(row.getByTestId('precon-tag')).toHaveText('Edited by you');
+    await row.getByRole('button', { name: /^View/ }).click();
+    await page.locator('.deck-card').first().click();
+    await expect(page.getByRole('dialog').getByRole('radio').first()).toBeChecked();
   });
 });

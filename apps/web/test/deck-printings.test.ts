@@ -21,14 +21,18 @@ test('the commander line that names a printing gives its set and collector numbe
   const text = 'Commander\n1x Zed the Test (FDC) 6\n\nMainboard\n1x Forest (xyz) 12';
   expect(commanderPrintingOf(text)).toEqual({
     name: 'Zed the Test',
-    printing: { set: 'fdc', collector: '6' },
+    printing: { set: 'fdc', collector: '6', explicit: false },
   });
   expect(commanderPrintingOf('Commander\n1x Zed the Test\n')).toBeNull();
 });
 
 test('a registered printing is found by the commander name, without case or back face', () => {
   registerDeckPrintings('Commander\n1x Two Faced (abc) 9\n');
-  expect(printingOf('TWO FACED // Other Side')).toEqual({ set: 'abc', collector: '9' });
+  expect(printingOf('TWO FACED // Other Side')).toEqual({
+    set: 'abc',
+    collector: '9',
+    explicit: false,
+  });
   expect(printingOf('Never Registered')).toBeNull();
 });
 
@@ -36,8 +40,8 @@ test('every card of the commander and main deck that names a printing is registe
   registerDeckPrintings(
     'Commander\n1x Lead Card (abc) 1\n\nMainboard\n1x Main Card (abc) 2\n1x Plain Card\n\nSideboard\n1x Side Card (abc) 3',
   );
-  expect(printingOf('Lead Card')).toEqual({ set: 'abc', collector: '1' });
-  expect(printingOf('Main Card')).toEqual({ set: 'abc', collector: '2' });
+  expect(printingOf('Lead Card')).toEqual({ set: 'abc', collector: '1', explicit: false });
+  expect(printingOf('Main Card')).toEqual({ set: 'abc', collector: '2', explicit: false });
   expect(printingOf('Plain Card')).toBeNull();
   expect(printingOf('Side Card')).toBeNull();
 });
@@ -111,4 +115,16 @@ test('a list that names no printing searches any set and never asks for a listed
   const none = lookupsOf({});
   expect(await findCommanderArt('Zed the Test', null, none.lookups)).toBeNull();
   expect(none.asked).toEqual(['anywhere']);
+});
+
+test('a printing the player chose is asked for first, and a special one is the fallback', async () => {
+  const chosen = { ...LISTED, explicit: true };
+  const a = lookupsOf({ inSet: 'in', anywhere: 'any', listed: 'list' });
+  expect((await findCommanderArt('Zed the Test', chosen, a.lookups))?.normal).toContain(
+    '/list.jpg',
+  );
+  expect(a.asked).toEqual(['listed']);
+  const b = lookupsOf({ inSet: 'in' });
+  expect((await findCommanderArt('Zed the Test', chosen, b.lookups))?.normal).toContain('/in.jpg');
+  expect(b.asked).toEqual(['listed', 'inSet']);
 });

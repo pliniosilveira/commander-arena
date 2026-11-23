@@ -475,6 +475,13 @@ code {
   aspect-ratio: 488 / 680;
   object-fit: contain;
 }
+.deck-prints-use {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
 .deck-prints-list h3 {
   margin: 0 0 8px;
   font-size: 14px;

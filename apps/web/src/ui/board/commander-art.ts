@@ -1,7 +1,7 @@
 /**
  * Issue 366: the picture of a commander. Scryfall's name lookup gives the default printing; a commander is the face of the deck, so
  * a nicer one is asked for first: a printing with a special frame (borderless, extended art, showcase or full art), in the set the
- * deck's list names, else in any set. Then the printing the list names; when there is none, or Scryfall cannot be reached, the card
+ * deck's list names, else in any set. Then the printing the list names (first of all when the player chose it); when there is none, or Scryfall cannot be reached, the card
  * is drawn as before, by name.
  */
 import { createRequestQueue, type RequestQueue } from '@commander-arena/cards';
@@ -30,9 +30,18 @@ export interface ArtLookups {
  */
 export async function findCommanderArt(
   name: string,
-  printing: { readonly set: string; readonly collector: string } | null,
+  printing: {
+    readonly set: string;
+    readonly collector: string;
+    readonly explicit?: boolean;
+  } | null,
   lookups: ArtLookups,
 ): Promise<CardArt | null> {
+  // A printing the player chose on the deck screen is used as it is, before any special printing.
+  if (printing?.explicit === true) {
+    const chosen = await lookups.printing(printing.set, printing.collector, name);
+    if (chosen !== null) return chosen;
+  }
   if (printing !== null) {
     const inSet = await lookups.search(commanderArtQuery(name, printing.set));
     if (inSet !== null) return inSet;
