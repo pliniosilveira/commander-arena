@@ -11,6 +11,7 @@ import { useApp, useLookedCards } from '../store-context';
 import './board.css';
 import './table.css';
 import { splitAttachments } from './attach';
+import { BlockArrows } from './BlockArrows';
 import { Field, ROW_ORDER_ME, ROW_ORDER_OPP, zoneContents } from './Board';
 import { CommanderPopup } from './CommanderPopup';
 import { exilePlayable } from './exile-play';
@@ -120,6 +121,7 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
             onClose={() => setCommanderSeat(null)}
           />
         )}
+        <BlockArrows roles={roles} />
         {open !== null && (
           <ZoneViewer
             title={open.title}

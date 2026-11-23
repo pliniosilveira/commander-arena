@@ -41,6 +41,7 @@ async function show(
   width = 1440,
   height = 900,
   conceded: readonly number[] = [],
+  combat = false,
 ): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -49,7 +50,7 @@ async function show(
   await page.setContent('<!doctype html><html><head></head><body></body></html>');
   if (css !== '') await page.addStyleTag({ content: css });
   await page.addScriptTag({
-    content: `${script}\nTableEntry.mount(${opponents}, ${JSON.stringify(conceded)});`,
+    content: `${script}\nTableEntry.mount(${opponents}, ${JSON.stringify(conceded)}, ${combat});`,
   });
   expect(errors).toEqual([]);
   await expect(page.getByTestId('game-table-board')).toBeVisible();
@@ -265,3 +266,11 @@ for (const [width, height] of [
     if (width === 1440) await page.screenshot({ path: 'test-results/table-strip.png' });
   });
 }
+
+test('a declared block on the table board draws one block arrow between the tiles', async ({
+  page,
+}) => {
+  await show(page, 3, 1440, 900, [], true);
+  await expect(page.locator('.block-arrow')).toHaveCount(1);
+  await expect(page.locator('.block-arrow .pnl-arrow-shaft')).toHaveAttribute('d', /.+/);
+});
