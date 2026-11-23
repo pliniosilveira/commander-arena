@@ -384,3 +384,114 @@ describe('Cid, Freeflier Pilot: flying on your turn; returns an Equipment or Veh
     expect(() => g.act(0).activate(CID, { targets: [name] })).toThrow();
   });
 });
+
+describe('Sephiroth, Fallen Hero: a cell counter, then each modified creature you control is 7/5; The Reunion (CR 700.9, 611.2c, 613.4b, 602.2)', () => {
+  const SEPH = 'Sephiroth, Fallen Hero';
+  const seph = real(SEPH);
+
+  const board = () =>
+    scenario()
+      .define(seph)
+      .define(syntheticCard(BLADE))
+      .seat(0)
+      .battlefield(SEPH, 'Grizzly Bears', 'Llanowar Elves', 'Serra Angel')
+      .battlefield(BLADE, { attachedTo: 'Grizzly Bears' })
+      .seat(1)
+      .battlefield('Giant Spider')
+      .at('beginningOfCombat', { active: 0 })
+      .build();
+
+  const attack = (g: ReturnType<typeof board>) => {
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: SEPH }]);
+    g.passAll();
+  };
+
+  test('is valid', () => {
+    expect(validateCard(seph)).toEqual([]);
+  });
+
+  test('with the counter put on a creature, every modified creature of yours is 7/5 (the counter makes its creature modified)', () => {
+    const g = board();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: SEPH }]);
+    g.act(0).chooseTargets({ name: 'Llanowar Elves' });
+    g.passAll();
+    g.act(0).accept();
+    g.expect.counters('Llanowar Elves', { cell: 1 });
+    g.expect.pt('Llanowar Elves', 7, 5);
+    g.expect.pt('Grizzly Bears', 8, 6); // equipped: base 7/5, the Equipment's +1/+1 on top
+    g.expect.pt('Serra Angel', 4, 4); // not modified
+    g.expect.invariants();
+  });
+
+  test('declining the counter still sets the base power and toughness of the creatures that are modified', () => {
+    const g = board();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: SEPH }]);
+    g.act(0).chooseTargets({ name: 'Llanowar Elves' });
+    g.passAll();
+    g.act(0).decline();
+    g.expect.counters('Llanowar Elves', {});
+    g.expect.pt('Llanowar Elves', 1, 1);
+    g.expect.pt('Grizzly Bears', 8, 6);
+    g.expect.pt('Giant Spider', 2, 4);
+  });
+
+  test('creatures of an opponent are not changed even when modified', () => {
+    const g = board();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: SEPH }]);
+    g.act(0).chooseTargets({ name: 'Giant Spider' });
+    g.passAll();
+    g.act(0).accept();
+    g.expect.counters('Giant Spider', { cell: 1 });
+    g.expect.pt('Giant Spider', 2, 4);
+  });
+
+  test('the creatures that were modified when it resolved stay 7/5 until end of turn, others stay as they are', () => {
+    const g = board();
+    attackAndDecline(g);
+    g.expect.pt('Grizzly Bears', 8, 6);
+    g.expect.pt('Serra Angel', 4, 4);
+  });
+
+  function attackAndDecline(g: ReturnType<typeof board>) {
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: SEPH }]);
+    g.act(0).chooseTargets({ name: 'Serra Angel' });
+    g.passAll();
+    g.act(0).decline();
+  }
+
+  test('The Reunion: {3}, sacrifice a modified creature: returns from the graveyard to the battlefield tapped', () => {
+    const g = scenario()
+      .define(seph)
+      .define(syntheticCard(BLADE))
+      .seat(0)
+      .battlefield('Grizzly Bears', 'Llanowar Elves', 'Plains', 'Plains', 'Plains')
+      .battlefield(BLADE, { attachedTo: 'Grizzly Bears' })
+      .graveyard(SEPH)
+      .seat(1)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(SEPH, { pay: true, sacrifice: 'Grizzly Bears' });
+    g.passAll();
+    g.expect.zone(SEPH, 'battlefield', { seat: 0 });
+    g.expect.tapped(SEPH);
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('The Reunion cannot sacrifice a creature that is not modified', () => {
+    const g = scenario()
+      .define(seph)
+      .seat(0)
+      .battlefield('Llanowar Elves', 'Plains', 'Plains', 'Plains')
+      .graveyard(SEPH)
+      .seat(1)
+      .at('precombatMain', { active: 0 })
+      .build();
+    expect(() => g.act(0).activate(SEPH, { pay: true, sacrifice: 'Llanowar Elves' })).toThrow();
+  });
+});

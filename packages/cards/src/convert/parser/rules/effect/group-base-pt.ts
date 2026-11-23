@@ -33,8 +33,14 @@ export const EFFECT_LEAD_GROUP_BASE_PT = defineRule<Clauses>({
     'Until end of turn, creatures you control have base power and toughness X/X and gain all creature types',
     'Until end of turn, creatures you control have base power and toughness 3/3',
     'Until end of turn, creatures you control have base power and toughness 2/2 and gain all creature types',
+    // Sephiroth, Fallen Hero (CR 611.2c, 700.9): each permanent of a kind, the singular verb.
+    'Until end of turn, each modified creature you control has base power and toughness 7/5',
+    'Until end of turn, each creature you control has base power and toughness 3/3',
   ],
   rejects: [
+    'Until end of turn, each creature you control have base power and toughness 3/3',
+    'Until end of turn, each creature you control has base power and toughness 3/3 and gain all creature types',
+    'Until end of turn, each creature you control has base power and toughness X/3',
     'Until end of turn, creatures you control have base power and toughness X/X and gain all creature types until end of turn',
     'Until end of turn, creatures you control have base power and toughness X/X and gains all creature types',
     'Until end of turn, creatures you control have base power and toughness X/3',
@@ -50,15 +56,19 @@ export const EFFECT_LEAD_GROUP_BASE_PT = defineRule<Clauses>({
     const r = sequence(
       family<IrDuration>('duration'),
       literal(', '),
-      family<IrNoun>('noun', { only: ['noun.plain-permanents'] }),
-      literal(' have '),
+      family<IrNoun>('noun', { only: ['noun.plain-permanents', 'noun.each-permanent'] }),
+      pattern(/ has? /u),
       spanned(pattern(/base power and toughness (?:(\d+)\/(\d+)|X\/X)(?![\p{L}\p{N}/])/u)),
       optional(spanned(pattern(new RegExp(` and gain all creature types${BOUNDARY}`, 'u'))), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [duration, , subject, , pt, types] = r.value;
-    // The plural group of the plain permanent phrase, never a single permanent: "creatures you control", "Elves you control".
-    if (!subject.plural) return fail(ctx, pos);
+    const [duration, , subject, verb, pt, types] = r.value;
+    // The plural group of the plain permanent phrase, never a single permanent: "creatures you control", "Elves you control"; or (Sephiroth, Fallen Hero) "each modified creature you
+    // control" with the singular verb. The verb agrees with the subject, and "each" takes no types.
+    const each = subject.det === 'each' && !subject.plural;
+    if (each ? verb[0] !== ' has ' || types !== null : !subject.plural || verb[0] !== ' have ') {
+      return fail(ctx, pos);
+    }
     const numbers = pt.value[1] !== undefined;
     const basePt: IrBasePt = {
       kind: 'basePt',
