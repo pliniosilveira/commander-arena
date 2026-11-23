@@ -464,3 +464,73 @@ code {
   max-height: 76vh;
   margin: 0 auto;
 }
+.deck-prints {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.deck-prints-picture .deck-card-large {
+  width: 100%;
+  aspect-ratio: 488 / 680;
+  object-fit: contain;
+}
+.deck-prints-list h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.deck-prints-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 70vh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow-y: auto;
+}
+.deck-prints-legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.deck-print-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.deck-print:has(.deck-print-input:focus-visible) {
+  outline: 2px solid currentColor;
+}
+.deck-print {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.deck-print-on {
+  border-color: var(--accent, currentColor);
+  background: var(--bg-sunken, rgb(127 127 127 / 0.15));
+  font-weight: 600;
+}
+.deck-print-meta {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+@media (max-width: 640px) {
+  .deck-prints {
+    grid-template-columns: 1fr;
+  }
+  .deck-prints-items {
+    max-height: 30vh;
+  }
+}

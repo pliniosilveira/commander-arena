@@ -1,7 +1,7 @@
 /** The deck screen: every card of a deck in a grid, grouped by type; a click shows it large. */
 import { useEffect, useState } from 'react';
 import type { ImportReport, ImportService } from '../../import/types';
-import { Dialog } from './Dialog';
+import { CardPrintsDialog } from './CardPrintsDialog';
 import { groupEntries, imageOf } from './deck-view-model';
 
 export function DeckScreen({
@@ -77,19 +77,7 @@ export function DeckScreen({
           </section>
         ))}
       </div>
-      {shown !== undefined && (
-        <Dialog title={shown.name} onClose={() => setOpen(null)}>
-          {imageOf(shown, 'large') === null ? (
-            <p>{shown.faces.map((f) => `${f.name}: ${f.oracleText}`).join('\n')}</p>
-          ) : (
-            <img
-              className="deck-card-large"
-              src={imageOf(shown, 'large') ?? undefined}
-              alt={shown.name}
-            />
-          )}
-        </Dialog>
-      )}
+      {shown !== undefined && <CardPrintsDialog card={shown} onClose={() => setOpen(null)} />}
     </main>
   );
 }
