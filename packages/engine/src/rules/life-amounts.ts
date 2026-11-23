@@ -10,7 +10,7 @@
 import type { Amount, Cost, PlayerSelector } from '../ast/types';
 import type { SeatId } from '../ids';
 import { getSeat } from '../state/ops';
-import type { GameState, ThisWayCounts } from '../state/types';
+import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { amountOf } from './amounts';
 import type { SelectContext } from './select';
 
@@ -74,9 +74,18 @@ export function resolveMayPayCost(
   state: GameState,
   cost: readonly Cost[],
   ctx: SelectContext,
+  /** The targets the spell or ability chose, which an amount may read ("equal to that permanent's mana value", issue 105). */
+  targets: readonly ChosenTarget[] = [],
 ): readonly Cost[] | null {
   const resolved: Cost[] = [];
   for (const c of cost) {
+    // Issue 105 (Confiscation Coup, CR 107.14, 608.2c): "an amount of {E} equal to ...", worked out once into a plain energy cost.
+    if (c.kind === 'energyAmount') {
+      const energy = amountOf(state, c.amount, ctx, targets);
+      if (energy <= 0) return null;
+      resolved.push({ kind: 'energy', count: energy });
+      continue;
+    }
     if (c.kind !== 'payLife' || typeof c.amount === 'number') {
       resolved.push(c);
       continue;

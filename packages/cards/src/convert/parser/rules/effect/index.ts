@@ -78,6 +78,7 @@ import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
+import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
@@ -165,6 +166,7 @@ import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
+import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
@@ -1033,6 +1035,7 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target activated or triggered ability',
     // Ahoy Mateys deck, group 10 (Siren Stormtamer): a spell or an ability that targets you or a creature you control.
     'counter target spell or ability that targets you or a creature you control',
+    'counter target spell, activated ability, or triggered ability',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -1050,6 +1053,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
           'noun.target-activated-or-triggered-ability',
+          // Issue 105 (Disallow).
+          'noun.target-spell-activated-or-triggered-ability',
           // Ahoy Mateys deck, group 10 (Siren Stormtamer).
           'noun.target-spell-or-ability-targeting-you',
         ],
@@ -1366,6 +1371,8 @@ export const EFFECT_RULES = [
   ...PLANESWALKER_EFFECT_RULES,
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
+  // Aetherdrift energy deck (issue 105): "destroy each permanent chosen this way", whose first words are those of `effect.destroy`.
+  ...EACH_PLAYER_CHOOSES_RULES,
   EFFECT_DESTROY,
   // Stage P70 (D-278): "exile them, then meld them into X" starts like a plain exile and is tried before it.
   ...MELD_EFFECT_RULES,
@@ -1506,4 +1513,6 @@ export const EFFECT_RULES = [
   ...RECURSION_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,
+  // Aetherdrift energy deck (issue 105): "pay one or more {E}".
+  EFFECT_PAY_ENERGY_ANY,
 ];

@@ -14,10 +14,22 @@ export const CONDITION_IF_YOU_DO = defineRule<IrCondition>({
   family: 'condition',
   leading: ['you'],
   cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 118.3 (Costs)'],
-  examples: ['you do', 'You do'],
-  rejects: ['you don’t', "you don't", 'you did', 'you do not', 'they do', 'you does', 'you'],
+  // Issue 105 (Lightning Runner): "If you pay, ..." after "you may pay eight {E}" says the same.
+  examples: ['you do', 'You do', 'you pay'],
+  rejects: [
+    'you don’t',
+    "you don't",
+    'you did',
+    'you do not',
+    'they do',
+    'you does',
+    'you',
+    'you pay {1}',
+    'you paid',
+    'you payment',
+  ],
   parse: (ctx, pos) => {
-    const r = pattern(/you do(?![\p{L}\p{N}])/iu)(ctx, pos);
+    const r = pattern(/you (?:do|pay)(?![\p{L}\p{N}])/iu)(ctx, pos);
     if (!r.ok) return r;
     const span = { start: pos, end: r.pos };
     return {

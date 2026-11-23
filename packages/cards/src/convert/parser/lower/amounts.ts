@@ -770,6 +770,13 @@ export function lowerAmount(
       }
       // Issue 121 (Bloodthirsty Adversary, CR 603.12): in the reflexive ability of "pay {2}{R} any number of times", "that many" is the number of times the cost was paid, which the
       // ability's event carries (`triggerDamage`).
+      // Issue 105 (CR 107.14, 608.2c): in the "If you do" of "you may pay one or more {E}", "that many" is the number paid, the X the payment announces.
+      if (amount.thatMany === true && ctx.payEnergyX) {
+        const paidX = needs('x');
+        if (paidX !== null) return paidX;
+        ctx.usesX = true;
+        return { ok: true, value: { kind: 'x' }, rule };
+      }
       if (amount.thatMany === true && ctx.payReflexive) {
         const paid = needs('triggerDamage');
         if (paid !== null) return paid;

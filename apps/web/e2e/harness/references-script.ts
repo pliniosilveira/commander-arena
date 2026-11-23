@@ -8,7 +8,8 @@ import { settled } from './settle';
  */
 export const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 export const counterDialog = (page: Page) => page.getByRole('dialog', { name: 'Counterspell' });
-export const searchDialog = (page: Page) => page.getByRole('dialog', { name: 'Search' });
+export const searchDialog = (page: Page) =>
+  page.getByRole('dialog', { name: 'Search', exact: true });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });
 export const bouncePanel = (page: Page) =>
   page.getByRole('region', { name: 'Permanents to choose' });

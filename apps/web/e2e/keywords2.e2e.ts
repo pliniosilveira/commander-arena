@@ -12,6 +12,7 @@ import {
   game,
   graveyardSize,
   handCard,
+  permanents,
   primary,
   untappedLands,
 } from './harness/keywords2-script';
@@ -56,7 +57,7 @@ test('Convoke: the panel lists the creatures with the suggestion picked, says wh
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED_CONVOKE));
   await reachConvoke(page);
-  const tappedBefore = await bears(page).and(page.locator('.is-tapped')).count();
+  const tappedBefore = await permanents(bears(page).and(page.locator('.is-tapped')));
 
   await handCard(page, WURM).first().click();
   const panel = page.getByRole('dialog', { name: 'Convoke' });
@@ -89,7 +90,7 @@ test('Convoke: the panel lists the creatures with the suggestion picked, says wh
   await expect(logText(page)).toContainText(`You tap ${tapped} to convoke ${WURM}.`);
   await expect(logText(page)).toContainText(`You cast ${WURM}`);
   // The creatures stay tapped on the board.
-  expect(await bears(page).and(page.locator('.is-tapped')).count()).toBe(tappedBefore + count);
+  expect(await permanents(bears(page).and(page.locator('.is-tapped')))).toBe(tappedBefore + count);
   expect(errors).toEqual([]);
 });
 
@@ -101,7 +102,7 @@ test('Cancel (and Esc) rewinds the cast; an answer the engine does not list cann
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED_CONVOKE));
   await reachConvoke(page);
-  const untappedBears = await bears(page, true).count();
+  const untappedBears = await permanents(bears(page, true));
   const lands = await untappedLands(page);
 
   await handCard(page, WURM).first().click();
@@ -119,7 +120,7 @@ test('Cancel (and Esc) rewinds the cast; an answer the engine does not list cann
   await settled(page);
   // The cast is taken back: the Wurm is in the hand, castable again, nothing was tapped or logged.
   await expect(handCard(page, WURM)).toHaveCount(1);
-  expect(await bears(page, true).count()).toBe(untappedBears);
+  expect(await permanents(bears(page, true))).toBe(untappedBears);
   expect(await untappedLands(page)).toBe(lands);
   await expect(logText(page)).not.toContainText('to convoke');
 

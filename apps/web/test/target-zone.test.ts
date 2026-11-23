@@ -57,6 +57,14 @@ describe('the zone to open for a targets question', () => {
     expect(targetZoneToOpen(viewWith([]))).toBeNull();
   });
 
+  test('the targets question of a graveyard opens its Zone Picker by itself (Macabre Waltz)', () => {
+    expect(questionZoneToOpen(viewWith([obj('g1'), obj('g2')]))).toEqual({
+      zone: { kind: 'graveyard', seat: 0 },
+      name: 'graveyard',
+    });
+    expect(questionZoneToOpen(viewWith([obj('g1'), obj('bear')]))).toBeNull();
+  });
+
   test('another question opens nothing', () => {
     const v = viewWith([obj('g1')]);
     expect(

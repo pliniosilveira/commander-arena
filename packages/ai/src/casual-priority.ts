@@ -256,7 +256,9 @@ export function spellPlays(
       o.alternative === 'escape' ||
       o.alternative === 'retrace' ||
       o.alternative === 'jumpStart' ||
-      o.alternative === 'harmonize'
+      o.alternative === 'harmonize' ||
+      // Issue 105: casting for energy (`grantEnergyAlternative`) is not a play the AI weighs; it casts the card the ordinary way.
+      o.alternative === 'energyGrant'
     )
       continue;
     const base = findObject(view, o.object);

@@ -272,6 +272,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainEnergy',
     // CR 122.1: "You get an experience counter" (`gainExperience`).
     'gainExperience',
+    // Issue 105: "Double the number of each kind of counter you have" (`doublePlayerCounters`).
+    'doublePlayerCounters',
     // CR 122.1: "They get a number of poison counters equal to the difference" (`givePoison`).
     'givePoison',
     // CR 702.179c: "Increase your speed by 1" (`increaseSpeed`).
@@ -493,6 +495,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castCard',
     // D-149: "proliferate" (CR 701.34).
     'proliferate',
+    // Issue 105: "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way."
+    'eachPlayerChoosesDestroy',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
     'exileTop',
     'mayPlay',
@@ -837,6 +841,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payLife',
     'mill',
     'tapPermanents',
+    // Issue 105 (Aether Hub): "{T}, Pay {E}: Add one mana of any color." (CR 107.14, 118.3, 605.3).
+    'energy',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
     'removeCounters',
     // Issue 144 (Arena of Glory): "{R}, {T}, Exert this land: Add {R}{R}." (CR 701.43a).
@@ -951,8 +957,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileFromGraveyard',
     // D-200: the loyalty symbol of a loyalty ability (CR 606).
     'loyalty',
-    // D-209: "{E}{E}", paid by the player an `unlessPays` asks (`activationCostIssues` refuses it anywhere else).
+    // D-209: "{E}{E}", paid by the player an `unlessPays` asks; issue 105: and the cost of an activated or a mana ability (`activationCostIssues` refuses it in a spell).
     'energy',
+    // Issue 105: "an amount of {E} equal to ...", the cost of a `mayPay` only.
+    'energyAmount',
   ],
   // `choose` is run by `sacrifice` and by `moveToZone` to hand, graveyard or library; `anyOf` is
   // ObjectFilter.anyOf (a disjunction of filters); `ownerRef` is ObjectFilter.owner, read in the
@@ -1390,6 +1398,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantFlashbackToGraveyardCards',
     // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
     'grantAlternativeCostToSpells',
+    // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (CR 118.9, 107.14).
+    'grantEnergyAlternative',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1636,6 +1646,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
   // D-121, D-124: the named alternative costs (Overload, Evoke, Dash, Spectacle, Escape).
   castAlternatives: [
+    // Issue 105: energy rather than the mana cost, granted by a static ability of a permanent (`grantEnergyAlternative`).
+    'energyGrant',
     'flashback',
     'free',
     'overload',
@@ -2470,6 +2482,8 @@ export const STATIC_KINDS = [
   'grantFlashbackToGraveyardCards',
   /** "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9). */
   'grantAlternativeCostToSpells',
+  /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14). */
+  'grantEnergyAlternative',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
@@ -2790,6 +2804,8 @@ export const CAST_ALTERNATIVE_KINDS = [
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
+  // Issue 105 (Nissa, Worldsoul Speaker): energy rather than the mana cost, granted by a static ability of a permanent.
+  'energyGrant',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 
@@ -2947,6 +2963,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeAllPlayerCounters: true,
   gainEnergy: true,
   gainExperience: true,
+  doublePlayerCounters: true,
   givePoison: true,
   increaseSpeed: true,
   noMaxHandSizeForGame: true,
@@ -3070,6 +3087,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   myriad: true,
   exileIfLeaves: true,
   proliferate: true,
+  eachPlayerChoosesDestroy: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,
@@ -3326,6 +3344,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   putCounters: true,
   mill: true,
   energy: true,
+  energyAmount: true,
   returnToHand: true,
 };
 

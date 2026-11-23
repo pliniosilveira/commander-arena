@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { handCard } from './harness/locators';
+import { handCard, permanentTarget, seatTarget } from './harness/locators';
 import { settled } from './harness/settle';
 
 /**
@@ -106,11 +106,11 @@ test('Damage divided among the targets: choose two, split it with the steppers, 
   // Nothing is chosen: Confirm waits for a target.
   await expect(primary(page)).toBeDisabled();
 
-  // Two targets: the opponent and the first other chip. The shares start as an even split, 2 and 1.
-  const chips = panel.locator('button.dec-chip').filter({ hasNotText: 'Even split' });
-  const first = chips.filter({ hasText: 'Opponent' });
-  const second = chips.filter({ hasNotText: /^(Opponent)$/ }).first();
-  const secondName = (await second.innerText()).trim();
+  // Two targets, both chosen on the board: the opponent and the first creature that can be chosen.
+  // The shares start as an even split, 2 and 1.
+  const first = seatTarget(page, 1);
+  const second = permanentTarget(page, /./).first();
+  const secondName = (await second.locator('.board-tile-name').innerText()).trim();
   await first.click();
   await expect(division.locator('output')).toHaveText(['3']);
   await second.click();

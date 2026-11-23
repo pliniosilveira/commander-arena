@@ -276,6 +276,8 @@ export interface LowerContext {
   scryTrigger: boolean;
   /** True while the reflexive ability of a payment made any number of times is lowered (issue 121, CR 603.12): the number of times paid is the number its event carries. */
   payReflexive: boolean;
+  /** True while the "If you do" sentence of "you may pay one or more {E}" is lowered (issue 105, CR 107.14, 608.2c): "that many" is the number of energy counters paid, the X of the payment. */
+  payEnergyX: boolean;
   /** True in the body of a triggered ability (CR 603.3d): the number of targets of a slot ("up to X target ...") may be read as it triggers. */
   triggeredBody: boolean;
   /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
@@ -432,6 +434,7 @@ export function newContext(
     lifeGainTrigger: false,
     scryTrigger: false,
     payReflexive: false,
+    payEnergyX: false,
     triggeredBody: false,
     discardBatchTrigger: false,
     graveyardBatchTrigger: false,

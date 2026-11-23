@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { leaveHand } from './harness/pointer';
 import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
@@ -259,6 +260,7 @@ test('Foretell: the button, our own card face down, cast for the foretell cost f
   // Ours: named in the log and the strip, marked Foretold, not castable yet.
   await expect(logText(page)).toContainText(`You foretold ${giant}.`);
   await expect(exileStrip(page)).toContainText(`${giant} Foretold`);
+  await leaveHand(page);
   await page.getByRole('button', { name: /^Open You exile/ }).click();
   const viewer = page.getByRole('dialog', { name: /exile$/ });
   await expect(viewer.locator('[data-exile-mark="Foretold"]')).toHaveCount(1);

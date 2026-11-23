@@ -40,6 +40,7 @@ import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
+import { runChooseEach } from './choose-each';
 import { runChooseNumber } from './choose-number';
 import { runChooseOne } from './choose-one';
 import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
@@ -316,6 +317,7 @@ export function runInstruction(
   if (instruction.kind === 'chooseSacrifice') return runChooseSacrifice(state, res, instruction);
   if (instruction.kind === 'chooseMove') return runChooseMove(state, res, instruction);
   if (instruction.kind === 'chooseTap') return runChooseTap(state, res, instruction);
+  if (instruction.kind === 'chooseEach') return runChooseEach(state, res, instruction);
   if (instruction.kind === 'proliferate') return runProliferate(state, res, instruction);
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
@@ -2285,7 +2287,7 @@ function runEffect(
     case 'mayPay': {
       // CR 702.101a (D-120): the controller may pay; the effect runs only if they do (rules/pay-unless.ts).
       // D-364 (CR 119.4, 608.2c): a payment of life by an amount ("pay that much life") is worked out now; one of 0 life is no offer.
-      const cost = resolveMayPayCost(state, effect.cost, ctx);
+      const cost = resolveMayPayCost(state, effect.cost, ctx, targets);
       if (cost === null) return done(state);
       // Issue 101 (Gix): "its controller may pay 1 life": the player named is asked and pays, nobody when the selector names none.
       const payer =
@@ -2956,6 +2958,27 @@ function runEffect(
         const had = getSeat(next, seat).experience ?? 0;
         next = patchSeat(next, seat, { experience: had + amount });
         events.push({ kind: 'experienceChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
+    case 'doublePlayerCounters': {
+      // CR 701.10, 122.1 (issue 105, Aetheric Amplifier): each player named puts as many counters of each kind as they have of it: poison, energy and experience.
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const have = getSeat(next, seat);
+        const poison = have.poison;
+        const energy = have.energy ?? 0;
+        const experience = have.experience ?? 0;
+        next = patchSeat(next, seat, {
+          ...(poison > 0 ? { poison: poison * 2 } : {}),
+          ...(energy > 0 ? { energy: energy * 2 } : {}),
+          ...(experience > 0 ? { experience: experience * 2 } : {}),
+        });
+        if (poison > 0) events.push({ kind: 'poisonChanged', seat, from: poison, to: poison * 2 });
+        if (energy > 0) events.push({ kind: 'energyChanged', seat, from: energy, to: energy * 2 });
+        if (experience > 0) {
+          events.push({ kind: 'experienceChanged', seat, from: experience, to: experience * 2 });
+        }
       }
       return done(next, events);
     }
@@ -3633,6 +3656,22 @@ function runEffect(
         ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
       };
     }
+
+    case 'eachPlayerChoosesDestroy':
+      // CR 101.4 (issue 105, Druid of Purification): the players choose in turn order starting with the controller (rules/choose-each.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseEach',
+            filter: effect.filter,
+            seats: seatsInOrder(state, res.controller),
+            picked: [],
+            chosen: null,
+          },
+        ],
+      );
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).

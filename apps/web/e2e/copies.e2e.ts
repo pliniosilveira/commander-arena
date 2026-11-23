@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { handCard } from './harness/locators';
+import { handCard, seatTarget } from './harness/locators';
 import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
@@ -15,7 +15,6 @@ const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const bar = (page: Page) => page.locator('.dec-bar');
 const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const stackItems = (page: Page) => stack(page).locator('.pnl-stack-item');
-const targets = (page: Page) => page.getByRole('region', { name: 'Legal targets' });
 
 async function untappedLands(page: Page): Promise<number> {
   return page
@@ -67,7 +66,7 @@ async function castAtOpponent(page: Page, card: string): Promise<void> {
 
 async function chooseOpponent(page: Page): Promise<void> {
   await expect(bar(page)).toContainText('Choose a target for');
-  await targets(page).getByRole('button', { name: 'Opponent' }).click();
+  await seatTarget(page, 1).click();
   await bar(page).getByRole('button', { name: 'Confirm' }).click();
   await settled(page);
 }
@@ -106,17 +105,14 @@ test('Storm: the third spell copies twice; the copies are on the stack and ask f
   // First copy: the question keeps the target (it is preselected; no cancel).
   await expect(bar(page)).toContainText('Choose new targets for the copy of');
   await expect(bar(page).getByRole('button', { name: 'Cancel' })).toHaveCount(0);
-  await expect(targets(page).getByRole('button', { name: 'Opponent' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(seatTarget(page, 1)).toHaveAttribute('aria-pressed', 'true');
   await bar(page).getByRole('button', { name: 'Keep the targets' }).click();
   await settled(page);
 
   // Second copy: change the target to yourself.
   await expect(bar(page)).toContainText('Choose new targets for the copy of');
-  await targets(page).getByRole('button', { name: 'Opponent' }).click();
-  await targets(page).getByRole('button', { name: 'You', exact: true }).click();
+  await seatTarget(page, 1).click();
+  await seatTarget(page, 0).click();
   await bar(page).getByRole('button', { name: 'Confirm' }).click();
   await settled(page);
 

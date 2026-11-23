@@ -683,6 +683,7 @@ export function answerResolutionChoice(
     head.kind !== 'chooseObjects' &&
     head.kind !== 'chooseMove' &&
     head.kind !== 'chooseTap' &&
+    head.kind !== 'chooseEach' &&
     head.kind !== 'fightPairs' &&
     head.kind !== 'proliferate' &&
     head.kind !== 'auraEntry' &&

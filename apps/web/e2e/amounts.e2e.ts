@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
-import { handCard, handLand, mine } from './harness/locators';
+import { handCard, handLand, mine, permanentTarget } from './harness/locators';
 import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
@@ -151,10 +151,9 @@ test('a bite: the creature deals the damage, the target is chosen, nothing is de
   await handCard(page, bite).first().click();
   await settled(page);
   await expect(bar(page)).toContainText(`Choose a target for ${bite}`);
-  const chips = page.getByRole('region', { name: 'Legal targets' }).getByRole('button');
-  // Both slots are in one list: the creature that bites, then the creature that is bitten.
-  await chips.filter({ hasText: yours }).first().click();
-  await chips.filter({ hasText: THEIR_CREATURES }).first().click();
+  // Both slots are chosen on the board: the creature that bites, then the creature that is bitten.
+  await permanentTarget(page, yours).first().click();
+  await permanentTarget(page, THEIR_CREATURES).first().click();
   await primary(page).click();
   await settled(page);
   await primary(page).click();

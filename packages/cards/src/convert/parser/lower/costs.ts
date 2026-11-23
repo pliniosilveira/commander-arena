@@ -230,10 +230,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // CR 118.1: the source card exiles itself as an ordinary activation cost from its graveyard.
       return options.ordinary === true ? ok({ kind: 'exileThis' }) : failure(cost);
     case 'energy':
-      // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks, and nowhere else.
-      return options.unless === true && cost.count >= 1
+      // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks; issue 105: the cost of an activated ability and of a mana ability too.
+      return (options.unless === true || options.ordinary === true || options.mana === true) &&
+        cost.count >= 1
         ? ok({ kind: 'energy', count: cost.count })
         : failure(cost);
+    case 'energyAmount':
+      // Issue 105: read where the offer is lowered (`lowerMayPay`), which has the context its amount names.
+      return failure(cost);
     case 'discard': {
       // CR 701.9, 118.3: N cards of the hand, the paying player's choice. The count is a whole
       // number of one or more; the engine pays no other discard cost (D-095).

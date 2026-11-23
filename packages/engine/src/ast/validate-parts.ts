@@ -3318,6 +3318,10 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         issue(out, `${path}.count`, 'mill count must be a positive integer');
       }
       break;
+    case 'energyAmount':
+      // Issue 105 (CR 107.14, 608.2c): the amount is read as the `mayPay` resolves (the checks of the effect hold it to what it may read).
+      if (cost.amount === undefined) issue(out, `${path}.amount`, 'energyAmount needs an amount');
+      break;
     case 'energy':
       // D-209 (CR 107.14): a whole number of one or more energy counters, paid by the player an `unlessPays` names.
       if (!isCount(cost.count) || cost.count < 1) {
@@ -4567,7 +4571,11 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
         issue(out, `${path}.${key}`, `a creature token needs a numeric ${key}`);
       }
     } else if (v !== null) {
-      issue(out, `${path}.${key}`, `only a creature token has ${key}`);
+      // Issue 105 (CR 301.7, 302.1): a Vehicle token is an artifact with a power and a toughness that becomes a creature when it is crewed.
+      const vehicle = def.types?.includes('artifact') === true && def.subtypes?.includes('Vehicle');
+      if (!vehicle || typeof v !== 'number' || !Number.isSafeInteger(v)) {
+        issue(out, `${path}.${key}`, `only a creature token has ${key}`);
+      }
     }
   }
   // CR 306.5b, 310.4b (D-200): a planeswalker token enters with loyalty counters equal to its loyalty, a battle token with defense counters.
@@ -7143,11 +7151,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");
         }
         // Issue 121 (Forger's Foundry): or the cards the permanent exiled with its linked ability ("from among cards exiled with this artifact").
-        if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
+        // Issue 105 (Aetherflux Conduit): or the spells in the controller's hand ("any number of spells from your hand").
+        const fromHand =
+          kindOf(e.objects) === 'choose' && (e.objects as ChooseSelector).filter?.zone === 'hand';
+        if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile' && !fromHand) {
           issue(
             out,
             `${path}.max`,
-            "several spells are cast from the cards an effect before moved ('moved') or the cards exiled with this permanent ('linkedExile')",
+            "several spells are cast from the cards an effect before moved ('moved'), the cards exiled with this permanent ('linkedExile') or the spells in the hand",
           );
         }
         if (e.play === true) {
@@ -7668,6 +7679,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.kind === 'draw' && (e as { unless?: unknown }).unless !== undefined) {
         issue(out, `${path}.unless`, 'only a discard has an "unless you discard" alternative');
       }
+      break;
+    case 'doublePlayerCounters':
+      // Issue 105 (CR 701.10, 122.1): each player the selector names doubles their own counters.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'gainLife':
     case 'loseLife':
@@ -8352,6 +8367,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
       if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
         issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
+      break;
+    case 'eachPlayerChoosesDestroy':
+      // CR 101.4, 608.2d (issue 105): the permanents the players may choose are a filter of the battlefield, read from the controller of the effect.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
       }
       break;
     case 'proliferate':

@@ -174,7 +174,9 @@ export function runCastFree(
               ins.remaining === 'any'
                 ? 'any number of spells'
                 : `up to ${ins.remaining === 1 ? 'one more spell' : `${ins.remaining} spells`}`
-            } from among the exiled cards without paying their mana costs`,
+            } from ${
+              ins.objects.kind === 'choose' ? 'your hand' : 'among the exiled cards'
+            } without paying their mana costs`,
     },
   };
 }

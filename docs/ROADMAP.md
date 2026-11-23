@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - Explore emits no event and ignores APNAP order.
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.

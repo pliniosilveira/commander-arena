@@ -258,7 +258,10 @@ export interface FlashbackGrantSource {
 export interface AltCostGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
-  readonly alt: { readonly kind: 'evoke'; readonly cost: readonly Cost[] };
+  readonly alt:
+    | { readonly kind: 'evoke'; readonly cost: readonly Cost[] }
+    // Issue 105: energy counters rather than the mana cost.
+    | { readonly kind: 'energy'; readonly count: number };
   readonly condition?: Condition;
 }
 
@@ -570,6 +573,20 @@ function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): Alt
         object,
         what: a.static.what,
         alt: a.static.alt,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  for (const a of abilities) {
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantEnergyAlternative' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        alt: { kind: 'energy', count: a.static.energy },
         ...(a.condition === undefined ? {} : { condition: a.condition }),
       });
     }

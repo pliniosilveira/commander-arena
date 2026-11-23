@@ -59,7 +59,7 @@ function measure(pairs: readonly Pair[]): Placed[] {
     const from = boxOf(pair.blocker);
     const to = boxOf(pair.attacker);
     if (from === null || to === null) continue;
-    const arrow = arrowBetween(from, to, { bend: 0.08, gap: 4, headSize: 11 });
+    const arrow = arrowBetween(from, to, { bend: 0.08, gap: 4, headSize: 11, minLength: 3 });
     if (arrow !== null) placed.push({ key: pair.key, number: pair.number, arrow });
   }
   return placed;

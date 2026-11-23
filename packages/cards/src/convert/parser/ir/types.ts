@@ -1104,6 +1104,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'mill'; readonly amount: IrAmount }
     // "{E}{E}" (stage P51, D-209, CR 107.14): energy counters paid by the player that an "unless you pay" asks
     | { readonly kind: 'energy'; readonly count: number }
+    // Issue 105 (Confiscation Coup): "an amount of {E} equal to that permanent's mana value".
+    | { readonly kind: 'energyAmount'; readonly amount: IrAmount }
     | { readonly kind: 'removeCounters'; readonly counter: string; readonly amount: IrAmount }
     // "Exert ~" (issue 144, CR 701.43a): the permanent itself, as a cost
     | { readonly kind: 'exert' }
@@ -2019,6 +2021,8 @@ export type IrStaticEffect =
    * controller that `cards` names (a noun with no zone and no controller). The subject of the statement is `you`.
    */
   | { readonly kind: 'graveyardFlashback'; readonly cards: IrNoun }
+  /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14): the permanent spells of the controller may be cast for `count` energy counters. The subject is `you`. */
+  | { readonly kind: 'energyAlternative'; readonly count: number }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */
@@ -2029,6 +2033,8 @@ export type IrStaticEffect =
       readonly causeAttacks?: true;
       /** Yarok, the Desecrated: "If a permanent entering causes a triggered ability ... to trigger". */
       readonly causeEnters?: true;
+      /** Issue 105 (Panharmonicon): with `causeEnters`, only a permanent that is one of these card types as it enters. */
+      readonly causeEntersTypes?: readonly string[];
     }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }

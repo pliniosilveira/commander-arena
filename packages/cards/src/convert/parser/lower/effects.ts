@@ -2315,7 +2315,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     token.ptAmount !== true &&
     (token.keywords ?? []).length === 0 &&
     types.length > 0;
-  if (!noncreature && (!creature || definesPt === null)) {
+  // Issue 105 (Pia Nalaar, Chief Mechanic, CR 301.7, 302.1): a Vehicle token is an artifact with power and toughness that is no creature until it is crewed.
+  const vehicle =
+    !creature &&
+    types.length === 1 &&
+    types[0] === 'artifact' &&
+    token.subtypes?.includes('Vehicle') === true &&
+    (token.ptAmount === true || (token.power !== undefined && token.toughness !== undefined));
+  if (!vehicle && !noncreature && (!creature || definesPt === null)) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -2328,6 +2335,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       const unsupportedDevour = missingFeatures(['ability:keyword', 'keyword:devour']);
       if (unsupportedDevour.length > 0) return { ok: false, needs: unsupportedDevour, ...at };
       abilities.push({ kind: 'keyword', keyword: { kind: 'devour', count: Number(devour[1]) } });
+      continue;
+    }
+    // "with flying and crew 2" (issue 105, CR 702.122a): the keyword of a Vehicle token.
+    const crew = /^crew ([1-9]\d*)$/.exec(word);
+    if (crew !== null) {
+      const unsupportedCrew = missingFeatures(['ability:keyword', 'keyword:crew']);
+      if (unsupportedCrew.length > 0) return { ok: false, needs: unsupportedCrew, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'crew', power: Number(crew[1]) } });
       continue;
     }
     const toxic = /^toxic ([1-9]\d*)$/.exec(word);
@@ -2421,6 +2436,25 @@ const BASIC_LAND_MANA: Readonly<Record<string, ManaColor | undefined>> = {
   Swamp: 'B',
   Mountain: 'R',
   Forest: 'G',
+};
+
+/** "Double the number of each kind of counter you have" (issue 105, CR 701.10, 122.1): the engine's `doublePlayerCounters` of the controller. */
+const DOUBLE_PLAYER_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'doublePlayerCounters',
+  id: 'lower.double-player-counters',
+  needs: ['effect:doublePlayerCounters'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    if (player.value.kind !== 'you') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'doublePlayerCounters', player: player.value }],
+      rule: clause.rule,
+    };
+  },
 };
 
 const PLAYER_LOCK: Lowering<IrClause, Effects> = {
@@ -2610,6 +2644,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainLife'),
   playerVerb('gainEnergy'),
   playerVerb('gainExperience'),
+  DOUBLE_PLAYER_COUNTERS,
   playerVerb('loseLife'),
   PLAYER_LOCK,
   PLAYER_PROTECTION,

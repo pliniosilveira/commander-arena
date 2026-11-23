@@ -31,10 +31,15 @@ const wordsFor = (plural: boolean): readonly (readonly [RegExp, IrRestrictionKin
       : / attacks this turn if able(?![\p{L}\p{N}])/iu,
     'attacksEachCombat',
   ],
-  [/ block this turn if able(?![\p{L}\p{N}])/iu, 'mustBlock'],
+  // Issue 105 (Peema Aether-Seer): one creature "blocks", several "block".
+  [
+    plural
+      ? / block this turn if able(?![\p{L}\p{N}])/iu
+      : / blocks this turn if able(?![\p{L}\p{N}])/iu,
+    'mustBlock',
+  ],
   // Stage P49 (D-206, CR 509.1c): "must be blocked this turn if able".
   [/ must be blocked this turn if able(?![\p{L}\p{N}])/iu, 'mustBeBlocked'],
-  [/ block this turn if able(?![\p{L}\p{N}])/iu, 'mustBlock'],
 ];
 
 const tail = (plural: boolean) => {
@@ -85,6 +90,7 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature can't block this turn",
     "target creature you don't control can't block this turn",
     'target creature attacks this turn if able',
+    'target creature blocks this turn if able',
     "target creature with power 3 or less can't be blocked this turn",
     // Quandrix Unlimited deck, group G (Deekah): a creature token.
     "target creature token can't be blocked this turn",
@@ -111,6 +117,7 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     'one or two target creatures attacks this turn if able',
     'up to two target creatures attacks this turn if able',
     'target creature attack this turn if able',
+    'target creature block this turn if able',
     "one or two target creatures or planeswalkers can't block this turn",
     "up to that many target creatures can't block this turn",
     "target creature or planeswalker can't be blocked this turn",
