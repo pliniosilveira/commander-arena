@@ -539,10 +539,8 @@ describe('effect.attach: "attach it to target creature you control" (CR 701.3)',
     // The plural is read and refused: the diagnostic stops after what was read.
     ['When ~ enters, attach it to two target creatures.', '.'],
     ['When ~ enters, attach it to each creature you control.', 'each creature you control.'],
-    [
-      'When ~ enters, attach target Equipment to target creature.',
-      'target Equipment to target creature.',
-    ],
+    // Limit Break deck, group 1: target Equipment are read now (one destination only), so the plural destination is the near miss.
+    ['When ~ enters, attach target Equipment to two target creatures.', '.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text, 'artifact', ['Equipment'])).toMatchObject({ stoppedAt });
   });

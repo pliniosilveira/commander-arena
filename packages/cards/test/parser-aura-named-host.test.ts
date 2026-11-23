@@ -66,6 +66,25 @@ describe('"Create a token. When you do, return up to one target Aura or Equipmen
     });
   });
 
+  test('Limit Break deck, group 1: several cards are read as one slot of up to two, each attached to the token', () => {
+    const [ability] = upkeep(
+      `${TOKEN} When you do, return up to two target Aura or Equipment cards from your graveyard to the battlefield attached to that token.`,
+    );
+    expect(ability).toMatchObject({
+      effect: {
+        effects: [
+          { kind: 'createToken' },
+          {
+            kind: 'reflexive',
+            carriesMoved: true,
+            targets: [{ id: 't1', min: 0, max: 2 }],
+            effect: { attachTo: { kind: 'moved' } },
+          },
+        ],
+      },
+    });
+  });
+
   test.each([
     // No token to attach it to.
     [
@@ -82,10 +101,7 @@ describe('"Create a token. When you do, return up to one target Aura or Equipmen
     [
       `At the beginning of your upkeep, ${TOKEN} When you do, return up to one target Aura card from your graveyard to your hand attached to that token.`,
     ],
-    // Several cards, a third kind.
-    [
-      `At the beginning of your upkeep, ${TOKEN} When you do, return up to two target Aura or Equipment cards from your graveyard to the battlefield attached to that token.`,
-    ],
+    // A third kind.
     [
       `At the beginning of your upkeep, ${TOKEN} When you do, return up to one target Aura or Equipment or Saga card from your graveyard to the battlefield attached to that token.`,
     ],

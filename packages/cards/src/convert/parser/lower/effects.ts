@@ -1927,6 +1927,8 @@ const ATTACH: Lowering<IrClause, Effects> = {
     }
     const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
+    // A permanent is not attached to itself (CR 701.3b): "attach ~ to it" where "it" is `~` is no instruction the game can follow.
+    if (what.value.kind === 'this' && onto.value.kind === 'this') return failure(clause);
     return {
       ok: true,
       value: [{ kind: 'attach', object: what.value, to: onto.value }],
