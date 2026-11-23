@@ -318,6 +318,8 @@ export interface ChosenValues {
   readonly color?: Color;
   /** A card type of CR 205.2a that the engine models (`CARD_TYPES`): "choose a card type" (D-376, Serra's Emissary). */
   readonly cardType?: CardType;
+  /** A planeswalker type of CR 205.3j, spelled as `PLANESWALKER_TYPES` lists it: "choose a planeswalker type" (Deification). */
+  readonly planeswalkerType?: Subtype;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
   /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */

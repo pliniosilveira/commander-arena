@@ -623,6 +623,7 @@ export type GameEvent =
         | 'creatureType'
         | 'color'
         | 'cardType'
+        | 'planeswalkerType'
         | 'lifePaid'
         | 'option'
         | 'attackTarget'

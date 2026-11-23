@@ -767,6 +767,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'damageBonus',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
+    // CR 614.1a, 120.3c (Deification): "if damage dealt to a planeswalker you control would result in all loyalty counters on it being removed, instead all but one are removed".
+    'keepOneLoyalty',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
     // D-417 (CR 702.89a): "Umbra armor".
@@ -998,6 +1000,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenType',
     'notChosenType',
     'chosenColor',
+    'chosenPlaneswalkerType',
     // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
     'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
@@ -1915,6 +1918,7 @@ export const SELECTOR_KINDS = [
   'chosenType',
   'notChosenType',
   'chosenColor',
+  'chosenPlaneswalkerType',
   /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
   'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
@@ -3016,6 +3020,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   redirectDamage: true,
   damageBonus: true,
   skipDraw: true,
+  keepOneLoyalty: true,
   drawInstead: true,
   umbraArmor: true,
 };

@@ -25,6 +25,7 @@ import { derive } from './derive';
 import { allDamageHasWither, damageCantBePrevented } from './global-statics';
 import { abilitiesHaveKeyword } from './keywords';
 import { gainLife } from './life-gain';
+import { keepsOneLoyalty } from './loyalty-floor';
 import { commanderCardOf } from './melded';
 import { lifeTotalIsLocked } from './player-lock';
 import { playerHasProtectionFrom } from './player-protection';
@@ -343,8 +344,12 @@ export function dealDamageAsking(
       }
       if (types.includes('planeswalker')) {
         // CR 120.3c: damage to a planeswalker removes that many loyalty counters.
-        const removed = Math.min(amount, counters.loyalty ?? 0);
-        counters.loyalty = (counters.loyalty ?? 0) - removed;
+        const loyalty = counters.loyalty ?? 0;
+        let removed = Math.min(amount, loyalty);
+        // CR 614.1a (Deification): damage that would remove all the loyalty counters removes all but one instead.
+        if (removed === loyalty && loyalty > 0 && keepsOneLoyalty(state, obj))
+          removed = loyalty - 1;
+        counters.loyalty = loyalty - removed;
         if (removed > 0) {
           events.push({
             kind: 'counterRemoved',

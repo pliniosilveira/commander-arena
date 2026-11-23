@@ -376,7 +376,16 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       break;
     case 'asEntersChoose':
       // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
-      if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType', 'lifePaid'])) {
+      if (
+        !isOneOf(r.what, [
+          'creatureType',
+          'color',
+          'option',
+          'cardType',
+          'planeswalkerType',
+          'lifePaid',
+        ])
+      ) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;

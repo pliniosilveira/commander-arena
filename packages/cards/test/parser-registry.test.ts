@@ -973,6 +973,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
   'replacement.skip-draw': asIs,
+  // Deification: the line of its own ("As long as ..." is part of the replacement).
+  'replacement.keep-one-loyalty': asIs,
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
   'replacement.tokens-double': asIs,

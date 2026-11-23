@@ -656,7 +656,12 @@ export function checkFilter(
     issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
   }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
-  for (const key of ['chosenType', 'chosenColor', 'notChosenType'] as const) {
+  for (const key of [
+    'chosenType',
+    'chosenColor',
+    'notChosenType',
+    'chosenPlaneswalkerType',
+  ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }

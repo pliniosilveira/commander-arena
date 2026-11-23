@@ -9,7 +9,7 @@
 import type { Ability } from './types';
 import type { AstIssue } from './validate-base';
 
-type Choice = 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
+type Choice = 'creatureType' | 'color' | 'option' | 'cardType' | 'planeswalkerType' | 'lifePaid';
 
 /**
  * Every choice the value refers to: an object with `chosenType: true` refers to the creature type, one with
@@ -28,6 +28,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   // CR 613.1d: "Slivers you control ... are the chosen type" reads the creature type the permanent chose as it entered.
   if (o.kind === 'giveChosenCreatureType') found.add('creatureType');
   if (o.chosenColor === true) found.add('color');
+  // CR 607.2d: "planeswalkers ... of the chosen type" reads the planeswalker type the permanent chose.
+  if (o.chosenPlaneswalkerType === true) found.add('planeswalkerType');
   // D-149: "Add one mana of the chosen color" reads the same choice.
   if (o.kind === 'chosenColor') found.add('color');
   // Issue 144 (Throne of Eldraine): "monocolored spells of that color" and "Spend only mana of the chosen color" read the same choice.
@@ -101,6 +103,7 @@ export function chosenIssues(
         a.replacement.what === 'color' ||
         a.replacement.what === 'option' ||
         a.replacement.what === 'cardType' ||
+        a.replacement.what === 'planeswalkerType' ||
         a.replacement.what === 'lifePaid'
       ) {
         asked.push(a.replacement.what);
@@ -194,9 +197,11 @@ export function chosenIssues(
               ? 'it refers to the life paid as it entered but does not pay any as it enters (CR 614.12)'
               : choice === 'cardType'
                 ? 'it refers to the chosen card type but does not choose one as it enters (CR 607.2d)'
-                : choice === 'option'
-                  ? 'it refers to the chosen option but does not choose one as it enters (CR 607.2d)'
-                  : 'it refers to the chosen color but does not choose one as it enters (CR 607.2d)',
+                : choice === 'planeswalkerType'
+                  ? 'it refers to the chosen planeswalker type but does not choose one as it enters (CR 607.2d)'
+                  : choice === 'option'
+                    ? 'it refers to the chosen option but does not choose one as it enters (CR 607.2d)'
+                    : 'it refers to the chosen color but does not choose one as it enters (CR 607.2d)',
       });
     }
   }

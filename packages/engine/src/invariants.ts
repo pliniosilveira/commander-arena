@@ -5,6 +5,7 @@
 
 import { CARD_TYPES, COLORS } from './characteristics';
 import { CREATURE_TYPES } from './data/creature-types';
+import { PLANESWALKER_TYPES } from './data/planeswalker-types';
 import type { ObjectId } from './ids';
 import {
   buybackCostOf,
@@ -370,7 +371,7 @@ export function checkInvariants(state: GameState): string[] {
     // CR 614.12a, 400.7 (D-100): a choice made as a permanent entered belongs to a permanent whose card
     // or token asks that question, and is one of its options; it is gone when the permanent leaves.
     if (obj.chosen !== undefined) {
-      const { creatureType, color, cardType, lifePaid } = obj.chosen;
+      const { creatureType, color, cardType, planeswalkerType, lifePaid } = obj.chosen;
       const kinds = new Set(
         (obj.token === null ? faces.map((f) => f.abilities) : [obj.token.abilities]).map(
           entersChoice,
@@ -391,6 +392,13 @@ export function checkInvariants(state: GameState): string[] {
       // D-376: a chosen card type is one of `CARD_TYPES` that its card asks for.
       if (cardType !== undefined && (!CARD_TYPES.includes(cardType) || !kinds.has('cardType'))) {
         problems.push(`${id} chose card type ${cardType}, which it cannot have`);
+      }
+      // CR 205.3j: a chosen planeswalker type is one of `PLANESWALKER_TYPES` that its card asks for.
+      if (
+        planeswalkerType !== undefined &&
+        (!PLANESWALKER_TYPES.includes(planeswalkerType) || !kinds.has('planeswalkerType'))
+      ) {
+        problems.push(`${id} chose planeswalker type ${planeswalkerType}, which it cannot have`);
       }
       // CR 119.4: the life paid as it entered is a whole number, and only a card that asks to pay life has one.
       if (

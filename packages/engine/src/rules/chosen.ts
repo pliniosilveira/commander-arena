@@ -6,10 +6,17 @@
  */
 import { CARD_TYPES, COLORS } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
+import { PLANESWALKER_TYPES } from '../data/planeswalker-types';
 import type { ObjectId } from '../ids';
 import type { ChosenValues, GameState } from '../state/types';
 
-export type ChoiceKind = 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
+export type ChoiceKind =
+  | 'creatureType'
+  | 'color'
+  | 'option'
+  | 'cardType'
+  | 'planeswalkerType'
+  | 'lifePaid';
 
 /** The options of a question, in the fixed order its legal actions follow. */
 export function optionsFor(
@@ -23,6 +30,8 @@ export function optionsFor(
   if (what === 'lifePaid')
     return Array.from({ length: Math.max(life, 0) + 1 }, (_, i) => String(i));
   if (what === 'cardType') return CARD_TYPES;
+  // CR 205.3j: "choose a planeswalker type" is one of the planeswalker types the rules list.
+  if (what === 'planeswalkerType') return PLANESWALKER_TYPES;
   // Issue 184: "choose a color other than blue" leaves that color out.
   if (what === 'color') return COLORS.filter((c) => c !== except);
   return what === 'creatureType' ? CREATURE_TYPES : what === 'option' ? named : COLORS;
@@ -47,6 +56,8 @@ export function chosenFromOption(
   if (what === 'lifePaid') return named.includes(option) ? { lifePaid: Number(option) } : null;
   if (what === 'creatureType')
     return CREATURE_TYPES.includes(option) ? { creatureType: option } : null;
+  if (what === 'planeswalkerType')
+    return PLANESWALKER_TYPES.includes(option) ? { planeswalkerType: option } : null;
   // D-376 (CR 205.2a): "choose a card type" is one of the card types the engine models (`CARD_TYPES`).
   if (what === 'cardType') {
     const cardType = CARD_TYPES.find((t) => t === option);
