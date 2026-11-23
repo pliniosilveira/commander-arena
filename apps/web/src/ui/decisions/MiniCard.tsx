@@ -64,7 +64,7 @@ export function MiniCard({
 }
 
 /** The card's picture, with its name behind it for when it is not there (offline, a token, SYNTHETIC). */
-function CardPicture({ card }: { card: ObjectView }) {
+export function CardPicture({ card }: { card: ObjectView }) {
   const art = artOf(card);
   return (
     <span className="dec-card-pic">

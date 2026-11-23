@@ -894,7 +894,8 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  min-height: calc(var(--hand-h) + 40px);
+  padding-top: 10px;
+  min-height: 106px;
 }
 .dec-arrange-card {
   display: flex;
@@ -918,6 +919,15 @@
 .dec-arrange-face:hover {
   border-color: var(--text-dim);
 }
+/* The badge sits on the card's top edge, not over its name. */
+.dec-arrange-face .dec-card-badge {
+  top: -9px;
+  right: auto;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
 .dec-arrange-moves {
   display: flex;
   gap: 4px;
@@ -931,7 +941,7 @@
   display: grid;
   place-items: center;
   width: var(--hand-w);
-  height: var(--hand-h);
+  height: 96px;
   border: 2px dashed var(--line);
   border-radius: calc(var(--radius) + 2px);
   color: var(--text-dim);
