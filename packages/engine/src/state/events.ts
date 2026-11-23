@@ -634,6 +634,7 @@ export type GameEvent =
         | 'creatureType'
         | 'color'
         | 'cardType'
+        | 'planeswalkerType'
         | 'lifePaid'
         | 'option'
         | 'attackTarget'
@@ -723,13 +724,13 @@ export type GameEvent =
    * (an Aura that falls off goes to the graveyard, which is its `zoneChanged`). `reason` is
    * 'replaced' when it was attached to another permanent (CR 701.3b: the Equipment moved), 'left'
    * when `from` is no longer on the battlefield (CR 704.5n), 'illegal' when `from` is still there
-   * but can no longer be equipped (CR 704.5n, 704.5p).
+   * but can no longer be equipped (CR 704.5n, 704.5p), 'effect' when an effect unattached it (Reconfigure, CR 702.151a).
    */
   | {
       readonly kind: 'unattached';
       readonly object: ObjectId;
       readonly from: ObjectId;
-      readonly reason: 'left' | 'illegal' | 'replaced';
+      readonly reason: 'left' | 'illegal' | 'replaced' | 'effect';
     }
   | { readonly kind: 'commanderMovedToCommandZone'; readonly card: CardId; readonly from: Zone }
   | { readonly kind: 'playerLost'; readonly seat: SeatId; readonly reason: LossReason }

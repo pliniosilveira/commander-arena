@@ -25,6 +25,7 @@ import { commanderIdentity } from './commander-identity';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { colorSetAmongForSource } from './derive-count';
 import { matchesFilter } from './select';
 
 /** The mana types in the order a player is shown them: the five colors, then colorless (CR 106.1b). */
@@ -218,6 +219,11 @@ function plainOutcomes(
       // controller with the permanent as "this" (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
       const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
       return COLORS.map((c) => Array.from({ length: n }, () => c));
+    }
+    case 'anyColorAmong': {
+      // CR 106.1b, 105.2, 605.3b: one outcome per color the matching objects have between them, in the order W, U, B, R, G; with none, no outcome (nothing to pick).
+      const found = colorSetAmongForSource(state, p.filter, obj);
+      return COLORS.filter((c) => found.has(c)).map((c) => [c]);
     }
     case 'eachColorAmong': {
       // CR 105.2, 106.1b, 605.3b ("For each color among permanents you control, add one mana of that color"): one outcome with one mana of each color the permanents the

@@ -9,7 +9,7 @@
 // number or the filter only. No real card's text is claimed; the cards that are not defined here are the engine's own test cards.
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { parsed } from './convert-grammar-helpers';
+import { parsed, parseOnly, spellCard } from './convert-grammar-helpers';
 
 const BEARS = 'Grizzly Bears'; // 2/2 green, MV 2
 const RING = 'Sol Ring'; // artifact, MV 1, {T}: Add {C}{C}
@@ -862,5 +862,65 @@ describe('"Living weapon" (CR 702.92a)', () => {
     g.expect.pt(germ?.id ?? '', 2, 2);
     g.expect.attached(cyst.name, germ?.id ?? null);
     g.expect.invariants();
+  });
+});
+
+describe('"Tap any number of untapped creatures you control. Create a 4/4 ... Angel creature token with flying for each creature tapped this way." (CR 701.26a, 608.2c, 302.6)', () => {
+  const invocation = parsed(
+    'SYNTHETIC Parsed Invocation',
+    'Sorcery',
+    'Tap any number of untapped creatures you control. Create a 4/4 white Angel creature token with flying for each creature tapped this way.',
+    { manaCost: '{W}', colors: ['W'] },
+  );
+  const angels = (g: ScenarioGame): number =>
+    Object.values(g.state.objects).filter(
+      (o) => o?.token?.characteristics.name === 'Angel' && o.zone === 'battlefield',
+    ).length;
+
+  test('the player taps as many as they choose and gets that many Angels; tapped and opposing creatures are not offered', () => {
+    const g = main(
+      (b) =>
+        b
+          .define(invocation)
+          .hand(invocation.name)
+          .battlefield('Plains')
+          .battlefield(BEARS, { label: 'b1' })
+          .battlefield(BEARS, { label: 'b2' })
+          .battlefield(BEARS, { label: 'b3' })
+          .battlefield(BEARS, { label: 'done', tapped: true }),
+      (b) => b.battlefield(BEARS, { label: 'theirs' }),
+    );
+    g.act(0).cast(invocation.name, { pay: true });
+    g.passAll();
+    expect(() => g.act(0).choosePermanents('done')).toThrow(/legal|choose/i);
+    expect(() => g.act(0).choosePermanents('theirs')).toThrow(/legal|choose/i);
+    g.act(0).choosePermanents('b1', 'b3');
+    g.expect.tapped('b1');
+    g.expect.tapped('b3');
+    g.expect.tapped('b2', false);
+    g.expect.tapped('theirs', false);
+    expect(angels(g)).toBe(2);
+    g.expect.invariants();
+  });
+
+  test('choosing none taps nothing and makes no tokens', () => {
+    const g = main((b) =>
+      b.define(invocation).hand(invocation.name).battlefield('Plains').battlefield(BEARS),
+    );
+    g.act(0).cast(invocation.name, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents();
+    expect(angels(g)).toBe(0);
+  });
+
+  test('"for each artifact tapped this way" after tapping creatures is not read (the text stays unsupported)', () => {
+    const card = parseOnly(
+      spellCard(
+        'SYNTHETIC Parsed Mismatch',
+        'Tap any number of untapped creatures you control. Create a 4/4 white Angel creature token with flying for each artifact tapped this way.',
+        { type: 'Sorcery', manaCost: '{W}' },
+      ),
+    );
+    expect(card.support.status).toBe('unsupported');
   });
 });

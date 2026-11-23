@@ -767,6 +767,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures they control',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
+    // Elminster (CR 701.22): the cards looked at by the scry that caused the trigger.
+    'where X is the number of cards looked at while scrying this way',
     // CR 120.2a: the opponents a source dealt combat damage to this turn.
     'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon this turn',
   ],
@@ -802,6 +804,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon',
     'where X is the number of creatures who lost life this turn',
     'where X is the amount of life you gained last turn',
+    'where X is the number of cards looked at while scrying',
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);
@@ -1007,6 +1010,22 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: milled.pos },
         },
         pos: milled.pos,
+      };
+    }
+    // Devout Invocation (CR 701.26a, 608.2c): "for each creature tapped this way": the permanents the `tap` of a chosen set before it tapped.
+    const tapped = spanned(
+      pattern(new RegExp(`for each (${SINGLE_TYPE}) tapped this way${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (tapped.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'tapped',
+          words: [(tapped.value.value[1] ?? '').toLowerCase()],
+          span: tapped.value.span,
+        },
+        pos: tapped.pos,
       };
     }
     const r = spanned(

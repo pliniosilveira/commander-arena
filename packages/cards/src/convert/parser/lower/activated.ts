@@ -38,7 +38,7 @@ import { lowerCost } from './costs';
 import { lowerClause, lowerMana } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
-import { colorLetter } from './nouns';
+import { colorLetter, lowerFilter } from './nouns';
 import { kindOfNoun, lowerDelayedCast, lowerSentences } from './sentences';
 import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
 
@@ -358,6 +358,16 @@ function lowerManaAbility(
       spec.what.kind === 'anyCombinationX'
         ? { kind: 'anyCombinationAmount', amount: amount.value }
         : { kind: 'anyColorAmount', amount: amount.value };
+  } else if (spec.what.kind === 'colorsAmongCards') {
+    // "Add one mana of any color among legendary creature cards in your graveyard." (CR 106.1b, 105.2, 605.3b): the colors the cards have between them, read as the ability is
+    // activated. Cards of a zone outside the battlefield and the library (hidden information) only.
+    const zone = spec.what.of.filter.zone;
+    if (zone === undefined || zone === 'battlefield' || zone === 'library') return failure(ability);
+    const cards = lowerFilter(spec.what.of);
+    if (!cards.ok) return cards;
+    // The colors are read before the costs are paid, so a cost that gives up a permanent could change them (`validateCard` refuses it too).
+    if (costs.value.some((c) => c.kind === 'sacrifice')) return failure(ability);
+    production = { kind: 'anyColorAmong', filter: cards.value };
   } else {
     const plain = lowerMana(spec);
     if (plain === null) return failure(ability);
@@ -1092,6 +1102,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'manaProduction:anyColorAmount',
+  'manaProduction:anyColorAmong',
   'manaProduction:anyCombinationAmount',
   'ability:activateOnlyIf',
   'ability:costReducedIf',

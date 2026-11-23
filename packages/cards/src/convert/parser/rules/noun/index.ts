@@ -634,6 +634,7 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
   examples: [
     'all land cards from your graveyard',
     'all cards from a graveyard',
+    'all instant and sorcery cards from your graveyard',
     'all creature cards from all graveyards',
     "all creature cards from target player's graveyard",
     'all cards from target opponent’s graveyard',
@@ -641,6 +642,7 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
   ],
   rejects: [
     'all lands',
+    'all instant and instant cards from your graveyard',
     'each land card from your graveyard',
     "all creature cards from target player's graveyards",
     "all creature cards from target creature's graveyard",
@@ -650,7 +652,10 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
   parse: (ctx, pos) => {
     const own = node<IrFilter, IrNoun>(
       ID.allGraveyard,
-      map(sequence(literal('all '), graveyardPhrase(true)), ([, filter]) => filter),
+      map(
+        sequence(literal('all '), graveyardPhrase(true, 'from', undefined, false, false, true)),
+        ([, filter]) => filter,
+      ),
       (filter) => bare('each', filter, { plural: true }),
     )(ctx, pos);
     if (own.ok) return own;

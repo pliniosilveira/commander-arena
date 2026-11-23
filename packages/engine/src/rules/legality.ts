@@ -436,6 +436,12 @@ export function libraryCastPermission(
   for (const source of libraryCastSources(state)) {
     if (controllerOf(state, source.object) !== seat) continue;
     if (
+      source.condition !== undefined &&
+      !evaluateCondition(state, source.condition, { controller: seat, source: source.object.id })
+    ) {
+      continue;
+    }
+    if (
       !matchesFilter(
         state,
         obj,

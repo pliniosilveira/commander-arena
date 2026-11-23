@@ -759,7 +759,12 @@ export function checkFilter(
     issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
   }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
-  for (const key of ['chosenType', 'chosenColor', 'notChosenType'] as const) {
+  for (const key of [
+    'chosenType',
+    'chosenColor',
+    'notChosenType',
+    'chosenPlaneswalkerType',
+  ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
@@ -1212,7 +1217,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.countX`,
-          "only a slot of a spell's own text (not an ability or a mode) takes as many targets as the X announced",
+          "only a slot of a spell's own text or of a mode of a spell with an X (not an ability) takes as many targets as the X announced",
         );
       } else if (
         (spec.min !== undefined && spec.min !== 0) ||
@@ -4095,6 +4100,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
+    // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
+    e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
     // Death Toll deck group B: the cards `chooseRandomFromGraveyard` picked are "it" ("If it's a creature card, put it onto the battlefield").
@@ -7130,6 +7137,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }
+      if (e.times !== undefined && !(Number.isSafeInteger(e.times) && e.times >= 2)) {
+        issue(out, `${path}.times`, 'times is a whole number of 2 or more when present');
+      }
       // Blue Mage's Cane (CR 118.9, 601.2f): "by paying {3} rather than paying its mana cost": mana only, at least one symbol.
       if (e.cost !== undefined) {
         const costs = e.cost as readonly { kind?: unknown; symbols?: unknown }[];
@@ -8005,6 +8015,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (kindOf(e.to) === 'triggerSubject')
         checkSubjectRef(e.to, 'permanent', `${path}.to`, scope, out);
       else checkRef(e.to, 'object', `${path}.to`, scope, out);
+      break;
+    case 'unattach':
+      // CR 701.3d: the permanent to unattach is named by reference ("this").
+      checkRef(e.object, 'object', `${path}.object`, scope, out);
       break;
     case 'conditional':
       // CR 608.2c: "If [condition], [effect]. Otherwise, [else]." Both branches see the same

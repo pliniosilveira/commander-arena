@@ -158,6 +158,7 @@ import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
+import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
@@ -1055,6 +1056,8 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
       return spec.what.or === undefined
         ? { kind: 'chosenColor' }
         : { kind: 'chosenColor', or: spec.what.or };
+    case 'colorsAmongCards':
+    // Lowered by `lowerManaAbility`, which reads the filter of the cards; an instruction of a spell has no color choice.
     case 'thatColor':
     case 'anyOneColorX':
     case 'anyCombinationX':
@@ -2782,6 +2785,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
+  ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,

@@ -25,7 +25,7 @@ import { turnUpSymbols } from './rules/face-down-legality';
 import { goadersOf } from './rules/goad';
 import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
-import { loyaltyActivatedThisTurn } from './rules/loyalty';
+import { loyaltyLimitReached } from './rules/loyalty';
 import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
 import { landManaTypes } from './rules/mana-outcomes';
 import { manaValueOfCost } from './rules/mana-value';
@@ -138,8 +138,8 @@ export interface ObjectView {
    */
   readonly printedLoyalty?: number;
   /**
-   * True for a permanent of which a loyalty ability was activated this turn (CR 606.3, D-200): no loyalty ability of it can be activated until the next
-   * turn. Public, like the activation. Absent otherwise.
+   * True for a permanent of which loyalty abilities were activated as often as this turn allows (CR 606.3, D-200: once, or more with a
+   * `loyaltyActivationLimit`): no loyalty ability of it can be activated until the next turn. Public, like the activation. Absent otherwise.
    */
   readonly loyaltyUsed?: true;
   /**
@@ -843,7 +843,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(d.loyalty !== null && d.types.includes('planeswalker')
       ? { printedLoyalty: d.loyalty }
       : {}),
-    ...(obj.zone === 'battlefield' && loyaltyActivatedThisTurn(state, obj.id)
+    ...(obj.zone === 'battlefield' && loyaltyLimitReached(state, obj)
       ? { loyaltyUsed: true as const }
       : {}),
     ...(obj.copyOf === undefined ? {} : { copy: true as const }),

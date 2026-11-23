@@ -27,6 +27,7 @@ export type PlayRuleEffect = Extract<
       | 'playLandsFromGraveyard'
       | 'graveyardPlayEachType'
       | 'activateAsThoughHaste'
+      | 'loyaltyActivationLimit'
       | 'attackTax'
       | 'optionalUntap'
       | 'crewSaddleBonus'
@@ -44,6 +45,7 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
     effect.kind === 'playLandsFromGraveyard' ||
     effect.kind === 'graveyardPlayEachType' ||
     effect.kind === 'activateAsThoughHaste' ||
+    effect.kind === 'loyaltyActivationLimit' ||
     effect.kind === 'attackTax' ||
     effect.kind === 'blockTax' ||
     effect.kind === 'optionalUntap' ||
@@ -71,6 +73,8 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
       return ['static:playFromGraveyardEachType'];
     case 'activateAsThoughHaste':
       return ['static:activateAsThoughHaste'];
+    case 'loyaltyActivationLimit':
+      return ['static:loyaltyActivationLimit'];
     case 'attackTax':
       return ['static:attackTax', 'cost:mana'];
     // Stage P33 (D-150): "Creatures can't block unless their controller pays {1} for each of those creatures."
@@ -146,6 +150,16 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
           creatures: { types: ['creature'], controller: 'you' },
         },
       });
+    // "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3): the planeswalkers of the controller.
+    case 'loyaltyActivationLimit':
+      return ok({
+        kind: 'static',
+        static: {
+          kind: 'loyaltyActivationLimit',
+          planeswalkers: { types: ['planeswalker'], controller: 'you' },
+          timesEachTurn: effect.timesEachTurn,
+        },
+      });
     case 'optionalUntap':
       return ok({ kind: 'static', static: { kind: 'optionalUntap' } });
     // "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a): the creature itself, a bonus to the power it counts for the cost.
@@ -176,6 +190,7 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
           kind: 'attackTax',
           cost: [cost.value],
           ...(effect.planeswalkers === true ? { planeswalkers: true as const } : {}),
+          ...(effect.planeswalkersOnly === true ? { planeswalkersOnly: true as const } : {}),
           ...(effect.perCounter === true ? { perCounter: true as const } : {}),
         },
       });
@@ -204,6 +219,7 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:playLandsFromGraveyard',
   'static:playFromGraveyardEachType',
   'static:activateAsThoughHaste',
+  'static:loyaltyActivationLimit',
   'static:attackTax',
   'static:blockTax',
   'static:optionalUntap',

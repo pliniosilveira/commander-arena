@@ -362,6 +362,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'createToken',
     'search',
     'attach',
+    // CR 701.3d, 702.151a (Reconfigure): `unattach`.
+    'unattach',
     'transform',
     'conditional',
     'counterUnlessPays',
@@ -519,6 +521,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
     'revealTopDuel',
+    // CR 701.20a, 400.7j: "reveal the top card of your library. Draw cards equal to that card's mana value" (the card revealed is `moved` for what follows).
+    'revealTopCard',
     // CR 701.20a, 608.2c: "Reveal the top card of your library. If it's a creature card, ... If it's a land card, ..." (several branches on one revealed card).
     'revealTopBranches',
     // CR 702.5a, 613.1f: "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (Animate Dead).
@@ -673,6 +677,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycling',
     'enchant',
     'equip',
+    // CR 702.151a: Reconfigure.
+    'reconfigure',
     'kicker',
     'flashback',
     'prowess',
@@ -825,6 +831,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'damageDouble',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
+    // CR 614.1a, 120.3c (Deification): "if damage dealt to a planeswalker you control would result in all loyalty counters on it being removed, instead all but one are removed".
+    'keepOneLoyalty',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
     // D-417 (CR 702.89a): "Umbra armor".
@@ -866,6 +874,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add one mana of any color among legendary creature cards in your graveyard." (`anyColorAmong`)
+    'anyColorAmong',
     // "Add X mana in any combination of colors, where X is the greatest power among creatures you control." (`anyCombinationAmount`)
     'anyCombinationAmount',
     // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
@@ -1088,6 +1098,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenType',
     'notChosenType',
     'chosenColor',
+    'chosenPlaneswalkerType',
     // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
     'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
@@ -1492,6 +1503,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playLandsFromGraveyard',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
     'activateAsThoughHaste',
+    // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
+    'loyaltyActivationLimit',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -2120,6 +2133,7 @@ export const SELECTOR_KINDS = [
   'chosenType',
   'notChosenType',
   'chosenColor',
+  'chosenPlaneswalkerType',
   /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
   'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
@@ -2586,6 +2600,8 @@ export const STATIC_KINDS = [
   'playLandsFromGraveyard',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
   'activateAsThoughHaste',
+  /** "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once" (CR 606.3): the engine's `loyaltyActivationLimit`. */
+  'loyaltyActivationLimit',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
   /** "The \"legend rule\" doesn't apply to Slivers you control" (CR 704.5j): the engine's `legendRuleDoesntApply`. */
@@ -3013,6 +3029,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   createToken: true,
   search: true,
   attach: true,
+  unattach: true,
   transform: true,
   conditional: true,
   counterUnlessPays: true,
@@ -3100,6 +3117,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   nextSpellPayLife: true,
   revealTop: true,
   revealTopDuel: true,
+  revealTopCard: true,
   revealTopBranches: true,
   replaceEnchant: true,
   behold: true,
@@ -3199,6 +3217,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cycling: true,
   enchant: true,
   equip: true,
+  reconfigure: true,
   kicker: true,
   buyback: true,
   flashback: true,
@@ -3301,6 +3320,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   damageBonus: true,
   damageDouble: true,
   skipDraw: true,
+  keepOneLoyalty: true,
   drawInstead: true,
   umbraArmor: true,
 };
@@ -3315,6 +3335,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  anyColorAmong: true,
   anyCombinationAmount: true,
   eachColorAmong: true,
   producedType: true,

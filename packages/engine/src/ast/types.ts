@@ -1044,6 +1044,11 @@ export interface ObjectFilter {
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
+   * "Of the chosen type" said of planeswalkers (CR 205.3j, 607.2d; Deification): the object has the planeswalker type the source permanent chose as it entered
+   * (`GameObject.chosen.planeswalkerType`, an `asEntersChoose` of `planeswalkerType`). Matches nothing without that choice.
+   */
+  readonly chosenPlaneswalkerType?: true;
+  /**
    * For stack objects: spells only, abilities only, or (D-207, CR 113.3c, 603.1) triggered abilities only ("target triggered ability"). A member of an
    * `anyOf` may set it when the outer filter does not ("target triggered ability or colorless spell": the outer filter has `zone: 'stack'`, one member
    * `stackKind: 'triggeredAbility'` and one `stackKind: 'spell'` with `colorless`).
@@ -1515,8 +1520,8 @@ export interface TargetSpec {
   /**
    * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
    * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
-   * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text (not an
-   * ability, a trigger or a mode), of a face whose costs have an X; `min`, `max`, `anyNumber`, `divide`, `onePerOpponent` and `upToThatMany` are left out.
+   * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text or of a mode of it (modes are chosen before X, CR 601.2b; not an
+   * ability or a trigger), of a face whose costs have an X; `min`, `max`, `anyNumber`, `divide`, `onePerOpponent` and `upToThatMany` are left out.
    * A copy of the spell keeps the X (CR 707.10) and so the count.
    */
   readonly countX?: true;
@@ -2290,6 +2295,11 @@ export type Effect =
         { readonly kind: 'moved' | 'boundObjects' | 'linkedExile' }
       >;
       /**
+       * "Copy that card three times. You may cast the copies without paying their mana costs." (CR 707.12, Mnemonic Deluge): the number of copies made of each card, 2 or more (omitted:
+       * one). The controller may cast any number of the copies, one after the other.
+       */
+      readonly times?: number;
+      /**
        * "You may cast the copy by paying {3} rather than paying its mana cost." (Blue Mage's Cane, CR 118.9, 601.2f, 707.12): the alternative cost the copy is cast for, mana only, in place of
        * the cost of not paying one. Left out, the copy is cast without paying its mana cost. A copy the controller cannot pay for is not offered (CR 601.2h).
        */
@@ -2939,6 +2949,13 @@ export type Effect =
    * defined; the cards are all revealed before any life is lost, and the mana values are read from the cards as they were revealed.
    */
   | { readonly kind: 'revealTopDuel'; readonly players: PlayerSelector }
+  /**
+   * "Scry 3, then reveal the top card of your library. Draw cards equal to that card's mana value." (CR 701.20a Reveal, 400.7j, 202.3, 608.2c): each player `player` names reveals
+   * the top card of their own library (a `cardsRevealed` event; nothing for an empty library) and the card stays on top. The card revealed is what `moved` names for the effects after
+   * it in the same sequence ("that card's mana value"); `moved` is empty when no card was revealed, so an amount read from it is 0. With several players, `moved` is the card of the last
+   * seat named that had one.
+   */
+  | { readonly kind: 'revealTopCard'; readonly player: PlayerSelector }
   /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\"" (CR 702.5a, 613.1f, 611.2a, 303.4c; Animate Dead): the
    * Aura `objects` names (`this`) stops having the enchant ability `loses` and has the enchant ability `gains` instead, for as long as it stays on the battlefield (a layer 6 continuous
@@ -3935,8 +3952,14 @@ export type Effect =
        * permanent with the ability leaves the battlefield; does nothing when it is not there as the effect would begin. Only in an ability of a permanent.
        * `forAsLongAsYouControlThis` (D-229, CR 611.2b): "gains indestructible for as long as you control this creature": ends, for good, when the
        * permanent with the ability leaves the battlefield or is no longer controlled by the controller of the effect; does nothing when that is already so.
+       * `untilYourNextTurn` (CR 611.2a, 500.1, Emeria's Call): "Non-Angel creatures you control gain indestructible until your next turn": the permanents `objects` names as the effect
+       * resolves (CR 611.2c) have the keyword until the next turn of the controller of the effect begins (the turn it resolves in not counted). Only a keyword without parameters.
        */
-      readonly duration: Duration | 'forAsLongAsThisRemains' | 'forAsLongAsYouControlThis';
+      readonly duration:
+        | Duration
+        | 'forAsLongAsThisRemains'
+        | 'forAsLongAsYouControlThis'
+        | 'untilYourNextTurn';
     }
   /**
    * "Target creature can't be blocked this turn", "target creature attacks this turn if able": a
@@ -4795,6 +4818,11 @@ export type Effect =
    */
   | { readonly kind: 'attach'; readonly object: ObjectRef; readonly to: ObjectRef }
   /**
+   * CR 701.3d (Attach), 702.151a (Reconfigure): `object` (an Aura or Equipment) becomes unattached from the permanent it is attached to and stays on the battlefield. One that is attached to nothing
+   * does nothing. The second ability of the Reconfigure keyword is this effect on "this permanent".
+   */
+  | { readonly kind: 'unattach'; readonly object: ObjectRef }
+  /**
    * An instruction that depends on the game as it is when the instruction runs (CR 608.2c: "If
    * [condition], [effect]. Otherwise, [else]"): `condition` is checked at that moment, not when the
    * spell or ability was put on the stack, and `effect` runs if it holds, else `else` (when there is
@@ -4879,6 +4907,14 @@ export type ManaProduction =
    * the permanent up or takes counters off it is refused where the lowering reads this, as the amount is counted before costs are paid.
    */
   | { readonly kind: 'anyColorAmount'; readonly amount: Amount }
+  /**
+   * "{T}: Add one mana of any color among legendary creature cards in your graveyard." (The Grey Havens; CR 106.1b, 105.2, 605.3b): one mana of a color that the objects
+   * `filter` matches have between them (colorless is no color), in the zone the filter names (the battlefield when it names none), chosen as the ability resolves (so the
+   * activation names it, like `anyColor`). The colors are read as the ability is activated, for its controller with its permanent as "this"; a filter's `controller` is relative
+   * to that controller (in a graveyard or exile, the owner), so in a game of several players "you" never means another seat. With no such color the ability makes no mana.
+   * Only a mana ability (`validateCard`).
+   */
+  | { readonly kind: 'anyColorAmong'; readonly filter: ObjectFilter }
   /**
    * "{G}, {T}: Add X mana in any combination of colors, where X is the greatest power among creatures you control." (Selvala, Heart of the Wilds; CR 106.1b, 605.3b, 107.3c): as
    * `anyCombination` with as many mana as `amount`, read as the ability is activated for its controller with its permanent as "this" (a mana ability resolves at once); each mana is a color of the
@@ -5729,6 +5765,12 @@ export type Keyword =
        */
       readonly costReducedIf?: { readonly generic: number; readonly condition: Condition };
     }
+  /**
+   * CR 702.151a (Reconfigure): "Reconfigure [cost]" means "[Cost]: Attach this permanent to another target creature you control. Activate only as a sorcery." and "[Cost]: Unattach this
+   * permanent. Activate only if this permanent is attached to a creature and only as a sorcery." The engine expands it when it derives the object's abilities (`rules/derive-keywords.ts`);
+   * CR 702.151b: while it is attached, the Equipment is not a creature (`rules/derive-view.ts`), and CR 301.5c lets an Equipment that is a creature equip only with this keyword.
+   */
+  | { readonly kind: 'reconfigure'; readonly cost: readonly Cost[] }
   /**
    * CR 702.33a (Kicker): "Kicker [cost]" means "You may pay an additional [cost] as you cast this
    * spell." The caster is asked while casting (CR 601.2b, before targets), and a kicked spell pays
@@ -6979,10 +7021,17 @@ export type Replacement =
       readonly kind: 'asEntersChoose';
       /**
        * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
+       * `planeswalkerType` (CR 205.3j, "As this enchantment enters, choose a planeswalker type"): one of `PLANESWALKER_TYPES`; read by the `chosenPlaneswalkerType` quality of a filter.
        * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
        * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
        */
-      readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
+      readonly what:
+        | 'creatureType'
+        | 'color'
+        | 'option'
+        | 'cardType'
+        | 'planeswalkerType'
+        | 'lifePaid';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -7223,6 +7272,19 @@ export type Replacement =
    */
   | { readonly kind: 'skipDraw'; readonly while?: Condition }
   /**
+   * "As long as you control a creature, if damage dealt to a planeswalker you control of the chosen type would result in all loyalty counters on it being removed, instead all but
+   * one of those counters are removed." (CR 614.1a, 120.3c, 704.5i; Deification): a replacement effect of a permanent on the battlefield for the damage dealt to a planeswalker
+   * that `planeswalkers` matches (read for the planeswalker as it is, with `controller: 'you'` required: the controller of the permanent with the ability; `chosenPlaneswalkerType`
+   * reads the choice of the permanent with the ability). It replaces the result of the damage, not the damage: when the damage would remove every loyalty counter the planeswalker
+   * has (and it has at least one), all but one are removed. `while` is the "as long as" condition, read for the controller of the permanent as the damage is dealt
+   * (`controlsAtLeast`, `lifeTotal`, `controlCommander`, `cardsInGraveyard`, `cardsInLibrary`, `yourTurn`, `and`, `or`, `not`). It is the ability of the permanent (lost with "loses all abilities").
+   */
+  | {
+      readonly kind: 'keepOneLoyalty';
+      readonly planeswalkers: ObjectFilter;
+      readonly while?: Condition;
+    }
+  /**
    * "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead." (D-379, CR 614.1a, 614.11, 614.11a,
    * 614.5, 504.1; the Hashaton deck, Bard, King of Dale): a replacement effect of a permanent on the battlefield for the cards its controller would
    * draw. Each draw it applies to is replaced by `count` draws; they are separate draws (a "whenever you draw" ability triggers for each card, the commander
@@ -7433,6 +7495,12 @@ export type StaticEffect =
       readonly kind: 'attackTax';
       readonly cost: readonly Cost[];
       readonly planeswalkers?: true;
+      /**
+       * "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's
+       * attacking a planeswalker you control." (CR 508.1d, 508.1h, 506.3): only attacks on the planeswalkers its controller controls
+       * cost `cost`; an attack on the controller as a player is free. Replaces `planeswalkers` (set both: invalid).
+       */
+      readonly planeswalkersOnly?: true;
       /**
        * "Each creature with one or more counters on it can't attack you ... unless its controller pays {X}, where X is the
        * number of counters on that creature." (CR 508.1d, 508.1h, 122.1): only a creature with a counter of any kind is
@@ -7998,6 +8066,17 @@ export type StaticEffect =
    * cost. It is no haste: the creature still cannot attack, and it is not shown with the keyword. A creature of another player never gets it.
    */
   | { readonly kind: 'activateAsThoughHaste'; readonly creatures: ObjectFilter }
+  /**
+   * "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3, 606.4): while the permanent has the ability, the
+   * loyalty abilities of each planeswalker `planeswalkers` describes (battlefield permanents, read for the controller of the permanent with the permanent as the source) may
+   * be activated `timesEachTurn` times in a turn instead of once; the limit is still counted for the planeswalker as a whole, over all its loyalty abilities, and the
+   * loyalty cost of each activation is paid in full (CR 606.4). Sorcery timing still applies. The greatest `timesEachTurn` among the permanents that apply is the limit.
+   */
+  | {
+      readonly kind: 'loyaltyActivationLimit';
+      readonly planeswalkers: ObjectFilter;
+      readonly timesEachTurn: number;
+    }
   /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative

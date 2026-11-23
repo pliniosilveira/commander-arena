@@ -99,6 +99,7 @@ import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
+import { GAIN_NEXT_TURN_EFFECT_RULES } from './gain-next-turn';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
 import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
@@ -146,6 +147,7 @@ import {
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MELD_EFFECT_RULES } from './meld';
+import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
 import { NEXT_SPELL_EFFECT_RULES } from './next-spell';
 import { NILS_EFFECT_RULES } from './nils';
@@ -1216,6 +1218,7 @@ export const EFFECT_RULES = [
   // Blue Mage's Cane: "exile ... from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost."
   ...COPY_CAST_PAYING_EFFECT_RULES,
   ...PRISMARI_G2_EFFECT_RULES,
+  ...MNEMONIC_DELUGE_EFFECT_RULES,
   ...MARDU_SURGE_EFFECT_RULES,
   // Prismari deck, group 3 (issue 87, D-660 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into
   // your hand", "shuffle your library, then reveal cards ... exile that card ...", "as many times as you choose, you may exile ...", "each player exiles cards ... until they exile a nonland card",
@@ -1285,6 +1288,8 @@ export const EFFECT_RULES = [
   ...LAND_CREATURE_ABILITY_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,
+  // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
+  ...GAIN_NEXT_TURN_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,

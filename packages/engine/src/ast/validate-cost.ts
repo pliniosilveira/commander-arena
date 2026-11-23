@@ -610,6 +610,12 @@ export function checkAttackTax(
   if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
     issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
   }
+  if (s.planeswalkersOnly !== undefined && s.planeswalkersOnly !== true) {
+    issue(out, `${path}.planeswalkersOnly`, 'planeswalkersOnly is true or absent');
+  }
+  if (s.planeswalkersOnly === true && s.planeswalkers === true) {
+    issue(out, `${path}.planeswalkersOnly`, 'planeswalkersOnly excludes planeswalkers');
+  }
   if (s.perCounter !== undefined && s.perCounter !== true) {
     issue(out, `${path}.perCounter`, 'perCounter is true or absent');
   }

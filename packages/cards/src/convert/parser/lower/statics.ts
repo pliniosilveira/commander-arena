@@ -672,6 +672,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'playLandsFromGraveyard':
     case 'graveyardPlayEachType':
     case 'activateAsThoughHaste':
+    case 'loyaltyActivationLimit':
     case 'attackTax':
     case 'optionalUntap':
     case 'crewSaddleBonus':
@@ -843,6 +844,47 @@ function takesCondition(effect: IrStaticEffect): boolean {
     default:
       return false;
   }
+}
+
+/** Whether the effects are the pair "you may play lands and cast spells from the top of your library" reads as (`playLandsFromTopOfLibrary`, then `castFromTop` of all spells). */
+function isPlayFromTopPair(effects: readonly IrStaticEffect[]): boolean {
+  const [land, cast, ...rest] = effects;
+  return (
+    rest.length === 0 &&
+    land?.kind === 'playLandsFromTopOfLibrary' &&
+    land.alsoLook === undefined &&
+    cast?.kind === 'castFromTop' &&
+    !cast.gainsHaste &&
+    cast.sacrifice === undefined
+  );
+}
+
+/**
+ * CR 305.1, 601.3, 401.5 (The Reality Chip): "you may play lands and cast spells from the top of your library" while a condition holds: the engine's two permissions of the
+ * top card, each with the condition the engine reads where the permission is used. The controller's own: the subject is "you" and the spells are all of them (a land is played,
+ * never cast).
+ */
+function lowerPlayFromTop(
+  ability: Static,
+  part: IrStaticPart,
+  condition: Condition,
+): LowerResult<readonly Ability[]> {
+  if (part.subject.det !== 'you') return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'ability:staticCondition',
+    'static:playLandsFromTopOfLibrary',
+    'static:castFromTopOfLibrary',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  return {
+    ok: true,
+    value: [
+      { kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' }, condition },
+      { kind: 'static', static: { kind: 'castFromTopOfLibrary', spells: {} }, condition },
+    ],
+    rule: ability.rule,
+  };
 }
 
 /** One subject with what it gets or has: one engine `static` ability for each effect, with the condition when there is one. */
@@ -1259,6 +1301,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     for (const part of parts) {
       // The play rules that take a condition: the attack tax, read where the attack is declared.
       const [only] = part.effects;
+      // "As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library." (The Reality Chip): both permissions, with the condition.
+      if (isPlayFromTopPair(part.effects)) {
+        const both = lowerPlayFromTop(ability, part, condition);
+        if (!both.ok) return both;
+        abilities.push(...both.value);
+        continue;
+      }
       if (only !== undefined && isPlayRule(only)) {
         if (part.effects.length > 1 || only.kind !== 'attackTax') return failure(ability);
         const lowered = lowerPlayRule(ability, only);

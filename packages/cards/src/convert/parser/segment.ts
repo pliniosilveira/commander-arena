@@ -427,6 +427,13 @@ const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, crea
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
 /**
+ * "Exile target instant or sorcery card from a graveyard. Copy that card three times. You may cast the copies without paying their mana costs." (Mnemonic Deluge, CR 707.12): the three
+ * sentences are one instruction (`effect.exile-copy-card-times`).
+ */
+const EXILE_CARD_FROM_A_GRAVEYARD = /^exile target [^.]* card from a graveyard\.$/i;
+const COPY_THAT_CARD_TIMES = /^copy that card (?:twice|[a-z0-9]+ times)\.$/i;
+const MAY_CAST_THE_COPIES = /^you may cast the copies without paying their mana costs\.$/i;
+/**
  * "Each opponent may create X 1/1 red Elemental creature tokens with haste. For each opponent who does, create X 1/1 red Elemental creature tokens with haste." (Tempt with Vengeance, issue 101,
  * CR 101.4, 111.2): the second sentence counts the opponents the first offered the tokens to who took them, so the two are read as one instruction
  * (`effect.opponents-may-create-tokens`).
@@ -1212,6 +1219,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EXILE_CARD_FROM_A_GRAVEYARD) &&
+      said(b, COPY_THAT_CARD_TIMES) &&
+      said(c, MAY_CAST_THE_COPIES)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

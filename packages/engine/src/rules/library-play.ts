@@ -7,6 +7,7 @@
 import type { SeatId } from '../ids';
 import { getObject, getSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { mayHaveStatic } from './printed-statics';
@@ -24,6 +25,9 @@ export function libraryLandPermission(state: GameState, seat: SeatId, obj: GameO
       (a) =>
         a.kind === 'static' &&
         a.static.kind === 'playLandsFromTopOfLibrary' &&
+        // "As long as ~ is attached to a creature, you may play lands ...": the condition is read now, for the controller of the permanent.
+        (a.condition === undefined ||
+          evaluateCondition(state, a.condition, { controller: seat, source: source.id })) &&
         (a.static.lands === undefined ||
           matchesFilter(
             state,

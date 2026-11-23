@@ -355,3 +355,31 @@ describe('the prowess keyword', () => {
     expect(full(card)).toEqual([]);
   });
 });
+
+describe('grantKeyword until your next turn (CR 611.2a, 500.1)', () => {
+  const group = {
+    kind: 'each',
+    filter: { zone: 'battlefield', types: ['creature'], controller: 'you', notSubtypes: ['Angel'] },
+  } as const;
+
+  test('a keyword without parameters is read and supported', () => {
+    const effect: Effect = {
+      kind: 'grantKeyword',
+      objects: group,
+      keyword: { kind: 'indestructible' },
+      duration: 'untilYourNextTurn',
+    };
+    expect(structure(instant({ effect }))).toEqual([]);
+    expect(full(instant({ effect }))).toEqual([]);
+  });
+
+  test('a protection is not given until your next turn', () => {
+    const effect: Effect = {
+      kind: 'grantKeyword',
+      objects: group,
+      keyword: { kind: 'protection', from: 'color', colors: ['R'] },
+      duration: 'untilYourNextTurn',
+    };
+    expectIssue(structure(instant({ effect })), 'not given with a protection');
+  });
+});

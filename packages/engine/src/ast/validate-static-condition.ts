@@ -35,6 +35,9 @@ const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
   'setPt',
   // D-229: "As long as there are fewer than eight cards in your graveyard, ~ isn't a creature": layer 4, a plain condition.
   'loseTypes',
+  // The Reality Chip: "As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library": read where the card on top is played or cast (`rules/library-play.ts`, `rules/legality.ts`).
+  'playLandsFromTopOfLibrary',
+  'castFromTopOfLibrary',
 ];
 
 /** The conditions a static ability that works in layer 4 or 5 may have: they read no characteristics, so they cannot depend on the layers (CR 613.8). */

@@ -250,7 +250,7 @@ export const lifeAction: Action = (subject, you, rule) => {
               verbWord(base, you),
               // "gain that much life" (stage P29, D-133): the damage of the event that caused the trigger.
               family<IrArg>('amount', {
-                only: [...NUMBER_OR_X, 'amount.that-much', 'amount.half-x'],
+                only: [...NUMBER_OR_X, 'amount.that-much', 'amount.half-x', 'amount.twice-x'],
               }),
               LIFE,
             ),

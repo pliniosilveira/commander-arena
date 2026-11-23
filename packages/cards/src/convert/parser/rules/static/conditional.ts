@@ -78,6 +78,37 @@ const PAIR_UNIT = unit(['noun.paired-creatures'], 'each');
 // D-427 (Danitha group 3, CR 303.4b, 301.5a): "enchanted creature has hexproof", what an Aura gives while a condition holds.
 const ATTACHED_UNIT = unit(['noun.attached-permanent'], 'attached');
 
+/**
+ * "you may play lands and cast spells from the top of your library" (CR 305.1, 601.3, 401.5; The Reality Chip): both permissions of the controller, the engine's
+ * `playLandsFromTopOfLibrary` and `castFromTopOfLibrary` of every spell, said as one unit with no period. Only read after a condition ("As long as ~ is attached to a creature, ...").
+ */
+const PLAY_FROM_TOP_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const r = pattern(
+    /you may play lands and cast spells from the top of your library(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    value: {
+      noun: {
+        kind: 'noun',
+        det: 'you',
+        filter: { raw: 'You' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: pos + 3 },
+        rule: 'static.conditional-prefix',
+      },
+      effects: [
+        { kind: 'playLandsFromTopOfLibrary' },
+        { kind: 'castFromTop', spells: { raw: 'spells' }, gainsHaste: false },
+      ],
+    },
+    pos: r.pos,
+  };
+};
+
 const ANY_UNIT: Parser<StaticUnit> = choice(
   SELF_BECOMES_UNIT,
   // Stage P68 (D-229): "~ isn't a creature".
@@ -89,6 +120,7 @@ const ANY_UNIT: Parser<StaticUnit> = choice(
   // Stage P37 (D-180): "your opponents can't cast spells during your turn".
   OPPONENTS_CANT_CAST_UNIT,
   ATTACHED_UNIT,
+  PLAY_FROM_TOP_UNIT,
 );
 
 /**
@@ -256,6 +288,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as ~ has five or more quest counters on it, creatures you control get +2/+0.',
     // Issue 145 (Voice of the Blessed): "it" is ~ after a condition about the counters on ~.
     'As long as ~ has four or more +1/+1 counters on it, it has flying and vigilance.',
+    // The Reality Chip (CR 305.1, 601.3, 401.5): both permissions of the top card of the library, while ~ is attached to a creature.
+    'As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library.',
   ],
   rejects: [
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',
@@ -279,6 +313,10 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as ~ entered this turn, it has hexproof.',
     'As long as it has four or more +1/+1 counters on it, it has flying.',
     'As long as ~ has four or more +1/+1 counters on it, you draw a card.',
+    'As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library',
+    'As long as ~ is attached to a creature, you may play lands and cast creature spells from the top of your library.',
+    'As long as ~ is attached to a creature, you may play lands from the top of your library.',
+    'As long as ~ is attached to a creature, you may play lands and cast spells from the top of your graveyard.',
   ],
   parse: (ctx, pos) => {
     const lead = literal('as long as ')(ctx, pos);

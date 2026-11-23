@@ -15,7 +15,7 @@
  * hexproof and shroud: those restrict targeting, not being attached.
  */
 
-import type { Keyword, ObjectFilter, TargetSpec } from '../ast/types';
+import type { Ability, Keyword, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
@@ -119,7 +119,7 @@ export function canEnchantPlayer(state: GameState, aura: GameObject, seat: SeatI
 /**
  * Whether `attachment` could be attached to `host` (CR 701.3a): an Aura to what its enchant ability
  * allows and not to itself (CR 303.4d), an Equipment to a creature other than itself (CR 301.5,
- * 301.5c). Both must be on the battlefield. Anything else cannot be attached (CR 701.3b).
+ * 301.5c); an Equipment that is a creature only with reconfigure (CR 301.5c, 702.151a). Both must be on the battlefield. Anything else cannot be attached (CR 701.3b).
  */
 export function canAttach(state: GameState, attachment: GameObject, host: GameObject): boolean {
   if (attachment.zone !== 'battlefield') return false;
@@ -141,8 +141,17 @@ export function canAttach(state: GameState, attachment: GameObject, host: GameOb
     );
   }
   if (host.zone !== 'battlefield' || hasProtectionFrom(state, host, attachment.id)) return false;
-  if (d.subtypes.includes('Equipment')) return derive(state, host).types.includes('creature');
+  if (d.subtypes.includes('Equipment')) {
+    // CR 301.5c: an Equipment that is also a creature can't equip a creature unless it has reconfigure (CR 702.151a).
+    if (d.types.includes('creature') && !hasReconfigure(d.abilities)) return false;
+    return derive(state, host).types.includes('creature');
+  }
   return false;
+}
+
+/** Whether the abilities include the Reconfigure keyword (CR 702.151a). */
+function hasReconfigure(abilities: readonly Ability[]): boolean {
+  return abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'reconfigure');
 }
 
 /**
@@ -289,7 +298,10 @@ export function illegalAttachments(
       continue;
     }
     if (d.subtypes.includes('Aura')) continue; // CR 704.5m: it goes to the graveyard instead
-    if (!d.subtypes.includes('Equipment') || d.types.includes('creature')) {
+    // CR 301.5c, 704.5n: an Equipment that is a creature is attached illegally unless it has reconfigure (CR 702.151a).
+    const creatureEquipment =
+      d.types.includes('creature') && !hasReconfigure(derive(state, obj).abilities);
+    if (!d.subtypes.includes('Equipment') || creatureEquipment) {
       out.push({ object: obj, from: obj.attachedTo, reason: hostIsThere ? 'illegal' : 'left' });
     } else if (host === undefined || !canAttach(state, obj, host)) {
       out.push({ object: obj, from: obj.attachedTo, reason: hostIsThere ? 'illegal' : 'left' });
@@ -303,7 +315,7 @@ export function unattach(
   state: GameState,
   object: ObjectId,
   from: ObjectId,
-  reason: 'left' | 'illegal',
+  reason: 'left' | 'illegal' | 'effect',
 ): { state: GameState; events: GameEvent[] } {
   return {
     state: patchObject(state, object, { attachedTo: null }),

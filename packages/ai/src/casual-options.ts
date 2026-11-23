@@ -17,6 +17,7 @@ import { choosePile } from './casual-piles';
 import { chooseProtectionCardType, chooseProtectionColor } from './casual-protection';
 import { ownCommandZone, ownHand } from './casual-view';
 import { chooseVote } from './casual-vote';
+import { chooseWalkerType } from './casual-walker-type';
 
 /** The creature type or color names the object has, as the decision spells them. */
 function namesOf(
@@ -159,6 +160,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'lifePaid') return chooseLifePaid(view, d);
   // D-376 (CR 614.12a): "choose a card type", the type the opponents' permanents have most of (casual-card-type.ts).
   if (d.purpose === 'cardType') return chooseCardType(view, d);
+  // CR 614.12a, 205.3j: "choose a planeswalker type", the type of the planeswalkers it controls (casual-walker-type.ts).
+  if (d.purpose === 'planeswalkerType') return chooseWalkerType(view, d);
   // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice", the color that threatens the protected permanents (casual-protection.ts).
   if (d.purpose === 'protectionColor') return chooseProtectionColor(view, d);
   // D-514 (CR 702.16a, 608.2d): "gains protection from the card type of your choice", the card type that threatens the protected permanents (casual-protection.ts).

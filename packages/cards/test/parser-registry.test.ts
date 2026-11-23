@@ -125,6 +125,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 345: the play-from-the-top lines are lines of their own.
   'static.look-and-play-lands-from-top': asIs,
   'static.activate-as-though-haste': asIs,
+  'static.loyalty-activation-limit': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,
@@ -150,6 +151,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.eternalize': asIs,
   // Issue 104: Embalm is a line of its own, like Eternalize.
   'keyword.embalm': asIs,
+  'keyword.reconfigure': asIs,
   'keyword.escape': asIs,
   'keyword.impending': asIs,
   'static.eminence-cost-reduction': asIs,
@@ -426,6 +428,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.x': spell((e) => `Draw ${e} cards.`),
   // Quandrix Unlimited deck, group D2: the rounding of "half X" is written next to the X.
   'amount.half-x': spell((e) => `You gain ${e} life.`),
+  'amount.twice-x': spell((e) => `You gain ${e} life.`),
   'amount.article': spell((e) => `Draw ${e} card.`),
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.that-spells-mana-value': permanent(
@@ -1047,6 +1050,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
   'replacement.skip-draw': asIs,
+  // Deification: the line of its own ("As long as ..." is part of the replacement).
+  'replacement.keep-one-loyalty': asIs,
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
   'replacement.tokens-double': asIs,

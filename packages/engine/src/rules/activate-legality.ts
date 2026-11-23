@@ -13,7 +13,7 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import { encoreGrantSources } from './derive-statics';
 import { hasSorceryTiming } from './legality';
-import { isLoyaltyAbility, loyaltyActivatedThisTurn } from './loyalty';
+import { isLoyaltyAbility, loyaltyLimitReached } from './loyalty';
 import { legalModeSets, modalOfAbility } from './modes';
 import { hasRestriction } from './restrictions';
 import { legalTargets, targetBounds } from './select';
@@ -114,8 +114,8 @@ export function activationRefusal(
   if ((ability.timing === 'sorcery' || loyalty) && !hasSorceryTiming(state, seat)) {
     return 'That ability can be activated only at sorcery speed';
   }
-  // ... and only if no player has activated a loyalty ability of that permanent this turn (D-200).
-  if (loyalty && loyaltyActivatedThisTurn(state, obj.id)) {
+  // ... and only if no player has activated a loyalty ability of that permanent this turn, or fewer times than a static ability allows (D-200).
+  if (loyalty && loyaltyLimitReached(state, obj)) {
     return 'A loyalty ability of that permanent was already activated this turn (CR 606.3)';
   }
   // CR 602.5b (D-139): "Activate only once each turn": this object's ability was not activated yet this turn.

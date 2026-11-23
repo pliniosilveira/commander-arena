@@ -44,6 +44,8 @@ export function checkModes(
   triggered = false,
   /** True for a spell: only its modes may have a cost listed before the effect (CR 700.2h, D-433). */
   spell = false,
+  /** CR 107.3a, 601.2b-c: a mode of a spell that announces an X may take as many targets as that X (the modes are chosen before X, then the targets). */
+  countXAllowed = false,
 ): void {
   const list = modes ?? [];
   if (!Array.isArray(list) || list.length < 2) {
@@ -58,7 +60,15 @@ export function checkModes(
     if (typeof mode.text !== 'string' || mode.text === '') {
       issue(out, `${p}.text`, 'mode text is empty');
     }
-    const targets = declareTargets(mode.targets, `${p}.targets`, out);
+    const targets = declareTargets(
+      mode.targets,
+      `${p}.targets`,
+      out,
+      false,
+      false,
+      false,
+      countXAllowed,
+    );
     // The slots of every chosen mode are asked in one decision, so an id belongs to one mode only.
     for (const id of targets.keys()) {
       // D-344: the slots of the later instances of a repeated mode are `<id>#2`, ...: an id of the text cannot look like one.

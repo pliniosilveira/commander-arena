@@ -156,6 +156,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'reconfigure':
+      // CR 702.151a: "[Cost]: Attach this permanent to another target creature you control."
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
+        issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
+      }
+      break;
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."
       checkCosts(k.cost, `${path}.cost`, out);
@@ -385,7 +392,16 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       break;
     case 'asEntersChoose':
       // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
-      if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType', 'lifePaid'])) {
+      if (
+        !isOneOf(r.what, [
+          'creatureType',
+          'color',
+          'option',
+          'cardType',
+          'planeswalkerType',
+          'lifePaid',
+        ])
+      ) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;
@@ -2596,6 +2612,7 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
       out,
       false,
       true,
+      xAllowed,
     );
     return;
   }

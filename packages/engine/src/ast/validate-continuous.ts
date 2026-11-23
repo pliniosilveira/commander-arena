@@ -313,6 +313,11 @@ export function checkContinuousEffect(
     if (e.restriction !== 'attacksEachCombat') {
       issue(out, `${path}.duration`, '"this combat" is the duration of attacksEachCombat only');
     }
+  } else if (e.kind === 'grantKeyword' && e.duration === 'untilYourNextTurn') {
+    // CR 611.2a, 500.1: the duration of a temporary grant of a keyword (`runContinuous` ends it as the next turn of the controller begins); only without parameters (below).
+    if (e.keyword?.kind === 'protection') {
+      issue(out, `${path}.duration`, '"until your next turn" is not given with a protection');
+    }
   } else if (e.kind === 'grantAbility' && e.duration === 'untilYourNextTurn') {
     // Issue 145 (Song of Freyalise, CR 611.2a, 500.1): the duration of a temporary grant of an activated, triggered or mana ability (`checkGrantAbility` checks the abilities).
   } else if (!isOneOf(e.duration, DURATIONS)) {

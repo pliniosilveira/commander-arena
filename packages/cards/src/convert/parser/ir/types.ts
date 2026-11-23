@@ -704,7 +704,13 @@ export type IrAmount =
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
   // `life`: "where X is the amount of life you gained" (Field-Tested Frying Pan), read only where the trigger is life being gained.
-  | { readonly kind: 'triggerDamage'; readonly life?: true; readonly span: Span }
+  // `scry`: "where X is the number of cards looked at while scrying this way" (Elminster), read only where the trigger is a scry.
+  | {
+      readonly kind: 'triggerDamage';
+      readonly life?: true;
+      readonly scry?: true;
+      readonly span: Span;
+    }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"
@@ -1146,6 +1152,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'anyColor'; readonly count?: number }
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
+    // "one mana of any color among legendary creature cards in your graveyard" (CR 106.1b, 105.2): a color the cards `of` names have between them; the noun is a plural group of cards
+    | { readonly kind: 'colorsAmongCards'; readonly of: IrNoun }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
     // issue 144 (Throne of Eldraine): "four mana of the chosen color" has `count` 4
     | {
@@ -1424,7 +1432,7 @@ export interface IrRestrictionArg extends IrNode {
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
   /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
-  readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
+  readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'planeswalkerType' | 'lifePaid';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
   /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */
@@ -1891,6 +1899,8 @@ export type IrStaticEffect =
   | { readonly kind: 'graveyardPlayEachType' }
   /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
   | { readonly kind: 'activateAsThoughHaste' }
+  /** "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3). The subject is `you`. */
+  | { readonly kind: 'loyaltyActivationLimit'; readonly timesEachTurn: number }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of
@@ -1901,6 +1911,8 @@ export type IrStaticEffect =
       readonly kind: 'attackTax';
       readonly cost: IrCost;
       readonly planeswalkers?: true;
+      /** "Creatures can't attack planeswalkers you control unless ...": only the planeswalkers, not the controller (engine `planeswalkersOnly`). */
+      readonly planeswalkersOnly?: true;
       /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
       readonly perCounter?: true;
     }

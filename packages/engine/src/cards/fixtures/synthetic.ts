@@ -35,6 +35,8 @@ import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
 import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
+import { SYNTHETIC_CHOSEN_WALKER_LIST } from './synthetic-chosen-walker';
+import { SYNTHETIC_COLOR_AMONG_MANA_LIST } from './synthetic-color-among-mana';
 import { SYNTHETIC_COMBAT_LIST } from './synthetic-combat';
 import { SYNTHETIC_COMMANDER_TRIGGER_LIST } from './synthetic-commander-triggers';
 import { SYNTHETIC_COMMANDER_LIST } from './synthetic-commanders';
@@ -459,6 +461,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DICE_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,
   ...SYNTHETIC_DEVOTION_MANA_LIST,
+  ...SYNTHETIC_COLOR_AMONG_MANA_LIST,
   ...SYNTHETIC_STATION_LIST,
   ...SYNTHETIC_DAWNBREAK_LIST,
   ...SYNTHETIC_ATTACK_BATCH_LIST,
@@ -475,6 +478,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
   ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
+  ...SYNTHETIC_CHOSEN_WALKER_LIST,
   ...SYNTHETIC_HASHATON_G5_LIST,
   ...SYNTHETIC_EMBALM_LIST,
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,

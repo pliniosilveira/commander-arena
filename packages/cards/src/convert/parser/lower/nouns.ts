@@ -81,6 +81,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:chosenType',
   'selector:chosen',
   'selector:chosenColor',
+  'selector:chosenPlaneswalkerType',
   'selector:thisSpell',
   'selector:anyTarget',
   'selector:anyOf',
@@ -240,12 +241,22 @@ function lowerFilterAt(
   let chosen:
     | { chosenType: true }
     | { chosenColor: true }
+    | { chosenPlaneswalkerType: true }
     | { notChosenType: true }
     | Record<string, never> = {};
   if (filter.notChosenType === true) {
     const missing = missingFeatures(['selector:chosenType']);
     if (missing.length > 0) return bad(missing);
     chosen = { notChosenType: true };
+  } else if (
+    filter.chosen === 'type' &&
+    filter.types?.length === 1 &&
+    filter.types[0] === 'planeswalker'
+  ) {
+    // CR 205.3j, 607.2d: "planeswalkers you control of the chosen type" is the planeswalker type the source chose as it entered.
+    const missing = missingFeatures(['selector:chosenPlaneswalkerType']);
+    if (missing.length > 0) return bad(missing);
+    chosen = { chosenPlaneswalkerType: true };
   } else if (filter.chosen !== undefined) {
     const feature = filter.chosen === 'type' ? 'selector:chosenType' : 'selector:chosenColor';
     const missing = missingFeatures([feature]);

@@ -32,7 +32,7 @@ import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { runAssignControl } from './assign-control';
-import { attachEntered, attachObject } from './attach';
+import { attachEntered, attachObject, unattach } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
@@ -158,6 +158,7 @@ import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealTopBranches } from './reveal-top-branches';
+import { runRevealTopCard } from './reveal-top-card';
 import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
@@ -1659,9 +1660,12 @@ function runEffect(
       const copies: ObjectId[] = [];
       for (const card of exiled) {
         if (card.card === null) continue;
-        const made = makeCardCopy(withCopies, card.card, res.controller);
-        withCopies = made.state;
-        copies.push(made.copy);
+        // CR 707.12: "Copy that card three times" makes each copy separately (`times`).
+        for (let n = 0; n < (effect.times ?? 1); n += 1) {
+          const made = makeCardCopy(withCopies, card.card, res.controller);
+          withCopies = made.state;
+          copies.push(made.copy);
+        }
       }
       return {
         ...done(
@@ -3545,6 +3549,18 @@ function runEffect(
       return { ...done(next, events), performed: attached };
     }
 
+    case 'unattach': {
+      // CR 701.3d, 702.151a (Reconfigure): each permanent the reference names that is on the battlefield and attached to a permanent becomes unattached and stays.
+      for (const id of resolveObjects(state, effect.object, ctx, targets)) {
+        const obj = next.objects[id];
+        if (obj?.zone !== 'battlefield' || obj.attachedTo === null) continue;
+        const r = unattach(next, id, obj.attachedTo, 'effect');
+        next = r.state;
+        events.push(...r.events);
+      }
+      return done(next, events);
+    }
+
     case 'moveAllCounters': {
       // CR 122.1, 122.6: each counter comes off the first permanent and goes onto the second, except a kind the second can't have.
       const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
@@ -3747,6 +3763,10 @@ function runEffect(
     case 'revealTopBranches':
       // CR 701.20a, 608.2c: reveal the top card once and do each branch it matches (rules/reveal-top-branches.ts).
       return runRevealTopBranches(state, res, effect, ctx, targets);
+
+    case 'revealTopCard':
+      // CR 701.20a, 400.7j: reveal the top card; it is `moved` for the effects after it (rules/reveal-top-card.ts).
+      return runRevealTopCard(state, effect, ctx, targets);
 
     case 'revealTopDuel':
       // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).

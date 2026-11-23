@@ -57,6 +57,7 @@ function gate(node: At, needs: readonly FeatureRef[]): LowerFailure | null {
 const KEYWORD_RULE = {
   cycling: 'keyword.cycling',
   equip: 'keyword.equip',
+  reconfigure: 'keyword.reconfigure',
   kicker: 'keyword.kicker',
   multikicker: 'keyword.multikicker',
   flashback: 'keyword.flashback',
@@ -76,6 +77,7 @@ const KEYWORD_RULE = {
 type CostedKeyword =
   | 'cycling'
   | 'equip'
+  | 'reconfigure'
   | 'kicker'
   | 'multikicker'
   | 'flashback'
@@ -202,6 +204,7 @@ function lowerCostedKeyword(
   // own check says it does not pay one, a discard is paid since D-095.
   const kinds =
     name === 'flashback' ||
+    name === 'reconfigure' ||
     name === 'multikicker' ||
     name === 'unearth' ||
     name === 'encore' ||
@@ -563,6 +566,7 @@ export function lowerKeyword(
   if (
     ability.name === 'cycling' ||
     ability.name === 'equip' ||
+    ability.name === 'reconfigure' ||
     ability.name === 'kicker' ||
     ability.name === 'multikicker' ||
     ability.name === 'flashback' ||
@@ -795,6 +799,20 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (event.condition === undefined) return built({ kind: 'skipDraw' });
     const when = lowerCondition(event.condition);
     return when.ok ? built({ kind: 'skipDraw', while: when.value }) : when;
+  }
+  if (event.verb === 'keepOneLoyalty') {
+    // CR 614.1a, 120.3c (Deification): the damage dealt to the planeswalkers of the controller removes all but one loyalty counter instead of all of them.
+    const walkers = event.args.planeswalkers;
+    if (walkers?.kind !== 'noun') return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:keepOneLoyalty']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(walkers);
+    if (!lowered.ok) return lowered;
+    const { zone, ...planeswalkers } = lowered.value;
+    void zone;
+    if (event.condition === undefined) return built({ kind: 'keepOneLoyalty', planeswalkers });
+    const when = lowerCondition(event.condition);
+    return when.ok ? built({ kind: 'keepOneLoyalty', planeswalkers, while: when.value }) : when;
   }
   if (event.verb === 'umbraArmor') {
     // CR 702.89a (Danitha deck, D-417): the keyword of an Aura; the engine checks that the face is one.
@@ -1247,6 +1265,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'ability:keyword',
   'keyword:cycling',
   'keyword:equip',
+  'keyword:reconfigure',
   'keyword:kicker',
   'keyword:multikicker',
   'keyword:typecycling',
@@ -1298,6 +1317,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:asEntersChoose',
   'replacement:entersAsCopy',
   'replacement:skipDraw',
+  'replacement:keepOneLoyalty',
   'replacement:tokensInstead',
   'replacement:countersPlus',
   'replacement:damageBonus',

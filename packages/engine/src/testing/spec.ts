@@ -198,7 +198,7 @@ export function validatePlacement(p: Placement, def: CardDefinition, seatCount =
     }
     if (o.chosen !== undefined) {
       const kind = entersChoice(face.abilities);
-      const { creatureType, color, option, cardType, lifePaid } = o.chosen;
+      const { creatureType, color, option, cardType, planeswalkerType, lifePaid } = o.chosen;
       if (kind === null) {
         throw new ScenarioError(`${where}: ${p.name} does not choose anything as it enters`);
       }
@@ -209,12 +209,14 @@ export function validatePlacement(p: Placement, def: CardDefinition, seatCount =
             ? option
             : kind === 'cardType'
               ? cardType
-              : kind === 'lifePaid'
-                ? lifePaid === undefined
-                  ? undefined
-                  : String(lifePaid)
-                : color;
-      const others = [creatureType, color, option, cardType, lifePaid].filter(
+              : kind === 'planeswalkerType'
+                ? planeswalkerType
+                : kind === 'lifePaid'
+                  ? lifePaid === undefined
+                    ? undefined
+                    : String(lifePaid)
+                  : color;
+      const others = [creatureType, color, option, cardType, planeswalkerType, lifePaid].filter(
         (x) => x !== undefined,
       ).length;
       if (given === undefined || others !== 1) {
