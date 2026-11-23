@@ -6,6 +6,7 @@
 import type { ObjectFilter } from '../ast/types';
 import type { SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
+import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { libraryCastSources } from './derive-statics';
 import { matchesFilter } from './select';
@@ -23,6 +24,12 @@ export function libraryCastSacrificeOf(
   let first: ObjectFilter | null = null;
   for (const source of libraryCastSources(state)) {
     if (controllerOf(state, source.object) !== seat) continue;
+    if (
+      source.condition !== undefined &&
+      !evaluateCondition(state, source.condition, { controller: seat, source: source.object.id })
+    ) {
+      continue;
+    }
     // The spell is a card in the library before it is cast and a spell on the stack after: the filter, which names no zone, is read where the spell is.
     if (
       !matchesFilter(

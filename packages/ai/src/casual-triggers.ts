@@ -141,6 +141,8 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
       return isTarget(effect.objects, id) ? (effect.to === 'battlefield' ? help() : harm()) : null;
     case 'attach':
       return isTarget(effect.to, id) ? help() : null;
+    case 'unattach':
+      return null;
     case 'castCard':
       // The mana is read from the view where the slot is scored (`manaAvailable`), as the ability goes on the stack.
       return isTarget(effect.object, id)

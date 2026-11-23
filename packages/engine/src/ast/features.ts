@@ -332,6 +332,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'createToken',
     'search',
     'attach',
+    // CR 701.3d, 702.151a (Reconfigure): `unattach`.
+    'unattach',
     'transform',
     'conditional',
     'counterUnlessPays',
@@ -623,6 +625,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycling',
     'enchant',
     'equip',
+    // CR 702.151a: Reconfigure.
+    'reconfigure',
     'kicker',
     'flashback',
     'prowess',
@@ -2739,6 +2743,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   createToken: true,
   search: true,
   attach: true,
+  unattach: true,
   transform: true,
   conditional: true,
   counterUnlessPays: true,
@@ -2914,6 +2919,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cycling: true,
   enchant: true,
   equip: true,
+  reconfigure: true,
   kicker: true,
   buyback: true,
   flashback: true,

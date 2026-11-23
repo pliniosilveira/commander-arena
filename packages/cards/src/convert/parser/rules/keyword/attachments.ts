@@ -8,6 +8,7 @@ import { choice, fail, literal, map, optional, pattern, quiet, sequence } from '
 import type { IrCost, IrKeyword, IrNoun } from '../../ir/types';
 import { CREATURE_TYPES } from '../noun/creature-types';
 import { defineRule, family, node } from '../registry';
+import { altCostKeyword } from './alt-costs';
 
 /**
  * `keyword.enchant`: "Enchant creature", "Enchant creature you control", "Enchant land", "Enchant
@@ -311,6 +312,30 @@ export const KEYWORD_EQUIP_LEGENDARY = defineRule<readonly IrKeyword[]>({
   ),
 });
 
+/**
+ * `keyword.reconfigure`: "Reconfigure {2}{U}" (CR 702.151a: "[Cost]: Attach this permanent to another target creature you control. Activate only as a sorcery" and "[Cost]: Unattach this
+ * permanent. Activate only if this permanent is attached to a creature and only as a sorcery."). It lowers to the keyword of the engine, which expands it into the two abilities and makes
+ * the Equipment not a creature while it is attached (CR 702.151b). The cost is a plain mana cost; a line is read on its own. The reminder text is dropped before the line is read.
+ */
+export const KEYWORD_RECONFIGURE = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.reconfigure',
+  family: 'keyword',
+  leading: ['reconfigure'],
+  cites: ['CR 702.151a (Reconfigure)', 'CR 702.151b (Reconfigure)'],
+  examples: ['Reconfigure {2}{U}', 'Reconfigure {3}', 'reconfigure {1}{W}'],
+  rejects: [
+    'Reconfigure',
+    'Reconfigure {X}',
+    'Reconfigure {W/U}',
+    'Reconfigure—Pay 2 life.',
+    'Reconfigure {2}{U}.',
+    'Reconfigure {2}{U}, flying',
+    'Reconfigured {2}{U}',
+    'Equip {2}{U}',
+  ],
+  parse: altCostKeyword('keyword.reconfigure', 'reconfigure'),
+});
+
 export const ATTACHMENT_KEYWORD_RULES = [
   KEYWORD_ENCHANT,
   KEYWORD_ENCHANT_PLAYER,
@@ -318,4 +343,5 @@ export const ATTACHMENT_KEYWORD_RULES = [
   KEYWORD_EQUIP_QUALITY,
   KEYWORD_EQUIP_COMMANDER,
   KEYWORD_EQUIP_LEGENDARY,
+  KEYWORD_RECONFIGURE,
 ];

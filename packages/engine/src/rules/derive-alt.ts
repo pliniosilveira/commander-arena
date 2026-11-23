@@ -153,3 +153,27 @@ export function alternativeAbilitiesOf(state: GameState, obj: GameObject): reado
     ? [DASH_HASTE_ABILITY]
     : [];
 }
+
+/**
+ * CR 702.151b (Reconfigure): attaching an Equipment with reconfigure to a creature makes it stop being a creature until it becomes unattached. A permanent on the battlefield with the
+ * keyword (read from its printed abilities, as for impending) that is attached to a permanent.
+ */
+export function isReconfigureNotCreature(obj: GameObject, printed: readonly Ability[]): boolean {
+  return (
+    obj.zone === 'battlefield' &&
+    obj.attachedTo !== null &&
+    printed.some((a) => a.kind === 'keyword' && a.keyword.kind === 'reconfigure')
+  );
+}
+
+export function reconfigureTypeEffects(obj: GameObject): readonly ContinuousEffect[] {
+  return [
+    {
+      id: `reconfigure:${obj.id}:remove`,
+      timestamp: obj.timestamp,
+      objects: [obj.id],
+      until: 'permanent',
+      change: { kind: 'setTypes', remove: ['creature'] },
+    },
+  ];
+}

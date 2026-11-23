@@ -7169,6 +7169,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkSubjectRef(e.to, 'permanent', `${path}.to`, scope, out);
       else checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
+    case 'unattach':
+      // CR 701.3d: the permanent to unattach is named by reference ("this").
+      checkRef(e.object, 'object', `${path}.object`, scope, out);
+      break;
     case 'conditional':
       // CR 608.2c: "If [condition], [effect]. Otherwise, [else]." Both branches see the same
       // targets and X as the rest of the spell or ability.

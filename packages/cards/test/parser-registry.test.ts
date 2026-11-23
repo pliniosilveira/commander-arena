@@ -149,6 +149,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.eternalize': asIs,
   // Issue 104: Embalm is a line of its own, like Eternalize.
   'keyword.embalm': asIs,
+  'keyword.reconfigure': asIs,
   'keyword.escape': asIs,
   'keyword.impending': asIs,
   'static.eminence-cost-reduction': asIs,

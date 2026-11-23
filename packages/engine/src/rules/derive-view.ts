@@ -22,6 +22,8 @@ import {
   impendingTypeEffects,
   isBestowedAura,
   isImpendingNotCreature,
+  isReconfigureNotCreature,
+  reconfigureTypeEffects,
 } from './derive-alt';
 import { groupTypeEffects } from './derive-group-types';
 import { hasPrintedKeyword } from './derive-keywords';
@@ -57,6 +59,10 @@ function withStaticTypes(
     // CR 702.103b, 702.103d (bestow; rules text not available to check): a bestow spell, and a bestow permanent while it is attached, is an Aura enchantment and no
     // longer a creature (its creature types go with the type, CR 205.1a). Layer 4 with the permanent's own timestamp.
     return [...effects, ...bestowTypeEffects(obj)].sort((a, b) => a.timestamp - b.timestamp);
+  }
+  if (isReconfigureNotCreature(obj, printed)) {
+    // CR 702.151b: attached by reconfigure, it is not a creature (its creature types go with the type, CR 205.1a). Layer 4 with its own timestamp, which attaching renews (CR 701.3c).
+    return [...effects, ...reconfigureTypeEffects(obj)].sort((a, b) => a.timestamp - b.timestamp);
   }
   if (isImpendingNotCreature(obj)) {
     // CR 702.176a: not a creature while it has a time counter; its creature subtypes go with the type (CR 205.1a).

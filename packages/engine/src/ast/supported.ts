@@ -874,8 +874,8 @@ function walkAbility(
           ['mana', 'payLife'],
           true,
         );
-      } else if (a.keyword.kind === 'equip') {
-        // CR 702.6a: paid like any activation cost; only mana and life are run (as for Cycling).
+      } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
+        // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'ward') {
         // CR 702.21a: paid when the ward ability resolves (rules/pay-unless.ts): mana, life and
