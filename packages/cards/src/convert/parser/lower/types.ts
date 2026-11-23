@@ -228,6 +228,8 @@ export interface LowerContext {
   attackBatchThose: boolean;
   /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
   selfAttackTrigger: boolean;
+  /** True in the body of "Whenever you attack ..." (every event is an attack batch of the controller's creatures; CR 508.1, 508.4): a permanent may enter "tapped and attacking" (`enterAttacking`). */
+  youAttackBatchTrigger: boolean;
   /**
    * True in the body of a triggered ability whose every event is the card itself entering the battlefield or attacking (Titan of Littjara): "it" in "shares a creature type with it" is
    * the source of the ability, the one case the engine's `sharesCreatureTypeWith: 'source'` is read from the words.
@@ -485,6 +487,7 @@ export function newContext(
     damageBatchTrigger: false,
     attackBatchThose: false,
     selfAttackTrigger: false,
+    youAttackBatchTrigger: false,
     selfEntersOrAttacksTrigger: false,
     cardName,
     selfName: '',

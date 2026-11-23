@@ -1595,6 +1595,8 @@ function lowerTriggeredAbility(
         (t.what === undefined ||
           JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
     );
+  ctx.youAttackBatchTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'attackBatch' && t.who === 'you');
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');

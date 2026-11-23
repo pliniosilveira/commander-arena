@@ -171,3 +171,78 @@ describe('"Whenever ~ or another creature enters from your graveyard, that creat
     g.expect.invariants();
   });
 });
+
+describe('"Whenever you attack with one or more legendary creatures, you may pay {2}{B}. If you do, return this card from your graveyard to the battlefield tapped and attacking." (CR 508.4, 113.6b, 603.2c)', () => {
+  const hound = parsed(
+    'SYNTHETIC Parsed Hound',
+    'Legendary Creature — Dog',
+    'Menace\nAssassins you control have menace.\nWhenever you attack with one or more legendary creatures, you may pay {2}{B}. If you do, return this card from your graveyard to the battlefield tapped and attacking.',
+    { manaCost: '{3}{B}', power: '3', toughness: '3', colors: ['B'] },
+  );
+  const legend = parsed('SYNTHETIC Parsed Legend', 'Legendary Creature — Human', '', {
+    manaCost: '{1}{B}',
+    power: '2',
+    toughness: '2',
+    colors: ['B'],
+  });
+  const plain = parsed('SYNTHETIC Parsed Plain', 'Creature — Human', '', {
+    manaCost: '{1}{B}',
+    power: '2',
+    toughness: '2',
+    colors: ['B'],
+  });
+  const build = (attacker: string) =>
+    base()
+      .define(hound)
+      .define(legend)
+      .define(plain)
+      .battlefield(attacker, 'Swamp', 'Swamp', 'Swamp')
+      .graveyard(hound.name)
+      .at('precombatMain', { active: 0 })
+      .build();
+  const attack = (attacker: string) => {
+    const g = build(attacker);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker }]);
+    g.passAll();
+    return g;
+  };
+
+  test('lowers to a payment and a return that enters attacking, working from the graveyard', () => {
+    expect(hound.faces[0]?.abilities[2]).toMatchObject({
+      kind: 'triggered',
+      trigger: { kind: 'attackBatch', what: { supertypes: ['legendary'], types: ['creature'] } },
+      effect: {
+        kind: 'mayPay',
+        effect: {
+          kind: 'sequence',
+          effects: [{ kind: 'moveToZone', tapped: true }, { kind: 'enterAttacking' }],
+        },
+      },
+      functionsIn: 'graveyard',
+    });
+  });
+
+  test('paying returns it tapped and attacking, never declared as an attacker', () => {
+    const g = attack(legend.name);
+    g.act(0).accept();
+    g.act(0).payAuto();
+    g.expect.zone(hound.name, 'battlefield', { seat: 0 });
+    g.expect.tapped(hound.name);
+    g.expect.combat({ attackers: [legend.name, hound.name] });
+    g.expect.invariants();
+  });
+
+  test('declining leaves it in the graveyard', () => {
+    const g = attack(legend.name);
+    g.act(0).decline();
+    g.expect.zone(hound.name, 'graveyard', { seat: 0 });
+    g.expect.combat({ attackers: [legend.name] });
+  });
+
+  test('an attack with no legendary creature does not trigger it', () => {
+    const g = attack(plain.name);
+    expect(g.state.pending?.kind).not.toBe('mayPay');
+    g.expect.zone(hound.name, 'graveyard', { seat: 0 });
+  });
+});

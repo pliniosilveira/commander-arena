@@ -321,6 +321,7 @@ const RETURN_SELF_RULE = 'effect.return-self';
 interface Destination {
   readonly zone: 'battlefield' | 'hand';
   readonly tapped?: true;
+  readonly attacking?: true;
   readonly counters: { readonly count: number; readonly counter: string } | null;
   readonly span: Span;
 }
@@ -432,6 +433,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
   examples: [
     'return this card from your graveyard to the battlefield',
     'return this card from your graveyard to the battlefield tapped',
+    'return this card from your graveyard to the battlefield tapped and attacking',
     'return this card from your graveyard to the battlefield with a +1/+1 counter on it',
     'return this card from your graveyard to the battlefield with two +1/+1 counters on it',
     'return this card from your graveyard to your hand',
@@ -441,6 +443,8 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
   rejects: [
     'return this card from a graveyard to the battlefield',
     'return this card from your graveyard to your hand tapped',
+    'return this card from your graveyard to your hand and attacking',
+    'return this card from your graveyard to the battlefield tapped and attacking that player',
     'return this card from your graveyard to your hand with a +1/+1 counter on it',
     'return this card to the battlefield',
     'return this card from your graveyard to its owner’s hand',
@@ -460,13 +464,16 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
             sequence(
               literal('the battlefield'),
               optional(literal(' tapped'), null),
+              // CR 508.4: "tapped and attacking" (Interceptor, Shadow's Hound).
+              optional(literal(' and attacking'), null),
               optional(WITH_COUNTERS, null),
             ),
           ),
           ({ value, span }): Destination => ({
             zone: 'battlefield',
-            counters: value[2],
+            counters: value[3],
             ...(value[1] === null ? {} : { tapped: true }),
+            ...(value[2] === null ? {} : { attacking: true as const }),
             span,
           }),
         ),
@@ -495,6 +502,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
       from: 'graveyard',
       whose: to.zone === 'hand' ? 'you' : 'owner',
       ...(to.tapped === true ? { tapped: true } : {}),
+      ...(to.attacking === true ? { attacking: true as const } : {}),
       ...(to.counters === null
         ? {}
         : { counters: { counter: to.counters.counter, count: to.counters.count } }),

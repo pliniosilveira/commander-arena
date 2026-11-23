@@ -557,6 +557,10 @@ function lowerReturnSelf(
     if (ref.value.kind !== 'target') return failure(clause);
     attachTo = { kind: 'target', id: ref.value.id };
   }
+  // "... to the battlefield tapped and attacking" (CR 508.4): joins the combat of the attack the trigger is about, never declared (the engine's `enterAttacking` of what moved).
+  if (to.attacking === true && (to.zone !== 'battlefield' || !ctx.youAttackBatchTrigger)) {
+    return failure(clause);
+  }
   const effect: Effect =
     to.zone === 'battlefield'
       ? {
@@ -569,6 +573,15 @@ function lowerReturnSelf(
           ...(attachTo === undefined ? {} : { attachTo }),
         }
       : { kind: 'moveToZone', objects: { kind: 'this' }, to: 'hand' };
+  if (to.attacking === true) {
+    const attacking = missingFeatures(['effect:enterAttacking']);
+    if (attacking.length > 0) return failure(clause, attacking);
+    return {
+      ok: true,
+      value: [effect, { kind: 'enterAttacking', objects: { kind: 'moved' } }],
+      rule: clause.rule,
+    };
+  }
   return { ok: true, value: [effect], rule: clause.rule };
 }
 
