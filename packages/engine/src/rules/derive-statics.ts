@@ -184,6 +184,13 @@ export interface HasteActivationSource {
   readonly creatures: ObjectFilter;
 }
 
+/** A static ability of a permanent that raises the number of times a turn the loyalty abilities of some planeswalkers may be activated (`loyaltyActivationLimit`, CR 606.3). */
+export interface LoyaltyLimitSource {
+  readonly object: GameObject;
+  readonly planeswalkers: ObjectFilter;
+  readonly timesEachTurn: number;
+}
+
 /**
  * A static ability of a permanent that lets its controller, once during each of their turns, play a land or cast a spell from their graveyard
  * (`playFromGraveyardOnceEachTurn`, D-232): read by `rules/graveyard-play.ts`. A permanent that lost all its abilities has none (CR 613.1f).
@@ -266,6 +273,8 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
   readonly hasteActivations: readonly HasteActivationSource[];
+  /** Permanents with a `loyaltyActivationLimit` static ability, in battlefield order (CR 606.3). */
+  readonly loyaltyLimits: readonly LoyaltyLimitSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
@@ -531,6 +540,7 @@ function buildIndex(state: GameState): BoardIndex {
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const hasteActivations: HasteActivationSource[] = [];
+  const loyaltyLimits: LoyaltyLimitSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
@@ -554,6 +564,13 @@ function buildIndex(state: GameState): BoardIndex {
     for (const a of printed) {
       if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
         hasteActivations.push({ object, creatures: a.static.creatures });
+      }
+      if (a.kind === 'static' && a.static.kind === 'loyaltyActivationLimit') {
+        loyaltyLimits.push({
+          object,
+          planeswalkers: a.static.planeswalkers,
+          timesEachTurn: a.static.timesEachTurn,
+        });
       }
     }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
@@ -633,6 +650,7 @@ function buildIndex(state: GameState): BoardIndex {
     flashes,
     libraryCasts,
     hasteActivations,
+    loyaltyLimits,
     graveyardPlays,
     handGrants,
     spellGrants,
@@ -685,6 +703,11 @@ export function abilityReductionSources(state: GameState): readonly AbilityReduc
 }
 
 /** The permission "You may cast creature spells ... from the top of your library" of the permanents on the battlefield (D-151). */
+/** The permanents whose static ability raises the loyalty activation limit of some planeswalkers (CR 606.3). */
+export function loyaltyLimitSources(state: GameState): readonly LoyaltyLimitSource[] {
+  return indexOf(state).loyaltyLimits;
+}
+
 /** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
 export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
   return indexOf(state).hasteActivations;

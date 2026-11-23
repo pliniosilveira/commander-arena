@@ -283,6 +283,39 @@ describe('"You may choose not to untap ~ during your untap step." (backlog: 44 c
   });
 });
 
+describe('"You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3)', () => {
+  const OATH = parsed(
+    'SYNTHETIC Parsed Twice Oath',
+    'Enchantment',
+    'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.',
+    { manaCost: '{3}{W}{U}', colors: ['W', 'U'] },
+  );
+  const LOYALTY_WALKER = 'SYNTHETIC Loyalty Walker';
+
+  test('the lowering is the loyalty activation limit of the controller planeswalkers', () => {
+    expect(OATH.faces[0]?.abilities).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'loyaltyActivationLimit',
+          planeswalkers: { types: ['planeswalker'], controller: 'you' },
+          timesEachTurn: 2,
+        },
+      },
+    ]);
+  });
+
+  test('the engine allows a second loyalty activation, and no third', () => {
+    const g = scenario().define(OATH).seat(0).battlefield(LOYALTY_WALKER, OATH.name).build();
+    g.act(0).activate(LOYALTY_WALKER, { ability: 0 });
+    g.passAll();
+    g.act(0).activate(LOYALTY_WALKER, { ability: 0 });
+    g.passAll();
+    g.expect.counters(LOYALTY_WALKER, { loyalty: 6 });
+    g.expect.illegal(0, { activate: LOYALTY_WALKER, ability: 1 });
+  });
+});
+
 describe('"Creatures can\'t attack planeswalkers you control unless their controller pays {1} for each creature ..." (CR 508.1d, 508.1h, 506.3)', () => {
   const WARD = parsed(
     'SYNTHETIC Parsed Walker Ward',

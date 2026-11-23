@@ -755,6 +755,51 @@ export const STATIC_ACTIVATE_AS_THOUGH_HASTE = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.loyalty-activation-limit`: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3: a loyalty
+ * ability is activated only if no player has activated a loyalty ability of that permanent this turn; the static ability allows a second activation). The planeswalkers of the
+ * controller, two activations. Not read: another number ("three times"), another set of planeswalkers (all, an opponent's), a line with more text.
+ */
+export const STATIC_LOYALTY_ACTIVATION_LIMIT = defineRule<IrStatic>({
+  id: 'static.loyalty-activation-limit',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 606.3 (Loyalty Abilities)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.',
+  ],
+  rejects: [
+    'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once',
+    'You may activate the loyalty abilities of planeswalkers you control three times each turn rather than only once.',
+    'You may activate the loyalty abilities of planeswalkers twice each turn rather than only once.',
+    'You may activate the loyalty abilities of planeswalkers your opponents control twice each turn rather than only once.',
+    'You may activate the loyalty abilities of creatures you control twice each turn rather than only once.',
+    'You may activate loyalty abilities of planeswalkers you control as though they had haste.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.loyalty-activation-limit',
+    );
+    return {
+      ok: true,
+      value: statement(
+        'static.loyalty-activation-limit',
+        who,
+        { kind: 'loyaltyActivationLimit', timesEachTurn: 2 },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
@@ -763,6 +808,7 @@ export const PLAY_RULE_STATIC_RULES = [
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
   STATIC_ACTIVATE_AS_THOUGH_HASTE,
+  STATIC_LOYALTY_ACTIVATION_LIMIT,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,

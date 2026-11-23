@@ -7291,6 +7291,17 @@ export type StaticEffect =
    */
   | { readonly kind: 'activateAsThoughHaste'; readonly creatures: ObjectFilter }
   /**
+   * "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3, 606.4): while the permanent has the ability, the
+   * loyalty abilities of each planeswalker `planeswalkers` describes (battlefield permanents, read for the controller of the permanent with the permanent as the source) may
+   * be activated `timesEachTurn` times in a turn instead of once; the limit is still counted for the planeswalker as a whole, over all its loyalty abilities, and the
+   * loyalty cost of each activation is paid in full (CR 606.4). Sorcery timing still applies. The greatest `timesEachTurn` among the permanents that apply is the limit.
+   */
+  | {
+      readonly kind: 'loyaltyActivationLimit';
+      readonly planeswalkers: ObjectFilter;
+      readonly timesEachTurn: number;
+    }
+  /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative
    * to the controller of the permanent: "you" is usual, and a spell of another player never gets it, as the permission is the

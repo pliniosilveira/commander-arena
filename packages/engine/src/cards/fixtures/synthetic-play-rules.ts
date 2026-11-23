@@ -204,6 +204,26 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
       "Creatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
     abilities: [attackTax(['1'], true)],
   }),
+  // "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3).
+  singleFace({
+    name: 'SYNTHETIC Twice Oath',
+    manaCost: ['2', 'W', 'U'],
+    types: ['enchantment'],
+    colors: ['W', 'U'],
+    colorIdentity: ['W', 'U'],
+    oracleText:
+      'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'loyaltyActivationLimit',
+          planeswalkers: { types: ['planeswalker'], controller: 'you' },
+          timesEachTurn: 2,
+        },
+      },
+    ],
+  }),
   singleFace({
     name: 'SYNTHETIC Tax Walker Ward',
     manaCost: ['1', 'W'],
