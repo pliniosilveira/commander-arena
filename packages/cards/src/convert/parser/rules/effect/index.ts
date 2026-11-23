@@ -80,6 +80,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
+import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
@@ -683,7 +684,11 @@ const RETURN_SPELL_OR_CREATURE_TO_HAND = map(
 const RETURN_TO_HAND = map(
   sequence(
     literal('return '),
-    operands(SELF_OR_PERMANENT_OPERANDS, 'effect.return'),
+    // "return target creature that player controls to its owner's hand" (Sigil of Sleep, CR 115.1, 109.4, 400.3): the permanents of the player of the trigger.
+    operands(
+      [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+      'effect.return',
+    ),
     spanned(OWNERS_HAND),
   ),
   ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({
@@ -922,6 +927,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from your graveyard to the battlefield tapped under your control',
     "return target creature card from an opponent's graveyard to the battlefield tapped",
     "return ~ to its owner's hand",
+    "return target creature that player controls to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
@@ -1420,6 +1426,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // Deck support issue 578 (Enduring Tenacity): "It's an enchantment." after the return of a card.
+  ...ENDURING_EFFECT_RULES,
   // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
   // CR 105.2, 605.3b (Faeburrow Elder): "for each color among permanents you control, add one mana of that color".

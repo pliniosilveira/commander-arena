@@ -1,5 +1,5 @@
 {
-  "parserVersion": 195,
+  "parserVersion": 196,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -3897,6 +3897,14 @@
       "reasons": [],
       "ast": "e826d588"
     },
+    "51b47053-d169-4627-982f-f29b8630d75f": {
+      "name": "Sigil of Sleep",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f27d2f6c"
+    },
     "51eae7ff-fed9-4afe-8053-7690379449dd": {
       "name": "Gideon, Ally of Zendikar",
       "group": "acceptance",
@@ -7250,6 +7258,14 @@
       "reasons": [],
       "ast": "93a767d7"
     },
+    "98e698ae-1a69-469c-9cfb-0e3fedeb71d4": {
+      "name": "Enduring Tenacity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2a1ce5e8"
+    },
     "990b5e12-6e04-4832-9d64-87278f12cbda": {
       "name": "Betor, Ancestor's Voice",
       "group": "acceptance",
@@ -9762,6 +9778,14 @@
       "reasons": [],
       "ast": "39b4bf21"
     },
+    "cd4db500-0017-46c6-be94-1bf48f686b6a": {
+      "name": "Sygg, River Cutthroat",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae734dc7"
+    },
     "cdfa9de4-7d7d-4638-8ac4-793ece6372dd": {
       "name": "Changing Loyalty",
       "group": "acceptance",
@@ -12019,8 +12043,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1191,
-      "total": 1210
+      "supported": 1194,
+      "total": 1213
     }
   }
 }
