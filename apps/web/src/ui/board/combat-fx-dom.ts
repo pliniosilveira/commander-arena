@@ -24,7 +24,9 @@ const cssEscape = (value: string): string =>
 
 /** The tile (or other card element) of an object on the board, if it is on screen. */
 export function tileOf(id: string): HTMLElement | null {
-  const el = document.querySelector(`.board [data-object-id="${cssEscape(id)}"]`);
+  const el = document.querySelector(
+    `:is(.board, .table-board) [data-object-id="${cssEscape(id)}"]`,
+  );
   return el instanceof HTMLElement ? el : null;
 }
 

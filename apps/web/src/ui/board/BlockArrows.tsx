@@ -45,7 +45,9 @@ const cssEscape = (value: string): string =>
     : value.replace(/["\\]/g, '\\$&');
 
 function boxOf(id: string): Box | null {
-  const el = document.querySelector(`.board [data-object-id="${cssEscape(id)}"]`);
+  const el = document.querySelector(
+    `:is(.board, .table-board) [data-object-id="${cssEscape(id)}"]`,
+  );
   if (el === null) return null;
   const rect = el.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 ? rect : null;
