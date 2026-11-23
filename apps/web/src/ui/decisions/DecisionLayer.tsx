@@ -238,6 +238,12 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
             }}
           >
             <DragProvider plan={dnd}>{children}</DragProvider>
+            {/* Inside the gate: the dock's "Open graveyard" button of a targets question asks the board to open it. */}
+            {dockSlot === undefined
+              ? dock
+              : dockSlot === null || dock === null
+                ? null
+                : createPortal(dock, dockSlot)}
           </ZoneGateProvider>
         </ZoneDecisionProvider>
       </InteractionProvider>
@@ -265,11 +271,6 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
           index={objectIndex(overlayProps.view)}
         />
       ) : null}
-      {dockSlot === undefined
-        ? dock
-        : dockSlot === null || dock === null
-          ? null
-          : createPortal(dock, dockSlot)}
     </div>
   );
 }

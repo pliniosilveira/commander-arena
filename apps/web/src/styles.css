@@ -412,6 +412,9 @@ button {
   bottom: 8px;
 }
 .settings-dialog {
+  /* Above the card preview (45): the top of the stack's card is shown by itself, takes the pointer,
+     and must not cover a setting the player is about to click. */
+  z-index: 46;
   height: auto;
   width: var(--controls-width);
   overflow-y: auto;

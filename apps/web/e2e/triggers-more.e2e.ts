@@ -13,7 +13,7 @@ import { settled } from './harness/settle';
 const game = (seed: number) =>
   `/?autostart=synthetic-triggers-more,synthetic-triggers-more&seed=${seed}`;
 
-const SEED = { combatTrigger: 2, unlessPays: 2 };
+const SEED = { combatTrigger: 2, unlessPays: 4 };
 
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { handCard } from './harness/locators';
+import { handCard, permanentTarget } from './harness/locators';
 import { showAllLogLines, toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
@@ -164,11 +164,10 @@ test('a mode with a target: the prompt and the dock show the mode, and its effec
   const prompt =
     'Mode 1: Deals 3 damage to target creature. Choose a target for SYNTHETIC Three Way Charm.';
   await expect(page.getByText(prompt)).toBeVisible();
-  const dock = page.getByRole('region', { name: 'Legal targets' });
-  await expect(
-    dock.getByRole('heading', { name: 'Mode 1: Deals 3 damage to target creature' }),
-  ).toBeVisible();
-  await dock.getByRole('button').first().click();
+  // The legal targets are creatures on the board, chosen there: the dock has no list (and so no
+  // mode heading) when nothing off the board can be chosen (#555); the prompt names the mode.
+  await expect(page.getByRole('region', { name: 'Legal targets' })).toHaveCount(0);
+  await permanentTarget(page, /./).first().click();
   await primary(page).click();
 
   await expect(logText(page)).toContainText('You choose: Deals 3 damage to target creature.');
@@ -234,7 +233,7 @@ test('"choose two": Cancel and Esc rewind the cast, two modes are needed, the di
       'Mode 1: Deals 2 damage to target creature. Choose a target for SYNTHETIC Twin Charm.',
     ),
   ).toBeVisible();
-  await page.getByRole('region', { name: 'Legal targets' }).getByRole('button').first().click();
+  await permanentTarget(page, /./).first().click();
   await primary(page).click();
   await expect(logText(page)).toContainText(
     'You choose: Deals 2 damage to target creature and Draw a card.',

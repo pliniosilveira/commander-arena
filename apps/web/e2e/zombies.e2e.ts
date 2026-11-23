@@ -226,10 +226,16 @@ test('A card cast from the graveyard: the ability opens a window, the chip says 
   await mine(page, chanter).first().click();
 
   // The ability needs a Zombie creature card of the graveyard as its target; the stack says what it does.
-  const targets = page.getByRole('region', { name: 'Legal targets' }).getByRole('button');
+  // Every legal target is in one graveyard: the dock offers a button that opens it, and the card is
+  // chosen and confirmed in the picker (#555).
   await expect(prompt(page)).toHaveText(`Choose a target for ${chanter}.`);
-  await targets.filter({ hasText: zombie }).first().click();
-  await primary(page).click();
+  await page
+    .getByRole('region', { name: 'Legal targets' })
+    .getByRole('button', { name: 'Open graveyard' })
+    .click();
+  const picker = page.getByRole('dialog', { name: 'You graveyard' });
+  await picker.getByRole('button', { name: zombie }).first().click();
+  await picker.locator('.board-modal-actions .dec-btn-primary').click();
   await settled(page);
   await expect(
     page.getByRole('region', { name: 'Stack', exact: true }).locator('.pnl-stack-when', {

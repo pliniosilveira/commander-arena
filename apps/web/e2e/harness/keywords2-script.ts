@@ -18,6 +18,17 @@ export const bears = (page: Page, untapped = false): Locator =>
     `[data-field-seat="0"] .board-tile${untapped ? ':not(.is-tapped)' : ''}:has(.board-tile-name:text-is("Grizzly Bears"))`,
   );
 
+/**
+ * How many permanents the tiles stand for: equal permanents are one tile with `data-count` (a stack, and
+ * the tapped and the untapped ones are separate stacks), so counting tiles undercounts.
+ */
+export async function permanents(tiles: Locator): Promise<number> {
+  const counts = await tiles.evaluateAll((els) =>
+    els.map((el) => Number(el.getAttribute('data-count') ?? 1)),
+  );
+  return counts.reduce((sum, n) => sum + n, 0);
+}
+
 /** The number of untapped lands the human has. */
 export async function untappedLands(page: Page): Promise<number> {
   return page
@@ -58,7 +69,11 @@ export async function drive(
   { until, cast, spare, keep = [], steps = 700 }: Drive,
 ): Promise<void> {
   const keepButton = page.getByRole('button', { name: 'Keep', exact: true });
-  const targets = page.getByRole('region', { name: 'Legal targets' });
+  // The legal targets are on the board (the panel lists only those it does not show), so the
+  // question is recognised by its prompt in the action bar.
+  const targets = page.locator('.dec-prompt', {
+    hasText: /^Choose (a|an|\d+|up to \d+) targets?\b/,
+  });
   for (let step = 0; step < steps; step += 1) {
     await settled(page);
     if (await keepButton.isVisible()) {
