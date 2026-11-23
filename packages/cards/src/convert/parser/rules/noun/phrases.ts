@@ -1408,7 +1408,17 @@ export function graveyardPhrase(
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, notSupertypes, notTypes, extra, subtypeAnyOf, historic },
+      {
+        types,
+        anyOf,
+        subtypes,
+        notSubtypes,
+        notSupertypes,
+        notTypes,
+        extra,
+        subtypeAnyOf,
+        historic,
+      },
       ,
       chosen,
       compared,

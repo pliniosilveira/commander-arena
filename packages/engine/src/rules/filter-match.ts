@@ -475,6 +475,14 @@ export function matchesFilterWith(
     }
     if (!(d.power < power)) return false;
   }
+  // CR 208.1, 608.2c (Conformer Shuriken): "has greater power than this creature": more than the power of this ability's source.
+  if (filter.powerGreaterThanSource === true) {
+    const power = ctx.sourcePower;
+    if (power === null || power === undefined || d.power === null || d.power === undefined) {
+      return false;
+    }
+    if (!(d.power > power)) return false;
+  }
   // CR 208.1, 608.2c: "with power greater than target creature's power": more than the power of the object the effect names.
   if (filter.powerGreaterThan !== undefined) {
     const limit = ctx.powerLimit;

@@ -57,7 +57,7 @@ export const EFFECT_LEAD_GROUP_BASE_PT = defineRule<Clauses>({
       family<IrDuration>('duration'),
       literal(', '),
       family<IrNoun>('noun', { only: ['noun.plain-permanents', 'noun.each-permanent'] }),
-      pattern(/ has? /u),
+      pattern(/ (?:has|have) /u),
       spanned(pattern(/base power and toughness (?:(\d+)\/(\d+)|X\/X)(?![\p{L}\p{N}/])/u)),
       optional(spanned(pattern(new RegExp(` and gain all creature types${BOUNDARY}`, 'u'))), null),
     )(ctx, pos);

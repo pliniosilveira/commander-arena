@@ -75,7 +75,10 @@ import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { SUBJECT_GREATER_CONDITION_RULES } from './subject-greater';
-import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
+import {
+  CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
+  CONDITION_THAT_OBJECT_POWER,
+} from './that-object-power';
 import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
@@ -656,6 +659,7 @@ export const CONDITION_RULES = [
   CONDITION_ADDITIONAL_COST_PAID,
   CONDITION_X_AT_LEAST,
   CONDITION_THAT_OBJECT_POWER,
+  CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
   ...EXPERIENCE_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,

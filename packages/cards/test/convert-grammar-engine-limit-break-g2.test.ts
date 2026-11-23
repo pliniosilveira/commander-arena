@@ -203,7 +203,12 @@ describe('Puresteel Paladin: draws when an Equipment enters; Equipment have equi
       .define(syntheticCard(BLADE))
       .seat(0)
       .library('Plains', 'Plains', 'Plains')
-      .battlefield(PALADIN, BLADE, 'Grizzly Bears', ...Array.from({ length: artifacts - 1 }, () => 'Sol Ring'))
+      .battlefield(
+        PALADIN,
+        BLADE,
+        'Grizzly Bears',
+        ...Array.from({ length: artifacts - 1 }, () => 'Sol Ring'),
+      )
       .seat(1)
       .build();
 
@@ -303,7 +308,7 @@ describe('Elena, Turk Recruit: a non-Assassin historic card returns; casting a h
     expect(() => g.act(0).chooseTargets({ name: ASSASSIN })).toThrow();
   });
 
-  test.each(['Sol Ring', LEGEND])('%s returns to its owner\'s hand', (name) => {
+  test.each(['Sol Ring', LEGEND])("%s returns to its owner's hand", (name) => {
     const g = enter();
     g.act(0).chooseTargets({ name });
     g.passAll();
@@ -350,10 +355,22 @@ describe('Cid, Freeflier Pilot: flying on your turn; returns an Equipment or Veh
     expect(validateCard(cid)).toEqual([]);
   });
 
-  test('Cid has flying during its controller\'s turn only', () => {
-    const mine = scenario().define(cid).seat(0).battlefield(CID).seat(1).at('precombatMain', { active: 0 }).build();
+  test("Cid has flying during its controller's turn only", () => {
+    const mine = scenario()
+      .define(cid)
+      .seat(0)
+      .battlefield(CID)
+      .seat(1)
+      .at('precombatMain', { active: 0 })
+      .build();
     mine.expect.derived(CID, { keywords: ['flying'] });
-    const theirs = scenario().define(cid).seat(0).battlefield(CID).seat(1).at('precombatMain', { active: 1 }).build();
+    const theirs = scenario()
+      .define(cid)
+      .seat(0)
+      .battlefield(CID)
+      .seat(1)
+      .at('precombatMain', { active: 1 })
+      .build();
     theirs.expect.derived(CID, { keywords: [] });
   });
 
@@ -400,12 +417,6 @@ describe('Sephiroth, Fallen Hero: a cell counter, then each modified creature yo
       .battlefield('Giant Spider')
       .at('beginningOfCombat', { active: 0 })
       .build();
-
-  const attack = (g: ReturnType<typeof board>) => {
-    g.advanceTo('declareAttackers');
-    g.act(0).declareAttackers([{ attacker: SEPH }]);
-    g.passAll();
-  };
 
   test('is valid', () => {
     expect(validateCard(seph)).toEqual([]);
@@ -475,11 +486,13 @@ describe('Sephiroth, Fallen Hero: a cell counter, then each modified creature yo
       .seat(1)
       .at('precombatMain', { active: 0 })
       .build();
-    g.act(0).activate(SEPH, { pay: true, sacrifice: 'Grizzly Bears' });
+    // Only the Bears are modified (the Equipment is attached), so they are the creature the cost gives up.
+    g.act(0).activate(SEPH, { pay: true });
     g.passAll();
     g.expect.zone(SEPH, 'battlefield', { seat: 0 });
     g.expect.tapped(SEPH);
     g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.zone('Llanowar Elves', 'battlefield', { seat: 0 });
     g.expect.invariants();
   });
 
@@ -492,6 +505,94 @@ describe('Sephiroth, Fallen Hero: a cell counter, then each modified creature yo
       .seat(1)
       .at('precombatMain', { active: 0 })
       .build();
-    expect(() => g.act(0).activate(SEPH, { pay: true, sacrifice: 'Llanowar Elves' })).toThrow();
+    expect(() => g.act(0).activate(SEPH, { pay: true })).toThrow();
+  });
+});
+
+describe('Conformer Shuriken: tap a defender, +1/+1 counters equal to the power it has over the bearer (CR 208.1, 608.2c, 508.1, 122.6)', () => {
+  const SHURIKEN = 'Conformer Shuriken';
+  const shuriken = real(SHURIKEN);
+
+  const game = (seats: 2 | 3 = 2) => {
+    const b = scenario({ seats })
+      .define(shuriken)
+      .seat(0)
+      .battlefield('Grizzly Bears')
+      .battlefield(SHURIKEN, { attachedTo: 'Grizzly Bears' })
+      .seat(1)
+      .battlefield('Serra Angel', 'Llanowar Elves');
+    return (seats === 3 ? b.seat(2).battlefield('Giant Spider') : b)
+      .at('beginningOfCombat', { active: 0 })
+      .build();
+  };
+  const attack = (g: ReturnType<typeof game>, victim: string) => {
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: 'Grizzly Bears' }]);
+    g.act(0).chooseTargets({ name: victim });
+    g.passAll();
+  };
+
+  test('is valid', () => {
+    expect(validateCard(shuriken)).toEqual([]);
+  });
+
+  test('a creature with greater power is tapped and the bearer gets counters equal to the difference', () => {
+    const g = game();
+    attack(g, 'Serra Angel');
+    g.expect.tapped('Serra Angel');
+    g.expect.counters('Grizzly Bears', { '+1/+1': 2 }); // Serra Angel 4, Grizzly Bears 2 (Equipment gives no bonus)
+    g.expect.pt('Grizzly Bears', 4, 4);
+    g.expect.invariants();
+  });
+
+  test('a creature with less power is tapped and no counters are put', () => {
+    const g = game();
+    attack(g, 'Llanowar Elves');
+    g.expect.tapped('Llanowar Elves');
+    g.expect.counters('Grizzly Bears', {});
+    g.expect.pt('Grizzly Bears', 2, 2);
+  });
+
+  test('a creature with equal power is tapped and no counters are put', () => {
+    const g = scenario()
+      .define(shuriken)
+      .seat(0)
+      .battlefield('Grizzly Bears', { label: 'mine' })
+      .battlefield(SHURIKEN, { attachedTo: 'mine' })
+      .seat(1)
+      .battlefield('Grizzly Bears', { label: 'theirs' })
+      .at('beginningOfCombat', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: 'mine' }]);
+    g.passAll();
+    g.expect.tapped('theirs');
+    g.expect.counters('mine', {});
+  });
+
+  test('only a creature the defending player controls can be tapped, in a game of three', () => {
+    const g = game(3);
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: 'Grizzly Bears', target: { player: 1 } }]);
+    expect(() => g.act(0).chooseTargets({ name: 'Giant Spider' })).toThrow();
+    g.act(0).chooseTargets({ name: 'Serra Angel' });
+    g.passAll();
+    g.expect.counters('Grizzly Bears', { '+1/+1': 2 });
+  });
+
+  test('another creature that attacks does not trigger it', () => {
+    const g = scenario()
+      .define(shuriken)
+      .seat(0)
+      .battlefield('Grizzly Bears', 'Llanowar Elves')
+      .battlefield(SHURIKEN, { attachedTo: 'Grizzly Bears' })
+      .seat(1)
+      .battlefield('Serra Angel')
+      .at('beginningOfCombat', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: 'Llanowar Elves' }]);
+    g.passAll();
+    g.expect.tapped('Serra Angel', false);
   });
 });

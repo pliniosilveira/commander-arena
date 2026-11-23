@@ -1137,6 +1137,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notAttacking',
     'blocking',
     'powerLessThanSource',
+    // Conformer Shuriken: `ObjectFilter.powerGreaterThanSource`, "that creature has greater power than this creature".
+    'powerGreaterThanSource',
     // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
     'monarchController',
     'restrictBlockers',
@@ -2186,6 +2188,8 @@ export const SELECTOR_KINDS = [
   'blocking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "That creature has greater power than this creature" (Conformer Shuriken, CR 208.1): the engine's `ObjectFilter.powerGreaterThanSource`. */
+  'powerGreaterThanSource',
   /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
   'monarchController',
   /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
