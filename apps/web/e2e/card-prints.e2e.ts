@@ -115,9 +115,17 @@ test('a player’s own deck lists the printings of a card, and a chosen one is s
     /large\/front\/p2\.jpg/,
   );
   await expect(dialog.getByText('Borderless')).toBeVisible();
-  await dialog.getByRole('button', { name: 'Use in this deck' }).click();
-  await expect(dialog.getByRole('status')).toContainText('Saved');
-  await expect(dialog.getByRole('button', { name: 'Use in this deck' })).toBeDisabled();
+  // The button sits under the picture, not after the list, and saving closes the dialog.
+  const use = dialog.getByRole('button', { name: 'Use in this deck' });
+  const pictureBox = await dialog.locator('img.deck-card-large').boundingBox();
+  const useBox = await use.boundingBox();
+  expect(useBox?.y ?? 0).toBeGreaterThan((pictureBox?.y ?? 0) + (pictureBox?.height ?? 0) - 1);
+  await use.click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('.deck-card img').first()).toHaveAttribute(
+    'src',
+    /normal\/front\/p2\.jpg/,
+  );
 
   // The choice is written into the saved deck: it is still there after a reload.
   await page.reload();

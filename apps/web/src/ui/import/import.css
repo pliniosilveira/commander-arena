@@ -471,6 +471,7 @@ code {
   align-items: start;
 }
 .deck-prints-picture .deck-card-large {
+  max-height: 62vh;
   width: 100%;
   aspect-ratio: 488 / 680;
   object-fit: contain;
@@ -479,6 +480,7 @@ code {
   grid-template-columns: 1fr;
 }
 .deck-prints-use {
+  justify-content: center;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

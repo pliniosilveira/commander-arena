@@ -22,7 +22,7 @@ export function CardPrintsDialog({
 }) {
   const state = useCardPrints(card.name);
   const [chosen, setChosen] = useState<string | null>(null);
-  const [saving, setSaving] = useState<'idle' | 'busy' | 'done' | string>('idle');
+  const [saving, setSaving] = useState<'idle' | 'busy' | string>('idle');
   const prints = state.status === 'ready' ? state.prints : [];
 
   const own = withoutQuery(imageOf(card, 'large'));
@@ -40,7 +40,8 @@ export function CardPrintsDialog({
     if (onUse === undefined || selected === undefined) return;
     setSaving('busy');
     onUse(selected).then(
-      () => setSaving('done'),
+      // Saved: the dialog has done its job.
+      onClose,
       (e) => setSaving(e instanceof Error ? e.message : String(e)),
     );
   };
@@ -59,6 +60,23 @@ export function CardPrintsDialog({
             <p>{card.faces.map((f) => `${f.name}: ${f.oracleText}`).join('\n')}</p>
           ) : (
             <img className="deck-card-large" src={picture} alt={card.name} />
+          )}
+          {onUse !== undefined && (
+            <div className="deck-prints-use">
+              <button
+                type="button"
+                className="scr-btn"
+                disabled={!canUse || saving === 'busy'}
+                onClick={use}
+              >
+                Use in this deck
+              </button>
+              {saving !== 'idle' && saving !== 'busy' && (
+                <span role="alert" className="imp-alert">
+                  {saving}
+                </span>
+              )}
+            </div>
           )}
         </div>
         {selectable && (
@@ -97,26 +115,6 @@ export function CardPrintsDialog({
                   );
                 })}
               </fieldset>
-            )}
-            {onUse !== undefined && prints.length > 0 && (
-              <div className="deck-prints-use">
-                <button
-                  type="button"
-                  className="scr-btn"
-                  disabled={!canUse || saving === 'busy'}
-                  onClick={use}
-                >
-                  Use in this deck
-                </button>
-                {saving === 'done' && (
-                  <span role="status">Saved: the game will draw this printing.</span>
-                )}
-                {saving !== 'idle' && saving !== 'busy' && saving !== 'done' && (
-                  <span role="alert" className="imp-alert">
-                    {saving}
-                  </span>
-                )}
-              </div>
             )}
           </section>
         )}
