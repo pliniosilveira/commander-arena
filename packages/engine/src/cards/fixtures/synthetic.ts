@@ -34,6 +34,7 @@ import { SYNTHETIC_CANT_SACRIFICE_LIST } from './synthetic-cant-sacrifice';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
+import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
 import { SYNTHETIC_CHOSEN_WALKER_LIST } from './synthetic-chosen-walker';
 import { SYNTHETIC_COLOR_AMONG_MANA_LIST } from './synthetic-color-among-mana';
 import { SYNTHETIC_COMBAT_LIST } from './synthetic-combat';
@@ -67,14 +68,19 @@ import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
 import { SYNTHETIC_DIVIDE_ABILITIES_LIST } from './synthetic-divide-abilities';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
+import { SYNTHETIC_EACH_TYPE_LIST } from './synthetic-each-type';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
 import { SYNTHETIC_ENCHANTED_LAND_MANA_LIST } from './synthetic-enchanted-land-mana';
+import { SYNTHETIC_ENERGY_LIST } from './synthetic-energy';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
+import { SYNTHETIC_EVASION_LIMITS_LIST } from './synthetic-evasion-limits';
+import { SYNTHETIC_EVOKE_GRANT_LIST } from './synthetic-evoke-grant';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
+import { SYNTHETIC_EXTRA_TURNS_LIST } from './synthetic-extra-turns';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -91,6 +97,7 @@ import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
 import { SYNTHETIC_GISA_G3_LIST } from './synthetic-gisa-g3';
 import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
 import { SYNTHETIC_GISA_G5_LIST } from './synthetic-gisa-g5';
+import { SYNTHETIC_GRANTED_STATICS_LIST } from './synthetic-granted-statics';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GRAVEYARD_COPY_LIST } from './synthetic-graveyard-copy';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
@@ -124,6 +131,7 @@ import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
 import { SYNTHETIC_LIFE_COST_LIST } from './synthetic-life-cost';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
+import { SYNTHETIC_LIFE_LOST_GROUP_LIST } from './synthetic-life-lost-group';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
 import { SYNTHETIC_LIVING_DEATH_LIST } from './synthetic-living-death';
 import { SYNTHETIC_LOREHOLD_G1_LIST } from './synthetic-lorehold-g1';
@@ -133,6 +141,7 @@ import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
 import { SYNTHETIC_MANA_GROUP_F_LIST } from './synthetic-mana-group-f';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
+import { SYNTHETIC_MANA_NOT_GENERIC_LIST } from './synthetic-mana-not-generic';
 import { SYNTHETIC_MANA_PLUS_LIST } from './synthetic-mana-plus';
 import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
 import { SYNTHETIC_MANA_SPENT_LIST } from './synthetic-mana-spent';
@@ -208,6 +217,7 @@ import { SYNTHETIC_VOTE_LIST } from './synthetic-vote';
 import { SYNTHETIC_VRASKA_LIST } from './synthetic-vraska';
 import { SYNTHETIC_WARD_LIST } from './synthetic-ward';
 import { SYNTHETIC_X_LIST } from './synthetic-x';
+import { SYNTHETIC_YAROK_LIST } from './synthetic-yarok';
 
 export const SYNTHETIC_PREFIX = 'SYNTHETIC ';
 
@@ -412,6 +422,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_VEHICLE_LIST,
   ...SYNTHETIC_PREVENTION_LIST,
   ...SYNTHETIC_DAMAGE_ORDER_LIST,
+  ...SYNTHETIC_EACH_TYPE_LIST,
   ...SYNTHETIC_DAMAGE_BONUS_LIST,
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_ROOM_LIST,
@@ -436,10 +447,13 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PT_LIST,
   ...SYNTHETIC_ALT_COST_LIST,
   ...SYNTHETIC_EXERT_LIST,
+  ...SYNTHETIC_EXTRA_TURNS_LIST,
+  ...SYNTHETIC_GRANTED_STATICS_LIST,
   ...SYNTHETIC_AMOUNT_LIST,
   ...SYNTHETIC_ANGELS_SHAPES_LIST,
   ...SYNTHETIC_ANGELS_STATICS_LIST,
   ...SYNTHETIC_LIFE_GAIN_LIST,
+  ...SYNTHETIC_LIFE_LOST_GROUP_LIST,
   ...SYNTHETIC_LOREHOLD_G1_LIST,
   ...SYNTHETIC_LOREHOLD_G2_LIST,
   ...SYNTHETIC_LOREHOLD_G3_LIST,
@@ -455,10 +469,12 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_COMMANDER_TRIGGER_LIST,
   ...SYNTHETIC_COUNTER_DOUBLING_LIST,
   ...SYNTHETIC_MANA_RESTRICTED_LIST,
+  ...SYNTHETIC_MANA_NOT_GENERIC_LIST,
   ...SYNTHETIC_NIV_GROUP_2B_B_LIST,
   ...SYNTHETIC_HASHATON_G1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
+  ...SYNTHETIC_YAROK_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
   ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
@@ -478,6 +494,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_SLIVER_B_LIST,
   ...SYNTHETIC_DANITHA_G6_LIST,
   ...SYNTHETIC_DANITHA_G7_LIST,
+  ...SYNTHETIC_ENERGY_LIST,
   ...SYNTHETIC_FEATHER_G2_LIST,
   ...SYNTHETIC_GISA_G5_LIST,
   ...SYNTHETIC_HYLDA_G2_LIST,
@@ -507,11 +524,13 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HOFRI_LIST,
   ...SYNTHETIC_ETERNAL_MIGHT_LIST,
   ...SYNTHETIC_JESKAI_FLASHBACK_LIST,
+  ...SYNTHETIC_EVOKE_GRANT_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
+  ...SYNTHETIC_EVASION_LIMITS_LIST,
   ...SYNTHETIC_ENCHANTED_LAND_MANA_LIST,
   ...SYNTHETIC_POWER_ABOVE_TARGET_LIST,
   ...SYNTHETIC_UNBLOCKED_LIST,
@@ -583,6 +602,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ATTACK_LIMIT_LIST,
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_SLIVER_C_LIST,
+  ...SYNTHETIC_CHOSEN_REVEAL_LIST,
   ...SYNTHETIC_PILES_LIST,
   ...SYNTHETIC_HASHATON_G2_LIST,
   ...SYNTHETIC_BLIGHT_CURSE_LIST,

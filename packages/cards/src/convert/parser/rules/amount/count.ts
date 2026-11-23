@@ -57,6 +57,12 @@ const TARGET_PLAYER_CONTROLS = pattern(
   new RegExp(` (target (?:player|opponent)) controls${BOUNDARY}`, 'iu'),
 );
 
+/**
+ * " its controller controls" (Observed Stasis, CR 109.4, 608.2c): the permanents of the controller of the object an earlier sentence names ("remove enchanted creature from combat. Then
+ * draw a card for each tapped creature its controller controls."). The controller is a noun of `noun.its-controller` whose "it" the binding pass finds.
+ */
+const ITS_CONTROLLER_CONTROLS = pattern(new RegExp(` its controller controls${BOUNDARY}`, 'iu'));
+
 /** " they control": the permanents of the player an earlier noun of the text names (see `battlefield`). */
 const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
 
@@ -177,9 +183,25 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       // Only with "other": the creatures attacking besides the source.
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
+      const itsController = targeted.ok ? null : ITS_CONTROLLER_CONTROLS(ctx, end);
       // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
-      const they = targeted.ok ? null : THEY_CONTROL(ctx, end);
-      if (they?.ok === true) {
+      const they = targeted.ok || itsController?.ok === true ? null : THEY_CONTROL(ctx, end);
+      if (itsController?.ok === true) {
+        const start = end + 1;
+        const controller: IrNoun = {
+          kind: 'noun',
+          det: 'controllerOf',
+          filter: { raw: 'its controller' },
+          upTo: false,
+          plural: false,
+          other: false,
+          of: possessedNoun('noun.its-controller', 'its', start),
+          span: { start, end: start + 'its controller'.length },
+          rule: 'noun.its-controller',
+        };
+        filter = { ...filter, controller: { noun: controller } };
+        end = itsController.pos;
+      } else if (they?.ok === true) {
         const player = family<IrNoun>('noun', { only: ['noun.they'] })(ctx, end + 1);
         if (!player.ok) return fail(ctx, end);
         filter = { ...filter, controller: { noun: player.value } };
@@ -211,6 +233,26 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (shares.ok) {
         filter = { ...filter, sharesCreatureTypeWithSource: true };
         end = shares.pos;
+      }
+    }
+    // Shared Animosity (CR 508.1, 205.3m): "each other attacking creature that shares a creature type with it", whoever controls them: "other" and "it" are the creature the
+    // trigger is about, which the lowering of the ability checks (the engine's `otherThanTriggerSubject` and `sharesCreatureTypeWith: 'triggerSubject'`).
+    if (!plural && filter.controller === undefined && filter.attacking === true && other.value) {
+      const shares = quiet(SHARES_CREATURE_TYPE_WITH_IT)(ctx, end);
+      if (shares.ok) {
+        return {
+          ok: true,
+          value: {
+            filter: {
+              ...filter,
+              sharesCreatureTypeWithIt: true,
+              otherThanIt: true,
+              raw: ctx.text.slice(pos, shares.pos),
+            },
+            other: false,
+          },
+          pos: shares.pos,
+        };
       }
     }
     return {

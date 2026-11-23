@@ -159,7 +159,9 @@ export function LogPanel() {
           {groups.length === 0 && <p className="pnl-empty">Nothing has happened yet</p>}
           {groups.map((group) => (
             <div className="pnl-log-group" key={group.turn}>
-              <h3 className="pnl-log-turn">{groupHeading(group, view?.viewer ?? 0)}</h3>
+              <h3 className="pnl-log-turn">
+                {groupHeading(group, view?.viewer ?? 0, view?.seats.length)}
+              </h3>
               <ul className="pnl-log-list">
                 {group.entries.map((entry) => {
                   const segments = link(entry.text, entry.objects);

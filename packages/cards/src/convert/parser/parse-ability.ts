@@ -65,6 +65,8 @@ const SPELL_STATICS = [
   'static.free-cast',
   // Flare of Malice (CR 118.9, 701.21a): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost."
   'static.sacrifice-alt-cost',
+  // Snuff Out (CR 118.9, 118.4): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost."
+  'static.pay-life-alt-cost',
 ] as const;
 
 const FAMILIES: ReadonlySet<string> = new Set([
@@ -117,6 +119,28 @@ type Read<T> =
   | { readonly ok: true; readonly value: T; readonly recognised: readonly string[] }
   | { readonly ok: false; readonly failure: ParseFailure };
 
+const AND_PLAYER_MAY =
+  / and (?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may )/u;
+
+/**
+ * A sentence that goes on with " and target opponent may ..." cut in two of the same length: the first ends in a period where the space before "and" was, the second starts at the
+ * player noun, so that every span of the text still holds. Null when the sentence has no such join.
+ */
+function splitBeforePlayerMay(
+  text: string,
+  span: Span,
+): { readonly text: string; readonly dot: number; readonly next: number } | null {
+  const found = AND_PLAYER_MAY.exec(text.slice(span.start, span.end));
+  if (found === null) return null;
+  const dot = span.start + found.index;
+  const next = dot + found[0].length;
+  return {
+    text: `${text.slice(0, dot)}.${' '.repeat(next - dot - 1)}${text.slice(next)}`,
+    dot,
+    next,
+  };
+}
+
 /** The sentences of a body, each read by the sentence parser; the first failure stops. */
 function readBody(
   sk: AbilitySkeleton,
@@ -140,7 +164,23 @@ function readSentences(
   const seen = [...before];
   for (const span of spans) {
     const run = runDetailed(sentence, text, span.start, span.end, rules);
-    if (!run.ok) return { ok: false, failure: failureOf(run, 0, 'effect', fallback, seen) };
+    if (!run.ok) {
+      // CR 608.2d, 101.4 (Tataru Taru): "You draw a card and target opponent may draw a card." is two instructions in order, the second asking a player; read as two sentences.
+      const split = splitBeforePlayerMay(text, span);
+      const halves =
+        split === null
+          ? null
+          : [
+              runDetailed(sentence, split.text, span.start, split.dot + 1, rules),
+              runDetailed(sentence, split.text, split.next, span.end, rules),
+            ];
+      if (halves?.[0]?.ok !== true || halves[1]?.ok !== true) {
+        return { ok: false, failure: failureOf(run, 0, 'effect', fallback, seen) };
+      }
+      sentences.push(halves[0].value, halves[1].value);
+      seen.push(...halves[0].recognised, ...halves[1].recognised);
+      continue;
+    }
     sentences.push(run.value);
     seen.push(...run.recognised);
   }
@@ -212,6 +252,11 @@ function readModes(
   );
   if (!header.ok) {
     return { ok: false, failure: failureOf(header, 0, 'modal', 'modal.choose', before) };
+  }
+  // Issue 105: "Choose one" with no dash is the lead of a modal activated ability whose restriction follows it; anywhere else it is a lead line no rule reads.
+  if (header.value.rule === 'modal.choose-bare' && sk.head !== 'activated') {
+    const failure = { progress: 0, closestRule: 'modal.choose', slot: 'modal' as const };
+    return { ok: false, failure: { ...failure, recognised: before } };
   }
   const seen = unique([...before, ...header.recognised]);
   const bodies: IrBody[] = [];

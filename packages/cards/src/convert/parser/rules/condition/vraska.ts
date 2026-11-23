@@ -93,6 +93,41 @@ export const CONDITION_CARD_LEFT_GRAVEYARD = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.descended-this-turn`: "you descended this turn" (Enterprising Scallywag): a permanent card was put into your graveyard from anywhere this turn (the
+ * keyword action's rule text is not checked here; CR 603.4, 404.1). The engine's `descendedThisTurn`, read as the event happens and again as the ability resolves. Not read:
+ * another player ("an opponent descended"), a count, another time, "descended" with no "this turn".
+ */
+export const CONDITION_DESCENDED_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.descended-this-turn',
+  family: 'condition',
+  leading: ['you'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 404.1 (Graveyard)'],
+  examples: ['you descended this turn'],
+  rejects: [
+    'you descended this turn.',
+    'an opponent descended this turn',
+    'you descended',
+    'you descended twice this turn',
+    'you descended last turn',
+    'you have descended this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/you descended this turn(?![\p{L}\p{N}])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'descendedThisTurn' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.descended-this-turn',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.cast-from-graveyard`: "~ was cast from a graveyard" (CR 601.2a, 603.4; the card's own name or "this spell" reads as `~`): the spell the
  * text belongs to was cast from a graveyard (with Flashback or any other permission). The engine's `castFromZone` of the graveyard. Not read: another
  * zone, "from your graveyard" (the zone is the owner's graveyard either way, but the words are not those of the card), another spell ("that spell").
@@ -123,6 +158,47 @@ export const CONDITION_CAST_FROM_GRAVEYARD = defineRule<IrCondition>({
         test: { kind: 'castFromZone', zone: 'graveyard' },
         span: { start: pos, end: r.pos },
         rule: 'condition.cast-from-graveyard',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.cast-from-hand`: "~ was cast from your hand" (CR 601.2a, 603.4, 702.88a: Transpose's "If this spell was cast from your hand"; the card's own name or "this spell" reads as `~`):
+ * the spell the text belongs to was cast from its caster's hand. The engine's `castFromZone` of the hand. Not read: another zone, "a hand", "their hand", "was not cast from your hand",
+ * another spell ("that spell").
+ */
+export const CONDITION_CAST_FROM_HAND = defineRule<IrCondition>({
+  id: 'condition.cast-from-hand',
+  family: 'condition',
+  leading: ['~'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 603.4 (Handling Triggered Abilities)',
+    'CR 702.88a (Rebound)',
+  ],
+  examples: ['~ was cast from your hand'],
+  rejects: [
+    '~ was cast from your hand.',
+    '~ was cast from a hand',
+    '~ was cast from their hand',
+    '~ was cast from exile',
+    '~ was cast from your graveyard',
+    '~ was not cast from your hand',
+    '~ was cast from your hand or exile',
+    'that spell was cast from your hand',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/~ was cast from your hand(?![\p{L}\p{N}])(?! or)/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'castFromZone', zone: 'hand' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.cast-from-hand',
       },
       pos: r.pos,
     };
@@ -226,5 +302,7 @@ export const VRASKA_CONDITION_RULES = [
   CONDITION_IT_TARGETS,
   CONDITION_MANA_SPENT_AT_LEAST,
   CONDITION_CARD_LEFT_GRAVEYARD,
+  CONDITION_DESCENDED_THIS_TURN,
   CONDITION_CAST_FROM_GRAVEYARD,
+  CONDITION_CAST_FROM_HAND,
 ];

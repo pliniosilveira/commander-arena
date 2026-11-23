@@ -287,3 +287,55 @@ describe('"if an opponent was dealt N or more damage this turn": Hideaway', () =
     expect(g.find({ name: BEARS, zone: 'exile' })).toHaveLength(1);
   });
 });
+
+describe('"an opponent was dealt damage" after an opponent left the game (three seats, issue 498)', () => {
+  // Policy, as for Spectacle (issue 495, docs/RULES_COVERAGE.md 702.137a): a player who has left the game
+  // is no longer an opponent (CR 102.2, 800.4a), so damage dealt to them does not count. The CR is silent
+  // on that history; the choice is pinned here.
+  const BEARS = 'Grizzly Bears';
+  const setup = () => {
+    const g = scenario({ seats: 3 })
+      .seat(0)
+      .hand(HIDEAWAY, BOLT, BOLT)
+      .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain')
+      .library(BEARS, 'Island', 'Island', 'Island', ...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .seat(2)
+      .library(...LIBRARY)
+      .build();
+    g.act(0).playLand(HIDEAWAY);
+    g.passAll();
+    g.act(0).chooseCards(g.id(BEARS));
+    for (let i = 0; i < 3; i += 1) g.advanceTo('precombatMain', { turn: 'next' });
+    return g;
+  };
+
+  test('damage to an opponent who then left does not count', () => {
+    const g = setup();
+    g.act(0).cast(`${BOLT}[0]`, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.act(0).pass();
+    g.act(1).concede();
+    g.act(2).pass(); // the step ends; the turn goes on in the next step
+    g.act(0).activate(HIDEAWAY, { pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'exile', { seat: 0 });
+  });
+
+  test('damage to another opponent who is still in the game counts', () => {
+    const g = setup();
+    g.act(0).cast(`${BOLT}[0]`, { targets: [{ player: 2 }], pay: true });
+    g.passAll();
+    g.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.act(0).pass();
+    g.act(1).concede();
+    g.act(2).pass(); // the step ends; the turn goes on in the next step
+    g.act(0).activate(HIDEAWAY, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards(g.id(BEARS));
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+  });
+});

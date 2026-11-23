@@ -5,6 +5,7 @@ import { looksOffline } from './model';
 import { PlayNote } from './PlayNote';
 import {
   CommanderPicker,
+  CompanionSection,
   FuzzyMatches,
   IgnoredLines,
   NameProblems,
@@ -68,6 +69,7 @@ export function ResultsView({
         </p>
       )}
       <ValidationPanel validation={report.validation} />
+      <CompanionSection companion={report.companion} />
       {report.entries.length > 0 && <CoverageSection report={report} onWhy={actions.onWhy} />}
       <PlayNote report={report} />
       <IgnoredLines ignored={report.ignored} />

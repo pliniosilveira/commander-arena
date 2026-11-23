@@ -5,18 +5,20 @@ export function SavedDecksView({
   decks,
   loading,
   onOpen,
+  onView,
   onRemove,
 }: {
   decks: readonly SavedDeck[] | null;
   loading: boolean;
   onOpen: (deck: SavedDeck) => void;
+  onView: (deck: SavedDeck) => void;
   onRemove: (deck: SavedDeck) => void;
 }) {
   return (
     <section className="imp-section" aria-labelledby="imp-decks-h">
       <h2 id="imp-decks-h">My decks</h2>
       <p className="scr-help">
-        Saved in this browser only. A saved deck keeps your pasted list; opening it imports it
+        Saved in this browser only. A saved deck keeps your pasted list; editing it imports it
         again, so it needs a connection to Scryfall.
       </p>
       {decks === null ? (
@@ -27,22 +29,27 @@ export function SavedDecksView({
         <p>No saved decks yet. Paste a list on the Import tab and choose "Save deck".</p>
       ) : (
         <ul className="imp-list imp-saved">
-          {decks.map((deck) => (
-            <li key={deck.id}>
-              <span>
-                <strong>{deck.name}</strong>{' '}
-                <span className="scr-help">saved {deck.savedAt.slice(0, 10)}</span>
-              </span>
-              <span className="imp-row-actions">
-                <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
-                  Open<span className="imp-sr"> {deck.name}</span>
-                </button>
-                <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
-                  Delete<span className="imp-sr"> {deck.name}</span>
-                </button>
-              </span>
-            </li>
-          ))}
+          {[...decks]
+            .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+            .map((deck) => (
+              <li key={deck.id}>
+                <span>
+                  <strong>{deck.name}</strong>{' '}
+                  <span className="scr-help">saved {deck.savedAt.slice(0, 10)}</span>
+                </span>
+                <span className="imp-row-actions">
+                  <button type="button" className="scr-btn" onClick={() => onView(deck)}>
+                    View<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                  <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
+                    Edit<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                  <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
+                    Delete<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                </span>
+              </li>
+            ))}
         </ul>
       )}
     </section>

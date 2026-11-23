@@ -7,7 +7,6 @@ const configFor = (seats: number, seed: number) => ({
   decks: Array.from({ length: seats }, (_, i) => ARENA_DECKS[i % ARENA_DECKS.length]).filter(
     (d): d is NonNullable<typeof d> => d !== undefined,
   ),
-  allowMoreThanTwoSeats: true,
 });
 
 describe('games with several seats play to the end', () => {

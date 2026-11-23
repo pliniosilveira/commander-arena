@@ -5,12 +5,15 @@
  * attacks the chosen one. It stays in combat and is not declared again (CR 508.7a), and nothing that restricts declaring attackers
  * applies (CR 508.7b), so the candidates are all the opponents' players and permanents, as `attackTargets` lists them.
  */
+
+import type { SeatId } from '../ids';
 import type { AttackTarget } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { attackTargets } from './attack-targets';
 import { controllerOf } from './control';
 import { defenderRecord } from './defending';
+import { derive } from './derive';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -24,6 +27,17 @@ export function attackTargetOption(target: AttackTarget): string {
 const sameTarget = (a: AttackTarget, b: AttackTarget): boolean =>
   attackTargetOption(a) === attackTargetOption(b);
 
+/** CR 508.4 ("that player or a planeswalker they control"): the player `seat` or a planeswalker that player controls. */
+function allowedBy(state: GameState, target: AttackTarget, seat: SeatId): boolean {
+  if (target.kind === 'player') return target.seat === seat;
+  const obj = state.objects[target.object];
+  return (
+    obj !== undefined &&
+    derive(state, obj).types.includes('planeswalker') &&
+    controllerOf(state, obj) === seat
+  );
+}
+
 export function runReselectAttack(
   state: GameState,
   res: ResolutionContext,
@@ -32,7 +46,9 @@ export function runReselectAttack(
   const attacker = state.combat?.attackers.find((a) => a.object === instruction.object);
   const obj = state.objects[instruction.object];
   if (attacker === undefined || obj?.zone !== 'battlefield') return done(state);
-  const targets = attackTargets(state, controllerOf(state, obj));
+  const targets = attackTargets(state, controllerOf(state, obj)).filter(
+    (t) => instruction.among === undefined || allowedBy(state, t, instruction.among),
+  );
   if (instruction.chosen !== null) {
     const picked = targets.find((t) => attackTargetOption(t) === instruction.chosen);
     if (picked === undefined) return done(state);

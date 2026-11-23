@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, handLand, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -15,7 +16,7 @@ const game = (human: string, ai: string, seed: number) => `/?autostart=${human},
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const bar = (page: Page) => page.locator('.dec-bar');
 const logText = (page: Page) => page.getByRole('log');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const unlessDialog = (page: Page) => page.getByRole('dialog', { name: 'Unless you pay' });
 const handCount = async (page: Page): Promise<number> =>
   Number(await page.locator('.board-strip-me [title="Cards in hand"] b').innerText());
@@ -24,7 +25,7 @@ const handCount = async (page: Page): Promise<number> =>
 async function start(page: Page, human: string, ai: string, seed: number): Promise<void> {
   await page.goto(game(human, ai, seed));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 }
 
 /**
@@ -37,6 +38,7 @@ async function playUntil(
   cast: string | null = null,
 ): Promise<void> {
   const discard = page.getByRole('dialog', { name: /^Discard/ });
+  const orderDialog = page.getByRole('dialog', { name: 'Trigger order' });
   for (let step = 0; step < 900; step += 1) {
     await settled(page);
     if (await ready()) return;
@@ -51,6 +53,10 @@ async function playUntil(
         await cards.nth(i).click();
       }
       await confirm.click();
+    } else if (await orderDialog.isVisible()) {
+      // Several goblins hitting us at once trigger the monarch's steal several times: keep the
+      // order the game offers.
+      await orderDialog.getByRole('button', { name: 'Confirm order' }).click();
     } else if ((await page.locator('.dec-overlay').count()) > 0) {
       throw new Error('an unexpected dialog is open');
     } else if ((await handLand(page).count()) > 0) {
@@ -80,7 +86,7 @@ test('Echo paid by hand: the question, the payment, the permanent stays', async 
   await start(page, 'synthetic-echo', 'synthetic-echo', 1);
   await playUntil(page, onBoard(page, hound), hound);
   // From here on mana is paid by hand, so the payment step of the question shows.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
   await playUntil(page, async () => unlessDialog(page).isVisible());
 
   const dialog = unlessDialog(page);
@@ -146,7 +152,7 @@ test('Cumulative upkeep: age counters grow, the cost repeats, backing out of the
   await expect(mine(page, wall)).toHaveCount(1);
 
   // The next one: two age counters, the whole {1}{1} or nothing. Pay it by hand and back out.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
   await playUntil(page, async () => unlessDialog(page).isVisible());
   await expect(dialog.locator('.dec-sub').last()).toHaveText(
     `Cumulative upkeep: pay {1}{1} (2 age counters) or sacrifice ${wall}?`,

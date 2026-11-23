@@ -121,22 +121,12 @@ export function parseFaceText(
   let xAtMostLine: { index: number; text: string } | null = null;
   // The line each ability came from, for a refusal that is found only once every line is read (a linked exile, stage P31).
   const lineOf: { index: number; text: string; ruleId: string }[] = [];
-  // CR 721.2, 721.3 (Station): once a station symbol ("12+ | ...") has been read, the lines after it that carry no symbol of their own may be in its striation, which the text does
-  // not say; they are refused, never read as abilities that work at every count.
-  let afterStationSymbol = false;
+  // CR 721.2, 721.3 (Station): the abilities printed in the striation of a station symbol are part of its static ability. The text gives the symbol once, at the head of the
+  // striation ("6+ | Flying"), and the striations run to the bottom of the text box (the abilities a station card has at every count come before them, CR 721.4), so a line after a
+  // symbol that carries no symbol of its own is in the striation of the symbol before it and is read at that threshold.
+  let striation: number | null = null;
   for (const [index, text] of lines.entries()) {
     const symbol = STATION_SYMBOL.exec(text);
-    if (symbol === null && afterStationSymbol) {
-      unparsed.push(
-        unparsedAbility(faceIndex, index, text, {
-          reason: 'notRunnable',
-          stoppedAt: text,
-          closestRule: 'none',
-          recognised: [],
-        }),
-      );
-      continue;
-    }
     if (
       /^Rather than pay \{2\} for each previous time you've cast ~ from the command zone this game, pay 2 life that many times\.$/u.test(
         text,
@@ -164,13 +154,13 @@ export function parseFaceText(
       selfName,
       namedWholeName,
     };
-    const threshold = symbol === null ? null : Number(symbol[1]);
+    const threshold: number | null = symbol === null ? striation : Number(symbol[1]);
     const labelled = symbol === null ? text : (symbol[2] ?? '');
     // CR 702.178a (issue 144): "Max speed — [ability]" is the ability as long as the player's speed is 4; the label is read here, not dropped as a flavor word.
     const unlabelled = withoutMaxSpeedLabel(labelled);
     const maxSpeedLine = unlabelled !== null;
     const body = unlabelled ?? labelled;
-    if (threshold !== null) afterStationSymbol = true;
+    striation = threshold;
     // CR 702.177a (issue 345, Redshift): "Exhaust — [Cost]: [Effect]" means "[Cost]: [Effect]. Activate only once." The word is not a flavor word: the ability that follows it
     // is read without it and is marked `exhaust` below, so that it can be activated once, never read as an unlimited one.
     const exhaustWord = /^Exhaust\s+[—–-]\s+(?=[{\p{Lu}])/u.exec(body)?.[0];
@@ -222,8 +212,17 @@ export function parseFaceText(
         );
         continue;
       }
-      abilities.push({ kind: 'stationLevel', threshold, abilities: [...result.abilities] });
-      lineOf.push({ index, text, ruleId: result.ruleId });
+      // A second line of the same striation joins the abilities of its symbol (CR 721.2: one static ability for the striation).
+      const last = abilities[abilities.length - 1];
+      if (symbol === null && last?.kind === 'stationLevel' && last.threshold === threshold) {
+        abilities[abilities.length - 1] = {
+          ...last,
+          abilities: [...last.abilities, ...result.abilities],
+        };
+      } else {
+        abilities.push({ kind: 'stationLevel', threshold, abilities: [...result.abilities] });
+        lineOf.push({ index, text, ruleId: result.ruleId });
+      }
     } else if (
       exhaust &&
       (missingFeatures(['ability:exhaust']).length > 0 ||
@@ -563,7 +562,10 @@ function linkExile(abilities: readonly Ability[]): {
   // The reader is a static ability that takes from the exile (Imprint) or, since stage P50 (D-207), an ability that chooses a card among those the permanent
   // exiled ("Put a card exiled with ~ into its owner's graveyard").
   const readers = abilities.flatMap((a, i) =>
-    (a.kind === 'static' && a.static.kind === 'takeFromLinkedExile') ||
+    (a.kind === 'static' &&
+      // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~" reads the cards too.
+      (a.static.kind === 'takeFromLinkedExile' ||
+        a.static.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||
         // Lorehold group 2 (CR 607.2a): "Choose target card exiled with ~": a target slot of the cards the permanent exiled.

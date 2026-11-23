@@ -117,17 +117,24 @@ describe('Board', () => {
     for (const id of drawn) expect(knownToViewer.has(id)).toBe(true);
   });
 
-  test('the strips show life, library, graveyard and the command zone with tax and damage', async () => {
+  test('the strips show life, library, graveyard and exile, and only the commander chip', async () => {
     const store = await gameAfter(0);
     const html = render(store, <Board />);
     expect(html).toContain('board-life-total');
     expect(html).toContain('Library');
     expect(html).toContain('Graveyard');
-    expect(html).toContain('Exile (shared)');
-    expect(html).toContain('Tax +0');
-    expect(html).toContain('Cmdr dmg 0');
-    expect(html).toContain('Isamaru, Hound of Konda');
-    expect(html).toContain('Yargle, Glutton of Urborg');
+    expect(html).toContain('Open You exile');
+    // The tax and the commander damage are in the commander popup, not on the strip.
+    expect(html).not.toContain('Tax +');
+    expect(html).not.toContain('Cmdr dmg');
+    expect(html).not.toContain('Open You command zone');
+    // What is left of the commander is its chip, which opens the popup.
+    expect(html.match(/data-commander-chip="\d"/g)).toHaveLength(2);
+    expect(html).toContain('Commander Isamaru, Hound of Konda');
+    expect(html).toContain('Commander Yargle, Glutton of Urborg');
+    // Each chip has an info button, where the cost was, that opens the popup.
+    expect(html.match(/data-commander-info="\d"/g)).toHaveLength(2);
+    expect(html).toContain('About Isamaru, Hound of Konda');
   });
 
   test('the interaction contract drives glow, selection and dimming', async () => {
@@ -163,11 +170,10 @@ describe('Board', () => {
 });
 
 describe('PreviewPanel', () => {
-  test('empty state explains hover, pin and unpin', async () => {
+  test('draws nothing while there is nothing to read', async () => {
     const store = await gameAfter(0);
     const html = render(store, <PreviewPanel />);
-    expect(html).toContain('Hover a card to read it');
-    expect(html).toContain('Right-click pins, Esc unpins');
+    expect(html).not.toContain('Card preview');
   });
 
   test('a hovered card shows in full with its current state', async () => {
@@ -197,10 +203,60 @@ describe('PreviewPanel', () => {
     store.getState().hover(null);
   });
 
-  test('an object that is no longer visible says so', async () => {
+  describe('the companion (SPEC 5.8, 10)', () => {
+    const SPIDER = {
+      name: 'SYNTHETIC Companion Spider',
+      manaCost: ['2', 'G'],
+      supertypes: [],
+      types: ['creature'],
+      subtypes: ['Spider'],
+      colors: ['G'],
+      power: 2,
+      toughness: 4,
+      oracleText: 'Reach',
+    } as const;
+    const withCompanions = async (mine: boolean, theirs: boolean) => {
+      const store = await gameAfter(0);
+      const snap = store.getState().snapshot;
+      if (snap === null) throw new Error('no snapshot');
+      const seats = snap.view.seats.map((seat) => ({
+        ...seat,
+        companion: { ...SPIDER, brought: seat.id === snap.view.viewer ? mine : theirs },
+      }));
+      store.setState({ snapshot: { ...snap, view: { ...snap.view, seats } } });
+      return store;
+    };
+
+    test('each strip shows its companion with the state it is in; nothing for a deck without one', async () => {
+      const store = await withCompanions(false, true);
+      const html = render(store, <Board />);
+      expect(html).toContain('aria-label="Your companion SYNTHETIC Companion Spider, Companion"');
+      expect(html).toContain(
+        'aria-label="The opponent&#x27;s companion SYNTHETIC Companion Spider, Used: brought into the game"',
+      );
+      expect(html).toContain('data-companion-brought="false"');
+      expect(html).toContain('data-companion-brought="true"');
+      expect(render(await gameAfter(0), <Board />)).not.toContain('data-companion');
+    });
+
+    test('hovering the chip shows the card in the preview panel, with its state', async () => {
+      const store = await withCompanions(false, false);
+      store.getState().hover('o-10');
+      const html = render(store, <PreviewPanel />);
+      expect(html).toContain('SYNTHETIC Companion Spider');
+      expect(html).toContain('Your companion, outside the game');
+      expect(html).toContain('for {3}');
+      store.getState().hover(null);
+      const used = await withCompanions(true, false);
+      used.getState().hover('o-10');
+      expect(render(used, <PreviewPanel />)).toContain('was brought into the game');
+    });
+  });
+
+  test('an object that is no longer visible draws nothing', async () => {
     const store = await gameAfter(0);
     store.getState().hover('o999999');
     const html = render(store, <PreviewPanel />);
-    expect(html).toContain('Not visible any more');
+    expect(html).toBe('');
   });
 });

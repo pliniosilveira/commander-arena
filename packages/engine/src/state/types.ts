@@ -193,6 +193,16 @@ export interface GameObject {
    */
   readonly alt?: PermanentAlternativeKind;
   /**
+   * Present on a permanent that entered from a spell cast for an escape cost an effect gave its card (`gainEscape`, CR 702.138a; `StackData.escapeGrant`): its `alt` of `escape` has no
+   * escape cost on its face to show for it. Absent otherwise.
+   */
+  readonly escapeGranted?: true;
+  /**
+   * Present on a permanent that entered from a spell cast for an evoke cost a static ability gave it (`grantAlternativeCostToSpells`; `StackData.evokeGrant`): its `alt` of `evoke` has
+   * no evoke cost on its face to show for it. Absent otherwise.
+   */
+  readonly evokeGranted?: true;
+  /**
    * How many times the spell this permanent came from was kicked, when it was kicked with Multikicker (CR
    * 702.33c, D-110): "for each time it was kicked" reads it. Absent for a permanent that was not kicked
    * and for one that came from a spell kicked with plain Kicker (which has `kicked` and counts once).
@@ -416,6 +426,8 @@ export interface StackData {
   readonly boughtBack?: true;
   /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
   readonly lifeForMana?: true;
+  /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */
+  readonly energyGrant?: number;
   /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
@@ -443,6 +455,17 @@ export interface StackData {
    */
   readonly aftermath?: true;
   /**
+   * The escape cost a card was cast for when an effect gave it escape (`gainEscape`, CR 702.138a): the cost and the number of other cards exiled, kept on the spell because the card
+   * is a new object on the stack (CR 400.7) that the effect did not name. Absent for a card with a printed escape cost and for every other spell.
+   */
+  readonly escapeGrant?: { readonly cost: readonly Cost[]; readonly exile: number };
+  /**
+   * The evoke cost a card was cast for when a static ability gave its spell evoke as it was cast (`grantAlternativeCostToSpells`, CR 702.74a, 118.9): kept on the spell, so the permanent
+   * it becomes has the evoke sacrifice trigger even when the permanent that gave the cost has left the battlefield before the spell resolves. A copy of the spell has none (CR 707.10).
+   * Absent for a card with a printed evoke cost and for every other spell.
+   */
+  readonly evokeGrant?: { readonly cost: readonly Cost[] };
+  /**
    * True when cast from the graveyard by its retrace ability (CR 702.81a, D-667): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
    * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
    */
@@ -457,6 +480,10 @@ export interface StackData {
    * Absent otherwise, and for an ability.
    */
   readonly free?: true;
+  /**
+   * The mana the spell was cast for rather than its mana cost (CR 118.9, 601.2f: "You may cast the copy by paying {3} rather than paying its mana cost"), with `free`. Absent otherwise.
+   */
+  readonly payInstead?: readonly Cost[];
   /**
    * True when the spell was cast as the effect of its suspend ability (CR 702.62a, D-128): if it is a creature spell
    * the permanent it becomes has haste (`GameObject.alt` `suspend`). Absent otherwise, and for an ability.
@@ -494,6 +521,10 @@ export interface StackData {
     readonly source: ObjectId;
     readonly entersTapped?: true;
     readonly gains?: Ability;
+    /** The permanent type this use of a `playFromGraveyardEachType` permission was counted as. */
+    readonly slot?: CardType;
+    /** Issue 102 (Kotis): the other cards of the graveyard exiled as an additional cost of this spell. */
+    readonly exileOthers?: number;
   };
   /**
    * The named alternative cost the spell was cast for (D-121): `overload` (CR 702.96a: its text has
@@ -511,6 +542,11 @@ export interface StackData {
    * that spell"): a mana of a color pays any colored symbol of its cost; colorless mana still pays only generic mana and {C}. Absent otherwise, and for an ability.
    */
   readonly anyManaColor?: true;
+  /**
+   * The generic mana the cost of this spell goes down by because of the permission it was cast with (Urianger Augurelt, "Spells you cast this way cost {2} less to cast", CR 601.2f):
+   * written as the spell is cast from exile (`rules/cast.ts`), read where its cost is determined. Absent otherwise, and for an ability.
+   */
+  readonly lessGeneric?: number;
   /**
    * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
    * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
@@ -566,6 +602,8 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** For a `damageBatch` ability to opponents that reads `triggerDamagedPlayers`: the opponents dealt damage, as the ability was put on the stack. */
+  readonly triggerDamaged?: readonly SeatId[];
   /** The target count read by a cast trigger (D-574). */
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
@@ -580,6 +618,11 @@ export interface StackData {
    * (D-491): the ids they had, which the amount and the condition `sacrificedAsCost` count (absent when none was). Absent for every other object.
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
+  /**
+   * For a spell cast with Convoke (CR 702.51a): the creatures the caster tapped to help pay for it, in the order chosen, which the `convokers` reference reads ("each creature that
+   * convoked this spell"). Absent when no creature was tapped for it, and for every other object.
+   */
+  readonly convokedBy?: readonly ObjectId[];
   /**
    * For an activated ability whose cost tapped permanents (`tapPermanents`, CR 702.184a): the power the tapped creatures had as they were tapped, added up, which the amount
    * `tappedAsCostPower` reads when the ability resolves (CR 608.2h). Absent for every other object.
@@ -662,6 +705,12 @@ export interface SeatState {
   readonly previousTurnStartTimestamp: number;
   readonly hasLost: boolean;
   /**
+   * The companion this player revealed before the game (CR 103.2b, 702.139): `definition` indexes `GameState.definitions`, and the card is
+   * outside the game (no object, in no zone, none of the 100 cards) until `brought` is true, when a card of the game is in the hand
+   * (`rules/companion.ts`). Public. Absent when the player has none.
+   */
+  readonly companion?: { readonly definition: number; readonly brought: boolean };
+  /**
    * The emblem named The Ring (CR 701.54c, D-196): present once the Ring has tempted this player. The emblem is a record of the seat, not an
    * object (nothing else reads an emblem's characteristics and the engine has no emblem objects): `tempted` is how many times the Ring has
    * tempted the player, which turns on its four abilities (`rules/ring.ts`). The emblem stays for the rest of the game (CR 114.1).
@@ -727,6 +776,13 @@ export interface TurnState {
    * the first one you draw in each of your draw steps" reads it. Every step that begins clears it; a draw that was skipped or replaced is not a draw.
    */
   readonly drewInDrawStep?: true;
+  /** Present, and `true`, while the turn is an extra turn an effect created (CR 500.7). */
+  readonly extra?: true;
+  /**
+   * Present during an extra turn (CR 500.7): the player whose turn the extra turns were added after. When no extra turn is left to take, the turn order goes on with
+   * the player after this one, not after the player of the extra turn.
+   */
+  readonly resumeAfter?: SeatId;
 }
 
 /**
@@ -841,6 +897,8 @@ export interface PendingTrigger {
   /** The player the event is about (`triggerPlayer`, D-133) and the damage it dealt (`triggerDamage`), when it has them. */
   readonly player?: SeatId;
   readonly damage?: number;
+  /** For a `damageBatch` trigger to opponents that reads `triggerDamagedPlayers`: the opponents dealt damage (CR 603.2c). */
+  readonly damaged?: readonly SeatId[];
   readonly targetCount?: number;
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed (`StackData.sacrificedBefore`). */
   readonly sacrificedBefore?: readonly ObjectId[];
@@ -971,7 +1029,8 @@ export interface CastingContext {
     | 'tap'
     | 'bounce'
     | 'blight'
-    | 'untap';
+    | 'untap'
+    | 'removeCounters';
   /**
    * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
@@ -1051,6 +1110,11 @@ export interface ActivationContext {
    * its cost. The same value is `StackData.x` of the ability's object.
    */
   readonly x: number;
+  /**
+   * The counters of a cost "Remove two +1/+1 counters from among creatures you control" still to remove (CR 118.3, 122.1): left out until the first of them has been asked for, then what
+   * is still owed. Absent when the cost has no such part.
+   */
+  readonly countersLeft?: number;
 }
 
 export type Instruction =
@@ -1068,7 +1132,16 @@ export type Instruction =
    */
   | {
       readonly kind: 'choosePlayer';
-      readonly among: 'mostLife';
+      readonly among: 'mostLife' | 'opponent';
+      readonly chosen: SeatId | null;
+    }
+  /**
+   * "An opponent separates / chooses / copies ..." with more than one opponent left (CR 608.2d, 801.5b, 702.144a): the controller of the effect (`seat`, or the player it is run as) chooses which
+   * opponent, with a `chooseOption` decision of purpose `chooseOpponent` (options `seat:<n>`). Queued ahead of the effect that needs it; the answer becomes `ResolutionContext.chosenOpponent`.
+   */
+  | {
+      readonly kind: 'chooseOpponent';
+      readonly seat: SeatId;
       readonly chosen: SeatId | null;
     }
   | {
@@ -1096,6 +1169,18 @@ export type Instruction =
       readonly as?: SeatId;
       readonly otherwise?: Effect;
       readonly answer: boolean | null;
+      /**
+       * CR 101.4, 608.2d: with several players the answers are collected first, in APNAP order, and only then does anything happen (every accepted effect, and every `otherwise`): this
+       * instruction is the one of the first player; `later` are the players asked after, `held` the answers so far. Absent for one player.
+       */
+      readonly together?: {
+        readonly later: readonly { readonly seat: SeatId; readonly as?: SeatId }[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly as?: SeatId;
+          readonly answer: boolean;
+        }[];
+      };
     }
   /**
    * CR 701.21: sacrifice one permanent (checked against its controller as it runs). Emits
@@ -1128,6 +1213,11 @@ export type Instruction =
       readonly fromTriggerSources?: true;
       /** "That dealt combat damage to you this turn" (`ChooseSelector.dealtCombatDamageToYou`): only the permanents that dealt combat damage to the controller of the ability this turn. */
       readonly dealtCombatDamageToYou?: true;
+      /**
+       * `keepOrSacrifice` (Slaughter the Strong, CR 608.2d, 701.21a): the player chooses which of the permanents that match to keep, with total power at most this number
+       * (a `choosePermanent` decision of purpose 'keep'), and the others (not the ones that can't be sacrificed) are sacrificed; `chosen` is then the ones to sacrifice. `count` is 0.
+       */
+      readonly keepPowerAtMost?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1165,6 +1255,8 @@ export type Instruction =
       readonly kind: 'reselectAttack';
       readonly object: ObjectId;
       readonly chosen: string | null;
+      /** CR 508.4: only this player and the planeswalkers they control may be chosen (an effect that names "that player or a planeswalker they control"). */
+      readonly among?: SeatId;
     }
   /**
    * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (`assignControlToOpponents`, issue 81,
@@ -1334,6 +1426,17 @@ export type Instruction =
       readonly objects: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
     }
+  /**
+   * "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way." (`eachPlayerChoosesDestroy`, issue 105): the
+   * players still to choose in order (`seats`), what was chosen so far (`picked`) and the answer to the question just asked (`chosen`, null until then). See rules/choose-each.ts.
+   */
+  | {
+      readonly kind: 'chooseEach';
+      readonly filter: ObjectFilter;
+      readonly seats: readonly SeatId[];
+      readonly picked: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+    }
   | {
       readonly kind: 'chooseTap';
       readonly filter: ObjectFilter;
@@ -1350,11 +1453,31 @@ export type Instruction =
       readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
+      /**
+       * CR 101.4, 701.13 (`exileOwnGraveyardCard` with several players): the players choose in APNAP order and the cards move together once the last has chosen. This instruction is the one of
+       * the first player; `later` are the players who choose after, `held` the cards chosen so far (`automatic`: the engine chose them, there being no more candidates than needed).
+       */
+      readonly together?: {
+        readonly later: readonly SeatId[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly cards: readonly ObjectId[];
+          readonly automatic: boolean;
+        }[];
+      };
+      /** The choice in `chosen` was made by the engine (there were no more candidates than needed): the event says so. */
+      readonly automatic?: true;
+      /** Issue 102 (Dauthi Voidwalker): the card chosen is not moved; the controller may play it this turn (`mayPlay`), without paying its mana cost when `free`. */
+      readonly permit?: { readonly free?: true };
+      /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
+      readonly decider?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */
       readonly countsNonland?: true;
       readonly position: 'top' | 'bottom' | number;
       /** "You may ..." (`ChooseSelector.optional`, D-139): none up to `count` are chosen. */
       readonly optional?: true;
+      /** "Put a creature card from defending player's hand" (`ChooseSelector.fromHandOf`): the candidates are the cards in the hand of this player, not the chooser's. */
+      readonly handOf?: SeatId;
       /** "From your hand or graveyard" (`ChooseSelector.alsoGraveyard`, D-544): the cards of the graveyard are candidates besides those of the hand `filter` names. */
       readonly alsoGraveyard?: true;
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
@@ -1371,6 +1494,10 @@ export type Instruction =
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
       readonly minCardTypes?: number;
+      /** "A card from each graveyard" (`ChooseSelector.eachGraveyard`): the candidates are the cards in this player's graveyard (the chooser is still `seat` or the controller). */
+      readonly graveyardOf?: SeatId;
+      /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
+      readonly linkTo?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1387,6 +1514,19 @@ export type Instruction =
       readonly seat: SeatId;
       readonly accepted: boolean | null;
       readonly chosen: readonly ObjectId[] | null;
+      /**
+       * CR 701.23i, 101.4: with several players, each looks at their library, then they decide in APNAP order which cards to find, and only then do the cards move and the libraries
+       * get shuffled. This instruction is the one of the first player; `later` are the players who decide after, `held` what each did so far (`accepted` false: a "may" search they
+       * declined; `chosen`: the cards found, none being an answer too). Absent for one player.
+       */
+      readonly together?: {
+        readonly later: readonly SeatId[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly accepted: boolean;
+          readonly chosen: readonly ObjectId[];
+        }[];
+      };
     }
   /**
    * "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one
@@ -1449,6 +1589,8 @@ export type Instruction =
       /** The pile that was not chosen, in the `finish` stage. */
       readonly second: readonly ObjectId[];
       readonly pick?: 1 | 2;
+      /** The opponent who chooses a pile: the one the controller chose as the effect started, or the only one left (CR 608.2d, 801.5b). */
+      readonly opponent?: SeatId;
     }
   /**
    * "As many times as you choose, you may exile the top card of your library" (`exileTopAnyNumber`, D-661): `answer` is null while the controller is asked whether to exile
@@ -1486,7 +1628,7 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree';
+      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
@@ -1527,6 +1669,17 @@ export type Instruction =
   | {
       readonly kind: 'drawUpTo';
       readonly seat: SeatId;
+      readonly max: number;
+      readonly amount: number | null;
+    }
+  /**
+   * "Choose a number between 0 and 10" (`chooseNumber`, CR 608.2d): `amount` is the number `seat` chose, null until they have answered the `chooseX` decision (purpose
+   * 'chooseNumber') between `min` and `max`. The answer is kept in `ResolutionContext.chosenNumber`. See rules/choose-number.ts.
+   */
+  | {
+      readonly kind: 'chooseNumber';
+      readonly seat: SeatId;
+      readonly min: number;
       readonly max: number;
       readonly amount: number | null;
     }
@@ -1893,6 +2046,12 @@ export type Instruction =
        * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
        */
       readonly replacedLeft?: number;
+      /**
+       * Dredge (CR 702.52a, issue 102): the card of the graveyard last declined for the draw being made (the next one asked comes after it), and the owner's answer to the card being
+       * asked (`accepted`), recorded here when given. Absent for a draw nobody was asked about. See rules/dredge.ts.
+       */
+      readonly dredgeAfter?: ObjectId;
+      readonly dredgeAnswer?: { readonly card: ObjectId; readonly accepted: boolean };
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {
@@ -1960,6 +2119,8 @@ export type Instruction =
       readonly kind: 'castFree';
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
+      /** "If that spell would be put into your graveyard, exile it instead" (`castFree.exileInstead`, issue 102): the rider of the spell cast. */
+      readonly exileInstead?: true;
       readonly filter?: ObjectFilter;
       /** D-660: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
       readonly remaining?: number | 'any';
@@ -1969,6 +2130,10 @@ export type Instruction =
       readonly cardsZone?: 'graveyard';
       /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
       readonly seat?: SeatId;
+      /** `remember` (Cmdr. Troi): the spell cast is what `moved` names afterwards. */
+      readonly remember?: true;
+      /** `copyCardAndCast.cost` (Blue Mage's Cane, CR 118.9): the mana paid rather than the mana cost. */
+      readonly payInstead?: readonly Cost[];
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -1987,8 +2152,12 @@ export interface ResolutionContext {
   readonly controller: SeatId;
   /** Creature type chosen by a resolving instruction such as "choose a creature type". */
   readonly chosenCreatureType?: string;
+  /** The number a resolving `chooseNumber` effect had its controller choose (CR 608.2d), what `powerAtLeastChosenNumber` reads. */
+  readonly chosenNumber?: number;
   /** The player a `choosePlayer` instruction of this resolution chose, which the selector `chosenPlayer` ("that player") reads. */
   readonly chosenPlayer?: SeatId;
+  /** The opponent the controller chose for the effect that is about to start ("an opponent separates ..."), read when it starts and cleared once it did (rules/choose-opponent.ts). */
+  readonly chosenOpponent?: SeatId;
   /** Every creature type chosen by a resolving "each player chooses a creature type" (CR 101.4), in the order they were chosen; `chosenCreatureType` is the last. */
   readonly chosenCreatureTypes?: readonly string[];
   /** Objects chosen by resolving instructions, keyed by their bound text reference. */
@@ -2010,6 +2179,8 @@ export interface ResolutionContext {
   readonly entersChosen?: ChosenValues | null;
   /** The answer to "you may have it become a copy of any creature" (CR 707.9, D-151) for the move that asked it: the permanent copied, or null for none. Cleared once that move is done. */
   readonly entersCopy?: ObjectId | null;
+  /** The protector the controller of a battle chose as it entered (CR 310.9a), for the move that asked. Absent until answered; cleared once that move is done. */
+  readonly entersProtector?: SeatId;
   /**
    * The answer to "you may sacrifice any number of creatures" of devour (CR 702.82a, D-185) for the move that asked it: the creatures to sacrifice,
    * none being an answer. Absent until answered, and cleared once that move is done.
@@ -2035,6 +2206,8 @@ export interface ResolutionContext {
   /** The player whose `playersMay` answer declined the current otherwise effect (D-576). */
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** What `triggerDamagedPlayers` reads: `StackData.triggerDamaged`. */
+  readonly triggerDamaged?: readonly SeatId[];
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
@@ -2102,6 +2275,8 @@ export interface ThisWayCounts {
   readonly returned?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
+  /** The nontoken creatures a `destroy` destroyed, whoever controlled them (CR 701.8, 608.2h: "for each nontoken creature destroyed this way"). */
+  readonly destroyedNontokenCreatures?: number;
   /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */
   readonly destroyedValue?: number;
   readonly playersDrew?: number;
@@ -2121,6 +2296,10 @@ export interface ThisWayCounts {
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;
+  /** The nonland cards discarded by `discard` effects (Federation Fleet group D: "When you discard a nonland card this way", CR 603.12). */
+  readonly discardedNonland?: number;
+  /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
+  readonly countersPut?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
   /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */
@@ -2172,6 +2351,11 @@ export interface CombatState {
   readonly blocks: readonly { readonly blocker: ObjectId; readonly attacker: ObjectId }[];
   /** Creatures that had first strike or double strike as the first damage step began (CR 510.4). */
   readonly firstStrikers: readonly ObjectId[] | null;
+  /**
+   * The defending players that have declared their blockers so far (CR 509.1), in turn order. Set only when more than one player is
+   * attacked: with one defender the declaration is a single question and nothing needs to be remembered.
+   */
+  readonly blockersDeclaredBy?: readonly SeatId[];
 }
 
 /**
@@ -2202,6 +2386,11 @@ export type ContinuousChange =
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
        */
       readonly exileInstead?: true;
+      /**
+       * "You may cast it from your graveyard as an Adventure" (`mayCast.adventure`, Hildibrand Manderville, CR 715.3): only the Adventure half of the card may be cast with this permission
+       * (face 1), never its creature half; `legality.ts` (`mayCastAdventureFromGraveyard`) reads it, and every other reading of `castPermission` ignores it.
+       */
+      readonly adventureOnly?: true;
     }
   /**
    * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (`gainFlashbackFromManaCost`, CR 702.34a, 611.2a, 611.2c):
@@ -2209,6 +2398,11 @@ export type ContinuousChange =
    * decided (`rules/flashback-grant.ts`).
    */
   | { readonly kind: 'flashbackFromManaCost' }
+  /**
+   * "Until end of turn, each creature card in your graveyard gains the escape ability "Escape, {3}{B}, exile four other cards from your graveyard" (`gainEscape`, CR 702.138a, 611.2a, 611.2c): each card the
+   * effect's `objects` names, in its owner's graveyard, has escape with this cost until the effect ends. No layer: read where casting is decided (`rules/escape-grant.ts`).
+   */
+  | { readonly kind: 'escapeGrant'; readonly cost: readonly Cost[]; readonly exile: number }
   /**
    * "Gain control of target creature" (`gainControl`, D-189, CR 613.1b): `seat` controls each permanent the effect's `objects` names while the effect
    * lasts. Layer 2: `controllerOf` (`rules/control.ts`) reads it, after the stored controller (the player the permanent entered under, CR 110.2) and
@@ -2243,6 +2437,15 @@ export type ContinuousChange =
        * cast with this permission carries `StackData.anyManaColor` (`rules/cast.ts`, `beginCast`), and the cost of the card is read that way while it is still in exile.
        */
       readonly anyManaColor?: true;
+      /**
+       * "You may cast that card ..., and mana of any type can be spent to cast that spell" (`mayPlay.anyManaType`, Hostage Taker, CR 609.4b): as `anyManaColor`, but any mana pays any symbol, colored or
+       * colorless (`StackData.anyManaType`).
+       */
+      readonly anyManaType?: true;
+      /** "If that spell would be put into a graveyard, exile it instead" (`mayPlay.exileInstead`, Dire Fleet Daredevil, CR 614.1a): the spell carries `StackData.exileInstead`. */
+      readonly exileInstead?: true;
+      /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
+      readonly lessGeneric?: number;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,
@@ -2301,7 +2504,12 @@ export type ContinuousChange =
    * objects a restriction as the rules read it (CR 613.11) and is not an ability, so "loses all
    * abilities" leaves it. `derive` lists it in `restrictions`.
    */
-  | { readonly kind: 'restrict'; readonly restriction: Restriction }
+  | {
+      readonly kind: 'restrict';
+      readonly restriction: Restriction;
+      /** "Can't be blocked this turn except by Spirits": the creatures that can't block the object (a `cantBeBlocked` with them is a limit on blockers, not an unconditional restriction). */
+      readonly blockers?: ObjectFilter;
+    }
   /**
    * "You gain hexproof until end of turn" (`grantPlayerHexproof`, CR 702.11b, Hylda group 3): the effect's `players` have hexproof while it lasts. No layer: read where a
    * player is targeted (`rules/player-protection.ts`).
@@ -2337,6 +2545,25 @@ export type ContinuousChange =
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
       readonly awayFrom?: SeatId;
+    }
+  /**
+   * "Until your next turn, creatures can't attack you" (`creaturesCantAttackYou`, CR 508.1a, 611.2c): no layer and no fixed set (`objects` is empty): read where attackers are declared
+   * (`rules/attack-bans.ts`), for each creature `filter` matches then, with `controller` as "you": none of them may be declared attacking `controller` as a player.
+   */
+  | {
+      readonly kind: 'creaturesCantAttackPlayer';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+    }
+  /**
+   * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each
+   * creature `filter` matches when the rule asks (with `controller` as "you") has the restriction `restriction`, read by `hasRestriction` (`rules/restrictions.ts`).
+   */
+  | {
+      readonly kind: 'groupRestriction';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+      readonly restriction: 'canAttackAsThoughNoDefender' | 'assignsDamageByToughness';
     }
   /**
    * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (`requireAttackSource`, CR 508.1d, 611.2c): no layer and no
@@ -2513,6 +2740,8 @@ export type EffectEnd =
 export interface TurnLog {
   /** The permanents whose "once during each of your turns, you may ... from your graveyard" has been used this turn (D-232, `playFromGraveyardOnceEachTurn`). */
   readonly graveyardPlays?: readonly ObjectId[];
+  /** The permanent types ("land" for the land play) already played or cast this turn through each permanent's `playFromGraveyardEachType` permission. */
+  readonly graveyardSlots?: readonly { readonly source: ObjectId; readonly type: CardType }[];
   /**
    * Each activated ability activated this turn: the object it belongs to and its index among that object's abilities. `loyalty` is set
    * when the ability was a loyalty ability (D-200): CR 606.3 allows one loyalty ability of a permanent a turn, whichever it is.
@@ -2618,6 +2847,11 @@ export interface TurnLog {
    */
   readonly graveyarded: readonly ObjectId[];
   /**
+   * Each card put into a graveyard this turn by being discarded (CR 701.9) or from a library (milled, CR 701.17; or any other move from a library), by the id it has in the
+   * graveyard (Ahoy Mateys deck, Ghost of Ramirez DePietro). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /**
    * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
    * whether it is a token. Absent until one left, so the state of a game where none did is as it was.
    */
@@ -2646,6 +2880,8 @@ export interface TurnLog {
   readonly graveyardEntries: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
+    /** The zone the card was put into the graveyard from (issue 102, "put into your graveyard from your hand or library this turn"). */
+    readonly from: Zone;
   }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
@@ -2718,6 +2954,11 @@ export interface GameState {
   /** The active player of the turn before the current one (CR 502.2, 731.2): the seat whose count in `lastTurnSpellsCast` the day and night check reads. Written with it. */
   readonly lastTurnActiveSeat?: SeatId;
   /**
+   * The players each seat declared attackers attacking in the last turn that seat took (CR 508.6, 609.4: "players who attacked you during their last turn"), by the seat that attacked, each player
+   * once. Rolled as a turn ends (`startTurn`) from `turnLog.attackedPlayers`: an attack on a planeswalker or a battle is not an attack on a player. Absent until a turn has ended.
+   */
+  readonly attackedLastTurn?: Readonly<Record<number, readonly SeatId[]>>;
+  /**
    * The day or night designation the game has (CR 731.1): absent while it is neither, as the game starts. Once set it is always one of the two (CR 731.1), changed at each untap
    * step by the spells the previous turn's active player cast (CR 502.2, 731.2) and by Daybound and Nightbound permanents (CR 702.145d, 702.145g), see `rules/day-night.ts`.
    */
@@ -2754,6 +2995,13 @@ export interface GameState {
   /** Top of the stack is the last element (CR 405.2). */
   readonly stack: readonly ObjectId[];
   readonly turn: TurnState;
+  /**
+   * The extra turns effects created that have not begun (CR 500.7), each the seat that takes it, in the order they were created: they are added directly after the
+   * current turn and the most recently created one is taken first, so the next turn is the last of the list. Absent when there are none.
+   */
+  readonly extraTurns?: readonly SeatId[];
+  /** How many extra turns have begun in the game (CR 500.7): what tells the rounds of the turn order from the turn counter. Absent while it is 0. */
+  readonly extraTurnsTaken?: number;
   /** Commander tax counter: times each commander card was cast from the command zone (CR 903.8). */
   readonly commanderCasts: Readonly<Record<CardId, number>>;
   /** Combat damage dealt to each seat by each commander card (CR 903.10a). */

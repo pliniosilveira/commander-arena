@@ -22,6 +22,15 @@ describe('round number (D-153)', () => {
     expect([1, 4, 5, 8, 9].map((n) => roundOf(n, 4))).toEqual([1, 1, 2, 2, 3]);
   });
 
+  test('an extra turn belongs to the round of the turn it follows (CR 500.7)', () => {
+    // Turns 1 and 2 are round 1; turn 3 is an extra turn of the second player; turns 4 and 5 are then round 2.
+    expect(roundOf(3, 2, 1)).toBe(1);
+    expect(roundOf(4, 2, 1)).toBe(2);
+    expect(roundOf(5, 2, 1)).toBe(2);
+    expect(roundOf(6, 2, 1)).toBe(3);
+    expect(turnLabel(1, 0, 3, 2, 1)).toBe("Opponent's turn 1");
+  });
+
   test('one player rounds are their own turns; no seats gives no round', () => {
     expect(roundOf(5, 1)).toBe(5);
     expect(roundOf(5, 0)).toBe(0);
@@ -79,8 +88,13 @@ describe('log group heading', () => {
   });
 });
 
-const view = (activeSeat: number, prioritySeat: number | null = null): GameView =>
-  ({ viewer: 0, activeSeat, prioritySeat }) as unknown as GameView;
+const view = (activeSeat: number, prioritySeat: number | null = null, seatCount = 2): GameView =>
+  ({
+    viewer: 0,
+    activeSeat,
+    prioritySeat,
+    seats: Array.from({ length: seatCount }, (_, id) => ({ id })),
+  }) as unknown as GameView;
 
 describe('active area', () => {
   test('the class follows the active seat, never priority', () => {
@@ -95,5 +109,12 @@ describe('active area', () => {
     expect(battlefieldLabel(view(0), 1)).toBe("Opponent's battlefield");
     expect(battlefieldLabel(view(1), 1)).toBe("Opponent's battlefield, opponent's turn");
     expect(battlefieldLabel(view(1), 0)).toBe('Your battlefield');
+  });
+
+  test('with more seats the battlefield names the numbered opponent', () => {
+    expect(battlefieldLabel(view(2, null, 3), 2)).toBe(
+      "Opponent 2's battlefield, opponent 2's turn",
+    );
+    expect(battlefieldLabel(view(0, null, 3), 1)).toBe("Opponent 1's battlefield");
   });
 });

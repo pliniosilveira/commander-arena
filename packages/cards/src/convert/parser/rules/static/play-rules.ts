@@ -338,6 +338,53 @@ export const STATIC_PLAY_LANDS_FROM_GRAVEYARD = defineRule<IrStatic>({
 });
 
 /**
+ * `static.graveyard-play-each-type`: "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (Muldrotha, the Gravetide;
+ * CR 601.2a, 305.1, 205.2a, 604.1: in its controller's own turn, a land card and a spell of each permanent type may come from the graveyard, one for each; the reminder text
+ * "(If a card has multiple permanent types, choose one as you play it.)" is removed before the rules read the line). The engine's `playFromGraveyardEachType`. Not read: another
+ * zone or player, "once during each of your turns", another count ("a land and a creature spell"), a part of the types ("each card type", "of each nonland permanent type"), a
+ * land or a spell only, and a line with more text.
+ */
+export const STATIC_GRAVEYARD_PLAY_EACH_TYPE = defineRule<IrStatic>({
+  id: 'static.graveyard-play-each-type',
+  family: 'static',
+  leading: ['during'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 305.1 (Lands)',
+    'CR 205.2a (Card Types)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard.',
+  ],
+  rejects: [
+    'During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard',
+    'During each of your turns, you may play a land and cast a permanent spell of each permanent type from your hand.',
+    'During each of your turns, you may play a land and cast a permanent spell of each permanent type from an opponent’s graveyard.',
+    'During each of your turns, you may play a land and cast a permanent spell of each card type from your graveyard.',
+    'During each of your turns, you may play a land and cast a permanent spell of each nonland permanent type from your graveyard.',
+    'During each of your turns, you may play a land and cast a creature spell from your graveyard.',
+    'During each of your turns, you may play a land from your graveyard.',
+    'During each of your turns, you may cast a permanent spell of each permanent type from your graveyard.',
+    'Once during each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard.',
+    'During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard. You may look at the top card of your library any time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.graveyard-play-each-type';
+    const r = pattern(
+      /during each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject('you', 'you', { start: pos, end: pos + 6 }, id);
+    return {
+      ok: true,
+      value: statement(id, who, { kind: 'graveyardPlayEachType' }, { start: pos, end: r.pos }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * The mana cost an attacker pays: plain symbols ({2}, {W}, {C}), hybrid ones ({R/W}, {2/W}, {C/W}) and Phyrexian
  * ones ({W/P}, CR 107.4f), which the engine's planner pays as it pays any cost (D-125). Never {X} (nobody announces
  * an X when attacking, CR 107.3), snow or a cost of nothing ({0}).
@@ -537,6 +584,8 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     'Untap ~ during each other player’s untap step.',
     // Issue 145 (Prop Room): "each creature", the same group as "all creatures".
     "Untap each creature you control during each other player's untap step.",
+    // CR 502.3 (Seedborn Muse): every permanent of its controller untaps in the untap step of each other player.
+    "Untap all permanents you control during each other player's untap step.",
   ],
   rejects: [
     "Untap all creatures you control during each other player's untap step",
@@ -552,6 +601,10 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     "Untap ~ during each other player's upkeep.",
     "Untap ~ during another player's untap step.",
     "Untap all lands you control during each other player's untap step.",
+    "Untap all permanents during each other player's untap step.",
+    "Untap each permanent you control during each other player's untap step.",
+    "Untap all permanents you control during each player's untap step.",
+    "Untap all permanents you control during each opponent's untap step.",
     "Untap all creatures you control during each other player's untap step if you control a Swamp.",
     "Untap all creatures during each other player's untap step.",
     'Untap all creatures you control during your untap step.',
@@ -583,11 +636,13 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
       };
     }
     const r = pattern(
-      new RegExp(`untap (?:all creatures|each creature) you control ${tail}`, 'iu'),
+      new RegExp(`untap (?:all creatures|each creature|all permanents) you control ${tail}`, 'iu'),
     )(ctx, pos);
     if (!r.ok) return r;
+    const permanents = /^untap all permanents /iu.test(ctx.text.slice(pos));
     const at =
-      /^untap (?:all creatures|each creature) /iu.exec(ctx.text.slice(pos))?.[0].length ?? 0;
+      /^untap (?:all creatures|each creature|all permanents) /iu.exec(ctx.text.slice(pos))?.[0]
+        .length ?? 0;
     const who = subject(
       'you',
       'you',
@@ -596,7 +651,14 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     );
     return {
       ok: true,
-      value: statement(rule, who, { kind: 'untapInOthersStep' }, { start: pos, end: r.pos }),
+      value: statement(
+        rule,
+        who,
+        permanents
+          ? { kind: 'untapInOthersStep', permanents: true }
+          : { kind: 'untapInOthersStep' },
+        { start: pos, end: r.pos },
+      ),
       pos: r.pos,
     };
   },
@@ -806,6 +868,7 @@ export const PLAY_RULE_STATIC_RULES = [
   STATIC_REVEAL_TOP,
   STATIC_PLAY_LANDS_FROM_TOP,
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
+  STATIC_GRAVEYARD_PLAY_EACH_TYPE,
   STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
   STATIC_ACTIVATE_AS_THOUGH_HASTE,
   STATIC_LOYALTY_ACTIVATION_LIMIT,

@@ -26,6 +26,12 @@ import {
  * And a vote (D-194, CR 701.38a): one button for each option the card words ("Profit", "Security"), with the votes already cast in the prompt; a vote is
  * not taken back either.
  */
+/** "{W}" to "W": the options of a mana choice are symbols, and each button wears its color. */
+function manaColor(label: string): string | null {
+  const m = /^\{([WUBRGC])\}$/.exec(label);
+  return m === null ? null : (m[1] ?? null);
+}
+
 export function NamedOptionDialog({
   d,
   act,
@@ -73,7 +79,10 @@ export function NamedOptionDialog({
             <button
               ref={i === 0 ? first : undefined}
               type="button"
-              className="dec-btn dec-btn-secondary dec-named-btn"
+              className={`dec-btn dec-btn-secondary dec-named-btn${
+                manaColor(row.label) === null ? '' : ' dec-mana-btn'
+              }`}
+              data-mana={manaColor(row.label) ?? undefined}
               data-option={row.option}
               onClick={() => act({ kind: 'chooseOption', option: row.option })}
             >

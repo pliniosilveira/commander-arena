@@ -52,8 +52,8 @@ test("issue 59: the opponent's face-down card sits inside its place in the exile
     await strip.evaluate((el) => getComputedStyle(el.firstElementChild ?? el).listStyleType),
   ).toBe('none');
 
-  await page.getByRole('button', { name: /^Open exile/ }).click();
-  const viewer = page.getByRole('dialog', { name: /^Exile/ });
+  await page.getByRole('button', { name: /^Open Opponent exile/ }).click();
+  const viewer = page.getByRole('dialog', { name: /exile$/ });
   const body = viewer.locator('.board-modal-body');
   const cardButton = viewer.locator('.board-zone-card', { has: page.locator('[data-face-down]') });
   await expect(cardButton).toHaveCount(1);
@@ -269,7 +269,8 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
   await page.setViewportSize({ width: 1366, height: 600 });
   await page.goto('/?autostart=synthetic-lands,white-knights&seed=5');
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  const badge = page.locator('.board-land-count').first();
+  // The badge of the player's own land stack: the opponent's field comes first in the page.
+  const badge = page.locator('[data-field-seat="0"] .board-land-count').first();
   for (let step = 0; step < 300 && (await badge.count()) === 0; step += 1) {
     await settled(page);
     const playable = page.locator('.board-hand .is-clickable');
@@ -286,10 +287,12 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
   // The badge ignores the pointer, so a hit test would skip it: let it take part, to read the paint order.
   await page.addStyleTag({ content: '.board-land-count { pointer-events: auto !important; }' });
   // A card in the hand is the top of a card: lifted, it no longer reaches past the player's strip to the
-  // land row. The test lifts it further itself, since what it checks is which of the two is drawn on top.
+  // land row, and the hand's scroll box clips what rises more than 110px (the land stack's badge is further
+  // up than that). The test lifts the card further and lets it out of the box itself, since what it checks
+  // is which of the two is drawn on top.
   await page.addStyleTag({
     content:
-      '.board-hand-card:hover { transform: translateY(-190px) scale(1.2) !important; transition: none !important; }',
+      '.board-hand-card:hover { transform: translateY(-260px) scale(1.2) !important; transition: none !important; } .board-hand-fan { overflow: visible !important; }',
   });
   const b = await badge.boundingBox();
   if (b === null) throw new Error('no badge box');
@@ -297,8 +300,17 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
   const cards = page.locator('.board-hand-card');
   let overlapped = 0;
   for (let i = 0; i < (await cards.count()); i += 1) {
-    await cards.nth(i).hover();
-    await page.waitForTimeout(250); // the lift is a transition
+    // A resting card sits low in the hand, its lower part below the window (the hand cards are smaller and lower
+    // since the table board): the pointer goes to the part that shows, the top left corner of the resting card.
+    await page.mouse.move(683, 5);
+    await page.waitForTimeout(100);
+    const rest = await cards.nth(i).boundingBox();
+    if (rest === null) throw new Error('no card box');
+    await page.mouse.move(rest.x + 8, rest.y + 8, { steps: 4 });
+    // The card is lifted by the test's own rule (no transition) once the pointer is on it.
+    await expect
+      .poll(async () => (await cards.nth(i).boundingBox())?.y ?? Number.POSITIVE_INFINITY)
+      .toBeLessThan(rest.y - 100);
     const c = await cards.nth(i).boundingBox();
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;

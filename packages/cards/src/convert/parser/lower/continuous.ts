@@ -9,6 +9,7 @@ import type {
   Color,
   Effect,
   Keyword,
+  ObjectFilter,
   ObjectSelector,
   PtAmount,
 } from '@commander-arena/engine';
@@ -17,7 +18,7 @@ import { grantedKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
-import { colorLetter, itemsOf, objectSelectorOf } from './nouns';
+import { colorLetter, itemsOf, lowerFilter, objectSelectorOf } from './nouns';
 import type { Lowering, LowerResult } from './types';
 
 const END = 'untilEndOfTurn' as const;
@@ -172,13 +173,59 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
       restriction !== 'cantBeBlocked' &&
       restriction !== 'attacksEachCombat' &&
       restriction !== 'mustBeBlocked' &&
-      restriction !== 'mustBlock'
+      restriction !== 'mustBlock' &&
+      // CR 609.4, 702.3b, 510.1a: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
+      restriction !== 'canAttackAsThoughNoDefender' &&
+      restriction !== 'assignsDamageByToughness'
     ) {
       return failure(clause);
+    }
+    // "can't be blocked this turn except by Spirits" (CR 509.1b): the creatures that can't block, as the engine's `restrict.blockers`.
+    let blockers: ObjectFilter | undefined;
+    if (given.blockers !== undefined) {
+      if (restriction !== 'cantBeBlocked') return failure(clause);
+      const blocked = missingFeatures(['selector:restrictBlockers']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+      const lowered = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: given.blockers,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: clause.span,
+        rule: clause.rule,
+      });
+      if (!lowered.ok) return lowered;
+      blockers = lowered.value;
     }
     // One chosen creature (the engine's `restrict` of a target, as its fixtures write it), or every
     // creature of a group as the effect begins (`each`, CR 611.2c).
     const noun = operand(clause, 'objects');
+    // CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender": the group is read when the rule asks, not fixed as the
+    // effect resolves, so the engine's `restrictGroup` (a creature that matches later in the turn is affected too).
+    if (
+      (restriction === 'canAttackAsThoughNoDefender' ||
+        restriction === 'assignsDamageByToughness') &&
+      noun?.kind === 'noun' &&
+      noun.det === 'each'
+    ) {
+      if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn') return failure(clause);
+      const blocked = missingFeatures(['effect:restrictGroup']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+      const { zone: _zone, ...rest } = noun.filter;
+      const creatures = lowerFilter({ ...noun, filter: rest });
+      if (!creatures.ok) return creatures;
+      const effect: Effect = {
+        kind: 'restrictGroup',
+        creatures: creatures.value,
+        restriction,
+        duration: END,
+      };
+      return { ok: true, value: [effect], rule: clause.rule };
+    }
     // Stage P53 (D-212): "~ and that creature each ... attack this turn if able": each of the nouns of a list is one of those.
     const named = noun === undefined ? [] : noun.kind === 'nounList' ? noun.items : [noun];
     if (
@@ -194,6 +241,7 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
         kind: 'restrict',
         objects,
         restriction,
+        ...(blockers === undefined ? {} : { blockers }),
         duration: whileControlling
           ? 'forAsLongAsYouControlThis'
           : whileRemains
@@ -264,7 +312,11 @@ export const SET_PT: Lowering<IrClause, Effects> = {
   takesDuration: true,
   lower(clause, ctx) {
     const base = arg(clause, 'basePt');
-    if (base?.kind !== 'basePt' || !endsWithTurn(clause)) return failure(clause);
+    // No duration (Admiral Brass, CR 611.2a): only "it", for as long as the permanent stays; the engine's `permanent`.
+    const noun = arg(clause, 'objects');
+    const lasting =
+      clause.duration === undefined && noun?.kind === 'noun' && noun.det === 'anaphor';
+    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting)) return failure(clause);
     // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
     let power: PtAmount = base.power;
     let toughness: PtAmount = base.toughness;
@@ -286,9 +338,16 @@ export const SET_PT: Lowering<IrClause, Effects> = {
     return eachObject(
       clause,
       ctx,
-      (objects) => ({ kind: 'setPt', objects, power, toughness, duration: END }),
+      (objects) => ({
+        kind: 'setPt',
+        objects,
+        power,
+        toughness,
+        duration: lasting ? 'permanent' : END,
+      }),
       'objects',
-      TRIGGER_SUBJECT,
+      // Ahoy Mateys deck, Admiral Brass (CR 400.7): "it" after "return target ... to the battlefield" is the permanent that came back, a new object, which the engine's `moved` names.
+      { ...TRIGGER_SUBJECT, moved: true },
     );
   },
 };
@@ -648,6 +707,18 @@ export const CHOOSE_PLAYER: Lowering<IrClause, Effects> = {
   needs: ['effect:choosePlayer'],
   lower(clause) {
     return { ok: true, value: [{ kind: 'choosePlayer', among: 'mostLife' }], rule: clause.rule };
+  },
+};
+
+/**
+ * "Choose an opponent." (Slithermuse, CR 608.2d, 102.2): the engine's `choosePlayer` among the opponents of the controller; the player is what the instructions after it call "that player".
+ */
+export const CHOOSE_OPPONENT: Lowering<IrClause, Effects> = {
+  head: 'chooseOpponent',
+  id: 'lower.choose-opponent',
+  needs: ['effect:choosePlayer'],
+  lower(clause) {
+    return { ok: true, value: [{ kind: 'choosePlayer', among: 'opponent' }], rule: clause.rule };
   },
 };
 

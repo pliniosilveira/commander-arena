@@ -26,6 +26,7 @@ import {
   isIrAmount,
   nounsOfClause,
 } from '../ir/types';
+import { arg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
@@ -186,11 +187,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'enters': {
       const what = entersWhat(t, ctx);
       if (!what.ok) return what;
+      // "enters from a graveyard" (issue 102, River Kelpie, CR 603.6a): the zone it came from, as the event is noticed.
+      if (t.fromGraveyard === true) {
+        const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
       return ok({
         kind: 'entersBattlefield',
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
+        ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
       });
     }
     case 'attacks': {
@@ -294,8 +301,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'dealsCombatDamage': {
       const what = whatOf(t, ctx);
-      // `you` is the recipient of the batch trigger only (`combatDamageBatch`).
-      if (t.damaged === 'you') return failure(t);
+      // `you` and `opponents` are recipients of the batch trigger only (`combatDamageBatch`).
+      if (t.damaged === 'you' || t.damaged === 'opponents') return failure(t);
       return what.ok
         ? ok({ kind: 'dealsCombatDamage', what: what.value, to: t.damaged ?? 'any' })
         : what;
@@ -332,7 +339,10 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // for each player damaged in one damage event, the creatures named by a filter of the controller's permanents.
       if (
         t.subject === undefined ||
-        (t.damaged !== 'player' && t.damaged !== 'opponent' && t.damaged !== 'you')
+        (t.damaged !== 'player' &&
+          t.damaged !== 'opponent' &&
+          t.damaged !== 'opponents' &&
+          t.damaged !== 'you')
       ) {
         return failure(t);
       }
@@ -344,6 +354,22 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         to: t.damaged,
         ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
         ...(t.whileMonarch === true ? { whileMonarch: true as const } : {}),
+      });
+    }
+    case 'damageBatch': {
+      // "Whenever one or more Pirates you control deal damage to a player | to your opponents" (Ahoy Mateys group 1, CR 120.2, 603.2c): the engine's `damageBatch`.
+      if (t.subject === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
+        return failure(t);
+      }
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      const missing = missingFeatures(['trigger:damageBatch']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({
+        kind: 'damageBatch',
+        what: filter.value,
+        to: t.damaged === 'opponent' ? 'opponents' : 'player',
+        ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
       });
     }
     case 'tappedForMana': {
@@ -394,11 +420,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return ok({ kind: 'landfall' });
     case 'playsCard': {
       // "Whenever you play a card with two or more card types" (Death Toll deck, group D, CR 305.1, 601.2, 205.2a): the player is the controller of the ability.
-      if (t.actor?.det !== 'you' || t.atLeast === undefined) return failure(t);
+      // Urianger Augurelt: "you play a land from exile or cast a spell from exile" names no number of card types, only the zone.
+      if (t.actor?.det !== 'you' || (t.atLeast === undefined && t.fromExile !== true)) {
+        return failure(t);
+      }
       const blocked = missingFeatures(['trigger:playsCard']);
       return blocked.length > 0
         ? failure(t, blocked)
-        : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
+        : ok({
+            kind: 'playsCard',
+            ...(t.atLeast === undefined ? {} : { minCardTypes: t.atLeast }),
+            ...(t.fromExile === true ? { fromExile: true as const } : {}),
+          });
     }
     case 'doorUnlocked': {
       // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
@@ -568,12 +601,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you lose life [for the first time each turn]" (CR 119.3, 603.2): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      const blocked = missingFeatures(['trigger:lifeLost']);
+      // "Whenever one or more opponents lose life" (CR 603.2c): one trigger for the losses of one run of events, only of other players and with no ordinal.
+      if (t.batch === true && (who === 'you' || t.firstEachTurn === true)) return failure(t);
+      const blocked = missingFeatures([
+        'trigger:lifeLost',
+        ...(t.batch === true ? (['trigger:lifeLostBatch'] as const) : []),
+      ]);
       if (blocked.length > 0) return failure(t, blocked);
       return ok({
         kind: 'lifeLost',
         who,
         ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+        ...(t.batch === true ? { batch: true as const } : {}),
       });
     }
     case 'countersAdded': {
@@ -688,11 +727,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;
+      // "... during your turn" (issue 102, Kishla Skimmer, CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const during = missingFeatures(['trigger:leftGraveyardDuringYourTurn']);
+        if (during.length > 0) return failure(t, during);
+      }
       return ok({
         kind: 'leftGraveyard',
         who: 'you',
         ...(filter === null ? {} : { filter: filter.value }),
         ...(t.each === true ? { each: true as const } : {}),
+        ...(t.duringTurn === 'you' ? { duringTurn: 'you' as const } : {}),
       });
     }
     case 'exiledFromLibraryOrGraveyard': {
@@ -819,6 +864,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
+      only.event === 'damageBatch' ||
       only.event === 'noncombatDamageDealt' ||
       only.event === 'playerDealtDamage') &&
       only.recipient !== undefined);
@@ -1054,6 +1100,8 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       e.event === 'lifeGained' ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
+      // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.
+      e.event === 'dealsCombatDamage' ||
       e.event === 'dealsDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
@@ -1075,6 +1123,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'difference':
       case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };
@@ -1197,6 +1246,7 @@ function conditionAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'difference':
       case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };
@@ -1330,6 +1380,8 @@ function lowerTriggeredAbility(
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
+  ctx.graveyardBatchTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.batch === true);
   // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
   ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
@@ -1396,7 +1448,7 @@ function lowerTriggeredAbility(
     // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
     const [only] = triggers;
     if (events.length !== 1 || only?.kind !== 'entersBatch') return failure(ifWritten, []);
-    const blocked = missingFeatures(['trigger:entersFromGraveyard']);
+    const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers[0] = { ...only, fromGraveyard: true };
   } else if (ifWritten?.test.kind === 'damageDealtByType') {
@@ -1524,6 +1576,17 @@ function lowerTriggeredAbility(
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
   ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
+  ctx.attackBatchThose =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) =>
+        t.kind === 'attackBatch' &&
+        t.who === 'you' &&
+        t.attackedEnchantedPlayer !== true &&
+        t.eachAttackedPlayer !== true &&
+        (t.what === undefined ||
+          JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
+    );
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
@@ -1640,9 +1703,13 @@ function lowerTriggeredAbility(
       c.verb === 'castFromAmong' ||
       // Issue 100 (Baral and Kari Zev): "you may cast a spell ... from your hand without paying its mana cost. If you don't, ...": the engine's `castFree` asks (and may be declined).
       c.verb === 'castFree' ||
+      // Issue 102 (Diviner of Mist): the engine's `castFree` of a card of the graveyard asks, and may be declined.
+      c.verb === 'castChosenGraveyardSpell' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
+      // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped": the engine's choice of none or one card is the offer.
+      (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
       // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
@@ -1665,7 +1732,25 @@ function lowerTriggeredAbility(
   // The engine's `optional` covers the whole effect, so it cannot sit beside a condition.
   const conditional = sentences.some((s) => s.condition !== undefined && !boughtSentence(s));
   const others = sentences.filter(ownMay).flatMap((s) => s.clauses);
-  if (optional && (others.length !== 1 || conditional)) return failure(ability);
+  // Ahoy Mateys deck, Admiral Brass (CR 608.2d, 608.2c): "you may return target ... to the battlefield. It has base power and toughness 4/4. It gains haste until end of turn.": the one
+  // "you may" is of the return, and every sentence after it is about the card it returned ("it"), which does nothing when the player does not return it; so the ability's own `optional`
+  // asks the one question for the whole chain.
+  const [first, ...rest] = others;
+  const chain =
+    first !== undefined &&
+    first.verb === 'return' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => {
+      const objects = arg(c, 'objects');
+      return (
+        !c.optional &&
+        (c.verb === 'setPt' || c.verb === 'grantKeyword') &&
+        objects?.kind === 'noun' &&
+        objects.det === 'anaphor'
+      );
+    });
+  if (optional && ((others.length !== 1 && !chain) || conditional)) return failure(ability);
   // A "you may" of the whole ability beside an offer would be two questions for one effect.
   if (optional && sentences.some((s, i) => offerSentence(s) || mayOffer(s, i))) {
     return failure(ability);
@@ -1861,6 +1946,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersUntapped',
   'trigger:leavesToAnyOf',
   'trigger:combatDamageBatch',
+  'trigger:damageBatch',
   'trigger:diesBatch',
   'trigger:discarded',
   'trigger:exerted',
@@ -1889,8 +1975,9 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:activatesAbility',
   'trigger:tappedBy',
   'trigger:tapBatch',
+  'trigger:lifeLostBatch',
   'trigger:notAsAttacker',
-  'trigger:entersFromGraveyard',
+  'trigger:entersBattlefieldFromGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',

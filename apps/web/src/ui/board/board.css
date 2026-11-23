@@ -278,6 +278,29 @@
   -webkit-box-orient: vertical;
 }
 
+/* A seat's companion (SPEC 5.8): a chip like the commander's, dashed because the card is outside the game; dimmed once it was brought. */
+.board-companion {
+  border-style: dashed;
+  cursor: help;
+}
+
+.board-companion.is-used {
+  opacity: 0.65;
+}
+
+.board-companion-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.board-companion-state {
+  font-size: calc(10px * var(--text-scale));
+  color: var(--text-dim);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
 .board-cmdr-facts {
   display: flex;
   flex-direction: column;
@@ -296,12 +319,37 @@
 }
 
 /* The three rows of a battlefield; beside them, at the left, the emblem strip when there is one (D-243). */
-.board-field-rows {
+.board-field-rows-wrap {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
   min-height: 0;
+}
+
+/* The one sideways scroller of the three rows (FieldRows.tsx); its width is the unit (cqw) of the
+   empty room at the ends of the rows. */
+.board-field-rows {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.board-field-rows::-webkit-scrollbar {
+  display: none;
+}
+
+/* As wide as the widest row (plus its room at the ends); the rows stretch to it, so each centres
+   its cards in the same width. */
+.board-field-track {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: max-content;
+  min-width: 100%;
 }
 
 /*
@@ -512,11 +560,6 @@
   position: relative;
   min-height: 0;
   padding: 0 8px;
-  border-bottom: 1px dashed color-mix(in srgb, var(--line) 55%, transparent);
-}
-
-.board-row:last-child {
-  border-bottom: 0;
 }
 
 .board-row-creature {
@@ -547,9 +590,50 @@
   flex: 1 1 0;
 }
 
+/* The back line: lands, a small plain gap, then the other permanents (BackRow.tsx). It is as wide as the
+   view; the two parts measure and scroll inside their own boxes. */
+.board-row-back {
+  flex: 1 1 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  /* Half the view of empty room at both ends, as .board-row-scroll has: the line centres in the
+     same track as the creatures. */
+  padding-inline: 50cqw;
+}
+
+.board-row-back .board-row-inline {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.board-row-back .board-row-inline .board-row-view {
+  width: 100%;
+}
+
+.board-row-back .board-row-inline .board-row-scroll,
+.board-row-back .board-row-land .board-row-scroll {
+  padding-inline: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  justify-content: safe center;
+}
+
+.board-back-lands,
+.board-back-others {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.board-row-back.has-both .board-back-others {
+  margin-left: 24px;
+}
+
 .board-row-land {
-  /* The land row asks for more height while its columns are deep (LandRow.tsx `landGrow`). */
-  flex: var(--land-grow, 1) 1 0;
+  flex: 1 1 0;
 }
 
 /* Artifacts, enchantments and planeswalkers are rare: an empty row gives its room to the others. */
@@ -561,34 +645,26 @@
   transition: flex-basis 0.2s ease;
 }
 
-.board-row-scroll {
+.board-row-view {
   position: absolute;
-  inset: 0 8px;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100cqw;
+  pointer-events: none;
+}
+
+.board-row-scroll {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: safe center;
+  height: 100%;
+  justify-content: center;
   gap: 6px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
-
-/* Room under the tiles for the name strips of attached Auras and Equipment (Row.tsx). */
-.board-row-scroll {
-  padding-bottom: var(--attach-reserve, 0px);
-}
-
-.board-row-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.board-row-empty {
-  color: var(--text-dim);
-  font-size: calc(11px * var(--text-scale));
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.55;
-  user-select: none;
+  /* Empty room on both sides, half the view each: the rightmost card can be brought to the middle
+     of the screen, clear of the stack panel on the right. The cards keep their size. */
+  padding-inline: 50cqw;
+  box-sizing: content-box;
 }
 
 .board-scroll {
@@ -1103,8 +1179,8 @@
   margin-top: 18px;
 }
 
-/* Auras and Equipment attached to a permanent: the host's tile with a name strip per attachment
-   tucked behind it, so the stack reads like cards laid over each other. */
+/* Auras and Equipment attached to a permanent: the host's tile with a vertical name strip per
+   attachment tucked behind it to the right, like the basic lands of the land row overlap. */
 .board-stack {
   position: relative;
   flex: none;
@@ -1124,19 +1200,20 @@
 
 .board-attach-slot {
   position: absolute;
-  left: 0;
-  right: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
-  justify-content: center;
+  align-items: flex-start;
 }
 
 .board-attach {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
   gap: 4px;
-  height: 100%;
-  padding: 0 4px 0 0;
+  width: 100%;
+  padding: 4px 0 0;
   overflow: hidden;
   color: var(--text);
   font-size: calc(10px * var(--text-scale));
@@ -1146,8 +1223,8 @@
   cursor: default;
   background: var(--bg-raised);
   border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 0 6px 6px;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
   pointer-events: auto;
 }
 
@@ -1174,13 +1251,14 @@
 .board-attach-band {
   flex: none;
   align-self: stretch;
-  width: 5px;
+  height: 5px;
 }
 
 .board-attach-name {
   flex: 1 1 auto;
-  min-width: 0;
-  padding-bottom: 2px;
+  min-height: 0;
+  padding-left: 3px;
+  writing-mode: vertical-rl;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1193,8 +1271,9 @@
 
 .board-attach-badge {
   flex: none;
-  padding: 0 4px;
-  margin-bottom: 1px;
+  padding: 2px 0;
+  margin-bottom: 2px;
+  writing-mode: vertical-rl;
   font-size: calc(9px * var(--text-scale));
   color: var(--accent-text);
   background: var(--accent);
@@ -1272,15 +1351,35 @@
   /* 108px in a short window; a taller window gives the hand more, and a card shows that much of
      itself (Hand.tsx `shown`): 120px at 1003, the most (128px) from 1067 (issue 137). */
   height: clamp(108px, 12vh, 128px);
-  padding: 0 12px;
+  /* The left 96px are the Log and Settings buttons (styles.css `.log-toggle`): the cards start, and
+     scroll, to the right of them. */
+  padding: 0 12px 0 96px;
   background: linear-gradient(0deg, var(--bg-sunken), var(--bg));
 }
 
 .board-hand-fan {
   display: flex;
-  justify-content: center;
+  /* safe: a hand wider than the area starts at its left edge and scrolls, it is not cut on both sides */
+  justify-content: safe center;
   align-items: flex-end;
-  height: 100%;
+  /* The scroll box clips what leaves it, and a lifted card rises well above the hand: the box is
+     taller than the area by that rise, and the strip above the cards does not take the pointer. */
+  height: calc(100% + 110px);
+  margin-top: -110px;
+  padding: 0 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  pointer-events: none;
+}
+
+.board-hand-fan::-webkit-scrollbar {
+  display: none;
+}
+
+.board-hand-fan > * {
+  pointer-events: auto;
 }
 
 .board-hand-empty {
@@ -1301,14 +1400,14 @@
   cursor: default;
   z-index: var(--z);
   transform-origin: 50% 100%;
-  transform: rotate(var(--fan-rot)) translateY(var(--fan-drop));
+  transform: translateY(var(--rest-drop));
   transition: transform 0.16s ease;
 }
 
 .board-hand-card:hover,
 .board-hand-card:focus-visible {
   z-index: 60;
-  transform: rotate(0deg) translateY(-14px) scale(1.2);
+  transform: translateY(-14px) scale(1.2);
 }
 
 /* ---- Card frame (hand, zone viewer, preview) ------------------------------------------- */
@@ -1654,8 +1753,10 @@
 .board-modal-panel {
   display: flex;
   flex-direction: column;
-  width: min(100%, 720px);
+  /* Wide enough for four large cards beside the question column. */
+  width: min(100%, 1120px);
   max-height: 100%;
+  min-height: 0;
   background: var(--bg-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1688,12 +1789,106 @@
   border-radius: 6px;
 }
 
-.board-modal-body {
+/* The list scrolls inside the panel; the question column beside it stays in view. */
+.board-modal-main {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.board-modal-body {
+  --zone-card-w: 200px;
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(auto-fill, var(--zone-card-w));
+  gap: 14px;
+  align-content: start;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
   padding: 14px;
   overflow-y: auto;
+}
+
+.board-modal-side {
+  --preview-card-w: 240px;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 10px;
+  width: 272px;
+  padding: 14px;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+}
+
+.board-modal-source {
+  width: var(--preview-card-w);
+}
+
+.board-modal-prompt {
+  margin: 0;
+  font-weight: 600;
+}
+
+.board-modal-detail {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.board-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-top: auto;
+}
+
+/* A card looked at that cannot be taken: its face as text, dimmed, nothing to click. */
+.board-zone-other {
+  opacity: 0.6;
+}
+
+.board-zone-other-face {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: calc(var(--zone-card-w, 135px) * 1.3935);
+  padding: 8px 9px;
+  background: var(--bg-sunken);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+.board-zone-other-face {
+  position: relative;
+}
+
+.board-zone-other-image {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-zone-other-image.is-loaded {
+  opacity: 1;
+}
+
+.board-zone-other-head {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.board-zone-other-text {
+  margin: 0;
+  font-size: calc(13px * var(--text-scale));
 }
 
 .board-modal-empty {
@@ -1709,19 +1904,15 @@
      area (issue 59). */
   display: flex;
   flex-direction: column;
-  width: 135px;
+  /* The whole card (the full variant) at the width of the grid's cell. */
+  --preview-card-w: var(--zone-card-w, 135px);
+  width: var(--zone-card-w, 135px);
   height: auto;
   padding: 0;
   background: none;
   border: 0;
   text-align: left;
   cursor: default;
-}
-
-.board-zone-card > .board-card {
-  flex: none;
-  /* The top of the card, as in the hand: 135 wide over the shape of card-top.ts. */
-  height: 123px;
 }
 
 /*
@@ -2057,13 +2248,15 @@
   max-width: 170px;
 }
 
-/* ---- The land row: equal lands stacked in columns (D-215, LandRow.tsx, lands.ts) ---------- */
+/* ---- The land row: one line, equal basic lands overlapped sideways (LandRow.tsx, lands.ts) ---- */
 
 /* The columns hang from the top of one band; the band is centred by the padding the row computes. */
 .board-row-land .board-row-scroll {
   align-items: flex-start;
+  gap: 12px; /* LAND_GAP in LandRow.tsx */
   padding-top: var(--land-pad, 0px);
   padding-bottom: 0;
+  padding-inline: 50%;
 }
 
 .board-land-col {
@@ -2071,11 +2264,11 @@
   flex: none;
 }
 
-/* Each card lies over the one behind it (the card in front has the highest z-index), so every card shows
-   its top edge: the colour band and the name. The slot is the size of a tile; the tile fills it. */
+/* Each card lies over the one after it (the first card has the highest z-index), so every card shows
+   a strip of its right side. The slot is the size of a tile; the tile fills it. */
 .board-land-slot {
   position: absolute;
-  left: 0;
+  top: 0;
   display: block;
 }
 
@@ -2084,7 +2277,7 @@
   display: block;
 }
 
-/* How many cards the column holds, off the top-right corner. */
+/* How many cards the cluster holds, off the top-right corner. */
 .board-land-count {
   position: absolute;
   top: -6px;

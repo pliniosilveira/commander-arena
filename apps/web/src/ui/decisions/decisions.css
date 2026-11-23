@@ -105,42 +105,6 @@
   padding-inline: 8px;
   line-height: 1.2;
 }
-.dec-bar-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 4px;
-  padding-top: 5px;
-  border-top: 1px solid var(--line);
-  /* Two rows of chips, whether or not they fit on one ("Undo" alone is shorter than "Undo (13)"):
-     the buttons above them keep their place as the count changes (D-146). */
-  min-height: calc(2 * (11px * var(--text-scale) * 1.3 + 6px) + 4px + 6px);
-}
-.dec-bar-footer:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-.dec-toggle {
-  line-height: 1.3;
-  padding: 2px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-dim);
-  font-size: calc(11px * var(--text-scale));
-  white-space: nowrap;
-  cursor: pointer;
-}
-.dec-toggle:hover {
-  color: var(--text);
-  border-color: var(--text-dim);
-}
-.dec-toggle[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
-  font-weight: 600;
-}
 .dec-passing {
   padding: 8px 12px;
   border: 1px dashed var(--accent);
@@ -413,6 +377,24 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+.dec-order-dialog {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-order-dialog .dec-order,
+.dec-order-dialog .dec-order-list {
+  width: 100%;
+}
+.dec-order-dialog .dec-order-list {
+  max-height: 50vh;
+}
+.dec-order-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 .dec-mulligan {
   width: min(2000px, 100%);
@@ -912,7 +894,8 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  min-height: calc(var(--hand-h) + 40px);
+  padding-top: 10px;
+  min-height: 106px;
 }
 .dec-arrange-card {
   display: flex;
@@ -936,6 +919,15 @@
 .dec-arrange-face:hover {
   border-color: var(--text-dim);
 }
+/* The badge sits on the card's top edge, not over its name. */
+.dec-arrange-face .dec-card-badge {
+  top: -9px;
+  right: auto;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
 .dec-arrange-moves {
   display: flex;
   gap: 4px;
@@ -949,7 +941,7 @@
   display: grid;
   place-items: center;
   width: var(--hand-w);
-  height: var(--hand-h);
+  height: 96px;
   border: 2px dashed var(--line);
   border-radius: calc(var(--radius) + 2px);
   color: var(--text-dim);
@@ -989,6 +981,33 @@
   gap: 2px;
   text-align: left;
 }
+/* A mana choice ({W}, {U}, ...): each button takes the color it stands for. */
+.dec-mana-btn {
+  color: #14151a;
+  border-color: transparent;
+  font-weight: 700;
+}
+.dec-mana-btn[data-mana="W"] {
+  background: var(--mana-w);
+}
+.dec-mana-btn[data-mana="U"] {
+  background: var(--mana-u);
+}
+.dec-mana-btn[data-mana="B"] {
+  background: var(--mana-b);
+}
+.dec-mana-btn[data-mana="R"] {
+  background: var(--mana-r);
+}
+.dec-mana-btn[data-mana="G"] {
+  background: var(--mana-g);
+}
+.dec-mana-btn[data-mana="C"] {
+  background: var(--mana-c);
+}
+.dec-mana-btn:hover {
+  filter: brightness(1.1);
+}
 .dec-named-label {
   font-weight: 700;
 }
@@ -1000,7 +1019,7 @@
 }
 /* "Pick a pile" (PilesDialog.tsx, D-303, CR 700.3): the two piles side by side, a button under each. */
 .dec-piles {
-  width: min(720px, 94vw);
+  width: min(1000px, 94vw);
 }
 .dec-piles-row {
   display: flex;
@@ -1010,7 +1029,7 @@
   flex-wrap: wrap;
 }
 .dec-pile {
-  flex: 1 1 280px;
+  flex: 1 1 400px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1026,11 +1045,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  min-height: calc(84px * 1.4);
+  min-height: calc(120px * 1.3935);
 }
 .dec-pile-facedown {
-  width: 84px;
-  height: calc(84px * 1.4);
+  width: 120px;
+  height: calc(120px * 1.3935);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: repeating-linear-gradient(
@@ -1417,12 +1436,18 @@
     align-self: flex-start;
   }
 }
+/* Three columns so the × stays in the middle: your deck on its left, the opponent's deck (and its emblems, which extend to the right) on its right. */
 .dec-versus {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: stretch;
-  justify-content: center;
   gap: 4px;
   width: 100%;
+}
+.dec-versus > .dec-versus-side {
+  width: 100%;
+  max-width: 264px;
+  justify-self: end;
 }
 .dec-versus-side {
   flex: 0 1 264px;
@@ -1468,10 +1493,75 @@
 .dec-versus-colors {
   margin-top: auto;
 }
+/* The opponent's deck with the emblems it starts with, side by side in the same block. */
+.dec-versus-opponent {
+  justify-self: start;
+  max-width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
+.dec-versus-emblems {
+  flex: 0 1 230px;
+  min-width: 0;
+  padding: 6px 4px;
+  text-align: left;
+}
+.dec-versus-emblems-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.dec-versus-emblem-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+/* Not enough room beside the deck: the emblems go below it. */
+@media (max-width: 1000px) {
+  .dec-versus-opponent {
+    width: 100%;
+    max-width: 264px;
+    flex-direction: column;
+  }
+  .dec-versus-emblems {
+    flex-basis: auto;
+  }
+}
 .dec-versus-x {
   align-self: center;
   font-size: 18px;
   color: var(--text-dim);
+}
+
+/* A table with several opponents: your deck and every opponent's deck on one line, the cells
+   shrinking to share the width. */
+.dec-versus-table {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 4px;
+}
+.dec-versus-table > .dec-versus-side,
+.dec-versus-seat > .dec-versus-side {
+  flex: 1 1 0;
+  width: auto;
+  max-width: 220px;
+  min-width: 0;
+  justify-self: auto;
+}
+.dec-versus-seat {
+  display: flex;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  max-width: 244px;
 }
 
 /* The screen before the opening hand: the versus cells, then Start game and Cancel below them. */

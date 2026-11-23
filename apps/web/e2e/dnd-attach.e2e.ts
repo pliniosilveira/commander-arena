@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { leaveHand } from './harness/pointer';
 import { settled } from './harness/settle';
 
 /**
@@ -137,9 +138,14 @@ test('an Aura by drag: dropped on a creature it is cast and attached; elsewhere 
   await expect(aura().first()).toHaveAttribute('draggable', 'true');
   const before = await hand(page).count();
 
-  // The battlefield and the stack are no zones for an Aura: it needs a permanent to enchant.
-  await aura().first().dragTo(page.locator('[data-drop="battlefield"]').first());
-  await aura().first().dragTo(page.locator('[data-drop="stack"]'));
+  // The battlefield and the stack are no zones for an Aura: it needs a permanent to enchant (the
+  // stack is out of sight then, so the drop is on the turn panel where it would be).
+  await aura()
+    .first()
+    .dragTo(page.locator('.board-field[data-field-seat="0"] .board-row-back'), {
+      targetPosition: { x: 40, y: 10 },
+    });
+  await aura().first().dragTo(page.locator('.turn-panel'));
   await expect(page.getByText('Choose what to enchant.')).toBeHidden();
   await expect(hand(page)).toHaveCount(before);
 
@@ -183,7 +189,7 @@ test('flashback by drag: a card carried out of the graveyard list reaches the bo
   await playUntil(page, async () => (await chip(page, 'SYNTHETIC Flash Gain').count()) > 0);
 
   // The last click left the pointer over a hand card, whose hover pop-up covers the strip: move off it.
-  await page.mouse.move(5, 5);
+  await leaveHand(page);
   await page.getByRole('button', { name: /^Open You graveyard/ }).click();
   const list = page.getByRole('dialog', { name: /graveyard/ });
   const card = list.getByLabel('SYNTHETIC Flash Gain').first();

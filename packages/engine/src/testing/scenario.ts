@@ -34,6 +34,8 @@ export interface ScenarioBuilder {
   seat(seat: SeatId): ScenarioBuilder;
   life(life: number): ScenarioBuilder;
   poison(counters: number): ScenarioBuilder;
+  /** Energy counters the seat starts with (CR 107.14, 122.1). */
+  energy(counters: number): ScenarioBuilder;
   /** Mana already in the seat's pool. */
   pool(mana: ManaSpec): ScenarioBuilder;
   mulligans(count: number): ScenarioBuilder;
@@ -46,6 +48,8 @@ export interface ScenarioBuilder {
   handSizeMax(max: number): ScenarioBuilder;
   /** The Ring has tempted the seat this many times (CR 701.54c, D-196): it has the emblem and its abilities of that level. */
   ring(tempted: number): ScenarioBuilder;
+  /** The seat has this card as its companion, outside the game (CR 103.2b, 702.139): bring it with `g.act(seat).bringCompanion()`. */
+  companion(name: string): ScenarioBuilder;
   /** The seat has the city's blessing (CR 702.131c, D-264). */
   citysBlessing(): ScenarioBuilder;
   /** The seat has this speed at the start (CR 702.179b): 1 to 4; without it the seat has no speed. */
@@ -148,6 +152,10 @@ export function scenario(options: ScenarioOptions = {}): ScenarioBuilder {
       seatSpec('life').life = life;
       return builder;
     },
+    energy(counters) {
+      seatSpec('energy').energy = counters;
+      return builder;
+    },
     poison(counters) {
       seatSpec('poison').poison = counters;
       return builder;
@@ -166,6 +174,10 @@ export function scenario(options: ScenarioOptions = {}): ScenarioBuilder {
     },
     handSizeMax(max) {
       seatSpec('handSizeMax').handSizeMax = max;
+      return builder;
+    },
+    companion(name) {
+      seatSpec('companion').companion = name;
       return builder;
     },
     citysBlessing() {

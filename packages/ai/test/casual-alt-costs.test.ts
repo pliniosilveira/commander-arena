@@ -127,6 +127,38 @@ describe('Evoke', () => {
   });
 });
 
+describe('Evoke given by a permanent (grantAlternativeCostToSpells)', () => {
+  const GRANTER = 'SYNTHETIC Evoke Granter';
+  const HEAVY = 'SYNTHETIC Heavy Elemental';
+  const BEAST = 'SYNTHETIC Heavy Beast';
+
+  test('an Elemental with an enters ability and only the granted {4}: evoked, and the engine lists it', async () => {
+    const g = scenario()
+      .seat(0)
+      .hand(HEAVY)
+      .battlefield(GRANTER)
+      .battlefield('Forest', { count: 4 })
+      .seat(1)
+      .build();
+    expect(await answer(g)).toEqual({
+      kind: 'castSpell',
+      object: g.id(HEAVY),
+      alternative: 'evoke',
+    });
+  });
+
+  test('a card the grant does not name is never evoked: nothing is offered, so nothing is cast', async () => {
+    const g = scenario()
+      .seat(0)
+      .hand(BEAST)
+      .battlefield(GRANTER)
+      .battlefield('Forest', { count: 4 })
+      .seat(1)
+      .build();
+    expect(await answer(g)).toEqual({ kind: 'pass' });
+  });
+});
+
 describe('Dash', () => {
   test('with only the dash cost payable: dashed', async () => {
     const g = scenario().seat(0).hand(RAIDER).battlefield('Mountain', { count: 2 }).seat(1).build();

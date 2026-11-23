@@ -1,5 +1,5 @@
 /**
- * Attached Auras and Equipment on the board: drawn as strips under their host, not as tiles; an
+ * Attached Auras and Equipment on the board: drawn as strips beside their host, not as tiles; an
  * unattached Equipment is an ordinary tile; the host's power and toughness is the view's number.
  * The first tests use hand-made views (the shapes are the engine's), the last two a real game of the
  * hidden SYNTHETIC deck `synthetic-attachments`.
@@ -143,12 +143,11 @@ describe('a battlefield row with attachments', () => {
   test('a row without attachments is unchanged: plain tiles, no stack wrapper', () => {
     const html = row('creature', [host], [host]);
     expect(html).not.toContain('board-stack');
-    expect(html).toContain('--attach-reserve:0px');
   });
 
-  test('a row with a host reserves room under its tiles for the strips', () => {
+  test('a host with attachments is wider by the strips beside its tile', () => {
     const html = row('creature', [hostView], [hostView, aura, boots]);
-    expect(html).toContain('--attach-reserve:28px');
+    expect(html).toMatch(/board-stack[^>]*style="[^"]*width:/);
   });
 
   test('clicking the host and a strip are separate: each reads the interaction for its own id', () => {

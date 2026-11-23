@@ -221,11 +221,11 @@ describe('validation', () => {
     expect(ok('G').length).toBeGreaterThan(0);
   });
 
-  test('a replacing setTypes with creature types needs the creature card type', () => {
+  test('a replacing setTypes with only creature types replaces the creature types and keeps the card types (CR 205.1a)', () => {
     const set = (extra: object) =>
       validateCard(withStatic({ kind: 'setTypes', subject: { kind: 'attached' }, ...extra }));
     expect(set({ types: ['creature'], subtypes: ['Elk'] })).toEqual([]);
-    expect(set({ subtypes: ['Elk'] }).length).toBeGreaterThan(0);
+    expect(set({ subtypes: ['Elk'] })).toEqual([]);
     expect(set({ subtypes: ['Elk'], additive: true })).toEqual([]);
     expect(set({}).length).toBeGreaterThan(0);
   });

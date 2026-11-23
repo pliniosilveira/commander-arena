@@ -44,7 +44,7 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Create a Wicked Role token.',
-    expect: no('.', 'effect.create-two-tokens'),
+    expect: no('.', 'effect.create-three-tokens'),
     note: 'the engine creates a Role only attached to a target',
   },
   {

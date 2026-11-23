@@ -147,6 +147,12 @@ export function createExpectations(
       if (actual !== life)
         fail(`Expected seat ${seat} to have ${life} life but it has ${actual}`, state);
     },
+    energy(seat, counters) {
+      const state = getState();
+      const actual = state.seats[seat]?.energy ?? 0;
+      if (actual !== counters)
+        fail(`Expected seat ${seat} to have ${counters} energy but it has ${actual}`, state);
+    },
     tapped(card, tapped = true) {
       const state = getState();
       const obj = resolveObject(ctx, card);

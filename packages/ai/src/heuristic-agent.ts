@@ -166,6 +166,7 @@ export class HeuristicAgent implements ExplainingAgent {
           sample: think.sample(),
           budget: think.budget,
           passiveWeight: this.opponent.passiveWeight,
+          passiveWeightFor: (seat) => this.opponent.passiveWeightFor(seat),
         });
         note(choice.reason);
         return choice.action;

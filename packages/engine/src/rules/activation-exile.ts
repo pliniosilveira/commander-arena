@@ -8,8 +8,9 @@ import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { opponentsOf, zoneList } from '../state/ops';
+import { zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { opponentOf } from './choose-opponent';
 import { moveInstructions } from './effect-support';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -79,7 +80,7 @@ type SplitInstruction = Extract<Instruction, { kind: 'splitExiled' }>;
 /** The effect `splitCostExiled` as it resolves: the opponent chooses (a decision unless one card is left), the cards go where the text says. */
 export function startSplit(state: GameState, res: ResolutionContext): StepOutcome {
   const cards = (res.costExiled ?? []).filter((id) => state.objects[id]?.zone === 'exile');
-  const [opponent] = opponentsOf(state, res.controller);
+  const opponent = opponentOf(state, res);
   if (cards.length === 0 || opponent === undefined) return done(state);
   return done(state, [], [{ kind: 'splitExiled', seat: opponent, cards, chosen: null }]);
 }

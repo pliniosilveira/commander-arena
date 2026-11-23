@@ -3,7 +3,16 @@
  * get an emblem with ..." (CR 114.1, 114.2), the ultimate of many planeswalkers. The engine runs `empowerJace` (`rules/empower.ts`) and `createEmblem`
  * (`rules/emblem.ts`).
  */
-import { fail, literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
+import {
+  choice,
+  fail,
+  literal,
+  map,
+  optional,
+  type Parser,
+  pattern,
+  sequence,
+} from '../../combinators';
 import type {
   IrAmount,
   IrArg,
@@ -322,6 +331,7 @@ export const EFFECT_EXCHANGE_LIFE_PT = defineRule<Clauses>({
     "exchange target opponent's life total with ~'s toughness",
     "exchange target player's life total with ~'s power",
     'exchange target opponent’s life total with ~’s toughness',
+    "exchange your life total with ~'s toughness",
   ],
   rejects: [
     "exchange target opponent's life total with ~'s",
@@ -329,6 +339,7 @@ export const EFFECT_EXCHANGE_LIFE_PT = defineRule<Clauses>({
     "exchange target opponent's life total with target creature's toughness",
     "exchange target opponent's life with ~'s toughness",
     "exchange target creature's life total with ~'s toughness",
+    "exchange your life with ~'s toughness",
     "exchange target opponent's life total with ~'s toughness until end of turn",
     "exchange target opponent's life total with ~'s toughness and draw a card",
   ],
@@ -337,11 +348,34 @@ export const EFFECT_EXCHANGE_LIFE_PT = defineRule<Clauses>({
     map(
       sequence(
         literal('exchange '),
-        family<IrNoun>('noun', { only: ['noun.player'] }),
-        pattern(/['’]s life total with /iu),
+        choice(
+          map(
+            sequence(
+              family<IrNoun>('noun', { only: ['noun.player'] }),
+              pattern(/['’]s life total with /iu),
+            ),
+            ([noun]) => noun,
+          ),
+          // CR 701.12c: "exchange your life total with ~'s toughness" (Tree of Redemption): the controller.
+          (ctx, pos) => {
+            const r = spanned(pattern(/your life total with /iu))(ctx, pos);
+            if (!r.ok) return r;
+            const you: IrNoun = {
+              kind: 'noun',
+              det: 'you',
+              filter: { raw: 'you' },
+              upTo: false,
+              plural: false,
+              other: false,
+              span: r.value.span,
+              rule: 'effect.exchange-life-pt',
+            };
+            return { ok: true, value: you, pos: r.pos };
+          },
+        ),
         spanned(pattern(/~['’]s (?:power|toughness)(?![\p{L}\p{N}])/iu)),
       ),
-      ([, player, , stat]) => {
+      ([, player, stat]) => {
         const rule = 'effect.exchange-life-pt';
         const object: IrNoun = {
           kind: 'noun',

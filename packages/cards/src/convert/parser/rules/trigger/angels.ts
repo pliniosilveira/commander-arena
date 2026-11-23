@@ -95,9 +95,14 @@ export const TRIGGER_LIFE_GAINED = defineRule<IrTrigger>({
 export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
   id: 'trigger.life-lost',
   family: 'trigger',
-  leading: ['you', 'an', 'a'],
-  cites: ['CR 119.3 (Life)', 'CR 603.2 (Handling Triggered Abilities)'],
+  leading: ['you', 'an', 'a', 'one'],
+  cites: [
+    'CR 119.3 (Life)',
+    'CR 603.2 (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+  ],
   examples: [
+    'one or more opponents lose life',
     'you lose life',
     'you lose life for the first time each turn',
     'an opponent loses life',
@@ -105,6 +110,10 @@ export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
     'an opponent loses life for the first time each turn',
   ],
   rejects: [
+    'one or more opponents lose life for the first time each turn',
+    'one or more opponents loses life',
+    'one or more players lose life',
+    'one or more opponent lose life',
     'you lose',
     'you lose 3 life',
     'you lose life for the first time',
@@ -119,6 +128,23 @@ export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
   ],
   parse: (ctx, pos) => {
     const id = 'trigger.life-lost';
+    // CR 603.2c: "one or more opponents lose life" is one trigger for the losses of one event, whatever the number of players.
+    const batch = spanned(pattern(/one or more opponents lose life(?![\p{L}\p{N}])/iu))(ctx, pos);
+    if (batch.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'trigger',
+          event: 'lifeLost',
+          actor: makeNoun(id, batch.value.span, 'eachOpponent', { raw: 'one or more opponents' }),
+          batch: true,
+          args: {},
+          span: { start: pos, end: batch.pos },
+          rule: id,
+        },
+        pos: batch.pos,
+      };
+    }
     const who = spanned(
       choice(
         map(pattern(/you lose life(?![\p{L}\p{N}])/iu), () => 'you' as const),

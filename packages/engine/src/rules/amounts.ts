@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'commanderCasts'
       | 'thisWay'
       | 'opponentsWithMore'
+      | 'chosenPlayerLead'
       | 'opponentCount'
       | 'movedCount'
       | 'cardsStillExiled'
@@ -53,12 +54,14 @@ type StateAmount = Extract<
       | 'experienceCounters'
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
+      | 'cardsToGraveyardThisTurn'
       | 'sacrificedAsCost'
       | 'tappedAsCostPower'
       | 'exiledAsCost'
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
-      | 'differentNamesAmong';
+      | 'differentNamesAmong'
+      | 'colorsAmong';
   }
 >;
 
@@ -98,6 +101,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'commanderCasts' ||
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
+    amount.kind === 'chosenPlayerLead' ||
     amount.kind === 'opponentCount' ||
     amount.kind === 'movedCount' ||
     amount.kind === 'cardsStillExiled' ||
@@ -105,12 +109,14 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'experienceCounters' ||
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
+    amount.kind === 'cardsToGraveyardThisTurn' ||
     amount.kind === 'sacrificedAsCost' ||
     amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
-    amount.kind === 'differentNamesAmong'
+    amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'colorsAmong'
   );
 }
 
@@ -207,6 +213,21 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
   return seen.size;
 }
 
+/**
+ * CR 105.2, 105.2c (Vivid): "the number of colors among permanents you control": the colors of the battlefield permanents the filter matches, each once, as the permanents
+ * have them now (layers 1, 4 and 5, through `derive`); colorless is no color.
+ */
+function colorsAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const color of derive(state, obj).colors) seen.add(color);
+  }
+  return seen.size;
+}
+
 /** The value a player has for "more life / cards in hand / creatures than you" (D-131). */
 export function playerStatOf(state: GameState, seat: SeatId, stat: PlayerStat): number {
   const s = getSeat(state, seat);
@@ -256,6 +277,9 @@ export function amountOf(
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  if (amount.kind === 'controllerLifeLostThisTurn') {
+    return getSeat(state, ctx.controller).lifeLostThisTurn;
+  }
   if (amount.kind === 'lifeGainedOrLostThisTurn') {
     return Math.max(
       state.turnLog.lifeGainedTotal[ctx.controller] ?? 0,
@@ -269,6 +293,10 @@ export function amountOf(
   if (amount.kind === 'aurasAttachedToTriggerSubject') {
     const left = ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject];
     return (left?.auras ?? []).filter((a) => a.controller === ctx.controller).length;
+  }
+  // CR 102.1, 608.2c: the number of players the selector names as the amount is read ("for each player who lost life this turn").
+  if (amount.kind === 'playerCount') {
+    return resolvePlayers(state, amount.of, ctx, targets).length;
   }
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
@@ -332,6 +360,8 @@ export function amountOf(
   if (amount.kind === 'triggerCycleX') return ctx.triggerDamage ?? 0;
   // CR 508.1 (issue 81, The Ur-Sphinx): the creatures of the declaration that matched the batch trigger, carried as the number of its event.
   if (amount.kind === 'triggerAttackerCount') return ctx.triggerDamage ?? 0;
+  // CR 603.2c (Malcolm): the opponents the batch's sources dealt damage to, carried as the number of its event.
+  if (amount.kind === 'triggerDamagedPlayerCount') return ctx.triggerDamage ?? 0;
   // CR 205.2a, 603.2c: "for each card type among those cards": the types of the cards of the batch that caused the trigger, each once, as they are or as they last were.
   if (amount.kind === 'cardTypesAmongTriggerCards') {
     const seen = new Set<string>();
@@ -382,7 +412,8 @@ export function amountOf(
   // D-131: arithmetic on other amounts. Each is read as the instruction runs, like the amounts it is made of.
   if (amount.kind === 'half') {
     const n = amountOf(state, amount.of, ctx, targets);
-    return amount.round === 'down' ? Math.floor(n / 2) : Math.ceil(n / 2);
+    const divisor = amount.divisor ?? 2;
+    return amount.round === 'down' ? Math.floor(n / divisor) : Math.ceil(n / divisor);
   }
   // D-321, CR 107.1b: a negative result of a calculation counts as 0.
   if (amount.kind === 'minus') {
@@ -391,6 +422,11 @@ export function amountOf(
   if (amount.kind === 'multiple') return amount.factor * amountOf(state, amount.of, ctx, targets);
   if (amount.kind === 'sum') {
     return amount.of.reduce<number>((n, part) => n + amountOf(state, part, ctx, targets), 0);
+  }
+  if (amount.kind === 'difference') {
+    // The positive difference of two numbers (Jaws of Defeat's rulings: subtract the smaller from the larger).
+    const [a, b] = amount.of.map((part) => amountOf(state, part, ctx, targets));
+    return Math.abs((a ?? 0) - (b ?? 0));
   }
   if (amount.kind === 'extreme') {
     const values = amount.of.map((part) => amountOf(state, part, ctx, targets));
@@ -475,6 +511,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'colorsAmong':
+      return colorsAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':
@@ -499,6 +537,15 @@ export function stateAmountOf(
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
       return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
+    case 'chosenPlayerLead': {
+      // CR 608.2c (Slithermuse): the stat of the player the resolution chose, more than the controller's, or 0.
+      if (ctx.chosenPlayer === undefined || getSeat(state, ctx.chosenPlayer).hasLost) return 0;
+      return Math.max(
+        0,
+        playerStatOf(state, ctx.chosenPlayer, amount.stat) -
+          playerStatOf(state, ctx.controller, amount.stat),
+      );
+    }
     case 'opponentCount':
       // CR 102.2, 102.3: the opponents of the controller still in the game.
       return opponentsOf(state, ctx.controller).length;
@@ -527,6 +574,11 @@ export function stateAmountOf(
           (amount.otherThanThis !== true || s.object !== ctx.source),
       ).length;
     }
+    case 'cardsToGraveyardThisTurn':
+      // CR 404.1, 400.3 (issue 102): the cards the controller owns that were put into a graveyard this turn from one of the zones.
+      return state.turnLog.graveyardEntries.filter(
+        (e) => e.seat === ctx.controller && amount.from.includes(e.from as 'hand' | 'library'),
+      ).length;
     case 'greatestManaValueCast': {
       // CR 202.3, 202.3e, 601.2i (D-646): the greatest mana value among the spells the controller has cast this turn (copies are not cast, CR 707.10), each as it was cast.
       const types = amount.ofTypes;

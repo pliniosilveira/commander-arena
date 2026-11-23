@@ -3,7 +3,7 @@
  *
  * Invented for the tests of D-151: an additional combat phase with "untap all attacking creatures" (`extraCombat`, `untap` of each attacker), Dethrone
  * (the keyword and the condition `attackingMostLife`), "attacks for the first time each turn" (`firstTimeEachTurn`), a creature put onto the battlefield
- * tapped and attacking (`enterAttacking`) behind the condition `attackersTotalPower`, and Myriad (inert with two players). Names start with
+ * tapped and attacking (`enterAttacking`) behind the condition `attackersTotalPower`, and Myriad. Names start with
  * "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.
  */
 import type { Effect } from '../../ast/types';
@@ -110,7 +110,7 @@ export const SYNTHETIC_DRAGONS_COMBAT_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
-  // "Flying. Myriad. Whenever this creature deals combat damage to a player, you gain 1 life." (Myriad does nothing with two players)
+  // "Flying. Myriad. Whenever this creature deals combat damage to a player, you gain 1 life."
   singleFace({
     name: 'SYNTHETIC Echo Drake',
     manaCost: ['4', 'R'],

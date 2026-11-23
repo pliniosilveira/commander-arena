@@ -32,6 +32,9 @@ export function playerSubject(
     case 'eachPlayerExcept':
       // CR 102.1: every player but the ones `except` names ("its owner draws ... and each other player loses ...").
       return { text: 'each other player', base: false };
+    case 'eachPlayerControlling':
+      // CR 102.1: the players with a battlefield permanent of a kind ("each player who controls a creature with power 4 or greater").
+      return { text: 'each player who controls one', base: false };
     case 'controllerOf':
       return { text: 'its controller', base: false };
     case 'ownerOf':
@@ -61,6 +64,9 @@ export function playerSubject(
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6): "each opponent attacking that player".
       return { text: 'each opponent attacking that player', base: false };
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: the opponents a batch of sources damaged.
+      return { text: 'each of those opponents', base: false };
     case 'declinedPlayer':
       // D-576: a player who declined a choice, named in its `otherwise` effect.
       return { text: 'the player who declined', base: false };
@@ -80,6 +86,18 @@ export function playerSubject(
       // CR 120.2a: "each opponent dealt combat damage this game by a creature named X loses life".
       return {
         text: `each opponent dealt combat damage this game by a creature named ${player.name}`,
+        base: false,
+      };
+    case 'lostLifeThisTurn':
+      // CR 119.3: "each opponent who lost life this turn".
+      return {
+        text: `${playerSubject(player.of, target).text} who lost life this turn`,
+        base: false,
+      };
+    case 'combatDamagedThisTurn':
+      // CR 120.2a: "each opponent who was dealt combat damage by this creature this turn".
+      return {
+        text: `${playerSubject(player.of, target).text} who was dealt combat damage this turn`,
         base: false,
       };
     case 'all':

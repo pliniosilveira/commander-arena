@@ -23,13 +23,14 @@ import type { IrAmount, IrCounterSpec, IrNoun, IrNounList } from '../../ir/types
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, LIST_SEPARATOR, makeClause, operands, single } from './operands';
+import { impliedYou } from './player';
 
 // Stage P69 (D-256): "that many", the life a life gain trigger names (the lowering refuses it where no such trigger or instruction gives it a meaning).
 /**
  * The name of a kind of counter: "+1/+1", "-1/-1", the keyword counters of two words (CR 122.1b: first strike, double strike) and any other word ("charge").
  * Read at the lowering, where the names the engine runs as keyword counters (D-430) are told from the ones it cannot run (decayed).
  */
-const COUNTER_NAME = /[+-]\d+\/[+-]\d+|first strike|double strike|[a-z]+/i;
+export const COUNTER_NAME = /[+-]\d+\/[+-]\d+|first strike|double strike|[a-z]+/i;
 
 const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-many'] as const;
 
@@ -212,6 +213,46 @@ export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
       args: counter === null ? { objects } : { counter, objects },
     }),
   ),
+});
+
+/**
+ * `effect.double-player-counters`: "double the number of each kind of counter you have" (issue 105, Aetheric Amplifier; CR 701.10, 122.1: the player puts as many counters of each kind as they
+ * have of it, the counters a player has being poison, energy and experience counters). Not read: a kind of counter named, another player, "on target player", a following clause.
+ */
+export const EFFECT_DOUBLE_PLAYER_COUNTERS = defineRule<Clauses>({
+  id: 'effect.double-player-counters',
+  family: 'effect',
+  leading: ['double'],
+  cites: ['CR 701.10 (Double)', 'CR 122.1 (Counters)', 'CR 122.6 (Counters)'],
+  examples: ['double the number of each kind of counter you have'],
+  rejects: [
+    'double the number of each kind of counter on target creature',
+    'double the number of each kind of counter',
+    'double the number of +1/+1 counters you have',
+    'double the number of each kind of counter that player has',
+    'double the number of each kind of counter you have and draw a card',
+    'double the number of each kind of counters you have',
+    'doubles the number of each kind of counter you have',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/double the number of each kind of counter you have(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          'effect.double-player-counters',
+          'doublePlayerCounters',
+          { player: impliedYou('effect.double-player-counters', pos) },
+          { start: pos, end: r.pos },
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
 });
 
 /**
@@ -670,6 +711,7 @@ export const COUNTER_RULES = [
   EFFECT_ADD_COUNTERS_OTHER_AND_SELF,
   EFFECT_ADD_COUNTERS,
   EFFECT_DOUBLE_COUNTERS,
+  EFFECT_DOUBLE_PLAYER_COUNTERS,
   EFFECT_ADD_COUNTERS_NUMBER_OF,
   EFFECT_ADD_COUNTERS_KINDS,
 ];

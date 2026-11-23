@@ -140,6 +140,11 @@ export function runMayPlay(
         ...(effect.free === true ? { free: true as const } : {}),
         // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell".
         ...(effect.anyManaColor === true ? { anyManaColor: true as const } : {}),
+        // Hostage Taker (CR 609.4b): "mana of any type can be spent to cast that spell"; Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead".
+        ...(effect.anyManaType === true ? { anyManaType: true as const } : {}),
+        ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
+        // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast".
+        ...(effect.lessGeneric === undefined ? {} : { lessGeneric: effect.lessGeneric }),
       },
     });
   }
@@ -158,6 +163,8 @@ function bakeAmount(amount: Amount, ids: readonly ObjectId[]): Amount {
       return { ...amount, of: bakeAmount(amount.of, ids) };
     case 'minus':
       return { ...amount, of: bakeAmount(amount.of, ids) };
+    case 'difference':
+      return { ...amount, of: [bakeAmount(amount.of[0], ids), bakeAmount(amount.of[1], ids)] };
     case 'extreme':
     case 'sum':
       return { ...amount, of: amount.of.map((a) => bakeAmount(a, ids)) };

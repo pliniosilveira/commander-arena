@@ -33,6 +33,7 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'eachOpponent',
   'eachOtherOpponent',
   'eachPlayerExcept',
+  'eachPlayerControlling',
   'all',
   'controllerOf',
   'ownerOf',
@@ -40,11 +41,14 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'playerToYourRight',
   'chosenPlayer',
   'triggerPlayer',
+  'triggerDamagedPlayers',
   'discardedThisWay',
   'couldntSacrificeThisWay',
   'giftRecipient',
   'attackedPlayers',
   'combatDamagedByNamed',
+  'lostLifeThisTurn',
+  'combatDamagedThisTurn',
 ];
 
 /**

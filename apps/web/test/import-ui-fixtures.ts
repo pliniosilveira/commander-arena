@@ -190,6 +190,7 @@ export function playableReport(overrides: Partial<ImportReport> = {}): ImportRep
     notFound: [],
     fuzzy: [],
     ignored: [],
+    companion: null,
     commanderChoices: [],
     commanders: [COMMANDER],
     validation: VALID,

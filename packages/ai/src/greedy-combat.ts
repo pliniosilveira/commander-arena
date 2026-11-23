@@ -27,7 +27,6 @@
  */
 import type {
   Action,
-  AttackTarget,
   DeclareAttackersDecision,
   DeclareBlockersDecision,
   GameView,
@@ -35,6 +34,7 @@ import type {
   ObjectView,
   SeatId,
 } from '@commander-arena/engine';
+import { rankOpponents, targetFor } from './attack-targets';
 import { couldBlock } from './casual-evasion';
 import { type PlannedAttack, payForAttacks } from './casual-play-rules';
 import { lifeDamageOf, poisonDamageOf, poisonOf } from './casual-poison';
@@ -43,9 +43,9 @@ import {
   hasKeyword,
   isCreature,
   manaValueOf,
-  opponentLife,
   ownLife,
   powerOf,
+  seatLife,
   toughnessOf,
 } from './casual-view';
 import { COMMANDER_LETHAL, commanderClock } from './evaluate';
@@ -130,9 +130,6 @@ export function survivesAttack(view: GameView, attacker: ObjectView): boolean {
   return !blockers.some((b) => blockerKills(b, attacker));
 }
 
-const opposingSeat = (view: GameView): SeatId | undefined =>
-  view.seats.find((s) => s.id !== view.viewer && !s.hasLost)?.id;
-
 /** Whether `unblocked`, all reaching `seat` unhindered, would make it lose (life, poison, commander). */
 function reachesLethal(
   view: GameView,
@@ -155,9 +152,13 @@ function reachesLethal(
  * The attackers left once each untapped potential blocker group has stopped one attacker, biggest
  * attacker first (a menace attacker takes two blockers).
  */
-function leftAfterBlocks(view: GameView, attackers: readonly ObjectView[]): ObjectView[] {
+function leftAfterBlocks(
+  view: GameView,
+  attackers: readonly ObjectView[],
+  defender: SeatId,
+): ObjectView[] {
   const free = new Set(
-    view.battlefield.filter((o) => o.controller !== view.viewer && isCreature(o) && !o.tapped),
+    view.battlefield.filter((o) => o.controller === defender && isCreature(o) && !o.tapped),
   );
   const left: ObjectView[] = [];
   for (const a of [...attackers].sort((x, y) => lifeDamageOf(y) - lifeDamageOf(x))) {
@@ -172,18 +173,19 @@ function leftAfterBlocks(view: GameView, attackers: readonly ObjectView[]): Obje
   return left;
 }
 
-/** The player attack target, or the first offered target when only permanents can be attacked. */
-function attackTarget(view: GameView, targets: readonly AttackTarget[]): AttackTarget | undefined {
-  return targets.find((t) => t.kind === 'player' && t.seat !== view.viewer) ?? targets[0];
-}
-
 export function chooseGreedyAttack(view: GameView, d: DeclareAttackersDecision): Choice {
+  // Issue 479: with several opponents the one the attackers can kill, else the weakest, is attacked.
+  const armed = d.candidates.flatMap((c) => {
+    const o = findObject(view, c.attacker);
+    return o === undefined || powerOf(o) <= 0 ? [] : [o];
+  });
+  const ranked = rankOpponents(view, armed);
   const candidates = d.candidates.flatMap((c) => {
     const object = findObject(view, c.attacker);
-    const target = attackTarget(view, c.targets);
+    const target = targetFor(view, c.targets, ranked);
     return object === undefined || target === undefined ? [] : [{ object, target, c }];
   });
-  const opponent = opposingSeat(view);
+  const opponent = ranked[0];
   const atPlayer = candidates.filter((x) => x.target.kind === 'player').map((x) => x.object);
   const lethal =
     opponent !== undefined &&
@@ -191,9 +193,9 @@ export function chooseGreedyAttack(view: GameView, d: DeclareAttackersDecision):
     reachesLethal(
       view,
       opponent,
-      opponentLife(view),
+      seatLife(view, opponent),
       poisonOf(view, opponent),
-      leftAfterBlocks(view, atPlayer),
+      leftAfterBlocks(view, atPlayer, opponent),
     );
   // CR 508.1d: a creature that attacks each combat if able is declared whatever the agent thinks.
   const required = new Set(d.mustAttack);

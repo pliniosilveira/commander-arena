@@ -3,6 +3,7 @@
  * The Worker owns the real `GameState`; the page only ever sees a `GameView` for the human seat.
  */
 import type {
+  Ability,
   Action,
   DeckConfig,
   GameEvent,
@@ -13,9 +14,10 @@ import type {
 import type { LookedCard } from './looked-cards';
 import type { RevealedCard } from './revealed-cards';
 
-/** The human is always seat 0 and the AI seat 1 in v1. */
+/** The human is always seat 0; every other seat (1 to 3) is an AI. */
 export const HUMAN: SeatId = 0;
-export const AI_SEAT: SeatId = 1;
+/** The first AI seat: the only one in a two-player game. */
+export const FIRST_AI_SEAT: SeatId = 1;
 
 /**
  * Which agent plays the opponent: `'normal'` is the `HeuristicAgent`, the only level there is (the
@@ -26,6 +28,14 @@ export type AiKind = 'casual' | 'normal';
 
 export function isAiKind(value: unknown): value is AiKind {
   return value === 'casual' || value === 'normal';
+}
+
+/** One AI opponent: the same fields as the singular `ai*` options of `NewGameOptions`. */
+export interface OpponentOptions {
+  readonly deck: string;
+  readonly cards?: DeckConfig;
+  readonly preconName?: string;
+  readonly emblems?: readonly { readonly text: string; readonly abilities: readonly Ability[] }[];
 }
 
 export interface NewGameOptions {
@@ -64,6 +74,13 @@ export interface NewGameOptions {
    * the host's default, so a host built without it behaves as before M7d.
    */
   readonly ai?: AiKind;
+  /** Emblems the opponent owns from the start (the Medium and Hard levels of the challenges): the engine's abilities and the text the emblem shows. */
+  readonly aiEmblems?: readonly { readonly text: string; readonly abilities: readonly Ability[] }[];
+  /**
+   * The AI opponents in seat order, seats 1 to N (at most three). When absent, `aiDeck`, `aiCards`,
+   * `aiPreconName` and `aiEmblems` describe the one opponent of a two-player game.
+   */
+  readonly opponents?: readonly OpponentOptions[];
 }
 
 export type LogLevel = 'major' | 'detail';
@@ -136,7 +153,9 @@ export interface Snapshot {
   readonly log: readonly LogEntry[];
   /** Actions applied since the game began. */
   readonly actionCount: number;
-  /** Decisions the AI watchdog replaced with the safe fallback (A28). */
+  /** The same count for each AI seat that needed a fallback (absent when none did). */
+  readonly aiFallbacksBySeat?: Readonly<Record<number, number>>;
+  /** Decisions the AI watchdog replaced with the safe fallback (A28), over all AI seats. */
   readonly aiFallbacks: number;
   /** The engine refused the action; the snapshot is unchanged. */
   readonly error: string | null;

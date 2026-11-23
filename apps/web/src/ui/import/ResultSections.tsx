@@ -215,11 +215,46 @@ export function ValidationPanel({ validation }: { validation: DeckValidation | n
   );
 }
 
+/** The companion of the list (SPEC 6.1, CR 702.139) as its own section: its name, and that it is accepted or why it is refused. */
+export function CompanionSection({ companion }: { companion: ImportReport['companion'] }) {
+  if (companion === null) return null;
+  const name = companion.card?.stored.name ?? companion.requested;
+  const refused = companion.card === null || companion.issues.length > 0;
+  return (
+    <section className="imp-section imp-companion" aria-labelledby="imp-comp-h">
+      <h3 id="imp-comp-h">Companion</h3>
+      <p className="imp-state" data-ok={!refused} data-testid="import-companion">
+        <strong>{name}</strong>{' '}
+        {refused ? 'is refused, so the deck cannot be played.' : 'is accepted.'}
+      </p>
+      {companion.card === null && (
+        <p className="scr-help">
+          This name was not matched to a card yet; see the card names above.
+        </p>
+      )}
+      {companion.issues.length > 0 && (
+        <ul className="imp-list">
+          {companion.issues.map((issue) => (
+            <li key={`${issue.code}:${issue.message}`}>
+              <span className="imp-tag">Error</span> {issue.message}
+            </li>
+          ))}
+        </ul>
+      )}
+      {companion.extra.length > 0 && (
+        <p className="scr-help">
+          Other names in the Companion section: {companion.extra.join(', ')}.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function IgnoredLines({ ignored }: { ignored: ImportReport['ignored'] }) {
   if (ignored.length === 0) return null;
   return (
     <details className="imp-section imp-ignored">
-      <summary>Ignored lines ({ignored.length}): sideboard, maybeboard and companion</summary>
+      <summary>Ignored lines ({ignored.length}): sideboard and maybeboard</summary>
       <ul className="imp-list">
         {ignored.map((l) => (
           <li key={`${l.section}:${l.name}`}>

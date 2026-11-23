@@ -34,6 +34,7 @@ export function stackWording(
   index: ReadonlyMap<ObjectId, ObjectView>,
   viewer: SeatId,
   activated: boolean,
+  seatCount = 2,
 ): StackWording {
   const mine = item.controller === viewer;
   // The monarch's abilities (CR 725.2) have no source and no card: worded from the kind.
@@ -74,9 +75,9 @@ export function stackWording(
   const sayX = (text: string): string =>
     item.x === undefined ? text : withAnnouncedX(text, item.x);
   const modes = chosenModesLine(item);
-  const targets = item.targets.map((t) => targetLabel(t, index, viewer));
+  const targets = item.targets.map((t) => targetLabel(t, index, viewer, seatCount));
   // D-145 (CR 601.2d): a spell that divided damage shows each target with its share, "3 damage to Goblin, 2 damage to Elf".
-  const shares = sharesText(item.targets, (t) => targetLabel(t, index, viewer));
+  const shares = sharesText(item.targets, (t) => targetLabel(t, index, viewer, seatCount));
   return {
     inherent,
     triggered,

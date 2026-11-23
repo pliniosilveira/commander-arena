@@ -103,6 +103,8 @@ describe('the continuous-effect nodes that are valid and supported', () => {
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      // CR 611.2a (Hildibrand Manderville): the duration of a `mayCast`, "until the end of your next turn".
+      'untilEndOfNextTurn',
       'whileHasCounter',
       'forAsLongAsYouControlThis',
       'forAsLongAsThisRemains',

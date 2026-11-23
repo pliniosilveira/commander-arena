@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
-import { handCard } from './harness/locators';
+import { handCard, permanentTarget } from './harness/locators';
+import { showAllLogLines, toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -105,7 +106,7 @@ test('"choose one": an illegal mode is disabled, a pick is required, the pick ru
   // No creature on either side: "Deals 3 damage to target creature" has no target.
   await expect(creatures(page)).toHaveCount(0);
   // Full Control keeps the spell on the stack, so what was chosen can be read there.
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   const handBefore = await hand(page).getAttribute('aria-label');
 
   await handCard(page, 'SYNTHETIC Three Way Charm').first().click();
@@ -134,7 +135,7 @@ test('"choose one": an illegal mode is disabled, a pick is required, the pick ru
 
   await expect(logText(page)).toContainText('You choose: Draw a card.');
   await expect(logText(page)).toContainText('You cast SYNTHETIC Three Way Charm.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('Chosen: Draw a card');
   await primary(page).click();
   await expect(stack).toContainText('Stack is empty');
@@ -150,7 +151,7 @@ test('a mode with a target: the prompt and the dock show the mode, and its effec
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED_CREATURE));
   await playUntil(page, 'SYNTHETIC Three Way Charm', THREE_WAY);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Three Way Charm').first().click();
   await expect(dialog(page)).toBeVisible();
@@ -163,15 +164,14 @@ test('a mode with a target: the prompt and the dock show the mode, and its effec
   const prompt =
     'Mode 1: Deals 3 damage to target creature. Choose a target for SYNTHETIC Three Way Charm.';
   await expect(page.getByText(prompt)).toBeVisible();
-  const dock = page.getByRole('region', { name: 'Legal targets' });
-  await expect(
-    dock.getByRole('heading', { name: 'Mode 1: Deals 3 damage to target creature' }),
-  ).toBeVisible();
-  await dock.getByRole('button').first().click();
+  // The legal targets are creatures on the board, chosen there: the dock has no list (and so no
+  // mode heading) when nothing off the board can be chosen (#555); the prompt names the mode.
+  await expect(page.getByRole('region', { name: 'Legal targets' })).toHaveCount(0);
+  await permanentTarget(page, /./).first().click();
   await primary(page).click();
 
   await expect(logText(page)).toContainText('You choose: Deals 3 damage to target creature.');
-  const stack = page.getByRole('region', { name: 'Stack' });
+  const stack = page.getByRole('region', { name: 'Stack', exact: true });
   await expect(stack).toContainText('Chosen: Deals 3 damage to target creature');
   await primary(page).click();
   await expect(logText(page)).toContainText('deals 3 damage');
@@ -185,7 +185,7 @@ test('"choose two": Cancel and Esc rewind the cast, two modes are needed, the di
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED_CREATURE));
   await playUntil(page, 'SYNTHETIC Twin Charm', TWIN);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   const handBefore = await hand(page).getAttribute('aria-label');
 
   await handCard(page, 'SYNTHETIC Twin Charm').first().click();
@@ -233,12 +233,12 @@ test('"choose two": Cancel and Esc rewind the cast, two modes are needed, the di
       'Mode 1: Deals 2 damage to target creature. Choose a target for SYNTHETIC Twin Charm.',
     ),
   ).toBeVisible();
-  await page.getByRole('region', { name: 'Legal targets' }).getByRole('button').first().click();
+  await permanentTarget(page, /./).first().click();
   await primary(page).click();
   await expect(logText(page)).toContainText(
     'You choose: Deals 2 damage to target creature and Draw a card.',
   );
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText(
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
     'Chosen: Deals 2 damage to target creature; Draw a card',
   );
   expect(errors).toEqual([]);
@@ -252,7 +252,7 @@ test('one legal set is chosen without a dialog: "choose two" with only two modes
   await page.goto(game(SEED_NO_CREATURE));
   await playUntil(page, 'SYNTHETIC Twin Charm', TWIN, { creatureless: true });
   await expect(creatures(page)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
 
   await handCard(page, 'SYNTHETIC Twin Charm').first().click();
   // No dialog: the engine chose "Target player gains 3 life" and "Draw a card"; the first of them
@@ -265,14 +265,11 @@ test('one legal set is chosen without a dialog: "choose two" with only two modes
   await page.locator('.board-life[data-seat="0"]').click();
   await primary(page).click();
   // The log says the choice was made for the player (a detail line).
-  await page
-    .getByRole('group', { name: 'Log detail' })
-    .getByRole('button', { name: 'All' })
-    .click();
+  await showAllLogLines(page);
   await expect(logText(page)).toContainText(
     'You choose: Target player gains 3 life and Draw a card (the only legal choice).',
   );
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText(
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
     'Chosen: Target player gains 3 life; Draw a card',
   );
   expect(errors).toEqual([]);

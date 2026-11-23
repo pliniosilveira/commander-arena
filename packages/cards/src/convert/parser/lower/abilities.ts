@@ -242,6 +242,19 @@ function lowerCostedKeyword(
   ) {
     return failure(ability);
   }
+  // "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability.
+  let costReducedIf: { generic: number; condition: Condition } | undefined;
+  if (ability.costReducedIf !== undefined) {
+    const { amount, condition } = ability.costReducedIf;
+    if (name !== 'equip' || cost.value.kind !== 'mana' || amount.kind !== 'number') {
+      return failure(ability);
+    }
+    const reduced = gate(ability, ['ability:costReducedIf']);
+    if (reduced !== null) return reduced;
+    const lowered = lowerCondition(condition);
+    if (!lowered.ok) return lowered;
+    costReducedIf = { generic: amount.value, condition: lowered.value };
+  }
   return {
     ok: true,
     value: [
@@ -250,6 +263,7 @@ function lowerCostedKeyword(
         keyword: {
           kind: name,
           cost: [cost.value],
+          ...(costReducedIf === undefined ? {} : { costReducedIf }),
           ...(ability.quality === undefined
             ? {}
             : { restriction: { subtypes: [ability.quality] } }),
@@ -428,6 +442,7 @@ function lowerNumbered(
     | 'toxic'
     | 'annihilator'
     | 'afflict'
+    | 'dredge'
     | 'mobilize'
     | 'fabricate'
     | 'bushido'
@@ -585,6 +600,7 @@ export function lowerKeyword(
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
     ability.name === 'afflict' ||
+    ability.name === 'dredge' ||
     ability.name === 'mobilize' ||
     ability.name === 'fabricate' ||
     ability.name === 'bushido' ||
@@ -618,6 +634,24 @@ export function lowerKeyword(
       ok: true,
       value: [{ kind: 'keyword', keyword: { kind: 'deckLimit', limit: limit.value } }],
       rule: 'keyword.deck-limit',
+    };
+  }
+  // CR 702.139a: "Companion — [condition]": a deck-construction line, no effect in a game; the condition is one of the closed set.
+  if (ability.name === 'companion') {
+    const [named] = ability.params;
+    if (ability.params.length !== 1 || named?.kind !== 'name') return failure(ability);
+    if (named.name !== 'noRepeatedManaSymbol') return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:companion']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: { kind: 'companion', condition: { kind: 'noRepeatedManaSymbol' } },
+        },
+      ],
+      rule: 'keyword.companion',
     };
   }
   if (ability.name === 'protection') return lowerProtection(ability);
@@ -711,6 +745,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const { zone, ...filter } = lowered.value;
     void zone;
     return built({ kind: 'damageBonus', sources: filter, amount: amount.value });
+  }
+  if (event.verb === 'damageDouble') {
+    // CR 614.1a, 120.3 (Angrath's Marauders): the damage a source the controller controls would deal to any permanent or player is doubled.
+    const sources = event.args.sources;
+    if (sources?.kind !== 'noun' || event.condition !== undefined) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:damageDouble']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(sources);
+    if (!lowered.ok) return lowered;
+    const { zone, ...filter } = lowered.value;
+    void zone;
+    return built({ kind: 'damageDouble', sources: filter });
   }
   if (event.verb === 'countersPlus') {
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
@@ -854,12 +900,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       'ability:replacement',
       'replacement:entersAsCopy',
       ...(event.args.withX === undefined ? [] : (['ability:copyEntersWithX'] as const)),
+      ...(event.args.fromGraveyard === undefined
+        ? []
+        : (['ability:copyEntersFromGraveyard'] as const)),
     ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
-    const { zone, ...kind } = filter.value;
-    void zone;
+    // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the filter keeps its zone, the graveyard.
+    const fromGraveyard =
+      event.args.fromGraveyard?.kind === 'flag' && event.args.fromGraveyard.value;
+    const { zone, ...unzoned } = filter.value;
+    if (fromGraveyard ? zone !== 'graveyard' : zone !== undefined && zone !== 'battlefield') {
+      return failure(ability);
+    }
+    const kind = fromGraveyard ? filter.value : unzoned;
     const gains: Keyword[] = [];
     for (const name of gained?.kind === 'keywordList' ? gained.names : []) {
       const word = keywordKind(name);
@@ -885,6 +940,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
+      ...(fromGraveyard ? { fromGraveyard: true as const } : {}),
+      // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types".
+      ...(event.args.keepName?.kind === 'flag' && event.args.keepName.value
+        ? { keepName: true as const }
+        : {}),
+      ...(event.args.addLegendary?.kind === 'flag' && event.args.addLegendary.value
+        ? { addSupertypes: ['legendary' as const] }
+        : {}),
       // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
       ...(event.args.withX?.kind === 'flag' && event.args.withX.value
         ? { withX: { counter: '+1/+1' } }
@@ -958,6 +1021,15 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       mode: event.args.plus === undefined ? 'thatMany' : 'plus',
       token: only.token,
     });
+  }
+  // Issue 102 (Dauthi Voidwalker, CR 614.1a, 122.1): "instead exile it with a void counter on it".
+  if (event.verb === 'wouldExileInsteadOfOpponentGraveyard') {
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:exileInsteadOfOpponentGraveyard',
+    ]);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'exileInsteadOfOpponentGraveyard', counter: 'void' });
   }
   if (event.verb === 'wouldDie') {
     // CR 614.1a, 700.4 (stage P29, D-133): a creature that would die is exiled instead; the controller of the permanent
@@ -1078,6 +1150,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
     }
+    // "where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the total or greatest of a stat over a group, read as it enters.
+    if (count?.kind === 'aggregate') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:aggregate',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'aggregate') {
+        return failure(ability);
+      }
+      return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
     // "equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as it enters.
     if (count?.kind === 'diedThisTurn') {
       const blocked = gate(ability, [
@@ -1185,10 +1272,12 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:dredge',
   'keyword:mobilize',
   'keyword:fabricate',
   'keyword:partnerWith',
   'keyword:deckLimit',
+  'keyword:companion',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',
@@ -1222,6 +1311,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTapped',
   'replacement:entersWithCounters',
   'replacement:wouldDie',
+  'replacement:exileInsteadOfOpponentGraveyard',
   'replacement:entersTappedUnlessPays',
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',
@@ -1231,6 +1321,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:tokensInstead',
   'replacement:countersPlus',
   'replacement:damageBonus',
+  'replacement:damageDouble',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

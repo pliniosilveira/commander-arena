@@ -1,6 +1,6 @@
 // The report of `pnpm ai:arena`: one match result as plain text. Pure, so a test can pin it.
 
-import type { MatchResult } from '@commander-arena/ai';
+import type { MatchResult, TableResult } from '@commander-arena/ai';
 
 const pct = (n: number, of: number): string => (of === 0 ? '-' : `${((100 * n) / of).toFixed(1)}%`);
 
@@ -64,13 +64,66 @@ export interface DecisionTimes {
   readonly slowestMs: number;
   /** Decisions that took longer than the budget, when the caller counted them. */
   readonly overBudget?: number;
+  /** The 95th percentile of the decision times, when the caller kept them. */
+  readonly p95Ms?: number;
 }
 
 /** The decision-time lines of a report: the mean and the slowest decision of each agent. */
 export function formatTimes(times: readonly DecisionTimes[], budgetMs: number): string {
   const lines = times.map((t) => {
     const mean = t.decisions === 0 ? 0 : t.totalMs / t.decisions;
-    return `decision time ${t.label}: ${t.decisions} decisions, mean ${mean.toFixed(2)} ms, slowest ${t.slowestMs.toFixed(1)} ms (budget ${budgetMs} ms${t.overBudget === undefined ? '' : `, ${t.overBudget} over it`})`;
+    return `decision time ${t.label}: ${t.decisions} decisions, mean ${mean.toFixed(2)} ms, ${t.p95Ms === undefined ? '' : `95th percentile ${t.p95Ms.toFixed(1)} ms, `}slowest ${t.slowestMs.toFixed(1)} ms (budget ${budgetMs} ms${t.overBudget === undefined ? '' : `, ${t.overBudget} over it`})`;
   });
   return lines.join('\n');
+}
+
+/** The report of a table of three or four seats: each agent once in every seat of every seed (`playTable`). */
+export function formatTable(r: TableResult, context: { seed: number; command: string }): string {
+  const w = [14, 16, ...r.winsBySeat.map(() => 10)];
+  const lines = [
+    `${r.labels.join(', ')}: ${r.games} games at ${r.seats} seats, ${r.games / r.seats} seeds from ${context.seed}, each played once for each rotation of the agents`,
+    `command: ${context.command}`,
+    '',
+    row(['agent', 'wins', ...r.winsBySeat.map((_, seat) => `as seat ${seat}`)], w),
+    ...r.labels.map((label, k) =>
+      row(
+        [
+          `${k} ${label}`,
+          `${r.wins[k] ?? 0} (${pct(r.wins[k] ?? 0, r.games)})`,
+          ...(r.winsByAgentSeat[k] ?? []),
+        ],
+        w,
+      ),
+    ),
+    '',
+    `wins by seat: ${r.winsBySeat.map((n, seat) => `seat ${seat} ${n}`).join(', ')}`,
+    `draws: ${r.draws}, unfinished (cap or stuck): ${r.unfinished}`,
+    `average turns: ${r.averageTurns.toFixed(1)}`,
+    `fallbacks: ${r.fallbacks}, rejected actions: ${r.rejectedActions}`,
+    ...r.labels.map((label, k) => `reasons ${k} ${label}: ${reasonLine(r.reasons[k] ?? {})}`),
+  ];
+  return lines.join('\n');
+}
+
+/** The `p`-th percentile (0 to 1) of `xs`, by rank; 0 when there are none. */
+export function percentile(xs: readonly number[], p: number): number {
+  if (xs.length === 0) return 0;
+  const sorted = [...xs].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? 0;
+}
+
+/**
+ * What the human waits for (issue 527): the decisions and their time of a whole run, per turn of the game and per round of turns (one turn of every seat). A turn is the engine's
+ * turn counter, summed over the games; the time is the sum of every agent's `decide`, so it is the wait when every seat is an AI.
+ */
+export function formatRound(totals: {
+  decisions: number;
+  ms: number;
+  turns: number;
+  seats: number;
+}): string {
+  const { decisions, ms, turns, seats } = totals;
+  if (turns === 0) return 'per turn: no turns played';
+  const rounds = turns / seats;
+  return `per turn: ${(decisions / turns).toFixed(1)} decisions, ${(ms / turns).toFixed(1)} ms; per round of ${seats} turns: ${(decisions / rounds).toFixed(1)} decisions, ${(ms / rounds).toFixed(1)} ms`;
 }

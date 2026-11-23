@@ -38,6 +38,7 @@ import {
   isAura,
   isEnchanted,
 } from './casual-attachments';
+import { chooseBringCompanion } from './casual-companion';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
 import {
   additionalCostsWorthPaying,
@@ -168,9 +169,18 @@ export interface Play {
   readonly lifeForMana?: true;
   /** The named alternative cost the play pays (Overload, Evoke, Dash, Spectacle: `casual-alt-costs.ts`, D-121, D-124). */
   readonly alt?: NamedAlternativeKind;
+  /** The permanent type of a card cast from the graveyard by `playFromGraveyardEachType` that has more than one: the engine lists one option for each, the first one is played. */
+  readonly permanentType?: Extract<
+    PriorityDecision['options'][number],
+    { kind: 'castSpell' }
+  >['permanentType'];
 }
 
 export const withFace = (face: number | undefined) => (face === undefined ? {} : { face });
+
+/** The permanent type the engine's option of a graveyard cast carries, to be given back with the action. */
+export const withType = (p: Pick<Play, 'permanentType'>) =>
+  p.permanentType === undefined ? {} : { permanentType: p.permanentType };
 
 /** Whether a land option is the back-face land of a modal double-faced card that is also a spell. */
 const isSpellLand = (p: Play): boolean =>
@@ -246,7 +256,9 @@ export function spellPlays(
       o.alternative === 'escape' ||
       o.alternative === 'retrace' ||
       o.alternative === 'jumpStart' ||
-      o.alternative === 'harmonize'
+      o.alternative === 'harmonize' ||
+      // Issue 105: casting for energy (`grantEnergyAlternative`) is not a play the AI weighs; it casts the card the ordinary way.
+      o.alternative === 'energyGrant'
     )
       continue;
     const base = findObject(view, o.object);
@@ -260,6 +272,7 @@ export function spellPlays(
       ...(free ? { free: true } : {}),
       ...(life ? { lifeForMana: true as const } : {}),
       ...(alt === undefined ? {} : { alt }),
+      ...(o.permanentType === undefined ? {} : { permanentType: o.permanentType }),
     };
     if (!allowed(view, play.obj, activations)) continue;
     // CR 118.9: paying life rather than mana is a last resort of the agent: never when it would leave it in danger (as for a shock land), and no spell with an {X} (it asks the
@@ -370,6 +383,7 @@ export function choosePriorityAction(
         ...(chosen.alt === undefined ? {} : { alternative: chosen.alt }),
         ...(chosen.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
         ...withFace(chosen.face),
+        ...withType(chosen),
       };
     }
   }
@@ -465,6 +479,10 @@ export function choosePriorityAction(
   // 2f. A locked half of a Room of ours (CR 709.5e, `casual-rooms.ts`): unlocked with the mana left after the spells.
   const unlock = chooseUnlockDoor(view, d);
   if (unlock !== null) return unlock;
+
+  // 2g. The companion (CR 702.139a, `casual-companion.ts`): the {3} comes out of mana nothing else used this turn.
+  const companion = chooseBringCompanion(view, d);
+  if (companion !== null) return companion;
 
   // 3. A land to cycle, or a pump that changes the combat (see casual-activations.ts).
   const activation = chooseActivation(view, d, activations);

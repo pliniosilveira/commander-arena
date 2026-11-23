@@ -1,7 +1,7 @@
 /** The menu's form logic, pure so it is tested without a DOM. */
 import type { AiKind, NewGameOptions } from '../../game/protocol';
 import type { DeckChoice, Precons } from '../../precons';
-import { startOptionsFor } from '../../precons/start';
+import { startOptionsFor, startTableOptionsFor } from '../../precons/start';
 
 export interface MenuForm {
   readonly humanDeck: string;
@@ -12,6 +12,15 @@ export interface MenuForm {
   readonly freeMulligan?: boolean;
   /** The opponent: the player's difficulty setting (D-164). Left out, the game starts with the host's default. */
   readonly ai?: AiKind;
+}
+
+/** The names of the opponents' deck steps, in seat order. */
+export const OPPONENT_ORDINALS = ['first', 'second', 'third'] as const;
+
+/** The title of the deck dialog of opponent `index` (from 0) at a table of `count` opponents. */
+export function opponentDeckTitle(index: number, count: number): string {
+  if (count === 1) return "Choose opponent's deck";
+  return `Choose ${OPPONENT_ORDINALS[index] ?? `#${index + 1}`} opponent's deck`;
 }
 
 export const MAX_SEED = 0xffffffff;
@@ -71,6 +80,40 @@ export async function startFromForm(
     seed: parsed.seed ?? pickSeed(),
     humanDeck: form.humanDeck,
     aiDeck: form.aiDeck,
+    freeMulligan: form.freeMulligan ?? true,
+    ...(form.ai === undefined ? {} : { ai: form.ai }),
+    allowHidden: false,
+  });
+  if (!result.ok) return { started: false, kind: 'refused', reason: result.reason };
+  await startGame({ ...result.options, intro: true });
+  return { started: true };
+}
+
+/**
+ * Starts a game with several opponents from the human deck and one deck per opponent, as
+ * `startFromForm` does for one: nothing starts on an invalid seed or when a deck is refused.
+ */
+export async function startTableFromForm(
+  startGame: (options: NewGameOptions) => Promise<void>,
+  form: {
+    readonly humanDeck: string;
+    readonly opponentDecks: readonly string[];
+    readonly seed: string;
+    readonly freeMulligan?: boolean;
+    readonly ai?: AiKind;
+  },
+  precons: Precons,
+  pickSeed: () => number = randomSeed,
+): Promise<StartResult> {
+  const parsed = parseSeed(form.seed);
+  if (!parsed.ok) return { started: false, kind: 'seed' };
+  if (form.humanDeck === '' || form.opponentDecks.some((id) => id === '')) {
+    return { started: false, kind: 'refused', reason: 'No precon is installed yet.' };
+  }
+  const result = await startTableOptionsFor(precons, {
+    seed: parsed.seed ?? pickSeed(),
+    humanDeck: form.humanDeck,
+    opponentDecks: form.opponentDecks,
     freeMulligan: form.freeMulligan ?? true,
     ...(form.ai === undefined ? {} : { ai: form.ai }),
     allowHidden: false,

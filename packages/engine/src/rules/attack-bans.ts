@@ -9,6 +9,7 @@ import { getObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { hasRestriction } from './restrictions';
 import { matchesFilter } from './select';
 
 /** The attack targets that `attacker` may not be declared attacking, among `targets`: the players and the planeswalkers of the controllers of the permanents that keep it off. */
@@ -37,6 +38,22 @@ export function withoutBannedTargets(
         );
       });
     }
+  }
+  // CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn": the players this creature was declared attacking earlier this turn (an attack on a planeswalker
+  // or a battle is not an attack on a player, so `attackedPlayers` has none for it) are left out; planeswalkers and battles can still be attacked.
+  if (hasRestriction(state, obj, 'cantAttackPlayersAlreadyAttacked')) {
+    const already = state.turnLog.attackedPlayers
+      .filter((a) => a.attacker === attacker)
+      .map((a) => a.player);
+    allowed = allowed.filter((t) => t.kind !== 'player' || !already.includes(t.seat));
+  }
+  // CR 508.1a, 611.2c (Chronomantic Escape): "Until your next turn, creatures can't attack you": the creatures the filter matches now may not attack that player.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'creaturesCantAttackPlayer') continue;
+    const ctx = { controller: e.change.controller, source: null };
+    if (!matchesFilter(state, obj, { ...e.change.filter, zone: 'battlefield' }, ctx)) continue;
+    const protectedSeat = e.change.controller;
+    allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== protectedSeat);
   }
   // CR 508.1a (Promise of Loyalty): the continuous effects `cantAttackPlayer` bar their objects from the player and the planeswalkers that player controls.
   for (const e of state.continuousEffects) {

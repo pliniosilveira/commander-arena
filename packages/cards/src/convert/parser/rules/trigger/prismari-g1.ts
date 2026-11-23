@@ -66,6 +66,59 @@ export const TRIGGER_CAST_FROM_HAND = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.cast-from-graveyard`: "a player casts a spell from a graveyard" (issue 102, River Kelpie; CR 601.2a: the spell is cast from where the card was; CR 601.2i: the ability triggers
+ * as the spell becomes cast). The spell `trigger.cast` reads, and "from a graveyard" (the engine's `castFromGraveyard`). Not read: another zone, "your graveyard", another caster than
+ * "a player", "from a graveyard" with nothing before it.
+ */
+export const TRIGGER_CAST_FROM_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.cast-from-graveyard',
+  family: 'trigger',
+  leading: ['a'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 603.2 (Handling Triggered Abilities)',
+  ],
+  examples: [
+    'a player casts a spell from a graveyard',
+    'a player casts a creature spell from a graveyard',
+  ],
+  rejects: [
+    'a player casts a spell from your graveyard',
+    'a player casts a spell from your hand',
+    'a player casts a spell',
+    'a player casts a spell from a graveyard or',
+    'an opponent casts a spell from a graveyard',
+    'you cast a spell from a graveyard',
+    'a player casts from a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      satisfy(
+        family<IrTrigger>('trigger', { only: ['trigger.cast'] }),
+        (t) => t.actor?.det === 'eachPlayer',
+      ),
+      spanned(pattern(new RegExp(` from a graveyard${NOT_IN_WORD}(?! or\\b)`, 'iu'))),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [cast, tail] = r.value;
+    const subject = cast.subject;
+    if (subject === undefined) return fail(ctx, pos);
+    const span = { start: pos, end: tail.span.end };
+    return {
+      ok: true,
+      value: {
+        ...cast,
+        span,
+        rule: 'trigger.cast-from-graveyard',
+        subject: { ...subject, filter: { ...subject.filter, castFromGraveyard: true } },
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 /** The event of "one or more creature tokens you control deal combat damage to a player". */
 function tokenDamageBatch(rule: string): Parser<IrTrigger> {
   return (ctx, pos) => {
@@ -188,5 +241,6 @@ export const TRIGGER_ENTERS_AND_TOKEN_DAMAGE = quietly(
 export const PRISMARI_G1_TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_TOKEN_DAMAGE,
   TRIGGER_CAST_FROM_HAND,
+  TRIGGER_CAST_FROM_GRAVEYARD,
   TRIGGER_TOKEN_COMBAT_DAMAGE_BATCH,
 ];

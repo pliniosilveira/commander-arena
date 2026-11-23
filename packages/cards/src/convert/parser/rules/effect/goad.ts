@@ -193,7 +193,78 @@ export const EFFECT_TOKENS_GOADED = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.explore` (Francisco, Fowl Marauder): "~ explores", "it explores" (CR 701.44a: the permanent's controller reveals the top card of their library; a land goes to their hand,
+ * otherwise the permanent gets a +1/+1 counter and the card may go to the graveyard). One permanent, the card itself or the one an earlier sentence chose. Not read: "target creature
+ * explores" (a target is no subject of this rule yet), several permanents, "explore" without a subject, "explores twice".
+ */
+export const EFFECT_EXPLORE = defineRule<Clauses>({
+  id: 'effect.explore',
+  family: 'effect',
+  leading: ['~', 'it'],
+  cites: ['CR 701.44a (Explore)'],
+  examples: ['~ explores', 'it explores'],
+  rejects: [
+    'target creature explores',
+    '~ explore',
+    'explore',
+    '~ explores twice',
+    'it explores it',
+    'they explore',
+  ],
+  parse: single(
+    'effect.explore',
+    sequence(operands(['noun.self', 'noun.it'], 'effect.explore'), literal(' explores')),
+    ([objects]) => ({ verb: 'explore', args: { objects } }),
+  ),
+});
+
+/**
+ * `effect.remove-from-combat`: "remove enchanted creature from combat", "remove target creature from combat" (CR 506.4: the creature stops attacking or blocking, and is no longer in
+ * the combat in progress; Observed Stasis). One creature: the permanent an Aura or Equipment is attached to, a target, or the pronoun an earlier sentence chose. Not read: "each
+ * creature", "all attacking creatures", "them", "remove it from the game", "remove from combat" with no creature, a duration.
+ */
+export const EFFECT_REMOVE_FROM_COMBAT = defineRule<Clauses>({
+  id: 'effect.remove-from-combat',
+  family: 'effect',
+  leading: ['remove'],
+  cites: ['CR 506.4 (Combat Phase)'],
+  examples: [
+    'remove enchanted creature from combat',
+    'remove equipped creature from combat',
+    'remove target creature from combat',
+    'remove up to one target creature from combat',
+    'remove it from combat',
+    'Remove target attacking creature from combat',
+  ],
+  rejects: [
+    'remove each creature from combat',
+    'remove all attacking creatures from combat',
+    'remove them from combat',
+    'remove target player from combat',
+    'remove enchanted creature from the game',
+    'remove enchanted creature from combat until end of turn',
+    'remove from combat',
+    'removes enchanted creature from combat',
+    'remove target creature from the combat',
+  ],
+  parse: single(
+    'effect.remove-from-combat',
+    sequence(
+      literal('remove '),
+      operands(
+        ['noun.attached-permanent', 'noun.target-permanent', 'noun.it'],
+        'effect.remove-from-combat',
+      ),
+      pattern(/ from combat(?![\p{L}\p{N}])/iu),
+    ),
+    ([, objects]) => ({ verb: 'removeFromCombat', args: { objects } }),
+  ),
+});
+
 export const GOAD_EFFECT_RULES = [
+  EFFECT_REMOVE_FROM_COMBAT,
+  EFFECT_EXPLORE,
   EFFECT_GOAD,
   EFFECT_TOKENS_GOADED,
   EFFECT_ATTACK_RANDOM_OPPONENT,

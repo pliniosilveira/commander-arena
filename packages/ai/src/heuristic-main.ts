@@ -43,7 +43,14 @@ import { turnUpCandidates } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
-import { choosePriorityAction, type Play, spellPlays, spendOf, withFace } from './casual-priority';
+import {
+  choosePriorityAction,
+  type Play,
+  spellPlays,
+  spendOf,
+  withFace,
+  withType,
+} from './casual-priority';
 import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
 import { creatureValue, evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
@@ -84,6 +91,7 @@ const castAction = (p: Play): Action => ({
   ...(p.alt === undefined ? {} : { alternative: p.alt }),
   ...(p.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
   ...withFace(p.face),
+  ...withType(p),
 });
 
 const sym = (p: Play): readonly string[] => (p.free === true ? [] : costSymbols(p.obj, spendOf(p)));
@@ -173,10 +181,13 @@ function casualRemainder(
   d: PriorityDecision,
   think: Think,
   activations: Set<string>,
+  /** Mana is held open for a protection spell: the companion's {3} (CR 702.139a) must not take it. */
+  holdsMana = false,
 ): Action {
   const options = d.options.filter(
     (o) =>
       o.kind !== 'playLand' &&
+      !(holdsMana && o.kind === 'bringCompanion') &&
       !(
         o.kind === 'castSpell' &&
         o.alternative !== 'flashback' &&
@@ -237,11 +248,11 @@ function mainPhase(
         : 'curve';
     return { action: castAction(first), reason, ...(hold === null ? {} : { reserve: hold }) };
   }
-  const rest = casualRemainder(view, d, think, activations);
+  const rest = casualRemainder(view, d, think, activations, reserve !== null);
   if (rest.kind === 'pass') {
     return { action: rest, reason: land?.hold === true ? 'hold' : 'no-play' };
   }
-  return { action: rest, reason: 'delegated' };
+  return { action: rest, reason: rest.kind === 'bringCompanion' ? 'companion' : 'delegated' };
 }
 
 /**

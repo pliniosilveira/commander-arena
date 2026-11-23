@@ -9,6 +9,7 @@
 import { pattern } from '../../combinators';
 import type { IrStatic } from '../../ir/types';
 import { defineRule } from '../registry';
+import { ABZAN_ARMOR_STATIC_RULES } from './abzan-armor';
 import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
@@ -25,6 +26,8 @@ import { DRAGON_STATIC_RULES } from './dragons';
 import { EACH_SPELL_COST_STATIC_RULES } from './each-spell-cost';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { EMINENCE_STATIC_RULES } from './eminence';
+import { STATIC_PAY_ENERGY_ALT_COST } from './energy-alt';
+import { EQUIPMENT_KIT_STATIC_RULES } from './equipment-kit';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
 import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
@@ -103,6 +106,8 @@ export const STATIC_RULES = [
   ...DEATH_TOLL_C_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
+  // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.
+  ...EQUIPMENT_KIT_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
@@ -126,6 +131,8 @@ export const STATIC_RULES = [
   ...DINOSAUR_STATIC_RULES,
   // Issue 160 (D-628): "Creatures with power less than ~'s power can't block creatures you control."
   ...BLOCK_POWER_STATIC_RULES,
+  // Abzan Armor deck: "Creatures your opponents control without flying or reach can't block creatures with power 2 or less."
+  ...ABZAN_ARMOR_STATIC_RULES,
   // Stage P33 (D-150): protections of a player, damage prevented to ~, a card that can't be cast early, a tax on blocking, permanents that
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,
@@ -141,6 +148,8 @@ export const STATIC_RULES = [
   ...ADAMANTOISE_STATIC_RULES,
   // Stage P67 (D-220): "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time."
   ...EDHREC_STATIC_RULES,
+  // Aetherdrift energy deck (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+  STATIC_PAY_ENERGY_ALT_COST,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."

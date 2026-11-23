@@ -131,10 +131,22 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'assignOpponent') return chooseFirstReplacement(d);
   // CR 701.30b: "clash with an opponent": which opponent. Nothing in the agent's plans reads it, so the first, deterministic and always legal.
   if (d.purpose === 'clashOpponent') return chooseFirstReplacement(d);
+  // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": which opponent. Nothing in the agent's plans reads it yet, so the first opponent left, deterministic and always legal.
+  if (d.purpose === 'chooseOpponent') return chooseFirstReplacement(d);
+  // CR 310.9a: the protector of a battle that enters. Nothing in the agent's plans reads it yet, so the first opponent left, deterministic and always legal.
+  if (d.purpose === 'protector') return chooseFirstReplacement(d);
   // CR 608.2d (The Black Gate): "choose a player with the most life or tied for most life": an opponent if one is among them (the effect is a bar on their creatures), else the first.
+  // CR 102.2 (Slithermuse): "choose an opponent" when it has more cards in hand than you means the opponent with the largest hand, so the opponent with the most cards in hand
+  // (ties go to the first listed, so the answer is deterministic); that is also a sound pick for the bar of The Black Gate.
   if (d.purpose === 'playerChoice') {
-    const other = d.options.find((o) => o !== `seat:${d.seat}`);
-    return { kind: 'chooseOption', option: other ?? d.options[0] ?? '' };
+    const handOf = (option: string): number =>
+      view.seats.find((s) => `seat:${s.id}` === option)?.handCount ?? 0;
+    let best: string | undefined;
+    for (const option of d.options) {
+      if (option === `seat:${d.seat}`) continue;
+      if (best === undefined || handOf(option) > handOf(best)) best = option;
+    }
+    return { kind: 'chooseOption', option: best ?? d.options[0] ?? '' };
   }
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);

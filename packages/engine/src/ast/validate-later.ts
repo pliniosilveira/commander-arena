@@ -78,6 +78,32 @@ export function checkDelayedTrigger(
     }
     return;
   }
+  // CR 603.7c, 118.12a, 701.21a (Ashling, the Limitless): "At the beginning of your next end step, sacrifice it unless you pay {W}{U}{B}{R}{G}", about the permanents an earlier effect of the
+  // same sequence made (`moved`, bound as the ability is created): its controller pays a mana cost, or the permanents are sacrificed.
+  if (kind === 'unlessPays') {
+    const unless = inner as Extract<Effect, { kind: 'unlessPays' }>;
+    const sacrifice = unless.effect;
+    if (
+      !exiledAvailable ||
+      kindOf(sacrifice) !== 'sacrifice' ||
+      kindOf((sacrifice as Extract<Effect, { kind: 'sacrifice' }>).objects) !== 'moved' ||
+      (sacrifice as Extract<Effect, { kind: 'sacrifice' }>).byController !== undefined ||
+      (sacrifice as Extract<Effect, { kind: 'sacrifice' }>).player !== undefined ||
+      unless.player?.kind !== 'you' ||
+      unless.optional !== undefined ||
+      unless.upkeep !== undefined ||
+      !Array.isArray(unless.cost) ||
+      unless.cost.length === 0 ||
+      unless.cost.some((c) => c?.kind !== 'mana')
+    ) {
+      issue(
+        out,
+        `${path}.effect`,
+        "a delayed 'unless pays' has its controller pay a mana cost or sacrifice the objects an effect before it made ('moved')",
+      );
+    }
+    return;
+  }
   // D-639 (CR 603.7c, 701.21a): "Sacrifice it / those tokens at the beginning of the next end step", about the permanents an earlier effect of the same sequence made (`moved`: the
   // tokens of `createToken`, `createCopies` or `populate`), as they are when the ability is created; sacrificed by the controller of the ability.
   if (kind === 'sacrifice') {
@@ -108,6 +134,9 @@ export function checkDelayedTrigger(
       }
       return;
     }
+    // CR 603.7c, 400.7j (Zara): "Return that creature to its owner's hand at the beginning of the next end step", about the permanents an earlier effect of the same sequence
+    // put onto the battlefield (`moved`), as they are when the ability is created.
+    if (move.to === 'hand' && exiledAvailable && kindOf(move.objects) === 'moved') return;
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
     // D-657 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
     // that has the ability became in the graveyard (`thisCard`).

@@ -395,6 +395,12 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSources':
       // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
       return 'those creatures';
+    case 'triggerAttackers':
+      // Champions from Beyond: the creatures the attack declared.
+      return 'those creatures';
+    case 'convokers':
+      // Lethal Scheme (CR 702.51a): the creatures tapped to cast the spell with Convoke.
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -405,6 +411,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'the exiled card';
     case 'putWithThis':
       // Animate Dead: "that creature", the creature this permanent put onto the battlefield.
+      return 'that creature';
+    case 'eachObject':
+      // Canopy Gargantuan: the creature the counters are being put on right now.
       return 'that creature';
   }
 }
@@ -501,6 +510,8 @@ function recipientText(
       return 'each other opponent';
     case 'eachPlayerExcept':
       return 'each other player';
+    case 'eachPlayerControlling':
+      return 'each player who controls one';
     case 'controllerOf':
       return 'its controller';
     case 'ownerOf':
@@ -508,7 +519,10 @@ function recipientText(
     case 'triggerSubject':
       return 'it';
     case 'triggerSources':
+    case 'triggerAttackers':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'defendingPlayer':
       return 'the defending player';
     case 'playerToYourRight':
@@ -526,6 +540,9 @@ function recipientText(
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6).
       return 'each opponent attacking that player';
+    case 'triggerDamagedPlayers':
+      // CR 603.2c: the opponents a batch of sources damaged.
+      return 'each of those opponents';
     case 'declinedPlayer':
       return 'the player who declined';
     case 'giftRecipient':
@@ -541,6 +558,10 @@ function recipientText(
     case 'combatDamagedByNamed':
       // CR 120.2a: the opponents a creature of this name has dealt combat damage to this game.
       return `each opponent dealt combat damage this game by a creature named ${to.name}`;
+    case 'lostLifeThisTurn':
+      return `each player who lost life this turn`;
+    case 'combatDamagedThisTurn':
+      return `each player who was dealt combat damage this turn`;
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
@@ -556,6 +577,7 @@ function recipientText(
     case 'attached':
     case 'linkedExile':
     case 'putWithThis':
+    case 'eachObject':
     case 'each':
       return objectText(to, ability, self);
   }
@@ -580,6 +602,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   cantBeBlocked: "can't be blocked",
   // Issue 81 (CR 509.1b): the Gingerbrute token.
   cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
+  cantAttackPlayersAlreadyAttacked: "can't attack a player it has already attacked this turn",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
@@ -587,6 +610,11 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   doesntUntap: "doesn't untap",
   cantBeCountered: "can't be countered",
   canBlockOnlyFlying: 'can block only creatures with flying',
+  // Abzan Armor group A (CR 609.4, 702.3b, 510.1a).
+  canAttackAsThoughNoDefender: "can attack as though it didn't have defender",
+  canAttackAsThoughNoDefenderVsLastTurnAttackers:
+    "can attack players who attacked you during their last turn as though it didn't have defender",
+  assignsDamageByToughness: 'assigns combat damage equal to its toughness rather than its power',
   cantActivateAbilities: "can't have its activated abilities activated",
 };
 
@@ -693,6 +721,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'eachOpponent':
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
+    case 'eachPlayerControlling':
     case 'eachPlayer':
       return { who: 'they', third: false };
     case 'controllerOf':
@@ -712,6 +741,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'that opponent', third: true };
     case 'opponentsAttackingTriggerPlayer':
       return { who: 'they', third: false };
+    case 'triggerDamagedPlayers':
+      return { who: 'each of those opponents', third: true };
     case 'declinedPlayer':
       return { who: 'the player who declined', third: true };
     case 'giftRecipient':
@@ -719,6 +750,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
     case 'attackedPlayers':
+    case 'lostLifeThisTurn':
+    case 'combatDamagedThisTurn':
     case 'combatDamagedByNamed':
       return { who: 'they', third: false };
     case 'all':
@@ -1073,6 +1106,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'cumulativeUpkeep':
       // CR 702.24a (D-127): the whole ability of the keyword, in the words of its reminder text.
       return `Put an age counter on this ${self}. Sacrifice it unless you ${unlessCostPhrase(effect.cost)} for each age counter on it`;
+    case 'extraTurn':
+      // CR 500.7: "take an extra turn after this one", "target player takes an extra turn after this one".
+      return `${playerVerb(effect.player, ability, 'take')} an extra turn after this one`;
     case 'becomeMonarch':
       // CR 725.1 (D-127): "you become the monarch", "its controller becomes the monarch".
       return `${playerVerb(effect.player, ability, 'become')} the monarch`;
@@ -1316,6 +1352,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             : '';
         return `You may cast ${object(effect.objects)} this turn${effect.free === true ? ' without paying its mana cost' : ''}${rider}`;
       }
+      // Hildibrand Manderville (CR 601.2, 715.3): "You may cast it from your graveyard as an Adventure until the end of your next turn" (the card of a permanent that died).
+      if (effect.adventure === true) {
+        return `You may cast it from your graveyard as an Adventure ${
+          effect.duration === 'untilEndOfNextTurn' ? 'until the end of your next turn' : 'this turn'
+        }`;
+      }
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
       // D-359 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".
       // Issue 159: "in a graveyard" (any player's) and the rider "When you cast it this turn, this creature gains all activated abilities of that card until end of turn".
@@ -1384,6 +1426,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
+    case 'myriad':
+      // CR 702.116a: the ability the keyword Myriad stands for, as the keyword's reminder text writes it.
+      return effect.opponent === undefined
+        ? "For each opponent other than defending player, you may create a token that's a copy of this creature that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat"
+        : 'Create a token that is a copy of this creature, tapped and attacking that opponent';
     case 'delayedSacrifice':
       // D-478 (CR 702.147a, 701.54c): the sacrifice at end of combat of the ability of Decayed, and of the third level of the Ring.
       return delayedSacrificeText(effect.of);
@@ -1532,6 +1579,17 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'requireAttack':
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
+    case 'creaturesCantAttackYou':
+      // Federation Fleet group F (CR 508.1a): "Until your next turn, creatures can't attack you".
+      return "Until your next turn, creatures can't attack you";
+    case 'restrictGroup': {
+      // Abzan Armor group A (CR 609.4, 611.2c): "Creatures you control with defender can attack this turn as though they didn't have defender".
+      const group = groupPhrase(effect.creatures);
+      if (group === null) return UNSAID;
+      return effect.restriction === 'canAttackAsThoughNoDefender'
+        ? `${capital(group)} can attack this turn as though they didn't have defender`
+        : `Until end of turn, ${group} assign combat damage equal to their toughness rather than their power`;
+    }
     case 'doubleTokens':
       // Issue 101 (CR 614.1a): "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead".
       return 'until end of turn, twice as many tokens are created under your control';

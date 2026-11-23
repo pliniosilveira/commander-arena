@@ -21,6 +21,11 @@ export interface Precon {
   readonly name: string;
   readonly commander: string;
   readonly entries: readonly [name: string, count: number][];
+  /**
+   * A companion (SPEC 5.8, CR 702.139) for the deck: a fixture card taken under another, SYNTHETIC name, kept outside the 100 cards. A hidden deck starts without
+   * the deck check of the import, so it carries no companion ability or condition of its own.
+   */
+  readonly companion?: { readonly like: string; readonly name: string };
 }
 
 const REAL_CARD_DECKS: readonly Precon[] = [
@@ -1092,6 +1097,17 @@ export const HIDDEN_DECKS: readonly Precon[] = [
     ],
   },
   {
+    id: 'synthetic-companion',
+    name: 'SYNTHETIC test deck: Companion',
+    commander: 'Yargle, Glutton of Urborg',
+    entries: [
+      ['Forest', 50],
+      ['Grizzly Bears', 48],
+      ['SYNTHETIC Court Herald', 1],
+    ],
+    companion: { like: 'Giant Spider', name: 'SYNTHETIC Companion Spider' },
+  },
+  {
     id: 'synthetic-trample',
     name: 'SYNTHETIC test deck: tramplers',
     commander: 'Yargle, Glutton of Urborg',
@@ -1128,5 +1144,14 @@ export function preconById(id: string): Precon {
 /** The engine deck for a precon: the commander first (index 0), then the 99 other cards. */
 export function deckFor(precon: Precon): DeckConfig {
   const cards: CardDefinition[] = deckOf([[precon.commander, 1], ...precon.entries]);
-  return { cards, commanders: [0] };
+  const like = precon.companion === undefined ? undefined : deckOf([[precon.companion.like, 1]])[0];
+  if (precon.companion === undefined || like === undefined) return { cards, commanders: [0] };
+  const name = precon.companion.name;
+  const companion: CardDefinition = {
+    ...like,
+    name,
+    oracleId: null,
+    faces: like.faces.map((face) => ({ ...face, name })),
+  };
+  return { cards, commanders: [0], companion };
 }

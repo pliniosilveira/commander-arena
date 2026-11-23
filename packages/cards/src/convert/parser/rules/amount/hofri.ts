@@ -91,7 +91,43 @@ export const AMOUNT_FOR_EACH_OWN_NONTOKEN_DESTROYED = defineRule<IrAmount>({
   },
 });
 
+/**
+ * `amount.for-each-nontoken-destroyed`: "for each nontoken creature destroyed this way" (CR 608.2c, 701.8, 608.2h: what the instruction before it destroyed, whoever
+ * controlled it). The engine's `thisWay` `destroyedNontokenCreatures`. Not read: a controller ("you controlled" is `amount.for-each-own-nontoken-destroyed`), tokens,
+ * another verb, "each creature destroyed this way" (`amount.for-each-this-way`).
+ */
+export const AMOUNT_FOR_EACH_NONTOKEN_DESTROYED = defineRule<IrAmount>({
+  id: 'amount.for-each-nontoken-destroyed',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 701.8 (Destroy)', 'CR 111.1 (Tokens)'],
+  examples: ['for each nontoken creature destroyed this way'],
+  rejects: [
+    'for each creature destroyed this way.',
+    'for each nontoken creature sacrificed this way',
+    'for each nontoken creature an opponent controlled that was destroyed this way',
+    'for each nontoken creature destroyed',
+    'for each nontoken creatures destroyed this way',
+    'for each nontoken permanent destroyed this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/for each nontoken creature destroyed this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'thisWay',
+        what: 'destroyedNontokenCreatures',
+        words: ['creature'],
+        span: { start: pos, end: r.pos },
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const HOFRI_AMOUNT_RULES = [
   AMOUNT_FOR_EACH_COMMANDER_CAST,
   AMOUNT_FOR_EACH_OWN_NONTOKEN_DESTROYED,
+  AMOUNT_FOR_EACH_NONTOKEN_DESTROYED,
 ];

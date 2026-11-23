@@ -1,6 +1,6 @@
 import type { GameView, ObjectView } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { splitAttachments, stripReserve, stripStep } from '../src/ui/board/attach';
+import { STRIP_W, splitAttachments, stripWidth } from '../src/ui/board/attach';
 import { groupEqual } from '../src/ui/board/group';
 import { fitTiles, handStep, layoutRow, type RowSpec } from '../src/ui/board/layout';
 import { rowSpec } from '../src/ui/board/Row';
@@ -305,13 +305,37 @@ describe('combat roles and commander damage', () => {
       { id: 0, ...bare },
       { id: 1, ...bare },
     ] as unknown as GameView['seats'];
-    const v = view({ seats, battlefield: [commander], commanderDamage: { '0:card7': 5 } });
-    expect(commanderDamageTaken(v, 0)).toEqual([{ source: 'Yargle', amount: 5 }]);
+    const v = view({
+      seats,
+      battlefield: [commander],
+      commanderDamage: { '0:card7': 5 },
+      commanderDamageSources: { '0:card7': 1 },
+    });
+    expect(commanderDamageTaken(v, 0)).toEqual([{ from: 1, name: 'Yargle', amount: 5 }]);
     expect(commanderDamageTaken(v, 1)).toEqual([]);
-    const two = view({ seats, battlefield: [commander], commanderDamage: { '0:a': 5, '0:b': 2 } });
+    const two = view({
+      seats,
+      battlefield: [commander],
+      commanderDamage: { '0:a': 5, '0:b': 2 },
+      commanderDamageSources: { '0:a': 1, '0:b': 1 },
+    });
     expect(commanderDamageTaken(two, 0)).toEqual([
-      { source: null, amount: 5 },
-      { source: null, amount: 2 },
+      { from: 1, name: null, amount: 5 },
+      { from: 1, name: null, amount: 2 },
+    ]);
+  });
+
+  test('with three seats each row names the seat whose commander dealt it (#535)', () => {
+    const bare = { graveyard: [], command: [], hand: null };
+    const seats = [0, 1, 2].map((id) => ({ id, ...bare })) as unknown as GameView['seats'];
+    const v = view({
+      seats,
+      commanderDamage: { '0:a': 9, '0:b': 2 },
+      commanderDamageSources: { '0:a': 1, '0:b': 2 },
+    });
+    expect(commanderDamageTaken(v, 0)).toEqual([
+      { from: 1, name: null, amount: 9 },
+      { from: 2, name: null, amount: 2 },
     ]);
   });
 });
@@ -384,24 +408,23 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(attached.size).toBe(0);
   });
 
-  test('strips take up to three full steps of room, then are squeezed into the same space', () => {
-    expect(stripStep(1)).toBe(14);
-    expect(stripStep(3)).toBe(14);
-    expect(stripReserve(0)).toBe(0);
-    expect(stripReserve(2)).toBe(28);
-    expect(stripReserve(3)).toBe(42);
-    expect(stripStep(6)).toBe(7);
-    expect(stripReserve(6)).toBeLessThanOrEqual(42);
-    expect(stripStep(20)).toBe(5);
+  test('every strip keeps one fixed width, however many there are', () => {
+    expect(stripWidth(1)).toBe(STRIP_W);
+    expect(stripWidth(20)).toBe(20 * STRIP_W);
+    expect(stripWidth(0)).toBe(0);
+    expect(stripWidth(3)).toBe(90);
+    expect(stripWidth(6)).toBe(180);
   });
 
-  test('a row with a host keeps room for its strips by drawing the tiles smaller', () => {
+  test('strips take width, not height: the tiles keep their size and the row scrolls when full', () => {
     const plain = rowSpec('creature', 140);
-    const reserved = rowSpec('creature', 140, stripReserve(2));
-    // The row is the room the tile fits in: 140 - 2 * 6 padding (the cap, 136, is above it).
-    expect(plain.tileH).toBe(128);
-    expect(reserved.tileH).toBe(100); // 140 - 2 * 6 padding - 28 for two strips
-    expect(reserved.preferredW).toBeLessThan(plain.preferredW);
+    const wide = rowSpec('creature', 140, stripWidth(10));
+    expect(wide.tileH).toBe(plain.tileH);
+    expect(wide.extraW).toBe(stripWidth(10));
+    const fit = fitTiles(3, 600, wide);
+    expect(fit.tileW).toBe(wide.preferredW);
+    expect(fit.overflow).toBe(true);
+    expect(fitTiles(3, 600, plain).overflow).toBe(false);
     // A tile has the shape of a card's top: wider than tall.
     expect(plain.preferredW).toBeGreaterThan(plain.tileH);
   });
@@ -409,7 +432,7 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
   test('the biggest tiles are a quarter bigger than before issue 137 (108, 84 and 70)', () => {
     // A row with all the room it wants: the cap of the kind. Before D-240 these were 108, 84 and 70.
     expect(rowSpec('creature', 400).tileH).toBe(136);
-    expect(rowSpec('other', 400).tileH).toBe(105);
+    expect(rowSpec('other', 400).tileH).toBe(88);
     expect(rowSpec('land', 400).tileH).toBe(88);
     expect(136 / 108).toBeGreaterThan(1.2);
     expect(136 / 108).toBeLessThan(1.3);

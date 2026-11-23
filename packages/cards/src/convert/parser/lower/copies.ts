@@ -95,7 +95,8 @@ export function lowerCopyToken(
     exceptions = {
       ...exceptions,
       setPt: { power: extra.power, toughness: extra.toughness },
-      addSubtypes: [...extra.subtypes],
+      // Issue 105 (Saheeli, Radiant Creator): "a 5/5 artifact creature in addition to its other types" names no creature type.
+      ...(extra.subtypes.length === 0 ? {} : { addSubtypes: [...extra.subtypes] }),
       addTypes: types,
       ...(abilities.length === 0 ? {} : { abilities }),
     };
@@ -110,6 +111,26 @@ export function lowerCopyToken(
       ...(token.copyStartingLoyalty === undefined
         ? {}
         : { startingLoyalty: token.copyStartingLoyalty }),
+    };
+  }
+  // "..., except it isn't legendary, it's an Illusion artifact in addition to its other types, and it has haste" (Reg Barclay, CR 707.9b, 205.4a): types and keywords besides the copied ones.
+  if (token.copyAddsTypes !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    const extra = token.copyAddsTypes;
+    const abilities: Ability[] = [];
+    for (const word of extra.keywords) {
+      const kind = keywordKind(word);
+      if (kind === undefined || !isGrantable(kind)) return { ok: false, needs: [], ...at };
+      abilities.push({ kind: 'keyword', keyword: plainKeyword(kind) });
+    }
+    const types = extra.cardTypes.filter((t): t is CardType => CARD_TYPES.includes(t as CardType));
+    if (types.length !== extra.cardTypes.length) return { ok: false, needs: [], ...at };
+    exceptions = {
+      ...exceptions,
+      addSubtypes: [...extra.subtypes],
+      addTypes: types,
+      ...(abilities.length === 0 ? {} : { abilities }),
     };
   }
   // "..., except their power is half that creature's power and their toughness is half ... Round up each time" (Saw in Half, CR 707.9b, 107.1a).

@@ -455,7 +455,11 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(
           `${id} was cast for its ${obj.stack.alt} cost but is not a spell on the stack`,
         );
-      } else if (face?.alternativeCosts?.some((a) => a.kind === obj.stack?.alt) !== true) {
+      } else if (
+        face?.alternativeCosts?.some((a) => a.kind === obj.stack?.alt) !== true &&
+        !(obj.stack.alt === 'escape' && obj.stack.escapeGrant !== undefined) &&
+        !(obj.stack.alt === 'evoke' && obj.stack.evokeGrant !== undefined)
+      ) {
         problems.push(
           `${id} was cast for its ${obj.stack.alt} cost but has no such alternative cost`,
         );
@@ -475,7 +479,9 @@ export function checkInvariants(state: GameState): string[] {
         obj.token === null &&
         (obj.alt === 'unearth' || obj.alt === 'suspend'
           ? !face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === obj.alt)
-          : face?.alternativeCosts?.some((a) => a.kind === obj.alt) !== true)
+          : face?.alternativeCosts?.some((a) => a.kind === obj.alt) !== true &&
+            !(obj.alt === 'escape' && obj.escapeGranted === true) &&
+            !(obj.alt === 'evoke' && obj.evokeGranted === true))
       ) {
         problems.push(`${id} remembers its ${obj.alt} cost but has no such alternative cost`);
       }
@@ -512,6 +518,18 @@ export function checkInvariants(state: GameState): string[] {
     if (n !== 1) problems.push(`card ${card} has ${n} objects, expected 1`);
   }
   for (const s of state.seats) {
+    // CR 103.2b, 702.139c: a companion has card data, and once brought it is a card of the game its owner owns (until then it is outside the game).
+    if (s.companion !== undefined) {
+      const { definition, brought } = s.companion;
+      if (state.definitions[definition] === undefined)
+        problems.push(`seat${s.id} has a companion with no card data`);
+      else if (
+        brought &&
+        !Object.values(state.cards).some((c) => c.owner === s.id && c.definition === definition)
+      ) {
+        problems.push(`seat${s.id} brought its companion but it is not a card of the game`);
+      }
+    }
     if (s.manaPool.length < 0) problems.push(`seat${s.id} has a negative pool`);
     if (s.landsPlayedThisTurn < 0) problems.push(`seat${s.id} has negative land plays`);
     if (s.cardsDrawnThisTurn < 0) problems.push(`seat${s.id} has a negative count of cards drawn`);

@@ -8,6 +8,11 @@ export {
   type ServiceFor,
 } from './build';
 export {
+  type ChallengeEmblem,
+  type ChallengeLevel,
+  emblemsFor,
+} from './challenges/levels';
+export {
   blurbOf,
   type CommanderLook,
   commanderNameOf,
@@ -18,5 +23,20 @@ export {
 } from './choices';
 export { layeredClient } from './layered-client';
 export { snapshotClient } from './snapshot-client';
-export { infoOf, type LoadedSnapshots, loadSnapshots, type PreconInfo, SHIPPED } from './snapshots';
-export { type StartOptions, type StartRequest, startOptionsFor } from './start';
+export {
+  CHALLENGES,
+  infoOf,
+  type LoadedSnapshots,
+  loadSnapshots,
+  type PreconInfo,
+  SHIPPED,
+} from './snapshots';
+export {
+  type ChallengeRequest,
+  type StartOptions,
+  type StartRequest,
+  startChallengeOptions,
+  startOptionsFor,
+  startTableOptionsFor,
+  type TableRequest,
+} from './start';

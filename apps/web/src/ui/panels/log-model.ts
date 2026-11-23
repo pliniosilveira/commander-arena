@@ -48,14 +48,14 @@ export function groupByTurn(entries: readonly LogEntry[]): readonly TurnGroup[] 
 export const turnHeading = (turn: number): string => (turn <= 0 ? 'Setup' : `Turn ${turn}`);
 
 /**
- * The heading of a group: "Setup", then "Your turn 5" or "Opponent's turn 5" (the owner's naming,
+ * The heading of a group: "Setup", then "Your turn 5", "Opponent's turn 5" or "Opponent 2's turn 5" with more than two seats (the owner's naming,
  * D-153: the official word, numbered by round). A log without the seat and round falls back to
  * the engine's turn number.
  */
-export function groupHeading(group: TurnGroup, viewer: SeatId): string {
+export function groupHeading(group: TurnGroup, viewer: SeatId, seatCount = 2): string {
   if (group.turn <= 0) return 'Setup';
   if (group.activeSeat === undefined || group.round === undefined) return turnHeading(group.turn);
-  return `${turnOwner(group.activeSeat, viewer)} turn ${group.round}`;
+  return `${turnOwner(group.activeSeat, viewer, seatCount)} turn ${group.round}`;
 }
 
 /** The first object an entry mentions that can still be shown (it is in `known`), else null. */

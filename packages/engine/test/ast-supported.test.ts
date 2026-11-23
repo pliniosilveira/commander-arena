@@ -45,6 +45,7 @@ const EXECUTABLE_KEYWORDS = [
   'partnerWith', // scenario-xx-gisa-g3-sacrifice-x
   'deckLimit', // convert-grammar-engine-witch-king (a deck-construction line, no effect in a game)
   'chooseBackground', // scenario-xx-choose-background
+  'companion', // parser-companion (CR 702.139a: functions outside the game, no effect in a game)
   'canBeCommander', // scenario-xx-planeswalker-commander
   'ascend', // scenario-xx-ascend
   'soulbond', // scenario-xx-soulbond (D-286)
@@ -53,6 +54,7 @@ const EXECUTABLE_KEYWORDS = [
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
   'afflict', // scenario-xx-gisa-g1-afflict (D-472)
+  'dredge', // convert-grammar-engine-sultai-arisen (issue 102, Dredge 3)
   'mobilize', // convert-grammar-engine-mardu-surge (issue 101, on the real cards)
   'fabricate', // convert-grammar-engine-mardu-surge (issue 101, on the real card)
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
@@ -71,6 +73,7 @@ const EXECUTABLE_KEYWORDS = [
   'mentor', // scenario-xx-keywords2-combat
   'evolve', // scenario-xx-keywords2-combat
   'bushido', // scenario-xx-keywords2-combat
+  'flanking', // ast-abzan-armor-validate
   'extort', // scenario-xx-keywords2-extort
   'affinity', // scenario-xx-keywords2-affinity
   'convoke', // scenario-xx-pay-options
@@ -99,6 +102,7 @@ const EXECUTABLE_KEYWORDS = [
   'livingWeapon', // scenario-xx-living-weapon
   'jobSelect', // convert-grammar-engine-p49 (Job select, D-206)
   'readAhead', // scenario-xx-read-ahead
+  'rebound', // convert-grammar-engine-scions-e
   'dethrone', // scenario-xx-extra-combat
   'myriad', // scenario-xx-extra-combat
   'decayed', // scenario-xx-gisa-g5-decayed (D-478)
@@ -116,6 +120,14 @@ function cardWithKeyword(keyword: Keyword): CardDefinition {
     ...base,
     faces: [{ ...face, abilities: [{ kind: 'keyword', keyword }] }],
   };
+}
+
+/** CR 702.88a: rebound is on an instant or a sorcery, so its sample is a sorcery with a spell. */
+function sorceryWithKeyword(keyword: Keyword): CardDefinition {
+  const base = fixtureCard('Divination');
+  const face = base.faces[0];
+  if (!face) throw new Error('no face');
+  return { ...base, faces: [{ ...face, abilities: [{ kind: 'keyword', keyword }] }] };
 }
 
 const KEYWORD_SAMPLES: Record<string, Keyword> = {
@@ -153,6 +165,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   partnerWith: { kind: 'partnerWith', name: 'SYNTHETIC Partner Quarry' },
   deckLimit: { kind: 'deckLimit', limit: 9 },
   chooseBackground: { kind: 'chooseBackground' },
+  companion: { kind: 'companion', condition: { kind: 'noRepeatedManaSymbol' } },
   canBeCommander: { kind: 'canBeCommander' },
   ascend: { kind: 'ascend' },
   soulbond: { kind: 'soulbond' },
@@ -161,6 +174,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
   afflict: { kind: 'afflict', count: 3 },
+  dredge: { kind: 'dredge', count: 3 },
   mobilize: { kind: 'mobilize', count: 1 },
   fabricate: { kind: 'fabricate', count: 2 },
   backup: { kind: 'backup', count: 1 },
@@ -183,6 +197,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   mentor: { kind: 'mentor' },
   evolve: { kind: 'evolve' },
   bushido: { kind: 'bushido', count: 1 },
+  flanking: { kind: 'flanking' },
   extort: { kind: 'extort' },
   affinity: { kind: 'affinity', filter: { types: ['artifact'] } },
   convoke: { kind: 'convoke' },
@@ -214,6 +229,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   hideaway: { kind: 'hideaway', count: 3 },
   dethrone: { kind: 'dethrone' },
   readAhead: { kind: 'readAhead' },
+  rebound: { kind: 'rebound' },
   myriad: { kind: 'myriad' },
   decayed: { kind: 'decayed' },
   protection: { kind: 'protection', from: 'color', colors: ['R'] },
@@ -287,7 +303,9 @@ describe('supported feature gate', () => {
                           ? syntheticCard('SYNTHETIC Rite // Toll')
                           : kind === 'readAhead'
                             ? syntheticCard('SYNTHETIC Reading Rite')
-                            : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                            : kind === 'rebound'
+                              ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
+                              : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
@@ -326,6 +344,7 @@ describe('supported feature gate', () => {
         'attackBatch',
         'attacks',
         'becomesBlocked',
+        'becomesBlockedBy',
         'becomesMonstrous',
         'becomesTapped',
         'becomesUntapped',
@@ -340,6 +359,7 @@ describe('supported feature gate', () => {
         'dealsDamage',
         'dealtDamage',
         'combatDamageBatch',
+        'damageBatch',
         'countersAdded',
         'crimeCommitted',
         'dies',
@@ -420,6 +440,9 @@ describe('supported feature gate', () => {
       'castFirstOfKind',
       'castDuringOpponentTurn',
       'castDuringYourTurn',
+      // Issue 102: "enters from a graveyard" and "leaves your graveyard during your turn".
+      'entersBattlefieldFromGraveyard',
+      'leftGraveyardDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',
@@ -429,6 +452,8 @@ describe('supported feature gate', () => {
       'activatesAbilityX',
       // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature".
       'countersAddedEach',
+      // "Whenever one or more opponents lose life".
+      'lifeLostBatch',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',
@@ -439,10 +464,14 @@ describe('supported feature gate', () => {
       'mill',
       // D-625: "{T}, Tap an untapped creature you control: Add one mana of any color" (Jaspera Sentinel, Holdout Settlement).
       'tapPermanents',
+      // Issue 105: "{T}, Pay {E}: Add one mana of any color" (Aether Hub).
+      'energy',
       // Issue 245 (PR #280): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).
       'removeCounters',
       // Issue 144: "{R}, {T}, Exert this land: Add {R}{R}" (Arena of Glory).
       'exert',
+      // "Put a -0/-1 counter on this creature: Add {G}" (CR 118.3, 122.1).
+      'putCounters',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

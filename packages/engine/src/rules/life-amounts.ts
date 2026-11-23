@@ -2,13 +2,15 @@
  * Amounts of life that depend on the player they are for (D-364, D-365; the Hashaton deck):
  * - "each opponent loses life equal to the life that player lost this turn" (`lifeLostThisTurn`, CR 119.3): the number of the player the effect applies
  *   to, read as the effect applies to them (`SeatState.lifeLostThisTurn`, kept by `loseLifeBy`);
+ * - "each player loses a third of their life, rounded up" (`half` of `lifeTotalOf` of the player the effect names, CR 119.3, 107.1a): the life total of the player the
+ *   effect applies to, read as it applies to them;
  * - "you may pay that much life" (`mayPay` with a `payLife` of an amount, CR 119.4, 608.2c): the life paid is worked out once, as the instruction
  *   resolves, into a plain number the question and the payment (`rules/pay-unless.ts`) read.
  */
-import type { Amount, Cost } from '../ast/types';
+import type { Amount, Cost, PlayerSelector } from '../ast/types';
 import type { SeatId } from '../ids';
 import { getSeat } from '../state/ops';
-import type { GameState, ThisWayCounts } from '../state/types';
+import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { amountOf } from './amounts';
 import type { SelectContext } from './select';
 
@@ -19,7 +21,14 @@ export function lifeAmountFor(
   seat: SeatId,
   read: () => number,
   thisWay?: ThisWayCounts,
+  /** The players the effect names: "their life" in the amount is the life of the one the effect is applying to. */
+  players?: PlayerSelector,
 ): number {
+  // CR 119.3, 107.1a (Dire Fleet Ravager): "a third of their life, rounded up" is each affected player's own life total, divided as the amount says.
+  if (players !== undefined) {
+    const own = ownLifeAmount(state, amount, seat, players);
+    if (own !== null) return own;
+  }
   // CR 608.2c (Deadly Tempest): "the number of creatures they controlled that were destroyed this way" is each player's own number.
   if (typeof amount === 'object' && amount.kind === 'thisWay') {
     if (amount.what === 'destroyedCreaturesOfAffected') {
@@ -37,6 +46,26 @@ export function lifeAmountFor(
   return read();
 }
 
+/** The amount of `half` of the life total of the players the effect names, for `seat` (the life total as it is, divided and rounded as the amount says); null for any other amount. */
+function ownLifeAmount(
+  state: GameState,
+  amount: Amount,
+  seat: SeatId,
+  players: PlayerSelector,
+): number | null {
+  if (typeof amount !== 'object') return null;
+  if (amount.kind === 'lifeTotalOf') {
+    return JSON.stringify(amount.player) === JSON.stringify(players)
+      ? Math.max(0, getSeat(state, seat).life) // CR 107.1b: a negative life total counts as 0 in a calculation
+      : null;
+  }
+  if (amount.kind !== 'half') return null;
+  const of = ownLifeAmount(state, amount.of, seat, players);
+  if (of === null) return null;
+  const divisor = amount.divisor ?? 2;
+  return amount.round === 'down' ? Math.floor(of / divisor) : Math.ceil(of / divisor);
+}
+
 /**
  * The cost of a `mayPay` with its life amounts worked out (CR 608.2c): `triggerDamage` is the life that was gained, a count is what it is now. Null when
  * a payment of life comes to 0 or less (nothing to pay, nothing bought, CR 119.4: a gain of 0 life was no event).
@@ -45,9 +74,18 @@ export function resolveMayPayCost(
   state: GameState,
   cost: readonly Cost[],
   ctx: SelectContext,
+  /** The targets the spell or ability chose, which an amount may read ("equal to that permanent's mana value", issue 105). */
+  targets: readonly ChosenTarget[] = [],
 ): readonly Cost[] | null {
   const resolved: Cost[] = [];
   for (const c of cost) {
+    // Issue 105 (Confiscation Coup, CR 107.14, 608.2c): "an amount of {E} equal to ...", worked out once into a plain energy cost.
+    if (c.kind === 'energyAmount') {
+      const energy = amountOf(state, c.amount, ctx, targets);
+      if (energy <= 0) return null;
+      resolved.push({ kind: 'energy', count: energy });
+      continue;
+    }
     if (c.kind !== 'payLife' || typeof c.amount === 'number') {
       resolved.push(c);
       continue;

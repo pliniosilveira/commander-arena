@@ -119,6 +119,19 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
         : failure(cost);
+    case 'removeCountersAmong': {
+      // "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the engine's `removeCounters` with `among`, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      if (!filter.ok) return filter;
+      if (cost.count < 1) return failure(cost);
+      return ok({
+        kind: 'removeCounters',
+        counter: cost.counter,
+        count: cost.count,
+        among: filter.value,
+      });
+    }
     case 'sacrifice': {
       const { what } = cost;
       if (what.det === 'self' && cost.also === undefined) {
@@ -217,10 +230,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // CR 118.1: the source card exiles itself as an ordinary activation cost from its graveyard.
       return options.ordinary === true ? ok({ kind: 'exileThis' }) : failure(cost);
     case 'energy':
-      // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks, and nowhere else.
-      return options.unless === true && cost.count >= 1
+      // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks; issue 105: the cost of an activated ability and of a mana ability too.
+      return (options.unless === true || options.ordinary === true || options.mana === true) &&
+        cost.count >= 1
         ? ok({ kind: 'energy', count: cost.count })
         : failure(cost);
+    case 'energyAmount':
+      // Issue 105: read where the offer is lowered (`lowerMayPay`), which has the context its amount names.
+      return failure(cost);
     case 'discard': {
       // CR 701.9, 118.3: N cards of the hand, the paying player's choice. The count is a whole
       // number of one or more; the engine pays no other discard cost (D-095).
@@ -248,7 +265,10 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     }
     case 'putCounters':
       // "Put a page counter on ~" (stage P31, D-140, CR 118.3): counters on the permanent itself, a cost of an ordinary activated ability.
-      if (options.ordinary !== true || cost.count < 1) return failure(cost);
+      // CR 118.3, 122.1: also the cost of a mana ability ("Put a -0/-1 counter on this creature: Add {G}.").
+      if ((options.ordinary !== true && options.mana !== true) || cost.count < 1) {
+        return failure(cost);
+      }
       return ok({ kind: 'putCounters', counter: cost.counter, count: cost.count });
     case 'returnToHand': {
       // "Return an artifact you control to its owner's hand" (stage P31, D-140, CR 118.3): the permanent itself, or `count` of the
@@ -263,6 +283,10 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         ...(cost.count > 1 ? { count: cost.count } : {}),
       });
     }
+    case 'putThisOnLibraryBottom':
+      // "Put ~ on the bottom of its owner's library" (CR 118.3, 401.4): the permanent itself, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      return ok({ kind: 'returnToHand', what: { kind: 'this' }, toLibraryBottom: true });
     case 'loyalty':
       // CR 606.2 (stage P47, D-202): the symbol of a loyalty ability, the cost of an ordinary activation on a planeswalker (the caller checks the face).
       return options.ordinary === true
@@ -273,11 +297,18 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (options.ordinary !== true) return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
       if (blocked.length > 0) return failure(cost, blocked);
+      // Issue 102 (Necropolis Fiend, CR 107.3a, 602.2b): "Exile X cards from your graveyard" is the X announced as the ability is activated.
+      const countX = cost.what.count?.kind === 'x';
       const many = cost.what.count?.kind === 'number' ? cost.what.count.value : 1;
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
       return filter.ok
-        ? ok({ kind: 'exileFromGraveyard', filter: filter.value, count: many })
+        ? ok({
+            kind: 'exileFromGraveyard',
+            filter: filter.value,
+            count: many,
+            ...(countX ? { countX: true as const } : {}),
+          })
         : filter;
     }
     case 'exileFromHand': {

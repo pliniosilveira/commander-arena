@@ -9,10 +9,11 @@ import type { ObjectId, SeatId } from '../ids';
 import type { PaymentSource } from '../mana';
 import type { ManaColor } from '../mana/types';
 import type { GameEvent } from '../state/events';
-import { getSeat, loseLifeBy, patchObject } from '../state/ops';
+import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { evaluateCondition } from './conditions';
 import { controlledSince, controllerOf } from './control';
+import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { hasteActivationSources } from './derive-statics';
 import { exertPermanent } from './exert';
@@ -215,6 +216,11 @@ export function lifeCostOf(ability: ManaAbility): number {
   );
 }
 
+/** The energy counters the ability's cost removes from its controller ("Pay {E}", CR 107.14, 118.3, issue 105). */
+export function energyCostOf(ability: ManaAbility): number {
+  return ability.cost.reduce((n, c) => n + (c.kind === 'energy' ? c.count : 0), 0);
+}
+
 /** The cards the ability's cost mills from its controller's library ("Mill a card", CR 701.17, D-208). */
 /** The counters the ability's cost removes from its own permanent ("Remove a charge counter from this land", issue 245, CR 118.3, 122.1). */
 export function counterCostsOf(
@@ -222,6 +228,15 @@ export function counterCostsOf(
 ): readonly { readonly counter: string; readonly count: number }[] {
   return ability.cost.flatMap((c) =>
     c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+  );
+}
+
+/** The counters the ability's cost puts on its own permanent ("Put a -0/-1 counter on this creature: Add {G}.", CR 118.3, 122.1). */
+export function putCounterCostsOf(
+  ability: ManaAbility,
+): readonly { readonly counter: string; readonly count: number }[] {
+  return ability.cost.flatMap((c) =>
+    c.kind === 'putCounters' ? [{ counter: c.counter, count: c.count }] : [],
   );
 }
 
@@ -243,7 +258,11 @@ export function outcomeColor(outcome: readonly ManaColor[]): ManaColor | null {
 
 /** True when the production lets the player pick one color (any color, a list, the identity, "could produce"). */
 export function isColorChoice(production: ManaProduction): boolean {
-  return !isCombinationProduction(production) && production.kind !== 'fixed';
+  return (
+    !isCombinationProduction(production) &&
+    production.kind !== 'fixed' &&
+    production.kind !== 'eachColorAmong'
+  );
 }
 
 /**
@@ -334,6 +353,11 @@ export function physicalRefusal(
   const life = lifeCostOf(ability);
   // A cost of no life is always payable, whatever the life total (it may be negative while the player cannot lose the game, CR 104.3b, issue 254).
   if (life > 0 && life > getSeat(state, seat).life) return `you have less than ${life} life to pay`;
+  // CR 107.14, 118.3: "Pay {E}" needs that many energy counters.
+  const energy = energyCostOf(ability);
+  if (energy > (getSeat(state, seat).energy ?? 0)) {
+    return `you have fewer than ${energy} energy counters to pay`;
+  }
   // CR 701.17b, 118.3: a cost that mills more cards than the library holds cannot be paid.
   const mill = millCostOf(ability);
   if (mill > getSeat(state, seat).library.length)
@@ -400,6 +424,16 @@ export function payManaAbilityCosts(
       events.push({ kind: 'tapped', object: given, by: seat });
     }
   }
+  // CR 118.3, 122.1, 122.6: the counters the cost puts on this permanent ("Put a -0/-1 counter on this creature"). A permanent that can't have counters of the kind gets
+  // none, and the cost is paid all the same (as for an ordinary activated ability).
+  for (const { counter, count } of putCounterCostsOf(ability)) {
+    const obj = next.objects[id];
+    if (obj === undefined || counterBlocked(next, obj, counter)) continue;
+    next = patchObject(next, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + count },
+    });
+    events.push({ kind: 'counterAdded', object: id, counter, count, by: seat });
+  }
   // CR 118.3, 122.1 (issue 245): the counters the cost removes from this permanent.
   for (const { counter, count } of counterCostsOf(ability)) {
     const obj = next.objects[id];
@@ -418,6 +452,12 @@ export function payManaAbilityCosts(
     const from = getSeat(next, seat).life;
     next = loseLifeBy(next, seat, life);
     events.push({ kind: 'lifeChanged', seat, from, to: from - life });
+  }
+  const energy = energyCostOf(ability);
+  if (energy > 0) {
+    const had = getSeat(next, seat).energy ?? 0;
+    next = patchSeat(next, seat, { energy: had - energy });
+    events.push({ kind: 'energyChanged', seat, from: had, to: had - energy });
   }
   const mill = millCostOf(ability);
   if (mill > 0) {

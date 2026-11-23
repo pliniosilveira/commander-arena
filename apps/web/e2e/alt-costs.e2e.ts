@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { clickUndo, toggleSetting, undoEnabled } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -17,7 +18,7 @@ const logText = (page: Page) => page.getByRole('log');
 const chooser = (page: Page) => page.getByRole('group', { name: 'Choose an ability' });
 /** The menu's items: every button of the chooser but its close button. */
 const options = (page: Page) => chooser(page).locator('button:not([aria-label="Close"])');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });
 
 /** Untapped lands of the player. */
@@ -69,7 +70,7 @@ test('Overload: the menu lists "Cast X" and "Overload {3}{R}{R}"; the log and th
   );
 
   // Full Control keeps the spell on the stack, so its badge can be read there.
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, name).first().click();
   const menu = chooser(page);
   await expect(menu).toBeVisible();
@@ -104,7 +105,7 @@ test('Evoke: "Evoke {W}" is asked about, the sacrifice trigger is worded on the 
       (await lands(page)) <= 2,
   );
 
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, name).first().click();
   // A single alternative is not cast unasked: the button says what it is.
   const menu = chooser(page);
@@ -153,7 +154,7 @@ test('Dash: "Dash {1}{R}" casts with haste, the badges say dashed and the creatu
     async () => (await handCard(page, name).count()) > 0 && (await lands(page)) >= 2,
   );
 
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, name).first().click();
   const menu = chooser(page);
   await expect(menu).toBeVisible();
@@ -208,20 +209,18 @@ test('Dash on a commander: Undo takes the cast back; at the end step the owner i
   const commander = page.locator('.board-cmdr.is-clickable');
   await playUntil(page, async () => (await commander.count()) > 0 && (await lands(page)) >= 2);
 
-  const undo = page.getByRole('button', { name: /^Undo/ });
-  const fullControl = page.getByRole('button', { name: 'Full Control', exact: true });
   // With Full Control the spell stays on the stack, so the cast can still be taken back.
-  await fullControl.click();
+  await toggleSetting(page, 'Full Control');
   await commander.first().click();
   await expect(chooser(page).getByRole('button', { name: 'Dash {1}{R}' })).toBeVisible();
   await chooser(page).getByRole('button', { name: 'Dash {1}{R}' }).click();
   await expect(logText(page)).toContainText(`You cast ${name} for its dash cost.`);
   await settled(page);
-  await expect(undo).toBeEnabled();
+  await expect.poll(() => undoEnabled(page)).toBe(true);
   // Undo takes back one small step at a time (the cast, then each mana payment): until the commander
   // is in the command zone again, with nothing on the stack and nothing in the log.
   for (let step = 0; step < 6 && (await commander.count()) === 0; step += 1) {
-    if (await undo.isEnabled()) await undo.click();
+    if (await undoEnabled(page)) await clickUndo(page);
     await settled(page);
   }
   await expect(commander.first()).toBeVisible();
@@ -230,7 +229,7 @@ test('Dash on a commander: Undo takes the cast back; at the end step the owner i
   await expect(stack(page)).toContainText('Stack is empty');
 
   // Dash it again and let the turn pass: the autopilot stops at the question and nowhere before.
-  await fullControl.click();
+  await toggleSetting(page, 'Full Control');
   await commander.first().click();
   await chooser(page).getByRole('button', { name: 'Dash {1}{R}' }).click();
   await expect(logText(page)).toContainText(`You cast ${name} for its dash cost.`);
@@ -246,8 +245,7 @@ test('Dash on a commander: Undo takes the cast back; at the end step the owner i
   await expect(page.getByRole('dialog', { name: 'Command zone' })).toContainText(
     `${name} would be put into your hand.`,
   );
-  // The pass that got here cleared the history: the question has no Undo button, and Ctrl+Z does nothing.
-  await expect(undo).toHaveCount(0);
+  // The pass that got here cleared the history: Ctrl+Z does nothing.
   await page.keyboard.press('Control+z');
   await settled(page);
   await expect(question).toBeVisible();

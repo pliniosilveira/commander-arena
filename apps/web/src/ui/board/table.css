@@ -1,0 +1,114 @@
+/*
+ * The board for three or more players. Class names start with `table-`; the pieces inside (strips,
+ * fields, the hand) keep the `board-` rules of board.css. The grid areas come from `tableAreas`.
+ */
+.table-board {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2px;
+  overflow: clip;
+  background: var(--bg);
+}
+
+.table-empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.table-cell {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+}
+
+.table-flow {
+  border-left: 1px solid var(--border, currentColor);
+}
+
+/*
+ * The flow cell: the same pieces as the floating panels of the 1v1 screen (styles.css `.turn-panel`,
+ * `.game > .pnl-tracker`), laid out in a column that scrolls inside the cell.
+ */
+.table-flow {
+  gap: var(--gap);
+  padding: var(--gap);
+  overflow-y: auto;
+  background: var(--bg-raised);
+}
+.table-flow .pnl-tracker {
+  flex: none;
+}
+.table-flow .pnl-stack {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.table-flow .pnl-stack-list {
+  overflow: visible;
+}
+/* An empty stack is out of sight, and shows while a card is dragged (the place a spell is dropped). */
+:root:not([data-dnd-stack]) .table-flow .pnl-stack-empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* The sideways scroll buttons of the battlefield rows are left out here: the rows still scroll
+   (wheel, trackpad, touch), and the narrow cells would be crowded by them. */
+.table-board .board-scroll {
+  display: none;
+}
+
+/* The hand sits lower than on the 1v1 board: a shorter area, so less of each card shows at rest and
+   the battlefield above gets the room (Hand.tsx reads the area's height as the part that shows). */
+.table-board .board-hand {
+  height: clamp(88px, 10vh, 108px);
+}
+
+/*
+ * A strip on this board is one row, to give the battlefield the height: the life box, a 2x2 of
+ * counts (Hand and Library over Graveyard and Exile) and the commander chip, side by side. The
+ * 1v1 board keeps its strips as they are.
+ */
+.table-board .board-strip {
+  flex-wrap: nowrap;
+  gap: 4px 10px;
+  min-height: 0;
+  padding: 4px 8px;
+}
+.table-board .board-counts {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: start;
+  gap: 2px 16px;
+}
+/* The same inset for the four so the two columns line up (the zone buttons have padding to show a hover). */
+.table-board .board-counts .board-count-item {
+  padding: 0 4px;
+}
+/* The card backs next to the hand count are left out: the number says it. */
+.table-board .board-backs {
+  display: none;
+}
+.table-board .board-command {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+/* The chip is a tenth narrower than the 190px it was: its name has two lines. */
+.table-board .board-cmdr {
+  max-width: 171px;
+}

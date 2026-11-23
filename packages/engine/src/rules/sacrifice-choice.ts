@@ -8,7 +8,7 @@ import type { GameEvent } from '../state/events';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { derive } from './derive';
 import { manaValueOfCost } from './mana-value';
-import { sacrificeCandidates } from './sacrifice';
+import { controlledCandidates, sacrificeCandidates } from './sacrifice';
 import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -106,6 +106,33 @@ export function runChooseSacrifice(
   };
   if (instruction.chosen !== null) {
     return proceed(instruction.chosen, [chosenEvent(instruction.chosen, false)]);
+  }
+  // CR 608.2d, 701.21a (Slaughter the Strong): "chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control": the
+  // player chooses the ones to keep among all the creatures they control; with none there is nothing to choose.
+  if (instruction.keepPowerAtMost !== undefined) {
+    const all = controlledCandidates(state, seat, res.source, instruction.filter);
+    if (all.length === 0) return proceed([], []);
+    const powers: Record<ObjectId, number> = {};
+    for (const id of all) {
+      const obj = state.objects[id];
+      powers[id] = obj === undefined ? 0 : (derive(state, obj).power ?? 0);
+    }
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat,
+        source: res.object,
+        purpose: 'keep',
+        min: 0,
+        max: all.length,
+        legal: all,
+        maxTotalPower: instruction.keepPowerAtMost,
+        powers,
+      },
+    };
   }
   const candidates = sacrificeCandidates(
     state,

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { toggleSetting } from './harness/settings';
 
 /**
  * Mana and lands (D-072). The listed test decks hold none of these cards, so the games use the
@@ -52,7 +53,7 @@ test('manual mana: a two-colour land offers its two colors, and a Shock Rock ask
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(GAME);
   await keepHand(page);
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
 
   await hand(page).filter({ hasText: 'SYNTHETIC Dual Land' }).first().click();
   const land = page.locator('.board-field [data-object-id]', { hasText: 'SYNTHETIC Dual Land' });

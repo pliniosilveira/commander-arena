@@ -62,7 +62,7 @@ describe('a face-down foretold card of the opponent', () => {
 
     const viewer = render(
       store,
-      <ZoneViewer title="Exile (shared)" objects={[...view.exile]} onClose={() => undefined} />,
+      <ZoneViewer title="Exile" objects={[...view.exile]} onClose={() => undefined} />,
     );
     expect(viewer).toContain('Face-down card (face down)');
     expect(viewer).toContain('data-face-down');
@@ -98,7 +98,7 @@ describe("the viewer's own foretold and suspended cards", () => {
     expect(html).toContain('Foretold');
     const viewer = render(
       store,
-      <ZoneViewer title="Exile (shared)" objects={[...view.exile]} onClose={() => undefined} />,
+      <ZoneViewer title="Exile" objects={[...view.exile]} onClose={() => undefined} />,
     );
     expect(viewer).toContain('data-exile-mark="Foretold"');
     expect(viewer).toContain('Yours');
@@ -122,7 +122,7 @@ describe("the viewer's own foretold and suspended cards", () => {
     expect(html).toContain('SYNTHETIC Suspend Bear');
     const viewer = render(
       store,
-      <ZoneViewer title="Exile (shared)" objects={[...after.exile]} onClose={() => undefined} />,
+      <ZoneViewer title="Exile" objects={[...after.exile]} onClose={() => undefined} />,
     );
     expect(viewer).toContain('data-exile-mark="time 3"');
   });

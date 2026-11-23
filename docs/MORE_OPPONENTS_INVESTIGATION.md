@@ -1,6 +1,16 @@
 # Adding more opponents: investigation (3 and 4 seats)
 
-Status: phase 0, an investigation. Nothing here is a decision; the SPEC (section 2, "v2") only says that nothing in v1 may assume exactly two players. This note records what was read in the code and what the first probe found, so the next step starts from facts. Counts and timings depend on the machine and the seeds listed below.
+Status: the engine, the cards and the AI work with two to four seats and no issue of the `more-opponents` label is open. What stops a 3 or 4 seat game in the app is the app: its host, its menu flow and its board still have one opponent (see "What still blocks it"). Nothing here is a decision; the SPEC (section 2, "v2") only says that nothing in v1 may assume exactly two players. This note records what was read in the code and what the probes found, so the next step starts from facts. Counts and timings depend on the machine and the seeds listed below.
+
+## Where we are
+
+The engine (phase 1), the audit of the cards (phase 2) and the AI fixes (phase 3) are done. `createGame` takes two to four seats (#500) and `pnpm ai:arena --seats 3|4` plays tables (#502). The app plays them: the menu has a number-of-opponents toggle and a deck dialog for each opponent (#519, #523), the host runs one agent for each AI seat (#526) and the table screen shows the board of the plan (#499). Commander damage by source, the singular texts and the arrows are open (#535, #537, #538). Performance with 3 and 4 seats is measured once, on a cloud machine (see "Performance with 3 and 4 seats"); the soak is not started.
+
+Done: the N-seat harness (#362), the audit of the AI (#452; its fixes are #479 to #483), `ai:arena` for 3 and 4 seats (#482), leaving the game (#336, CR 800.4a; the `did not settle` crash is gone), the audit (#363), several defending players declaring blockers (#414), the battle protector chosen by its controller (#415), "choose an opponent" effects asking which one (#416), "an opponent has N life" ignoring players who left (#417), 3-seat tests of annihilator, reselecting an attack, "attacks you" triggers, goad, the random opponent, attack bans and commander damage (#421: all pass, no bug found), Myriad with 3 or 4 seats (#419), 3-seat scenarios for 26 real cards (#420: all pass; the list at the end got its first rows from the phase 2 audit), a battle whose protector left the game getting a new one (#432, CR 704.5y), #418 (a discard, an exile from a graveyard, a "may" or a search by several players collects every choice or answer first), the AI fixes #481 and #483 (their pull requests are #503 and #504; the casual agent's must-differ target slots are #501), a crash when a seat loses in the same check as its permanent dies (#475), the probe follow-ups (#453, see "Rerun on current main"), the latent single-opponent sites (#422), and the audit of about 380 more cards ("Phase 2 audit" below; its one failure was #506).
+
+Open: no issue. The audit left three rulings, and all are settled: #507 (a goad that never ended when its goader left the game) by CR 800.4m (#522), #508 (Mindblade Render with two opponents hit in one combat) by the official ruling of the card (#524) and #509 (Tasigur asked the first opponent only) by #520. What is left is work nobody has opened an issue for yet, listed in "What still blocks it" and "Plan in phases".
+
+Not audited: the view code and the host of the app. `tools/perf/derive-bench.ts` and `ai:arena --precons` play two seats only, and the decision time of the AI with several opponents has not been measured. The probe tables of the first sections are from before #414 to #418; "Rerun on current main" is the latest.
 
 ## Question
 
@@ -13,18 +23,17 @@ Can the app run free-for-all Commander games with 3 and 4 seats, what would brea
 - `apnapOrder` (`rules/select.ts`) orders `eachPlayer` and `eachOpponent` effects. `loseTheGame` (`rules/lose-game.ts`) marks `hasLost` per seat, and the monarch moves on when its holder loses.
 - `commanderDamage` is keyed by the damaged seat and the commander card (`commanderDamageKey` in `rules/sba.ts`, `"seat:card"`), so it can hold several defenders. That the 21-point loss is checked per key with more than two seats was not read.
 
-## What blocks it today
+## What still blocks it
 
-- `createGame` throws for anything but two seats (`rules/setup.ts`).
-- `runGame` types its agents as a pair (`packages/ai/src/runner.ts`).
-- `Board.tsx` draws one opponent (`view.seats.find(s => s.id !== view.viewer)`), and the web host has one `HUMAN` and one `AI_SEAT` (`apps/web/src/game/host.ts`).
-- The scenario DSL assumes two seats (`testing/scenario.ts`, `testing/assemble.ts` has `(controller + 1) % 2`).
-- `docs/RULES_COVERAGE.md` marks CR 800.4a and 806 "Not implemented" and lists several seat-specific limits: one defending player (annihilator), `reselectAttack` (508.7d and 508.7e), APNAP for simultaneous choices (101.4), control changes when an owner leaves.
-- The AI has about 30 places that look for "the other seat" (a search for `seats.find` and similar in `packages/ai/src`), and the comments of the casual and heuristic handlers speak of "the opponent" in the singular. Not read in detail: whether `determinize` redraws the hidden hands of every other seat, which three opponents would need.
+- The host: `AI_SEAT` is one constant (`game/protocol.ts`), used in `host.ts` (the AI's turn loop, its emblems and `determinize`) and `slow-opponent.ts`. The app has one human (seat 0) and one AI seat with one agent; `createGame` is called with two decks.
+- The menu: the number-of-opponents toggle and the deck dialog per opponent exist (#519, #523), but nothing starts the game and the screen that follows is empty. The text of #523 says the engine still plays two seats; since #500 it does not.
+- The board: `Board.tsx` and `Versus.tsx` pick "the" opponent with `view.seats.find(s => s.id !== view.viewer)`, and `seatLabel`, `commanderDamageTaken`, `game-over-model.ts`, `TurnTracker.tsx`, `priority.ts` and `LibraryTop` speak of one opponent. `Board.tsx` is not going to change in this phase; the new board of "Board plan" is unbuilt.
+- Tools: `tools/perf/derive-bench.ts` replays two-seat games, `ai:arena --precons` and `--pairing` are for two seats (tables use the arena decks), and there is no soak for three or four seats.
+- Rules not built (`docs/RULES_COVERAGE.md`, `docs/ROADMAP.md`): CR 800.4c, 800.4e to 800.4i and 800.4k, 806, effects that last until a point of the next turn of a player who left (`turnEnd`, `endStep`), and the active seat of a turn in which its player left (CR 800.4j: the engine passes the priority on, but the seat stays active until the turn ends). The range of influence (CR 801) is an owner decision (below).
 
 ## Probe
 
-The probe is not in the repository: it ran from a local patch that is not merged and not kept here, so a rerun needs the three changes below made again. It played whole games of the real precons (`apps/web/src/precons/snapshots/`), one agent per seat, through `runGame`, with three changes: `createGame` accepted two to four seats, `runGame` took any number of agents instead of a pair, and each agent was wrapped to record what its view shows about seats that have lost (`node tools/ai/multiplayer-probe.ts --players 3|4 --games N --agent random|casual|greedy|heuristic [--seed S] [--verbose]`).
+The first runs below came from a local patch; the probe is in the repository now (`tools/ai/multiplayer-probe.ts`, #371), `createGame` takes two to four seats (#500) and `runGame` takes any number of agents. It played whole games of the real precons (`apps/web/src/precons/snapshots/`), one agent per seat, through `runGame`, with three changes: `createGame` accepted two to four seats, `runGame` took any number of agents instead of a pair, and each agent was wrapped to record what its view shows about seats that have lost (`node tools/ai/multiplayer-probe.ts --players 3|4 --games N --agent random|casual|greedy|heuristic [--seed S] [--verbose]`).
 
 First run: agent `random`, 10 games per seat count, first seed 1, 100 turns and 8000 actions as limits.
 
@@ -109,7 +118,15 @@ Step 1 (#371) put the probe in the repository and step 2 (#377, CR 800.4a) made 
 | heuristic, 3 | 10 of 10 | 0 | 0 | 28 |
 | heuristic, 4 | 10 of 10 | 0 | 0 | 44 |
 
-In all six runs no permanent stayed under a player who had lost, no seat that had lost was asked for a decision and no stack object was controlled by one. The crash is gone (9 of 60 games before, 0 now) and so are the rejected actions, which were probably a result of the broken state. The lost seat as the active seat still appears (random 30 and 42 decisions with 3 and 4 seats, heuristic 24 with 4 seats): a player who leaves on their own turn stays the active seat until it ends and is asked nothing, the smaller option of point 3 of #336. The four games at the turn cap are all with the random agent; seed 8 with 3 seats is new, and none of the four was examined.
+In all six runs no permanent stayed under a player who had lost, no seat that had lost was asked for a decision and no stack object was controlled by one. The crash is gone (9 of 60 games before, 0 now) and so are the rejected actions, which were probably a result of the broken state. The lost seat as the active seat still appears (random 30 and 42 decisions with 3 and 4 seats, heuristic 24 with 4 seats): a player who leaves on their own turn stays the active seat until it ends and is asked nothing, the smaller option of point 3 of #336. The four games at the turn cap are all with the random agent; seed 8 with 3 seats is new. None of the four was examined at the time; the next section did.
+
+## Rerun on current main (#453)
+
+`node tools/ai/multiplayer-probe.ts --precons --games 10 --agent random|casual|heuristic` on `main` after the AI fixes. The seed-to-deck pairing differs from the first runs, so the old seeds cannot be replayed.
+
+- Turn caps: with the random agent 6 of 10 games with 4 seats reach the 100-turn cap (seeds 2, 3, 4, 5, 7, 10) and none with 3 seats; with 2 seats the same agent leaves 1 of 20 unfinished. At the cap the games are not stalled (4000 to 5000 of 8000 actions used, libraries still at 38 to 67 cards, life totals spread out, some seats already lost): a weak agent, since random seats rarely attack well and more seats mean more life to remove. Not an engine defect.
+- Rejected actions: none with the random agent, and none with casual or heuristic with 3 or 4 seats (10 of 10 games won). The two `You cannot pay that cost` rejections and the Overflowing Basin one did not recur, so they were a result of the broken state before #377. One new rejection of the casual agent with 4 seats (`Choose 1 to 1 targets for t2`, Incremental Blight) was fixed by #501.
+- Seats that have lost: no permanent under them, no decision asked of them, no stack object controlled by them. The only counter left is the active seat that left on its own turn (CR 800.4j), which showed in 2 decisions of one game and changed no outcome. The engine now passes the priority to the next seat when the seat that left held it (`api.ts`, `leave-game.test.ts`); the seat stays active until the turn ends, a limit listed in ROADMAP.
 
 ## Limits of this probe
 
@@ -119,45 +136,188 @@ In all six runs no permanent stayed under a player who had lost, no seat that ha
 - Decision times were not measured. Runs of 10 games took on the order of minutes.
 - The probe's agents are wrapped, so a failing seed must be replayed without the wrapper to confirm it.
 
-## Risks, in order of weight
+## Remaining risks, in order of weight
 
-1. Rules: leaving the game (CR 800.4a), attacks with several defenders, APNAP for simultaneous choices, `'opponent'` filters (the same in 1v1, "any" or "each" in 3 and 4), commander damage per player, and every card marked supported that was only checked in 1v1 (monarch, goad, vote, annihilator, extort, the Ring).
-2. AI: target and attack choice among several opponents, samples of several hidden hands, and decision time (the budget is 5 s a decision).
-3. UI: a layout that is "me below, one opponent above", the arrows of combat and of the stack, a choice of which opponent, and phone width.
-4. Performance: more permanents and triggers; `tools/perf/derive-bench.ts` measures only two seats.
-5. Tests: the scenario DSL, the golden and derive digests, and an exhaustive soak for 3 and 4 seats.
+1. App: the host and the protocol have one AI seat, the current board draws one opponent (a separate board for three or more players is planned), and the table screen starts no game. Until they change, everything built so far cannot be played.
+2. Performance: more permanents and triggers; the decision time of the AI with three opponents (the budget is 5 s a decision) and the speed of `getView`, `getLegalActions` and `applyAction` with more seats are measured once on a cloud machine only (see "Performance with 3 and 4 seats"); the owner's numbers are the ones that count.
+3. Tests: no soak for three or four seats, and the scenarios of the phase 2 audit were not kept (a card of the corpus is not guaranteed to have its own 3-seat test).
+4. Rules: the CR sections listed under "What still blocks it", and cards that were checked only with the text the parser reads (the audit says which were read and not run).
+5. UI: arrows of combat and of the stack with three opponents, a choice of which opponent, and phone width (left out of the board plan).
 
-## Board sketch
+## Board plan: a separate board for three or more players (phase 4)
 
-The viewer stays below. Opponents sit in a row above: two for three seats, three for four. The active player and the defender being attacked are highlighted. An opponent's strip shows life, hand count, a commander-damage matrix, the command zone and a collapsed battlefield that opens on click. On a phone the opponents become tabs or a carousel. A choice of target opponent is a clear selector when more than one target is legal. Combat arrows need a source and a defender each.
+The board for three or more players (two or more opponents) starts as a board of its own, next to today's. The current board (`Board.tsx`, the screen of `Game` in `App.tsx`) is not touched in this phase: it stays as it is for 1v1. The app already has a separate screen for a table (`screen === 'table'`, `EmptyTable` in `App.tsx`, #523), so the new board goes there and `Game` is left alone. The new board composes the components that exist (`Field`, `PlayerStrip`, `HandBacks`, the turn box, the stack, the decision dock) and does not edit them where it can avoid it. Whether the two boards become one is a later decision, after the new one works. The screen is a grid:
+
+```
+3 opponents                 2 opponents                 1 opponent
+| opp 1 | opp 2 | opp 3 |   | opp 1     | opp 2     |   today's board,
+| you           | flow  |   | you           | flow  |   not touched
+```
+
+Opponents share the top row equally. You get the bottom left (4 of 6 columns). The flow cell (2 of 6) holds what floats today at the right edge and top left: the decision dock, the stack and the turn box. The template is a pure function of the opponent count (`tableAreas`, unit tested like `layout.ts`), so adding a seat count adds a row to a table, not a component.
+
+### The mockup (owner, three opponents)
+
+![Mockup of the board with three opponents: the opponents in a row on top, you at the bottom left, and the flow cell at the bottom right](images/more-opponents-board-mockup.png)
+
+The mockup is about where the players sit, not a design of the strips. It fixes:
+
+- The opponents share the top row in equal columns, one cell each (zone 1), up to three.
+- You are at the bottom left, about two thirds of the bottom row, with your hand under your battlefield (zone 2).
+- The flow cell is at the bottom right, the rest of the bottom row (zone 3): the turn, the stack and your decision.
+- The log, the settings and "Report issue" stay at the bottom left as in 1v1 (`LogDock`, `SettingsDock` and `ReportDock` in `App.tsx`, outside the board). The flow cell has no log.
+
+Everything else in the picture (the colour of each seat, the chips, the wheel of seats, the compact strip, the highlighted borders and the Portuguese labels) is illustrative and not a requirement. The first version reuses today's components and they are adjusted afterwards ("Later adjustments").
+
+### What is reused as it is
+
+By composition: the new board imports these and does not change them.
+
+| Today | In the new board |
+| --- | --- |
+| `Field` and `BattlefieldRow` | One per seat, unchanged. Rows measure their own cell (`useMeasure`) and pick tile height, grouping and scrolling from it, so a narrower cell is not a new code path. `ROW_ORDER_OPP` already mirrors the opponent. |
+| `PlayerStrip` and its parts (`CommandBox`, `ManaPool`, `CommanderChip`, `LibraryTop`) | Unchanged at first, one for each seat. A compact density is added only if the strip does not fit its cell (decided with the screenshots of step 2). |
+| `HandBacks` | One per opponent. |
+| `BlockArrows`, `StackArrows` | Measure tiles from the DOM by `data-object-id` (`panels/arrows.ts`), so they do not care where a cell is. To confirm with a test at 3 opponents. |
+| `DecisionLayer`, `DockSlotContext`, `StackPanel` | In `Game` the dock slot is in `aside.turn-panel`; the new board gives the same slot to its flow cell. |
+| `ix.clickableSeats`, `ix.onSeat`, `AttackTargetDialog` | Already keyed by seat id and by `player:<seat>` options. They only need names. |
+| `TurnTracker` | It floats at the top left in `Game`; in the new board it sits in the flow cell, as it is. A turn-order wheel is a later adjustment. |
+| `LogDock`, `SettingsDock`, `ReportDock` | Unchanged and outside the board: the bottom left, as in 1v1. The flow cell has no log. |
+
+### What has to change in the first version
+
+These are about being correct with several opponents, not about looks. The current board is not edited: what the new board needs is new code beside it, and a shared module changes only in a way that leaves the 1v1 output exactly as it is (the tests of the 1v1 strings stay).
+
+- `seatLabel` says "Opponent" for everyone, so three opponents cannot be told apart. The new board uses its own label that numbers the opponents ("Opponent 2"); the two copies of `seatLabel` (`ui/board/resolve.ts` and `ui/decisions/lookup.ts`) are left for later.
+- `commanderDamageTaken` names the source only when there is one source (`resolve.ts`). The new board maps each `"seat:card"` key to its owner and shows "from Opponent 2", or it would show a wrong total.
+- Words that say "the opponent" in the singular and are shared by both screens: `Versus.tsx`, `game-over-model.ts` (who won, with three opponents), `TurnTracker.tsx` (`stopSide`; the two stop settings stay, "opponent" meaning any opponent), `priority.ts`, `LibraryTop`. They change by adding what several opponents need, with the 1v1 text unchanged.
+- A seat that left the game keeps its strip with `has-lost` (it exists already); what it owned has left the game (CR 800.4a), so its field is empty.
+- New rules go in a new `table.css`, with class names of their own (`table-`), so the e2e tests of the 1v1 board are not affected; `board.css` is already over 2000 lines.
+- Not part of the board: `host.ts` has one `HUMAN` and one `AI_SEAT`, and the table screen starts no game. Those belong to #526.
+
+### Later adjustments
+
+Not planned as pull requests until the board is playable; each becomes an issue when wanted: merging the two boards into one, a colour for each seat, the turn-order wheel in the flow cell, a compact strip, a badge for the monarch and the commander damage chips on the strips, widening the column of the seat that attacks or targets you (UI state, never engine state), a collapsed strip for a seat that left, opponents stacked below about 1100 px wide, and phone width.
+
+### Developing it
+
+`createGame` takes two to four seats now (#500), but the host of the app does not start such a game, so the UI cannot wait for it. Render the new board from synthetic `GameView` fixtures (marked `SYNTHETIC`) in a component test and in one e2e page, with 2 and 3 opponents, a seat that left, and an attack on you. Because `Board.tsx` and `Game` are not edited, the 1v1 game is unaffected by construction, and the existing e2e tests stay the check of that.
+
+### Steps
+
+None is built. Each is a pull request, and none edits the current board. Steps 1 to 3 do not need the host (#526), and the numbers of #527 decide whether the board is built for four seats or three.
+
+1. Pure parts with tests, nothing imports them yet: `tableAreas` (the positions of the mockup as a function of the opponent count) and the label that numbers the opponents.
+2. `TableBoard` (`ui/board/TableBoard.tsx`, `table.css`): the three zones with the existing `Field`, `PlayerStrip`, `HandBacks` and your hand, adjusting only what does not fit. Reachable only from a synthetic e2e page and component tests; screenshots at 1440, 1280 and 1024 wide decide whether the strip needs a compact density.
+3. The flow cell: the existing turn box, stack and decision dock placed in it, with the log, settings and report docks where they are.
+4. What must be right with several opponents: commander damage by source, arrows of combat and of the stack (to read first: `CombatEffects`, `combat-order` and `pair-focus` may assume one defender), the attack target dialog and the choices of target naming the opponent, the singular wording of the decisions, and the end screen.
+5. The table screen shows `TableBoard` instead of the empty board, the menu starts the game with the host of #526, and one e2e game has three opponents.
+
+### Open choices
+
+- When, if ever, the two boards become one (not before the new board works).
+- The narrowest window width the board must support.
 
 ## How games would be run
 
-1. Probe: `runGame` with one agent per seat, as above (headless, deterministic, seeds reproduce; it needs the unmerged changes described there).
-2. Arena (`pnpm ai:arena`): today it is two seats with paired seeds and swapped sides. For 3 and 4 it needs a player count, a list of agents and a rotation of the seating, so each agent sits in each position.
-3. App: the host keeps one agent per AI seat and runs the ones with a pending decision in turn; the menu chooses the seat count and a deck for each.
-4. Tests: a scenario DSL that accepts 3 and 4 seats, rule scenarios written first, a nightly soak, and the benchmark with a seat count.
+1. Probe: `runGame` with one agent per seat, as above (headless, deterministic, seeds reproduce; `tools/ai/multiplayer-probe.ts`). Done.
+2. Arena (`pnpm ai:arena`): two seats play paired seeds with swapped sides; `--seats 3|4 --agents ...` plays a table with the agents rotated through the seats (#482; arena decks only). Done.
+3. App: the host keeps one agent per AI seat and runs the ones with a pending decision in turn; the menu chooses the seat count and a deck for each. The menu, the host and the table screen are built (#519, #523, #526).
+4. Tests: a scenario DSL that accepts 3 and 4 seats and the rule scenarios written first are done (#362, phase 2); a nightly soak and the benchmark with a seat count are not.
 
 ## Plan in phases
 
-0. Investigation (this note): done so far are the probe with the random, casual and heuristic agents and the crash seeds. Open: reproducing the crash and the turn caps, an inventory of `'opponent'` and seat assumptions.
-1. Engine: leaving the game (CR 800.4a), a player who loses during their own turn, several defenders, full APNAP, commander damage with several defenders. Tests first. An S-class gap needs a proposal on an issue and the human's approval (`AGENTS.md`, "Card support").
-2. Cards: re-test the supported cards that depend on the number of opponents with 3 and 4 seats and reclassify those that fail.
-3. AI: a target policy and several hidden-hand samples; `ai:arena` with 3 and 4 seats.
-4. UI: board, arrows, target choice, commander damage and the end screen.
-5. Performance, soak and the release in the menu.
+0. Investigation (this note): done.
+1. Engine: leaving the game, a player who loses during their own turn (priority only), several defenders, APNAP, commander damage with several defenders: done (#336, #414 to #419, #432), with the rules of "What still blocks it" left out.
+2. Cards: the supported cards that depend on the number of opponents were re-tested with 3 and 4 seats (#420, "Phase 2 audit"): done; the table of cards not supported for several opponents is empty.
+3. AI: a target policy, lethal checks, defenses and several hidden-hand samples (#452 and its fixes), and `ai:arena` with 3 and 4 seats (#482): done; its decision time is not measured.
+4. UI: the board plan (#499), the menu flow, the host, the table screen and the end screen are done; the arrows, the singular texts and commander damage by source are open (#538, #537, #535).
+5. Performance, soak and the release in the menu: not started.
 
 ## Decisions that are the owner's
 
 - The range of influence (CR 801): off, so that everyone is in range?
-- Whether `createGame` may accept more than two seats in `main` before phase 1 is finished (it does not today).
-- Whether `docs/SPEC.md` section 2 (the "v2" line, 2 to 6 seats) changes (needs approval).
+- Whether `docs/SPEC.md` section 2 (the "v2" line, 2 to 6 seats) changes: the engine takes two to four (needs approval).
 
 ## Open work from the probe
 
-- Check the crash of the random run (4 seats) and the three turn caps of that run.
-- Read how the 21-point commander loss is checked with several defenders (CR 903.10a and 104.3j: 21 or more combat damage from the same commander; the key `"seat:card"` suggests it is per defender, but the check was not read).
-- Look at the rejections: `You cannot pay that cost` (casual with 3 seats, heuristic with both) and the mana ability of Overflowing Basin tried with an empty pool (heuristic with 3 seats). They may be agent bugs that exist with two seats too.
-- Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
-- Scenario DSL with 3 and 4 seats.
-- Choose 20 to 30 cards that depend on the number of opponents and write a scenario for each.
+- The turn caps of the random run, the rejected actions and the views of seats that have lost: answered in "Rerun on current main" (#453); the active seat that left (CR 800.4j) stays a limit in ROADMAP.
+- The 21-point commander loss with several defenders: the key `"seat:card"` is per defender in `lossReasons` (CR 903.10a, 104.3j) and 3-seat tests cover it (#421).
+- The AI for 3 and 4 seats: audited in #452; the fixes are #479 to #483, #501, #503 and #504.
+- Inventory of `'opponent'`: done for the rules; the parser is left as card-pipeline limits (see "Audit of the one-opponent assumptions").
+- The scenario DSL plays 3 and 4 seats (`scenario({ seats })`), with limits seen in the phase 2 audit: `expect.canBlock` and the default attack target throw with more than two seats (`testing/expect-combat.ts`, `testing/combat-refs.ts`), `concede()` works only while that seat holds the decision, and a second concede with the default invariant check fails with "card cN has 0 objects".
+
+## Audit of the one-opponent assumptions (step 3, #363)
+
+Read-only audit of `packages/engine/src/rules/`. The selector layer is already correct for N seats (`resolvePlayers` returns every living opponent in turn order, and sacrifice, clash, vote, control changes, gift, encore, crime, speed, the Ring and the monarch handle N). What is wrong with 3 or 4 seats, and the issue that fixes it:
+
+| Finding | Where | Issue |
+| --- | --- | --- |
+| Latent `resolvePlayers(...)[0]` and `[0]` sites, none reachable from real card text | `amounts.ts`, `effects.ts`, `legality.ts`, `control-effects.ts` | #422 |
+
+A battle's protector is now chosen by its controller among their living opponents (CR 310.9a, 310.12a; #415), and so is the opponent in "an opponent separates, chooses or copies" (Demonstrate, piles, Coin of Fate; #416, CR 608.2d, 801.5b), each asked only with more than one. "An opponent has N or less life" now ignores opponents who left the game (CR 800.4a; #417).
+
+The combat data model already supports several defenders (each attacker stores its own target and defender, and `defending.ts` derives the defending player per creature, CR 508.5a); the defending players now declare blockers one after the other, each against the attackers aimed at them (CR 802.4; #414). Tests for annihilator, `reselectAttack`, goad and commander damage with 3 seats: #421. The AI was audited afterwards (next section); the UI and the view code were not.
+
+## Audit of the AI (phase 3, #452)
+
+About 40 places in `packages/ai/src` look up another seat. Wrong with several opponents (fix issue): the attack target is always the lowest-numbered living opponent and a lethal attack on another is missed, reproduced with the casual, greedy and heuristic agents (#479); the lethal checks mix the life of the weakest opponent with the poison and commander damage of the first (#480); player-targeted spells go to the first opponent (#481); the crack-back penalty and the block model assume one opponent (#483). The same with N: `evaluate`, `simAction`/`playOut`, `determinize` (it redeals the hidden cards of every other seat; `packages/ai/test/determinize-three-seats.test.ts`) and the answers of the vote, Ring, search and pile decisions. Not measured yet: the decision time with more permanents; `ai:arena --seats 3|4` (#482, arena decks only) is the tool for it.
+
+## Phase 2 audit: the cards with 3 and 4 seats
+
+The inventory ran the parser over the golden corpus and the precon snapshots (2,210 distinct cards, 2,169 supported). 483 supported cards have text that reads opponents or players (opponent, each player, monarch, vote, goad, myriad and similar); 104 were already in a 3-seat test, and the other 379 were grouped by the engine primitive they depend on and played with 3 and 4 seats, with a 1v1 control. Support is proven per primitive, so each group has one scenario per primitive and names the cards it stands for.
+
+Result: one failure and three rulings, all settled since (#507, #508, #509).
+
+- Failure, fixed (#506, #510): "each other opponent" also damaged the opponent the event was about, because `readsTriggerPlayer` did not know `eachOtherOpponent`. It happened with two seats as well.
+- Needs a ruling (#507, #508, #509): the CR text was not available in the audit, so every rule number in it was UNVERIFIED. #507 was settled afterwards with the text of CR 800.4m (an effect that lasts until the next turn of a player who left lasts until that turn would have begun); #508 with the official rulings of Mindblade Render (Scryfall, source wotc, 2018-06-08), which the CR does not decide; #509 was fixed in #520.
+- Passed: monarch, goad by Aura and by spell, "defending player", "target opponent" with two opponents, "for each opponent", opponent counts, each-opponent drain and damage, APNAP order of sacrifices, discards and "may" choices, tempting offers, gifts, myriad, encore, annihilator, emblems, and the opponents who left the game.
+- Limits: part of the cards of each group were not in the corpus and ran with SYNTHETIC cost and power or toughness; a primitive that was read but not run (for instance a card whose text only repeats a tested primitive) counts as covered by reading, not by a test. The per-primitive notes and the scratch tests were not kept in the repository, so a card of the corpus is not guaranteed to have its own test.
+
+## Performance with 3 and 4 seats (#527)
+
+Measured, not optimised. Machine of this run: a cloud container, 4 cores, Intel Xeon 2.1 GHz, Node 22.23, Linux x86_64. **The numbers that count are the ones the owner runs on their own machine**; these are indicative, and the samples are small (2 to 4 seeds for the arena, 12 for `derive-bench`). Same real precons for every seat count (`apps/web/src/precons/snapshots/`).
+
+Commands (seed 1, real clock, one agent kind at every seat, decks stay with the seat when the agents rotate):
+
+- Two seats: `node tools/ai/arena.ts --a <kind> --b <kind> --games 6 --seed 1 --precons --pairing cross --real-clock --max-turns 200 --max-actions 20000`
+- Three: `node tools/ai/arena.ts --seats 3 --agents <kind> --games 6 --seed 1 --precons --real-clock --max-turns 300 --max-actions 30000`
+- Four: the same with `--seats 4 --games 8 --max-turns 400 --max-actions 40000`.
+- Engine: `node tools/perf/derive-bench.ts --seats <n> --seeds 12 --reps 15 --max-turn 20 --keep 4`
+
+AI decisions (every game finished, no fallback, no rejected action, none over the 5 s budget):
+
+| Agent, seats | Decisions | Mean | 95th percentile | Slowest | Per turn | Per round of turns |
+| --- | --- | --- | --- | --- | --- | --- |
+| casual, 2 | 2707 | 0.06 ms | 0.1 ms | 2.2 ms | 25.5 decisions, 1.5 ms | 51.1 decisions, 2.9 ms |
+| casual, 3 | 8812 | 0.04 ms | 0.1 ms | 2.1 ms | 38.3 decisions, 1.6 ms | 114.9 decisions, 4.8 ms |
+| casual, 4 | 17838 | 0.04 ms | 0.1 ms | 3.0 ms | 46.0 decisions, 1.9 ms | 183.9 decisions, 7.7 ms |
+| heuristic, 2 | 2612 | 2.92 ms | 18.5 ms | 148.9 ms | 25.6 decisions, 74.8 ms | 51.2 decisions, 149.5 ms |
+| heuristic, 3 | 8457 | 4.70 ms | 24.8 ms | 480.1 ms | 38.6 decisions, 181.7 ms | 115.8 decisions, 545.0 ms |
+| heuristic, 4 | 16472 | 5.08 ms | 19.0 ms | 1378.4 ms | 48.4 decisions, 246.0 ms | 193.8 decisions, 984.1 ms |
+
+A turn is the engine's turn counter and a round is one turn of every seat, so "per round" is the wait when every seat is an AI; with one human it is the round minus the human's turn. The heuristic agent is the slow one: its slowest decision grows with the seats (149 ms, 480 ms, 1378 ms) but stays well under the budget here.
+
+Engine, biggest boards of 12 casual games at turn 20 (precons played by `derive-bench`):
+
+| Seats | Permanents (kept) | `getView` first call | `getLegalActions` | `applyAction` (first 5 legal actions) | Whole turn of the biggest board | View size at the biggest boards |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 | 32, 31, 30, 30 | 1.3 to 2.9 ms | 0.01 to 0.02 ms | 2.2 to 3.4 ms mean, 12.3 ms p99 at most | 73.6 ms (34 actions) | 24.1 to 30.1 KB |
+| 3 | 53, 49, 37, 37 | 1.6 to 2.4 ms | 0.01 to 0.03 ms | 3.1 to 13.3 ms mean, 60.5 ms p99 at most | 393.5 ms (135 actions; combat steps 282.9 ms) | 26.5 to 45.6 KB |
+| 4 | 40, 36, 35, 35 | 1.5 to 2.0 ms | 0.01 to 0.02 ms | 2.7 to 9.4 ms mean, 102.1 ms p99 at most | 119.9 ms (53 actions) | 25.0 to 48.0 KB |
+
+What it says, and what it does not:
+
+- The engine is cheap per call at every seat count. The slowest `applyAction` seen was 102 ms (among the first five legal actions of a 40-permanent, 4-seat state); along the biggest turn it was 68 ms (the 53-permanent, 3-seat board), and that whole turn took 393 ms in the engine.
+- The view grows from about 30 KB to about 48 KB at the biggest boards, not with the seat count by itself but with the permanents on the table.
+- Not measured: the human-facing wait with a heuristic opponent at four seats on a slower machine, tables with different agents, and decks other than the five committed precons. The boards come from casual agents, which build the biggest boards; the decision-time rows come from tables of one agent kind.
+- Games between identical agents with decks tied to the seats are won mostly by the same seat (the deck, not the agent), so these tables say nothing about strength.
+
+**Decision for the owner:** what share of decisions over budget and what wait per round of AI turns the app accepts for 3 and 4 seats. In this run no decision went over the 5 s budget; the heuristic agent's round of AI turns is about 0.5 s with three seats and about 1 s with four. Each hot spot (for example the combat steps of big boards, or fewer samples for each heuristic decision when there are more opponents) would be its own issue.
+
+## Cards not supported for more than one opponent
+
+Support is one flag per card today, so a card here is marked supported in the golden corpus and is known not to work with 3 or 4 seats. 1v1 support is unchanged. Add a card with what fails and the issue that fixes it; delete the row when the fix is merged. The 3-seat re-test that fills this list is #420.
+
+| Card | What fails with 3 or more seats | Issue |
+| --- | --- | --- |

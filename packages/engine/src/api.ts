@@ -4,6 +4,7 @@
  * information.
  */
 
+import type { CardType } from './characteristics';
 import type { ObjectId, SeatId } from './ids';
 import { legalActionsForDecision } from './legal-actions';
 import type { ManaColor } from './mana/types';
@@ -12,6 +13,7 @@ import {
   answerCrewCost,
   answerDiscardCost,
   answerExileCost,
+  answerRemoveCounters,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -21,6 +23,7 @@ import {
 } from './rules/activate';
 import { activationRefusal } from './rules/activate-legality';
 import { isArrangement } from './rules/arrange';
+import { protectorChosenEvent, setProtector } from './rules/battle-protector';
 import { coversCardTypes } from './rules/card-types-choice';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
@@ -60,11 +63,13 @@ import {
   answerDamage,
   answerExert,
 } from './rules/combat-flow';
+import { bringCompanion } from './rules/companion';
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import { answerDestruction } from './rules/destroy-replacement';
 import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
+  answerDredgeDraw,
   answerMiracleDraw,
   answerUntapChoice,
   discardCards,
@@ -75,7 +80,9 @@ import {
   applyGraveyardRider,
   graveyardPlayPermission,
   markGraveyardPlay,
+  permanentTypeUnavailable,
   riderOf,
+  slotOf,
 } from './rules/graveyard-play';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
@@ -100,6 +107,7 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionChooseOpponent,
   answerResolutionChoosePlayer,
   answerResolutionClash,
   answerResolutionClashOpponent,
@@ -107,6 +115,7 @@ import {
   answerResolutionCounterPick,
   answerResolutionCreatureType,
   answerResolutionDevour,
+  answerResolutionDredge,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
@@ -114,6 +123,7 @@ import {
   answerResolutionPayAmount,
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
+  answerResolutionProtector,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
@@ -162,6 +172,11 @@ export function getLegalActions(state: GameState, seat: SeatId): Action[] {
   return legalActionsForDecision(d);
 }
 
+/** The permanent type of a play from the graveyard (`playFromGraveyardEachType`): an action that names none lets the engine choose, one that names a type must be one offered. */
+function sameType(offered: CardType | undefined, asked: CardType | undefined): boolean {
+  return offered === undefined || asked === undefined || offered === asked;
+}
+
 function sameAction(a: Action, b: Action): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -188,7 +203,8 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         action.kind === 'castSpell' &&
         o.object === action.object &&
         o.alternative === action.alternative &&
-        (o.face ?? 0) === (action.face ?? 0)
+        (o.face ?? 0) === (action.face ?? 0) &&
+        sameType(o.permanentType, action.permanentType)
       );
     }
     if (o.kind === 'playLand') {
@@ -206,6 +222,7 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
     ) {
       return action.kind === o.kind && action.object === o.object;
     }
+    if (o.kind === 'bringCompanion') return action.kind === 'bringCompanion';
     if (o.kind === 'unlockDoor') {
       return action.kind === 'unlockDoor' && action.object === o.object && action.door === o.door;
     }
@@ -234,12 +251,17 @@ function playLand(
   entersChosen: ChosenValues | null = null,
   entersRiot: readonly string[] = [],
   entersRevealed?: ObjectId,
+  permanentType?: CardType,
 ): Result {
   const obj = getObject(state, object);
   if (!canPlayLand(state, seat, obj, face)) return fail('That land cannot be played now');
   // D-232: a land from the graveyard uses the permission of the permanent that gives it (once each turn).
   const graveyardUse =
-    obj.zone === 'graveyard' ? graveyardPlayPermission(state, seat, obj, true) : null;
+    obj.zone === 'graveyard'
+      ? graveyardPlayPermission(state, seat, obj, true, permanentType)
+      : null;
+  const graveyardSlot =
+    graveyardUse === null ? undefined : slotOf(state, seat, obj, graveyardUse, true, permanentType);
   // CR 305.1: playing a land is a special action that does not use the stack (CR 116.2a). A modal
   // double-faced card enters with the face the player chose up (CR 712.12).
   const moved = moveObject(state, {
@@ -272,12 +294,21 @@ function playLand(
   });
   if (graveyardUse !== null) {
     // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
-    if (graveyardUse.unlimited !== true) next = markGraveyardPlay(next, graveyardUse.object.id);
-    next = applyGraveyardRider(next, moved.newObject, riderOf(graveyardUse, true));
+    if (graveyardUse.unlimited !== true) {
+      next = markGraveyardPlay(next, graveyardUse.object.id, graveyardSlot);
+    }
+    next = applyGraveyardRider(next, moved.newObject, riderOf(graveyardUse, true, graveyardSlot));
   }
   const events: GameEvent[] = [
     ...moved.events,
-    { kind: 'landPlayed', seat, object: moved.newObject, ...(face === 0 ? {} : { face }) },
+    {
+      kind: 'landPlayed',
+      seat,
+      object: moved.newObject,
+      ...(face === 0 ? {} : { face }),
+      // CR 305.1: "Whenever you play a land from exile": the zone it was played from, when that is not the hand.
+      ...(obj.zone === 'hand' ? {} : { fromZone: obj.zone }),
+    },
   ];
   next = { ...next, pending: null, turn: { ...next.turn, passedInSuccession: [] } };
   const granted = grantPriority(next, seat, events);
@@ -422,6 +453,14 @@ function answerConfirm(
     }
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }
+  // CR 702.52a (Dredge, issue 102): "you may instead mill N cards and return this card": asked in the draw step (no resolution) or by a draw of a resolving spell or ability.
+  if (d.purpose === 'dredge' && d.subject !== undefined) {
+    if (state.resolution === null) {
+      const r = answerDredgeDraw(state, d.subject, accept);
+      return ok(r.state, r.events);
+    }
+    return finishResolutionAnswer(answerResolutionDredge(state, d.subject, accept));
+  }
   // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-274): "you may play it without paying its mana cost" (Suspend), "its owner may
   // cast it by paying [cost]" (Madness) and "you may cast it by paying [its miracle cost]" (Miracle): asked while the ability resolves.
   if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
@@ -504,6 +543,25 @@ function answerChooseOption(
     // CR 701.30b: the opponent the controller chose to clash with.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
+  }
+  if (d.purpose === 'chooseOpponent') {
+    // CR 608.2d, 801.5b: the opponent the controller chose for "an opponent separates / chooses / copies ...".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
+  }
+  if (d.purpose === 'protector') {
+    // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    // CR 704.5y: or, for a battle already on the battlefield, the new protector the state-based actions asked for.
+    if (state.objects[d.source]?.zone === 'battlefield') {
+      const event = protectorChosenEvent(d, option);
+      const resumed = resumeAfterSbaDecision(
+        setProtector({ ...state, pending: null }, d.source, Number(option.slice('seat:'.length))),
+        [event],
+      );
+      return resumed.ok ? ok(resumed.state, [event, ...resumed.events]) : resumed;
+    }
+    return finishResolutionAnswer(answerResolutionProtector(state, option));
   }
   if (d.purpose === 'playerChoice') {
     // CR 608.2d (The Black Gate): the player the controller chose among those with the most life.
@@ -721,7 +779,10 @@ function validPermanentChoice(
     new Set(chosen).size === chosen.length &&
     chosen.every((id) => d.legal.includes(id)) &&
     // CR 701.21a: a cost that sacrifices a permanent for each of several parts takes one different permanent for each.
-    (d.groups === undefined || matchesGroups(chosen, d.groups))
+    (d.groups === undefined || matchesGroups(chosen, d.groups)) &&
+    // CR 208.1, 608.2d (Slaughter the Strong): the permanents kept have total power of at most the limit (a negative power subtracts).
+    (d.maxTotalPower === undefined ||
+      chosen.reduce((sum, id) => sum + (d.powers?.[id] ?? 0), 0) <= d.maxTotalPower)
   );
 }
 
@@ -817,14 +878,59 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           return ok(r.state, r.events);
         }
         case 'playLand':
-          return playLand(state, seat, action.object, null, action.face ?? 0);
+          if (
+            permanentTypeUnavailable(
+              state,
+              seat,
+              getObject(state, action.object),
+              true,
+              action.permanentType,
+            )
+          ) {
+            return fail('That card cannot be played from the graveyard as that permanent type');
+          }
+          return playLand(
+            state,
+            seat,
+            action.object,
+            null,
+            action.face ?? 0,
+            null,
+            [],
+            undefined,
+            action.permanentType,
+          );
         case 'castSpell':
-          return beginCast(state, seat, action.object, action.alternative, action.face ?? 0);
+          if (
+            permanentTypeUnavailable(
+              state,
+              seat,
+              getObject(state, action.object),
+              false,
+              action.permanentType,
+            )
+          ) {
+            return fail('That card cannot be cast from the graveyard as that permanent type');
+          }
+          return beginCast(
+            state,
+            seat,
+            action.object,
+            action.alternative,
+            action.face ?? 0,
+            false,
+            false,
+            {},
+            action.permanentType,
+          );
         case 'suspend':
         case 'foretell':
         case 'plot':
           // CR 116.2f, 116.2h (D-128): a special action; it asks for its payment, then exiles the card.
           return beginSpecialAction(state, seat, action.kind, action.object);
+        case 'bringCompanion':
+          // CR 116.2g, 702.139a: a special action; it pays {3} and puts the companion into the hand at once.
+          return bringCompanion(state, seat);
         case 'turnFaceUp':
           // CR 116.2b, 701.40b (D-310): a special action; it asks for its payment, then turns the permanent face up.
           return beginTurnFaceUp(state, seat, action.object);
@@ -988,6 +1094,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           ? answerCastBlight(state, action.objects)
           : answerBlight(state, action.objects);
       }
+      // CR 118.3, 122.1: the permanent a counter is removed from to pay "Remove two +1/+1 counters from among creatures you control".
+      if (d.purpose === 'removeCountersCost') return answerRemoveCounters(state, action.objects);
       // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
       if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
@@ -1100,7 +1208,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 107.3a, 601.2b, 602.2b (D-103): X is announced as the spell is cast or the ability
       // activated; the announcement can be taken back, which rewinds it (CR 733).
       // D-151: "pay any amount of {R}" is asked while an ability resolves: there is no cast to take back.
-      if ((d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo') && action.kind !== 'chooseX') {
+      if (
+        (d.purpose === 'payAnyAmount' ||
+          d.purpose === 'drawUpTo' ||
+          d.purpose === 'chooseNumber') &&
+        action.kind !== 'chooseX'
+      ) {
         return fail('Choose how many');
       }
       if (action.kind === 'cancel') return cancelCast(state);
@@ -1112,8 +1225,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         return fail('No legal target has that mana value: choose another X');
       }
       // D-151: how many times to pay in "You may pay any amount of {R}".
-      if (d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo') {
-        // D-217: how many cards "may draw up to two cards" draws.
+      if (
+        d.purpose === 'payAnyAmount' ||
+        d.purpose === 'drawUpTo' ||
+        d.purpose === 'chooseNumber'
+      ) {
+        // CR 608.2d: the number a "choose a number" effect asks for is recorded the same way. D-217: how many cards "may draw up to two cards" draws.
         return finishResolutionAnswer(answerResolutionPayAmount(state, action.value));
       }
       // CR 702.33c (D-110): the count of Multikicker is the same question with another answer.

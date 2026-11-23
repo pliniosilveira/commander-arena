@@ -21,6 +21,7 @@ import type {
   Ability,
   Amount,
   Condition,
+  Cost,
   Keyword,
   ObjectFilter,
   Restriction,
@@ -32,10 +33,11 @@ import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { characteristicPtOf, staticAmountOf } from './derive-count';
-import { linkedCardOf, topCardOf } from './derive-group-types';
+import { linkedCardOf, linkedCardsOf, topCardOf } from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
+import { intrinsicManaAbilities } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { isCommanderCardId } from './melded';
 import { staticConditionHolds } from './static-conditions';
@@ -54,6 +56,7 @@ type Modifier = Extract<
       | 'cantBeBlockedBy'
       | 'takeFromLinkedExile'
       | 'grantActivatedAbilitiesOfTopCard'
+      | 'grantActivatedAbilitiesOfLinkedExile'
       | 'loseAllAbilities';
   }
 > & {
@@ -206,6 +209,10 @@ export interface GraveyardPlaySource {
   /** `playLandsFromGraveyard`: the land cards that may be played (any land when absent); the permission is not used up by a use. */
   readonly lands?: ObjectFilter;
   readonly unlimited?: true;
+  /** `playFromGraveyardEachType`: one use a turn for each permanent type (`TurnLog.graveyardSlots`), the land play included. */
+  readonly eachType?: true;
+  /** Issue 102 (Kotis): the other cards of the graveyard a spell cast with this permission exiles as an additional cost. */
+  readonly exileOthers?: number;
 }
 
 /**
@@ -253,6 +260,20 @@ export interface FlashbackGrantSource {
   readonly condition?: Condition;
 }
 
+/**
+ * A static ability of a permanent that gives an alternative cost to the spells its controller casts from the hand (`grantAlternativeCostToSpells`, CR 702.74a, 118.9, 613.1f): read
+ * where casting is decided (`rules/alt-cost-grant.ts`), never by `derive`: an alternative cost is no characteristic of the spell. A permanent that lost all its abilities has none.
+ */
+export interface AltCostGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly alt:
+    | { readonly kind: 'evoke'; readonly cost: readonly Cost[] }
+    // Issue 105: energy counters rather than the mana cost.
+    | { readonly kind: 'energy'; readonly count: number };
+  readonly condition?: Condition;
+}
+
 interface BoardIndex {
   readonly battlefield: readonly ObjectId[];
   readonly definitions: GameState['definitions'];
@@ -267,6 +288,8 @@ interface BoardIndex {
   readonly reductions: readonly CostReductionSource[];
   /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
   readonly hasCostIncrease: boolean;
+  /** Whether any permanent has a `grantAbility` that gives a "+N/+N" or a keyword to a group (Dancer's Chakrams): only then does `derive` make its second pass (`rules/granted-statics.ts`). */
+  readonly hasStaticGrants: boolean;
   /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
   readonly abilityReductions: readonly AbilityReductionSource[];
   /** Permanents with a `castAsThoughFlash` static ability, in battlefield order (D-139). */
@@ -289,6 +312,8 @@ interface BoardIndex {
   readonly legendExemptions: readonly LegendExemptionSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
+  /** Permanents with a `grantAlternativeCostToSpells` static ability, in battlefield order. */
+  readonly altCostGrants: readonly AltCostGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -313,6 +338,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
       a.static.kind === 'cantBeBlockedBy' ||
       a.static.kind === 'takeFromLinkedExile' ||
       a.static.kind === 'grantActivatedAbilitiesOfTopCard' ||
+      a.static.kind === 'grantActivatedAbilitiesOfLinkedExile' ||
       a.static.kind === 'loseAllAbilities')
   );
 }
@@ -428,6 +454,17 @@ function graveyardPlaysOf(
         land: a.static.land === true,
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
+        ...(a.static.exileOthers === undefined ? {} : { exileOthers: a.static.exileOthers }),
+      });
+    }
+    if (a.kind === 'static' && a.static.kind === 'playFromGraveyardEachType') {
+      out.push({
+        object,
+        cast: undefined,
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        eachType: true,
       });
     }
     // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.
@@ -535,10 +572,45 @@ function flashbackGrantsOf(
   return out;
 }
 
+function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): AltCostGrantSource[] {
+  const out: AltCostGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantAlternativeCostToSpells' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        alt: a.static.alt,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  for (const a of abilities) {
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantEnergyAlternative' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        alt: { kind: 'energy', count: a.static.energy },
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  return out;
+}
+
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
   let hasCostIncrease = false;
+  let hasStaticGrants = false;
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
@@ -548,6 +620,7 @@ function buildIndex(state: GameState): BoardIndex {
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
+  const altCostGrants: AltCostGrantSource[] = [];
   const legendExemptions: LegendExemptionSource[] = [];
   const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
@@ -560,6 +633,7 @@ function buildIndex(state: GameState): BoardIndex {
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
     if (printed.some(givesCostIncrease)) hasCostIncrease = true;
+    if (printed.some(givesGroupStatic)) hasStaticGrants = true;
     reductions.push(...costReductionsOf(object, printed));
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
@@ -580,6 +654,7 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
+    altCostGrants.push(...altCostGrantsOf(object, printed));
     legendExemptions.push(...legendExemptionsOf(object, printed));
     encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
@@ -649,6 +724,7 @@ function buildIndex(state: GameState): BoardIndex {
     late: listEntries(late),
     reductions,
     hasCostIncrease,
+    hasStaticGrants,
     abilityReductions,
     flashes,
     libraryCasts,
@@ -658,6 +734,7 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants,
     spellGrants,
     flashbackGrants,
+    altCostGrants,
     legendExemptions,
     encoreGrants,
     attachments,
@@ -688,6 +765,21 @@ function givesCostIncrease(a: Ability): boolean {
         a.static.ability.kind === 'static' &&
         a.static.ability.static.kind === 'costIncrease'))
   );
+}
+
+/** Whether an ability is a static `grantAbility` that gives a "+N/+N" or a keyword to a group (Dancer's Chakrams, CR 613.1f). */
+function givesGroupStatic(a: Ability): boolean {
+  return (
+    a.kind === 'static' &&
+    a.static.kind === 'grantAbility' &&
+    a.static.ability.kind === 'static' &&
+    (a.static.ability.static.kind === 'modifyPt' || a.static.ability.static.kind === 'grantKeyword')
+  );
+}
+
+/** Whether a permanent on the battlefield gives a "+N/+N" or a keyword to a group through an ability it gives to another permanent: `derive` then makes a second pass (`rules/granted-statics.ts`). */
+export function hasStaticGrantSources(state: GameState): boolean {
+  return indexOf(state).hasStaticGrants;
 }
 
 /** Whether a permanent on the battlefield may have a spell tax (`costIncrease`) after the layers (D-149); read before looking at any permanent's derived abilities. */
@@ -738,6 +830,11 @@ export function legendExemptionSources(state: GameState): readonly LegendExempti
 /** The static abilities of the permanents on the battlefield that give flashback to the cards of their controller's graveyard (CR 702.34a). */
 export function flashbackGrantSources(state: GameState): readonly FlashbackGrantSource[] {
   return indexOf(state).flashbackGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that give an alternative cost to the spells their controller casts from the hand (CR 702.74a, 118.9). */
+export function altCostGrantSources(state: GameState): readonly AltCostGrantSource[] {
+  return indexOf(state).altCostGrants;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */
@@ -1080,6 +1177,22 @@ export function staticEffectsOn(
       const card = topCardOf(state, source.object, mod.card);
       if (card !== null) {
         for (const ability of printedAbilities(state, card)) {
+          if (ability.kind === 'activated' || ability.kind === 'mana') {
+            grants.push({ ability, timestamp: source.object.timestamp });
+          }
+        }
+      }
+    } else if (mod.kind === 'grantActivatedAbilitiesOfLinkedExile') {
+      // CR 613.1f, 607.2a (issue 102): the activated and mana abilities of each card the permanent exiled with its linked ability that the filter names, given in layer 6 with the
+      // permanent's timestamp (read from the cards as printed: in exile no layer but a copy effect changes them).
+      for (const card of linkedCardsOf(state, source.object, mod.from)) {
+        // CR 305.6: a basic land type is the ability "{T}: Add {C}", which the card has too.
+        const printed = copiableValues(state, card).characteristics;
+        const abilities = [
+          ...printedAbilities(state, card),
+          ...intrinsicManaAbilities(printed.types, printed.subtypes),
+        ];
+        for (const ability of abilities) {
           if (ability.kind === 'activated' || ability.kind === 'mana') {
             grants.push({ ability, timestamp: source.object.timestamp });
           }

@@ -183,7 +183,7 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING = defineRule<IrStatic>({
     'If a creature attacking causes an activated ability of a permanent you control to trigger, that ability triggers an additional time.',
     'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
     'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
-    'If a creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature dying causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
     'If creatures attacking cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
   ],
   parse: (ctx, pos) => {
@@ -266,8 +266,124 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.triggers-additional-time-entering-types` (Panharmonicon, issue 105): "If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that
+ * ability triggers an additional time." (CR 603.2d, 603.6a: the cause is an artifact or a creature entering the battlefield, whoever controls it; the abilities that trigger on that
+ * event trigger once more). Not read: a lone type, another pair, another player's permanents, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_TYPES = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-entering-types',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 603.6a (Enters-the-Battlefield Abilities)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If an artifact entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature or artifact entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If an artifact or creature entering causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If an artifact or creature entering causes a triggered ability of a creature you control to trigger, that ability triggers an additional time.',
+    'If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+    'If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
+    'If artifacts or creatures entering cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-entering-types';
+    const r = sequence(
+      literal(
+        'if an artifact or creature entering causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        subject,
+        [{ kind: 'doubleTriggers', causeEnters: true, causeEntersTypes: ['artifact', 'creature'] }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.triggers-additional-time-entering` (Yarok, the Desecrated): "If a permanent entering causes a triggered ability of a permanent you control to trigger, that
+ * ability triggers an additional time." (CR 603.2d, 603.6a: the cause is any permanent entering the battlefield; the abilities that trigger on that event trigger once more).
+ * The permanents are "a permanent you control". Not read: another kind of entering permanent, another player's permanents, "enters" as a verb, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-entering',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 603.6a (Enters-the-Battlefield Abilities)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If a permanent entering causes a triggered ability of a creature you control to trigger, that ability triggers an additional time.',
+    'If a permanent entering causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If a permanent entering causes an activated ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+    'If a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
+    'If a creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If permanents entering cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-entering';
+    const r = sequence(
+      literal(
+        'if a permanent entering causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(id, subject, [{ kind: 'doubleTriggers', causeEnters: true }], pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 export const EDHREC_STATIC_RULES = [
   STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING,
+  STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING,
+  STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_TYPES,
   STATIC_TRIGGERS_ADDITIONAL_TIME,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER,
   STATIC_TRIGGERS_ADDITIONAL_TIME_CAUSE,

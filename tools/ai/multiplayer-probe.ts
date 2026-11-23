@@ -17,7 +17,7 @@
 // (CR 800.4a): permanents still under them, them being the active seat, a decision asked of them, a
 // stack object they control. Decisions counted, not games.
 //
-// Not part of any test tier. Games run with `allowMoreThanTwoSeats` on, which the app never sets.
+// Not part of any test tier. The app itself still plays two seats.
 
 import '../corpus/register.ts';
 import { parseArgs } from 'node:util';
@@ -119,7 +119,6 @@ for (let i = 0; i < games; i += 1) {
   const config = {
     seed,
     decks: decks.filter((d): d is NonNullable<typeof d> => d !== undefined),
-    allowMoreThanTwoSeats: true,
   };
   const agents = Array.from({ length: players }, (_, s) => watched(factory.create(seed * 10 + s)));
   let key: string;

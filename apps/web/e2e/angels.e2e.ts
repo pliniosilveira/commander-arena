@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -100,7 +101,7 @@ test('Cost of blocking: the dock says what a block costs, Confirm waits for bloc
     ready: async () => (await cost.isVisible()) && (await primary(page).isVisible()),
   });
   // The payment of the tax is asked by hand: the toggle is on from here.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
 
   await expect(cost.locator('[data-block-cost]')).toContainText(
     /^Blocking costs \{\d+\} per creature \(SYNTHETIC Tithe Angel\)\. Your mana covers (\d+ creatures?|none) now\.$/,
@@ -188,10 +189,17 @@ test('Cast by tapping creatures: the menu names the creatures, the dialog asks w
   page.on('pageerror', (e) => errors.push(e.message));
   const angel = 'SYNTHETIC Sky Blade Angel';
   const birds = mine(page, 'SYNTHETIC Mana Bird');
+  // Equal creatures share one tile with a count (`data-count`): the fliers are the sum of the counts.
+  const birdCount = async () =>
+    (
+      await birds.evaluateAll((tiles) =>
+        tiles.map((tile) => Number(tile.getAttribute('data-count') ?? 1)),
+      )
+    ).reduce((sum, n) => sum + n, 0);
   await reach(page, [16, 3, 6, 10], (seed) => game(seed, FLIERS, 'swamp-forest'), {
     keep: /SYNTHETIC (?!Mana Bird)/,
     // Five fliers: with exactly four there is nothing to choose, and the engine does not ask.
-    ready: async () => (await handCard(page, angel).count()) > 0 && (await birds.count()) >= 5,
+    ready: async () => (await handCard(page, angel).count()) > 0 && (await birdCount()) >= 5,
   });
   await handCard(page, angel).first().click();
   const menu = page.getByRole('group', { name: 'Choose an ability' });

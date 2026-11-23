@@ -24,12 +24,15 @@ export interface Placement {
 export interface SeatSpec {
   life: number | null;
   poison: number;
+  energy: number;
   pool: ManaSpec[];
   mulligans: number;
   landsPlayed: number;
   handSizeMax: number | null;
   /** How many times the Ring has tempted this seat (D-196); null: never, and no emblem. */
   ring: number | null;
+  /** The name of the seat's companion, outside the game at the start (CR 103.2b, 702.139); null: none. */
+  companion: string | null;
   /** The seat has the city's blessing at the start (CR 702.131c, D-264). */
   citysBlessing: boolean;
   /** The seat's speed at the start (CR 702.179b); null: it has none. */
@@ -52,11 +55,13 @@ export function emptySeatSpec(): SeatSpec {
   return {
     life: null,
     poison: 0,
+    energy: 0,
     pool: [],
     mulligans: 0,
     landsPlayed: 0,
     handSizeMax: null,
     ring: null,
+    companion: null,
     citysBlessing: false,
     speed: null,
     commanderDamage: [],
@@ -123,7 +128,7 @@ export function checkCount(label: string, n: number | undefined, min = 0): void 
     throw new ScenarioError(`${label} must be an integer >= ${min}, got ${n}`);
 }
 
-export function validatePlacement(p: Placement, def: CardDefinition): void {
+export function validatePlacement(p: Placement, def: CardDefinition, seatCount = 2): void {
   const o = p.options;
   const where = `${p.name} in seat ${p.seat}'s ${p.zone}`;
   checkCount(`count for ${where}`, o.count, 1);
@@ -163,7 +168,7 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
         `${p.name} is not a permanent card and cannot be on the battlefield (CR 110.1)`,
       );
     }
-    if (o.controller !== undefined && (o.controller < 0 || o.controller > 1)) {
+    if (o.controller !== undefined && (o.controller < 0 || o.controller >= seatCount)) {
       throw new ScenarioError(`${where}: controller ${o.controller} is not a seat`);
     }
     const types = face.types;
@@ -229,7 +234,7 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
       if (!types.includes('battle')) {
         throw new ScenarioError(`${where}: only a battle has a protector (CR 310.9)`);
       }
-      if (o.protector !== 0 && o.protector !== 1) {
+      if (!Number.isInteger(o.protector) || o.protector < 0 || o.protector >= seatCount) {
         throw new ScenarioError(`${where}: protector ${o.protector} is not a seat`);
       }
       if (o.protector === (o.controller ?? p.seat)) {

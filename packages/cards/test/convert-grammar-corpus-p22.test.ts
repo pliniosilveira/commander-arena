@@ -133,9 +133,9 @@ const REFUSED_BY_THE_ENGINE: readonly Line[] = [
 const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
-    text: 'Evoke—Exile a white card from your hand.',
-    expect: no('Evoke—Exile a white card from your hand.', NONE),
-    note: 'real wording of Solitude, Fury, Grief, Endurance and Subtlety (backlog): a cost that is not mana is not read',
+    text: 'Evoke—Pay 2 life.',
+    expect: no('Evoke—Pay 2 life.', NONE),
+    note: 'SYNTHETIC: an evoke cost that is neither mana nor an exile from hand is not read (the exile wording of Solitude, Fury, Grief and Endurance is read since the evoke exile group)',
   },
   {
     kind: 'creature',

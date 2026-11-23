@@ -8,6 +8,7 @@ import type {
   PriorityDecision,
 } from '@commander-arena/engine';
 import { isNamedAlternative } from '../../game/alt-cost';
+import { midPossessiveOf, possessiveOf, seatNameOf } from '../../game/seat-name';
 import { canPassTurn } from '../../policy/should-stop';
 import { STEP_LABELS } from '../format';
 import { hasActivation, hasSpecialAction, type MenuItem, manaAction, menuItems } from './abilities';
@@ -200,7 +201,7 @@ function combatHasFirstStrike(view: Pick<GameView, 'combat' | 'battlefield'>): b
  */
 export function nextStepLabel(
   view: Pick<GameView, 'viewer' | 'activeSeat' | 'step' | 'battlefield' | 'combat'> &
-    Pick<GameView, 'addedPhase' | 'nextAddedPhase'>,
+    Pick<GameView, 'addedPhase' | 'nextAddedPhase'> & { seats?: GameView['seats'] },
 ): string {
   const mine = view.activeSeat === view.viewer;
   // CR 500.8 (D-356): the last step of a phase leads to the phase an effect added after it, when one waits.
@@ -237,8 +238,27 @@ export function nextStepLabel(
     case 'postcombatMain':
       return 'To End Step';
     default:
-      return mine ? 'End Turn' : 'To Your Turn';
+      return mine ? 'End Turn' : nextTurnLabel(view);
   }
+}
+
+/**
+ * The button of the end step of a turn that is not the viewer's: "To Your Turn" when the viewer's turn
+ * is next, and with three or more seats "To Opponent 2's Turn" for the numbered opponent whose turn
+ * follows (turn order is seat order, skipping players who have lost; CR 103.1, CR 800.4).
+ */
+function nextTurnLabel(
+  view: Pick<GameView, 'viewer' | 'activeSeat'> & { seats?: GameView['seats'] },
+) {
+  const seats = view.seats;
+  if (seats === undefined || seats.length <= 2) return 'To Your Turn';
+  for (let i = 1; i <= seats.length; i++) {
+    const seat = seats[(view.activeSeat + i) % seats.length];
+    if (seat === undefined || seat.hasLost) continue;
+    if (seat.id === view.viewer) return 'To Your Turn';
+    return `To ${seatNameOf(seat.id, view.viewer, seats.length)}'s Turn`;
+  }
+  return 'To Your Turn';
 }
 
 /** The "Pass turn" button (issue 46): what it says, and the name a screen reader gives it. */
@@ -274,7 +294,9 @@ export function passTurnIsPrimary(
  * never says "Pass Turn" for a single-step pass (issue 46).
  */
 export function passLabel(
-  view: Pick<GameView, 'viewer' | 'activeSeat' | 'step' | 'stack' | 'battlefield' | 'combat'>,
+  view: Pick<GameView, 'viewer' | 'activeSeat' | 'step' | 'stack' | 'battlefield' | 'combat'> & {
+    seats?: GameView['seats'];
+  },
 ): string {
   if (view.stack.length > 0) return 'Resolve';
   return passTurnIsPrimary(view) ? PASS_TURN_LABEL : nextStepLabel(view);
@@ -282,10 +304,11 @@ export function passLabel(
 
 export function priorityPrompt(view: GameView, index: Index): string {
   const mine = view.activeSeat === view.viewer;
-  const where = `${mine ? 'Your' : "Opponent's"} turn, ${STEP_LABELS[view.step]}`;
+  const who = possessiveOf(view.activeSeat, view.viewer, view.seats.length);
+  const where = `${mine ? 'Your' : who} turn, ${STEP_LABELS[view.step]}`;
   const top = view.stack[view.stack.length - 1];
   if (top !== undefined) {
-    const owner = top.controller === view.viewer ? 'your' : "the opponent's";
+    const owner = midPossessiveOf(top.controller, view.viewer, view.seats.length);
     return `${nameOf(index, top.id)} (${owner}) is on the stack.`;
   }
   return where;

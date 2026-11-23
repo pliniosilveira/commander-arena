@@ -20,6 +20,7 @@ import { Menu } from '../src/ui/screens/Menu';
 import {
   defaultDecks,
   matchesColorFilter,
+  opponentDeckTitle,
   parseSeed,
   pickRandomDeck,
   toggleColorFilter,
@@ -269,5 +270,48 @@ describe('the deck color filter', () => {
     expect(toggleColorFilter(['R'], 'C')).toEqual(['C']);
     expect(toggleColorFilter(['C'], 'U')).toEqual(['U']);
     expect(toggleColorFilter(['R', 'U'], 'R')).toEqual(['U']);
+  });
+});
+
+describe('the deck dialog titles with several opponents', () => {
+  test('one opponent keeps the plain title; more name each opponent', () => {
+    expect(opponentDeckTitle(0, 1)).toBe("Choose opponent's deck");
+    expect([0, 1, 2].map((i) => opponentDeckTitle(i, 3))).toEqual([
+      "Choose first opponent's deck",
+      "Choose second opponent's deck",
+      "Choose third opponent's deck",
+    ]);
+  });
+});
+
+describe('a game with several opponents', () => {
+  const three = {
+    seed: 7,
+    humanDeck: 'white-knights',
+    aiDeck: 'swamp-forest',
+    opponents: [{ deck: 'swamp-forest' }, { deck: 'white-knights' }],
+  };
+
+  test('starting it opens the table screen with every deck; backToMenu clears it', async () => {
+    const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+    await store.getState().startGame(three);
+    expect(store.getState().screen).toBe('table');
+    expect(store.getState().snapshot?.view.seats).toHaveLength(3);
+    expect(store.getState().table).toEqual({
+      humanDeck: 'white-knights',
+      opponentDecks: ['swamp-forest', 'white-knights'],
+    });
+    store.getState().backToMenu();
+    expect(store.getState().screen).toBe('menu');
+    expect(store.getState().table).toBeNull();
+  });
+
+  test('a two-player game stays on the playing screen with no table', async () => {
+    const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+    await store
+      .getState()
+      .startGame({ seed: 7, humanDeck: 'white-knights', aiDeck: 'swamp-forest' });
+    expect(store.getState().screen).toBe('playing');
+    expect(store.getState().table).toBeNull();
   });
 });

@@ -18,7 +18,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrAmount, IrArg, IrClause, IrNoun, IrToken, Span } from '../../ir/types';
+import type { IrAmount, IrArg, IrClause, IrCost, IrNoun, IrToken, Span } from '../../ir/types';
 import { NUMBER_OR_X, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL as FOR_EACH, scaled } from '../amount/scaled';
 import { CARD_TYPES, typeWords } from '../noun/phrases';
@@ -29,6 +29,8 @@ import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
+/** A draw's card word may be "additional": "draws an additional card" is one more card drawn (CR 121.1). */
+const DRAW_CARDS = pattern(/ (?:additional )?cards?(?![\p{L}\p{N}])/iu);
 const LIFE = pattern(/ life(?![\p{L}\p{N}])/iu);
 
 function verbWord(base: string, you: boolean): Parser<unknown> {
@@ -65,16 +67,16 @@ function quantityForEach(head: Parser<unknown>, tail: Parser<unknown>): Parser<I
  * control" (the amount is then the count, CR 121.1, 608.2c) and "cards equal to the greatest power among creatures
  * you control" (stage P28).
  */
-const cardsAmount = (verb: Parser<unknown>): Parser<IrAmount> =>
+const cardsAmount = (verb: Parser<unknown>, cards: Parser<unknown> = CARDS): Parser<IrAmount> =>
   choice(
-    quantityForEach(verb, CARDS),
+    quantityForEach(verb, cards),
     map(
       sequence(verb, literal('cards '), family<IrAmount>('amount', { only: EQUAL_AMOUNTS })),
       ([, , amount]) => amount,
     ),
-    map(sequence(verb, family<IrAmount>('amount'), CARDS), ([, amount]) => amount),
+    map(sequence(verb, family<IrAmount>('amount'), cards), ([, amount]) => amount),
   );
-const drawAmount = cardsAmount;
+const drawAmount = (verb: Parser<unknown>): Parser<IrAmount> => cardsAmount(verb, DRAW_CARDS);
 
 /** A player verb phrase, given the subject it is said of. Returns one clause. */
 export type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
@@ -208,17 +210,20 @@ export const lifeAction: Action = (subject, you, rule) => {
     spanned(
       sequence(
         verbWord('lose', you),
-        pattern(/half their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
+        pattern(/(half|a third of) their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
       ),
     ),
     ({ value, span }) => {
+      // "a third of their life, rounded up" (Dire Fleet Ravager, CR 107.1a): the same amount divided by 3.
+      const third = (value[1][1] ?? '').toLowerCase() === 'a third of';
       const words = value[1][0] ?? '';
       const halfSpan = { start: span.start + words.length, end: span.end };
       const total: IrAmount = { kind: 'lifeTotalOf', of: subject, span: halfSpan };
       return {
         kind: 'half',
         of: total,
-        round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+        round: (value[1][2] ?? '').toLowerCase() as 'down' | 'up',
+        ...(third ? { divisor: 3 as const } : {}),
         span,
       };
     },
@@ -282,18 +287,85 @@ export const lifeAction: Action = (subject, you, rule) => {
   return choice(life('gain', 'gainLife'), life('lose', 'loseLife'));
 };
 
-/** "get {E}{E}", "gets {E}" (CR 107.14, 122.1: the player puts that many energy counters on themselves; stage P51, D-209). */
-const energyAction: Action = (subject, you, rule) =>
-  map(
-    spanned(sequence(verbWord('get', you), pattern(/(?:\{E\}){1,8}(?![\p{L}\p{N}{])/u))),
-    ({ value, span }) =>
-      actionClause(
-        rule,
-        'gainEnergy',
-        { player: subject, amount: { kind: 'number', value: value[1][0].length / 3, span } },
+/**
+ * "get {E}{E}", "gets {E}", "get six {E}", "get {E} for each creature you control", "get an amount of {E} equal to the greatest power among creatures you control" and
+ * "get that many {E}" (CR 107.14, 122.1: the player puts that many energy counters on themselves; stage P51, D-209; issue 105). "That many" after combat damage is the
+ * damage of the trigger, as "that much" is.
+ */
+const energyAction: Action = (subject, you, rule) => {
+  const symbols = pattern(/(?:\{E\}){1,8}(?![\p{L}\p{N}{])/u);
+  const amount: Parser<IrAmount> = choice(
+    map(
+      sequence(verbWord('get', you), pattern(/\{E\}(?![\p{L}\p{N}{])/u), FOR_EACH),
+      ([, , each]) => each,
+    ),
+    map(
+      spanned(sequence(verbWord('get', you), symbols)),
+      ({ value, span }): IrAmount => ({
+        kind: 'number',
+        value: value[1][0].length / 3,
         span,
+      }),
+    ),
+    map(
+      sequence(
+        verbWord('get', you),
+        satisfy(QUANTITY, (a) => a.kind === 'number' && a.value >= 2),
+        pattern(/ \{E\}(?![\p{L}\p{N}{])/u),
       ),
+      ([, quantity]) => quantity,
+    ),
+    map(
+      sequence(
+        verbWord('get', you),
+        pattern(/an amount of \{E\} /iu),
+        family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
+      ),
+      ([, , equal]) => equal,
+    ),
+    map(
+      spanned(sequence(verbWord('get', you), pattern(/that many \{E\}(?![\p{L}\p{N}{])/iu))),
+      ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+    ),
   );
+  return map(spanned(amount), ({ value, span }) =>
+    actionClause(rule, 'gainEnergy', { player: subject, amount: value }, span),
+  );
+};
+
+/**
+ * "you may pay eight {E}" and "you may pay one or more {E}" after ", then" (issue 105, Lightning Runner, CR 107.14, 118.3): the offer of an energy payment that comes second in a sentence
+ * about the player. Only "you may" (the player chooses as the ability resolves); the clause is optional, and the sentences after it say what the payment buys.
+ */
+const energyOfferAction: Action = (subject, you, rule) =>
+  subject.det !== 'you' || !you
+    ? never(rule)
+    : choice(
+        map(
+          spanned(
+            sequence(
+              literal('you may '),
+              family<IrCost>('cost', { only: ['cost.pay-energy', 'cost.pay-energy-amount'] }),
+            ),
+          ),
+          ({ value, span }): IrClause => ({
+            ...actionClause(
+              rule,
+              'pay',
+              { cost: { kind: 'costList', costs: [value[1]], span, rule } },
+              span,
+            ),
+            optional: true,
+          }),
+        ),
+        map(
+          spanned(pattern(/you may pay one or more \{E\}(?![\p{L}\p{N}{])/u)),
+          ({ span }): IrClause => ({
+            ...actionClause(rule, 'payEnergyAny', {}, span),
+            optional: true,
+          }),
+        ),
+      );
 
 /** "get an experience counter", "gets two experience counters" (CR 122.1: the player puts that many experience counters on themselves; Meren of Clan Nel Toth). */
 const experienceAction: Action = (subject, you, rule) =>
@@ -423,6 +495,20 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
+ * "takes an extra turn after this one" (CR 500.7) said of a player: "target player takes an extra turn after this one". Not read: a number of turns, a turn after another
+ * turn, a rider about the turn.
+ */
+const extraTurnAction: Action = (subject, you, rule) =>
+  map(
+    spanned(
+      pattern(
+        new RegExp(`take${you ? '' : 's'} an extra turn after this one(?![\\p{L}\\p{N}])`, 'iu'),
+      ),
+    ),
+    ({ span }) => actionClause(rule, 'extraTurn', { player: subject }, span),
+  );
+
+/**
  * "gains control of ~" said of "that player" (CR 613.1b, 611.2a, 110.2: a control-changing effect with no duration lasts until the game ends or another effect changes it; the player
  * who gains control is the one the subject names): the player the event of a trigger is about, taking the permanent with the ability ("that player draws three cards and gains
  * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
@@ -489,10 +575,19 @@ export const PLAYER_SUBJECTS = [
   'noun.each-player-attacked',
   // Gollum, Obsessed Stalker: "each opponent dealt combat damage this game by a creature named ~ loses life equal to ...".
   'noun.each-opponent-dealt-combat-damage-by-named',
+  // Shatter the Sky: "each player who controls a creature with power 4 or greater draws a card".
+  'noun.each-player-who-controls',
+  // Papalymo Totolymo: "each opponent who lost life this turn sacrifices a creature with the greatest power among creatures they control".
+  'noun.each-player-who-lost-life',
+  'noun.each-player-who-dealt-combat-damage',
   'noun.you-and-player',
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',
+  // Will of the Abzan: "any number of target opponents each sacrifice a creature with the greatest power among creatures that player controls and lose 3 life".
+  'noun.any-number-target-opponents',
   'noun.each-other-player',
+  // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
+  'noun.each-player-other-than-its-controller',
   'noun.defending-player',
   'noun.player-to-your-right',
   'noun.player',
@@ -539,6 +634,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
   ],
   examples: [
     'you become the monarch',
+    'target player takes an extra turn after this one',
+    'you take an extra turn after this one',
     'you draw a card',
     'you gain 4 life',
     'each opponent loses 3 life',
@@ -627,6 +724,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw cards equal to the greatest power among creatures you control',
     // Stage P51 (D-209, CR 107.14): energy counters.
     'you get {E}{E}',
+    'you get six {E}',
+    'you get {E} for each creature you control',
+    'you get an amount of {E} equal to the greatest power among creatures you control',
+    'you get that many {E}',
     'target player gets {E}',
     // CR 122.1: experience counters.
     'you get an experience counter',
@@ -638,6 +739,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each opponent loses the game',
     'each player ~ attacked this turn loses the game',
     'target player loses the game',
+    // Howling Mine: the extra card of the draw step (CR 121.1).
+    'target player draws an additional card',
+    'each player draws two additional cards',
     'you lose the game',
     'that player loses the game',
     'target opponent loses 3 life and loses the game',
@@ -671,6 +775,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you get an energy counter',
     'you get {E}{R}',
     'you get {E} {E}',
+    'you get one {E}',
+    'you get an amount of {E}',
+    'you get that much {E}',
     'you get E',
     'you gets {E}',
     'target player get {E}',
@@ -731,6 +838,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you become the monarchy',
     'you become the monarch of the realm',
     'target player becomes the monarch',
+    'target player take an extra turn after this one',
+    'target player takes two extra turns after this one',
+    'you takes an extra turn after this one',
     'each opponent becomes the monarch',
     'its controller becomes the monarch',
     'its controller become the monarch',
@@ -760,6 +870,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         part('effect.player.mill', millAction),
         alone('effect.player.manifest', manifestAction),
         part('effect.player.energy', energyAction),
+        // Issue 105: ", then you may pay eight {E}".
+        alone('effect.player.energy-offer', energyOfferAction),
         part('effect.player.experience', experienceAction),
         alone('effect.player.sacrifice', sacrificeAction),
         alone('effect.player.exile-graveyard', exileGraveyardCardsAction),
@@ -768,6 +880,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.shuffle', shuffleAction),
         alone('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
+        alone('effect.player.extra-turn', extraTurnAction),
         alone('effect.player.lose-game', loseGameAction),
         alone('effect.player.gain-control-of-self', gainControlOfSelfAction),
       );
@@ -856,6 +969,7 @@ export const EFFECT_DISCARD = defineRule<Clauses>({
     'discard two cards unless you discard a creature card',
     'discard a card at random',
     'discard two cards at random',
+    'discard cards equal to the number of creatures you control',
   ],
   rejects: [
     'discards a card',
@@ -871,11 +985,25 @@ export const EFFECT_DISCARD = defineRule<Clauses>({
   parse: (ctx, pos) =>
     map(
       spanned(
-        sequence(
-          verbWord('discard', true),
-          family<IrArg>('amount'),
-          CARDS,
-          optional(RANDOM_OR_UNLESS, null),
+        choice(
+          map(
+            sequence(
+              verbWord('discard', true),
+              family<IrArg>('amount'),
+              CARDS,
+              optional(RANDOM_OR_UNLESS, null),
+            ),
+            ([, amount, , rest]) => ({ amount, rest }),
+          ),
+          // "discard cards equal to its power" (CR 701.9, 107.1): the number comes from the amount.
+          map(
+            sequence(
+              verbWord('discard', true),
+              literal('cards '),
+              family<IrArg>('amount', { only: EQUAL_AMOUNTS }),
+            ),
+            ([, , amount]) => ({ amount, rest: null }),
+          ),
         ),
       ),
       ({ value, span }): Clauses => [
@@ -884,12 +1012,12 @@ export const EFFECT_DISCARD = defineRule<Clauses>({
           'discard',
           {
             player: impliedYou('effect.discard', pos),
-            amount: value[1],
-            ...(value[3] === null
+            amount: value.amount,
+            ...(value.rest === null
               ? {}
-              : typeof value[3] === 'string'
+              : typeof value.rest === 'string'
                 ? { random: { kind: 'flag', value: true, span, rule: 'effect.discard' } }
-                : { unless: value[3] }),
+                : { unless: value.rest }),
           },
           span,
         ),

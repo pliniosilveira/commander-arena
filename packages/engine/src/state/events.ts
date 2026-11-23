@@ -14,7 +14,15 @@ export type GameEvent =
   | { readonly kind: 'gameStarted'; readonly startingSeat: SeatId; readonly seed: number }
   | { readonly kind: 'mulliganTaken'; readonly seat: SeatId; readonly count: number }
   | { readonly kind: 'handKept'; readonly seat: SeatId }
-  | { readonly kind: 'turnBegan'; readonly seat: SeatId; readonly turn: number }
+  /** `extra`: the turn is an extra turn an effect created (CR 500.7). */
+  | {
+      readonly kind: 'turnBegan';
+      readonly seat: SeatId;
+      readonly turn: number;
+      readonly extra?: true;
+    }
+  /** An effect gave `seat` an extra turn after the current one (CR 500.7). */
+  | { readonly kind: 'extraTurnAdded'; readonly seat: SeatId }
   | { readonly kind: 'stepBegan'; readonly step: StepId; readonly seat: SeatId }
   | {
       readonly kind: 'zoneChanged';
@@ -135,6 +143,8 @@ export type GameEvent =
       readonly object: ObjectId;
       /** The face played when it is not face 0 (a modal double-faced card's back face, CR 712.12). */
       readonly face?: number;
+      /** The zone the land was played from, only when it is not the hand ("Whenever you play a land from exile", CR 305.1). */
+      readonly fromZone?: Zone;
     }
   | {
       readonly kind: 'spellCast';
@@ -469,7 +479,8 @@ export type GameEvent =
         | 'bounce'
         | 'fight'
         | 'blight'
-        | 'untapCost';
+        | 'untapCost'
+        | 'removeCountersCost';
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;
@@ -634,7 +645,10 @@ export type GameEvent =
         | 'protectionColor'
         | 'protectionCardType'
         | 'clashOpponent'
-        | 'playerChoice';
+        | 'playerChoice'
+        | 'chooseOpponent'
+        | 'protector'
+        | 'number';
       readonly option: string;
     }
   /**
@@ -697,6 +711,8 @@ export type GameEvent =
    * no cost and carries no card id.
    */
   | { readonly kind: 'foretold'; readonly seat: SeatId; readonly object: ObjectId }
+  /** The companion was brought (CR 116.2g, 702.139a): `seat` paid {3} and put it into its hand; `object` is the new object there (CR 400.7). Public. */
+  | { readonly kind: 'companionBrought'; readonly seat: SeatId; readonly object: ObjectId }
   /** A card was plotted (CR 702.170a): `seat` paid its plot cost and exiled it from their hand, face up. `object` is the card in exile (public). */
   | { readonly kind: 'plotted'; readonly seat: SeatId; readonly object: ObjectId }
   /** CR 701.3 (Attach): an Aura or Equipment became attached to a permanent. */

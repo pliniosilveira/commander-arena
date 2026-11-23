@@ -31,6 +31,15 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: destroyedOwn.pos,
     };
   }
+  // CR 119.3 (Betor): the life the controller lost this turn, as "gained" below is the life gained.
+  const lost = pattern(/the amount of life you lost this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (lost.ok) {
+    return {
+      ok: true,
+      value: { kind: 'controllerLifeLostThisTurn', span: { start: pos, end: lost.pos } },
+      pos: lost.pos,
+    };
+  }
   const gain = pattern(/the amount of life you gained this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
   if (gain.ok) {
     return {
@@ -75,6 +84,22 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
         span: { start: pos, end: spells.pos },
       },
       pos: spells.pos,
+    };
+  }
+  // Issue 102 (Welcome the Dead, CR 404.1): the cards put into the controller's graveyard this turn from the hand and/or the library.
+  const toGraveyard = pattern(
+    /the number of cards that were put into your graveyard from your (hand or library|library or hand|hand|library) this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (toGraveyard.ok) {
+    const zones = (toGraveyard.value[1] ?? '').toLowerCase();
+    return {
+      ok: true,
+      value: {
+        kind: 'cardsToGraveyardThisTurn',
+        from: zones === 'hand' ? ['hand'] : zones === 'library' ? ['library'] : ['hand', 'library'],
+        span: { start: pos, end: toGraveyard.pos },
+      },
+      pos: toGraveyard.pos,
     };
   }
   // D-646 (Prismari deck group 2, CR 202.3, 601.2i): the greatest mana value among the spells the controller has cast this turn.

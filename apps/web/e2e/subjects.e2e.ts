@@ -66,7 +66,7 @@ async function playUntil(
 
 /** Passes priority until the stack is empty again, so the spell or ability on it has resolved. */
 async function resolveStack(page: Page): Promise<void> {
-  const items = page.getByRole('region', { name: 'Stack' }).locator('.pnl-stack-item');
+  const items = page.getByRole('region', { name: 'Stack', exact: true }).locator('.pnl-stack-item');
   for (let step = 0; step < 20; step += 1) {
     await settled(page);
     if ((await items.count()) === 0) return;

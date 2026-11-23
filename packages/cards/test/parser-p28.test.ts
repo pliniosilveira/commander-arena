@@ -418,7 +418,6 @@ describe('amount.equal-to and the value phrases (CR 107.1, 208.1, 700.5, 903.4)'
     'Draw cards equal to one times the number of creatures you control.',
     'Draw cards equal to the greatest power among creatures with flying or reach you control.',
     'Draw cards equal to the number of creatures you control plus 1.',
-    'Draw cards equal to the number of colors among creatures you control.',
   ])('"%s" is not read', (text) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised' });
   });

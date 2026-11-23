@@ -146,6 +146,18 @@ const createdTokens: Parser<{
       pos: host.pos,
     };
   }
+  // CR 508.4, 110.5b (Kari Zev): "create Ragavan, a legendary 2/1 red Monkey creature token. Ragavan enters tapped and attacking.": the second sentence says the token just made
+  // enters tapped and attacking, so it is the token's own flag (as "that's tapped and attacking" is), read only about the one token the first sentence names.
+  if (token.named !== undefined && token.legendary === true) {
+    const enters = literal(`. ${token.named} enters tapped and attacking`)(ctx, head.pos);
+    if (enters.ok && /^(?:\.|$)/u.test(ctx.text.slice(enters.pos))) {
+      return {
+        ok: true,
+        value: { token: { ...token, tappedAndAttacking: true }, alternative: null },
+        pos: enters.pos,
+      };
+    }
+  }
   const rider = sequence(
     choice(literal('. They have '), literal('. Those tokens have ')),
     TOKEN_QUOTED_ABILITY,
@@ -352,7 +364,60 @@ export const EFFECT_CREATE_TWO_TOKENS = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.create-three-tokens`: "create a 3/3 colorless Golem artifact creature token with flying, a 3/3 colorless Golem artifact creature token with vigilance, and a 3/3 ... with trample"
+ * (issue 105, Triplicate Titan; CR 111.2, 608.2c): one "create" for three groups of tokens, written as a list with a comma before the last. It is the three instructions "create A", "create
+ * B" and "create C", followed in the order written. Not read: two groups, four, "or", a rider or a "for each" count (the other rules read those).
+ */
+export const EFFECT_CREATE_THREE_TOKENS = defineRule<Clauses>({
+  id: 'effect.create-three-tokens',
+  family: 'effect',
+  leading: ['create'],
+  cites: ['CR 111.2 (Tokens)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'create a Treasure token, a Food token, and a Clue token',
+    'create a 3/3 colorless Golem artifact creature token with flying, a 3/3 colorless Golem artifact creature token with vigilance, and a 3/3 colorless Golem artifact creature token with trample',
+    'create two Treasure tokens, a Food token, and a Clue token',
+  ],
+  rejects: [
+    'create a Treasure token and a Food token',
+    'create a Treasure token, a Food token and a Clue token',
+    'create a Treasure token, a Food token, and',
+    'create a Treasure token, a Food token, or a Clue token',
+    'create a Treasure token, a Food token, a Clue token, and a Gold token',
+    'create a Treasure token, a Food token, and a Clue token and draw a card',
+    'create a Treasure token, and a Food token',
+  ],
+  parse: (ctx, pos) => {
+    const first = sequence(literal('create '), family<IrToken>('token'))(ctx, pos);
+    if (!first.ok) return first;
+    const second = sequence(literal(', '), family<IrToken>('token'))(ctx, first.pos);
+    if (!second.ok) return second;
+    const third = sequence(literal(', and '), family<IrToken>('token'))(ctx, second.pos);
+    if (!third.ok) return third;
+    // A fourth group is not read: the next word must not continue the list.
+    if (/^(?:,| and | or )/u.test(ctx.text.slice(third.pos))) return fail(ctx, third.pos);
+    const id = 'effect.create-three-tokens';
+    const tokens = [first.value[1], second.value[1], third.value[1]];
+    const ends = [first.pos, second.pos, third.pos];
+    return {
+      ok: true,
+      value: tokens.map((token, i) => {
+        const clause = makeClause(
+          id,
+          'createToken',
+          { token },
+          { start: i === 0 ? pos : (ends[i - 1] ?? pos), end: ends[i] ?? third.pos },
+        );
+        return i < 2 ? { ...clause, connector: 'and' as const } : clause;
+      }),
+      pos: third.pos,
+    };
+  },
+});
+
 export const TOKEN_EFFECT_RULES = [
+  EFFECT_CREATE_THREE_TOKENS,
   EFFECT_CREATE_TWO_TOKENS,
   EFFECT_CREATE_TOKEN,
   EFFECT_INVESTIGATE,

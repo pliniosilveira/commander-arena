@@ -3,7 +3,10 @@
 // permanents kept, and then timed: `getView` (which derives every object), `getLegalActions`,
 // `applyAction` and the replay of the whole turn with the biggest board (combat steps apart).
 //
-//   node tools/perf/derive-bench.ts [--seeds 12] [--reps 15] [--max-turn 20] [--keep 4] [--first-seed 100] [--seed-list 127,116] [--json]
+//   node tools/perf/derive-bench.ts [--seeds 12] [--reps 15] [--max-turn 20] [--keep 4] [--first-seed 100] [--seed-list 127,116] [--seats 2|3|4] [--json]
+//
+// `--seats 3|4` (issue 527) plays tables of casual agents, one precon for each seat (`tableSets`), and the report adds the size of the `GameView` the page would receive for
+// the kept states (JSON text, in bytes: what crosses the Worker boundary is a structured clone of the same data).
 //
 // It lives in tools/ so it may read a real clock (`performance.now`); the engine and the AI never do.
 // Timings depend on the machine: only compare runs made one after the other on the same one.
@@ -22,6 +25,7 @@ const { values } = parseArgs({
     keep: { type: 'string', default: '4' },
     'first-seed': { type: 'string', default: '100' },
     'seed-list': { type: 'string' },
+    seats: { type: 'string', default: '2' },
     json: { type: 'boolean', default: false },
   },
 });
@@ -29,17 +33,23 @@ const SEEDS = Number(values.seeds);
 const REPS = Number(values.reps);
 const MAX_TURN = Number(values['max-turn']);
 const KEEP = Number(values.keep);
+const SEATS = Number(values.seats);
+if (SEATS !== 2 && SEATS !== 3 && SEATS !== 4) {
+  process.stderr.write('--seats must be 2, 3 or 4\n');
+  process.exit(2);
+}
 const FIRST_SEED = Number(values['first-seed']);
 /** Seeds to play instead of `--seeds` consecutive ones, e.g. the ones a long run found the biggest boards in. */
 const SEED_LIST = values['seed-list']?.split(',').map(Number);
 
 const { applyAction, getLegalActions, getView } = await import('@commander-arena/engine');
 const { AGENT_FACTORIES, runGame } = await import('@commander-arena/ai');
-const { crossPairs, loadPreconDecks } = await import('./../ai/precons.ts');
+const { crossPairs, loadPreconDecks, tableSets } = await import('./../ai/precons.ts');
 
 const loaded = await loadPreconDecks();
 for (const problem of loaded.problems) process.stderr.write(`precon left out: ${problem}\n`);
-const pairs = crossPairs(loaded.decks);
+// Two seats: every ordered pair of two precons; three or four: one precon for each seat (`tableSets`).
+const pairs = SEATS === 2 ? crossPairs(loaded.decks) : tableSets(loaded.decks, SEATS);
 
 interface Step {
   readonly before: GameState;
@@ -50,6 +60,8 @@ interface Kept {
   readonly label: string;
   readonly permanents: number;
   readonly state: GameState;
+  /** The bytes of the JSON text of the view of the seat to decide at that state. */
+  readonly viewBytes: number;
   /** The steps of the whole turn the state belongs to. */
   readonly turn: readonly Step[];
 }
@@ -63,7 +75,7 @@ for (let i = 0; i < (SEED_LIST?.length ?? SEEDS); i++) {
   if (decks === undefined) continue;
   const run = await runGame(
     { seed, decks },
-    [AGENT_FACTORIES.casual.create(2 * seed + 1), AGENT_FACTORIES.casual.create(2 * seed + 2)],
+    Array.from({ length: SEATS }, (_, k) => AGENT_FACTORIES.casual.create(SEATS * seed + k + 1)),
     { maxTurns: MAX_TURN, maxActions: 20000 },
   );
   // Replay through applyAction to see every state, then pick the turn with the biggest board.
@@ -93,6 +105,7 @@ for (let i = 0; i < (SEED_LIST?.length ?? SEEDS); i++) {
     label: `seed ${seed} turn ${bestTurn} (${run.reason})`,
     permanents: best,
     state: peak.before,
+    viewBytes: JSON.stringify(getView(peak.before, peak.before.pending?.seat ?? 0)).length,
     turn,
   });
   process.stderr.write(`played seed ${seed}: ${steps.length} actions, peak ${best} permanents\n`);
@@ -222,9 +235,9 @@ if (values.json) {
 } else {
   const fmt = (x: number) => x.toFixed(2).padStart(9);
   process.stdout.write(
-    `seeds ${SEED_LIST?.length ?? SEEDS}, reps ${REPS}, max turn ${MAX_TURN}, kept ${chosen.length} states; permanents: ${chosen
+    `seats ${SEATS}, seeds ${SEED_LIST?.length ?? SEEDS}, reps ${REPS}, max turn ${MAX_TURN}, kept ${chosen.length} states; permanents: ${chosen
       .map((c) => c.permanents)
-      .join(', ')}\n`,
+      .join(', ')}; view size in bytes: ${chosen.map((c) => c.viewBytes).join(', ')}\n`,
   );
   process.stdout.write(
     `${'operation'.padEnd(70)} perm   n      mean(ms)   p99(ms)   slowest(ms)  state\n`,

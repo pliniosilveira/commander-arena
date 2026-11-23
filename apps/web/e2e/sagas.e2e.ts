@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -11,7 +12,7 @@ import { settled } from './harness/settle';
  * every time; the loop only waits for the page to settle.
  */
 const game = (seed: number) => `/?autostart=synthetic-sagas,swamp-forest&seed=${seed}`;
-const SEED = 1;
+const SEED = 2;
 const RITE = 'SYNTHETIC Rite of Three';
 
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
@@ -63,7 +64,7 @@ test('a Saga shows "Lore 1 / 3" when it enters and its chapter I ability is labe
   // Without Full Control the page passes over our own abilities on the stack (D-045), so a
   // chapter ability would resolve before it could be read there.
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await playUntilChapterOne(page);
 
   const saga = mine(page, RITE).first();

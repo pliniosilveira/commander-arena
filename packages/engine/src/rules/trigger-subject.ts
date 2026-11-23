@@ -15,9 +15,15 @@ export function readsTriggerSubject(ability: Ability): boolean {
   const effects = JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
   // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card" leaves out the card the permanent that died became, read as the targets are chosen and checked again.
-  if (effects.includes('"notTriggerCard"')) return true;
+  if (effects.includes('"notTriggerCard"') || effects.includes('"otherThanTriggerSubject"'))
+    return true;
   // CR 603.10a, 608.2h (Auntie Ool): "draw a card if you control that creature" reads the permanent the trigger is about, as the ability resolves.
-  if (effects.includes('"subjectControlledByYou"') || effects.includes('"subjectStat"'))
+  if (
+    effects.includes('"subjectControlledByYou"') ||
+    effects.includes('"subjectStat"') ||
+    // Selvala: "if its power is greater than each other creature's power" reads the creature that entered as the ability resolves.
+    effects.includes('"subjectGreaterThanEach"')
+  )
     return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
   if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;
@@ -55,7 +61,10 @@ export function readsTriggerPlayer(ability: Ability): boolean {
     ) ||
       // Issue 159: "each opponent attacking that player" reads the player the trigger is about.
       JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
-      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"'))
+      // Issue 506 (U.S.S. Prometheus): "each other opponent" leaves out the player the event is about, so the player must stay on the stack object.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"eachOtherOpponent"') ||
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"') ||
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerTurn"'))
   );
 }
 
@@ -68,7 +77,17 @@ export function readsTriggerDamage(ability: Ability): boolean {
     ) ||
       // Issue 81 (Shark Typhoon): the X of the cycling cost travels with the trigger as the number of its event.
       JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerCycleX"') ||
-      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackerCount"'))
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackerCount"') ||
+      // CR 603.2c (Malcolm): the opponents dealt damage travel with the trigger as the number of its event.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerDamagedPlayerCount"'))
+  );
+}
+
+/** Whether the triggered ability reads the opponents its damage batch dealt damage to (`triggerDamagedPlayers`, CR 603.2c). */
+export function readsTriggerDamaged(ability: Ability): boolean {
+  return (
+    ability.kind === 'triggered' &&
+    JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerDamagedPlayers"')
   );
 }
 
@@ -76,9 +95,11 @@ export function readsTriggerDamage(ability: Ability): boolean {
 export function readsTriggerAttackers(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"attackersGreatestPower"',
-    )
+    ) ||
+      // Champions from Beyond: "those creatures" of the attack event.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackers"'))
   );
 }
 

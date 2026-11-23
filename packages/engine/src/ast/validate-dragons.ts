@@ -5,15 +5,16 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype } from '../characteristics';
+import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
-import { isOneOf, kindOf, triggerHasPlayer } from './validate-base';
+import { isCount, isOneOf, kindOf, triggerHasPlayer } from './validate-base';
 import {
   type AstIssue,
   checkAmount,
   checkEffect,
+  checkEnumList,
   checkFilter,
   checkPlayerSelector,
   checkRef,
@@ -44,12 +45,13 @@ export function checkDragonsEffect(
           owner !== 'target' &&
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
+          owner !== 'triggerDamagedPlayers' &&
           owner !== 'eachOpponent'
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent') or the player of the event ('triggerPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -118,6 +120,15 @@ export function checkDragonsEffect(
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
       }
+      // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": generic mana off the cost, so a cost that is not free.
+      if (e.lessGeneric !== undefined) {
+        if (!isCount(e.lessGeneric) || e.lessGeneric < 1) {
+          issue(out, `${path}.lessGeneric`, 'lessGeneric must be a positive whole number');
+        }
+        if (e.free === true) {
+          issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
+        }
+      }
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
@@ -144,12 +155,20 @@ export function checkDragonsEffect(
         if (e.anyManaColor !== true) {
           issue(out, `${path}.anyManaColor`, 'anyManaColor must be true when present');
         }
+      }
+      // Hostage Taker (CR 609.4b), Dire Fleet Daredevil (CR 614.1a): riders of the spell cast with the permission.
+      for (const rider of ['anyManaType', 'exileInstead'] as const) {
+        if (e[rider] === undefined) continue;
+        if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
         if (e.castOnly !== true) {
           issue(
             out,
-            `${path}.anyManaColor`,
-            'mana as though of any color is spent on a cast: needs castOnly',
+            `${path}.${rider}`,
+            `${rider} is about the spell that is cast: needs castOnly`,
           );
+        }
+        if (e.free === true && rider === 'anyManaType') {
+          issue(out, `${path}.${rider}`, 'a free play spends no mana');
         }
       }
       return true;
@@ -294,6 +313,16 @@ export function checkDragonsEffect(
             out,
           );
         }
+        if (
+          branch.asController !== undefined &&
+          (branch.asController !== true || branch.onMatch === undefined)
+        ) {
+          issue(
+            out,
+            `${at}.asController`,
+            'asController is true, and only for a branch with onMatch',
+          );
+        }
         if (branch.to !== undefined) {
           moving += 1;
           if (!isOneOf(branch.to, ['battlefield', 'hand'])) {
@@ -394,7 +423,7 @@ export function checkDragonsEffect(
             'the cost of one payment is mana symbols: numbers and colors, no X or hybrid',
           );
         }
-      } else if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
+      } else if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1', 'E'])) {
         issue(
           out,
           `${path}.symbol`,
@@ -490,13 +519,14 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true
       ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
+          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
         );
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the
@@ -527,6 +557,12 @@ export function checkDragonsEffect(
         issue(out, `${path}.objects`, "the creatures that enter attacking are what moved: 'moved'");
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
+      }
+      if (
+        e.thatPlayerOrTheirPlaneswalkers !== undefined &&
+        e.thatPlayerOrTheirPlaneswalkers !== true
+      ) {
+        issue(out, `${path}.thatPlayerOrTheirPlaneswalkers`, 'it is true or left out');
       }
       if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
@@ -734,10 +770,19 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
         }
       }
       return true;
+    case 'playFromGraveyardEachType':
+      return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.
       if (s.cast === undefined && s.land !== true) {
         issue(out, path, 'the permission names the spells to cast, a land to play, or both');
+      }
+      // Issue 102 (Kotis): "by exiling three other cards from your graveyard": an additional cost of the spell cast this way.
+      if (
+        s.exileOthers !== undefined &&
+        (!Number.isSafeInteger(s.exileOthers) || s.exileOthers < 1 || s.cast === undefined)
+      ) {
+        issue(out, `${path}.exileOthers`, 'exileOthers is a whole number from 1, only with cast');
       }
       if (s.cast !== undefined) {
         checkFilter(s.cast, `${path}.cast`, out);
@@ -782,7 +827,7 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
     filterSome(
       r.what,
       (f) =>
-        f.zone !== undefined ||
+        (f.zone !== undefined && !(r.fromGraveyard === true && f.zone === 'graveyard')) ||
         f.stackKind !== undefined ||
         f.attacking !== undefined ||
         f.attackingYou !== undefined ||
@@ -794,6 +839,23 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       `${path}.what`,
       'what is copied is a permanent on the battlefield: no zone, stackKind, combat or other',
     );
+  }
+  // Federation Fleet deck (CR 614.12, 707.9, 700.4): "... a copy of any creature card in your graveyard that was put there from the battlefield this turn".
+  if (r.fromGraveyard !== undefined && r.fromGraveyard !== true) {
+    issue(out, `${path}.fromGraveyard`, 'fromGraveyard is true when present');
+  }
+  if (r.fromGraveyard === true && r.what?.zone !== 'graveyard') {
+    issue(out, `${path}.what`, 'what names the zone graveyard when the copy is of a card there');
+  }
+  if (r.keepName !== undefined && r.keepName !== true) {
+    issue(out, `${path}.keepName`, 'keepName is true when present');
+  }
+  if (r.addSupertypes !== undefined) {
+    if (!Array.isArray(r.addSupertypes) || r.addSupertypes.length === 0) {
+      issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
+    } else {
+      checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
+    }
   }
   if (r.optional !== undefined && r.optional !== true) {
     issue(out, `${path}.optional`, 'optional is true or absent');

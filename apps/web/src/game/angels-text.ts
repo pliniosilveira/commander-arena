@@ -258,6 +258,8 @@ export function manaRestrictionWording(
   let text = `${activationCostText(cost)}: Add ${made}`;
   if (ability.spendOnly?.xCost === true) {
     text = `${text}. Spend this mana only on costs that contain {X}`;
+  } else if (ability.spendOnly?.notGeneric === true) {
+    text = `${text}. This mana can't be spent to pay generic mana costs`;
   } else if (ability.spendOnly !== undefined) {
     const spells =
       ability.spendOnly.alsoAbilities === true
@@ -294,6 +296,9 @@ export function restrictionWords(restriction: PoolRestriction): string {
   switch (restriction.kind) {
     case 'abilitiesOnly':
       return 'Spend only to activate abilities';
+    case 'notGeneric':
+      // CR 106.6 (Jegantha, the Wellspring): a colored symbol of a cost, never generic mana.
+      return "Can't be spent to pay generic mana costs";
     case 'xCost':
       // CR 106.6, 107.3 (Elementalist's Palette): a spell or an ability whose cost contains {X}.
       return 'Spend only on costs that contain {X}';

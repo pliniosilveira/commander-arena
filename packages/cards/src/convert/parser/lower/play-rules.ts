@@ -25,6 +25,7 @@ export type PlayRuleEffect = Extract<
       | 'revealTopOfLibrary'
       | 'playLandsFromTopOfLibrary'
       | 'playLandsFromGraveyard'
+      | 'graveyardPlayEachType'
       | 'activateAsThoughHaste'
       | 'loyaltyActivationLimit'
       | 'attackTax'
@@ -42,6 +43,7 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
     effect.kind === 'revealTopOfLibrary' ||
     effect.kind === 'playLandsFromTopOfLibrary' ||
     effect.kind === 'playLandsFromGraveyard' ||
+    effect.kind === 'graveyardPlayEachType' ||
     effect.kind === 'activateAsThoughHaste' ||
     effect.kind === 'loyaltyActivationLimit' ||
     effect.kind === 'attackTax' ||
@@ -67,6 +69,8 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
         : ['static:playLandsFromTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
+    case 'graveyardPlayEachType':
+      return ['static:playFromGraveyardEachType'];
     case 'activateAsThoughHaste':
       return ['static:activateAsThoughHaste'];
     case 'loyaltyActivationLimit':
@@ -122,6 +126,9 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
               : { types: ['land'], subtypes: [effect.landType] },
         },
       });
+    // "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (Muldrotha, CR 601.2a, 305.1).
+    case 'graveyardPlayEachType':
+      return ok({ kind: 'static', static: { kind: 'playFromGraveyardEachType' } });
     // "You may play lands from the top of your library." (Oracle of Mul Daya, CR 305.1, 401.5): any land card on top; with `alsoLook`, "You may look at the top card of your library any time" is in the same sentence (issue 345).
     case 'playLandsFromTopOfLibrary': {
       const play: Ability = { kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' } };
@@ -168,7 +175,10 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
             ? { kind: 'untapInOthersUntapStep', self: true }
             : {
                 kind: 'untapInOthersUntapStep',
-                what: { types: ['creature'], controller: 'you' },
+                what:
+                  effect.permanents === true
+                    ? { controller: 'you' }
+                    : { types: ['creature'], controller: 'you' },
               },
       });
     case 'attackTax': {
@@ -207,6 +217,7 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:revealTopOfLibrary',
   'static:playLandsFromTopOfLibrary',
   'static:playLandsFromGraveyard',
+  'static:playFromGraveyardEachType',
   'static:activateAsThoughHaste',
   'static:loyaltyActivationLimit',
   'static:attackTax',

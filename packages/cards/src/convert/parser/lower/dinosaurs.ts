@@ -113,6 +113,36 @@ export const FIGHT_PAIRS: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard." (issue 102, Consuming Aberration, CR 701.20,
+ * 101.4): the engine's `revealUntil` for each opponent, every card revealed going into its owner's graveyard. The kind describes a card in a library: no zone, controller or owner.
+ */
+export const REVEAL_UNTIL_EACH_OPPONENT: Lowering<IrClause, Effects> = {
+  head: 'revealUntilEachOpponent',
+  id: 'lower.reveal-until-each-opponent',
+  needs: ['effect:revealUntil', 'ability:revealUntilEachPlayer'],
+  lower(clause) {
+    const card = arg(clause, 'card');
+    if (card?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'revealUntil',
+          filter: filter.value,
+          from: { kind: 'eachOpponent' },
+          put: 'graveyard',
+          rest: 'graveyard',
+          perPlayer: true,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
  * bottom of your library in a random order." (CR 701.20, 401.4): the engine's `revealUntil`. The kind describes a card in a library: no
  * zone, controller or owner.
@@ -240,6 +270,22 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
     const written = arg(clause, 'mayWritten');
     if (written?.kind === 'flag' && !written.value && !clause.optional) return failure(clause);
     const playing = play.value ? { play: true as const } : {};
+    // Issue 105 (Aetherflux Conduit): "any number of spells from your hand": asked again after each spell cast.
+    const anyNumber = arg(clause, 'anyNumber')?.kind === 'flag';
+    if (anyNumber) {
+      if (objects.det !== 'a' || objects.filter.zone !== 'hand' || play.value) {
+        return failure(clause);
+      }
+      const filter = lowerFilter(objects);
+      if (!filter.ok) return filter;
+      return {
+        ok: true,
+        value: [
+          { kind: 'castFree', objects: { kind: 'choose', filter: filter.value }, max: 'any' },
+        ],
+        rule: clause.rule,
+      };
+    }
     if (objects.det === 'linkedExile') {
       // D-664 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
       // ability to belong to: "Reveal cards from the top of your library until you reveal a nonland card. Exile that card ... You may cast the exiled card without paying its mana cost."
@@ -356,6 +402,7 @@ export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
 };
 
 export const DINOSAUR_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  REVEAL_UNTIL_EACH_OPPONENT,
   DOUBLE_PT,
   FIGHT,
   FIGHT_PAIRS,

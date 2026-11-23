@@ -69,8 +69,17 @@ test('no chip while no commander damage was dealt', async () => {
 });
 
 test('the tooltip says whose commander and the rule', () => {
-  expect(commanderDamageTitle('You', 'Ghoulcaller Gisa', 7)).toBe(
+  const twoSeats = { viewer: 0, seats: [{ id: 0 }, { id: 1 }] } as unknown as GameView;
+  expect(
+    commanderDamageTitle('You', { from: 1, name: 'Ghoulcaller Gisa', amount: 7 }, twoSeats),
+  ).toBe(
     'You have taken 7 combat damage from Ghoulcaller Gisa. 21 from one commander loses the game (CR 704.6c).',
   );
-  expect(commanderDamageTitle('Opponent', null, 3)).toContain('Opponent has taken 3');
+  expect(
+    commanderDamageTitle('Opponent', { from: null, name: null, amount: 3 }, twoSeats),
+  ).toContain('Opponent has taken 3');
+  const three = { viewer: 0, seats: [{ id: 0 }, { id: 1 }, { id: 2 }] } as unknown as GameView;
+  expect(commanderDamageTitle('You', { from: 2, name: null, amount: 5 }, three)).toContain(
+    "from Opponent 2's commander",
+  );
 });

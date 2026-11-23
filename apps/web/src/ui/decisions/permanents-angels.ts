@@ -24,6 +24,11 @@ import {
   moveCountersPrompt,
 } from './permanents-move-counters';
 import { isPopulate, POPULATE_BADGE, populatePrompt } from './permanents-populate';
+import {
+  isRemoveCountersCost,
+  REMOVE_COUNTERS_COST_BADGE,
+  removeCountersCostPrompt,
+} from './permanents-remove-counters-cost';
 import { isRingBearer, RING_BEARER_BADGE, ringBearerPrompt } from './permanents-ring';
 import { isSoulbond, SOULBOND_BADGE, soulbondPrompt } from './permanents-soulbond';
 import { isUntapChoice, UNTAP_CHOICE_BADGE, untapChoicePrompt } from './permanents-untap';
@@ -108,8 +113,13 @@ export function proliferateChipLabel(
 }
 
 /** "You (3 poison counters)", "Opponent (1 poison counter)". */
-export function poisonChipLabel(seat: SeatId, viewer: SeatId, poison: number): string {
-  return `${seatLabel(seat, viewer)} (${plural(poison, 'poison counter')})`;
+export function poisonChipLabel(
+  seat: SeatId,
+  viewer: SeatId,
+  poison: number,
+  seatCount = 2,
+): string {
+  return `${seatLabel(seat, viewer, seatCount)} (${plural(poison, 'poison counter')})`;
 }
 
 /** The title of the dock panel of a proliferate: "Proliferate". The card is named in the prompt. */
@@ -211,6 +221,8 @@ export function angelsPermanentPrompt(
   if (isBlight(decision)) return blightPrompt(decision, index);
   // CR 701.26b: "Untap two tapped creatures you control", a cost that untaps permanents.
   if (isUntapCost(decision)) return untapCostPrompt(decision, index);
+  // CR 118.3, 122.1: "Remove two +1/+1 counters from among creatures you control", a cost that takes a counter off one of them at a time.
+  if (isRemoveCountersCost(decision)) return removeCountersCostPrompt(decision, index);
   // D-286 (CR 702.95a): "you may pair this creature with another unpaired creature you control".
   if (isSoulbond(decision)) return soulbondPrompt(decision, index);
   // D-216 (CR 701.26a): "Untap up to three lands."
@@ -234,6 +246,7 @@ export function angelsBadge(
   if (isMoveCounters(decision)) return MOVE_COUNTERS_BADGE;
   if (isBlight(decision)) return BLIGHT_BADGE;
   if (isUntapCost(decision)) return UNTAP_COST_BADGE;
+  if (isRemoveCountersCost(decision)) return REMOVE_COUNTERS_COST_BADGE;
   if (isSoulbond(decision)) return SOULBOND_BADGE;
   if (isUntapChoice(decision)) return UNTAP_CHOICE_BADGE;
   if (isConniveOrder(decision)) return 'Connives';

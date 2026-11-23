@@ -30,9 +30,11 @@ import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
+import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
@@ -151,7 +153,8 @@ const ANY_EVENT = choice(
 const OR_SUBJECTS_EVENT = choice(ANY_EVENT, EVENT_WORDS.leavesBattlefield);
 
 /** The events of `trigger.or`: those of any trigger of one subject, and (stage P36, D-178) "becomes the target of a spell". */
-const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell);
+// CR 701.37a (Protector of the Wastes): "enters or becomes monstrous".
+const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell, EVENT_WORDS.becomesMonstrous);
 
 function trigger(
   rule: string,
@@ -228,6 +231,48 @@ export const TRIGGER_ENTERS = singleEvent('trigger.enters', 'enters', {
     'you enter',
     'the beginning of your upkeep',
   ],
+});
+
+/**
+ * `trigger.permanent-put-into-graveyard`: "a permanent you control is put into a graveyard" (issue 105, Aetherworks Marvel; CR 700.4, 603.6c: a permanent can only be put into a graveyard from the
+ * battlefield, so this is the event "dies" names). Only "a permanent you control": a card put into a graveyard from another zone is another event. Not read: "from anywhere", another noun, "~".
+ */
+export const TRIGGER_PERMANENT_PUT_INTO_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.permanent-put-into-graveyard',
+  family: 'trigger',
+  leading: ['a'],
+  cites: ['CR 700.4 (General)', 'CR 603.6c (Handling Triggered Abilities)'],
+  examples: ['a permanent you control is put into a graveyard'],
+  rejects: [
+    'a permanent you control is put into a graveyard from anywhere',
+    'a creature you control is put into a graveyard',
+    '~ is put into a graveyard',
+    'a permanent you control is put into a graveyard from the battlefield',
+    'permanents you control are put into a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a permanent you control is put into a graveyard(?![\p{L}\p{N}]| from)/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: 'trigger.permanent-put-into-graveyard',
+    };
+    return {
+      ok: true,
+      value: trigger('trigger.permanent-put-into-graveyard', span, 'dies', { subject }),
+      pos: r.pos,
+    };
+  },
 });
 
 /** `trigger.dies`: "~ dies", "a creature you control dies" (CR 700.4, 603.6c, 603.10a). */
@@ -513,8 +558,11 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     '~ attacks, blocks, or becomes the target of a spell',
     '~ enters, attacks, or dies',
     'another creature you control attacks, blocks, or dies',
+    // CR 701.37a (Monstrosity), 603.2: the monstrosity action is an event like any other of the subject.
+    '~ enters or becomes monstrous',
   ],
   rejects: [
+    '~ becomes monstrous or becomes monstrous',
     '~ attacks or becomes the target of a spell or ability',
     '~ becomes the target of a spell or becomes the target of a spell',
     '~ enters',
@@ -610,6 +658,56 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
     return {
       ok: true,
       value: trigger('trigger.or-subjects', span, event, { subject, alternatives: [alternative] }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `trigger.enters-from-graveyard`: "~ or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 603.2c, 400.7): one ability that triggers for the permanent itself
+ * and for any other permanent that came onto the battlefield from a graveyard (the zone it moved from; a token or a spell cast from a graveyard is not that). As for `trigger.or-subjects`,
+ * each subject is an engine ability of its own. Not read: another kind than "permanent", "cast from", "your graveyard", a battlefield-only entry ("enters").
+ */
+export const TRIGGER_ENTERS_FROM_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.enters-from-graveyard',
+  family: 'trigger',
+  leading: ['~'],
+  cites: [
+    'CR 603.6a (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 400.7 (General)',
+  ],
+  examples: ['~ or another permanent enters from a graveyard'],
+  rejects: [
+    '~ or another permanent enters',
+    '~ or another permanent enters from your graveyard',
+    '~ or another creature enters from a graveyard',
+    '~ or a permanent enters from a graveyard',
+    '~ or another permanent is cast from a graveyard',
+    '~ enters from a graveyard',
+    '~ or another permanent enters from a graveyard or exile',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(literal('~')),
+      literal(' or another permanent'),
+      pattern(/ enters(?: the battlefield)? from a graveyard(?![\p{L}\p{N}])(?! or\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [self] = r.value;
+    const id = 'trigger.enters-from-graveyard';
+    const span = { start: pos, end: r.pos };
+    const whole = (subject: IrNoun): IrTrigger => ({
+      ...trigger(id, span, 'enters', { subject }),
+      fromGraveyard: true,
+    });
+    const other = makeNoun(id, span, 'a', { raw: 'another permanent' });
+    return {
+      ok: true,
+      value: {
+        ...whole(makeNoun(id, self.span, 'self', { raw: '~' })),
+        alternatives: [{ ...whole({ ...other, other: true }) }],
+      },
       pos: r.pos,
     };
   },
@@ -719,8 +817,14 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // D-437: a second kind of spell joined with "or".
     'you cast an Equipment spell or a spell that targets a creature you control',
     'you cast an artifact spell or a spell that targets a permanent',
+    // Don Andres, the Renegade (CR 108.3): a spell whose owner is another player.
+    "you cast a noncreature spell you don't own",
+    'you cast a spell you don’t own',
   ],
   rejects: [
+    "you cast a noncreature spell you don't own that targets a creature",
+    "you cast a spell you don't own or",
+    "you cast a spell you don't owns",
     'you cast ~',
     'you cast spells',
     'you cast a spell or',
@@ -779,6 +883,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
         ),
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
+      // Don Andres (CR 108.3): "a noncreature spell you don't own", a spell whose owner is not the controller of the ability.
+      optional(pattern(/ you don['’]t own(?![\p{L}\p{N}'’])/iu), null),
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
       optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
@@ -788,9 +894,13 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, colored, aimed, alternative] = r.value;
+    const [actor, spell, unowned, colored, aimed, alternative] = r.value;
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
-    const spellBase: IrFilter = spell.value[1];
+    if (unowned !== null && (colored !== null || aimed !== null || alternative !== null)) {
+      return fail(ctx, pos);
+    }
+    const spellBase: IrFilter =
+      unowned === null ? spell.value[1] : { ...spell.value[1], notOwnedByYou: true };
     if (colored !== null && (spellBase.colors !== undefined || spellBase.colorless === true)) {
       return fail(ctx, pos);
     }
@@ -1210,6 +1320,8 @@ export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
   ...CAST_DURING_TURN_TRIGGER_RULES,
+  // Astrologian's Planisphere: "you cast a noncreature spell and whenever you draw your third card each turn" starts like `trigger.cast`, which stops before the rest.
+  ...CAST_AND_DRAW_TRIGGER_RULES,
   // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,
@@ -1218,6 +1330,7 @@ export const TRIGGER_RULES = [
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
   ...UNBOUND_I_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
+  TRIGGER_ENTERS_FROM_GRAVEYARD,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,
   TRIGGER_BECOMES_TARGET,
@@ -1258,6 +1371,7 @@ export const TRIGGER_RULES = [
   // `trigger.enters` would stop at.
   ...ARTIFACT_TRIGGER_RULES,
   TRIGGER_ENTERS,
+  TRIGGER_PERMANENT_PUT_INTO_GRAVEYARD,
   TRIGGER_DIES,
   // Before the plain event: "attacks" is a prefix of "attacks alone" and of "attacks you or a planeswalker you control"
   // (stage P29), and the first rule that reads a prefix wins.
@@ -1305,5 +1419,7 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
   ...TROYAN2_TRIGGER_RULES,
+  // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
+  ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

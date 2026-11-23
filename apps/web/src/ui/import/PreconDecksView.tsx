@@ -11,10 +11,12 @@ import type { DeckChoice } from '../../precons';
 export function PreconDecksView({
   precons,
   onEdit,
+  onView,
   onReset,
 }: {
   precons: readonly DeckChoice[];
   onEdit: (precon: DeckChoice) => void;
+  onView: (precon: DeckChoice) => void;
   onReset: (precon: DeckChoice) => void;
 }) {
   // The precon whose reset waits for a second click: the edits are lost for good.
@@ -31,54 +33,59 @@ export function PreconDecksView({
         <p>No precon is installed yet.</p>
       ) : (
         <ul className="imp-list imp-saved" data-testid="precon-decks">
-          {precons.map((deck) => (
-            <li key={deck.id} data-precon={deck.id}>
-              <span>
-                <strong>{deck.name}</strong>{' '}
-                <span className="imp-tag" data-testid="precon-tag" data-edited={deck.edited}>
-                  {deck.edited ? 'Edited by you' : 'Built in'}
-                </span>{' '}
-                <span className="scr-help">
-                  {deck.commander === '' ? '' : `Commander: ${deck.commander}`}
+          {[...precons]
+            .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+            .map((deck) => (
+              <li key={deck.id} data-precon={deck.id}>
+                <span>
+                  <strong>{deck.name}</strong>{' '}
+                  <span className="imp-tag" data-testid="precon-tag" data-edited={deck.edited}>
+                    {deck.edited ? 'Edited by you' : 'Built in'}
+                  </span>{' '}
+                  <span className="scr-help">
+                    {deck.commander === '' ? '' : `Commander: ${deck.commander}`}
+                  </span>
                 </span>
-              </span>
-              <span className="imp-row-actions">
-                {confirming === deck.id ? (
-                  <>
-                    <span className="scr-help">Discard your edits?</span>
-                    <button
-                      type="button"
-                      className="scr-btn"
-                      onClick={() => {
-                        setConfirming(null);
-                        onReset(deck);
-                      }}
-                    >
-                      Yes, reset<span className="imp-sr"> {deck.name}</span>
-                    </button>
-                    <button type="button" className="scr-btn" onClick={() => setConfirming(null)}>
-                      Keep my edits<span className="imp-sr"> of {deck.name}</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button type="button" className="scr-btn" onClick={() => onEdit(deck)}>
-                      Edit<span className="imp-sr"> {deck.name}</span>
-                    </button>
-                    {deck.edited && (
+                <span className="imp-row-actions">
+                  {confirming === deck.id ? (
+                    <>
+                      <span className="scr-help">Discard your edits?</span>
                       <button
                         type="button"
                         className="scr-btn"
-                        onClick={() => setConfirming(deck.id)}
+                        onClick={() => {
+                          setConfirming(null);
+                          onReset(deck);
+                        }}
                       >
-                        Reset to default<span className="imp-sr"> {deck.name}</span>
+                        Yes, reset<span className="imp-sr"> {deck.name}</span>
                       </button>
-                    )}
-                  </>
-                )}
-              </span>
-            </li>
-          ))}
+                      <button type="button" className="scr-btn" onClick={() => setConfirming(null)}>
+                        Keep my edits<span className="imp-sr"> of {deck.name}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" className="scr-btn" onClick={() => onView(deck)}>
+                        View<span className="imp-sr"> {deck.name}</span>
+                      </button>
+                      <button type="button" className="scr-btn" onClick={() => onEdit(deck)}>
+                        Edit<span className="imp-sr"> {deck.name}</span>
+                      </button>
+                      {deck.edited && (
+                        <button
+                          type="button"
+                          className="scr-btn"
+                          onClick={() => setConfirming(deck.id)}
+                        >
+                          Reset to default<span className="imp-sr"> {deck.name}</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
         </ul>
       )}
     </section>

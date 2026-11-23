@@ -150,10 +150,13 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {G}{G} for each creature you control',
     'add {B} or {G} for each permanent destroyed this way',
     'add {R} or {G} for each creature you control',
+    // Issue 102 (Crypt of Agadeem, CR 105.2): a color word before the cards counted.
+    'add {B} for each black creature card in your graveyard',
     // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
     'add an amount of mana of that color equal to your devotion to that color',
     // Kami of Whispered Hopes, Astral Cornucopia: a mana ability's count of mana of one chosen color.
     'add x mana of any one color',
+    'add x mana in any combination of colors',
     'add one mana of that color for each charge counter on ~',
     // Issue 144 (Throne of Eldraine): a count of mana of the chosen color.
     'add four mana of the chosen color',
@@ -264,6 +267,10 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
             // Kami of Whispered Hopes (CR 106.1b, 107.3c): "X mana of any one color", X what the sentence's ", where X is ..." says; lowered only by a mana ability that has it.
             map(pattern(/x mana of any one color(?![\p{L}\p{N}])/iu), () => ({
               kind: 'anyOneColorX' as const,
+            })),
+            // Selvala, Heart of the Wilds (CR 106.1b, 107.3c): "X mana in any combination of colors", X what the sentence's ", where X is ..." says; lowered only by a mana ability that has it.
+            map(pattern(/x mana in any combination of colors(?![\p{L}\p{N}])/iu), () => ({
+              kind: 'anyCombinationX' as const,
             })),
             // Astral Cornucopia (CR 605.3b, 106.1b): after "Choose a color.", one mana of that color for each of a count; lowered only after that sentence.
             map(pattern(/one mana of that color(?![\p{L}\p{N}])/iu), () => ({

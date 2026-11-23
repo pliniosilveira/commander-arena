@@ -20,7 +20,7 @@ import type { Cost, ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { PaymentPlan } from '../mana';
 import type { GameEvent } from '../state/events';
-import { getSeat, loseLifeBy, patchObject } from '../state/ops';
+import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
 import { exileCostCandidates } from './activation-exile';
 import { blightCandidates } from './blight-candidates';
@@ -33,6 +33,7 @@ import { discardOne } from './madness';
 import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
+import { removalCounters } from './remove-counters-candidates';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
@@ -44,6 +45,8 @@ import { moveObject } from './zones';
 export interface CostBreakdown {
   readonly tap: boolean;
   readonly life: number;
+  /** "Pay {E}{E}" (CR 107.14, 118.3, issue 105): the energy counters the payer removes from themselves. */
+  readonly energy: number;
   readonly counters: readonly { readonly counter: string; readonly count: number }[];
   /** The loyalty symbol (D-200, CR 606.4): the change to the source's loyalty counters, with an X worked out, or null for no loyalty cost. */
   readonly loyalty: number | null;
@@ -82,6 +85,8 @@ export interface CostBreakdown {
   readonly bounce: 'this' | ObjectFilter | null;
   /** How many of them; 1 for the source and for an ordinary cost. */
   readonly bounceCount: number;
+  /** The return cost puts the permanent on the bottom of its owner's library instead of their hand (`returnToHand.toLibraryBottom`, CR 401.4). */
+  readonly bounceToLibraryBottom: boolean;
   /** "Exile two creature cards from your graveyard" (D-232): the cards of the graveyard the cost exiles, or null for none. */
   readonly exileCards: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The untapped permanents to tap (D-133, "Tap three untapped Zombies you control"), or null. */
@@ -92,6 +97,12 @@ export interface CostBreakdown {
   readonly tapCreatures: number | null;
   /** "Blight 1" (D-407, CR 701.68): the -1/-1 counters put on a creature the player controls, none when 0. */
   readonly blight: number;
+  /** "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the counters taken off the player's permanents the filter matches, or null. */
+  readonly removeAmong: {
+    readonly counter: string;
+    readonly count: number;
+    readonly filter: ObjectFilter;
+  } | null;
 }
 
 /**
@@ -104,6 +115,7 @@ export interface CostBreakdown {
 export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
   let life = 0;
+  let energy = 0;
   let discardThis = false;
   let revealThis = false;
   let exileThis = false;
@@ -120,6 +132,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let sacrifices = 0;
   let bounce: CostBreakdown['bounce'] = null;
   let bounceCount = 1;
+  let bounceToLibraryBottom = false;
   let bounces = 0;
   let exileCards: CostBreakdown['exileCards'] = null;
   let exileCardsCosts = 0;
@@ -131,6 +144,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tapCreaturesCosts = 0;
   let blight = 0;
   let blightCosts = 0;
+  let removeAmong: CostBreakdown['removeAmong'] = null;
+  let removeAmongCosts = 0;
   let onlyChosenColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
@@ -149,7 +164,15 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'payXLife':
         life += x;
         break;
+      case 'energy':
+        energy += cost.count;
+        break;
       case 'removeCounters':
+        if (cost.among !== undefined) {
+          removeAmongCosts += 1;
+          removeAmong = { counter: cost.counter, count: cost.count, filter: cost.among };
+          break;
+        }
         counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
         break;
       case 'loyalty':
@@ -164,6 +187,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         bounces += 1;
         bounce = 'kind' in cost.what ? 'this' : cost.what;
         bounceCount = cost.count ?? 1;
+        bounceToLibraryBottom = cost.toLibraryBottom === true;
         break;
       case 'discardThis':
         discardThis = true;
@@ -204,7 +228,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         break;
       case 'exileFromGraveyard':
         exileCardsCosts += 1;
-        exileCards = { filter: cost.filter, count: cost.count };
+        // Issue 102 (CR 107.3a, 602.2b): "Exile X cards from your graveyard" is X cards, the X announced for the ability.
+        exileCards = { filter: cost.filter, count: cost.countX === true ? x : cost.count };
         break;
       case 'tapPermanents':
         tapPermanentsCosts += 1;
@@ -235,7 +260,16 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounces > 1 ||
     exileCardsCosts > 1 ||
     loyaltyCosts > 1 ||
-    blightCosts > 1
+    blightCosts > 1 ||
+    removeAmongCosts > 1
+  ) {
+    return null;
+  }
+  // Federation Fleet group D: the counters are chosen after the permanents to tap and before a blight, which a crew cost (its creatures are chosen last, alone), an untap cost and a blight have no
+  // order for.
+  if (
+    removeAmong !== null &&
+    (tapCreatures !== null || untapPermanents !== null || blight > 0 || loyalty !== null)
   ) {
     return null;
   }
@@ -253,6 +287,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   return {
     tap,
     life,
+    energy,
     hasX: hasX(abilityXCost(costs)),
     onlyChosenColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
@@ -273,11 +308,13 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     sacrificeAlongside,
     bounce,
     bounceCount,
+    bounceToLibraryBottom,
     exileCards,
     tapPermanents,
     untapPermanents,
     tapCreatures,
     blight,
+    removeAmong,
   };
 }
 
@@ -312,6 +349,10 @@ function immediateRefusal(
     return `you have less than ${costs.life} life`;
   }
   if (costs.life > 0 && lifeTotalIsLocked(state, seat)) return 'your life total cannot change';
+  // CR 107.14, 118.3: energy is paid by removing that many counters from the player, who needs that many.
+  if (costs.energy > (getSeat(state, seat).energy ?? 0)) {
+    return `you have fewer than ${costs.energy} energy counters`;
+  }
   for (const { counter, count } of costs.counters) {
     if (source.zone !== 'battlefield' || (source.counters[counter] ?? 0) < count) {
       return `it has fewer than ${count} ${counter} counters`;
@@ -359,6 +400,11 @@ export function payImmediateCosts(
     const life = getSeat(state, seat).life;
     state = loseLifeBy(state, seat, costs.life);
     events.push({ kind: 'lifeChanged', seat, from: life, to: life - costs.life });
+  }
+  if (costs.energy > 0) {
+    const had = getSeat(state, seat).energy ?? 0;
+    state = patchSeat(state, seat, { energy: had - costs.energy });
+    events.push({ kind: 'energyChanged', seat, from: had, to: had - costs.energy });
   }
   for (const { counter, count } of costs.counters) {
     const obj = state.objects[source];
@@ -536,6 +582,13 @@ export function costRefusal(
       return found === 0
         ? "you control nothing to return to its owner's hand"
         : `you control fewer than ${parts.bounceCount} permanents to return to their owners' hands`;
+    }
+  }
+  if (parts.removeAmong !== null) {
+    // CR 118.3, 122.1: enough counters of the kind among the permanents that match.
+    const { counter, count, filter } = parts.removeAmong;
+    if (removalCounters(paid, seat, source.id, filter, counter).total < count) {
+      return `you control too few ${counter} counters to remove`;
     }
   }
   if (parts.blight > 0 && blightCandidates(paid, seat).length === 0) {

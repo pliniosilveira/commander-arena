@@ -65,8 +65,8 @@ describe('mayPlay with anyManaColor', () => {
     expect(messages(sorcery(play({ castOnly: true, anyManaColor: true })))).toEqual([]);
   });
 
-  test('it needs castOnly: the mana is spent on a spell, not on a land', () => {
-    expect(messages(sorcery(play({ anyManaColor: true }))).length).toBeGreaterThan(0);
+  test('without castOnly it is valid too (Breeches: "play those cards ... mana of any color to cast those spells"): a land is played, a spell is paid for with any color', () => {
+    expect(messages(sorcery(play({ anyManaColor: true })))).toEqual([]);
   });
 
   test('anyManaColor is true when present', () => {

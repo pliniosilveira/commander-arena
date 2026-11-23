@@ -76,7 +76,10 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
     case 'producedType': // read from the mana ability that was tapped for mana; only a `tappedForMana` effect (validate.ts, validate-parts.ts)
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
     case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
+    case 'anyCombinationAmount': // so is this one
     case 'commanderIdentity':
+      break;
+    case 'eachColorAmong': // the filter is checked with the mana ability (validate-mana-ability.ts)
       break;
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)
       // Issue 184: "Add {U} or one mana of the chosen color".

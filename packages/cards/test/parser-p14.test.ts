@@ -286,11 +286,17 @@ describe('cost: Pay N life on a mana ability (CR 119.4)', () => {
     expect(abilities(text, 'land')).toEqual([manaAbility([TAP, life(amount)], production)]);
   });
 
-  test('paying life twice, or with nothing to tap, is not a mana ability the engine has', () => {
+  // Issue 102 (Lord of the Forsaken, CR 605.1a, 119.4): the life is the whole cost of the ability, which needs no {T}.
+  test('paying life alone is a mana ability', () => {
+    expect(abilities('Pay 1 life: Add {B}.', 'land')).toEqual([
+      manaAbility([life(1)], { kind: 'fixed', mana: ['B'] }),
+    ]);
+  });
+
+  test('paying life twice is not a mana ability the engine has', () => {
     expect(dropped('{T}, Pay 1 life, Pay 1 life: Add {B}.', 'land')).toMatchObject({
       reason: 'notRunnable',
     });
-    expect(dropped('Pay 1 life: Add {B}.', 'land')).toMatchObject({ reason: 'notRunnable' });
     expect(dropped('{T}, Pay 0 life: Add {B}.', 'land').stoppedAt).toBe('0 life: Add {B}.');
   });
 });

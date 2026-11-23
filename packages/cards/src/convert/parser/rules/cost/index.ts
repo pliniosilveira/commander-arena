@@ -11,11 +11,14 @@ import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
+import { EXTRA_TURN_COST_RULES } from './extra-turns';
+import { FEDERATION_D_COST_RULES } from './federation-d';
 import { GISA_G4_COST_RULES } from './gisa-g4';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
+import { PAY_ENERGY_COST_RULES } from './pay-energy';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -933,10 +936,14 @@ export const COST_RULES = [
   COST_DISCARD_FILTERED,
   // Stage P68 (D-229): "Discard this card", "Exile ~".
   ...HOFRI_COST_RULES,
+  // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
+  ...EXTRA_TURN_COST_RULES,
   // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,
   COST_ENERGY,
+  // Aetherdrift energy deck (issue 105): "Pay {E}{E}", "Pay six {E}".
+  ...PAY_ENERGY_COST_RULES,
   COST_PAY_LIFE,
   COST_PAY_LIFE_AMOUNT,
   // Hashaton deck, group 2 (D-364): "pay that much life", read by `effect.pay` only.
@@ -953,4 +960,6 @@ export const COST_RULES = [
   COST_LOYALTY,
   // Hatsune Miku deck (issue 145): "Untap two tapped creatures you control".
   ...UNTAP_PERMANENTS_COST_RULES,
+  // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
+  ...FEDERATION_D_COST_RULES,
 ];

@@ -54,6 +54,31 @@ export function permanentValue(view: GameView, o: ObjectView): number {
   return 3 + manaValueOf(o) + powerOf(o) / 100 + counters / 10 + (o.isCommander ? 50 : 0);
 }
 
+/**
+ * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (a `choosePermanent` with `purpose: 'keep'`,
+ * CR 608.2d, 701.21a, Slaughter the Strong): the answer names the creatures kept. The agent keeps the ones it values most, one after another, as long as the total power stays within
+ * the limit (a creature with no power is always kept for free). Not a perfect packing, only a good one.
+ */
+export function chooseCreaturesToKeep(view: GameView, d: ChoosePermanentDecision): Action {
+  const limit = d.maxTotalPower ?? 0;
+  const powers = d.powers ?? {};
+  const ranked = d.legal
+    .map((id, index) => {
+      const o = findObject(view, id);
+      return { id, index, value: o === undefined ? 0 : permanentValue(view, o) };
+    })
+    .sort((a, b) => b.value - a.value || a.index - b.index);
+  const kept: ObjectId[] = [];
+  let total = 0;
+  for (const r of ranked) {
+    const power = powers[r.id] ?? 0;
+    if (total + power > limit) continue;
+    kept.push(r.id);
+    total += power;
+  }
+  return { kind: 'choosePermanents', objects: d.legal.filter((id) => kept.includes(id)) };
+}
+
 export function choosePermanentToSacrifice(view: GameView, d: ChoosePermanentDecision): Action {
   // CR 701.21a: "Sacrifice a Swamp and a Forest": a different permanent for each part; of the ways to pay it the one that gives up the least.
   if (d.groups !== undefined) {
@@ -187,6 +212,16 @@ export function chooseSparedPermanent(view: GameView, d: ChoosePermanentDecision
  * entered is tapped too, so with another tapped land the older one goes back.
  */
 export function choosePermanentToReturn(view: GameView, d: ChoosePermanentDecision): Action {
+  // Issue 105 (Druid of Purification, CR 608.2d): "each player may choose a permanent ... destroy each permanent chosen": an optional choice of one. The agent chooses the best permanent of
+  // an opponent when the list has one, and never one of its own.
+  if (d.min === 0 && d.max === 1) {
+    const theirs = d.legal
+      .map((id) => findObject(view, id))
+      .filter((o): o is NonNullable<typeof o> => o !== undefined && o.controller !== view.viewer)
+      .sort((a, b) => permanentValue(view, b) - permanentValue(view, a));
+    const best = theirs[0];
+    return { kind: 'choosePermanents', objects: best === undefined ? [] : [best.id] };
+  }
   const ranked = d.legal
     .map((id, index) => {
       const o = findObject(view, id);
@@ -353,6 +388,15 @@ function answerClash(d: ConfirmOptionalDecision, view: GameView): Action {
 export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Action {
   if (d.purpose === 'exert') return answerExert(d, view);
   if (d.purpose === 'clash') return answerClash(d, view);
+  // Dredge (CR 702.52a, issue 102): "mill N cards instead of drawing, and return this card" trades a fresh card for a recursion spell and fills the graveyard; it is worth it only
+  // while the library is deep enough that milling it is no danger (more than 12 cards left after the mill).
+  if (d.purpose === 'dredge') {
+    const me = view.seats.find((s) => s.id === view.viewer);
+    const n = Number(/dredge (\d+)/i.exec(d.sourceOracleText)?.[1] ?? 3);
+    return me !== undefined && me.libraryCount - n > 12
+      ? { kind: 'acceptOptional' }
+      : { kind: 'declineOptional' };
+  }
   // "You may cast that card without paying its mana cost" (Cascade, CR 702.85a): a free spell, always.
   if (d.purpose === 'cascade') return { kind: 'acceptOptional' };
   // "As many times as you choose, you may exile the top card of your library" (D-662): each card exiled is a free spell if the total mana value stays at 13 or less. The agent

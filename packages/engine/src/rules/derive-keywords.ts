@@ -11,7 +11,14 @@
  * itself stays (CR 702.29b), so the object still has it. Each instance of a keyword expands on its
  * own: two instances of prowess are two triggered abilities (CR 702.108b), and so are two of ward.
  */
-import type { Ability, Cost, Keyword, ObjectFilter, TokenDefinition } from '../ast/types';
+import type {
+  Ability,
+  Condition,
+  Cost,
+  Keyword,
+  ObjectFilter,
+  TokenDefinition,
+} from '../ast/types';
 import { effectForGift } from './gift-effect';
 import { SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY } from './soulbond-abilities';
 
@@ -30,7 +37,11 @@ export function hasPrintedKeyword(abilities: readonly Ability[], kind: Keyword['
 }
 
 /** CR 702.6a: "Equip [cost]" is "[Cost]: Attach this permanent to target creature you control." */
-function equipAbility(cost: readonly Cost[], restriction?: ObjectFilter): Ability {
+function equipAbility(
+  cost: readonly Cost[],
+  restriction?: ObjectFilter,
+  costReducedIf?: { readonly generic: number; readonly condition: Condition },
+): Ability {
   return {
     kind: 'activated',
     cost,
@@ -49,6 +60,8 @@ function equipAbility(cost: readonly Cost[], restriction?: ObjectFilter): Abilit
     timing: 'sorcery',
     // D-425: what "Equip abilities you activate that target ..." names.
     equip: true,
+    // "This ability costs {2} less to activate if you have one or fewer cards in hand." (CR 601.2f)
+    ...(costReducedIf === undefined ? {} : { costReducedIf }),
   };
 }
 
@@ -199,6 +212,18 @@ const DECAYED_ABILITY: Ability = {
   kind: 'triggered',
   trigger: { kind: 'attacks', what: { kind: 'this' } },
   effect: { kind: 'delayedSacrifice', of: 'this' },
+};
+
+/**
+ * CR 702.116a (Myriad): "Whenever this creature attacks, ..." (the effect is `rules/myriad.ts`); each instance triggers separately (CR 702.116b). With one opponent there is no
+ * opponent other than the defending player, so the ability could do nothing and could not be told from not having triggered; it is not put on the stack then (the condition is read
+ * as the creature attacks), which keeps a two-player game as it was: no extra trigger to order or respond to.
+ */
+const MYRIAD_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  triggerCondition: { kind: 'opponentsAtLeast', count: 2 },
+  effect: { kind: 'myriad' },
 };
 
 /**
@@ -455,6 +480,26 @@ function bushidoAbilities(count: number): Ability[] {
     { kind: 'triggered', trigger: { kind: 'becomesBlocked', what: { kind: 'this' } }, effect },
   ];
 }
+
+/**
+ * CR 702.25a, 702.25b (Flanking): "Whenever this creature becomes blocked by a creature without flanking, the blocking creature gets -1/-1 until end of turn." It triggers once for
+ * each creature that blocks it (CR 509.3d), and each instance of the keyword triggers separately (the expansion is one ability for each instance of the keyword).
+ */
+export const FLANKING_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: {
+    kind: 'becomesBlockedBy',
+    what: { kind: 'this' },
+    by: { types: ['creature'], notKeywords: ['flanking'] },
+  },
+  effect: {
+    kind: 'modifyPt',
+    objects: { kind: 'triggerSources' },
+    power: -1,
+    toughness: -1,
+    duration: 'untilEndOfTurn',
+  },
+};
 
 /**
  * CR 702.101a: "Extort" means "Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1
@@ -790,7 +835,13 @@ export function expansionOf(ability: Ability): Ability[] {
         },
       ];
     case 'equip':
-      return [equipAbility(ability.keyword.cost, ability.keyword.restriction)];
+      return [
+        equipAbility(
+          ability.keyword.cost,
+          ability.keyword.restriction,
+          ability.keyword.costReducedIf,
+        ),
+      ];
     case 'reconfigure':
       return reconfigureAbilities(ability.keyword.cost);
     case 'prowess':
@@ -810,6 +861,9 @@ export function expansionOf(ability: Ability): Ability[] {
       return [annihilatorAbility(ability.keyword.count)];
     case 'afflict':
       return [afflictAbility(ability.keyword.count)];
+    // CR 702.52a (issue 102): a replacement of the draw read from the graveyard (`rules/dredge.ts`), not an ability the permanent has.
+    case 'dredge':
+      return [];
     case 'mobilize':
       return [mobilizeAbility(ability.keyword.count)];
     case 'fabricate':
@@ -831,6 +885,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [EVOLVE_ABILITY];
     case 'bushido':
       return bushidoAbilities(ability.keyword.count);
+    case 'flanking':
+      return [FLANKING_ABILITY];
     case 'extort':
       return [EXTORT_ABILITY];
     case 'cascade':
@@ -869,6 +925,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [DETHRONE_ABILITY];
     case 'decayed':
       return [DECAYED_ABILITY];
+    case 'myriad':
+      return [MYRIAD_ABILITY];
     default:
       return [];
   }

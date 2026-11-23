@@ -167,6 +167,21 @@ export function lookAtTopText(
     return `Reveal ${top} of your library. You may put ${taken} from among them into your hand. ${REST_WORDS[rest]}`;
   }
   const look = `Look at ${top} of your library`;
+  // CR 608.2c (Planar Genesis, Risen Reef): "You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand."
+  if (take.elseAnyToHand === true) {
+    const tapped = take.tapped === true ? ' tapped' : '';
+    if (count === 1) {
+      return `${look}. If it's ${what}, you may put it onto the battlefield${tapped}. If you don't, put it into your hand`;
+    }
+    return `${look}. You may put ${taken} from among them onto the battlefield${tapped}. If you don't, put a card from among them into your hand. ${REST_WORDS[rest]}`;
+  }
+  // CR 401.2, 401.4 (Cream of the Crop): "Put one of those cards on top of your library and the rest on the bottom".
+  if (take.to === 'top')
+    return `${look}. Put one of them on top of your library. ${REST_WORDS[rest]}`;
+  // CR 701.20a, 608.2c (Cavalier of Thorns): a revealed card that must be put somewhere ("Put a land card from among them onto the battlefield").
+  if (effect.revealAll === true && (take.min ?? 0) > 0 && take.to === 'battlefield') {
+    return `Reveal ${top} of your library. Put ${taken} from among them onto the battlefield${take.tapped === true ? ' tapped' : ''}. ${REST_WORDS[rest]}`;
+  }
   // D-145 (CR 702.75a, Hideaway): "Exile one of them face down", a card that must be taken.
   if (take.to === 'exileFaceDown') {
     const which = plain && one ? 'one of them' : `${taken} from among them`;

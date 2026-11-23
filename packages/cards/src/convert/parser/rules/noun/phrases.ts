@@ -21,6 +21,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrComparison, IrFilter } from '../../ir/types';
 import { GRANTABLE_KEYWORDS } from '../keyword/vocabulary';
+import { family } from '../registry';
 import { readCreatureType } from './creature-types';
 import { PLANESWALKER_TYPES, SUBTYPE_WORD_NUMBERED, type SubtypeWord, subtypeOf } from './subtypes';
 
@@ -408,6 +409,12 @@ const ALL_COMPARABLE: readonly Comparable[] = ['power', 'toughness', 'manaValue'
 const MANA_VALUE_X: Parser<boolean> = map(
   pattern(new RegExp(` with mana value X${BOUNDARY}(?! or )`, 'u')),
   () => true,
+);
+
+/** " with total power 10 or less" (Reunion of the House, CR 208.1): the cards chosen together have power adding up to at most the number. */
+const TOTAL_POWER_OR_LESS: Parser<number> = map(
+  pattern(new RegExp(` with total power (\\d{1,3}) or less${BOUNDARY}`, 'u')),
+  (m) => Number(m[1]),
 );
 
 /** " with mana value X or less" (stage P68, D-230, CR 202.3): the mana value is at most the X a "where X is ..." defines. */
@@ -1020,9 +1027,18 @@ export function spellTypesAndPhrase(): Parser<IrFilter> {
  * " that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4): a card in a graveyard that went there from the battlefield
  * during this turn (a creature that died, an artifact that was destroyed).
  */
-const PUT_THERE_THIS_TURN: Parser<boolean> = map(
-  pattern(new RegExp(` that was put there from the battlefield this turn${BOUNDARY}`, 'iu')),
-  () => true,
+const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice(
+  map(
+    pattern(new RegExp(` that was put there from the battlefield this turn${BOUNDARY}`, 'iu')),
+    () => 'battlefield' as const,
+  ),
+  // Ahoy Mateys deck, Ghost of Ramirez DePietro (CR 701.9, 701.17): "that was discarded or put there from a library this turn".
+  map(
+    pattern(
+      new RegExp(` that was discarded or put there from a library this turn${BOUNDARY}`, 'iu'),
+    ),
+    () => 'discardedOrLibrary' as const,
+  ),
 );
 
 /** What stands before "card" in a graveyard phrase: types, a choice of types, subtypes (stage P15). */
@@ -1034,6 +1050,8 @@ interface CardWords {
   readonly notSubtypes?: readonly string[];
   /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
   readonly notSupertypes?: readonly string[];
+  /** "nonland card" (issue 102, CR 205.2a): card types the card does not have. */
+  readonly notTypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1053,10 +1071,14 @@ export function graveyardPhrase(
   // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
   // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
   amountLimit?: Parser<IrAmount>,
+  // Issue 102 (Tasigur): "a nonland card from your graveyard", read only by a caller that asks for it (a target's "nonland card" is another rule's reading).
+  allowNonland = false,
+  // Reunion of the House: "any number of target creature cards with total power 10 or less from your graveyard", read only where the caller asks for it.
+  allowTotalPower = false,
   // "all instant and sorcery cards": only the "all" form reads a list joined by "and" as a choice of kinds; "target creature and planeswalker cards" stays unread.
   andList = false,
 ): Parser<IrFilter> {
-  const owner: Parser<'you' | 'opponent' | undefined> =
+  const owner: Parser<'you' | 'opponent' | 'defendingPlayer' | undefined> =
     preposition === 'fromTheirs'
       ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
         // graveyard, so no owner. The caller reads it only after "each player".
@@ -1079,6 +1101,11 @@ export function graveyardPhrase(
                   map(literal(' from your graveyard'), () => 'you' as const),
                   map(literal(' from a graveyard'), () => undefined),
                   map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                  // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
+                  map(
+                    pattern(/ from defending player['’]s graveyard/i),
+                    () => 'defendingPlayer' as const,
+                  ),
                   // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
                   ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
                   // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
@@ -1115,6 +1142,8 @@ export function graveyardPhrase(
         map(literal('nonlegendary '), () => ['legendary']),
         [] as string[],
       ),
+      // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
+      optional(allowNonland ? map(literal('nonland '), () => ['land']) : fail, [] as string[]),
       nonSubtypes,
       many(
         map(
@@ -1130,10 +1159,11 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSupertypes, notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notTypes, notSubtypes, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
+      ...(notTypes.length > 0 ? { notTypes } : {}),
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
       ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
     }),
@@ -1235,10 +1265,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes, notSupertypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
     // A negated supertype inside a union is another reading, not built here.
-    if (notSupertypes !== undefined) return fail(ctx, pos);
+    if (notSupertypes !== undefined || notTypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
     if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
@@ -1289,6 +1319,8 @@ export function graveyardPhrase(
     const r = sequence(
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
+      // "creature cards of that type from your graveyard" (CR 608.2d, 205.3m: Haunting Voyage, after "Choose a creature type"): the type chosen as the spell resolves.
+      optional(quiet(CHOSEN_SUFFIX), undefined),
       // "creature card with mana value 3 or less from your graveyard" (stage P18): a card outside the
       // battlefield has its printed power, toughness and mana value (CR 202.3, 208.1).
       optional(quiet(comparisonSuffix(ALL_COMPARABLE)), undefined),
@@ -1296,35 +1328,54 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X_OR_LESS), false),
       // "Saga card with mana value X from your graveyard" (CR 107.3a, 202.3): the mana value is the X announced for the ability.
       optional(quiet(MANA_VALUE_X), false),
+      // Reunion of the House (CR 208.1): "creature cards with total power 10 or less from your graveyard".
+      optional(allowTotalPower ? quiet(TOTAL_POWER_OR_LESS) : fail, undefined),
       optional(
         quiet(
           amountLimit === undefined
             ? fail
-            : map(
-                sequence(literal(' with mana value less than or equal to '), amountLimit),
-                ([, amount]) => amount,
+            : choice(
+                map(
+                  sequence(literal(' with mana value less than or equal to '), amountLimit),
+                  ([, amount]) => ({ amount, exact: false }),
+                ),
+                // Krile Baldesion (CR 202.3, 603.3d): "with mana value equal to that spell's mana value": the card has exactly the mana value of the spell that caused the trigger.
+                map(
+                  sequence(
+                    literal(' with mana value equal to '),
+                    family<IrAmount>('amount', { only: ['amount.that-spells-mana-value'] }),
+                  ),
+                  ([, amount]) => ({ amount, exact: true }),
+                ),
               ),
         ),
         undefined,
       ),
+      // Issue 102 (Tasigur): "a nonland card of an opponent's choice from your graveyard", read only where the caller asks for it (`allowNonland`).
+      optional(allowNonland ? quiet(literal(" of an opponent's choice")) : fail, null),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
-      optional(quiet(PUT_THERE_THIS_TURN), false),
+      optional(quiet(PUT_THERE_THIS_TURN), null),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, notSupertypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, notSupertypes, notTypes, extra, subtypeAnyOf },
       ,
+      chosen,
       compared,
       atMostX,
       equalsX,
+      totalPower,
       limitAmount,
+      byOpponent,
       controller,
       putThere,
     ] = r.value;
+    // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
+    if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
     const filter = toFilter(
       'graveyard',
-      { ...NO_PARTS, types, controller },
+      { ...NO_PARTS, types, controller, ...(notTypes === undefined ? {} : { notTypes }) },
       ctx.text.slice(pos, r.pos),
     );
     return {
@@ -1342,10 +1393,21 @@ export function graveyardPhrase(
             : subtypeAnyOf === undefined
               ? {}
               : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
-          ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
+          ...(chosen === undefined ? {} : { chosen }),
+          ...(putThere === 'battlefield' ? { putFromBattlefieldThisTurn: true as const } : {}),
+          ...(putThere === 'discardedOrLibrary'
+            ? { discardedOrFromLibraryThisTurn: true as const }
+            : {}),
+          ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
-          ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),
+          ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
+          ...(limitAmount === undefined
+            ? {}
+            : {
+                manaValueAtMostAmount: limitAmount.amount,
+                ...(limitAmount.exact ? { manaValueExact: true as const } : {}),
+              }),
           card: true,
         },
         compared,

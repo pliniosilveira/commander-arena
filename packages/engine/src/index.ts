@@ -49,7 +49,7 @@ export { faceDownLabel } from './rules/face-down';
 export { KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
 export { distinctAssignments } from './rules/sacrifice-groups';
-export type { DeckConfig, GameConfig } from './rules/setup';
+export type { DeckConfig, GameConfig, StartingEmblem } from './rules/setup';
 export { createGame } from './rules/setup';
 export { sharesLandType } from './rules/share-type';
 export type * from './state/actions';

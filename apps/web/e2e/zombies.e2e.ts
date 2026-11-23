@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -84,7 +85,7 @@ async function playUntil(page: Page, play: Play): Promise<void> {
 
 /** Passes priority until the stack is empty again, so the spell or ability on it has resolved. */
 async function resolveStack(page: Page): Promise<void> {
-  const items = page.getByRole('region', { name: 'Stack' }).locator('.pnl-stack-item');
+  const items = page.getByRole('region', { name: 'Stack', exact: true }).locator('.pnl-stack-item');
   for (let step = 0; step < 20; step += 1) {
     await settled(page);
     if ((await items.count()) === 0) return;
@@ -221,17 +222,23 @@ test('A card cast from the graveyard: the ability opens a window, the chip says 
 
   const inYard = await graveyardCount(page);
   // Full Control keeps the ability on the stack with the player holding priority, so it can be read.
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await mine(page, chanter).first().click();
 
   // The ability needs a Zombie creature card of the graveyard as its target; the stack says what it does.
-  const targets = page.getByRole('region', { name: 'Legal targets' }).getByRole('button');
+  // Every legal target is in one graveyard: the dock offers a button that opens it, and the card is
+  // chosen and confirmed in the picker (#555).
   await expect(prompt(page)).toHaveText(`Choose a target for ${chanter}.`);
-  await targets.filter({ hasText: zombie }).first().click();
-  await primary(page).click();
+  await page
+    .getByRole('region', { name: 'Legal targets' })
+    .getByRole('button', { name: 'Open graveyard' })
+    .click();
+  const picker = page.getByRole('dialog', { name: 'You graveyard' });
+  await picker.getByRole('button', { name: zombie }).first().click();
+  await picker.locator('.board-modal-actions .dec-btn-primary').click();
   await settled(page);
   await expect(
-    page.getByRole('region', { name: 'Stack' }).locator('.pnl-stack-when', {
+    page.getByRole('region', { name: 'Stack', exact: true }).locator('.pnl-stack-when', {
       hasText: 'You may cast target Zombie creature card from your graveyard this turn',
     }),
   ).toBeVisible();

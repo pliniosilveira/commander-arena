@@ -15,9 +15,15 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
+import { HISTORY_VALUE } from '../amount/history';
 import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
+import { ABZAN_ARMOR_NOUN_RULES } from './abzan-armor';
+import { ABZAN_SPELLS_NOUN_RULES } from './abzan-spells';
+import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
+import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
+import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
@@ -34,6 +40,7 @@ import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
 import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
 import { ETERNAL_MIGHT_NOUN_RULES } from './eternal-might';
+import { FEDERATION_F_NOUN_RULES } from './federation-f';
 import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
 import { GISA_G2_NOUN_RULES } from './gisa-g2';
 import { GISA_G3_NOUN_RULES } from './gisa-g3';
@@ -64,15 +71,17 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { PLAYERS_WHO_NOUN_RULES } from './players-who';
+import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
-import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
+import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN, NOUN_THE_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
 import { SAME_NAME_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
-import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
+import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
@@ -349,6 +358,18 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * The limit a graveyard target's "with mana value less than or equal to ..." reads: the counters on the permanent the trigger is about (Puca's Covenant, CR 202.3, 122.1), or the amount of
+ * life the controller lost this turn (Betor, Ancestor's Voice, CR 119.3, 202.3).
+ */
+const graveyardLimit: Parser<IrAmount> = choice(
+  NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard),
+  (ctx, pos) => {
+    const r = HISTORY_VALUE(ctx, pos);
+    return r.ok && r.value.kind === 'controllerLifeLostThisTurn' ? r : fail(ctx, pos);
+  },
+);
+
 /** `noun.target-graveyard-card`: "target creature card from a graveyard" (CR 404.1). */
 export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   id: ID.targetGraveyard,
@@ -376,8 +397,20 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one, two, or three target creature cards from your graveyard',
     // Puca's Covenant (CR 202.3, 122.1): a limit of the counters on the permanent the trigger is about.
     'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
+    // Krile Baldesion (CR 202.3, 603.3d): exactly the mana value of the spell that caused the trigger.
+    "target creature card with mana value equal to that spell's mana value from your graveyard",
+    // Blue Mage's Cane (CR 508.5): the graveyard of the player an attacking creature attacks.
+    "target instant or sorcery card from defending player's graveyard",
+    "up to one target instant or sorcery card from defending player's graveyard",
+    // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
+    'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
   ],
   rejects: [
+    "target creature card with mana value equal to that card's mana value from your graveyard",
+    "target creature card with mana value equal to that spell's mana value",
+    "target instant or sorcery card from the defending player's graveyard",
+    "target instant or sorcery card from defending players' graveyard",
+    'target creature card with mana value less than or equal to the amount of life you gained this turn from your graveyard',
     'one, two, or three target creature card from graveyards',
     'one, two, three target creature cards from graveyards',
     'one, two, or four target creature cards from graveyards',
@@ -399,7 +432,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   ],
   parse: targetOf(ID.targetGraveyard, (plural) =>
     // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
-    graveyardPhrase(plural, 'from', NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard)),
+    graveyardPhrase(plural, 'from', graveyardLimit),
   ),
 });
 
@@ -459,8 +492,54 @@ export const NOUN_TARGET_CARD_IN_A_GRAVEYARD = defineRule<IrNoun>({
       graveyardPhrase(plural, 'inAny'),
     )(ctx, pos);
     if (!r.ok) return r;
-    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements.
-    return r.value.plural || r.value.upTo || r.value.count !== undefined ? fail(ctx, pos) : r;
+    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements. The words about this turn are
+    // `noun.target-card-in-a-graveyard-this-turn`.
+    return r.value.filter.discardedOrFromLibraryThisTurn === true ||
+      r.value.plural ||
+      r.value.upTo ||
+      r.value.count !== undefined
+      ? fail(ctx, pos)
+      : r;
+  },
+});
+
+/**
+ * `noun.target-card-in-a-graveyard-this-turn` (Ahoy Mateys deck, Ghost of Ramirez DePietro; CR 404.1, 115.1, 701.9, 701.17): "up to one target card in a graveyard that was discarded or put
+ * there from a library this turn": a card of any graveyard that went there this turn by a discard or from a library (the engine's `discardedOrFromLibraryThisTurn`). One card at most; the
+ * phrase is read only where a rule asks for this noun by its id, and only with the words about this turn.
+ */
+export const NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN = defineRule<IrNoun>({
+  id: 'noun.target-card-in-a-graveyard-this-turn',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)', 'CR 701.9 (Discard)', 'CR 701.17 (Mill)'],
+  examples: [
+    'up to one target card in a graveyard that was discarded or put there from a library this turn',
+    'target card in a graveyard that was discarded or put there from a library this turn',
+    'target creature card in a graveyard that was discarded or put there from a library this turn',
+  ],
+  rejects: [
+    'target card in a graveyard',
+    'up to one target card in a graveyard',
+    'up to two target cards in a graveyard that was discarded or put there from a library this turn',
+    'two target cards in a graveyard that was discarded or put there from a library this turn',
+    'target card in a graveyard that was discarded this turn',
+    'target card in a graveyard that was put there from a library this turn',
+    'target card in your graveyard that was discarded or put there from a library this turn',
+    'target card from a graveyard that was discarded or put there from a library this turn',
+    'card in a graveyard that was discarded or put there from a library this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-a-graveyard-this-turn', (plural) =>
+      graveyardPhrase(plural, 'inAny'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card at most, and only the words about this turn.
+    return r.value.plural ||
+      (r.value.count !== undefined && !r.value.upTo) ||
+      r.value.filter.discardedOrFromLibraryThisTurn !== true
+      ? fail(ctx, pos)
+      : r;
   },
 });
 
@@ -574,7 +653,7 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
     const own = node<IrFilter, IrNoun>(
       ID.allGraveyard,
       map(
-        sequence(literal('all '), graveyardPhrase(true, 'from', undefined, true)),
+        sequence(literal('all '), graveyardPhrase(true, 'from', undefined, false, false, true)),
         ([, filter]) => filter,
       ),
       (filter) => bare('each', filter, { plural: true }),
@@ -902,9 +981,16 @@ export const NOUN_RULES = [
   ...VRASKA_EARLY_NOUN_RULES,
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
   ...DESTINY_EARLY_NOUN_RULES,
+  ...PLAYERS_WHO_CONTROL_NOUN_RULES,
+  // "each opponent who lost life this turn", "each opponent who was dealt combat damage by ~ this turn": first words of `noun.player` ("each opponent").
+  ...PLAYERS_WHO_NOUN_RULES,
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
+  // Ahoy Mateys deck, group 10 (Siren Stormtamer): "target spell or ability that targets you or a creature you control" starts like "target spell", which reads a prefix of it: tried first.
+  ...AHOY_G10_NOUN_RULES,
+  // Issue 105 (Disallow): "target spell, activated ability, or triggered ability", whose first words are those of `noun.target-spell`.
+  ...STACK_ABILITY_EARLY_NOUN_RULES,
   NOUN_TARGET_SPELL,
   ...SPELL_OR_CREATURE_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".
@@ -931,6 +1017,7 @@ export const NOUN_RULES = [
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD,
+  NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN,
   // Issue 89 (Animate Dead): "creature card in a graveyard" and "creature put onto the battlefield with ~", read by the enchant ability of an Aura only.
   ...AURA_GRAVEYARD_NOUN_RULES,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
@@ -951,6 +1038,10 @@ export const NOUN_RULES = [
   ...ATTACKING_YOU_NOUN_RULES,
   // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
   ...QUANDRIX_G_TARGET_NOUN_RULES,
+  // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
+  ...AHOY_G7_NOUN_RULES,
+  // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.
+  ...ABZAN_ARMOR_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -959,11 +1050,14 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...ABZAN_SPELLS_NOUN_RULES,
   ...SAME_NAME_NOUN_RULES,
   ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
+  // Ahoy Mateys deck, group 4: "each other creature you control that's a Skeleton or Pirate" and "each creature you control but don't own", which `noun.each-permanent` would stop in the middle of.
+  ...AHOY_G4_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
@@ -990,12 +1084,15 @@ export const NOUN_RULES = [
   NOUN_IT,
   NOUN_EACH_OF_THEM,
   NOUN_THAT_TOKEN,
+  NOUN_THE_TOKEN,
   // Stage P50 (D-207): "target triggered ability or colorless spell".
   ...VRASKA_NOUN_RULES,
   // Stage P33 (D-150): "that nonland permanent card", "this card".
   ...ANGEL_NOUN_RULES,
   // D-362 (Hashaton, group 8): "the chosen cards".
   ...HASHATON_G8_NOUN_RULES,
+  // Federation Fleet deck, group F: "any number of target players' graveyards".
+  ...FEDERATION_F_NOUN_RULES,
   // D-392 (Hashaton, group 9): "that source's controller".
   ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,

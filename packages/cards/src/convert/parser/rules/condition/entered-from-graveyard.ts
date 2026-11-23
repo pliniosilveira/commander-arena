@@ -17,7 +17,7 @@ const ID = 'condition.entered-from-graveyard';
 export const CONDITION_ENTERED_FROM_GRAVEYARD = defineRule<IrCondition>({
   id: ID,
   family: 'condition',
-  leading: ['they'],
+  leading: ['they', 'one'],
   cites: [
     'CR 603.4 (Handling Triggered Abilities)',
     'CR 603.6a (Handling Triggered Abilities)',
@@ -26,6 +26,8 @@ export const CONDITION_ENTERED_FROM_GRAVEYARD = defineRule<IrCondition>({
   examples: [
     'they entered or were cast from a graveyard',
     'They entered or were cast from a graveyard',
+    // Issue 102 (Kotis, Sibsig Champion): the same fact of the batch, said of "one or more of them".
+    'one or more of them entered from a graveyard or was cast from a graveyard',
   ],
   rejects: [
     'it entered or was cast from a graveyard',
@@ -36,10 +38,16 @@ export const CONDITION_ENTERED_FROM_GRAVEYARD = defineRule<IrCondition>({
     'they entered or were cast from a hand',
     'they entered or were cast from a graveyard or',
     'they enter or are cast from a graveyard',
+    'one or more of them entered from a graveyard',
+    'one or more of them entered from a graveyard or was cast from your graveyard',
+    'one or more of them entered from a graveyard or was cast from a graveyard or',
   ],
   parse: (ctx, pos) => {
     const r = pattern(
-      new RegExp(`they entered or were cast from a graveyard${BOUNDARY}(?! or\\b)`, 'iu'),
+      new RegExp(
+        `(?:they entered or were cast from a graveyard|one or more of them entered from a graveyard or was cast from a graveyard)${BOUNDARY}(?! or\\b)`,
+        'iu',
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     return {

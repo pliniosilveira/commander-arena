@@ -369,6 +369,7 @@ describe('priority', () => {
   const view = (patch: Partial<GameView>): GameView =>
     ({
       viewer: 0,
+      seats: [{ id: 0 }, { id: 1 }],
       activeSeat: 0,
       step: 'precombatMain',
       stack: [],
@@ -453,6 +454,18 @@ describe('priority', () => {
       expect(label({ ...opp, step: 'combatDamage', combat: attacking() })).toBe('To End of Combat');
       expect(label({ ...opp, step: 'postcombatMain' })).toBe('To End Step');
       expect(label({ ...opp, step: 'end' })).toBe('To Your Turn');
+    });
+
+    test('at the end step with 3 or 4 seats, it names the opponent whose turn is next', () => {
+      const seats = (lost: number[] = []) =>
+        [0, 1, 2, 3].map((id) => ({ id, hasLost: lost.includes(id) }));
+      const end = (activeSeat: number, extra: Record<string, unknown> = {}) =>
+        label({ activeSeat, step: 'end', ...extra });
+      expect(end(1, { seats: seats() })).toBe("To Opponent 2's Turn");
+      expect(end(2, { seats: seats() })).toBe("To Opponent 3's Turn");
+      expect(end(3, { seats: seats() })).toBe('To Your Turn');
+      expect(end(1, { seats: seats([2]) })).toBe("To Opponent 3's Turn");
+      expect(end(1, { seats: seats().slice(0, 3) })).toBe("To Opponent 2's Turn");
     });
 
     test('no attackers declared: no declare blockers step (CR 508.8)', () => {

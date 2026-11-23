@@ -25,6 +25,8 @@ export type SpendTarget =
       readonly hasX?: boolean;
       /** The colors of the spell as it is cast (`W`, `U`, `B`, `R`, `G`); read by a `monocolored` restriction (issue 144, CR 105.2a). */
       readonly colors?: readonly string[];
+      /** The zone the spell is cast from (CR 601.2a); read by a `fromGraveyard` restriction (issue 102, CR 106.6). */
+      readonly castFrom?: string;
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
@@ -63,6 +65,8 @@ export function restrictionAllows(
   if (restriction.kind === 'abilitiesOnly') return isAbility;
   // CR 106.6, 107.3: a spell or an ability whose cost contains {X}.
   if (restriction.kind === 'xCost') return target.hasX === true;
+  // CR 106.6: "can't be spent to pay generic mana costs" limits which part of a cost it pays (the payment planner), not which spell or ability it is spent on.
+  if (restriction.kind === 'notGeneric') return true;
   if (isAbility) {
     // D-151: "... or activate abilities of Dragons": an ability of a permanent that matches the same card types and subtypes.
     if (restriction.kind !== 'spellMatch' || restriction.alsoAbilities !== true) return false;
@@ -87,6 +91,13 @@ export function restrictionAllows(
           ? 'hasX' in target && target.hasX === true
           : 'manaValue' in target && target.manaValue !== undefined && target.manaValue >= q.value,
       )
+    ) {
+      return false;
+    }
+    // CR 106.6, 601.2a: "only to cast a spell from your graveyard": the spell was cast from a graveyard.
+    if (
+      restriction.fromGraveyard === true &&
+      !('castFrom' in target && target.castFrom === 'graveyard')
     ) {
       return false;
     }

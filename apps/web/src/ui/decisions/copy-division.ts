@@ -27,8 +27,10 @@ export function shareLabel(
   target: ChosenTarget & { readonly share: number },
   index: Index,
   viewer: SeatId,
+  seatCount = 2,
 ): string {
-  const name = target.kind === 'object' ? nameOf(index, target.id) : seatLabel(target.seat, viewer);
+  const name =
+    target.kind === 'object' ? nameOf(index, target.id) : seatLabel(target.seat, viewer, seatCount);
   return `${name} ${target.share}`;
 }
 
@@ -40,9 +42,10 @@ export function keptDivisionText(
   decision: Pick<TargetsDecision, 'specs' | 'current'>,
   index: Index,
   viewer: SeatId,
+  seatCount = 2,
 ): string | null {
   if (!keepsDivision(decision)) return null;
-  const shares = keptTargets(decision).map((t) => shareLabel(t, index, viewer));
+  const shares = keptTargets(decision).map((t) => shareLabel(t, index, viewer, seatCount));
   const original = shares.length === 0 ? '' : `: ${shares.join(', ')}`;
   return `The original division stays${original}. A new target takes the share of the one it replaces.`;
 }

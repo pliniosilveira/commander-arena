@@ -210,7 +210,7 @@ describe('look at the top N cards, then put them back in any order (CR 401.2)', 
     ],
     [
       'Look at the top X cards of your library, then put them back in any order.',
-      'X cards of your library, then put them back in any order.',
+      'then put them back in any order.',
     ],
     [
       'Look at the top three cards of target player’s library, then put them back in any order.',

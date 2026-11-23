@@ -41,6 +41,7 @@ import type { LogLevel } from './protocol';
 import { giftedText } from './recursion-text';
 import { doorName, unlockedLine } from './room-text';
 import { chapterWord, loreCountIn, romanNumeral } from './saga';
+import { midNameOf, midPossessiveOf, possessiveOf, seatNameOf } from './seat-name';
 import { turnLabel } from './turn-label';
 
 export interface Described {
@@ -73,14 +74,17 @@ export function stepName(step: StepId): string {
   return STEP_NAMES[step];
 }
 
-/** Who a seat is called in text: "You" or "Opponent". */
-export function seatName(seat: SeatId, viewer: SeatId): string {
-  return seat === viewer ? 'You' : 'Opponent';
+/** The seats of a state (two when the state lists none: a test may describe an event with no state at all). */
+const seatsOf = (state: GameState | undefined): number => state?.seats?.length ?? 2;
+
+/** Who a seat is called in text: "You", "Opponent", or "Opponent N" with more than two seats (`seatCount`, default 2). */
+export function seatName(seat: SeatId, viewer: SeatId, seatCount = 2): string {
+  return seatNameOf(seat, viewer, seatCount);
 }
 
-/** "Your" or "Opponent's". */
-function possessive(seat: SeatId, viewer: SeatId): string {
-  return seat === viewer ? 'Your' : "Opponent's";
+/** "Your", "Opponent's" or "Opponent N's". */
+function possessive(seat: SeatId, viewer: SeatId, seatCount = 2): string {
+  return possessiveOf(seat, viewer, seatCount);
 }
 
 /**
@@ -224,7 +228,8 @@ export function describeEvent(
     const chapter = chapterWord((after.objects[id] ?? before.objects[id])?.stack?.chapter);
     return chapter === null ? `${name(id)}'s ability` : `${name(id)}'s ${chapter} ability`;
   };
-  const who = (seat: SeatId) => seatName(seat, viewer);
+  const seatCount = seatsOf(after);
+  const who = (seat: SeatId) => seatName(seat, viewer, seatCount);
   const verb = (seat: SeatId, you: string, they: string) => (seat === viewer ? you : they);
   const line = (
     level: LogLevel,
@@ -260,13 +265,22 @@ export function describeEvent(
     case 'turnBegan':
       return line(
         'major',
-        `${turnLabel(event.seat, viewer, event.turn, after.seats.length)} begins.`,
+        // CR 500.7: an extra turn says so.
+        `${turnLabel(event.seat, viewer, event.turn, after.seats.length, after.extraTurnsTaken)} begins${event.extra === true ? ' (an extra turn)' : ''}.`,
         event.seat,
+      );
+    case 'extraTurnAdded':
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'take', 'takes')} an extra turn after this one.`,
+        event.seat,
+        [],
+        'CR 500.7',
       );
     case 'stepBegan':
       return line(
         'detail',
-        `${possessive(event.seat, viewer)} ${stepName(event.step)}`,
+        `${possessive(event.seat, viewer, seatCount)} ${stepName(event.step)}`,
         event.seat,
         [],
         'CR 500',
@@ -313,7 +327,7 @@ export function describeEvent(
         return line(
           'major',
           event.fromZone === 'library' && owner !== undefined
-            ? `A card is exiled face down from the top of ${possessive(owner, viewer).toLowerCase()} library.`
+            ? `A card is exiled face down from the top of ${possessive(owner, viewer, seatCount).toLowerCase()} library.`
             : 'A card is exiled face down.',
           owner ?? null,
           [],
@@ -341,7 +355,7 @@ export function describeEvent(
           'major',
           owner === undefined
             ? `${name(event.to)} is exiled from the top of a library.`
-            : `${name(event.to)} is exiled from the top of ${possessive(owner, viewer).toLowerCase()} library.`,
+            : `${name(event.to)} is exiled from the top of ${possessive(owner, viewer, seatCount).toLowerCase()} library.`,
           owner ?? null,
           [event.to],
           'CR 701.13',
@@ -392,7 +406,7 @@ export function describeEvent(
       // D-332 (CR 614.11, 121.6): a replacement effect skipped the draw; no card was drawn and the library was not attempted.
       return line(
         'major',
-        `${name(event.source)} skips ${possessive(event.seat, viewer).toLowerCase()} draw.`,
+        `${name(event.source)} skips ${possessive(event.seat, viewer, seatCount).toLowerCase()} draw.`,
         event.seat,
         [event.source],
         'CR 614.11',
@@ -403,7 +417,7 @@ export function describeEvent(
       const by = sources.length === 0 ? 'A replacement effect' : sources.join(' and ');
       return line(
         'major',
-        `${by} replaces ${possessive(event.seat, viewer).toLowerCase()} draw: ${who(event.seat)} ${verb(event.seat, 'draw', 'draws')} ${event.count} cards instead.`,
+        `${by} replaces ${possessive(event.seat, viewer, seatCount).toLowerCase()} draw: ${who(event.seat)} ${verb(event.seat, 'draw', 'draws')} ${event.count} cards instead.`,
         event.seat,
         [...event.sources],
         'CR 614.11',
@@ -421,7 +435,7 @@ export function describeEvent(
     case 'libraryShuffled':
       return line(
         'detail',
-        `${possessive(event.seat, viewer)} library is shuffled.`,
+        `${possessive(event.seat, viewer, seatCount)} library is shuffled.`,
         event.seat,
         [],
         'CR 701.24',
@@ -592,7 +606,7 @@ export function describeEvent(
         event.to.kind === 'player'
           ? event.to.seat === viewer
             ? 'you'
-            : 'Opponent'
+            : who(event.to.seat)
           : name(event.to.id);
       return line(
         'major',
@@ -609,7 +623,7 @@ export function describeEvent(
         event.to.kind === 'player'
           ? event.to.seat === viewer
             ? 'you'
-            : 'Opponent'
+            : who(event.to.seat)
           : name(event.to.id);
       return line(
         'major',
@@ -622,7 +636,7 @@ export function describeEvent(
     case 'damageRedirected': {
       // CR 614.9 (D-192): "SYNTHETIC Bolt's 3 damage to you is dealt to Ancient Adamantoise instead." The `damageDealt` line that follows says what was dealt.
       const recipient = (r: typeof event.from): string =>
-        r.kind === 'player' ? (r.seat === viewer ? 'you' : 'Opponent') : name(r.id);
+        r.kind === 'player' ? (r.seat === viewer ? 'you' : who(r.seat)) : name(r.id);
       const touched: ObjectId[] = [event.source];
       if (event.from.kind === 'object') touched.push(event.from.id);
       if (event.to.kind === 'object') touched.push(event.to.id);
@@ -637,7 +651,7 @@ export function describeEvent(
     case 'lifeChanged':
       return line(
         'major',
-        `${possessive(event.seat, viewer)} life: ${event.from} to ${event.to}.`,
+        `${possessive(event.seat, viewer, seatCount)} life: ${event.from} to ${event.to}.`,
         event.seat,
         [],
         'CR 119',
@@ -682,7 +696,7 @@ export function describeEvent(
         'major',
         change > 0
           ? `${who(event.seat)} ${verb(event.seat, 'get', 'gets')} ${counters} (${event.to} in all).`
-          : `${possessive(event.seat, viewer)} experience counters: ${event.from} to ${event.to}.`,
+          : `${possessive(event.seat, viewer, seatCount)} experience counters: ${event.from} to ${event.to}.`,
         event.seat,
         [],
         'CR 122.1',
@@ -697,7 +711,7 @@ export function describeEvent(
         'major',
         gained > 0
           ? `${who(event.seat)} ${verb(event.seat, 'get', 'gets')} ${counters} (${event.to} of 10).`
-          : `${possessive(event.seat, viewer)} poison counters: ${event.from} to ${event.to}.`,
+          : `${possessive(event.seat, viewer, seatCount)} poison counters: ${event.from} to ${event.to}.`,
         event.seat,
         [],
         'CR 122.1',
@@ -888,6 +902,19 @@ export function describeEvent(
           'CR 701.26b',
         );
       }
+      // CR 118.3, 122.1, 602.2b: "Remove two +1/+1 counters from among creatures you control" as a cost; the counters' own lines follow.
+      if (event.purpose === 'removeCountersCost') {
+        const taken = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          event.automatic
+            ? `${who(event.seat)} must remove counters from ${taken} to pay for ${label(event.source)}: no other choice.`
+            : `${who(event.seat)} ${verb(event.seat, 'remove', 'removes')} a counter from ${taken} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 122.1',
+        );
+      }
       // D-407 (CR 701.68a, 602.2b): "Blight 1" as a cost; the counter's own line follows.
       if (event.purpose === 'blight') {
         const blighted = joinNames(event.objects.map(name));
@@ -1055,7 +1082,7 @@ export function describeEvent(
         // Issue 81 (Dack Fayden, CR 613.1b): "You choose Opponent to gain control of Grizzly Bears (Dack Fayden)."
         const permanent = asked?.kind === 'chooseOption' ? asked.assignFor : undefined;
         const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
-        const target = seat === viewer ? 'you' : 'Opponent';
+        const target = seat === viewer ? 'you' : who(seat);
         const what = permanent === undefined ? 'a permanent' : name(permanent);
         return line(
           'major',
@@ -1074,7 +1101,7 @@ export function describeEvent(
           seat !== undefined
             ? Number(seat) === viewer
               ? 'you'
-              : 'Opponent'
+              : who(Number(seat))
             : object === undefined
               ? 'a permanent'
               : name(object as ObjectId);
@@ -1085,6 +1112,32 @@ export function describeEvent(
           event.seat,
           attacker === undefined ? [] : [attacker],
           'CR 508.7',
+        );
+      }
+      // CR 608.2d, 801.5b: "You choose Opponent (Fact or Fiction)." The choice is public: the opponent chosen is the one asked next.
+      if (event.purpose === 'chooseOpponent') {
+        const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${seat === viewer ? 'you' : who(seat)} (${label(event.source)}).`,
+          event.seat,
+          [],
+          'CR 608.2d',
+        );
+      }
+      // CR 310.9a: "You choose Opponent as the protector of SYNTHETIC Vanilla Battle." The choice is public.
+      if (event.purpose === 'protector') {
+        const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
+        const subject =
+          asked?.kind === 'chooseOption' && asked.source === event.source
+            ? asked.sourceName
+            : label(event.source);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${seat === viewer ? 'you' : who(seat)} as the protector of ${subject}.`,
+          event.seat,
+          [],
+          'CR 310.9a',
         );
       }
       // CR 701.38a (D-194): "You vote for profit (Emissary Green)." / "Opponent votes for security (Emissary Green)." A vote is public.
@@ -1115,6 +1168,16 @@ export function describeEvent(
           event.seat,
           [],
           'CR 702.16a',
+        );
+      }
+      // CR 608.2d (Expel the Interlopers): "You choose the number 3 for Expel the Interlopers." The number is public: it decides which creatures die.
+      if (event.purpose === 'number') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} the number ${event.option} for ${label(event.source)}.`,
+          event.seat,
+          [],
+          'CR 608.2d',
         );
       }
       // CR 119.4, 614.12: "You choose to pay 4 life for Phyrexian Processor." The payment is public; the life lost is logged by its own line.
@@ -1457,7 +1520,7 @@ export function describeEvent(
           ? name(event.to.id)
           : event.to.seat === viewer
             ? 'you'
-            : 'Opponent';
+            : who(event.to.seat);
       return line(
         'major',
         `${who(event.seat)} ${verb(event.seat, 'change', 'changes')} the target of ${label(event.object)} to ${to}.`,
@@ -1537,12 +1600,12 @@ export function describeEvent(
     case 'ringTempted': {
       // CR 701.54a, 701.54c, 701.54d (D-196): the Ring tempts a player, who chooses a creature they control as their Ring-bearer (when they control none, nothing
       // is chosen and the Ring has still tempted them).
-      const tempted = `The Ring tempts ${event.seat === viewer ? 'you' : 'the opponent'}`;
+      const tempted = `The Ring tempts ${midNameOf(event.seat, viewer, seatCount)}`;
       return line(
         'major',
         event.bearer === null
-          ? `${tempted} (${event.times === 1 ? 'the first time' : `time ${event.times}`}). ${who(event.seat)} ${verb(event.seat, 'control', 'controls')} no creature to be ${possessive(event.seat, viewer).toLowerCase()} Ring-bearer.`
-          : `${tempted} (${event.times === 1 ? 'the first time' : `time ${event.times}`}). ${label(event.bearer)} becomes ${possessive(event.seat, viewer).toLowerCase()} Ring-bearer.`,
+          ? `${tempted} (${event.times === 1 ? 'the first time' : `time ${event.times}`}). ${who(event.seat)} ${verb(event.seat, 'control', 'controls')} no creature to be ${possessive(event.seat, viewer, seatCount).toLowerCase()} Ring-bearer.`
+          : `${tempted} (${event.times === 1 ? 'the first time' : `time ${event.times}`}). ${label(event.bearer)} becomes ${possessive(event.seat, viewer, seatCount).toLowerCase()} Ring-bearer.`,
         event.seat,
         event.bearer === null ? [] : [event.bearer],
         'CR 701.54a',
@@ -1552,7 +1615,7 @@ export function describeEvent(
       // CR 701.54a (D-196): another player gained control of it.
       return line(
         'major',
-        `${label(event.object)} is no longer ${possessive(event.seat, viewer).toLowerCase()} Ring-bearer.`,
+        `${label(event.object)} is no longer ${possessive(event.seat, viewer, seatCount).toLowerCase()} Ring-bearer.`,
         event.seat,
         [event.object],
         'CR 701.54a',
@@ -1636,10 +1699,10 @@ export function describeEvent(
           ? 'your library'
           : event.from === event.seat
             ? 'their library'
-            : "the opponent's library";
+            : `${midPossessiveOf(event.from, viewer, seatCount)} library`;
       return line(
         'major',
-        manifestedLine(who(event.seat) as 'You' | 'Opponent', mine, library),
+        manifestedLine(who(event.seat), mine, library),
         event.seat,
         [event.object],
         'CR 701.40a',
@@ -1649,11 +1712,7 @@ export function describeEvent(
       // CR 116.2b, 701.40b, 708.8 (D-310, D-315): a special action; the card is public from now on, so it is named.
       return line(
         'major',
-        turnedUpLine(
-          who(event.seat) as 'You' | 'Opponent',
-          event.seat === viewer,
-          name(event.object),
-        ),
+        turnedUpLine(who(event.seat), event.seat === viewer, name(event.object)),
         event.seat,
         [event.object],
         'CR 701.40b',
@@ -1719,6 +1778,15 @@ export function describeEvent(
         [event.object],
         'CR 702.170a',
       );
+    case 'companionBrought':
+      // CR 116.2g, 702.139a: the companion is public, so the card is named.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'bring', 'brings')} the companion ${name(event.object)} into ${verb(event.seat, 'your', 'their')} hand.`,
+        event.seat,
+        [event.object],
+        'CR 702.139a',
+      );
     default: {
       const unreachable: never = event;
       return unreachable;
@@ -1751,6 +1819,7 @@ function describeHandToLibrary(
   after: GameState,
   viewer: SeatId,
 ): Described | null {
+  const seatCount = seatsOf(after);
   const first = run[0];
   const seat = first === undefined ? undefined : after.objects[first.to]?.zoneOwner;
   if (first === undefined || seat === undefined || seat === null) return null;
@@ -1763,7 +1832,7 @@ function describeHandToLibrary(
   const whose = seat === viewer ? 'your' : 'their';
   return {
     level: 'major',
-    text: `${seatName(seat, viewer)} ${seat === viewer ? 'put' : 'puts'} ${cards}${where} ${whose} library.`,
+    text: `${seatName(seat, viewer, seatCount)} ${seat === viewer ? 'put' : 'puts'} ${cards}${where} ${whose} library.`,
     seat,
     objects: [],
     rule: moved.length > 1 ? 'CR 401.4' : 'CR 401',
@@ -1780,6 +1849,7 @@ function manaLifePayment(
   event: GameEvent,
   previous: GameEvent | undefined,
   viewer: SeatId,
+  seatCount: number,
 ): Described | null {
   // D-189: the event `tappedForMana` follows `tapped` for the same permanent.
   if (
@@ -1792,7 +1862,7 @@ function manaLifePayment(
   const verb = event.seat === viewer ? 'pay' : 'pays';
   return {
     level: 'major',
-    text: `${seatName(event.seat, viewer)} ${verb} ${event.from - event.to} life.`,
+    text: `${seatName(event.seat, viewer, seatCount)} ${verb} ${event.from - event.to} life.`,
     seat: event.seat,
     objects: [previous.object],
     rule: 'CR 119.4',
@@ -1809,6 +1879,7 @@ function untapChoiceLine(
   action: Action | undefined,
   viewer: SeatId,
 ): Described | null {
+  const seatCount = seatsOf(before);
   const asked = before.pending;
   if (
     action?.kind !== 'choosePermanents' ||
@@ -1822,7 +1893,7 @@ function untapChoiceLine(
   const names = left.map((id) => nameIn(before, id) ?? 'a permanent');
   return {
     level: 'major',
-    text: `${seatName(asked.seat, viewer)} left ${joinNames(names)} tapped.`,
+    text: `${seatName(asked.seat, viewer, seatCount)} left ${joinNames(names)} tapped.`,
     seat: asked.seat,
     objects: left,
     rule: 'CR 502.3',
@@ -1937,7 +2008,8 @@ export function describeEvents(
       continue;
     }
     const described =
-      manaLifePayment(event, events[i - 1], viewer) ?? describeEvent(event, before, after, viewer);
+      manaLifePayment(event, events[i - 1], viewer, seatsOf(after)) ??
+      describeEvent(event, before, after, viewer);
     if (described !== null) out.push(described);
   }
   if (resolving !== null) {
@@ -1948,3 +2020,5 @@ export function describeEvents(
   }
   return out;
 }
+
+export { BRING_COMPANION_LABEL } from './companion';

@@ -3,6 +3,8 @@
  * what they need of the card they are printed on. `validate.ts` and `validate-parts.ts` call into this file for the kinds they do not
  * know themselves.
  */
+
+import { CARD_TYPES } from '../characteristics';
 import type { Amount, Condition, ObjectFilter, Replacement, StaticEffect, Trigger } from './types';
 import { checkProtectionTypes } from './validate-attach';
 import { isCount, isOneOf, kindOf } from './validate-base';
@@ -29,6 +31,14 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       }
       if (t.firstEachTurn !== undefined && t.firstEachTurn !== true) {
         issue(out, `${path}.firstEachTurn`, 'firstEachTurn must be true when present');
+      }
+      if (t.kind === 'lifeLost' && t.batch !== undefined) {
+        if (t.batch !== true) issue(out, `${path}.batch`, 'batch must be true when present');
+        if (t.who === 'you')
+          issue(out, `${path}.batch`, 'a batch of life loss is of other players');
+        if (t.firstEachTurn === true) {
+          issue(out, `${path}.batch`, 'batch does not go with firstEachTurn');
+        }
       }
       return true;
     case 'countersAdded':
@@ -338,13 +348,23 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) === 'creatureAttacks') {
-          // Issue 81 (CR 603.2d): a creature attacking, no parameter.
+        if (kindOf(s.cause) === 'creatureAttacks' || kindOf(s.cause) === 'permanentEnters') {
+          // Issue 81 (CR 603.2d): a creature attacking, no parameter. Issue 105: the entering permanent may be limited to card types.
+          const entering = (s.cause as { entering?: unknown }).entering;
+          if (
+            entering !== undefined &&
+            (kindOf(s.cause) !== 'permanentEnters' ||
+              !Array.isArray(entering) ||
+              entering.length === 0 ||
+              !entering.every((t) => isOneOf(t, CARD_TYPES)))
+          ) {
+            issue(out, `${path}.cause.entering`, 'entering is a non-empty list of card types');
+          }
         } else if (kindOf(s.cause) !== 'castOrCopySpell') {
           issue(
             out,
             `${path}.cause`,
-            'the cause of an additional trigger is castOrCopySpell or creatureAttacks',
+            'the cause of an additional trigger is castOrCopySpell, creatureAttacks or permanentEnters',
           );
         } else {
           const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;

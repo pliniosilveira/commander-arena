@@ -126,6 +126,8 @@ interface Entry {
   readonly payAct: boolean;
   /** Its mana pays generic mana only (`PaymentSource.genericOnly`). */
   readonly genericOnly: boolean;
+  /** Its mana can't pay generic mana (`ManaRestriction` `notGeneric`, CR 106.6): never a generic demand of the cost nor of an activation cost, only a colored symbol. */
+  readonly notGeneric: boolean;
   /** The card types of the permanent that makes it (D-183). */
   readonly types: readonly string[];
   /** Issue 144 (CR 609.4b): its mana of a color pays any colored symbol of the spell, as the spell may be paid with mana as though it were of any color. */
@@ -310,6 +312,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           // An activation cost is paid for an ability, which restricted mana may not be spent on.
           payAct: restrictionAllows(mana.restriction, { ability: true }),
           genericOnly: false,
+          notGeneric: mana.restriction?.kind === 'notGeneric',
           types: mana.sourceTypes ?? [],
           anyColor: spendsAnyColor(request),
         },
@@ -362,7 +365,9 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         vec[C_EXTRA] =
           source.weighExtraByLife === true
             ? (source.lifeLoss ?? 0)
-            : source.extraEffect === true || (source.lifeLoss ?? 0) > 0
+            : source.extraEffect === true ||
+                (source.lifeLoss ?? 0) > 0 ||
+                (source.energyCost ?? 0) > 0
               ? 1
               : 0;
         entries.push({
@@ -374,6 +379,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           vec,
           payAct: !mandatory && source.genericOnly !== true,
           genericOnly: source.genericOnly === true,
+          notGeneric: source.restriction?.kind === 'notGeneric',
           types: source.types ?? [],
           anyColor: spendsAnyColor(request),
         });
@@ -420,10 +426,11 @@ function assignUnits(
         }
       }
       if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
-      dims.push(GENERIC_DIM);
+      if (!entry.notGeneric) dims.push(GENERIC_DIM);
       // Mana of a source with no mana cost may instead pay an activation cost (one level only).
       if (entry.payAct) {
-        dims.push(ACT_BASE + colorDim(color), ACT_GENERIC);
+        dims.push(ACT_BASE + colorDim(color));
+        if (!entry.notGeneric) dims.push(ACT_GENERIC);
         // A hybrid symbol of a costed ability that this color is one half of (CR 107.4e).
         flex.forEach((colors, k) => {
           if (colors.includes(color)) dims.push(TOTAL_DIMS + k);
@@ -558,10 +565,22 @@ export function planPayment(request: PaymentRequest): PaymentPlan | null {
     (n, t) => n + (lossOf.get(`${t.object}#${t.abilityIndex}`) ?? 0),
     plan.lifePaid,
   );
-  if (spent <= request.lifeAvailable) return plan;
+  const energyOf = new Map<string, number>();
+  for (const s of request.sources) energyOf.set(`${s.object}#${s.abilityIndex}`, s.energyCost ?? 0);
+  const energySpent = plan.taps.reduce(
+    (n, t) => n + (energyOf.get(`${t.object}#${t.abilityIndex}`) ?? 0),
+    0,
+  );
+  const withinEnergy = energySpent <= (request.energyAvailable ?? 0);
+  if (spent <= request.lifeAvailable && withinEnergy) return plan;
+  // CR 107.14, 118.3: a source that costs energy is left out when the plan would pay more than the player has.
   return planOnce({
     ...request,
-    sources: request.sources.filter((s) => (s.lifeLoss ?? 0) === 0),
+    sources: request.sources.filter(
+      (s) =>
+        (spent > request.lifeAvailable ? (s.lifeLoss ?? 0) === 0 : true) &&
+        (withinEnergy ? true : (s.energyCost ?? 0) === 0),
+    ),
   });
 }
 

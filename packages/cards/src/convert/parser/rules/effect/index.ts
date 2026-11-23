@@ -22,9 +22,17 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
+import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
+import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
+import { AHOY_G3_EFFECT_RULES } from './ahoy-g3';
+import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
+import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
+import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
@@ -33,12 +41,18 @@ import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
+import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
+import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
+import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
+import { COPY_CAST_PAYING_EFFECT_RULES } from './copy-cast-paying';
+import { COPY_CHOSEN_TOKEN_EFFECT_RULES } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
@@ -50,6 +64,7 @@ import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
+import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -63,19 +78,25 @@ import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
+import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
+import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FEDERATION_D_EFFECT_RULES } from './federation-d';
+import { FEDERATION_F_EFFECT_RULES } from './federation-f';
 import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
+import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
+import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GAIN_NEXT_TURN_EFFECT_RULES } from './gain-next-turn';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
@@ -87,6 +108,7 @@ import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
@@ -110,6 +132,7 @@ import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
+import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -120,6 +143,7 @@ import {
   EFFECT_CHOOSE_CREATURE_TYPE,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
+import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MELD_EFFECT_RULES } from './meld';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
@@ -140,8 +164,11 @@ import {
   single,
   UNDER_CONTROL,
 } from './operands';
+import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
+import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
+import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
@@ -167,7 +194,9 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
+import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
+import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
@@ -181,6 +210,7 @@ import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
+import { REVEAL_CHOSEN_TYPE_EFFECT_RULES } from './reveal-chosen-type';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
@@ -190,9 +220,11 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
@@ -444,6 +476,7 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to two target creatures',
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
+    'destroy target permanent you own',
   ],
   rejects: [
     'destroy it',
@@ -484,6 +517,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     "exile target player's graveyard",
     'exile target opponent’s graveyard',
     'exile all graveyards',
+    "exile any number of target players' graveyards",
     'exile all cards from all graveyards',
     'exile it',
     'exile that card',
@@ -496,6 +530,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
     'exile up to two target artifacts and/or enchantments',
+    // Protector of the Wastes (CR 115.1, 601.2c): at most two targets, no two controlled by the same player.
+    'exile up to two target artifacts and/or enchantments controlled by different players',
     // D-270 (CR 115.1, 404.1): one slot of targets in two zones.
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).
@@ -515,6 +551,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile all creatures until ~ leaves the battlefield',
     'exile target tapped artifact or enchantment',
     "exile target player's hand",
+    "exile any number of target players' hands",
     'exile them',
     'exile this card from your hand',
     'exile that card from your hand',
@@ -537,6 +574,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             // Lorehold group 2 (issue 86): "exile target noncreature, nonland card from your graveyard".
             'noun.target-nonmatching-graveyard-card',
             'noun.player-graveyard',
+            // Federation Fleet deck, group F (Stonespeaker Crystal): "exile any number of target players' graveyards".
+            'noun.any-number-target-players-graveyards',
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
@@ -996,6 +1035,9 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target triggered ability or colorless spell',
     // Issue 100 (Sublime Epiphany): an activated or a triggered ability.
     'counter target activated or triggered ability',
+    // Ahoy Mateys deck, group 10 (Siren Stormtamer): a spell or an ability that targets you or a creature you control.
+    'counter target spell or ability that targets you or a creature you control',
+    'counter target spell, activated ability, or triggered ability',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -1013,6 +1055,10 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
           'noun.target-activated-or-triggered-ability',
+          // Issue 105 (Disallow).
+          'noun.target-spell-activated-or-triggered-ability',
+          // Ahoy Mateys deck, group 10 (Siren Stormtamer).
+          'noun.target-spell-or-ability-targeting-you',
         ],
       }),
     ),
@@ -1131,6 +1177,12 @@ export const EFFECT_RULES = [
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
   // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
   ...F144_FIRST_EFFECT_RULES,
+  // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
+  ...AHOY_G2_EFFECT_RULES,
+  // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
+  ...AHOY_G1B_EFFECT_RULES,
+  // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
+  ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1144,6 +1196,11 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Ahoy Mateys deck, group 3: "Exile that token at end of combat.", "Look at defending player's hand. You may put ... tapped and attacking ..." and "Return that creature to its owner's hand at the beginning of the next end step." start like the plain exile, look and return rules, and are tried first.
+  ...AHOY_G3_EFFECT_RULES,
+  // Ahoy Mateys deck, group 7: "Until end of turn, it gains haste and becomes a Pirate in addition to its other types." and "That creature doesn't untap during its controller's untap step for as long as you control ~." start like the plain lead-gain and doesn't-untap rules, and are tried first.
+  ...AHOY_G7_EFFECT_RULES,
+  ...AHOY_G8_EFFECT_RULES,
   ...BLACK_GATE_EFFECT_RULES,
   // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
@@ -1152,6 +1209,8 @@ export const EFFECT_RULES = [
   // Prismari deck, group 2 (issue 87, D-647 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
+  // Blue Mage's Cane: "exile ... from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost."
+  ...COPY_CAST_PAYING_EFFECT_RULES,
   ...PRISMARI_G2_EFFECT_RULES,
   ...MNEMONIC_DELUGE_EFFECT_RULES,
   ...MARDU_SURGE_EFFECT_RULES,
@@ -1178,6 +1237,10 @@ export const EFFECT_RULES = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
   ...LOREHOLD_G2_EFFECT_RULES,
   ...FOOD_D_EFFECT_RULES,
+  // Urianger Augurelt: "look at the top card of your library. you may exile it face down" and "until end of turn, you may play cards exiled with ~. spells you cast this way cost {2} less to cast".
+  ...ARCANUM_EFFECT_RULES,
+  // Federation Fleet deck, group D: "you may reveal the top card of your library. Draw a card if it's an artifact card. If you don't draw a card this way, put two +1/+1 counters on ~."
+  ...FEDERATION_D_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
@@ -1186,6 +1249,11 @@ export const EFFECT_RULES = [
   ...GALADRIEL_G3_EFFECT_RULES,
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
+  ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...CHOOSE_OPPONENT_EFFECT_RULES,
+  // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
+  ...ABZAN_SPELLS_EFFECT_RULES,
+  ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".
@@ -1207,6 +1275,7 @@ export const EFFECT_RULES = [
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
   ...DACK_EFFECT_RULES,
+  ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
@@ -1236,6 +1305,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Baldin, Century Herdmaster: "up to one hundred target creatures each get +0/+X until end of turn".
+  ...PUMP_TARGETS_EFFECT_RULES,
   // Valakut Exploration: "you may play that card for as long as it remains exiled", "put them into their owner's graveyard", "~ deals that much damage to each opponent".
   ...EXILED_WITH_EFFECT_RULES,
   // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
@@ -1249,6 +1320,8 @@ export const EFFECT_RULES = [
   ...NIV_EFFECT_RULES,
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
   ...QUANDRIX_EFFECT_RULES,
+  // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
+  ...BOTTOM_GRAVEYARD_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
   // Hatsune Miku deck (issue 145): "You win the game."
@@ -1261,11 +1334,15 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  // Dance of the Elements deck: "You may play target Elemental card from your graveyard without paying its mana cost".
+  ...GRAVECAST_EFFECT_RULES,
   ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
   // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
   ...F144_EFFECT_RULES,
+  // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
+  ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
@@ -1299,6 +1376,8 @@ export const EFFECT_RULES = [
   ...PLANESWALKER_EFFECT_RULES,
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
+  // Aetherdrift energy deck (issue 105): "destroy each permanent chosen this way", whose first words are those of `effect.destroy`.
+  ...EACH_PLAYER_CHOOSES_RULES,
   EFFECT_DESTROY,
   // Stage P70 (D-278): "exile them, then meld them into X" starts like a plain exile and is tried before it.
   ...MELD_EFFECT_RULES,
@@ -1322,8 +1401,12 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
   ...WITHERBLOOM_A_EFFECT_RULES,
+  // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
+  ...PARLEY_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
+  // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
+  ...MANA_NOT_GENERIC_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
@@ -1344,6 +1427,8 @@ export const EFFECT_RULES = [
   ...HOFRI_EFFECT_RULES,
   // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
+  // CR 105.2, 605.3b (Faeburrow Elder): "for each color among permanents you control, add one mana of that color".
+  ...COLORS_AMONG_MANA_EFFECT_RULES,
   // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,
   // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
@@ -1358,8 +1443,12 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Ashling, the Limitless: "The token gains haste until end of turn."
+  ...THE_TOKEN_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
   ...PUMP_THOSE_EFFECT_RULES,
+  ...PUMP_UNBLOCKABLE_EFFECT_RULES,
+  ...COPY_CHOSEN_TOKEN_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".
@@ -1373,6 +1462,7 @@ export const EFFECT_RULES = [
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
   ...LOOK_ELSE_EFFECT_RULES,
+  ...LIBRARY_TOP_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,
@@ -1399,6 +1489,18 @@ export const EFFECT_RULES = [
   EFFECT_MILL,
   EFFECT_SHUFFLE,
   ...SACRIFICE_RULES,
+  // Federation Fleet deck, group A (Seek out): "one or two target creatures each get ... and gain ...", counters on two optional targets (read quietly: they share words with the
+  // older counter and pump rules and must not move where a line they do not read stops).
+  ...SEEK_OUT_EFFECT_RULES,
+  // Federation Fleet deck, group E (Unification, U.S.S. Stargazer): the owner draws then shuffles the creature in; the delayed exile of a token at end of combat.
+  ...FLEET_E_EFFECT_RULES,
+  // Extra turns (CR 500.7): "Take an extra turn after this one."
+  ...EXTRA_TURN_EFFECT_RULES,
+  // Federation Fleet deck, group F: "Until your next turn, creatures can't attack you.", the delayed return of two exiled cards, a commander into the hand, Tuvok's choice of attackers,
+  // Troi's free cast (read quietly, as the rules around them).
+  ...FEDERATION_F_EFFECT_RULES,
+  // Abzan Armor deck, group A: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
+  ...COMBAT_RULE_EFFECT_RULES,
   ...COUNTER_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,
@@ -1416,4 +1518,6 @@ export const EFFECT_RULES = [
   ...RECURSION_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,
+  // Aetherdrift energy deck (issue 105): "pay one or more {E}".
+  EFFECT_PAY_ENERGY_ANY,
 ];

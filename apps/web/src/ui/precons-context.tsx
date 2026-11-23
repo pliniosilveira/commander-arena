@@ -12,10 +12,29 @@ const NONE: Precons = {
 };
 
 const PreconsContext = createContext<Precons>(NONE);
+const ChallengesContext = createContext<Precons>(NONE);
 
 /** Provides the real precons (D-137): the list for the menus and `prepare` for starting one. */
-export function PreconsProvider({ precons, children }: { precons: Precons; children: ReactNode }) {
-  return <PreconsContext.Provider value={precons}>{children}</PreconsContext.Provider>;
+export function PreconsProvider({
+  precons,
+  challenges = NONE,
+  children,
+}: {
+  precons: Precons;
+  /** The challenge opponents; none when left out. */
+  challenges?: Precons;
+  children: ReactNode;
+}) {
+  return (
+    <PreconsContext.Provider value={precons}>
+      <ChallengesContext.Provider value={challenges}>{children}</ChallengesContext.Provider>
+    </PreconsContext.Provider>
+  );
+}
+
+/** The challenge opponents of the Challenges block; empty until a challenge snapshot exists. */
+export function useChallenges(): Precons {
+  return useContext(ChallengesContext);
 }
 
 export function usePrecons(): Precons {

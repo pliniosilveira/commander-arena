@@ -63,6 +63,8 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'its';
     case 'triggerSources':
+    case 'triggerAttackers':
+    case 'convokers':
       return 'their';
     case 'sacrificedCost':
       // D-133: the permanent sacrificed to pay the cost ("the sacrificed creature's power").
@@ -78,6 +80,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return "the exiled card's";
     case 'putWithThis':
       // Animate Dead: the creature this permanent put onto the battlefield.
+      return "that creature's";
+    case 'eachObject':
+      // Canopy Gargantuan: the creature the counters are being put on right now.
       return "that creature's";
   }
 }
@@ -100,7 +105,10 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'it';
     case 'triggerSources':
+    case 'triggerAttackers':
       return 'those creatures';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -109,6 +117,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'linkedExile':
       return 'the exiled card';
     case 'putWithThis':
+    case 'eachObject':
       return 'that creature';
   }
 }
@@ -142,6 +151,20 @@ function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
   }
 }
 
+/** The stat words of "has more ... than you". */
+function statWords(stat: PlayerStat): string {
+  switch (stat) {
+    case 'life':
+      return 'life';
+    case 'cardsInHand':
+      return 'cards in hand';
+    case 'creatures':
+      return 'creatures';
+    case 'lands':
+      return 'lands';
+  }
+}
+
 /** What an earlier instruction of the same resolution did (`thisWay`). */
 function thisWayPhrase(what: ThisWayKind): string {
   switch (what) {
@@ -172,6 +195,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
+    case 'destroyedNontokenCreatures':
+      // Blood Money: "for each nontoken creature destroyed this way".
+      return 'the number of nontoken creatures destroyed this way';
     case 'playersDrew':
       return 'the number of players who drew a card this way';
     case 'tapped':
@@ -191,6 +217,12 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'discardedNonland':
+      // Federation Fleet group D: "When you discard a nonland card this way".
+      return 'the number of nonland cards discarded this way';
+    case 'countersPut':
+      // Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way".
+      return 'the number of counters put this way';
     case 'discardedMost':
       // Issue 279 (Windfall).
       return 'the greatest number of cards a player discarded this way';
@@ -313,6 +345,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
         ? `the greatest ${stat} among ${things}`
         : `the total ${stat} of ${things}`;
     }
+    case 'colorsAmong': {
+      // CR 105.2 (Vivid): "the number of colors among permanents you control".
+      const things = thingsPhrase(amount.filter, true);
+      return things === null ? UNKNOWN_AMOUNT : `the number of colors among ${things}`;
+    }
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2).
       return 'the number of differently named permanents';
@@ -360,9 +397,15 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':
       return opponentsWithMore(amount.stat, amount.fewer === true);
+    case 'chosenPlayerLead':
+      // CR 608.2c: how much more of the stat the player chosen earlier has than you.
+      return `the difference by which the chosen player has more ${statWords(amount.stat)} than you`;
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
+    case 'triggerDamagedPlayerCount':
+      // CR 603.2c: "for each opponent dealt damage" of a batch damage trigger.
+      return 'the number of opponents dealt damage';
     case 'shortfall':
       // D-151 (CR 701.57): "the difference" between the limit and the mana value of the card found.
       return `the difference between ${amount.limit} and ${shortfallOf(amount.of)} mana value`;

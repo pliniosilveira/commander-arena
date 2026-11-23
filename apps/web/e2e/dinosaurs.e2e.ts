@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { handCard } from './harness/locators';
+import { handCard, permanentTarget, seatTarget } from './harness/locators';
 import { settled } from './harness/settle';
 
 /**
@@ -106,11 +106,11 @@ test('Damage divided among the targets: choose two, split it with the steppers, 
   // Nothing is chosen: Confirm waits for a target.
   await expect(primary(page)).toBeDisabled();
 
-  // Two targets: the opponent and the first other chip. The shares start as an even split, 2 and 1.
-  const chips = panel.locator('button.dec-chip').filter({ hasNotText: 'Even split' });
-  const first = chips.filter({ hasText: 'Opponent' });
-  const second = chips.filter({ hasNotText: /^(Opponent)$/ }).first();
-  const secondName = (await second.innerText()).trim();
+  // Two targets, both chosen on the board: the opponent and the first creature that can be chosen.
+  // The shares start as an even split, 2 and 1.
+  const first = seatTarget(page, 1);
+  const second = permanentTarget(page, /./).first();
+  const secondName = (await second.locator('.board-tile-name').innerText()).trim();
   await first.click();
   await expect(division.locator('output')).toHaveText(['3']);
   await second.click();
@@ -171,11 +171,14 @@ test('Hideaway: the look must take one card, which is exiled face down and playe
   await expect(primary(page)).toBeDisabled();
   await expect(page.getByRole('button', { name: /none/i })).toHaveCount(0);
   await page.screenshot({ path: `${SHOTS}/hideaway-look.png` });
-  const picks = panel.locator('button.dec-pick');
-  const taken = (await picks.first().locator('.dec-pick-name').innerText()).replace(/ ×\d+$/, '');
+  // The cards looked at are in the Zone Picker (docs/BOARD_COMPONENTS.md): the choice and Confirm are made there.
+  const dialog = page.getByRole('dialog', { name: 'Cards looked at' });
+  await expect(dialog).toBeVisible();
+  const picks = dialog.locator('.board-zone-card:not(.board-zone-other)');
+  const taken = (await picks.first().getAttribute('aria-label')) ?? '';
   await picks.first().click();
   await expect(primary(page)).toBeEnabled();
-  await primary(page).click();
+  await dialog.locator('.board-modal-actions .dec-btn-primary').click();
   await settled(page);
 
   // The log names no card; the card is in exile, face down, marked for its controller, who may look at it.
@@ -276,8 +279,8 @@ test("The opponent's Hideaway card is a card back with no name, in the strip, th
   await expect(logText(page)).toContainText('Opponent exiles a card face down (Hideaway).');
   await expect(logText(page)).not.toContainText(': library to exile');
   await page.screenshot({ path: `${SHOTS}/hideaway-opponent.png` });
-  await page.getByRole('button', { name: /^Open exile/ }).click();
-  const viewer = page.getByRole('dialog', { name: /^Exile/ });
+  await page.getByRole('button', { name: /^Open Opponent exile/ }).click();
+  const viewer = page.getByRole('dialog', { name: /exile$/ });
   await expect(viewer.getByRole('button', { name: 'Face-down card (face down)' })).toHaveCount(1);
   await expect(viewer.locator('[data-face-down]')).toHaveCount(1);
   await expect(viewer.locator('[data-exile-owner="1"]')).toContainText("Opponent's");

@@ -223,6 +223,32 @@ describe('General Kreat, the Boltbringer', () => {
     g.expect.invariants();
   });
 
+  test('with a planeswalker to attack, the controller chooses what the token attacks (CR 508.4: the text names no player)', () => {
+    const g = scenario()
+      .define(KREAT)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(KREAT.name)
+      .battlefield(GOBLIN, { label: 'goblin' })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('SYNTHETIC Vanilla Planeswalker')
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['goblin', KREAT.name]);
+    g.passAll();
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseOption') throw new Error('expected the choice of what to attack');
+    expect(d).toMatchObject({ seat: 0, purpose: 'attackTarget' });
+    expect(d.options).toHaveLength(2);
+    const walker = g.object('SYNTHETIC Vanilla Planeswalker').id;
+    g.act(0).chooseOption(`permanent:${walker}`);
+    const [token] = g.find({ name: 'Goblin', zone: 'battlefield' }).filter((o) => o.tapped);
+    const entry = g.state.combat?.attackers.find((a) => a.object === token?.id);
+    expect(entry?.target).toEqual({ kind: 'permanent', object: walker });
+    g.expect.invariants();
+  });
+
   test('two Goblins attacking: still one token (CR 603.2c: one trigger for the declaration)', () => {
     const g = board();
     g.act(0).attack(['goblin', KREAT.name]);

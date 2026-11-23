@@ -6,25 +6,34 @@
  * and counts every player's turn; this module only converts it for display.
  */
 import type { SeatId } from '@commander-arena/engine';
+import { possessiveOf } from './seat-name';
 
 /**
  * The round a turn belongs to: the number of rounds started, so with `seatCount` players the turns
  * 1 to `seatCount` are round 1 (CR 500: the players take turns in order, so each round holds one
  * turn of each player). Zero before the first turn (setup, mulligans). The engine's turn number is
- * 1-based and counts every turn of every player, including a turn that is taken in addition (extra
- * turns), which the display counts like any other (the engine has no extra turns yet).
+ * 1-based and counts every turn of every player, including an extra turn (CR 500.7), which is no turn
+ * of the turn order: `extraTurnsTaken` of them are left out, so an extra turn has the round of the turn
+ * it follows.
  */
-export function roundOf(turn: number, seatCount: number): number {
+export function roundOf(turn: number, seatCount: number, extraTurnsTaken = 0): number {
   if (turn <= 0 || seatCount <= 0) return 0;
-  return Math.floor((turn - 1) / seatCount) + 1;
+  // CR 500.7: an extra turn is no turn of the turn order, so it belongs to the round of the turn it follows.
+  return Math.floor(Math.max(0, turn - extraTurnsTaken - 1) / seatCount) + 1;
 }
 
-/** "Your" or "Opponent's": the name form the UI uses for a seat. */
-export function turnOwner(seat: SeatId, viewer: SeatId): string {
-  return seat === viewer ? 'Your' : "Opponent's";
+/** "Your", "Opponent's" or, with more than two seats, "Opponent 2's": the name form the UI uses for a seat. */
+export function turnOwner(seat: SeatId, viewer: SeatId, seatCount = 2): string {
+  return possessiveOf(seat, viewer, seatCount);
 }
 
 /** "Your turn 5" or "Opponent's turn 5": whose turn it is and the round it is in. */
-export function turnLabel(seat: SeatId, viewer: SeatId, turn: number, seatCount: number): string {
-  return `${turnOwner(seat, viewer)} turn ${roundOf(turn, seatCount)}`;
+export function turnLabel(
+  seat: SeatId,
+  viewer: SeatId,
+  turn: number,
+  seatCount: number,
+  extraTurnsTaken = 0,
+): string {
+  return `${turnOwner(seat, viewer, seatCount)} turn ${roundOf(turn, seatCount, extraTurnsTaken)}`;
 }

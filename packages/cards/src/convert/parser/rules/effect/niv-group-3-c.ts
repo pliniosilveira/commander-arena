@@ -3,7 +3,7 @@
  * can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead". ("Blue Magic —" before it is an ability word, which has no rules
  * meaning.)
  */
-import { literal, optional, pattern, satisfy, sequence } from '../../combinators';
+import { choice, literal, map, optional, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
@@ -22,6 +22,9 @@ const EXILE_INSTEAD = pattern(
     'iu',
   ),
 );
+
+/** " without paying its mana cost": the cast is free (CR 118.9, Alternative Costs), instead of the any-type rider (the two are not said together). */
+const WITHOUT_PAYING = pattern(new RegExp(` without paying its mana cost${BOUNDARY}`, 'iu'));
 
 const ID = 'effect.cast-graveyard-card';
 
@@ -52,6 +55,8 @@ export const EFFECT_CAST_GRAVEYARD_CARD = defineRule<Clauses>({
     'you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. if that spell would be put into a graveyard, exile it instead',
     'cast target instant or sorcery card from a graveyard. if that spell would be put into a graveyard, exile it instead',
     'cast target sorcery card from a graveyard',
+    'you may cast target instant or sorcery card from a graveyard without paying its mana cost',
+    'you may cast target instant or sorcery card from a graveyard without paying its mana cost. if that spell would be put into a graveyard, exile it instead',
   ],
   rejects: [
     'cast target instant or sorcery card from your graveyard',
@@ -62,7 +67,8 @@ export const EFFECT_CAST_GRAVEYARD_CARD = defineRule<Clauses>({
     'cast target instant or sorcery card from a graveyard, and mana of any color can be spent to cast that spell',
     'cast target instant or sorcery card from a graveyard and draw a card',
     'cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell and draw a card',
-    'cast target instant or sorcery card from a graveyard without paying its mana cost',
+    'cast target instant or sorcery card from a graveyard without paying its mana cost and draw a card',
+    'cast target instant or sorcery card from a graveyard without paying its mana cost, and mana of any type can be spent to cast that spell',
     'cast target instant or sorcery card from a graveyard. if that spell would be put into a graveyard, exile it instead, then draw a card',
     'cast target instant or sorcery card',
     'cast target creature from a graveyard',
@@ -82,17 +88,24 @@ export const EFFECT_CAST_GRAVEYARD_CARD = defineRule<Clauses>({
           !noun.upTo &&
           !noun.plural,
       ),
-      optional(spanned(ANY_MANA_TYPE), null),
+      optional(
+        choice(
+          map(spanned(ANY_MANA_TYPE), () => 'anyType' as const),
+          map(spanned(WITHOUT_PAYING), () => 'free' as const),
+        ),
+        null,
+      ),
       optional(spanned(EXILE_INSTEAD), null),
       // Nothing joined to the clause: a join says a second instruction, which is not read.
       pattern(/(?=\.|$)/u),
     ),
-    ([may, , objects, anyType, exileInstead]) => ({
+    ([may, , objects, rider, exileInstead]) => ({
       verb: 'castCard',
       args: {
         objects,
         may: flag(ID, may !== null, objects.span),
-        anyManaType: flag(ID, anyType !== null, objects.span),
+        anyManaType: flag(ID, rider === 'anyType', objects.span),
+        free: flag(ID, rider === 'free', objects.span),
         exileInstead: flag(ID, exileInstead !== null, objects.span),
       },
     }),

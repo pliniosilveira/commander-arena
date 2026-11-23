@@ -20,6 +20,7 @@ import {
   lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
+  spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
 import { cardTypesAmongForSource, countForSource } from './derive-count';
@@ -120,10 +121,12 @@ export function staticConditionHolds(
     }
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controllerOf(state, source), condition);
+    case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the turn log, which no layer changes
+      return spellsCastThisTurnHolds(state, controllerOf(state, source), condition);
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
       return lifeGainedThisTurnHolds(state, controllerOf(state, source), condition);
     case 'cardsInGraveyard': // D-229: the number of cards in a zone, which no layer changes
-      return cardsInGraveyardHolds(state, controllerOf(state, source), condition.compare);
+      return cardsInGraveyardHolds(state, controllerOf(state, source), condition);
     case 'cardsInLibrary': // D-331: the number of cards in a zone, which no layer changes
       return cardsInLibraryHolds(state, controllerOf(state, source), condition.compare);
     case 'thisMatches':

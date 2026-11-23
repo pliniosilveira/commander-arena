@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, handLand, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -178,7 +179,7 @@ test('the cost of attacking: the cost per target, the payment, Choose other atta
   await expect(costs).toContainText('2 chosen');
 
   // The cost is paid by hand: Manual mana shows the payment instead of paying it.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
   await primary(page).click();
   await settled(page);
   await expect(bar).toContainText(

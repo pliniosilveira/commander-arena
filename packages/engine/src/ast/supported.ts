@@ -162,6 +162,13 @@ function walkEffect(
         }
         return;
       }
+      // Hildibrand Manderville (CR 603.10a): the card the dying permanent became names itself; it is in the graveyard when the ability resolves or the permission is not given.
+      if (
+        effect.adventure === true &&
+        (effect.objects.kind === 'thisCard' || effect.objects.kind === 'triggerCard')
+      ) {
+        return;
+      }
       const zone = filter?.zone;
       if (zone !== 'graveyard') {
         out.push({
@@ -263,7 +270,7 @@ function walkEffect(
         effect.cost,
         `${path}.cost`,
         out,
-        ['mana', 'payLife', 'discard'],
+        ['mana', 'payLife', 'discard', 'energy', 'energyAmount'],
         false,
         true,
       );
@@ -562,6 +569,25 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
+  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  if (
+    removingAmong.length > 1 ||
+    (removingAmong.length === 1 &&
+      costs.some(
+        (c) =>
+          c.kind === 'tapCreatures' ||
+          c.kind === 'untapPermanents' ||
+          c.kind === 'blight' ||
+          c.kind === 'loyalty',
+      ))
+  ) {
+    // Federation Fleet group D: `breakDown` pays one such cost, and has no order for it next to a crew cost, an untap cost, a blight or a loyalty cost.
+    out.push({
+      path,
+      message:
+        'more than one "remove counters from among" cost, or one with a crew, untap, blight or loyalty cost, is not implemented by the engine yet',
+    });
+  }
   if (sacrifices > 1) {
     // `breakDown` (rules/activate-costs.ts) pays one sacrifice; an ability with two is never offered.
     out.push({
@@ -587,8 +613,8 @@ function activationCostIssues(
       allowed?.includes(c.kind) === false ||
       // D-386: "discard X cards" is an additional cost of a spell; an activated ability does not announce one.
       c.kind === 'discardX' ||
-      // D-209: an energy cost is paid only where an `unlessPays` names it.
-      (c.kind === 'energy' && allowed?.includes('energy') !== true)
+      // Issue 105: an amount of energy worked out as an offer is made belongs to a `mayPay` only.
+      (c.kind === 'energyAmount' && allowed?.includes('energyAmount') !== true)
     ) {
       out.push({
         path: `${path}[${i}]`,
@@ -638,6 +664,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesBlockedBy':
     case 'dealsCombatDamage':
     case 'dealsDamage':
     case 'leavesBattlefield':
@@ -762,6 +789,9 @@ function walkAbility(
         a.static.kind !== 'modifyPt' &&
         // D-133: a restriction is read where the rule acts, after the layers, so its subject may compare power.
         a.static.kind !== 'restriction' &&
+        // CR 509.1b, 613.11 (Sidar Kondo of Jamuraa: "can't block creatures with power 2 or less"): a limit on who may block, read where blockers are declared; the subject is
+        // matched after the layers that change power, as a restriction's is (`derive-statics.ts`).
+        a.static.kind !== 'cantBeBlockedBy' &&
         'subject' in a.static &&
         a.static.subject.kind === 'filter' &&
         filterComparesPt(a.static.subject.filter)
@@ -877,6 +907,13 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
         // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.costReducedIf !== undefined) {
+          conditionIssues(
+            a.keyword.costReducedIf.condition,
+            `${path}.keyword.costReducedIf.condition`,
+            out,
+          );
+        }
       } else if (a.keyword.kind === 'ward') {
         // CR 702.21a: paid when the ward ability resolves (rules/pay-unless.ts): mana, life and
         // discarding cards (D-095), no X; D-407 (CR 701.68a): or a blight, alone.

@@ -4,7 +4,8 @@
  * `overflow: auto` or `scroll` element, not `scrollbar-width: none`, whose content is larger than its
  * box is one that would show a bar. It lists a bar on the page itself, a horizontal bar anywhere, and a
  * scrolling area inside another scrolling area. Vertical bars that belong (the log, the stack list, a card
- * taller than its box) are not listed.
+ * taller than its box) are not listed. What is clipped away for screen readers only (`.pnl-visually-hidden`,
+ * like the game log while its dialog is closed) shows no bar to a player, so it is skipped.
  */
 export function scrollProblems(): string[] {
   const out: string[] = [];
@@ -21,6 +22,7 @@ export function scrollProblems(): string[] {
     return axis === 'x' ? el.scrollWidth > el.clientWidth : el.scrollHeight > el.clientHeight;
   };
   for (const el of document.querySelectorAll('*')) {
+    if (el.closest('.pnl-visually-hidden') !== null) continue;
     if (scrolls(el, 'x'))
       out.push(`horizontal bar on ${name(el)} (${el.scrollWidth} > ${el.clientWidth})`);
     if (!scrolls(el, 'y')) continue;

@@ -32,7 +32,9 @@
  * The whole pre-cast state is kept in the CastingContext. Cancelling restores it, which is also how
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
-import { COLORS } from '../characteristics';
+
+import type { Cost } from '../ast/types';
+import { type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -50,9 +52,11 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
+import { evokeGrantData, grantedEnergyOf } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
+  evokeExileOf,
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
@@ -90,9 +94,10 @@ import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
 import { derive } from './derive';
+import { escapeGrantData } from './escape-grant';
 import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
 import { freeCastSlotToUse } from './free-cast';
-import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
+import { graveyardPlayPermission, markGraveyardPlay, riderOf, slotOf } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import {
   canCast,
@@ -128,7 +133,12 @@ import {
   remainders,
   usePayOptions,
 } from './pay-options';
-import { playPermissionAnyColor } from './play-permission-color';
+import {
+  playPermissionAnyColor,
+  playPermissionAnyType,
+  playPermissionExiles,
+} from './play-permission-color';
+import { playPermissionLess } from './play-permission-cost';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -167,7 +177,14 @@ export function beginCast(
    * `exileInstead` ("If that spell would be put into a graveyard, exile it instead", CR 614.1a). With `resolving` and no alternative cost the spell is cast
    * paying its mana cost, from the graveyard it is in (`castCard`).
    */
-  riders: { readonly anyManaType?: boolean; readonly exileInstead?: boolean } = {},
+  riders: {
+    readonly anyManaType?: boolean;
+    readonly exileInstead?: boolean;
+    /** CR 118.9 (Blue Mage's Cane): with the `free` alternative, the mana paid rather than the mana cost. */
+    readonly payInstead?: readonly Cost[];
+  } = {},
+  /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
+  permanentType?: CardType,
 ): Result {
   const obj = getObject(state, objectId);
   // CR 722.3c (D-214): the copy of a prepare spell is cast as its own face.
@@ -186,6 +203,7 @@ export function beginCast(
                 ? 'freeGraveyard' // CR 118.9: "cast target ... card from a graveyard without paying its mana cost"
                 : 'free',
           riders.anyManaType === true,
+          riders.payInstead,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -219,8 +237,12 @@ export function beginCast(
     alternative !== 'retrace' &&
     alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
-      ? graveyardPlayPermission(state, seat, obj, false)
+      ? graveyardPlayPermission(state, seat, obj, false, permanentType)
       : null;
+  const graveyardSlot =
+    graveyardUse === null
+      ? undefined
+      : slotOf(state, seat, obj, graveyardUse, false, permanentType);
   // CR 601.2, 118.9 (`mayCastEachType`): a card in exile cast for free by the permission of an effect uses up the permission of one of its types.
   const freeUse =
     !resolving && alternative === 'free' && obj.zone === 'exile' && obj.onAdventure !== true
@@ -262,9 +284,25 @@ export function beginCast(
       // CR 702.133a: cast from the graveyard by its jump-start ability.
       ...(alternative === 'jumpStart' ? { jumpStart: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
+      ...(alternative === 'free' && riders.payInstead !== undefined
+        ? { payInstead: riders.payInstead }
+        : {}),
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
+      // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
+      ...(alternative === 'energyGrant'
+        ? {
+            energyGrant:
+              grantedEnergyOf(state, seat, castAs(obj, seat, face, alternative), zone) ?? 0,
+          }
+        : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
+      // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
+      ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
+      // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (`grantAlternativeCostToSpells`), kept so the permanent still has it when the source has left.
+      ...(alternative === 'evoke'
+        ? evokeGrantData(state, seat, castAs(obj, seat, face), zone)
+        : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
       freeUse !== null ||
       // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
@@ -277,11 +315,21 @@ export function beginCast(
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
       // D-350: what the effect that let the card be cast says about this spell.
-      ...(riders.anyManaType === true ? { anyManaType: true as const } : {}),
+      ...(riders.anyManaType === true ||
+      // Hostage Taker (CR 609.4b): "mana of any type can be spent to cast that spell" of the permission the card is cast with from exile.
+      (zone === 'exile' && !resolving && playPermissionAnyType(state, seat, obj.id))
+        ? { anyManaType: true as const }
+        : {}),
       // D-359: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
       ...(riders.exileInstead === true ||
-      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
+      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj)) ||
+      // Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead" of the permission the card is cast with from exile.
+      (zone === 'exile' && !resolving && playPermissionExiles(state, seat, obj.id))
         ? { exileInstead: true as const }
+        : {}),
+      // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast" of the permission the card is cast with.
+      ...(zone === 'exile' && !resolving && playPermissionLess(state, seat, obj.id) > 0
+        ? { lessGeneric: playPermissionLess(state, seat, obj.id) }
         : {}),
       // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" of the permission the card is cast with.
       ...(zone === 'exile' && !resolving && playPermissionAnyColor(state, seat, obj.id)
@@ -299,10 +347,14 @@ export function beginCast(
         : {}),
       // D-232: "Once during each of your turns, you may cast an artifact spell from your graveyard. If you cast a spell this way, that artifact enters tapped":
       // the card's own permission to be cast from the graveyard is used first; otherwise the permanent's, which is used up for this turn.
-      ...(graveyardUse === null ? {} : { graveyardPlay: riderOf(graveyardUse, false) }),
+      ...(graveyardUse === null
+        ? {}
+        : { graveyardPlay: riderOf(graveyardUse, false, graveyardSlot) }),
     },
   });
-  if (graveyardUse !== null) next = markGraveyardPlay(next, graveyardUse.object.id);
+  if (graveyardUse !== null) {
+    next = markGraveyardPlay(next, graveyardUse.object.id, graveyardSlot);
+  }
   if (freeUse !== null) {
     next = {
       ...next,
@@ -322,6 +374,7 @@ export function beginCast(
     alternative,
     excluded: obj.id,
     kicked: false,
+    ...(riders.payInstead === undefined ? {} : { payInstead: riders.payInstead }),
   });
   next = {
     ...next,
@@ -681,7 +734,11 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
   if (!stack) return fail('The spell is not on the stack');
   const face = faceOf(state, spell);
   const optionalExile = face?.additionalCosts?.find((cost) => cost.kind === 'exileFromHand');
-  if (optionalExile?.kind === 'exileFromHand' && stack.exiledAsCost === undefined) {
+  // CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): the exile is part of the alternative cost, so one card must be chosen.
+  const evokeExile = alternativeOfStack(stack) === 'evoke' ? evokeExileOf(face) : undefined;
+  const exileFilter =
+    evokeExile ?? (optionalExile?.kind === 'exileFromHand' ? optionalExile.filter : undefined);
+  if (exileFilter !== undefined && stack.exiledAsCost === undefined) {
     const legal = Object.values(state.objects)
       .filter(
         (object) =>
@@ -689,12 +746,15 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
           object.owner === casting.seat &&
           object.card !== null &&
           object.id !== casting.object &&
-          matchesFilter(state, object, optionalExile.filter, {
+          matchesFilter(state, object, exileFilter, {
             controller: casting.seat,
             source: casting.object,
           }),
       )
       .map((object) => object.id);
+    if (evokeExile !== undefined && legal.length === 0) {
+      return fail('There is no card in your hand to exile for the evoke cost');
+    }
     if (legal.length > 0) {
       return ok(
         setPending(
@@ -706,10 +766,13 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
             purpose: 'additionalExile',
             zone: 'hand',
             legal,
-            min: 0,
-            max: legal.length,
+            min: evokeExile === undefined ? 0 : 1,
+            max: evokeExile === undefined ? legal.length : 1,
             reveal: true,
-            prompt: 'You may exile any number of cards from your hand',
+            prompt:
+              evokeExile === undefined
+                ? 'You may exile any number of cards from your hand'
+                : 'Exile a card from your hand to pay the evoke cost',
             forCost: true,
           },
         ),
@@ -1045,6 +1108,12 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       },
     },
   };
+  if (cost.energy > 0) {
+    // CR 107.14, 118.3: the energy counters are removed as the cost is paid.
+    const had = getSeat(next, casting.seat).energy ?? 0;
+    next = patchSeat(next, casting.seat, { energy: had - cost.energy });
+    events.push({ kind: 'energyChanged', seat: casting.seat, from: had, to: had - cost.energy });
+  }
   if (cost.life > 0) {
     const life = getSeat(next, casting.seat).life;
     next = loseLifeBy(next, casting.seat, cost.life);
@@ -1228,7 +1297,18 @@ export function answerPayOptions(state: GameState, objects: readonly ObjectId[])
   const left = casting.optionsLeft ?? [];
   const settled = settlePayOptions(cleared, d, objects, left);
   if (settled === null) return fail('That would leave a cost you cannot pay');
-  const next: GameState = { ...settled.state, casting: { ...casting, totalCost: settled.cost } };
+  const withCasting: GameState = {
+    ...settled.state,
+    casting: { ...casting, totalCost: settled.cost },
+  };
+  // CR 702.51a: the creatures tapped for Convoke are remembered for "each creature that convoked this spell".
+  const stack = state.objects[casting.object]?.stack ?? null;
+  const next: GameState =
+    d.mechanism === 'convoke' && objects.length > 0 && stack !== null
+      ? patchObject(withCasting, casting.object, {
+          stack: { ...stack, convokedBy: [...(stack.convokedBy ?? []), ...objects] },
+        })
+      : withCasting;
   return askPayOptions(next, settled.events, left);
 }
 

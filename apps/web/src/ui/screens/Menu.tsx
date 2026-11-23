@@ -4,35 +4,65 @@
  * the opponent's deck; choosing the second starts the game. My Decks opens the page that lists
  * and imports decks.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { type ChallengeLevel, deckChoices, emblemsFor, startChallengeOptions } from '../../precons';
 import { ThemeToggle } from '../panels/ThemeToggle';
-import { usePrecons } from '../precons-context';
+import { useChallenges, usePrecons } from '../precons-context';
 import { useActions } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
+import { ChallengeDialog } from './ChallengeDialog';
 import { DeckDialog } from './DeckDialog';
-import { defaultDecks, type MenuForm, parseSeed, randomSeed, startFromForm } from './menu-model';
+import {
+  defaultDecks,
+  type MenuForm,
+  OPPONENT_ORDINALS,
+  opponentDeckTitle,
+  parseSeed,
+  randomSeed,
+  startFromForm,
+  startTableFromForm,
+} from './menu-model';
 import './screens.css';
 
 export const HOW_TO_PLAY: readonly string[] = [
   'Click a card in your hand to play a land or cast a spell. The game pays for it automatically unless you turn on manual mana payment.',
   'Hover a card to read it in the panel on the left. Right-click pins it there; Esc unpins.',
   'Space passes priority or resolves what is on the stack. The game passes for you when you have nothing to do, except at the stops in Settings.',
-  'Click a step in the bar at the top to add or remove a stop there. Full Control stops at every priority.',
+  'Click the current step in the panel at the right to add or remove a stop there. Full Control stops at every priority.',
   'Pass Turn (P) skips the rest of your turn: combat, the later steps and your second main phase. It stops for a question, or for an opponent spell aimed at you or that you can answer; Esc cancels it. Full Control still stops at every step.',
   'Attack and block by clicking creatures and then confirming. Only legal choices can be clicked.',
   'Arrows on the screen point from a spell on the stack to its targets.',
 ];
 
+const OPPONENT_COUNTS = [1, 2, 3] as const;
+
 export function Menu() {
   const actions = useActions();
   const precons = usePrecons();
+  const challenges = useChallenges();
   const { choices } = useDeckChoices();
+  const [level, setLevel] = useState<ChallengeLevel>('easy');
+  // With more than one opponent the deck dialog repeats, once per opponent, and the last deck starts
+  // the game (`startTableFromForm`).
+  const [opponents, setOpponents] = useState<(typeof OPPONENT_COUNTS)[number]>(1);
+  const [opponentIndex, setOpponentIndex] = useState(0);
+  const [opponentDecks, setOpponentDecks] = useState<readonly string[]>([]);
+  // Medium and Hard offer only the challenges that have emblems for them.
+  const challengeChoices = useMemo(
+    () =>
+      deckChoices(challenges.list, [], []).filter(
+        (choice) => level === 'easy' || emblemsFor(level, choice.id).length > 0,
+      ),
+    [challenges.list, level],
+  );
   const [form, setForm] = useState<MenuForm>({
     ...defaultDecks(precons.list.map((p) => p.id)),
     seed: '',
     freeMulligan: true,
   });
-  const [step, setStep] = useState<'home' | 'player' | 'opponent'>('home');
+  const [step, setStep] = useState<
+    'home' | 'player' | 'opponent' | 'challenge-player' | 'challenge-pick'
+  >('home');
   const [refused, setRefused] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const seedValid = parseSeed(form.seed).ok;
@@ -42,7 +72,35 @@ export function Menu() {
   const choose = (id: string) => {
     if (step === 'player') {
       setForm({ ...form, humanDeck: id });
+      setOpponentIndex(0);
+      setOpponentDecks([]);
       setStep('opponent');
+      return;
+    }
+    if (step === 'challenge-player') {
+      setForm({ ...form, humanDeck: id });
+      setStep('challenge-pick');
+      return;
+    }
+    if (opponents > 1) {
+      const decks = [...opponentDecks.slice(0, opponentIndex), id];
+      setOpponentDecks(decks);
+      if (decks.length < opponents) {
+        setOpponentIndex(decks.length);
+        return;
+      }
+      // The last opponent's deck ends the flow: the game starts with every deck chosen.
+      setRefused(null);
+      setStarting(true);
+      void startTableFromForm(
+        actions.startGame,
+        { ...form, opponentDecks: decks, ai: 'normal' },
+        precons,
+      )
+        .then((result) => {
+          if (!result.started && result.kind === 'refused') setRefused(result.reason);
+        })
+        .finally(() => setStarting(false));
       return;
     }
     // The opponent's deck ends the flow: the game starts with the two decks chosen.
@@ -53,6 +111,25 @@ export function Menu() {
     void startFromForm(actions.startGame, { ...next, ai: 'normal' }, precons)
       .then((result) => {
         if (!result.started && result.kind === 'refused') setRefused(result.reason);
+      })
+      .finally(() => setStarting(false));
+  };
+  // The challenge ends the Challenges flow: the game starts against it.
+  const chooseChallenge = (id: string) => {
+    const parsed = parseSeed(form.seed);
+    if (!parsed.ok) return;
+    setRefused(null);
+    setStarting(true);
+    void startChallengeOptions(precons, challenges, {
+      seed: parsed.seed ?? randomSeed(),
+      humanDeck: form.humanDeck,
+      challenge: id,
+      level,
+      freeMulligan: form.freeMulligan ?? true,
+    })
+      .then(async (result) => {
+        if (result.ok) await actions.startGame({ ...result.options, intro: true });
+        else setRefused(result.reason);
       })
       .finally(() => setStarting(false));
   };
@@ -74,14 +151,35 @@ export function Menu() {
       <section className="scr-card" aria-labelledby="scr-play-h">
         <h2 id="scr-play-h">Play a game</h2>
         <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
-        <button
-          type="button"
-          className="scr-btn scr-btn-primary"
-          disabled={!seedValid || !installed}
-          onClick={() => setStep('player')}
-        >
-          Start game
-        </button>
+        <div className="scr-card-row">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => setStep('player')}
+          >
+            Start game
+          </button>
+          <div className="scr-seg-group">
+            <span id="scr-opponents-label" className="scr-seg-label">
+              Number of opponents
+            </span>
+            <fieldset className="scr-seg" aria-labelledby="scr-opponents-label">
+              {OPPONENT_COUNTS.map((n) => (
+                <label key={n} className="scr-seg-opt">
+                  <input
+                    type="radio"
+                    name="scr-opponents"
+                    value={n}
+                    checked={opponents === n}
+                    onChange={() => setOpponents(n)}
+                  />
+                  <span>{n}</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        </div>
         {!installed && (
           <p className="scr-note scr-no-precon" role="note">
             No precon is installed yet. You can still import your own deck.
@@ -106,6 +204,46 @@ export function Menu() {
             onClick={() => actions.openImport('decks')}
           >
             My Decks
+          </button>
+        </div>
+      </section>
+
+      <section className="scr-card" aria-labelledby="scr-challenges-h">
+        <h2 id="scr-challenges-h">Challenges</h2>
+        <p className="scr-help">Pick your deck and face a prepared opponent.</p>
+        <div className="scr-modal-group">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => {
+              setLevel('easy');
+              setStep('challenge-player');
+            }}
+          >
+            Easy
+          </button>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => {
+              setLevel('medium');
+              setStep('challenge-player');
+            }}
+          >
+            Medium
+          </button>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            disabled={!seedValid || !installed}
+            onClick={() => {
+              setLevel('hard');
+              setStep('challenge-player');
+            }}
+          >
+            Hard
           </button>
         </div>
       </section>
@@ -156,23 +294,48 @@ export function Menu() {
         </ul>
       </details>
 
-      {step !== 'home' && (
+      {step === 'challenge-pick' && (
+        <ChallengeDialog
+          challenges={challengeChoices}
+          error={refused}
+          busy={starting}
+          onChoose={chooseChallenge}
+          onBack={() => {
+            setRefused(null);
+            setStep('challenge-player');
+          }}
+          onCancel={closeFlow}
+        />
+      )}
+
+      {step !== 'home' && step !== 'challenge-pick' && (
         <DeckDialog
-          key={step}
-          title={step === 'player' ? 'Choose your deck' : "Choose opponent's deck"}
+          key={step === 'opponent' ? `opponent-${opponentIndex}` : step}
+          title={
+            step === 'opponent' ? opponentDeckTitle(opponentIndex, opponents) : 'Choose your deck'
+          }
           prompt={
-            step === 'player'
+            step !== 'opponent'
               ? "Select the deck you'll play in this game."
-              : 'Select the deck your opponent will play.'
+              : opponents === 1
+                ? 'Select the deck your opponent will play.'
+                : `Select the deck the ${OPPONENT_ORDINALS[opponentIndex] ?? ''} opponent will play.`
           }
           decks={choices}
           error={step === 'opponent' ? refused : null}
           busy={starting}
           onChoose={choose}
-          {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
+          {...(step === 'opponent'
+            ? {
+                onBack: () =>
+                  opponentIndex > 0 ? setOpponentIndex(opponentIndex - 1) : setStep('player'),
+              }
+            : {})}
           onCancel={closeFlow}
           onImport={() => actions.openImport('import')}
-          initialTab={step === 'opponent' ? 'precon' : 'saved'}
+          {...(step === 'opponent' || !choices.some((deck) => deck.kind === 'saved')
+            ? { initialTab: 'precon' as const }
+            : {})}
         />
       )}
     </main>

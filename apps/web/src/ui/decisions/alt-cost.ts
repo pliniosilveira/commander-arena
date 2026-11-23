@@ -25,9 +25,33 @@ export function alternativeLabel(kind: NamedAlternative, card: ObjectView | unde
   if (kind === 'sacrificeFromGraveyard' || kind === 'sacrificePermanents') {
     return sacrificeAlternativeLabel(entry);
   }
+  // CR 118.9, 118.4 (Snuff Out): "Cast by paying 4 life instead of mana" (`AlternativeCostView.life`).
+  if (kind === 'payLife') return payLifeLabel(entry);
+  // CR 702.74a: "Evoke—Exile a red card from your hand": no mana, the exile of a card of the hand.
+  if (entry.exileFromHand !== undefined) return evokeExileLabel(entry);
   const label = `${ALTERNATIVE_NAMES[kind]} ${symbolsText(withX(entry.cost, 0))}`;
   return entry.exile === undefined ? label : `${label}, exile ${plural(entry.exile, 'other card')}`;
 }
+
+/** "Evoke, exile a red card from your hand" (`AlternativeCostView.exileFromHand`): the cast button of an evoke cost that exiles a card instead of paying mana. */
+export function evokeExileLabel(
+  entry: NonNullable<ObjectView['alternativeCosts']>[number],
+): string {
+  const colors = (entry.exileFromHand?.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' or ');
+  const mana = withX(entry.cost, 0).filter((s) => s !== '0');
+  const exile = `exile a ${colors === '' ? '' : `${colors} `}card from your hand`;
+  return mana.length === 0
+    ? `${ALTERNATIVE_NAMES.evoke}, ${exile}`
+    : `${ALTERNATIVE_NAMES.evoke} ${symbolsText(mana)}, ${exile}`;
+}
+
+const COLOR_NAMES: Readonly<Record<string, string>> = {
+  W: 'white',
+  U: 'blue',
+  B: 'black',
+  R: 'red',
+  G: 'green',
+};
 
 /**
  * "Cast for {W}, tapping four creatures with flying", "Cast by tapping four creatures" (no mana): the cast button of the alternative
@@ -63,6 +87,15 @@ export function sacrificeAlternativeLabel(
   return mana.length === 0
     ? `Cast by sacrificing ${what}`
     : `Cast for ${symbolsText(mana)}, sacrificing ${what}`;
+}
+
+/** "Cast by paying 4 life instead of mana": the button of the alternative cost that pays life (`AlternativeCostView.life`), with the mana it still costs, if any. */
+export function payLifeLabel(entry: NonNullable<ObjectView['alternativeCosts']>[number]): string {
+  const mana = withX(entry.cost, 0).filter((s) => s !== '0');
+  const life = `${entry.life ?? 0} life`;
+  return mana.length === 0
+    ? `Cast by paying ${life} instead of mana`
+    : `Cast for ${symbolsText(mana)} and ${life}`;
 }
 
 /** "Cast for {R}": the button of a foretold card, from its `alternativeCosts` (D-128). */

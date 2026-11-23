@@ -12,6 +12,7 @@ import type {
   ObjectId,
   ObjectView,
 } from '@commander-arena/engine';
+import { rankOpponents, targetFor } from './attack-targets';
 import { couldBlock } from './casual-evasion';
 import { type PlannedAttack, payForAttacks } from './casual-play-rules';
 import { lifeDamageOf, poisonLethal, poisonThreat } from './casual-poison';
@@ -22,6 +23,7 @@ import {
   opponentLife,
   ownLife,
   powerOf,
+  seatLife,
   toughnessOf,
 } from './casual-view';
 import { withinBlockBudget } from './legal';
@@ -86,26 +88,26 @@ export function isSafeAttack(view: GameView, attacker: ObjectView): boolean {
   );
 }
 
-/** The player attack target, or the first offered target when only permanents can be attacked. */
-function chooseAttackTarget(
-  view: GameView,
-  targets: readonly AttackTarget[],
-): AttackTarget | undefined {
-  const player = targets.find((t) => t.kind === 'player' && t.seat !== view.viewer);
-  return player ?? targets[0];
-}
-
 export function chooseAttackers(view: GameView, d: DeclareAttackersDecision): Action {
+  // Issue 479: with several opponents the one the attackers can kill, else the weakest, is attacked.
+  const armed = d.candidates.flatMap((c) => {
+    const o = findObject(view, c.attacker);
+    return o === undefined || powerOf(o) <= 0 ? [] : [o];
+  });
+  const ranked = rankOpponents(view, armed);
   const candidates = d.candidates.flatMap((c) => {
     const object = findObject(view, c.attacker);
-    const target = chooseAttackTarget(view, c.targets);
+    const target = targetFor(view, c.targets, ranked);
     return object === undefined || target === undefined ? [] : [{ object, target, c }];
   });
   // Attacking power that can reach the opposing player; an all-out attack is right if it is lethal.
   // Infect damage is poison, not life loss, and ten poison counters are lethal too (casual-poison.ts).
   const atPlayer = candidates.filter((x) => x.target.kind === 'player').map((x) => x.object);
   const playerPower = atPlayer.reduce((sum, o) => sum + lifeDamageOf(o), 0);
-  const lethal = playerPower >= opponentLife(view) || poisonLethal(view, atPlayer);
+  const aimed = ranked[0];
+  const lethal =
+    playerPower >= (aimed === undefined ? opponentLife(view) : seatLife(view, aimed)) ||
+    poisonLethal(view, atPlayer, aimed);
   // CR 508.1d: a creature that attacks each combat if able is declared whatever the agent thinks.
   const required = new Set(d.mustAttack);
   const wanted: PlannedAttack[] = candidates
@@ -123,9 +125,9 @@ export function chooseAttackers(view: GameView, d: DeclareAttackersDecision): Ac
     }));
   // D-203 (CR 306.6): an opposing planeswalker the safe attackers can kill this combat is attacked instead of the player, with the strongest of them
   // first and no more than it takes; the rest still go at the player. Not when the attack is lethal on the player (that wins the game).
-  const aimed = lethal ? wanted : aimAtPlaneswalkers(view, wanted);
+  const aimedAt = lethal ? wanted : aimAtPlaneswalkers(view, wanted);
   // CR 508.1h (D-125): attacking a taxed target costs mana; send as many as can be paid for.
-  const attacks = payForAttacks(d, aimed, lethal).map((p) => ({
+  const attacks = payForAttacks(d, aimedAt, lethal).map((p) => ({
     attacker: p.attacker,
     target: p.target,
   }));

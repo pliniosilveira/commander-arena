@@ -92,9 +92,12 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
       return failure(clause);
     }
     // Lorehold group 1: the card an `exile` of the text exiled is face up where it was and nobody looks at it: never "while exiled" (CR 406.3 asks cards exiled face down).
+    // Hostage Taker (CR 609.4b, 611.2b): "you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell": a card exiled face up where it was
+    // stays castable for as long as it stays in exile (a card that leaves exile is a new object, CR 400.7).
+    const whileExiledCast = lasts === 'whileExiled' && arg(clause, 'anyManaType') !== undefined;
     if (
       ctx.exiled === 'cards' &&
-      (lasts === 'whileExiled' || arg(clause, 'lookAt') !== undefined)
+      ((lasts === 'whileExiled' && !whileExiledCast) || arg(clause, 'lookAt') !== undefined)
     ) {
       return failure(clause);
     }
@@ -122,6 +125,9 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),
           // Issue 144 (Grenzo): "you may spend mana as though it were mana of any color to cast that spell".
           ...(arg(clause, 'anyManaColor')?.kind === 'flag' ? { anyManaColor: true as const } : {}),
+          // Hostage Taker (CR 609.4b): "mana of any type can be spent to cast that spell"; Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead".
+          ...(arg(clause, 'anyManaType')?.kind === 'flag' ? { anyManaType: true as const } : {}),
+          ...(arg(clause, 'exileInstead')?.kind === 'flag' ? { exileInstead: true as const } : {}),
           // Issue 101 (Gix): "you may play lands and cast spells from among cards exiled this way without paying their mana costs".
           ...(arg(clause, 'free')?.kind === 'flag' ? { free: true as const } : {}),
           // Issue 101 (Neriv): "during any turn you attacked with a commander, you may play those cards".

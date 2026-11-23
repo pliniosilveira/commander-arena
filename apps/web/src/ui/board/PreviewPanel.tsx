@@ -14,6 +14,7 @@ import { useMemo } from 'react';
 import { activatedStackIds } from '../../game/activation';
 import { alternativeBadge } from '../../game/alt-cost';
 import { chosenLabel } from '../../game/chosen';
+import { companionSeatOf, companionState } from '../../game/companion';
 import { additionalCostChoiceText, additionalCostsText } from '../../game/cost-text';
 import { designationKind } from '../../game/designations';
 import { realCardOf } from '../../game/face-down-text';
@@ -21,6 +22,7 @@ import { controlFact } from '../../game/korvold-text';
 import { laterFacts } from '../../game/later-text';
 import type { RevealedCard } from '../../game/revealed-cards';
 import { roomFacts } from '../../game/room-text';
+import { midNameOf, seatNameOf, startNameOf, startPossessiveOf } from '../../game/seat-name';
 import { castCostChanged, costsX, costText, symbolsText, withX } from '../decisions/cast-cost';
 import { faceCostText, faceFacts, faceRole } from '../decisions/layouts';
 import { chosenModeTexts } from '../decisions/modes-picker';
@@ -133,13 +135,25 @@ function PreviewDetails({ object }: { object: ObjectView }) {
   const restrictionChips = chips.filter((c) => c.restriction);
   const facts: string[] = [];
   const designation = designationKind(object.id);
-  if (designation !== null && view !== null) {
+  const companionSeat = companionSeatOf(object.id);
+  if (companionSeat !== null && view !== null) {
+    // SPEC 5.8, CR 702.139: the companion is outside the game; its owner may bring it into their hand once, for {3} (CR 116.2g).
+    const brought = view.seats.find((s) => s.id === companionSeat)?.companion?.brought === true;
+    const mine = companionSeat === view.viewer;
+    facts.push(
+      brought
+        ? `${startPossessiveOf(companionSeat, view.viewer, view.seats.length)} companion was brought into the game: it is an ordinary card now`
+        : `${startPossessiveOf(companionSeat, view.viewer, view.seats.length)} companion, outside the game (${companionState(false)}). ${
+            mine ? 'You may bring it into your hand' : 'They may bring it into their hand'
+          } once, for {3}`,
+    );
+  } else if (designation !== null && view !== null) {
     // D-243: the monarch and the Ring are no objects in a zone: say whose they are.
     const you = object.controller === view.viewer;
     facts.push(
       designation === 'monarch'
-        ? `${you ? 'You are' : 'The opponent is'} the monarch (CR 725.1)`
-        : `The Ring has tempted ${you ? 'you' : 'the opponent'} (CR 701.54c)`,
+        ? `${you ? 'You are' : `${startNameOf(object.controller, view.viewer, view.seats.length)} is`} the monarch (CR 725.1)`
+        : `The Ring has tempted ${midNameOf(object.controller, view.viewer, view.seats.length)} (CR 701.54c)`,
     );
   } else {
     if (view !== null)
@@ -394,7 +408,7 @@ function StackWords({ object }: { object: ObjectView }) {
   const activated = useMemo(() => activatedStackIds(log), [log]);
   const index = useMemo(() => (view === null ? new Map() : objectIndex(view)), [view]);
   if (view === null || object.zone !== 'stack') return null;
-  const w = stackWording(object, index, view.viewer, activated.has(object.id));
+  const w = stackWording(object, index, view.viewer, activated.has(object.id), view.seats.length);
   const lines: string[] = [];
   if (w.when !== null)
     lines.push(
@@ -427,9 +441,13 @@ function StackWords({ object }: { object: ObjectView }) {
 /** The cards a reveal showed (CR 701.20): who revealed them and from where, each with its cost, type line and text. */
 function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
   const viewer = useApp((s) => s.snapshot?.view.viewer ?? null);
+  const seatCount = useApp((s) => s.snapshot?.view.seats.length ?? 2);
   const first = cards[0];
   if (first === undefined) return null;
-  const who = first.seat === viewer ? 'You reveal' : 'Opponent reveals';
+  const who =
+    first.seat === viewer
+      ? 'You reveal'
+      : `${seatNameOf(first.seat, viewer ?? 0, seatCount)} reveals`;
   return (
     <div className="board-preview-revealed" data-preview-revealed>
       <div className="board-preview-bar">
@@ -457,68 +475,83 @@ function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
 }
 
 export function PreviewPanel() {
+  const hover = useApp((s) => s.hover);
+  const pin = useApp((s) => s.pin);
+  const dismissStackPreview = useApp((s) => s.dismissStackPreview);
+  const dismissedStack = useApp((s) => s.preview.dismissedStack ?? null);
   const view = useApp((s) => s.snapshot?.view ?? null);
   const pinnedId = useApp((s) => s.preview.pinned);
   const hoveredId = useApp((s) => s.preview.hovered);
   const revealed = useApp((s) => s.preview.revealed);
   const { id, source } =
-    view === null ? { id: null, source: 'none' } : previewChoice(view, pinnedId, hoveredId);
+    view === null
+      ? { id: null, source: 'none' }
+      : previewChoice(view, pinnedId, hoveredId, dismissedStack);
   const log = useApp((s) => s.log);
   const activated = useMemo(() => activatedStackIds(log), [log]);
   const object = view !== null && id !== null ? findObject(view, id) : null;
   const pinned = source === 'pinned' && object !== null;
   // The card behind the viewer's own face-down permanent (D-315), or null.
   const real = object === null ? null : realCardOf(object);
+  // A tap on the preview closes it: it drops the pin, the hover, a reveal and the stack's card.
+  const dismiss = () => {
+    hover(null);
+    pin(null);
+    // The card on top of the stack is shown by itself: the tap closes it until another is on top.
+    if (source === 'stack' && id !== null) dismissStackPreview(id);
+  };
   // A reveal is read when the player holds no object (pinned or hovered) and nothing newer than it is on the stack.
   if (revealed.length > 0 && (source === 'none' || source === 'stack')) {
     return (
-      <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
+      // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
+      <aside
+        className="preview-panel board-preview"
+        aria-label="Card preview"
+        aria-live="polite"
+        data-pinned="true"
+        onClick={dismiss}
+      >
         <RevealedList cards={revealed} />
       </aside>
     );
   }
+  // Nothing to read: the panel floats over the board, so it is not drawn at all.
+  if (object === null) return null;
   return (
-    <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
-      {object === null ? (
-        <div className="board-preview-empty">
-          <p className="board-preview-title">
-            {id === null ? 'Hover a card to read it' : 'Not visible any more'}
-          </p>
-          <p>
-            {id === null
-              ? 'Right-click pins, Esc unpins.'
-              : 'That object has moved to another zone or is hidden from you.'}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="board-preview-bar">
-            {pinned ? (
-              <span className="board-flag board-flag-pin">Pinned. Esc unpins</span>
-            ) : source === 'stack' ? (
-              <span className="board-flag" data-preview-stack>
-                Top of the stack
-              </span>
-            ) : (
-              <span className="board-dim">Right-click pins, Esc unpins</span>
-            )}
-          </div>
-          {real !== null && (
-            // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
-            <p className="board-flag" data-preview-face-down>
-              Face down. Only you can see this card; {object.name}, a {object.power}/
-              {object.toughness} creature, is what everyone sees.
-            </p>
-          )}
-          <div className="board-preview-card" data-preview-id={object.id}>
-            <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
-          </div>
-          <StackWords object={object} />
-          <PreviewDetails object={object} />
-          <FaceList object={object} />
-          <MeldList object={object} />
-        </>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
+    <aside
+      className="preview-panel board-preview"
+      aria-label="Card preview"
+      aria-live="polite"
+      data-pinned={pinned ? 'true' : undefined}
+      data-stack-preview={source === 'stack' ? 'true' : undefined}
+      onClick={dismiss}
+    >
+      <div className="board-preview-bar">
+        {pinned ? (
+          <span className="board-flag board-flag-pin">Pinned. Esc unpins</span>
+        ) : source === 'stack' ? (
+          <span className="board-flag" data-preview-stack>
+            Top of the stack
+          </span>
+        ) : (
+          <span className="board-dim">Right-click pins, Esc unpins</span>
+        )}
+      </div>
+      {real !== null && (
+        // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
+        <p className="board-flag" data-preview-face-down>
+          Face down. Only you can see this card; {object.name}, a {object.power}/{object.toughness}{' '}
+          creature, is what everyone sees.
+        </p>
       )}
+      <div className="board-preview-card" data-preview-id={object.id}>
+        <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
+      </div>
+      <StackWords object={object} />
+      <PreviewDetails object={object} />
+      <FaceList object={object} />
+      <MeldList object={object} />
     </aside>
   );
 }

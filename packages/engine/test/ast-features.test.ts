@@ -78,12 +78,16 @@ describe('the dimensions', () => {
       'exileFromGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
-      // D-209: "{E}{E}", paid in an `unlessPays` only.
+      // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
       'energy',
+      // Issue 105: "an amount of {E} equal to ...", the cost of a `mayPay`.
+      'energyAmount',
     ]);
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
       'untilYourNextTurn',
+      // CR 611.2a (Hildibrand Manderville): `mayCast.duration`, "until the end of your next turn".
+      'untilEndOfNextTurn',
       'whileHasCounter',
       'forAsLongAsYouControlThis',
       // D-207: "for as long as this Saga remains on the battlefield".
@@ -114,14 +118,20 @@ describe('the dimensions', () => {
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
       'subjectStat',
+      'subjectGreaterThanEach',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
+      'triggerPlayerTurn',
+      'triggerPlayerIsOpponent',
+      'triggerPlayerStat',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
       // Lorehold group 3: "if a player has one or fewer cards in hand".
       'aPlayerCardsInHand',
       'escaped',
+      // CR 702.143a: "if this spell was foretold".
+      'foretold',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',
@@ -150,6 +160,7 @@ describe('the dimensions', () => {
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
       'cardLeftYourGraveyard',
+      'descendedThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
@@ -176,6 +187,8 @@ describe('the dimensions', () => {
       'lifeGainedThisTurn',
       // D-591: life gain and life loss are both recorded this turn.
       'lifeGainedAndLostThisTurn',
+      // CR 119.3: "if a player lost 4 or more life this turn".
+      'aPlayerLostLifeThisTurn',
       // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
       'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
@@ -215,6 +228,10 @@ describe('the dimensions', () => {
       'grantKeywordToSpells',
       // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
       'grantFlashbackToGraveyardCards',
+      // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
+      'grantAlternativeCostToSpells',
+      // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+      'grantEnergyAlternative',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
@@ -249,6 +266,8 @@ describe('the dimensions', () => {
       'takeFromLinkedExile',
       // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
       'grantActivatedAbilitiesOfTopCard',
+      // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
+      'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
@@ -276,6 +295,7 @@ describe('the dimensions', () => {
       'unspentManaBecomesColorless',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."

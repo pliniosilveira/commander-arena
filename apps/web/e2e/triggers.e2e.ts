@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { leaveHand } from './harness/pointer';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -63,7 +64,9 @@ test('a "you may" trigger asks in a dialog, and No is logged', async ({ page }) 
   await expect(dialog).toContainText('you may draw a card');
   await expect(dialog).toContainText('Do it?');
   // The ability that asks is on the stack, shown as an ability of its source.
-  await expect(page.getByRole('region', { name: 'Stack' })).toContainText('Triggered ability');
+  await expect(page.getByRole('region', { name: 'Stack', exact: true })).toContainText(
+    'Triggered ability',
+  );
   await expect(dialog.getByRole('button', { name: 'Yes' })).toBeVisible();
 
   await dialog.getByRole('button', { name: 'No' }).click();
@@ -168,7 +171,7 @@ test('manual mana: a Treasure asks for a color, is sacrificed, and pays', async 
   await page.goto(`${GAME}&seed=1`);
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
   await expect(page.locator('.board-hand .is-clickable').first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
 
   // The land makes a Treasure when it enters.
   const hand = page.locator('.board-hand [data-object-id]');

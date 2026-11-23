@@ -51,7 +51,8 @@ import type {
   GameState,
   LastKnownInfo,
 } from '../state/types';
-import { historyCount } from './amounts';
+import { amountOf, historyCount } from './amounts';
+import { protectorChoices, protectorOption } from './battle-protector';
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
@@ -95,6 +96,7 @@ import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
+import { opponentGraveyardReplacement } from './graveyard-replacement';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
 import { gainLife } from './life-gain';
@@ -131,6 +133,11 @@ export interface MoveRequest {
    * copies, or null for none. Absent means "not asked yet". Ignored for a permanent that asks nothing.
    */
   readonly entersCopy?: ObjectId | null;
+  /**
+   * The controller's answer to "its controller chooses a player to be its protector" as a battle enters (CR 310.9a), once asked. Absent means "not asked yet". Ignored for a permanent
+   * that is not a battle, and for a battle with one legal protector, which asks nothing.
+   */
+  readonly entersProtector?: SeatId;
   /**
    * The controller's answer to devour's "you may sacrifice any number of creatures" (CR 702.82a, D-185), once asked: the creatures sacrificed as
    * the permanent enters, possibly none. Absent means "not asked yet". Ignored for a permanent without devour.
@@ -279,19 +286,27 @@ function recordLki(
   return { ...state, lki: { ...state.lki, [obj.id]: info } };
 }
 
-/** The protector of a battle entering the battlefield, or null for any other object (CR 310.11). */
+/** Whether the face of `old` that enters is a battle. */
+function entersAsBattle(state: GameState, old: GameObject, faceIndex: number): boolean {
+  const card = printedCard(old);
+  if (card === null) return false;
+  return definitionOf(state, card).faces[faceIndex]?.types.includes('battle') === true;
+}
+
+/**
+ * The protector of a battle entering the battlefield, or null for any other object (CR 310.9a). `chosen` is the answer of the controller when there was more than one legal
+ * player; with one the player is not asked, and an answer that is not legal is not used.
+ */
 function protectorFor(
   state: GameState,
   old: GameObject,
   controller: SeatId,
   faceIndex: number,
+  chosen: SeatId | undefined,
 ): SeatId | null {
-  const card = printedCard(old);
-  if (card === null) return null;
-  const face = definitionOf(state, card).faces[faceIndex];
-  if (!face?.types.includes('battle')) return null;
-  // In a two-player game the opponent of the battle's controller protects it.
-  return state.seats.find((s) => s.id !== controller && !s.hasLost)?.id ?? null;
+  if (!entersAsBattle(state, old, faceIndex)) return null;
+  const legal = protectorChoices(state, controller);
+  return chosen !== undefined && legal.includes(chosen) ? chosen : (legal[0] ?? null);
 }
 
 /** The abilities of the face that enters. */
@@ -468,6 +483,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 614.1a, 122.1 (issue 102, Dauthi Voidwalker): "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it."
+  const voidCounter = to === 'graveyard' ? opponentGraveyardReplacement(state, old) : null;
+  if (voidCounter !== null) {
+    to = 'exile';
+    toSeat = null;
+  }
   // CR 712.21d, 903.9c (D-277): what the second card of a melded permanent does when the permanent leaves. A replacement effect applied to one of the two
   // cards affects both, so it goes where the permanent goes; only a commander can be exempt (CR 903.9b-c), going to the command zone while the other card
   // goes on to the zone the permanent would have been put into, which is the zone as it is here, after the replacements above.
@@ -475,7 +496,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const companionTo = to;
   const companionToSeat = toSeat;
   // CR 903.9b (Commander): hand or library, from anywhere, becomes command zone at the owner's choice.
-  if (isCommanderCard(state, old) && (to === 'hand' || to === 'library')) {
+  // Command Beacon ("Put your commander into your hand from the command zone"): a commander that is already in the command zone is not asked: the replacement would put it where it is,
+  // and the effect that moves it exists to take it out of that zone.
+  if (
+    isCommanderCard(state, old) &&
+    old.zone !== 'command' &&
+    (to === 'hand' || to === 'library')
+  ) {
     if (request.commanderChoice === undefined || request.commanderChoice === null) {
       const from = old.zone;
       return {
@@ -657,6 +684,32 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
+  // CR 310.9a, 310.12a: "As a battle enters the battlefield, its controller chooses a player to be its protector": asked of the controller, among their opponents still in the game,
+  // unless there is only one. Nothing has moved yet.
+  if (
+    to === 'battlefield' &&
+    !entersDown &&
+    request.entersProtector === undefined &&
+    entersAsBattle(before, old, faceIndex)
+  ) {
+    const legal = protectorChoices(before, enterController);
+    if (legal.length > 1) {
+      const info = sourceInfo(state, old.id);
+      return {
+        kind: 'needsDecision',
+        decision: {
+          kind: 'chooseOption',
+          seat: enterController,
+          purpose: 'protector',
+          options: legal.map(protectorOption),
+          source: old.id,
+          sourceName: info?.name ?? '',
+          sourceOracleText: info?.oracleText ?? '',
+        },
+      };
+    }
+  }
+
   // CR 702.136a, 702.136b (D-185): riot asks once for each instance, whether the permanent has the counter or haste.
   const faceAbilities = entering === null ? [] : entering.abilities;
   const riotCount =
@@ -782,7 +835,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       (a) =>
         a.kind === 'diedThisTurn'
           ? historyCount(nextBefore, a, enterController)
-          : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+          : a.kind === 'aggregate'
+            ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
+              amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
+            : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.
@@ -931,7 +987,9 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     token: becomesToken ? copiableValues(state, old) : old.token,
     attachedTo: null,
     protector:
-      to === 'battlefield' && !entersDown ? protectorFor(next, old, controller, faceIndex) : null,
+      to === 'battlefield' && !entersDown
+        ? protectorFor(next, old, controller, faceIndex, request.entersProtector)
+        : null,
     // CR 708.2a, 708.6 (D-308): a permanent that enters face down.
     ...downEntry,
     stack: null,
@@ -952,6 +1010,14 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
     // CR 702.74a, 702.109a (D-121): a permanent remembers that its evoke or dash cost was paid.
     ...(to === 'battlefield' && enteredAlt !== undefined ? { alt: enteredAlt } : {}),
+    // CR 702.138a: the permanent whose spell was cast for an escape cost an effect gave its card remembers that the cost is not on its face.
+    ...(to === 'battlefield' && old.stack?.escapeGrant !== undefined
+      ? { escapeGranted: true as const }
+      : {}),
+    // CR 702.74a: the permanent whose spell was cast for an evoke cost a static ability gave it remembers that the cost is not on its face.
+    ...(to === 'battlefield' && old.stack?.evokeGrant !== undefined
+      ? { evokeGranted: true as const }
+      : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").
@@ -1023,7 +1089,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // abilities that trigger as it enters see the copy. The values are the original's as they are now (CR 707.2), with what the exception adds.
   const copiedObject =
     copyRule === null || request.entersCopy == null ? undefined : next.objects[request.entersCopy];
-  if (to === 'battlefield' && copyRule !== null && copiedObject?.zone === 'battlefield') {
+  if (
+    to === 'battlefield' &&
+    copyRule !== null &&
+    copiedObject?.zone === (copyRule.fromGraveyard === true ? 'graveyard' : 'battlefield')
+  ) {
     const became = becomeCopyAsItEnters(next, newId, copyRule, copiedObject.id, controller);
     next = became.state;
     events.push(...became.events);
@@ -1154,6 +1224,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
     };
   }
+  // The card exiled instead has the counter (CR 122.1).
+  if (voidCounter !== null && to === 'exile' && next.objects[newId] !== undefined) {
+    const exiled = getObject(next, newId);
+    next = patchObject(next, newId, { counters: { ...exiled.counters, [voidCounter]: 1 } });
+  }
   // CR 603.2, 404.1: a card put into a graveyard from anywhere ("whenever a land card is put into your graveyard ... for the first time each turn").
   if (to === 'graveyard' && created.card !== null) {
     next = {
@@ -1162,8 +1237,22 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         ...next.turnLog,
         graveyardEntries: [
           ...next.turnLog.graveyardEntries,
-          { seat: old.owner, types: derive(next, getObject(next, newId)).types },
+          {
+            seat: old.owner,
+            types: derive(next, getObject(next, newId)).types,
+            from: old.zone,
+          },
         ],
+      },
+    };
+  }
+  // CR 701.9, 701.17, 404.1: a card put into a graveyard from a library ("that was discarded or put there from a library this turn"); a discard is recorded by `discardOne`.
+  if (old.zone === 'library' && to === 'graveyard' && created.card !== null) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        discardedOrFromLibrary: [...(next.turnLog.discardedOrFromLibrary ?? []), newId],
       },
     };
   }

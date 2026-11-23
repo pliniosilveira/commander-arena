@@ -33,7 +33,7 @@ import type { ChooseOptionDecision, DamageReplacementChoice } from '../state/dec
 import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
-import { bonusAmount, bonusesFor, bonusKey } from './damage-bonus';
+import { bonusApplied, bonusesFor, bonusKey } from './damage-bonus';
 import type { DamageEvent, DamageModifier } from './damage-modifier';
 import { modifierText, nameOf } from './damage-order-text';
 import { redirectKey, redirectsFor } from './damage-redirect';
@@ -207,10 +207,10 @@ function counterRemoval(
 export function applyModifier(current: Settling, modifier: DamageModifier): Settling {
   const { origin } = modifier;
   if (origin.kind === 'increase') {
-    // CR 614.1a, 614.5: the same source deals more damage; this effect is used for the event, and no prevention is reported for it.
+    // CR 614.1a, 614.5: the same source deals more (or double) damage; this effect is used for the event, and no prevention is reported for it.
     return {
       ...current,
-      amount: current.amount + bonusAmount(current.state, origin.bonus),
+      amount: bonusApplied(current.state, origin.bonus, current.amount),
       applied: current.applied + 1,
       used: [...current.used, modifier.key],
     };

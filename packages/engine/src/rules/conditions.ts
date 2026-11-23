@@ -3,6 +3,7 @@
  * by the player who controls the thing that asks, so "you control" means that player's permanents.
  */
 import type { Condition } from '../ast/types';
+import { isPermanentType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
@@ -20,6 +21,7 @@ import {
   lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
+  spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
@@ -76,6 +78,8 @@ export interface ConditionContext {
   readonly triggerSubject?: ObjectId;
   /** The player the event of the trigger is about (`triggerPlayerHasMore`): the active player of a step trigger, the player who drew, who cast, ... */
   readonly triggerPlayer?: SeatId;
+  /** The player a `choosePlayer` of this resolution chose, for an `amountIs` of `chosenPlayerLead` (Slithermuse). */
+  readonly chosenPlayer?: SeatId;
   /**
    * What the resolving effect knows (D-135), for `objectMatches` and `didPrevious`: the targets still legal, what the earlier
    * move effect produced (`moved`) and how much the instructions since the last `may` effect did (`performed`). Absent
@@ -182,6 +186,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
     }
+    case 'foretold': {
+      // CR 702.143a (Foretell): a spell cast for its foretell cost carries the alternative cost on the stack; last-known information says once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && source.stack?.alt === 'foretell';
+    }
     case 'escaped': {
       // CR 702.138b: a spell that is resolving was cast from a graveyard with an escape ability (the fact is on
       // the stack), and a permanent that came from such a spell remembers it (`GameObject.alt`); last-known
@@ -215,6 +224,8 @@ export function evaluateCondition(
       const subject = ptNow(state, ctx.triggerSubject);
       const source = ptNow(state, ctx.source);
       if (subject === null || source === null) return false;
+      // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
+      if (condition.onlyPower === true) return subject.power > source.power;
       return subject.power > source.power || subject.toughness > source.toughness;
     }
     case 'controlCommander':
@@ -403,7 +414,11 @@ export function evaluateCondition(
       const n = amountOf(
         state,
         condition.amount,
-        { controller: ctx.controller, source: ctx.source },
+        {
+          controller: ctx.controller,
+          source: ctx.source,
+          ...(ctx.chosenPlayer === undefined ? {} : { chosenPlayer: ctx.chosenPlayer }),
+        },
         [],
       );
       if (condition.compare.cmp === 'atLeast') return n >= condition.compare.value;
@@ -497,6 +512,11 @@ export function evaluateCondition(
     case 'cardLeftYourGraveyard':
       // CR 400.7 (D-206): the turn log, read now.
       return state.turnLog.leftGraveyard.includes(ctx.controller);
+    case 'descendedThisTurn':
+      // A permanent card put into a graveyard of the controller from anywhere this turn (`TurnLog.graveyardEntries`: cards only, by owner, with their card types in the graveyard).
+      return state.turnLog.graveyardEntries.some(
+        (e) => e.seat === ctx.controller && e.types.some(isPermanentType),
+      );
     case 'manaSpentAtLeast': {
       // CR 601.2h (D-206): the spell that caused the cast trigger, as it is on the stack.
       const spell =
@@ -557,7 +577,7 @@ export function evaluateCondition(
       // D-423, CR 400.7: the source is the object that entered the battlefield this turn (a permanent that left and came back is a new object).
       return ctx.source !== null && state.turnLog.entered.some((e) => e.object === ctx.source);
     case 'cardsInGraveyard':
-      return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
+      return cardsInGraveyardHolds(state, ctx.controller, condition);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, ctx.controller, condition.compare);
     case 'aPlayerCardsInHand':
@@ -578,19 +598,12 @@ export function evaluateCondition(
           atLeast: 1,
         }) && getSeat(state, ctx.controller).lifeLostThisTurn > 0
       );
+    case 'aPlayerLostLifeThisTurn':
+      // CR 119.3: some player still in the game has lost at least that much life this turn (the seats' per-turn counters, reset as the turn ends).
+      return state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
     case 'spellsCastThisTurn':
-      // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
-      if (condition.ofTypes === undefined) {
-        return getSeat(state, ctx.controller).spellsCastThisTurn >= condition.atLeast;
-      }
-      // D-444: only the spells with one of the card types they were cast with.
-      return (
-        state.turnLog.castSpells.filter(
-          (s) =>
-            s.seat === ctx.controller &&
-            s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
-        ).length >= condition.atLeast
-      );
+      // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10); D-444: only those with one of the card types they were cast with.
+      return spellsCastThisTurnHolds(state, ctx.controller, condition);
     case 'spellsCastLastTurn': {
       // Issue 345, CR 601.2i: the spells each player cast in the turn before this one.
       const counts = state.lastTurnSpellsCast ?? [];
@@ -665,6 +678,26 @@ export function evaluateCondition(
       const subject = objectOrLki(state, ctx.triggerSubject);
       return subject !== null && controllerOf(state, subject) === ctx.controller;
     }
+    case 'subjectGreaterThanEach': {
+      // CR 603.10a, 113.7a, 208.1, 608.2c (Selvala): "if its power is greater than each other creature's power": the stat the permanent has now, or had as it left, against every other
+      // battlefield permanent the filter matches, whoever controls it, read as the instruction comes up.
+      if (ctx.triggerSubject === undefined) return false;
+      const pt = ptNow(state, ctx.triggerSubject);
+      if (pt === null) return false;
+      const mine = condition.stat === 'power' ? pt.power : pt.toughness;
+      const filter = {
+        ...condition.filter,
+        zone: 'battlefield' as const,
+        controller: 'any' as const,
+      };
+      for (const id of objectsInZone(state, 'battlefield')) {
+        if (id === ctx.triggerSubject) continue;
+        if (!matchesFilter(state, getObject(state, id), filter, ctx)) continue;
+        const theirs = statOf(state, id, condition.stat);
+        if (theirs !== null && theirs >= mine) return false;
+      }
+      return true;
+    }
     case 'subjectStat': {
       // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.
       if (ctx.triggerSubject === undefined) return false;
@@ -690,6 +723,22 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'triggerPlayerTurn':
+      // CR 603.4, 500.1: "that player", the player the event is about, is the active player.
+      return ctx.triggerPlayer !== undefined && state.turn.activeSeat === ctx.triggerPlayer;
+    case 'triggerPlayerIsOpponent':
+      // CR 603.2b, 102.2: "that player", the player the event is about, is an opponent of the controller of the ability.
+      return (
+        ctx.triggerPlayer !== undefined &&
+        opponentsOf(state, ctx.controller).includes(ctx.triggerPlayer)
+      );
+    case 'triggerPlayerStat': {
+      // CR 402.1, 119.1, 608.2c: "that player" has so many cards in hand (or life, creatures, lands) as the instruction comes up.
+      if (ctx.triggerPlayer === undefined) return false;
+      const n = playerStatOf(state, ctx.triggerPlayer, condition.stat);
+      const { cmp, value } = condition.compare;
+      return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
+    }
     case 'paired': {
       // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature now, both on the battlefield.
       const own = ctx.source === null ? undefined : state.objects[ctx.source];

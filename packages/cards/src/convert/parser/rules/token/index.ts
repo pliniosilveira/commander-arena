@@ -30,8 +30,10 @@ import {
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
 import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
+import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
+import { SEEK_OUT_TOKEN_RULES } from './seek-out';
 
 export type Bare = Omit<IrToken, 'span' | 'rule'>;
 
@@ -183,6 +185,12 @@ const TOXIC_WORD: Parser<string> = map(
   (m) => `toxic ${m[1] ?? ''}`,
 );
 
+/** "crew 2" (CR 702.122a, issue 105): the keyword of a Vehicle token; written "crew N" in the keywords of the token. */
+const CREW_WORD: Parser<string> = map(
+  pattern(/crew ([1-9]\d*)(?![\p{L}\p{N}])/iu),
+  (m) => `crew ${m[1] ?? ''}`,
+);
+
 /**
  * "changeling" (CR 702.73a, issue 104): a keyword a token has from its own text. It is a characteristic-defining ability the engine runs in every zone, and no static or
  * effect can grant it (the engine's `GRANTABLE_KEYWORDS`), so only the token's own description reads it, not `KEYWORD_WORD`.
@@ -203,12 +211,12 @@ const TOKEN_KEYWORD_WORDS: Parser<string[]> = keywordWordsOf(TOKEN_KEYWORD_WORD)
 const TOKEN_KEYWORDS: Parser<string[]> = choice(
   map(
     satisfy(
-      sequence(TOKEN_KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
+      sequence(TOKEN_KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD, CREW_WORD)),
       ([words]) => words.length === 1,
     ),
     ([words, , numbered]): string[] => [...words, numbered],
   ),
-  map(choice(DEVOUR_WORD, TOXIC_WORD), (numbered): string[] => [numbered]),
+  map(choice(DEVOUR_WORD, TOXIC_WORD, CREW_WORD), (numbered): string[] => [numbered]),
   TOKEN_KEYWORD_WORDS,
 );
 
@@ -326,6 +334,8 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           // CR 205.3i, 305.6 (Verdant Kraken): "a 3/3 green Forest Tentacle land creature token".
           map(literal(' land creature'), () => ['land', 'creature']),
           map(literal(' creature'), () => ['creature']),
+          // Issue 105 (Pia Nalaar, Chief Mechanic): "an X/X colorless Vehicle artifact token", which is no creature until it is crewed (CR 301.7).
+          map(literal(' artifact'), () => ['artifact']),
         ),
         TOKEN_WORD,
         optional(
@@ -416,6 +426,9 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token',
     'two 2/2 black Zombie creature tokens',
     'a 1/1 colorless Servo artifact creature token',
+    // Issue 105 (CR 301.7, 702.122a): a Vehicle token, no creature, with crew.
+    'a 3/3 colorless Vehicle artifact token with flying and crew 2',
+    'an X/X colorless Vehicle artifact token named Nalaar Aetherjet with flying and crew 2',
     'a 3/3 colorless Golem enchantment artifact creature token',
     // CR 205.3i, 305.6 (Verdant Kraken): a land creature token whose subtypes include a basic land type.
     'a 3/3 green Forest Tentacle land creature token',
@@ -929,10 +942,14 @@ export const TOKEN_RULES = [
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,
   TOKEN_COPY_EXCEPT_ADDITIVE,
+  // Aetherdrift energy deck (issue 105): "a 5/5 artifact creature in addition to its other types and has haste".
+  TOKEN_COPY_EXCEPT_ADDITIVE_TYPES,
   // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
   ...GALADRIEL_G3_TOKEN_RULES,
+  // Federation Fleet deck, group A (Reg Barclay): "..., except it isn't legendary, it's an Illusion artifact in addition to its other types, and it has haste".
+  ...SEEK_OUT_TOKEN_RULES,
   ...AURA_TOKEN_RULES,
   // Prismari deck, group 1 (D-638): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
   TOKEN_COPIES_X,

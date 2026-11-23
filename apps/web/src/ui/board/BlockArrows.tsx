@@ -45,7 +45,9 @@ const cssEscape = (value: string): string =>
     : value.replace(/["\\]/g, '\\$&');
 
 function boxOf(id: string): Box | null {
-  const el = document.querySelector(`.board [data-object-id="${cssEscape(id)}"]`);
+  // A commander on the battlefield shares its id with the command-zone chip: the card wins.
+  const base = `:is(.board, .table-board) [data-object-id="${cssEscape(id)}"]`;
+  const el = document.querySelector(`${base}:not(.cmdr-chip-main)`) ?? document.querySelector(base);
   if (el === null) return null;
   const rect = el.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 ? rect : null;
@@ -57,7 +59,7 @@ function measure(pairs: readonly Pair[]): Placed[] {
     const from = boxOf(pair.blocker);
     const to = boxOf(pair.attacker);
     if (from === null || to === null) continue;
-    const arrow = arrowBetween(from, to, { bend: 0.08, gap: 4, headSize: 11 });
+    const arrow = arrowBetween(from, to, { bend: 0.08, gap: 4, headSize: 11, minLength: 3 });
     if (arrow !== null) placed.push({ key: pair.key, number: pair.number, arrow });
   }
   return placed;

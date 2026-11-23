@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { leaveHand } from './harness/pointer';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -17,7 +19,7 @@ const game = (deck: string, seed: number) => `/?autostart=${deck},swamp-forest&s
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');
 const logText = (page: Page) => page.getByRole('log');
 const chooser = (page: Page) => page.getByRole('group', { name: 'Choose an ability' });
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });
 /** The chips above the hand for the cards of the graveyard that can be used now. */
 const chip = (page: Page, label: string | RegExp) =>
@@ -111,7 +113,7 @@ test('Spectacle: no button until an opponent loses life, then "Spectacle {1}{R}"
 
   // Nobody has lost life this turn: the creature cannot be cast at all, so it is not clickable.
   await expect(handCard(page, raider)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await handCard(page, pulse).first().click();
   await expect(logText(page)).toContainText(`You cast ${pulse}.`);
   await settled(page);
@@ -157,7 +159,7 @@ test('Escape: a button on the graveyard card, the exile question (Cancel takes t
   });
   const before = await graveyardCount(page);
 
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await expect(chip(page, 'Escape').first()).toHaveAttribute(
     'aria-label',
     `Graveyard: ${label}: ${name}`,
@@ -179,7 +181,8 @@ test('Escape: a button on the graveyard card, the exile question (Cancel takes t
   await expect(exile).toBeDisabled();
 
   // Cancel takes the whole cast back: the card is in the graveyard again and the stack is empty.
-  await page.locator('.dec-bar').getByRole('button', { name: 'Cancel' }).click();
+  // The question opens the graveyard in a viewer, with its buttons in the column beside the cards.
+  await page.locator('[data-zone-question]').getByRole('button', { name: 'Cancel' }).click();
   await settled(page);
   await expect(picker).toHaveCount(0);
   expect(await graveyardCount(page)).toBe(before);
@@ -188,6 +191,7 @@ test('Escape: a button on the graveyard card, the exile question (Cancel takes t
 
   // Again, this time from the graveyard viewer, where the card carries the same button as a badge,
   // and choose three cards.
+  await leaveHand(page);
   await graveyardButton(page).click();
   const viewer = page.getByRole('dialog', { name: /graveyard/i });
   const card = viewer.locator('.board-zone-card.is-clickable').first();
@@ -195,13 +199,18 @@ test('Escape: a button on the graveyard card, the exile question (Cancel takes t
   await card.click();
   await chooser(page).getByRole('button', { name: label }).click();
   await expect(picker).toBeVisible();
-  const row = picker.locator('.dec-pick').first();
+  // The question lists the cards in the viewer; the count and the Exile button are beside them.
+  const side = page.locator('[data-zone-question]');
+  const choices = page
+    .getByRole('dialog', { name: /graveyard/i })
+    .locator('.board-zone-card.is-clickable');
   for (let n = 1; n <= 3; n += 1) {
-    await row.click();
+    await choices.nth(n - 1).click();
     await expect(picker).toContainText(`${n} of 3 chosen`);
   }
-  await expect(exile).toBeEnabled();
-  await exile.click();
+  const exileHere = side.getByRole('button', { name: 'Exile', exact: true });
+  await expect(exileHere).toBeEnabled();
+  await exileHere.click();
 
   await expect(logText(page)).toContainText(`You cast ${name} for its escape cost.`);
   await expect(stack(page).getByText('escaped', { exact: true })).toBeVisible();
@@ -233,8 +242,10 @@ test('Unearth: "Unearth {R}" on the graveyard card, haste, the delayed exile at 
     ready: async () => (await chip(page, 'Unearth {R}').count()) > 0,
   });
 
-  await page.getByRole('button', { name: 'Full Control', exact: true }).click();
+  await toggleSetting(page, 'Full Control');
   await chip(page, 'Unearth {R}').first().click();
+  // A single ability is asked about, never activated by the click.
+  await chooser(page).getByRole('button', { name: 'Unearth {R}' }).click();
   // An ability, not a spell: it is on the stack under the card's name with what it does.
   const ability = stack(page).locator('.pnl-stack-item.pnl-triggered');
   await expect(ability).toContainText(name);

@@ -78,6 +78,11 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
     one: "can't be blocked except by creatures with haste",
     many: "can't be blocked except by creatures with haste",
   },
+  // CR 508.1a, 508.6: Port Razer.
+  cantAttackPlayersAlreadyAttacked: {
+    one: "can't attack a player it has already attacked this turn",
+    many: "can't attack a player they have already attacked this turn",
+  },
   cantBeBlockedByMoreThanOne: {
     one: "can't be blocked by more than one creature",
     many: "can't be blocked by more than one creature",
@@ -94,6 +99,19 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
   canBlockOnlyFlying: {
     one: 'can block only creatures with flying',
     many: 'can block only creatures with flying',
+  },
+  // Abzan Armor group A (CR 609.4, 702.3b, 510.1a): Felothar, Weathered Sentinels, Assault Formation.
+  canAttackAsThoughNoDefender: {
+    one: "can attack as though it didn't have defender",
+    many: "can attack as though they didn't have defender",
+  },
+  canAttackAsThoughNoDefenderVsLastTurnAttackers: {
+    one: "can attack players who attacked you during their last turn as though it didn't have defender",
+    many: "can attack players who attacked you during their last turn as though they didn't have defender",
+  },
+  assignsDamageByToughness: {
+    one: 'assigns combat damage equal to its toughness rather than its power',
+    many: 'assign combat damage equal to their toughness rather than their power',
   },
   // Galadriel group 3: only an effect gives it ("Its activated abilities can't be activated this turn"), so no static ability shows it; the words are for the type.
   cantActivateAbilities: {

@@ -308,11 +308,15 @@ describe('static abilities with subjects (CR 611.3, 613)', () => {
     for (const keyword of [
       { kind: 'flash' },
       { kind: 'cycling', cost: [{ kind: 'mana', symbols: ['1'] }] },
-      { kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] },
+      // CR 702.6a: an equip ability with a mana cost can be granted (Gemcutter Buccaneer); with another cost it cannot.
+      { kind: 'equip', cost: [{ kind: 'payLife', amount: 2 }] },
       { kind: 'enchant', filter: {} },
     ]) {
       expect(validateCardStructure(grant(keyword)), JSON.stringify(keyword)).not.toEqual([]);
     }
+    expect(
+      validateCardStructure(grant({ kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] })),
+    ).toEqual([]);
   });
 
   test('a static ability may give protection from colors, or from the colors outside the commander identity (D-259)', () => {

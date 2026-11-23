@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { handCard } from './harness/locators';
+import { handCard, permanentTarget } from './harness/locators';
 import { settled } from './harness/settle';
 
 /**
@@ -72,11 +72,7 @@ const canBolt = (page: Page) => async () =>
 /** Casts the Bolt at the Guard and passes until the ward question is on screen. */
 async function boltTheGuard(page: Page): Promise<void> {
   await handCard(page, 'Lightning Bolt').first().click();
-  await page
-    .getByRole('region', { name: 'Legal targets' })
-    .getByRole('button', { name: 'SYNTHETIC Warded Guard' })
-    .first()
-    .click();
+  await permanentTarget(page, 'SYNTHETIC Warded Guard').first().click();
   await primary(page).click();
   for (let step = 0; step < 12; step += 1) {
     await settled(page);
@@ -149,11 +145,7 @@ test('legend rule: a token copy of a legendary creature asks which to keep; the 
   );
 
   await handCard(page, 'SYNTHETIC Twin Image').first().click();
-  await page
-    .getByRole('region', { name: 'Legal targets' })
-    .getByRole('button', { name: 'SYNTHETIC Ancient Knight' })
-    .first()
-    .click();
+  await permanentTarget(page, 'SYNTHETIC Ancient Knight').first().click();
   await primary(page).click();
   for (let step = 0; step < 12; step += 1) {
     await settled(page);

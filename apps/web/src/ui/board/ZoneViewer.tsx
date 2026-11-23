@@ -1,17 +1,26 @@
 /**
- * Modal list of one zone (graveyard, shared exile, command zone). It covers the board only, so the
- * preview panel stays visible and hovering a card works as everywhere else. It handles Esc itself,
+ * The Zone Picker (docs/BOARD_COMPONENTS.md): modal list of one zone (graveyard, shared exile,
+ * command zone). While a targets or chooseCards question is pending it also carries the question:
+ * the card that asks, the prompt, the count and the buttons, so the choice is made in one place.
+ * It covers the board only, so the preview panel stays visible and hovering a card works as everywhere else. It handles Esc itself,
  * in the capture phase, and stops the event so the decision layer's Esc (cancel, unpin) does not
  * also fire while the viewer is open.
  */
 import type { ObjectView } from '@commander-arena/engine';
 import { useEffect, useRef } from 'react';
 import { FACE_DOWN_NAME, isHiddenFaceDown } from '../../game/later-text';
+import type { LookedCard } from '../../game/looked-cards';
+import { possessiveOf } from '../../game/seat-name';
+import { useZoneDecision } from '../decisions/zone-decision';
 import { useDraggable } from '../dnd/DragProvider';
+import { typeLine } from '../format';
 import { useInteraction } from '../interaction';
+import { ManaCost } from '../mana';
 import { useApp, useStaticNotes } from '../store-context';
+import { Art } from './art';
 import { CardFace } from './CardFace';
 import { useHoverPreview } from './hover';
+import { findObject } from './resolve';
 
 function ZoneCard({ object }: { object: ObjectView }) {
   const hover = useHoverPreview(object.id);
@@ -22,6 +31,7 @@ function ZoneCard({ object }: { object: ObjectView }) {
   const selected = ix.selected.has(object.id);
   const badge = ix.badge(object.id);
   const viewer = useApp((st) => st.snapshot?.view.viewer);
+  const seatCount = useApp((st) => st.snapshot?.view.seats.length ?? 2);
   // D-151 (CR 113.6b): a card that does something from the graveyard says what, under its picture and in its tooltip.
   const works = useStaticNotes(object.id);
   const fromGraveyard = object.zone === 'graveyard' && works !== undefined ? works : null;
@@ -42,7 +52,7 @@ function ZoneCard({ object }: { object: ObjectView }) {
       }}
       {...hover}
     >
-      <CardFace object={object} variant="hand" />
+      <CardFace object={object} variant="full" />
       {badge !== null && <span className="board-ibadge">{badge}</span>}
       {fromGraveyard !== null && (
         <span className="board-zone-marks" data-graveyard-ability title={fromGraveyard.join(' ')}>
@@ -52,20 +62,84 @@ function ZoneCard({ object }: { object: ObjectView }) {
       {object.zone === 'exile' && (
         // Exile is shared: whose card it is matters (a suspended card, a foretold one).
         <span className="board-zone-marks" data-exile-owner={object.owner}>
-          {object.owner === viewer ? 'Yours' : "Opponent's"}
+          {object.owner === viewer ? 'Yours' : possessiveOf(object.owner, viewer ?? 0, seatCount)}
         </span>
       )}
     </button>
   );
 }
 
+/** A card looked at that cannot be taken: its face only, not clickable. */
+function OtherCard({ card }: { card: LookedCard }) {
+  const hover = useHoverPreview(card.id);
+  return (
+    <div className="board-zone-card board-zone-other" data-looked-other={card.id} {...hover}>
+      <div className="board-zone-other-face">
+        {/* The picture of the card (issue 488); the text below stays as the fallback when it cannot load. */}
+        <Art name={card.name} isToken={false} version="normal" className="board-zone-other-image" />
+        <p className="board-zone-other-head">
+          <b>{card.name}</b>
+          <ManaCost cost={card.manaCost} />
+        </p>
+        <p className="board-dim">{typeLine(card)}</p>
+        {card.oracleText === '' ? null : <p className="board-zone-other-text">{card.oracleText}</p>}
+      </div>
+      <span className="board-zone-marks">Cannot be taken</span>
+    </div>
+  );
+}
+
 export interface ZoneViewerProps {
   readonly title: string;
   readonly objects: readonly ObjectView[];
+  /** Cards looked at that cannot be taken (a "look at the top cards" question), after the others. */
+  readonly others?: readonly LookedCard[];
   readonly onClose: () => void;
 }
 
-export function ZoneViewer({ title, objects, onClose }: ZoneViewerProps) {
+/** The side column of a pending question: the card that asks, what to do, the count and the buttons. */
+function QuestionSide() {
+  const decision = useZoneDecision();
+  const view = useApp((st) => st.snapshot?.view ?? null);
+  if (decision === null) return null;
+  const { bar } = decision;
+  const source = view === null ? null : findObject(view, decision.source);
+  return (
+    <aside className="board-modal-side" aria-label="Question" data-zone-question>
+      {source !== null && (
+        <div className="board-modal-source" data-zone-source={source.id}>
+          <CardFace object={source} variant="full" />
+        </div>
+      )}
+      <p className="board-modal-prompt" aria-live="polite">
+        {bar.prompt}
+      </p>
+      {bar.detail === null ? null : <p className="board-modal-detail">{bar.detail}</p>}
+      <div className="board-modal-actions">
+        {bar.buttons.map((b) => (
+          <button
+            key={b.key}
+            type="button"
+            className={`dec-btn dec-btn-${b.variant}`}
+            disabled={b.disabled}
+            title={b.hint ?? undefined}
+            aria-label={b.ariaLabel}
+            onClick={b.run}
+          >
+            {b.label}
+          </button>
+        ))}
+        {bar.cancel === null ? null : (
+          <button type="button" className="dec-btn dec-btn-secondary" onClick={bar.cancel.run}>
+            {bar.cancel.label}
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+export function ZoneViewer({ title, objects, others = [], onClose }: ZoneViewerProps) {
   const close = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -111,12 +185,22 @@ export function ZoneViewer({ title, objects, onClose }: ZoneViewerProps) {
             Close (Esc)
           </button>
         </header>
-        <div className="board-modal-body">
-          {objects.length === 0 ? (
-            <p className="board-modal-empty">Nothing here.</p>
-          ) : (
-            objects.map((o) => <ZoneCard key={o.id} object={o} />)
-          )}
+        <div className="board-modal-main">
+          <div className="board-modal-body">
+            {objects.length === 0 && others.length === 0 ? (
+              <p className="board-modal-empty">Nothing here.</p>
+            ) : (
+              <>
+                {objects.map((o) => (
+                  <ZoneCard key={o.id} object={o} />
+                ))}
+                {others.map((c) => (
+                  <OtherCard key={c.id} card={c} />
+                ))}
+              </>
+            )}
+          </div>
+          <QuestionSide />
         </div>
       </div>
     </div>

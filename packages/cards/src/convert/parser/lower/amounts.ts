@@ -38,7 +38,7 @@ function statSource(
 ): LowerResult<
   Extract<
     ObjectRef,
-    { kind: 'this' | 'target' | 'triggerSubject' | 'sacrificedCost' | 'sacrificed' }
+    { kind: 'this' | 'target' | 'triggerSubject' | 'sacrificedCost' | 'sacrificed' | 'eachObject' }
   >
 > {
   const ref = objectRefOf(of, ctx, { triggerSubject: true, sacrificed: true });
@@ -59,7 +59,8 @@ function statSource(
     ref.value.kind === 'this' ||
     ref.value.kind === 'triggerSubject' ||
     ref.value.kind === 'sacrificedCost' ||
-    ref.value.kind === 'sacrificed'
+    ref.value.kind === 'sacrificed' ||
+    ref.value.kind === 'eachObject'
   ) {
     return { ok: true, value: ref.value, rule };
   }
@@ -260,6 +261,11 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardTypesAmongTriggerCards' }, rule };
     }
+    case 'triggerDamagedPlayerCount': {
+      const blocked = needs('triggerDamagedPlayerCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'triggerDamagedPlayerCount' }, rule };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -335,6 +341,7 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
     }
     case 'lifeGainedOrLostThisTurn':
+    case 'controllerLifeLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -398,6 +405,16 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'cardsToGraveyardThisTurn': {
+      // CR 404.1 (issue 102, Welcome the Dead): the controller's cards put into a graveyard this turn from the zones named; `validateCard` refuses it in a static ability.
+      const blocked = needs('cardsToGraveyardThisTurn');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: { kind: 'cardsToGraveyardThisTurn', from: amount.from },
+        rule,
+      };
+    }
     case 'greatestManaValueCast': {
       // CR 202.3, 601.2i (D-646): the greatest mana value among the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('greatestManaValueCast');
@@ -422,12 +439,20 @@ export function lowerAmount(
       if (typeof controller === 'object') {
         const missingRef = missingFeatures(['selector:controllerRef']);
         if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
-        if (controller.orPlaneswalkerController === true || controller.noun.det !== 'target') {
+        // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
+        // as the count is made.
+        const itsController = controller.noun.det === 'controllerOf';
+        if (
+          controller.orPlaneswalkerController === true ||
+          (controller.noun.det !== 'target' && !itsController)
+        ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const named = playerSelectorOf(controller.noun, ctx);
         if (!named.ok) return named;
-        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        if (named.value.kind !== (itsController ? 'controllerOf' : 'target')) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
         const { controller: _named, ...rest } = amount.of.filter;
         const plain = countFilter({ ...amount.of, filter: rest });
         if (!plain.ok) return plain;
@@ -596,7 +621,16 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       const of = lowerAmount(amount.of, ctx, rule);
       if (!of.ok) return of;
-      return { ok: true, value: { kind: 'half', of: of.value, round: amount.round }, rule };
+      return {
+        ok: true,
+        value: {
+          kind: 'half',
+          of: of.value,
+          round: amount.round,
+          ...(amount.divisor === undefined ? {} : { divisor: amount.divisor }),
+        },
+        rule,
+      };
     }
     case 'multiple': {
       const blocked = needs('multiple');
@@ -643,6 +677,19 @@ export function lowerAmount(
       if (parts.length < 2) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'sum', of: parts }, rule };
     }
+    case 'difference': {
+      const blocked = needs('difference');
+      if (blocked !== null) return blocked;
+      const [one, other] = amount.of;
+      if (one === undefined || other === undefined || amount.of.length !== 2) {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const first = lowerAmount(one, ctx, rule);
+      if (!first.ok) return first;
+      const second = lowerAmount(other, ctx, rule);
+      if (!second.ok) return second;
+      return { ok: true, value: { kind: 'difference', of: [first.value, second.value] }, rule };
+    }
     case 'extreme': {
       const blocked = needs('extreme');
       if (blocked !== null) return blocked;
@@ -659,6 +706,24 @@ export function lowerAmount(
       const blocked = needs('opponentCount');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'opponentCount' }, rule };
+    }
+    case 'playerCount': {
+      // CR 102.1, 608.2c: the number of players the noun names ("each player who lost life this turn"), read as the amount is read.
+      const blocked = needs('playerCount');
+      if (blocked !== null) return blocked;
+      const of = playerSelectorOf(amount.of, ctx);
+      if (!of.ok) return of;
+      return { ok: true, value: { kind: 'playerCount', of: of.value }, rule };
+    }
+    case 'chosenPlayerLead': {
+      // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
+      const blocked = needs('chosenPlayerLead');
+      if (blocked !== null) return blocked;
+      if (!ctx.choseAPlayer) return { ok: false, needs: [], at: amount.span, rule };
+      const stat = amount.stat ?? ctx.comparedStat;
+      if (stat === null) return { ok: false, needs: [], at: amount.span, rule };
+      ctx.comparedStat = stat;
+      return { ok: true, value: { kind: 'chosenPlayerLead', stat }, rule };
     }
     case 'opponentsWithMore': {
       const blocked = needs('opponentsWithMore');
@@ -710,6 +775,13 @@ export function lowerAmount(
       }
       // Issue 121 (Bloodthirsty Adversary, CR 603.12): in the reflexive ability of "pay {2}{R} any number of times", "that many" is the number of times the cost was paid, which the
       // ability's event carries (`triggerDamage`).
+      // Issue 105 (CR 107.14, 608.2c): in the "If you do" of "you may pay one or more {E}", "that many" is the number paid, the X the payment announces.
+      if (amount.thatMany === true && ctx.payEnergyX) {
+        const paidX = needs('x');
+        if (paidX !== null) return paidX;
+        ctx.usesX = true;
+        return { ok: true, value: { kind: 'x' }, rule };
+      }
       if (amount.thatMany === true && ctx.payReflexive) {
         const paid = needs('triggerDamage');
         if (paid !== null) return paid;
@@ -728,10 +800,18 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'votesFor', option: amount.option }, rule };
     }
-    case 'colorsAmong':
-      // "For each color among permanents you control" (stage P37, D-180): the engine reads it only as a static ability's "+N/+N"
-      // (`lowerStaticPtStep`); as the amount of an effect it is not lowered.
-      return { ok: false, needs: [], at: amount.span, rule };
+    case 'colorsAmong': {
+      // "The number of colors among permanents you control" (Vivid, CR 105.2): the engine's `colorsAmong`, of permanents on the battlefield, read as the instruction runs
+      // (`lowerStaticPtStep` lowers the same IR for a static ability's "+1/+1 for each").
+      const blocked = needs('colorsAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'colorsAmong', filter: filter.value }, rule };
+    }
   }
 }
 
@@ -991,6 +1071,7 @@ export const AMOUNT_NEEDS = [
   'amount:lifeLostThisTurn',
   'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
+  'amount:controllerLifeLostThisTurn',
   'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
@@ -998,6 +1079,7 @@ export const AMOUNT_NEEDS = [
   'amount:experienceCounters',
   'amount:spellsCastThisTurn',
   'amount:greatestManaValueCast',
+  'amount:cardsToGraveyardThisTurn',
   'amount:exiledAsCost',
   'amount:times',
   'amount:toughnessOf',
@@ -1020,11 +1102,14 @@ export const AMOUNT_NEEDS = [
   'amount:sum',
   'amount:extreme',
   'amount:opponentCount',
+  'amount:playerCount',
   'amount:opponentsWithMore',
+  'amount:chosenPlayerLead',
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
   'amount:triggerAttackerCount',
+  'amount:triggerDamagedPlayerCount',
   'amount:cardTypesAmongTriggerCards',
   'amount:triggerSpellX',
   'amount:votesFor',
