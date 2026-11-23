@@ -121,13 +121,16 @@ const COPIES: readonly Line[] = [
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of target creature, except it's a 1/1.",
-    expect: no(", except it's a 1/1.", 'token.copy-except'),
+    expect: no("except it's a 1/1.", 'effect.create-three-tokens'),
     note: 'SYNTHETIC; "except" (CR 707.9) is not read unless it says the whole of the copy (a 1/1 with no color or type is not that); since Hashaton group 5 (D-382) the rule that gets furthest is `token.copy-except`',
   },
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of target creature, except it's an artifact in addition to its other types.",
-    expect: no(", except it's an artifact in addition to its other types.", 'token.copy-except'),
+    expect: no(
+      "except it's an artifact in addition to its other types.",
+      'effect.create-three-tokens',
+    ),
     note: 'SYNTHETIC; "except" is not read (the rule that gets furthest is `token.copy-except` since Hashaton group 5, D-382)',
   },
   {

@@ -78,8 +78,10 @@ describe('the dimensions', () => {
       'exileFromGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
-      // D-209: "{E}{E}", paid in an `unlessPays` only.
+      // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
       'energy',
+      // Issue 105: "an amount of {E} equal to ...", the cost of a `mayPay`.
+      'energyAmount',
     ]);
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
