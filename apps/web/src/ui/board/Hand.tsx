@@ -1,6 +1,6 @@
-/** The human's hand, in a straight row that scrolls sideways (A19), and the opponent's hand as card backs with a count. */
+/** The human's hand, in a straight row that never scrolls (it overlaps more instead), and the opponent's hand as card backs with a count. */
 import type { ObjectView } from '@commander-arena/engine';
-import { type CSSProperties, useEffect, useRef } from 'react';
+import { type CSSProperties, useRef } from 'react';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useTextScale } from '../panels/text-size';
@@ -13,8 +13,8 @@ import { useMeasure } from './measure';
 // whole printed card (488:680): it is big enough to read, so it is not cut to its top as a tile is.
 const BASE_W = 122;
 const BASE_H = 169;
-/** The closest two cards get, as a share of the card width: past it the hand scrolls instead. */
-const MIN_STEP_SHARE = 0.55;
+/** The closest two cards can get, in pixels: the hand never scrolls, a long hand overlaps more. */
+const MIN_STEP = 12;
 /**
  * The height of the hand area when the window is short: what shows of a card at rest, the lower part
  * of a card sits below the board edge, as in a held hand; hover lifts it. The area is taller in a
@@ -102,30 +102,10 @@ export function Hand({
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const width = size === null ? 800 : size.width;
-  // The cards never shrink to fit: a long hand scrolls sideways instead.
+  // The cards never shrink to fit and the hand never scrolls: a long hand overlaps more.
   const scale = useTextScale() * cardScale;
   const cardW = Math.round(BASE_W * scale);
-  const step = handStep(
-    cards.length,
-    cardW,
-    width - 2 * FAN_PAD,
-    6,
-    Math.round(cardW * MIN_STEP_SHARE),
-  );
-  const fanRef = useRef<HTMLDivElement>(null);
-  // A mouse wheel scrolls the hand sideways (the scrollbar is hidden and the strip above the cards
-  // does not take the pointer).
-  useEffect(() => {
-    const el = fanRef.current;
-    if (el === null) return;
-    const onWheel = (e: WheelEvent) => {
-      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-      el.scrollLeft += e.deltaY;
-      e.preventDefault();
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
+  const step = handStep(cards.length, cardW, width - 2 * FAN_PAD, 6, MIN_STEP);
   const shown = size === null ? MIN_SHOWN : size.height;
   return (
     <section
@@ -133,7 +113,7 @@ export function Hand({
       ref={ref}
       aria-label={`Your hand, ${cards.length} cards`}
     >
-      <div className="board-hand-fan" ref={fanRef}>
+      <div className="board-hand-fan">
         {cards.length === 0 && <span className="board-hand-empty">Your hand is empty</span>}
         {cards.map((c, i) => (
           <HandCard
