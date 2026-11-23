@@ -4,12 +4,13 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { markCommanders } from '../../import';
-import type { SavedDeck } from '../../import/types';
+import type { ImportService, SavedDeck } from '../../import/types';
 import type { DeckChoice } from '../../precons';
 import type { ImportTab } from '../../store';
 import { usePrecons } from '../precons-context';
 import { useActions, useApp } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
+import { DeckScreen } from './DeckScreen';
 import { type EditingPrecon, InputPanel } from './InputPanel';
 import { useImportEnv } from './import-context';
 import { SavedDecksView } from './ListViews';
@@ -41,6 +42,12 @@ export function ImportScreen() {
   const [editing, setEditing] = useState<{ readonly id: string; readonly name: string } | null>(
     null,
   );
+  // The deck on the deck screen (View), read through the service that knows its cards.
+  const [viewing, setViewing] = useState<{
+    readonly name: string;
+    readonly text: string;
+    readonly service: ImportService;
+  } | null>(null);
   const { choices, refresh: refreshChoices } = useDeckChoices();
 
   const refreshDecks = useCallback(() => {
@@ -137,12 +144,25 @@ export function ImportScreen() {
           },
         };
 
+  const viewPrecon = async (precon: DeckChoice) => {
+    const mine = (await env.decks.overrides()).find((deck) => deck.preconId === precon.id);
+    setViewing({
+      name: precon.name,
+      text: mine?.text ?? defaultListOf(precon.id),
+      service: precons.editorService(precon.id),
+    });
+  };
+
   const openSaved = (deck: SavedDeck) => {
     setEditing(null);
     setSaveMessage(null);
     setTab('import');
     void flow.start({ text: deck.text, name: deck.name });
   };
+
+  if (viewing !== null) {
+    return <DeckScreen {...viewing} onBack={() => setViewing(null)} />;
+  }
 
   return (
     <main className="imp-screen">
@@ -215,11 +235,15 @@ export function ImportScreen() {
             decks={decks}
             loading={decks === null}
             onOpen={openSaved}
+            onView={(deck) =>
+              setViewing({ name: deck.name, text: deck.text, service: env.service })
+            }
             onRemove={(deck) => void env.decks.remove(deck.id).then(refreshDecks)}
           />
           <PreconDecksView
             precons={choices.filter((choice) => choice.kind === 'precon')}
             onEdit={(precon) => void editPrecon(precon)}
+            onView={(precon) => void viewPrecon(precon)}
             onReset={(precon) => void resetPrecon(precon)}
           />
         </div>

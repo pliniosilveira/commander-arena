@@ -11,10 +11,12 @@ import type { DeckChoice } from '../../precons';
 export function PreconDecksView({
   precons,
   onEdit,
+  onView,
   onReset,
 }: {
   precons: readonly DeckChoice[];
   onEdit: (precon: DeckChoice) => void;
+  onView: (precon: DeckChoice) => void;
   onReset: (precon: DeckChoice) => void;
 }) {
   // The precon whose reset waits for a second click: the edits are lost for good.
@@ -66,6 +68,9 @@ export function PreconDecksView({
                     <>
                       <button type="button" className="scr-btn" onClick={() => onEdit(deck)}>
                         Edit<span className="imp-sr"> {deck.name}</span>
+                      </button>
+                      <button type="button" className="scr-btn" onClick={() => onView(deck)}>
+                        View<span className="imp-sr"> {deck.name}</span>
                       </button>
                       {deck.edited && (
                         <button

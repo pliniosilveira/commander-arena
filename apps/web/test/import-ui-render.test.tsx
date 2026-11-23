@@ -389,14 +389,26 @@ describe('other views', () => {
       { id: '1', name: 'SYNTHETIC One', text: 'x', savedAt: '2026-10-21T10:00:00.000Z' },
     ];
     const out = renderToStaticMarkup(
-      <SavedDecksView decks={decks} loading={false} onOpen={() => {}} onRemove={() => {}} />,
+      <SavedDecksView
+        decks={decks}
+        loading={false}
+        onOpen={() => {}}
+        onView={() => {}}
+        onRemove={() => {}}
+      />,
     );
     expect(out).toContain('SYNTHETIC One');
     expect(out).toContain('>Open<');
     expect(out).toContain('>Delete<');
     expect(
       renderToStaticMarkup(
-        <SavedDecksView decks={[]} loading={false} onOpen={() => {}} onRemove={() => {}} />,
+        <SavedDecksView
+          decks={[]}
+          loading={false}
+          onOpen={() => {}}
+          onView={() => {}}
+          onRemove={() => {}}
+        />,
       ),
     ).toContain('No saved decks yet');
   });

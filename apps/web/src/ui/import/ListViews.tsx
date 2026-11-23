@@ -5,11 +5,13 @@ export function SavedDecksView({
   decks,
   loading,
   onOpen,
+  onView,
   onRemove,
 }: {
   decks: readonly SavedDeck[] | null;
   loading: boolean;
   onOpen: (deck: SavedDeck) => void;
+  onView: (deck: SavedDeck) => void;
   onRemove: (deck: SavedDeck) => void;
 }) {
   return (
@@ -38,6 +40,9 @@ export function SavedDecksView({
                 <span className="imp-row-actions">
                   <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
                     Open<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                  <button type="button" className="scr-btn" onClick={() => onView(deck)}>
+                    View<span className="imp-sr"> {deck.name}</span>
                   </button>
                   <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
                     Delete<span className="imp-sr"> {deck.name}</span>
