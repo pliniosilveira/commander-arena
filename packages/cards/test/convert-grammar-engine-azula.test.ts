@@ -240,3 +240,65 @@ describe('Fire Nation Palace: {1}{R}, {T}: Target creature you control gains fir
     g.expect.pool(0, { R: 4 });
   });
 });
+
+describe('Fire Lord Azula: "Whenever you cast a spell while ~ is attacking, copy that spell." (CR 603.2, 707.10)', () => {
+  const AZULA = 'Fire Lord Azula';
+  const BOLT = 'Lightning Bolt';
+  const azula = real(AZULA);
+
+  const board = (attack: boolean) => {
+    const g = scenario()
+      .define(azula)
+      .seat(0)
+      .battlefield(AZULA)
+      .hand(BOLT)
+      .library('Island', 'Island')
+      .seat(1)
+      .battlefield('Llanowar Elves', 'Grizzly Bears')
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+    if (attack) {
+      g.advanceTo('declareAttackers', { attack: false });
+      g.act(0).declareAttackers([{ attacker: AZULA }]);
+      g.passAll();
+    }
+    return g;
+  };
+
+  test('is valid', () => {
+    expect(validateCard(azula)).toEqual([]);
+  });
+
+  test('while it is attacking, the firebending mana pays for a spell that is copied', () => {
+    const g = board(true);
+    g.expect.pool(0, { R: 2 });
+    g.act(0).cast(BOLT, { targets: ['Grizzly Bears'], pay: true });
+    g.expect.stack([`${AZULA} (ability)`, BOLT]);
+    g.pass();
+    g.pass();
+    // The copy is on the stack, ahead of the original, and its controller may choose new targets (CR 707.10c, 603.3).
+    g.expect.pending('targets', 0);
+    g.act(0).chooseTargets({ name: 'Llanowar Elves' });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 1 });
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('when it is not attacking, nothing is copied', () => {
+    const g = scenario()
+      .define(azula)
+      .seat(0)
+      .battlefield(AZULA, 'Mountain')
+      .hand(BOLT)
+      .library('Island', 'Island')
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(BOLT, { targets: ['Grizzly Bears'], pay: true });
+    g.expect.stack([BOLT]);
+  });
+});
