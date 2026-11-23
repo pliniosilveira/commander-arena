@@ -3,26 +3,23 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useActionsIfPresent } from '../store-context';
 
 const noHover = (_id: ObjectId | null): void => {};
-const noPin = (_id: ObjectId | null): void => {};
 
 /** The delay before a hover reaches the preview panel (brief: about 150 ms). */
 const HOVER_DELAY_MS = 150;
 
 /**
- * Hover, focus and right-click handlers for cards drawn by the decision layer. After 150 ms the
- * object goes to the preview panel (`hover(id)`), leaving clears it, right-click pins it.
+ * Hover and focus handlers for cards drawn by the decision layer. After 150 ms the
+ * object goes to the preview panel (`hover(id)`), leaving clears it.
  */
 export function useHoverProps(): (id: ObjectId) => {
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   onFocus: () => void;
   onBlur: () => void;
-  onContextMenu: (event: { preventDefault: () => void }) => void;
 } {
   // Outside a StoreProvider (a panel drawn on its own) there is no preview to drive: hovering does nothing.
   const actions = useActionsIfPresent();
   const hover = actions?.hover ?? noHover;
-  const pin = actions?.pin ?? noPin;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shown = useRef(false);
 
@@ -56,12 +53,8 @@ export function useHoverProps(): (id: ObjectId) => {
         onPointerLeave: leave,
         onFocus: enter,
         onBlur: leave,
-        onContextMenu: (event) => {
-          event.preventDefault();
-          pin(id);
-        },
       };
     },
-    [cancel, leave, hover, pin],
+    [cancel, leave, hover],
   );
 }

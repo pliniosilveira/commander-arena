@@ -42,7 +42,7 @@ describe('the companion in a game', () => {
       'SYNTHETIC Companion Spider',
     ]);
     expect(view.seats.every((s) => s.companion?.brought === false)).toBe(true);
-    // The hover and the pin find the card of each seat by its own id, and no real object has it.
+    // The hover finds the card of each seat by its own id, and no real object has it.
     const mine = companionObject(view, 0);
     const theirs = companionObject(view, 1);
     expect(mine?.name).toBe('SYNTHETIC Companion Spider');

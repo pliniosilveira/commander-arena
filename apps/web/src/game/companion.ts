@@ -1,7 +1,7 @@
 /**
  * The companion of a seat as a small card of the board (SPEC 10, CR 103.2b, 702.139). A revealed companion is outside the game until its owner brings it into their
  * hand (CR 116.2g), so it is no object of the engine's view: `SeatView.companion` carries its public card data and whether it was brought. The page builds an object of the
- * view's own shape for the preview, with an id that no real object has (the way `designations.ts` does for the monarch), so the hover and the pin treat it like any card.
+ * view's own shape for the preview, with an id that no real object has (the way `designations.ts` does for the monarch), so the hover treats it like any card.
  */
 import type { GameView, ObjectId, ObjectView, SeatId } from '@commander-arena/engine';
 

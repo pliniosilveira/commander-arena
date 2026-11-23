@@ -178,7 +178,7 @@ test('a transformed permanent: the tile names the back face and says so; the pre
   expect(tile).toContain('back face');
   expect(tile).toContain('>back<');
 
-  session.store.getState().pin(beast.id);
+  session.store.getState().hover(beast.id);
   const html = renderToStaticMarkup(
     <StoreProvider store={live(session.store)}>
       <PreviewPanel />
@@ -200,7 +200,7 @@ test('a transformed permanent: the tile names the back face and says so; the pre
 test('the preview of a split card in the hand lists both halves, both showing', async () => {
   const session = await reach(offers('Study // Zap', 'castSpell 0'));
   const card = inHand(viewOf(session), 'Study // Zap');
-  session.store.getState().pin(card.id);
+  session.store.getState().hover(card.id);
   const html = renderToStaticMarkup(
     <StoreProvider store={live(session.store)}>
       <PreviewPanel />

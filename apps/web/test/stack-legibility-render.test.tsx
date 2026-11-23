@@ -46,7 +46,7 @@ async function burnOnTheStack(x: number): Promise<XStore> {
 const bare = (n: number): ObjectView =>
   ({ id: objectId(n), zone: 'battlefield', name: `card ${n}` }) as unknown as ObjectView;
 
-test('previewChoice: pinned, then hovered while visible, then the top of the stack', () => {
+test('previewChoice: hovered while visible, then the top of the stack', () => {
   const stack = [
     { ...bare(1), zone: 'stack' },
     { ...bare(2), zone: 'stack' },
@@ -58,30 +58,26 @@ test('previewChoice: pinned, then hovered while visible, then the top of the sta
     seats: [{ graveyard: [], command: [], hand: [] }],
     viewer: 0,
   } as unknown as GameView;
-  expect(previewChoice(view, objectId(5), objectId(1))).toEqual({
-    id: objectId(5),
-    source: 'pinned',
-  });
-  expect(previewChoice(view, null, objectId(5))).toEqual({ id: objectId(5), source: 'hovered' });
+  expect(previewChoice(view, objectId(5))).toEqual({ id: objectId(5), source: 'hovered' });
   // The stack lists bottom first: its last item is the top.
-  expect(previewChoice(view, null, null)).toEqual({ id: objectId(2), source: 'stack' });
+  expect(previewChoice(view, null)).toEqual({ id: objectId(2), source: 'stack' });
   // A top of the stack the player tapped away is not shown; another top shows again.
-  expect(previewChoice(view, null, null, objectId(2))).toEqual({ id: null, source: 'none' });
-  expect(previewChoice(view, null, null, objectId(1))).toEqual({
+  expect(previewChoice(view, null, objectId(2))).toEqual({ id: null, source: 'none' });
+  expect(previewChoice(view, null, objectId(1))).toEqual({
     id: objectId(2),
     source: 'stack',
   });
   // A hovered object still shows over a dismissed top.
-  expect(previewChoice(view, null, objectId(5), objectId(2))).toEqual({
+  expect(previewChoice(view, objectId(5), objectId(2))).toEqual({
     id: objectId(5),
     source: 'hovered',
   });
   // A hovered object that is gone does not hide the stack.
-  expect(previewChoice(view, null, objectId(99))).toEqual({ id: objectId(2), source: 'stack' });
+  expect(previewChoice(view, objectId(99))).toEqual({ id: objectId(2), source: 'stack' });
   // With nothing on the stack: nothing, or the old "not visible" for a gone hover.
   const empty = { ...view, stack: [] } as unknown as GameView;
-  expect(previewChoice(empty, null, null)).toEqual({ id: null, source: 'none' });
-  expect(previewChoice(empty, null, objectId(99))).toEqual({ id: objectId(99), source: 'hovered' });
+  expect(previewChoice(empty, null)).toEqual({ id: null, source: 'none' });
+  expect(previewChoice(empty, objectId(99))).toEqual({ id: objectId(99), source: 'hovered' });
   // The monarch's ability has no source and no card: nothing is shown for it.
   const monarch = {
     ...bare(3),
@@ -89,7 +85,7 @@ test('previewChoice: pinned, then hovered while visible, then the top of the sta
     ability: { kind: 'triggered' },
   } as unknown as ObjectView;
   const inherent = { ...view, stack: [monarch] } as unknown as GameView;
-  expect(previewChoice(inherent, null, null)).toEqual({ id: null, source: 'none' });
+  expect(previewChoice(inherent, null)).toEqual({ id: null, source: 'none' });
 });
 
 test('with nothing hovered the preview shows the spell on the stack, with its X written in the text (issues 82, 107)', async () => {
@@ -97,19 +93,22 @@ test('with nothing hovered the preview shows the spell on the stack, with its X 
   const view = store.getState().snapshot?.view as GameView;
   const spell = view.stack.find((o) => o.name === 'SYNTHETIC X Burn');
   expect(spell?.x).toBe(3);
+  // The player's own actions (the cast, the payment) closed the preview of the top of the stack.
+  expect(renderWith(store, <PreviewPanel />)).toBe('');
+  store.setState((st) => ({ preview: { ...st.preview, dismissedStack: null } }));
   const html = renderWith(store, <PreviewPanel />);
   expect(html).toContain(`data-preview-id="${spell?.id}"`);
   expect(html).toContain('data-preview-stack');
   expect(html).toContain('Top of the stack');
   expect(html).toContain('Deals X (3) damage to any target.');
-  // A pinned card wins and the flag goes.
+  // A hovered card wins and the flag goes.
   const other = view.battlefield[0] ?? view.seats[0]?.hand?.[0];
   if (other === undefined) throw new Error('no other card');
-  store.getState().pin(other.id);
-  const pinned = renderWith(store, <PreviewPanel />);
-  expect(pinned).toContain(`data-preview-id="${other.id}"`);
-  expect(pinned).not.toContain('data-preview-stack');
-  store.getState().pin(null);
+  store.getState().hover(other.id);
+  const hovered = renderWith(store, <PreviewPanel />);
+  expect(hovered).toContain(`data-preview-id="${other.id}"`);
+  expect(hovered).not.toContain('data-preview-stack');
+  store.getState().hover(null);
 });
 
 test('a new object on top of the stack takes the preview from a hover', async () => {
@@ -128,10 +127,6 @@ test('a new object on top of the stack takes the preview from a hover', async ()
   await store.getState().act(option);
   expect(store.getState().snapshot?.view.stack.length).toBeGreaterThan(0);
   expect(store.getState().preview.hovered).toBeNull();
-  // A pinned card stays pinned when the stack changes.
-  store.getState().pin(burn.id);
-  expect(store.getState().preview.pinned).toBe(burn.id);
-  store.getState().pin(null);
 });
 
 test('an ability with an announced X says its value in its words and in its badge (issue 107)', async () => {
@@ -146,7 +141,9 @@ test('an ability with an announced X says its value in its words and in its badg
   const html = renderWith(store, <StackPanel />);
   expect(html).toContain('X = 1');
   expect(html).toContain('You draw X (1) cards');
-  // The preview of the ability shows the card's text with the same value for its X.
+  // The preview of the ability shows the card's text with the same value for its X. (The player's
+  // own actions closed the stack's preview, so the pointer is on the ability.)
+  if (ability !== undefined) store.getState().hover(ability.id);
   const preview = renderWith(store, <PreviewPanel />);
   expect(preview).toContain('{X}{X}, {T}: Draw X (1) cards.');
 });

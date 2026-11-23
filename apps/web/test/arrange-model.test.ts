@@ -322,9 +322,7 @@ describe('arrangeCards model', () => {
       editable: false,
       foreignModalOpen: false,
     };
-    expect(
-      keyCommand(esc, { bar: m.bar, pinned: false, chooserOpen: false, canUndo: false }),
-    ).toBeNull();
+    expect(keyCommand(esc, { bar: m.bar, chooserOpen: false, canUndo: false })).toBeNull();
   });
 
   test('Enter on a focused card confirms; Enter on a focused button is the button own', () => {
@@ -338,7 +336,7 @@ describe('arrangeCards model', () => {
       editable: false,
       foreignModalOpen: false,
     };
-    const ctx = { bar: m.bar, pinned: false, chooserOpen: false, canUndo: false };
+    const ctx = { bar: m.bar, chooserOpen: false, canUndo: false };
     expect(keyCommand(enter, ctx)).toBe('primary');
     expect(keyCommand({ ...enter, tag: 'BUTTON' }, ctx)).toBeNull();
   });

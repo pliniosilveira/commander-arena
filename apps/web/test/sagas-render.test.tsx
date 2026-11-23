@@ -63,7 +63,7 @@ test('the card face and the preview of the Saga show the badge and the chapter l
   expect(face).toContain('<p>I — You gain 1 life.</p>');
   expect(face).toContain('<p>II — You gain 2 life.</p>');
   expect(face).toContain('<p>III — You gain 4 life.</p>');
-  store.getState().pin(saga.id);
+  store.getState().hover(saga.id);
   const preview = render(store, <PreviewPanel />);
   expect(preview).toContain('>Lore 1 / 3<');
   expect(preview).not.toContain('<dt>Counters</dt>');
@@ -75,7 +75,7 @@ test('a chapter ability on the stack is labelled with its chapter, in the panel 
   if (ability === undefined) throw new Error('no chapter ability');
   const stack = render(store, <StackPanel />);
   expect(stack).toContain(`>${RITE} — chapter I<`);
-  store.getState().pin(ability.id);
+  store.getState().hover(ability.id);
   const preview = render(store, <PreviewPanel />);
   expect(preview).toContain(`${RITE} — chapter I`);
 });

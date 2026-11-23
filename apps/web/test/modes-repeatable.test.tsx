@@ -189,7 +189,7 @@ describe('the chooseModes model and dialog', () => {
           editable: false,
           foreignModalOpen: false,
         },
-        { bar: model.bar, pinned: false, chooserOpen: false, canUndo: false },
+        { bar: model.bar, chooserOpen: false, canUndo: false },
       );
     expect(key('Enter')).toBe('primary');
     expect(key('Escape')).toBe('cancel');

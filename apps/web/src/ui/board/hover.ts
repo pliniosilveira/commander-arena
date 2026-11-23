@@ -1,7 +1,6 @@
 /**
  * Hover preview wiring (A19): pointer or keyboard focus for ~150 ms shows the object in the
- * preview panel; leaving clears it; right-click pins it (Esc, handled by the decision layer,
- * unpins). Every tile, hand card, stack item and zone-viewer card in the app uses this hook.
+ * preview panel; leaving clears it. Every tile, hand card, stack item and zone-viewer card in the app uses this hook.
  */
 import type { ObjectId } from '@commander-arena/engine';
 import { type MouseEvent, useEffect, useRef } from 'react';
@@ -15,11 +14,10 @@ export interface HoverHandlers {
   onMouseLeave(): void;
   onFocus(): void;
   onBlur(): void;
-  onContextMenu(event: MouseEvent): void;
 }
 
 export function useHoverPreview(id: ObjectId): HoverHandlers {
-  const { hover, pin } = useActions();
+  const { hover } = useActions();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shown = useRef(false);
 
@@ -57,9 +55,5 @@ export function useHoverPreview(id: ObjectId): HoverHandlers {
     onMouseLeave: leave,
     onFocus: () => enter(),
     onBlur: leave,
-    onContextMenu(event) {
-      event.preventDefault();
-      pin(id);
-    },
   };
 }

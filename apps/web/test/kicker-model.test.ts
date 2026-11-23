@@ -204,7 +204,7 @@ describe('the kicker question', () => {
           editable: false,
           foreignModalOpen: false,
         },
-        { bar: model.bar, pinned: false, chooserOpen: false, canUndo: false },
+        { bar: model.bar, chooserOpen: false, canUndo: false },
       );
     expect(key('Escape')).toBe('cancel');
     expect(key('Enter')).toBe('primary');

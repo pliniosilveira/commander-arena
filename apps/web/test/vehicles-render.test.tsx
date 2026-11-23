@@ -143,7 +143,7 @@ test('a crewed Vehicle: a "crewed" chip and a live 4/4 on the tile, a badge on t
   const face = render(store, <CardFace object={wagon} variant="full" />);
   expect(face).toContain('>crewed<');
   expect(face).toMatch(/board-stat-pt[^>]*>4\/4</);
-  store.getState().pin(wagon.id);
+  store.getState().hover(wagon.id);
   const preview = render(store, <PreviewPanel />);
   expect(preview).toContain('<dt>Now</dt>');
   expect(preview).toContain('4/4');
@@ -167,7 +167,7 @@ test('the preview of an uncrewed Vehicle lists the printed pair, not a live "Now
   const wagon: ObjectView | undefined =
     view === undefined ? undefined : permanent(view, WAGON, true);
   if (wagon === undefined) throw new Error('no Wagon');
-  store.getState().pin(wagon.id);
+  store.getState().hover(wagon.id);
   const html = render(store, <PreviewPanel />);
   expect(html).toContain('<dt>Printed</dt>');
   expect(html).toContain('4/4, only while it is a creature');

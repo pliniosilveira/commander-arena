@@ -135,7 +135,7 @@ test('the hand shows the reduced cost and the preview says "Cost now" with the p
   if (bears === undefined) throw new Error('no Bears');
   const inHand = render(store, <Hand cards={handOf(view)} />);
   expect(inHand).toContain('Costs {G} now (printed {1}{G})');
-  store.getState().pin(bears.id);
+  store.getState().hover(bears.id);
   const preview = render(store, <PreviewPanel />);
   expect(preview).toContain('<dt>Cost now</dt>');
   expect(preview).toContain('{G} (printed {1}{G})');
@@ -147,7 +147,7 @@ test('the preview of a card with an additional cost lists it', async () => {
   );
   const card = handOf(view).find((c) => c.name === 'SYNTHETIC Sacrifice Draw');
   if (card === undefined) throw new Error('no card');
-  store.getState().pin(card.id);
+  store.getState().hover(card.id);
   const preview = render(store, <PreviewPanel />);
   expect(preview).toContain('<dt>Additional cost</dt>');
   expect(preview).toContain('Sacrifice a creature');

@@ -1,7 +1,7 @@
 /**
  * A permanent with Auras and Equipment attached (CR 301.5, 303.4): the host's tile, and under it
  * one name strip per attachment, tucked behind the tile so the stack reads as cards laid over each
- * other. A strip is hovered, pinned and clicked like any tile (an Equipment's click opens its
+ * other. A strip is hovered and clicked like any tile (an Equipment's click opens its
  * Equip ability), and clicking the host is unchanged: it targets or selects the host.
  */
 import type { ObjectView } from '@commander-arena/engine';

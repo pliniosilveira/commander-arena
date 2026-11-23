@@ -65,7 +65,7 @@ test('on the battlefield the tile shows the derived number, with the ability in 
 test('the preview has a Defined row: printed * in the hand, only the ability on the battlefield', async () => {
   const hand = await reach((v) => inHand(v, LURKER) !== undefined);
   const card = inHand(view(hand), LURKER) as ObjectView;
-  hand.getState().pin(card.id);
+  hand.getState().hover(card.id);
   const inHandHtml = render(hand, <PreviewPanel />);
   expect(inHandHtml).toContain('<dt>Defined</dt>');
   expect(inHandHtml).toContain('Printed *');
@@ -73,7 +73,7 @@ test('the preview has a Defined row: printed * in the hand, only the ability on 
 
   const field = await reach((v) => onField(v, LURKER).length > 0);
   const lurker = onField(view(field), LURKER)[0] as ObjectView;
-  field.getState().pin(lurker.id);
+  field.getState().hover(lurker.id);
   const html = render(field, <PreviewPanel />);
   expect(html).toContain('<dt>Defined</dt>');
   expect(html).not.toContain('Printed *');

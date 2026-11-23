@@ -258,7 +258,6 @@ describe('clicking an object with activated abilities', () => {
     };
     const ctx = (chooserOpen: boolean) => ({
       bar: h.model().bar,
-      pinned: false,
       chooserOpen,
       canUndo: false,
     });
@@ -305,9 +304,7 @@ describe('a sacrifice that pays for an ability', () => {
       editable: false,
       foreignModalOpen: false,
     };
-    expect(keyCommand(key, { bar: m.bar, pinned: false, chooserOpen: false, canUndo: false })).toBe(
-      'cancel',
-    );
+    expect(keyCommand(key, { bar: m.bar, chooserOpen: false, canUndo: false })).toBe('cancel');
   });
 
   test('Confirm still sends the chosen permanent', () => {

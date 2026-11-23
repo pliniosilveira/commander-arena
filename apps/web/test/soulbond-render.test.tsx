@@ -147,7 +147,7 @@ describe('the board', () => {
     if (squire === undefined) throw new Error('no squire');
     const snap = store.getState().snapshot;
     store.setState({ snapshot: { ...(snap ?? {}), view } as never });
-    store.getState().pin(squire.id);
+    store.getState().hover(squire.id);
     const markup = renderToStaticMarkup(
       <StoreProvider store={live(store)}>
         <PreviewPanel />

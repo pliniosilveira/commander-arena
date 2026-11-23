@@ -1,7 +1,6 @@
 /**
- * Keyboard (A18, SPEC 10 Accessibility): Space or Enter press the primary button, Esc unpins the
- * preview, else closes the mana chooser, else cancels the cast, F toggles Full Control and P passes
- * the turn (issue 46: Esc cancels a running pass first of all). The
+ * Keyboard (A18, SPEC 10 Accessibility): Space or Enter press the primary button, Esc closes the mana chooser, else cancels the cast, F toggles Full Control and P
+ * passes the turn (issue 46: Esc cancels a running pass first of all). The
  * decision is a pure function so the rules are unit tested; `useDecisionKeys` wires it to `window`.
  */
 import { useEffect, useRef } from 'react';
@@ -10,7 +9,6 @@ import type { BarModel } from './model';
 export type KeyCommand =
   | 'primary'
   | 'cancel'
-  | 'unpin'
   | 'closeChooser'
   | 'fullControl'
   | 'undo'
@@ -31,7 +29,6 @@ export interface KeyEventInfo {
 
 export interface KeyContext {
   readonly bar: BarModel | null;
-  readonly pinned: boolean;
   readonly chooserOpen: boolean;
   /** True when the Worker has something to take back (D-050). */
   readonly canUndo: boolean;
@@ -52,7 +49,6 @@ export function keyCommand(e: KeyEventInfo, ctx: KeyContext): KeyCommand | null 
   if (e.ctrlKey || e.metaKey || e.altKey) return null;
   if (e.key === 'Escape') {
     if (ctx.passTurnActive === true) return 'cancelPassTurn';
-    if (ctx.pinned) return 'unpin';
     if (ctx.chooserOpen) return 'closeChooser';
     return ctx.bar?.cancel != null && !ctx.bar.cancel.disabled ? 'cancel' : null;
   }
@@ -73,13 +69,11 @@ export function keyCommand(e: KeyEventInfo, ctx: KeyContext): KeyCommand | null 
 
 export interface KeyActions {
   readonly bar: BarModel | null;
-  readonly pinned: boolean;
   readonly chooserOpen: boolean;
   readonly canUndo: boolean;
   readonly passTurnActive: boolean;
   readonly cancelPassTurn: () => void;
   readonly undo: () => void;
-  readonly unpin: () => void;
   readonly closeChooser: () => void;
   readonly toggleFullControl: () => void;
 }
@@ -113,9 +107,6 @@ export function useDecisionKeys(actions: KeyActions): void {
           return;
         case 'cancel':
           a.bar?.cancel?.run();
-          return;
-        case 'unpin':
-          a.unpin();
           return;
         case 'closeChooser':
           a.closeChooser();

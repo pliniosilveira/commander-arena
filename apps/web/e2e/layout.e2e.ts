@@ -105,7 +105,7 @@ test('the log and the settings open and close from the buttons at the bottom lef
   await expect(page.getByRole('dialog', { name: 'Game settings' })).toHaveCount(0);
 });
 
-test('the card preview floats at the left, above the log, and a tap closes it', async ({
+test('the card preview floats at the left, above the log, and leaving the card closes it', async ({
   page,
 }) => {
   await start(page, 1366, 768);
@@ -114,8 +114,7 @@ test('the card preview floats at the left, above the log, and a tap closes it', 
   const preview = await box(page, '.board-preview');
   expect(preview.x).toBeLessThanOrEqual(16);
   expect(Math.abs(preview.y + preview.height / 2 - 768 / 2)).toBeLessThanOrEqual(40);
-  // Pinned (right-click), it takes taps; one closes it.
-  await page.locator('.board-hand .is-clickable').first().click({ button: 'right' });
-  await page.locator('.board-preview').click();
+  // The pointer passes through it, and leaving the card closes it.
+  await page.mouse.move(700, 400);
   await expect(page.locator('.board-preview')).toHaveCount(0);
 });

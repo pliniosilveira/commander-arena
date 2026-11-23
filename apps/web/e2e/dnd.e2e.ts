@@ -177,12 +177,7 @@ test('hovering still previews a card after a card was dragged out of the hand, a
   const other = hand(page).first();
   await other.hover();
   await expect(preview.locator('[data-preview-id]')).toBeVisible();
-  // Pin with a right click, then unpin with Esc: the hover shows again on the next card.
-  await other.click({ button: 'right' });
-  await expect(preview).toContainText('Pinned');
   await page.keyboard.press('Escape');
-  // The pin is gone. (Since the board redesign the preview closes with it until the pointer moves again, so it is the "Pinned" mark that is asserted gone, not the panel's text.)
-  await expect(preview.getByText('Pinned')).toHaveCount(0);
   await mine(page).locator('[data-object-id]', { hasText: 'Plains' }).hover();
   await expect(preview.locator('[data-preview-id]')).toContainText('Plains');
 });

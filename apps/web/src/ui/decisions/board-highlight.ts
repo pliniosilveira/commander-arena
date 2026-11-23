@@ -19,7 +19,6 @@ export interface RowFocusProps {
   onPointerLeave: () => void;
   onFocus: () => void;
   onBlur: () => void;
-  onContextMenu: (event: { preventDefault: () => void }) => void;
 }
 
 /** Handlers for a row about one object: preview it and light its tile, until the pointer leaves. */

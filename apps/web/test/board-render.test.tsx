@@ -186,21 +186,18 @@ describe('PreviewPanel', () => {
     expect(html).toContain(creature.name.replace("'", '&#x27;'));
     expect(html).toContain(`${creature.power}/${creature.toughness}`);
     expect(html).toContain(`data-preview-id="${creature.id}"`);
-    expect(html).not.toContain('Pinned');
   });
 
-  test('a pinned card wins over the hovered one and is marked pinned', async () => {
+  test('a player action closes the preview', async () => {
     const store = await gameAfter(24);
     const view = store.getState().snapshot?.view;
-    const [a, b] = view?.battlefield ?? [];
-    if (a === undefined || b === undefined) throw new Error('need two permanents');
-    store.getState().hover(b.id);
-    store.getState().pin(a.id);
-    const html = render(store, <PreviewPanel />);
-    expect(html).toContain(`data-preview-id="${a.id}"`);
-    expect(html).toContain('Pinned');
-    store.getState().pin(null);
-    store.getState().hover(null);
+    const a = view?.battlefield[0];
+    if (a === undefined) throw new Error('need a permanent');
+    store.getState().hover(a.id);
+    expect(render(store, <PreviewPanel />)).toContain(`data-preview-id="${a.id}"`);
+    await store.getState().act({ kind: 'pass' });
+    expect(store.getState().preview.hovered).toBeNull();
+    expect(store.getState().preview.revealed).toEqual([]);
   });
 
   describe('the companion (SPEC 5.8, 10)', () => {
