@@ -1,5 +1,5 @@
 {
-  "parserVersion": 197,
+  "parserVersion": 198,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -542,6 +542,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1bc914df"
+    },
+    "08c59e5e-d01c-49b7-a812-8ea75e9e945d": {
+      "name": "Princess Yue",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0f42f776"
     },
     "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
       "name": "Undercity Sewers",
@@ -8533,6 +8541,14 @@
       "reasons": [],
       "ast": "50f4d1dc"
     },
+    "aece819e-3678-48bc-9677-d06ebfa58b4e": {
+      "name": "Verge Rangers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "32911b4a"
+    },
     "af1acf07-39e2-441e-a1e0-1db535535e2e": {
       "name": "White Mage's Staff",
       "group": "acceptance",
@@ -9352,6 +9368,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a73ba198"
+    },
+    "c48d844c-3976-4fa5-8e0d-3f0e535e7619": {
+      "name": "Charming Prince",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fbce07fa"
     },
     "c4d36522-3ace-4bfb-bf2d-1a366f458698": {
       "name": "Suture Priest",
@@ -12140,8 +12164,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1206,
-      "total": 1225
+      "supported": 1209,
+      "total": 1228
     }
   }
 }
