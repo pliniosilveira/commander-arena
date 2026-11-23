@@ -1044,6 +1044,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
+    // Limit Break deck, group 1: "equipped creature" (`ObjectFilter.equipped`).
+    'equipped',
     // D-647: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
     'enchantedByYou',
     // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
@@ -2066,6 +2068,8 @@ export const SELECTOR_KINDS = [
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
   'enchanted',
+  /** "Equipped creature", "creatures that are equipped" (CR 301.5, Limit Break deck group 1): the engine's `ObjectFilter.equipped`. */
+  'equipped',
   /** "Enchanted by an Aura you control" (CR 303.4e, D-647): the engine's `ObjectFilter.enchantedByYou`. */
   'enchantedByYou',
   /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */

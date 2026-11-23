@@ -368,7 +368,11 @@ class Binder {
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
         if (found === undefined && noun.itWord === true) {
           found = recent.find(
-            (a) => a.kind === 'object' && a.token !== true && a.noun.ref === 'trig',
+            (a) =>
+              a.kind === 'object' &&
+              a.token !== true &&
+              // Limit Break deck, group 1: "When ~ enters, attach up to one target Equipment you control to it": "it" is the permanent with the ability (`self`).
+              (a.noun.ref === 'trig' || a.noun.ref === 'self'),
           );
         }
         break;

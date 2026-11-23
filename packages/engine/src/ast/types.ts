@@ -957,6 +957,12 @@ export interface ObjectFilter {
    */
   readonly enchanted?: boolean;
   /**
+   * "Equipped creature", "creatures that are equipped" (CR 301.5, 301.5a, 700.9; Limit Break deck group 1): `true` the permanent has at least one Equipment attached to it, `false` it has
+   * none. An Aura attached to it is no Equipment. Read from the attachments (the Equipment's subtype through layers 1, 4 and 5) where the filter is matched against the game, as
+   * `enchanted` is, so a static ability's group cannot name it (`validateCard`).
+   */
+  readonly equipped?: boolean;
+  /**
    * "Each creature that's enchanted by an Aura you control" (CR 303.4e, D-647): the permanent has at least one Aura attached to it that is controlled by the player the filter is read
    * for ("you": the controller of the source of the ability). An Aura an opponent controls does not count (the same words as the Auras that modify a creature, CR 700.9). Read from
    * the attachments (the Aura's subtype through layers 1, 4 and 5). Only `true`; with `enchanted: false` it is a contradiction (`validateCard`).

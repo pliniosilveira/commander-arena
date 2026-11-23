@@ -451,6 +451,13 @@ export function checkFilter(
       'enchanted must be a boolean (true: has an Aura, false: has none)',
     );
   }
+  if (f.equipped !== undefined && typeof f.equipped !== 'boolean') {
+    issue(
+      out,
+      `${path}.equipped`,
+      'equipped must be a boolean (true: has an Equipment, false: has none)',
+    );
+  }
   if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
     issue(out, `${path}.notOwnedByYou`, 'notOwnedByYou must be true');
   }
@@ -473,6 +480,7 @@ export function checkFilter(
   if (
     (f.attachedTo !== undefined ||
       f.enchanted !== undefined ||
+      f.equipped !== undefined ||
       f.enchantedByYou === true ||
       f.hostOfSource === true) &&
     f.zone !== undefined &&

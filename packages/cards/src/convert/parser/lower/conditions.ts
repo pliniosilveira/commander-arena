@@ -571,6 +571,14 @@ export function lowerCondition(
         const matched = lowerFilter({ ...test.who, det: 'self', filter: test.filter });
         return matched.ok ? ok({ kind: 'thisMatches', filter: matched.value }) : matched;
       }
+      // "Then if ~ has power 7 or greater, create two Treasure tokens" (Cloud, Ex-SOLDIER, CR 208.1, 608.2c): the permanent with the ability, as it is when the instruction is
+      // worked out: the engine's `thisMatches`. Only an ability of a permanent that is still there.
+      if (test.who.det === 'self' && ctx?.owner === 'ability' && !ctx.selfGone) {
+        const thisBlocked = missingFeatures(['condition:thisMatches']);
+        if (thisBlocked.length > 0) return failure(c, thisBlocked);
+        const matched = lowerFilter({ ...test.who, filter: test.filter });
+        return matched.ok ? ok({ kind: 'thisMatches', filter: matched.value }) : matched;
+      }
       const id = test.who.ref ?? '';
       // "Put a card exiled with ~ into its owner's graveyard. If it's a land card" (stage P50, D-207): the card the instruction before moved.
       if (id === 'moved') {

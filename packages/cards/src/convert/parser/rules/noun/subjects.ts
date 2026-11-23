@@ -271,8 +271,14 @@ export const NOUN_BARE_PERMANENT = defineRule<IrNoun>({
     'a creature',
     'creature or creature',
   ],
-  parse: node<IrFilter, IrNoun>('noun.bare-permanent', permanentPhrase(false), (filter) =>
-    bare('a', filter),
+  // Limit Break deck, group 1: the bare "equipped creature" is the permanent an Equipment is attached to (`noun.attached-permanent`), not a description of what may be enchanted.
+  parse: node<IrFilter, IrNoun>(
+    'noun.bare-permanent',
+    satisfy(
+      permanentPhrase(false),
+      (filter) => !(filter.equipped === true && filter.controller === undefined),
+    ),
+    (filter) => bare('a', filter),
   ),
 });
 

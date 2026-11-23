@@ -465,6 +465,8 @@ export interface IrFilter {
     | { readonly kind: 'type'; readonly types: readonly string[] };
   /** "that aren't enchanted" (`false`), "that are enchanted" (`true`) (D-426, CR 303.4): the permanent has no Aura attached to it (or has one). */
   readonly enchanted?: boolean;
+  /** "equipped creature", "equipped attacking creature you control" (Limit Break deck group 1, CR 301.5): the permanent has an Equipment attached to it (the engine's `equipped`). */
+  readonly equipped?: true;
   /** "enchanted by an Aura you control" (D-647, CR 303.4e): the engine's `enchantedByYou`. */
   readonly enchantedByYou?: true;
   /** "but don't own", "you don't own" (CR 108.3): the engine's `notOwnedByYou`. */

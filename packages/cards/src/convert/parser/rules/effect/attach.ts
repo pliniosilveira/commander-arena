@@ -50,11 +50,15 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
     // D-406 (CR 303.4j): the permanent a trigger is about.
     'attach ~ to that creature',
     'attach ~ to that permanent',
+    // Limit Break deck, group 1: the Equipment are targets of the ability.
+    'attach up to one target Equipment you control to target Rebel you control',
+    'attach up to one target Equipment you control to it',
+    'attach any number of target Equipment to it',
+    'attach target Equipment to target creature',
   ],
   rejects: [
     'attach ~ to ~',
     'attach ~',
-    'attach target Equipment to target creature',
     'attach ~ to each creature you control',
     'attach ~ to two target creatures',
     'attach all Equipment you control to target creature',
@@ -70,7 +74,11 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
     'effect.attach',
     sequence(
       literal('attach '),
-      family<IrNoun>('noun', { only: ['noun.self', 'noun.it'] }),
+      // Limit Break deck, group 1 (CR 701.3, 115.1): the Equipment may be targets, "attach up to one target Equipment you control to target Rebel you control",
+      // "attach any number of target Equipment to it".
+      family<IrNoun>('noun', {
+        only: ['noun.self', 'noun.it', 'noun.target-permanent', 'noun.any-number-targets'],
+      }),
       literal(' to '),
       // One object: an Equipment moves to one creature.
       choice(

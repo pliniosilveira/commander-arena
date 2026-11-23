@@ -200,6 +200,7 @@ function hasAuraAttached(
   obj: GameObject,
   ctx: FilterContext,
   by?: SeatId,
+  subtype: 'Aura' | 'Equipment' = 'Aura',
 ): boolean | null {
   const describeOther = ctx.describeOther;
   if (describeOther === undefined) return null;
@@ -208,7 +209,7 @@ function hasAuraAttached(
     return (
       other !== undefined &&
       other.attachedTo === obj.id &&
-      describeOther(other).subtypes.includes('Aura') &&
+      describeOther(other).subtypes.includes(subtype) &&
       (by === undefined || controllerOf(state, other) === by)
     );
   });
@@ -264,6 +265,13 @@ export function matchesFilterWith(
     if (source === undefined || source.attachedTo !== obj.id) return false;
   }
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
+    return false;
+  }
+  // CR 301.5 (Equipment): "equipped creature", "creatures that are equipped": an Equipment is attached to it.
+  if (
+    filter.equipped !== undefined &&
+    hasAuraAttached(state, obj, ctx, undefined, 'Equipment') !== filter.equipped
+  ) {
     return false;
   }
   // CR 303.4e (D-647): "enchanted by an Aura you control".
