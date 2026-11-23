@@ -25,4 +25,26 @@ export const AMOUNT_HALF_X = defineRule<IrAmount>({
   ),
 });
 
-export const HALF_X_AMOUNT_RULES = [AMOUNT_HALF_X];
+/**
+ * `amount.twice-x` (Heliod's Intervention, "Target player gains twice X life."; CR 107.3a, 107.1): twice the X announced for the spell, the engine's `multiple` of `x`. Only "twice":
+ * a larger factor ("three times X") is not a phrase of the cards read so far.
+ */
+export const AMOUNT_TWICE_X = defineRule<IrAmount>({
+  id: 'amount.twice-x',
+  family: 'amount',
+  leading: ['twice'],
+  cites: ['CR 107.3a (Numbers and Symbols)', 'CR 107.1 (Numbers and Symbols)'],
+  examples: ['twice X', 'Twice X'],
+  rejects: ['twice', 'twice Y', 'twice Xs', 'X', 'half X, rounded down'],
+  parse: map(
+    spanned(pattern(/twice X(?![\p{L}\p{N}])/iu)),
+    ({ span }): IrAmount => ({
+      kind: 'multiple',
+      factor: 2,
+      of: { kind: 'x', span },
+      span,
+    }),
+  ),
+});
+
+export const HALF_X_AMOUNT_RULES = [AMOUNT_HALF_X, AMOUNT_TWICE_X];

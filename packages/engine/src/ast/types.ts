@@ -1331,8 +1331,8 @@ export interface TargetSpec {
   /**
    * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
    * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
-   * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text (not an
-   * ability, a trigger or a mode), of a face whose costs have an X; `min`, `max`, `anyNumber`, `divide`, `onePerOpponent` and `upToThatMany` are left out.
+   * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text or of a mode of it (modes are chosen before X, CR 601.2b; not an
+   * ability or a trigger), of a face whose costs have an X; `min`, `max`, `anyNumber`, `divide`, `onePerOpponent` and `upToThatMany` are left out.
    * A copy of the spell keeps the X (CR 707.10) and so the count.
    */
   readonly countX?: true;
