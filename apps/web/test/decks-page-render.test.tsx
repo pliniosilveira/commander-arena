@@ -17,7 +17,12 @@ const precon = (over: Partial<DeckChoice> = {}): DeckChoice => ({
 describe('the precons on the decks page (issue 93)', () => {
   test('each precon is listed as built in with an Edit button and no reset', () => {
     const out = renderToStaticMarkup(
-      <PreconDecksView precons={[precon()]} onEdit={() => {}} onReset={() => {}} />,
+      <PreconDecksView
+        precons={[precon()]}
+        onEdit={() => {}}
+        onView={() => {}}
+        onReset={() => {}}
+      />,
     );
     expect(out).toContain('SYNTHETIC Zombies');
     expect(out).toContain('Built in');
@@ -28,7 +33,12 @@ describe('the precons on the decks page (issue 93)', () => {
 
   test('an edited precon says so and offers Reset to default', () => {
     const out = renderToStaticMarkup(
-      <PreconDecksView precons={[precon({ edited: true })]} onEdit={() => {}} onReset={() => {}} />,
+      <PreconDecksView
+        precons={[precon({ edited: true })]}
+        onEdit={() => {}}
+        onView={() => {}}
+        onReset={() => {}}
+      />,
     );
     expect(out).toContain('Edited by you');
     expect(out).toContain('Reset to default');
@@ -36,7 +46,9 @@ describe('the precons on the decks page (issue 93)', () => {
 
   test('without a precon the page says none is installed', () => {
     expect(
-      renderToStaticMarkup(<PreconDecksView precons={[]} onEdit={() => {}} onReset={() => {}} />),
+      renderToStaticMarkup(
+        <PreconDecksView precons={[]} onEdit={() => {}} onView={() => {}} onReset={() => {}} />,
+      ),
     ).toContain('No precon is installed yet');
   });
 });
