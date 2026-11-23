@@ -1158,6 +1158,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP_CARD) && said(b, YOU_MAY_EXILE_IT_FACE_DOWN)) ||
         (said(a, UNTIL_EOT_PLAY_CARDS_EXILED_WITH) && said(b, SPELLS_CAST_THIS_WAY_COST_LESS)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
+        // Explorer's Scope (CR 608.2c): a look at the top card and a land card that may be put onto the battlefield tapped (`effect.look-top-land-may-battlefield`).
+        (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_CARD_MAY_PUT_TAPPED)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||

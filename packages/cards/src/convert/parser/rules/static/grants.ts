@@ -154,6 +154,21 @@ const PROTECTION: Parser<Effects> = choice(
   ),
 );
 
+/**
+ * "equip {0}", "equip {2}" (Puresteel Paladin, CR 702.6a): the Equip ability a group of Equipment has, with a cost of plain mana (generic or colored symbols, {0} included); one ability
+ * only. Not read: "equip Pirate {1}", an equip cost that is not mana, {X}.
+ */
+const EQUIP_GRANT: Parser<Effects> = (ctx, pos) => {
+  const head = pattern(/equip (?=\{)/iu)(ctx, pos);
+  if (!head.ok) return head;
+  const cost = family<IrCost>('cost', { only: ['cost.mana'] })(ctx, head.pos);
+  if (!cost.ok) return cost;
+  if (cost.value.kind !== 'mana' || cost.value.symbols.some((s) => !/^(\d+|[WUBRGC])$/u.test(s))) {
+    return fail(ctx, pos);
+  }
+  return { ok: true, value: [{ kind: 'grantEquip', cost: cost.value }], pos: cost.pos };
+};
+
 /** What a subject has: keywords it can be granted, one ability in quotes, a protection (stage P70) or (stage P31) a base power and toughness. */
 const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
@@ -278,8 +293,10 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
     sequence(pattern(new RegExp(gets, 'i')), PT, more),
     ([, pt, rest]): Effects => [pt, ...rest],
   );
+  // Puresteel Paladin (CR 702.6a): a group of Equipment "have equip {0}".
+  const hasChoices = plural ? choice(EQUIP_GRANT, HAS_WHAT) : HAS_WHAT;
   const hasWhat = map(
-    sequence(pattern(new RegExp(has, 'i')), HAS_WHAT, more),
+    sequence(pattern(new RegExp(has, 'i')), hasChoices, more),
     ([, what, rest]): Effects => [...what, ...rest],
   );
   const restricted = map(
