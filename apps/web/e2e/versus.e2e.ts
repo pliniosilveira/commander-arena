@@ -20,7 +20,7 @@ test('Cancel on the versus screen goes back to the menu', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Start game' })).toBeVisible();
 });
 
-test('the versus screen draws the commander in the deck’s own printing and searches for no other', async ({
+test('the versus screen and the board draw the commander in the deck’s own printing and search for no other', async ({
   page,
 }) => {
   // Scryfall answers at once with nothing, so a search the screen made would show here within the wait.
@@ -44,6 +44,11 @@ test('the versus screen draws the commander in the deck’s own printing and sea
   const versus = versusScreen(page);
   await expect(versus).toBeVisible({ timeout: 30_000 });
   await expect(versus.locator('[data-versus-side="you"]')).toContainText(/Commander: \S/);
+  await page.waitForTimeout(3000);
+  expect(searches).toEqual([]);
+  // The board draws the commander the same way: the deck's own printing, no search.
+  await startFromVersus(page);
+  await expect(page.getByText('Your opening hand')).toBeVisible();
   await page.waitForTimeout(3000);
   expect(searches).toEqual([]);
 });

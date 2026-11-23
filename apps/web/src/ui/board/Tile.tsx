@@ -193,7 +193,6 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
             name={art.name}
             back={art.back}
             isToken={o.isToken}
-            commander={o.isCommander}
             eager
             {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
             version={top === null ? 'art_crop' : 'normal'}

@@ -58,16 +58,12 @@ test('a double-faced card is found by its front face and CRLF lines keep their e
   );
 });
 
-test('the board sees a chosen printing as explicit, a listed one as not', () => {
+test('the board reads a chosen printing like any listed one', () => {
   const next = withPrinting(TEXT, 'Zed the Test', 'fdc', '6') ?? '';
-  expect(commanderPrintingOf(next)?.printing).toEqual({
-    set: 'fdc',
-    collector: '6',
-    explicit: true,
-  });
+  expect(commanderPrintingOf(next)?.printing).toEqual({ set: 'fdc', collector: '6' });
   registerDeckPrintings(next);
-  expect(printingOf('Zed the Test')?.explicit).toBe(true);
-  expect(printingOf('Other Card')?.explicit).toBe(false);
+  expect(printingOf('Zed the Test')).toEqual({ set: 'fdc', collector: '6' });
+  expect(printingOf('Other Card')).toEqual({ set: 'xyz', collector: '12' });
 });
 
 test('every listed printing is read by the lower-case front face of the card', () => {
