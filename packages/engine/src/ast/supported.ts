@@ -907,7 +907,7 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
         // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
-        if (a.keyword.costReducedIf !== undefined) {
+        if (a.keyword.kind === 'equip' && a.keyword.costReducedIf !== undefined) {
           conditionIssues(
             a.keyword.costReducedIf.condition,
             `${path}.keyword.costReducedIf.condition`,
