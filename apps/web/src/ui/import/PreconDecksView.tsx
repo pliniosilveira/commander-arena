@@ -10,12 +10,13 @@ import type { DeckChoice } from '../../precons';
 
 export function PreconDecksView({
   precons,
-  onEdit,
+  onToggle,
   onView,
   onReset,
 }: {
   precons: readonly DeckChoice[];
-  onEdit: (precon: DeckChoice) => void;
+  /** Switches a precon on or off for the deck pickers and the Random buttons. */
+  onToggle: (id: string, enabled: boolean) => void;
   onView: (precon: DeckChoice) => void;
   onReset: (precon: DeckChoice) => void;
 }) {
@@ -25,9 +26,8 @@ export function PreconDecksView({
     <section className="imp-section" aria-labelledby="imp-precons-h">
       <h2 id="imp-precons-h">Built-in decks</h2>
       <p className="scr-help">
-        The precons that come with the app. Open one to add or remove cards: your version is kept in
-        this browser only and the built-in deck stays as it shipped. A card you add is looked up on
-        Scryfall and judged supported or not like in any deck.
+        The precons that come with the app. Switch one off to hide it from the deck lists and keep
+        it out of the Random buttons; the choice is kept in this browser only.
       </p>
       {precons.length === 0 ? (
         <p>No precon is installed yet.</p>
@@ -47,6 +47,15 @@ export function PreconDecksView({
                   </span>
                 </span>
                 <span className="imp-row-actions">
+                  <label className="scr-help">
+                    <input
+                      type="checkbox"
+                      data-testid="precon-toggle"
+                      checked={deck.enabled !== false}
+                      onChange={(event) => onToggle(deck.id, event.target.checked)}
+                    />{' '}
+                    Available<span className="imp-sr"> {deck.name}</span>
+                  </label>
                   {confirming === deck.id ? (
                     <>
                       <span className="scr-help">Discard your edits?</span>
@@ -68,9 +77,6 @@ export function PreconDecksView({
                     <>
                       <button type="button" className="scr-btn" onClick={() => onView(deck)}>
                         View<span className="imp-sr"> {deck.name}</span>
-                      </button>
-                      <button type="button" className="scr-btn" onClick={() => onEdit(deck)}>
-                        Edit<span className="imp-sr"> {deck.name}</span>
                       </button>
                       {deck.edited && (
                         <button

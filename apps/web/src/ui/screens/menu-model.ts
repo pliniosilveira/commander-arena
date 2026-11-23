@@ -136,7 +136,8 @@ export function pickRandomDeck(
   scope: RandomScope,
   random: (n: number) => number = randomBelow,
 ): DeckChoice | null {
-  const pool = scope === 'all' ? decks : decks.filter((deck) => deck.kind === scope);
+  const on = decks.filter((deck) => deck.enabled !== false);
+  const pool = scope === 'all' ? on : on.filter((deck) => deck.kind === scope);
   return pool[random(pool.length)] ?? null;
 }
 

@@ -15,11 +15,11 @@ const precon = (over: Partial<DeckChoice> = {}): DeckChoice => ({
 });
 
 describe('the precons on the decks page (issue 93)', () => {
-  test('each precon is listed as built in with an Edit button and no reset', () => {
+  test('each precon is listed as built in with an availability switch, no Edit button and no reset', () => {
     const out = renderToStaticMarkup(
       <PreconDecksView
         precons={[precon()]}
-        onEdit={() => {}}
+        onToggle={() => {}}
         onView={() => {}}
         onReset={() => {}}
       />,
@@ -27,7 +27,9 @@ describe('the precons on the decks page (issue 93)', () => {
     expect(out).toContain('SYNTHETIC Zombies');
     expect(out).toContain('Built in');
     expect(out).toContain('Commander: SYNTHETIC Commander');
-    expect(out).toContain('>Edit<');
+    expect(out).toContain('precon-toggle');
+    expect(out).toContain('checked=""');
+    expect(out).not.toContain('>Edit<');
     expect(out).not.toContain('Reset to default');
   });
 
@@ -35,7 +37,7 @@ describe('the precons on the decks page (issue 93)', () => {
     const out = renderToStaticMarkup(
       <PreconDecksView
         precons={[precon({ edited: true })]}
-        onEdit={() => {}}
+        onToggle={() => {}}
         onView={() => {}}
         onReset={() => {}}
       />,
@@ -44,10 +46,22 @@ describe('the precons on the decks page (issue 93)', () => {
     expect(out).toContain('Reset to default');
   });
 
+  test('a switched-off precon shows the switch unchecked', () => {
+    const out = renderToStaticMarkup(
+      <PreconDecksView
+        precons={[precon({ enabled: false })]}
+        onToggle={() => {}}
+        onView={() => {}}
+        onReset={() => {}}
+      />,
+    );
+    expect(out).not.toContain('checked=""');
+  });
+
   test('without a precon the page says none is installed', () => {
     expect(
       renderToStaticMarkup(
-        <PreconDecksView precons={[]} onEdit={() => {}} onView={() => {}} onReset={() => {}} />,
+        <PreconDecksView precons={[]} onToggle={() => {}} onView={() => {}} onReset={() => {}} />,
       ),
     ).toContain('No precon is installed yet');
   });
