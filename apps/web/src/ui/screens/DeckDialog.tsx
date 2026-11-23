@@ -41,6 +41,7 @@ export function DeckDialog({
   onCancel,
   onImport,
   initialTab,
+  excludeIds = [],
 }: {
   title: string;
   prompt: string;
@@ -58,6 +59,8 @@ export function DeckDialog({
   onImport: () => void;
   /** The tab shown first; "My Decks" when left out. */
   initialTab?: DeckTab;
+  /** Decks already chosen for this game: the Random buttons never pick them. */
+  excludeIds?: readonly string[];
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
@@ -80,7 +83,7 @@ export function DeckDialog({
 
   // A random button chooses a deck at once.
   const chooseRandom = (scope: RandomScope) => {
-    const deck = pickRandomDeck(decks, scope);
+    const deck = pickRandomDeck(decks, scope, undefined, excludeIds);
     if (deck !== null) onChoose(deck.id);
   };
 
@@ -239,7 +242,7 @@ export function DeckDialog({
                 key={r.scope}
                 type="button"
                 className="scr-btn scr-btn-primary"
-                disabled={busy || pickRandomDeck(decks, r.scope, () => 0) === null}
+                disabled={busy || pickRandomDeck(decks, r.scope, () => 0, excludeIds) === null}
                 onClick={() => chooseRandom(r.scope)}
               >
                 {r.label}

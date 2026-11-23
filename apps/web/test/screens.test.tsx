@@ -181,6 +181,9 @@ describe('Menu', () => {
     expect(pickRandomDeck(decks, 'saved', last)?.id).toBe('s1');
     expect(pickRandomDeck([decks[0] as (typeof decks)[0]], 'saved', last)).toBeNull();
     expect(pickRandomDeck([], 'all', last)).toBeNull();
+    // Decks already chosen for the game are left out of the pool.
+    expect(pickRandomDeck(decks, 'precon', last, ['p2'])?.id).toBe('p1');
+    expect(pickRandomDeck(decks, 'precon', last, ['p1', 'p2'])).toBeNull();
     // The browser's own source always lands inside the list.
     expect(['p1', 'p2']).toContain(pickRandomDeck(decks, 'precon')?.id);
   });

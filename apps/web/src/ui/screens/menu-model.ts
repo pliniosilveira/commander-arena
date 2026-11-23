@@ -129,14 +129,16 @@ export type RandomScope = 'all' | 'precon' | 'saved';
 /**
  * A random deck of the scope, or null when the scope has none. `random` gives a whole number in
  * `[0, n)`; by default it comes from the browser's crypto source, so call this from an event
- * handler, never in render.
+ * handler, never in render. Decks in `exclude` (ids already chosen for this game) are left out of
+ * the pool, so a Random button never gives two equal decks in one game.
  */
 export function pickRandomDeck(
   decks: readonly DeckChoice[],
   scope: RandomScope,
   random: (n: number) => number = randomBelow,
+  exclude: readonly string[] = [],
 ): DeckChoice | null {
-  const on = decks.filter((deck) => deck.enabled !== false);
+  const on = decks.filter((deck) => deck.enabled !== false && !exclude.includes(deck.id));
   const pool = scope === 'all' ? on : on.filter((deck) => deck.kind === scope);
   return pool[random(pool.length)] ?? null;
 }

@@ -332,6 +332,9 @@ export function Menu() {
               }
             : {})}
           onCancel={closeFlow}
+          excludeIds={
+            step === 'opponent' ? [form.humanDeck, ...opponentDecks.slice(0, opponentIndex)] : []
+          }
           onImport={() => actions.openImport('import')}
           {...(step === 'opponent' || !choices.some((deck) => deck.kind === 'saved')
             ? { initialTab: 'precon' as const }
