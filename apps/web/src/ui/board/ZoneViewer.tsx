@@ -22,7 +22,32 @@ import { CardFace } from './CardFace';
 import { useHoverPreview } from './hover';
 import { findObject } from './resolve';
 
-function ZoneCard({ object }: { object: ObjectView }) {
+/**
+ * Cards that look the same (a pile of basic lands) are shown once with a count (issue 570). Only
+ * when nothing is being chosen: a question needs every card on its own. Face-down cards stay apart.
+ */
+function groupRepeats(objects: readonly ObjectView[]): { object: ObjectView; count: number }[] {
+  const groups: { object: ObjectView; count: number }[] = [];
+  const byKey = new Map<string, { object: ObjectView; count: number }>();
+  for (const object of objects) {
+    if (object.faceDown === true || object.foretold === true || object.exiledFaceDown === true) {
+      groups.push({ object, count: 1 });
+      continue;
+    }
+    const key = `${object.zone}|${object.owner}|${object.name}`;
+    const found = byKey.get(key);
+    if (found !== undefined) {
+      found.count += 1;
+      continue;
+    }
+    const group = { object, count: 1 };
+    byKey.set(key, group);
+    groups.push(group);
+  }
+  return groups;
+}
+
+function ZoneCard({ object, count = 1 }: { object: ObjectView; count?: number }) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   // A graveyard card with flashback is carried out of the list onto the board (the list fades).
@@ -54,6 +79,11 @@ function ZoneCard({ object }: { object: ObjectView }) {
     >
       <CardFace object={object} variant="full" />
       {badge !== null && <span className="board-ibadge">{badge}</span>}
+      {count > 1 && (
+        <span className="board-zone-count" data-zone-count={count} title={`${count} copies`}>
+          ×{count}
+        </span>
+      )}
       {fromGraveyard !== null && (
         <span className="board-zone-marks" data-graveyard-ability title={fromGraveyard.join(' ')}>
           Graveyard ability
@@ -141,6 +171,9 @@ function QuestionSide() {
 
 export function ZoneViewer({ title, objects, others = [], onClose }: ZoneViewerProps) {
   const close = useRef<HTMLButtonElement>(null);
+  const decision = useZoneDecision();
+  const groups =
+    decision === null ? groupRepeats(objects) : objects.map((object) => ({ object, count: 1 }));
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -191,8 +224,8 @@ export function ZoneViewer({ title, objects, others = [], onClose }: ZoneViewerP
               <p className="board-modal-empty">Nothing here.</p>
             ) : (
               <>
-                {objects.map((o) => (
-                  <ZoneCard key={o.id} object={o} />
+                {groups.map((g) => (
+                  <ZoneCard key={g.object.id} object={g.object} count={g.count} />
                 ))}
                 {others.map((c) => (
                   <OtherCard key={c.id} card={c} />
