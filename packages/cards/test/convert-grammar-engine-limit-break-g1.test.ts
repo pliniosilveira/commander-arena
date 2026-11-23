@@ -16,6 +16,7 @@ const armory = real('Armory Automaton');
 const barretLeader = real('Barret, Avalanche Leader');
 const cloud = real('Cloud, Ex-SOLDIER');
 const barretWallace = real('Barret Wallace');
+const business = real('Unfinished Business');
 
 function withDefs(defs: readonly CardDefinition[]) {
   let b = scenario({ seats: 3 })
@@ -27,7 +28,7 @@ function withDefs(defs: readonly CardDefinition[]) {
 }
 
 describe('the cards are valid', () => {
-  test.each([armory, barretLeader, cloud, barretWallace])('$name', (card) => {
+  test.each([armory, barretLeader, cloud, barretWallace, business])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 });
@@ -279,5 +280,61 @@ describe('Barret Wallace: "it deals damage equal to the number of equipped creat
     g.act(0).attack(barretWallace.name, { player: 1 });
     g.passAll();
     g.expect.life(1, 40);
+  });
+});
+
+describe('Unfinished Business: "... then return up to two target Aura and/or Equipment cards from your graveyard to the battlefield attached to that creature" (CR 303.4f, 303.4g, 301.5)', () => {
+  const MIGHT = 'SYNTHETIC Might Aura';
+  const LAND_AURA = 'SYNTHETIC Shield Land Aura';
+  const board = () =>
+    withDefs([business])
+      .define(syntheticCard(MIGHT))
+      .define(syntheticCard(LAND_AURA))
+      .seat(0)
+      .hand(business.name)
+      .graveyard(BEARS, BLADE, CLOAK, MIGHT, LAND_AURA)
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains', 'Plains')
+      .library('Plains', { count: 6 })
+      .seat(1)
+      .library('Plains', { count: 6 })
+      .seat(2)
+      .library('Plains', { count: 6 })
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the creature returns and the Equipment and the Aura come back attached to it', () => {
+    const g = board();
+    g.act(0).cast(business.name, { targets: [BEARS, BLADE, MIGHT], pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.attached(BLADE, BEARS);
+    g.expect.attached(MIGHT, BEARS);
+    g.expect.zone(CLOAK, 'graveyard', { seat: 0 });
+    g.expect.pt(BEARS, 6, 4);
+    g.expect.invariants();
+  });
+
+  test('an Aura that cannot enchant the creature stays in the graveyard (CR 303.4g)', () => {
+    const g = board();
+    g.act(0).cast(business.name, { targets: [BEARS, LAND_AURA, CLOAK], pay: true });
+    g.passAll();
+    g.expect.zone(LAND_AURA, 'graveyard', { seat: 0 });
+    g.expect.attached(CLOAK, BEARS);
+    g.expect.invariants();
+  });
+
+  test('"up to two": only the creature may be chosen, and it returns alone', () => {
+    const g = board();
+    g.act(0).cast(business.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.zone(BLADE, 'graveyard', { seat: 0 });
+  });
+
+  test('three Auras or Equipment are too many targets', () => {
+    const g = board();
+    expect(() =>
+      g.act(0).cast(business.name, { targets: [BEARS, BLADE, CLOAK, MIGHT], pay: true }),
+    ).toThrow();
   });
 });

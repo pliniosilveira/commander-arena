@@ -1252,14 +1252,18 @@ export function graveyardPhrase(
   };
   // "Aura or Equipment card" (issue 89, Forum Filibuster, CR 205.3g, 205.3h): a card that is an Aura or is an Equipment, one card only (the subtypes of an enchantment and of an
   // artifact; no type word is said).
-  const auraOrEquipment: Parser<CardWords> = map(literal('Aura or Equipment '), () => ({
+  // Limit Break deck, group 1 (Unfinished Business): "up to two target Aura and/or Equipment cards", the same cards said with "and/or", also in the plural.
+  const auraOrEquipment: Parser<CardWords> = map(
+    choice(literal('Aura or Equipment '), literal('Aura and/or Equipment ')),
+    () => ({
     types: [],
     anyOf: [],
     subtypes: [],
     subtypeAnyOf: ['Aura', 'Equipment'],
-  }));
+    }),
+  );
   const words: Parser<CardWords> = plural
-    ? choice(permanentCards, choiceOfTypes, typed)
+    ? choice(permanentCards, choiceOfTypes, auraOrEquipment, typed)
     : choice(
         permanentCards,
         withNonAura,

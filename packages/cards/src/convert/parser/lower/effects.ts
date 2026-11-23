@@ -691,7 +691,7 @@ const RETURN: Lowering<IrClause, Effects> = {
     let attachTo: { readonly kind: 'moved' } | undefined;
     if (hostNoun !== undefined) {
       if (zone !== 'battlefield' || hostNoun.kind !== 'noun') return failure(clause);
-      const host = objectRefOf(hostNoun, ctx, { token: true });
+      const host = objectRefOf(hostNoun, ctx, { token: true, moved: true });
       if (!host.ok) return host;
       if (host.value.kind !== 'moved') return failure(clause);
       const blockedHost = missingFeatures(['ability:attachedToMoved']);
