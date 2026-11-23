@@ -683,7 +683,8 @@ const RETURN_SPELL_OR_CREATURE_TO_HAND = map(
 const RETURN_TO_HAND = map(
   sequence(
     literal('return '),
-    operands(SELF_OR_PERMANENT_OPERANDS, 'effect.return'),
+    // "return target creature that player controls to its owner's hand" (Sigil of Sleep, CR 115.1, 109.4, 400.3): the permanents of the player of the trigger.
+    operands([...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'], 'effect.return'),
     spanned(OWNERS_HAND),
   ),
   ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({
@@ -922,6 +923,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from your graveyard to the battlefield tapped under your control',
     "return target creature card from an opponent's graveyard to the battlefield tapped",
     "return ~ to its owner's hand",
+    "return target creature that player controls to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
