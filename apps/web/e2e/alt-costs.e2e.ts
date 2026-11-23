@@ -211,9 +211,7 @@ test('Dash on a commander: Undo takes the cast back; at the end step the owner i
 
   // With Full Control the spell stays on the stack, so the cast can still be taken back.
   await toggleSetting(page, 'Full Control');
-  // The chip opens the commander popup; the cast is its button.
   await commander.first().click();
-  await page.locator('[data-commander-cast]').first().click();
   await expect(chooser(page).getByRole('button', { name: 'Dash {1}{R}' })).toBeVisible();
   await chooser(page).getByRole('button', { name: 'Dash {1}{R}' }).click();
   await expect(logText(page)).toContainText(`You cast ${name} for its dash cost.`);
@@ -233,7 +231,6 @@ test('Dash on a commander: Undo takes the cast back; at the end step the owner i
   // Dash it again and let the turn pass: the autopilot stops at the question and nowhere before.
   await toggleSetting(page, 'Full Control');
   await commander.first().click();
-  await page.locator('[data-commander-cast]').first().click();
   await chooser(page).getByRole('button', { name: 'Dash {1}{R}' }).click();
   await expect(logText(page)).toContainText(`You cast ${name} for its dash cost.`);
   const question = page.getByText(`Move ${name} to the command zone?`);

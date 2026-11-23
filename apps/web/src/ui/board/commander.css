@@ -1,28 +1,63 @@
 /*
- * The commander chip of a strip (the button that opens the commander popup) and the popup itself
+ * The commander chip of a strip (it casts the commander; its info button opens the popup) and the popup itself
  * (`CommanderPopup.tsx`), on the table board and on the 1v1 board.
  */
-.cmdr-cta {
+/* The chip casts the commander (as on the 1v1 board always); its info button opens the popup. */
+.cmdr-chip {
+  gap: 0;
+  padding: 0;
+  align-items: stretch;
+}
+.cmdr-chip-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px 2px 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: inherit;
+}
+.cmdr-chip.is-clickable .cmdr-chip-main {
   cursor: pointer;
-  background: var(--bg-raised);
-  border-color: color-mix(in srgb, var(--accent, var(--line)) 60%, var(--line));
+}
+/* Where the cost circles were: a round "i" that opens the popup. */
+.cmdr-info {
+  flex: none;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 6px 0 2px;
+  padding: 0;
+  font:
+    italic 700 0.8rem / 1 Georgia,
+    "Times New Roman",
+    serif;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1.5px solid var(--text-dim);
+  border-radius: 50%;
+  cursor: pointer;
   transition:
-    background-color 0.12s ease,
+    color 0.12s ease,
     border-color 0.12s ease,
-    transform 0.12s ease;
+    background-color 0.12s ease;
 }
-.cmdr-cta:hover,
-.cmdr-cta:focus-visible {
-  background: color-mix(in srgb, var(--accent, var(--text)) 14%, var(--bg-raised));
+.cmdr-info:hover,
+.cmdr-info:focus-visible {
+  color: var(--accent-text, var(--bg));
+  background: var(--accent, var(--text));
   border-color: var(--accent, var(--text));
-  transform: translateY(-1px);
 }
-.cmdr-cta:active {
-  transform: translateY(0);
-}
-.cmdr-cta:focus-visible {
+.cmdr-info:focus-visible {
   outline: 2px solid var(--accent, var(--text));
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 .cmdr-strip {
   flex: 0 1 auto;

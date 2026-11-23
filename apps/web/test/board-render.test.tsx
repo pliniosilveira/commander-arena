@@ -129,9 +129,12 @@ describe('Board', () => {
     expect(html).not.toContain('Cmdr dmg');
     expect(html).not.toContain('Open You command zone');
     // What is left of the commander is its chip, which opens the popup.
-    expect(html.match(/data-commander-cta="\d"/g)).toHaveLength(2);
-    expect(html).toContain('Open commander Isamaru, Hound of Konda');
-    expect(html).toContain('Open commander Yargle, Glutton of Urborg');
+    expect(html.match(/data-commander-chip="\d"/g)).toHaveLength(2);
+    expect(html).toContain('Commander Isamaru, Hound of Konda');
+    expect(html).toContain('Commander Yargle, Glutton of Urborg');
+    // Each chip has an info button, where the cost was, that opens the popup.
+    expect(html.match(/data-commander-info="\d"/g)).toHaveLength(2);
+    expect(html).toContain('About Isamaru, Hound of Konda');
   });
 
   test('the interaction contract drives glow, selection and dimming', async () => {

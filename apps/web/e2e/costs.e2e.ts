@@ -60,9 +60,7 @@ async function playUntil(
       if ((await cards.count()) > 0) {
         await cards.first().click();
       } else if (commander && (await cmdr.count()) > 0) {
-        // The chip opens the commander popup; the cast is its button.
         await cmdr.first().click();
-        await page.locator('[data-commander-cast]').first().click();
       } else if ((await primary(page).count()) > 0 && (await primary(page).isEnabled())) {
         await primary(page).click();
       }

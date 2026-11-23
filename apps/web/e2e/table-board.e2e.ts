@@ -152,21 +152,27 @@ test('the last opponent left takes the whole top row', async ({ page }) => {
   expect((opp?.width ?? 0) / (board?.width ?? 1)).toBeCloseTo(1, 1);
 });
 
-test('the strip keeps only the commander chip, and it opens the commander popup', async ({
+test('the strip keeps only the commander chip; its info button opens the commander popup', async ({
   page,
 }) => {
   await show(page, 3);
   const strip = page.locator('.table-opp').first().locator('.board-strip');
   // The chip: the name of the commander and nothing of the old command box.
-  const chip = strip.locator('[data-commander-cta]');
+  const chip = strip.locator('[data-commander-chip]');
   await expect(chip).toHaveCount(1);
   await expect(chip).toContainText('Serra Angel');
+  // The info button sits where the cost was: no cost circles on the chip.
+  await expect(chip.locator('.cmdr-info')).toBeVisible();
+  await expect(chip.getByRole('img', { name: /mana/ })).toHaveCount(0);
   await expect(strip.getByText('Tax', { exact: false })).toHaveCount(0);
   await expect(strip.getByText('Cmdr dmg')).toHaveCount(0);
   await expect(strip.getByText('Command', { exact: true })).toHaveCount(0);
 
-  await chip.click();
   const popup = page.getByRole('dialog', { name: 'Opponent 1 commander' });
+  // The chip itself is the cast: clicking it (here it cannot be cast) does not open the popup.
+  await chip.locator('.cmdr-chip-main').click();
+  await expect(popup).toHaveCount(0);
+  await chip.locator('.cmdr-info').click();
   await expect(popup).toBeVisible();
   // Two sections side by side with a vertical line between them: the commander, and the damage taken.
   const sections = popup.locator('.cmdr-section');
@@ -208,7 +214,7 @@ test('your own commander popup shows its tax and a Cast button when it can be ca
   page,
 }) => {
   await show(page, 3);
-  await page.locator('.table-me [data-commander-cta]').click();
+  await page.locator('.table-me .cmdr-info').click();
   const popup = page.getByRole('dialog', { name: 'You commander' });
   await expect(popup).toBeVisible();
   await expect(popup.getByRole('heading', { name: 'Your Commander' })).toBeVisible();

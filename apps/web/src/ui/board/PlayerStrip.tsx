@@ -10,13 +10,7 @@ import { areaClass } from './active-area';
 import { CostDisplay } from './CardFace';
 import { HandBacks } from './Hand';
 import { useHoverPreview } from './hover';
-import {
-  bandBackground,
-  commanderDamageTaken,
-  commandersOf,
-  commanderTaxes,
-  seatLabel,
-} from './resolve';
+import { bandBackground, commanderDamageTaken, commandersOf, seatLabel } from './resolve';
 
 /** The public data of a revealed companion (the engine's `CompanionView` is not exported by name). */
 type CompanionView = NonNullable<SeatView['companion']>;
@@ -141,7 +135,11 @@ export function ManaPool({ pool }: { pool: SeatView['manaPool'] }) {
   );
 }
 
-function CommanderChip({ object }: { object: ObjectView }) {
+/**
+ * A commander of a strip: the chip casts it when it can be cast (a click, or a drag onto the battlefield),
+ * and the info button at its right, where the cost used to be, opens the commander popup.
+ */
+function CommanderChip({ object, onInfo }: { object: ObjectView; onInfo: () => void }) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   const drag = useDraggable(object.id, 'card', object.name);
@@ -149,28 +147,42 @@ function CommanderChip({ object }: { object: ObjectView }) {
   const selected = ix.selected.has(object.id);
   const badge = ix.badge(object.id);
   return (
-    <button
-      type="button"
-      className={`board-cmdr${clickable ? ' is-clickable' : ''}${selected ? ' is-selected' : ''}${
+    <div
+      className={`board-cmdr cmdr-chip${clickable ? ' is-clickable' : ''}${selected ? ' is-selected' : ''}${
         drag.dragging ? ' is-dragging' : ''
       }`}
-      draggable={drag.draggable}
-      onDragStart={drag.onDragStart}
-      onDragEnd={drag.onDragEnd}
-      data-object-id={object.id}
-      aria-label={`Commander ${object.name}${clickable ? ', can be cast' : ''}`}
-      aria-pressed={selected}
-      title={object.name}
-      onClick={() => {
-        if (clickable) ix.onObject(object.id);
-      }}
-      {...hover}
+      data-commander-chip={object.owner}
     >
-      <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
-      <span className="board-cmdr-name">{object.name}</span>
-      <CostDisplay object={object} />
-      {badge !== null && <span className="board-ibadge">{badge}</span>}
-    </button>
+      <button
+        type="button"
+        className="cmdr-chip-main"
+        draggable={drag.draggable}
+        onDragStart={drag.onDragStart}
+        onDragEnd={drag.onDragEnd}
+        data-object-id={object.id}
+        aria-label={`Commander ${object.name}${clickable ? ', can be cast' : ''}`}
+        aria-pressed={selected}
+        title={object.name}
+        onClick={() => {
+          if (clickable) ix.onObject(object.id);
+        }}
+        {...hover}
+      >
+        <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
+        <span className="board-cmdr-name">{object.name}</span>
+        {badge !== null && <span className="board-ibadge">{badge}</span>}
+      </button>
+      <button
+        type="button"
+        className="cmdr-info"
+        data-commander-info={object.owner}
+        aria-label={`About ${object.name}: tax and commander damage`}
+        title="Commander: the card, its tax and the commander damage"
+        onClick={onInfo}
+      >
+        <span aria-hidden="true">i</span>
+      </button>
+    </div>
   );
 }
 
@@ -244,87 +256,6 @@ function LibraryTop({ object, mine }: { object: ObjectView; mine: boolean }) {
   );
 }
 
-/**
- * The only commander element of a strip on the table board: the chip of the 1v1 strip (colour band,
- * name, cost) that opens the commander popup instead of casting. A commander that can be cast shows the
- * highlight of a clickable chip; the cast itself is a button of the popup.
- */
-function CommanderCta({ object, onOpen }: { object: ObjectView; onOpen: () => void }) {
-  const hover = useHoverPreview(object.id);
-  const ix = useInteraction();
-  const clickable = ix.clickable.has(object.id);
-  return (
-    <button
-      type="button"
-      className={`board-cmdr cmdr-cta${clickable ? ' is-clickable' : ''}`}
-      data-commander-cta={object.owner}
-      aria-label={`Open commander ${object.name}${clickable ? ', can be cast' : ''}`}
-      title={`${object.name}: open the commander${clickable ? ' (can be cast)' : ''}`}
-      onClick={onOpen}
-      {...hover}
-    >
-      <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
-      <span className="board-cmdr-name">{object.name}</span>
-      <CostDisplay object={object} />
-    </button>
-  );
-}
-
-function CommandBox({
-  view,
-  seat,
-  onOpenZone,
-  label,
-}: {
-  view: GameView;
-  seat: SeatView;
-  onOpenZone: (zone: ZoneRef) => void;
-  label: string;
-}) {
-  const taxes = commanderTaxes(seat);
-  const damage = commanderDamageTaken(view, seat.id);
-  // The emblems of the command zone are small cards of their own beside the battlefield (D-243).
-  const commanders = seat.command.filter((o) => o.emblem !== true);
-  return (
-    <div className="board-command" data-zone="command" data-seat-zone={seat.id}>
-      <button
-        type="button"
-        className="board-zone-btn"
-        onClick={() => onOpenZone({ kind: 'command', seat: seat.id })}
-        aria-label={`Open ${label} command zone`}
-      >
-        <span className="board-stat-label">Command</span>
-      </button>
-      <span className="board-cmdr-list">
-        {commanders.length === 0 ? (
-          <span className="board-dim">empty</span>
-        ) : (
-          commanders.map((o) => <CommanderChip key={o.id} object={o} />)
-        )}
-      </span>
-      {seat.companion !== undefined && (
-        <CompanionChip seat={seat.id} companion={seat.companion} mine={seat.id === view.viewer} />
-      )}
-      <span className="board-cmdr-facts">
-        <span className={taxes.some((t) => t > 0) ? '' : 'board-dim'} title="Commander tax">
-          Tax {taxes.length === 0 ? 0 : taxes.map((t) => `+${t}`).join(' ')}
-        </span>
-        <span
-          className={damage.some((d) => d.amount > 0) ? 'board-warn' : 'board-dim'}
-          title="Commander damage taken; 21 from one commander loses the game"
-        >
-          Cmdr dmg{' '}
-          {damage.length === 0
-            ? 0
-            : damage
-                .map((d) => (d.source === null ? `${d.amount}` : `${d.source} ${d.amount}`))
-                .join(', ')}
-        </span>
-      </span>
-    </div>
-  );
-}
-
 export function PlayerStrip({
   view,
   seat,
@@ -337,11 +268,8 @@ export function PlayerStrip({
   onOpenZone: (zone: ZoneRef) => void;
   /** The seat's name when the board numbers its opponents (`table-label.ts`); `seatLabel` when absent. */
   label?: string;
-  /**
-   * Given, the strip shows only the commander chip, which calls it (the table board: the command box,
-   * the tax and the commander damage move to the commander popup).
-   */
-  onOpenCommander?: (seat: SeatId) => void;
+  /** Opens the commander popup of a seat (the info button of its commander chip). */
+  onOpenCommander: (seat: SeatId) => void;
 }) {
   const ix = useInteraction();
   const zone = useDropZone({ kind: 'seat', seat: seat.id });
@@ -519,22 +447,14 @@ export function PlayerStrip({
         </button>
         <ManaPool pool={seat.manaPool} />
       </div>
-      {onOpenCommander === undefined ? (
-        <CommandBox view={view} seat={seat} onOpenZone={onOpenZone} label={who} />
-      ) : (
-        <div className="board-command cmdr-strip" data-seat-zone={seat.id}>
-          {commandersOf(view, seat.id).map((o) => (
-            <CommanderCta key={o.id} object={o} onOpen={() => onOpenCommander(seat.id)} />
-          ))}
-          {seat.companion !== undefined && (
-            <CompanionChip
-              seat={seat.id}
-              companion={seat.companion}
-              mine={seat.id === view.viewer}
-            />
-          )}
-        </div>
-      )}
+      <div className="board-command cmdr-strip" data-seat-zone={seat.id}>
+        {commandersOf(view, seat.id).map((o) => (
+          <CommanderChip key={o.id} object={o} onInfo={() => onOpenCommander(seat.id)} />
+        ))}
+        {seat.companion !== undefined && (
+          <CompanionChip seat={seat.id} companion={seat.companion} mine={seat.id === view.viewer} />
+        )}
+      </div>
     </div>
   );
 }
