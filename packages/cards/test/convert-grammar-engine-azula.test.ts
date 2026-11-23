@@ -146,8 +146,8 @@ describe('Firebending N (CR 702.189a, 500.5a): add N {R} as it attacks, kept unt
   const BENDER = parsed('SYNTHETIC Parsed Firebender', 'Creature — Human Monk', 'Firebending 2', {
     manaCost: '{1}{R}',
     colors: ['R'],
-    power: 2,
-    toughness: 2,
+    power: '2',
+    toughness: '2',
   });
   const NAME = BENDER.name;
   const FILLER = Array.from({ length: 8 }, () => 'Island');
