@@ -1,13 +1,12 @@
 /** The battlefield, both players' strips, the command zones and the human's hand (SPEC 10, A19). */
 import type { GameView, ObjectView } from '@commander-arena/engine';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { LookedCard } from '../../game/looked-cards';
 import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useApp, useLookedCards } from '../store-context';
 import './board.css';
 import { lookTakeRevealed, pickerCards } from '../decisions/cards-picker';
-import { useZoneGate } from '../decisions/zone-decision';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BackRow } from './BackRow';
@@ -24,8 +23,8 @@ import { PlayerStrip, type ZoneRef } from './PlayerStrip';
 import { PairFocusProvider } from './pair-focus';
 import { BattlefieldRow } from './Row';
 import { combatRoles, type RowKind, rowKindOf, seatLabel } from './resolve';
-import { questionZoneToOpen, sameZone, targetZoneToOpen } from './target-zone';
-import { useCloseOnDecision } from './useCloseOnDecision';
+import { questionTitle } from './target-zone';
+import { useQuestionZone } from './useQuestionZone';
 import { ZoneViewer } from './ZoneViewer';
 
 /** The two lines of a battlefield: the creatures, and the back line (lands, then other permanents). */
@@ -125,7 +124,7 @@ export function zoneContents(
     const pending = view.pending;
     if (pending?.kind !== 'chooseCards') return { title: 'Cards', objects: [] };
     const objects = [...pickerCards(view, pending)];
-    if (pending.purpose !== 'lookTake') return { title: 'Search your library', objects };
+    if (pending.purpose !== 'lookTake') return { title: questionTitle(pending), objects };
     return {
       title: lookTakeRevealed(pending) ? 'Cards revealed' : 'Cards looked at',
       objects,
@@ -154,42 +153,7 @@ export function Board() {
   // The seat whose commander popup is open.
   const [commanderSeat, setCommanderSeat] = useState<number | null>(null);
   const looked = useLookedCards();
-  useCloseOnDecision(view, () => setZone(null));
-  // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
-  // when the question is answered is the board's doing too, not the player's chore.
-  const toOpen = view === null ? null : (questionZoneToOpen(view)?.zone ?? null);
-  // What the effects below depend on: the zone as a key, so a new view of the same question does not reopen it.
-  const toOpenKey = toOpen === null ? null : `${toOpen.kind}${'seat' in toOpen ? toOpen.seat : ''}`;
-  const toOpenRef = useRef(toOpen);
-  toOpenRef.current = toOpen;
-  // The graveyard of a targets question opens only when the player asks for it (the panel's button).
-  const askable = view === null ? null : targetZoneToOpen(view);
-  const askableRef = useRef(askable);
-  askableRef.current = askable;
-  const autoOpened = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `toOpenKey` is what tells a new question; the zone itself is read from the ref
-  useEffect(() => {
-    if (toOpenRef.current !== null) {
-      setZone(toOpenRef.current);
-      autoOpened.current = true;
-    } else if (autoOpened.current) {
-      setZone(null);
-      autoOpened.current = false;
-    }
-  }, [toOpenKey]);
-  // The picker of the question's graveyard can be closed to look at the board and opened again; the
-  // decision layer holds Confirm back while it is closed (zone-decision.ts).
-  const gate = useZoneGate();
-  const questionOpen = toOpen !== null && zone !== null && sameZone(zone, toOpen);
-  const { setOpen: reportOpen, request } = gate;
-  useEffect(() => reportOpen(questionOpen), [questionOpen, reportOpen]);
-  const lastRequest = useRef(request);
-  useEffect(() => {
-    if (request === lastRequest.current) return;
-    lastRequest.current = request;
-    const asked = toOpenRef.current ?? askableRef.current;
-    if (asked !== null) setZone(asked);
-  }, [request]);
+  useQuestionZone(view, zone, setZone);
   const ix = useInteraction();
   const pendingBlocks = ix.pendingBlocks;
   const roles = useMemo(
