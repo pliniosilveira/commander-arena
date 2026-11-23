@@ -323,7 +323,8 @@ export function matchesFilter(
     (filter.anyOf?.some((m) => m.attackingOpponents === 'players') ?? false)
       ? { attackersOfOpponentPlayers: attackersOfOpponentPlayers(state, ctx.controller) }
       : {}),
-    ...(filter.powerLessThanSource === true && ctx.source !== null
+    ...((filter.powerLessThanSource === true || filter.powerGreaterThanSource === true) &&
+    ctx.source !== null
       ? { sourcePower: powerOfObject(state, ctx.source) }
       : {}),
     ...(filter.manaValueX === true ? xFilterContext(state, ctx) : {}),
@@ -381,6 +382,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.manaValueAtMost !== undefined ||
     f.manaValueBelow !== undefined ||
     f.powerLessThanSource === true ||
+    f.powerGreaterThanSource === true ||
     f.manaValueX === true ||
     f.controllerDealtDamageBySource === true ||
     f.controllerDealtCombatDamageByAtLeast !== undefined ||

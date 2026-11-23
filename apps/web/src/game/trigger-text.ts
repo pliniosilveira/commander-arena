@@ -81,6 +81,7 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'zone',
   'attacking',
   'powerLessThanSource',
+  'powerGreaterThanSource',
   // D-431: "with power greater than its base power".
   'powerAboveBase',
   // D-638 (CR 601.2a): "from your hand", said by `withText`.
@@ -190,6 +191,7 @@ export function withText(filter: ObjectFilter): string {
     filter.hasCounter === undefined ? '' : counterOnIt(filter.hasCounter),
     // Mentor (CR 702.134a): "target attacking creature with power less than this creature's power".
     filter.powerLessThanSource === true ? "power less than this creature's power" : '',
+    filter.powerGreaterThanSource === true ? "power greater than this creature's power" : '',
     // CR 208.4b (D-431): the power it has now is more than the base power it has before counters and effects that only modify it.
     filter.powerAboveBase === true ? 'power greater than its base power' : '',
     (filter.keywords ?? []).map(keywordWords).join(' and '),
@@ -488,6 +490,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'surveils':
       // CR 701.25 (Galadriel group 1): once each time the player surveils.
       return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
+    case 'winsCoinFlip':
+      // CR 705.2 (Setzer): once each time the player wins a coin flip.
+      return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;
     case 'rollsHighest':
       // CR 706.1a, 706.2 (Galadriel group 3): once for each die the player rolls whose natural result is the most it can show.
       return `Whenever ${trigger.who === 'you' ? 'you roll' : `${BY_WORDS[trigger.who]} rolls`} a die's highest natural result`;

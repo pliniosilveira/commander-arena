@@ -132,6 +132,17 @@ export type GameEvent =
       readonly result: number;
     }
   /**
+   * CR 705.2: `seat` flipped a coin after calling `call`; `result` is the side that came up, drawn from the seeded generator of the game, and `won` is whether the call matched it
+   * (the player wins the flip). A random event: the host does not let the player undo past it, as for a die.
+   */
+  | {
+      readonly kind: 'coinFlipped';
+      readonly seat: SeatId;
+      readonly call: 'heads' | 'tails';
+      readonly result: 'heads' | 'tails';
+      readonly won: boolean;
+    }
+  /**
    * CR 701.17a (Mill, D-131): `seat` put the top cards of their library into their graveyard, as the new objects they
    * became there (CR 400.7), in the order they were milled (the top card first). One event for each player and each
    * instruction; a player with an empty library mills nothing and no event is emitted for them.

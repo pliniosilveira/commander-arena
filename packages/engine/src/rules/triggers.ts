@@ -491,6 +491,11 @@ function occurrences(
       return event.kind === 'dieRolled' && event.result === event.sides
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
+    case 'winsCoinFlip':
+      // CR 705.2 (Setzer): the player who flipped the coin and whose call matched the result.
+      return event.kind === 'coinFlipped' && event.won
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'becomesMonstrous':
       // CR 701.37a, 701.37b: the permanent that became monstrous.
       return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
@@ -947,6 +952,7 @@ function matches(
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
+    case 'winsCoinFlip':
       // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability. CR 706.1a: the player who rolled the die.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -1207,6 +1213,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'scried':
     case 'surveiled':
     case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
+    case 'coinFlipped': // CR 705.2 (Setzer): "whenever you win a coin flip"
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':

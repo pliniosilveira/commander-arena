@@ -62,6 +62,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'surveils':
     // CR 706.1a (Galadriel group 3): the player who rolled the die.
     case 'rollsHighest':
+    case 'winsCoinFlip':
       return true;
     // The active player of the step (CR 102.1, 603.2b): "that player" in "at the beginning of each opponent's end step".
     case 'step':

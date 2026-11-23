@@ -447,6 +447,7 @@ const FALLBACK_SAYS: ReadonlySet<string> = new Set([
   'keywords',
   'notKeywords',
   'powerLessThanSource',
+  'powerGreaterThanSource',
   // D-431: "creatures with power greater than its base power".
   'powerAboveBase',
   'controllerDealtDamageBySource',
@@ -1797,6 +1798,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'clash':
       // CR 701.30b: "Clash with an opponent".
       return 'Clash with an opponent';
+    case 'coinFlip':
+      // CR 705.2: the flip after the call.
+      return `Flip a coin, calling ${effect.call}`;
     case 'rollDie':
       // CR 706.1 (D-271): "Roll a four-sided die".
       return `Roll a ${effect.sides}-sided die`;

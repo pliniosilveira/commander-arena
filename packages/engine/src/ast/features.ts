@@ -183,6 +183,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
     'modeAllOrNone',
     'modeDifferentTargets',
+    // CR 700.2: "choose one at random" (`ModeChoice.random`): a mode drawn from the seeded generator as the triggered ability goes on the stack.
+    'modeRandom',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
@@ -341,6 +343,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    // CR 705.2: "flip a coin" (`coinFlip`, one for each call under a `chooseOne`) and "whenever you win a coin flip" (`winsCoinFlip`).
+    'coinFlip',
     // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
     'clash',
     'scry',
@@ -619,6 +623,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveils',
     // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
     'rollsHighest',
+    // CR 705.2 (Setzer): "Whenever you win a coin flip".
+    'winsCoinFlip',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -1141,6 +1147,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notAttacking',
     'blocking',
     'powerLessThanSource',
+    // CR 509.1b: `ObjectFilter.powerGreaterThanSource`, "can't be blocked by creatures with greater power".
+    'powerGreaterThanSource',
     // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
     'monarchController',
     'restrictBlockers',
@@ -1930,6 +1938,8 @@ export const ABILITY_FEATURES = [
   'modeAllOrNone',
   /** "Each mode must target a different player." (CR 700.2d): `ModeChoice.differentTargets`, no target is chosen for two of the chosen modes. */
   'modeDifferentTargets',
+  /** "At the beginning of combat on your turn, choose one at random —" (CR 700.2): `ModeChoice.random`, the engine chooses the mode with the seeded generator as the ability goes on the stack. */
+  'modeRandom',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
@@ -2192,6 +2202,8 @@ export const SELECTOR_KINDS = [
   'blocking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "Creatures with greater power than this creature" (CR 509.1b, 208.1): the engine's `ObjectFilter.powerGreaterThanSource`. */
+  'powerGreaterThanSource',
   /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
   'monarchController',
   /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
@@ -2928,6 +2940,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeCost: true,
   modeAllOrNone: true,
   modeDifferentTargets: true,
+  modeRandom: true,
   sacrificeX: true,
   exileFromGraveyardX: true,
   discardCostX: true,
@@ -3034,6 +3047,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  coinFlip: true,
   clash: true,
   scry: true,
   surveil: true,
@@ -3198,6 +3212,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   scries: true,
   surveils: true,
   rollsHighest: true,
+  winsCoinFlip: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,

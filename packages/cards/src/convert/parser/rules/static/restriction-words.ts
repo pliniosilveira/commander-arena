@@ -103,6 +103,22 @@ const BLOCKED_BY_MONARCH: Parser<IrStaticEffect> = map(
 );
 
 /**
+ * "can't be blocked by creatures with greater power" (Locke, Treasure Hunter, CR 509.1b, 208.1): no creature whose power is greater than the power of the permanent with the
+ * ability, as it is when blockers are declared, can block the subject (the engine's `cantBeBlockedBy` with `powerGreaterThanSource`). Only those words.
+ */
+const BLOCKED_BY_GREATER_POWER: Parser<IrStaticEffect> = map(
+  pattern(new RegExp(`can['’]t be blocked by creatures with greater power${END}`, 'iu')),
+  (match): IrStaticEffect => ({
+    kind: 'cantBeBlockedBy',
+    blockers: {
+      types: ['creature'],
+      powerGreaterThanSource: true,
+      raw: match[0].replace(/^can['’]t be blocked by /iu, ''),
+    },
+  }),
+);
+
+/**
  * "can attack as though it didn't have defender" and "assigns combat damage equal to its toughness rather than its power" (CR 609.4, 702.3b, 510.1a): the two rule changes of a creature the engine
  * reads where attackers are declared and where combat damage is assigned. The pronoun agrees with the subject, singular ("it", "its", "assigns") or plural ("they", "their", "assign").
  */
@@ -151,6 +167,7 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
     BLOCKED_EXCEPT_BY,
     BLOCKED_BY_MONARCH,
+    BLOCKED_BY_GREATER_POWER,
     BLOCKED_BY,
     phrase("can['’]t block", 'cantBlock'),
     phrase("can['’]t be blocked", 'cantBeBlocked'),

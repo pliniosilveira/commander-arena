@@ -36,6 +36,7 @@ import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
 import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
 import { SYNTHETIC_CHOSEN_WALKER_LIST } from './synthetic-chosen-walker';
+import { SYNTHETIC_COIN_LIST } from './synthetic-coin';
 import { SYNTHETIC_COLOR_AMONG_MANA_LIST } from './synthetic-color-among-mana';
 import { SYNTHETIC_COMBAT_LIST } from './synthetic-combat';
 import { SYNTHETIC_COMMANDER_TRIGGER_LIST } from './synthetic-commander-triggers';
@@ -177,6 +178,7 @@ import { SYNTHETIC_PRISMARI_G2_LIST } from './synthetic-prismari-g2';
 import { SYNTHETIC_PRISMARI_G3_LIST } from './synthetic-prismari-g3';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
 import { SYNTHETIC_QUICK_DRAW_LIST } from './synthetic-quick-draw';
+import { SYNTHETIC_RANDOM_MODE_LIST } from './synthetic-random-mode';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
 import { SYNTHETIC_REPEATABLE_LIST } from './synthetic-repeatable';
@@ -459,6 +461,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LOREHOLD_G3_LIST,
   ...SYNTHETIC_LOSE_GAME_LIST,
   ...SYNTHETIC_DICE_LIST,
+  ...SYNTHETIC_RANDOM_MODE_LIST,
+  ...SYNTHETIC_COIN_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,
   ...SYNTHETIC_DEVOTION_MANA_LIST,
   ...SYNTHETIC_COLOR_AMONG_MANA_LIST,
