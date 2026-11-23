@@ -1,6 +1,12 @@
 // The printings picker of the deck screen's card dialog. The Scryfall answers here are SYNTHETIC: invented ids and image links.
 import { expect, test } from 'vitest';
-import { cardPrintsUrl, parseCardPrints, printLabel } from '../src/ui/import/card-prints';
+import {
+  cardPrintsUrl,
+  listedKey,
+  parseCardPrints,
+  parseListedImages,
+  printLabel,
+} from '../src/ui/import/card-prints';
 
 const img = (id: string) => ({
   small: `https://cards.scryfall.io/small/front/${id}.jpg`,
@@ -44,4 +50,25 @@ test('printings are parsed with their frame, in the order given; foreign images 
 test('a malformed answer gives no printings', () => {
   expect(parseCardPrints(null)).toEqual([]);
   expect(parseCardPrints({ data: 'x' })).toEqual([]);
+});
+
+test('a collection answer is read by set and number, not by position; foreign images are dropped', () => {
+  const images = parseListedImages({
+    data: [
+      { name: 'Card B', set: 'XYZ', collector_number: '12', image_uris: img('b') },
+      {
+        name: 'Card C',
+        set: 'abc',
+        collector_number: '3',
+        image_uris: { normal: 'https://evil.example/c.jpg' },
+      },
+    ],
+    not_found: [{ set: 'abc', collector_number: '3' }],
+  });
+  expect([...images.keys()]).toEqual(['xyz/12']);
+  expect(images.get(listedKey({ set: 'xyz', collector: '12' }))).toEqual({
+    name: 'Card B',
+    normal: 'https://cards.scryfall.io/normal/front/b.jpg',
+  });
+  expect(parseListedImages(null).size).toBe(0);
 });

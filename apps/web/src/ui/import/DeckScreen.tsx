@@ -1,9 +1,11 @@
 /** The deck screen: every card of a deck in a grid, grouped by type; a click shows it large. */
+
+import { frontFaceName, type StoredCard } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
 import type { ImportReport, ImportService } from '../../import/types';
 import { CardPrintsDialog } from './CardPrintsDialog';
-import type { CardPrint } from './card-prints';
-import { printingInText, withPrinting } from './deck-text';
+import { type CardPrint, listedKey, useListedImages } from './card-prints';
+import { printingInText, printingsInText, withPrinting } from './deck-text';
 import { groupEntries, imageOf } from './deck-view-model';
 
 export function DeckScreen({
@@ -12,6 +14,7 @@ export function DeckScreen({
   service,
   onBack,
   onSave,
+  drawListed = false,
 }: {
   name: string;
   text: string;
@@ -19,6 +22,8 @@ export function DeckScreen({
   onBack: () => void;
   /** Stores the deck's new text (a printing was chosen); absent when this deck cannot be changed. */
   onSave?: (text: string) => Promise<void>;
+  /** Draw each card of the grid in the printing the deck's text lists (a built-in deck); a player's own deck keeps the default picture. */
+  drawListed?: boolean;
 }) {
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +42,29 @@ export function DeckScreen({
       live = false;
     };
   }, [service, text, name]);
+
+  const listed = printingsInText(current);
+  const images = useListedImages(
+    drawListed && report !== null
+      ? report.entries.flatMap(({ card }) => {
+          const printing = listed.get(frontFaceName(card.stored.name).toLowerCase());
+          return printing === undefined ? [] : [printing];
+        })
+      : [],
+  );
+  /** The picture of a card in the grid: the printing chosen in this visit, then the listed one, then the default. */
+  const gridImage = (card: StoredCard): string | null => {
+    const printing = listed.get(frontFaceName(card.name).toLowerCase());
+    const image =
+      drawListed && printing !== undefined ? images.get(listedKey(printing)) : undefined;
+    // A list that names the printing of another card must not draw that card.
+    const own =
+      image !== undefined &&
+      frontFaceName(image.name).toLowerCase() === frontFaceName(card.name).toLowerCase();
+    return (
+      picked.get(card.oracleId)?.normal ?? (own ? image.normal : null) ?? imageOf(card, 'normal')
+    );
+  };
 
   const groups = report === null ? [] : groupEntries(report.entries);
   const shown = report?.entries.find((e) => e.card.stored.oracleId === open)?.card.stored;
@@ -63,8 +91,7 @@ export function DeckScreen({
             </h2>
             <ul className="deck-grid">
               {entries.map(({ card, count: copies }) => {
-                const url =
-                  picked.get(card.stored.oracleId)?.normal ?? imageOf(card.stored, 'normal');
+                const url = gridImage(card.stored);
                 return (
                   <li key={card.stored.oracleId}>
                     <button

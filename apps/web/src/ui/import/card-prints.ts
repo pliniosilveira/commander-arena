@@ -119,3 +119,100 @@ export function useCardPrints(name: string): PrintsState {
   }, [name]);
   return found?.name === name ? { status: 'ready', prints: found.prints } : { status: 'loading' };
 }
+
+/** A printing a deck's text lists: set code (any case) and collector number. */
+export interface ListedKey {
+  readonly set: string;
+  readonly collector: string;
+}
+
+export const listedKey = (key: ListedKey): string => `${key.set.toLowerCase()}/${key.collector}`;
+
+/** The picture a listed printing is drawn with, and the name of the card it belongs to. */
+export interface ListedImage {
+  readonly name: string;
+  readonly normal: string;
+}
+
+/** The printings of a `/cards/collection` answer by `listedKey`; those without a Scryfall-hosted picture are left out. */
+export function parseListedImages(answer: unknown): ReadonlyMap<string, ListedImage> {
+  const data = (answer as { data?: unknown } | null)?.data;
+  const found = new Map<string, ListedImage>();
+  if (!Array.isArray(data)) return found;
+  for (const raw of data) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const card = raw as Record<string, unknown>;
+    const normal = str(imagesOf(card)?.normal);
+    if (!HOST.test(normal)) continue;
+    found.set(listedKey({ set: str(card.set), collector: str(card.collector_number) }), {
+      name: str(card.name),
+      normal,
+    });
+  }
+  return found;
+}
+
+/** Scryfall takes at most 75 identifiers per `/cards/collection` request. */
+const BATCH = 75;
+const listed = new Map<string, Promise<ListedImage | null>>();
+
+/** The pictures of printings by set and number, in as few requests as possible; a printing Scryfall cannot give is absent. */
+export async function loadListedImages(
+  keys: readonly ListedKey[],
+): Promise<ReadonlyMap<string, ListedImage>> {
+  const wanted = [...new Map(keys.map((k) => [listedKey(k), k])).entries()];
+  const missing = wanted.filter(([id]) => !listed.has(id));
+  for (let i = 0; i < missing.length; i += BATCH) {
+    const batch = missing.slice(i, i + BATCH);
+    const answer = queue
+      .request({
+        url: 'https://api.scryfall.com/cards/collection',
+        method: 'POST',
+        json: {
+          identifiers: batch.map(([, k]) => ({
+            set: k.set.toLowerCase(),
+            collector_number: k.collector,
+          })),
+        },
+      })
+      .then((r) => (r.kind === 'response' && r.ok ? parseListedImages(r.json) : new Map()))
+      .catch(() => new Map<string, ListedImage>());
+    for (const [id] of batch)
+      listed.set(
+        id,
+        answer.then((found) => found.get(id) ?? null),
+      );
+  }
+  const out = new Map<string, ListedImage>();
+  await Promise.all(
+    wanted.map(async ([id]) => {
+      const image = await listed.get(id);
+      if (image !== null && image !== undefined) out.set(id, image);
+    }),
+  );
+  return out;
+}
+
+/** The pictures of the listed printings of a deck, by `listedKey`; empty while asked for or when Scryfall cannot be reached. */
+export function useListedImages(keys: readonly ListedKey[]): ReadonlyMap<string, ListedImage> {
+  const id = JSON.stringify([...new Set(keys.map(listedKey))].sort());
+  const [found, setFound] = useState<{ id: string; images: ReadonlyMap<string, ListedImage> }>({
+    id: '',
+    images: new Map(),
+  });
+  useEffect(() => {
+    const wanted = (JSON.parse(id) as string[]).map((entry): ListedKey => {
+      const cut = entry.indexOf('/');
+      return { set: entry.slice(0, cut), collector: entry.slice(cut + 1) };
+    });
+    if (wanted.length === 0) return;
+    let alive = true;
+    void loadListedImages(wanted).then((images) => {
+      if (alive) setFound({ id, images });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+  return found.id === id ? found.images : new Map();
+}

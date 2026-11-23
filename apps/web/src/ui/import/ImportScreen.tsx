@@ -48,6 +48,7 @@ export function ImportScreen() {
     readonly text: string;
     readonly service: ImportService;
     readonly onSave: (text: string) => Promise<void>;
+    readonly drawListed?: boolean;
   } | null>(null);
   const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
@@ -138,6 +139,8 @@ export function ImportScreen() {
       name: precon.name,
       text: mine?.text ?? defaultListOf(precon.id),
       service: precons.editorService(precon.id),
+      // A built-in deck is drawn in the printings its list names; a player's own deck keeps the default picture.
+      drawListed: true,
       // A printing chosen for a built-in deck is kept as the player's edited list of it (D-215), which "Reset to default" undoes.
       onSave: (text) => env.decks.saveOverride(precon.id, precon.name, text).then(refreshChoices),
     });

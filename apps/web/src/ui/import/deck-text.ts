@@ -25,6 +25,22 @@ function scanEntryLine(line: string): DeckEntry | null {
 }
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** Every printing the text lists, by the lower-case front face of the card's name. */
+export function printingsInText(text: string): ReadonlyMap<string, ListedPrinting> {
+  const { sections } = parseDecklist(text);
+  const out = new Map<string, ListedPrinting>();
+  for (const entry of [...sections.commander, ...sections.main]) {
+    if (entry.set !== null && entry.collector !== null) {
+      out.set(frontFaceName(entry.name).toLowerCase(), {
+        set: entry.set,
+        collector: entry.collector,
+        chosen: entry.tags.includes(CHOSEN_TAG),
+      });
+    }
+  }
+  return out;
+}
+
 /** The printing the text lists for the card `name`, or null. */
 export function printingInText(text: string, name: string): ListedPrinting | null {
   const { sections } = parseDecklist(text);

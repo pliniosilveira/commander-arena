@@ -90,4 +90,39 @@ test.describe('card printings', () => {
     await page.locator('.deck-card').first().click();
     await expect(page.getByRole('dialog').getByRole('radio').first()).toBeChecked();
   });
+
+  test('the grid of a built-in deck draws a card in the printing its list names', async ({
+    page,
+  }) => {
+    // The Zombies list names the commander as `Ghoulcaller Gisa (fdc) 6`; one collection request asks for every listed printing.
+    await page.route('https://api.scryfall.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        headers: CORS,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          object: 'list',
+          data: [
+            {
+              id: 'listed',
+              name: 'Ghoulcaller Gisa',
+              set: 'fdc',
+              collector_number: '6',
+              image_uris: image('listed'),
+            },
+          ],
+        }),
+      }),
+    );
+    await page.route('https://cards.scryfall.io/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: PNG }),
+    );
+    await page.goto('/');
+    await page.getByRole('button', { name: 'My decks' }).click();
+    await page.locator(`[data-precon="${PRECON}"]`).getByRole('button', { name: /^View/ }).click();
+    await expect(page.locator('.deck-card img').first()).toHaveAttribute(
+      'src',
+      /normal\/front\/listed\.jpg/,
+    );
+  });
 });

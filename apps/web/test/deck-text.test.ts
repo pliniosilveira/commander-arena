@@ -7,7 +7,7 @@ import {
   printingOf,
   registerDeckPrintings,
 } from '../src/ui/board/deck-printings';
-import { printingInText, withPrinting } from '../src/ui/import/deck-text';
+import { printingInText, printingsInText, withPrinting } from '../src/ui/import/deck-text';
 
 const TEXT = [
   'Commander',
@@ -68,4 +68,12 @@ test('the board sees a chosen printing as explicit, a listed one as not', () => 
   registerDeckPrintings(next);
   expect(printingOf('Zed the Test')?.explicit).toBe(true);
   expect(printingOf('Other Card')?.explicit).toBe(false);
+});
+
+test('every listed printing is read by the lower-case front face of the card', () => {
+  const all = printingsInText(
+    'Commander\n1 Zed the Test (abc) 6\n\nDeck\n1 Front // Back (xyz) 9 ^Chosen printing^\n1 No Printing\n',
+  );
+  expect([...all.keys()]).toEqual(['zed the test', 'front']);
+  expect(all.get('front')).toEqual({ set: 'xyz', collector: '9', chosen: true });
 });
