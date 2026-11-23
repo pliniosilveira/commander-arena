@@ -14,7 +14,15 @@ export type GameEvent =
   | { readonly kind: 'gameStarted'; readonly startingSeat: SeatId; readonly seed: number }
   | { readonly kind: 'mulliganTaken'; readonly seat: SeatId; readonly count: number }
   | { readonly kind: 'handKept'; readonly seat: SeatId }
-  | { readonly kind: 'turnBegan'; readonly seat: SeatId; readonly turn: number }
+  /** `extra`: the turn is an extra turn an effect created (CR 500.7). */
+  | {
+      readonly kind: 'turnBegan';
+      readonly seat: SeatId;
+      readonly turn: number;
+      readonly extra?: true;
+    }
+  /** An effect gave `seat` an extra turn after the current one (CR 500.7). */
+  | { readonly kind: 'extraTurnAdded'; readonly seat: SeatId }
   | { readonly kind: 'stepBegan'; readonly step: StepId; readonly seat: SeatId }
   | {
       readonly kind: 'zoneChanged';

@@ -45,9 +45,9 @@ const cssEscape = (value: string): string =>
     : value.replace(/["\\]/g, '\\$&');
 
 function boxOf(id: string): Box | null {
-  const el = document.querySelector(
-    `:is(.board, .table-board) [data-object-id="${cssEscape(id)}"]`,
-  );
+  // A commander on the battlefield shares its id with the command-zone chip: the card wins.
+  const base = `:is(.board, .table-board) [data-object-id="${cssEscape(id)}"]`;
+  const el = document.querySelector(`${base}:not(.cmdr-chip-main)`) ?? document.querySelector(base);
   if (el === null) return null;
   const rect = el.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 ? rect : null;

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 191,
+  "parserVersion": 192,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -9694,19 +9694,10 @@
     "d0896996-ee31-402e-b642-4e7cca4929fe": {
       "name": "Timestream Navigator",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{2}{U}{U}, {T}, Put ~ on the bottom of its owner's library: Take an extra turn after this one. Activate only if you have the city's blessing.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "cost.put-counters"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5d582f37"
+      "ast": "fbdbede5"
     },
     "d0dd425b-fdba-41b4-b9e6-f5161610bd7e": {
       "name": "Ezuri's Predation",
@@ -11837,7 +11828,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1162,
+      "supported": 1163,
       "total": 1184
     }
   }

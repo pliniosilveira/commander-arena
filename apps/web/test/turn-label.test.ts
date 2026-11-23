@@ -22,6 +22,15 @@ describe('round number (D-153)', () => {
     expect([1, 4, 5, 8, 9].map((n) => roundOf(n, 4))).toEqual([1, 1, 2, 2, 3]);
   });
 
+  test('an extra turn belongs to the round of the turn it follows (CR 500.7)', () => {
+    // Turns 1 and 2 are round 1; turn 3 is an extra turn of the second player; turns 4 and 5 are then round 2.
+    expect(roundOf(3, 2, 1)).toBe(1);
+    expect(roundOf(4, 2, 1)).toBe(2);
+    expect(roundOf(5, 2, 1)).toBe(2);
+    expect(roundOf(6, 2, 1)).toBe(3);
+    expect(turnLabel(1, 0, 3, 2, 1)).toBe("Opponent's turn 1");
+  });
+
   test('one player rounds are their own turns; no seats gives no round', () => {
     expect(roundOf(5, 1)).toBe(5);
     expect(roundOf(5, 0)).toBe(0);

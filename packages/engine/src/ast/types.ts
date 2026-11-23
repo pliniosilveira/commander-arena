@@ -1775,6 +1775,11 @@ export type Cost =
       readonly kind: 'returnToHand';
       readonly what: { readonly kind: 'this' } | ObjectFilter;
       readonly count?: number;
+      /**
+       * "Put this creature on the bottom of its owner's library" as a cost (CR 118.3, 401.4, 108.3): the permanent the ability belongs to goes to the bottom of its
+       * owner's library instead of their hand (a commander's owner may still put it into the command zone, CR 903.9b). Only with `what` `this`.
+       */
+      readonly toLibraryBottom?: true;
     };
 
 /** The named alternative costs that are paid with mana instead of the mana cost (D-121). */
@@ -3355,6 +3360,12 @@ export type Effect =
    * leaves the battlefield.
    */
   | { readonly kind: 'becomeMonarch'; readonly player: PlayerSelector }
+  /**
+   * "Take an extra turn after this one", "target player takes an extra turn after this one" (CR 500.7): each player the selector names (in APNAP order when several)
+   * is given a turn that is added directly after the current one; the most recently created extra turn is taken first, and afterwards the turn order goes on from the
+   * player whose turn they followed. A player who has left the game takes none.
+   */
+  | { readonly kind: 'extraTurn'; readonly player: PlayerSelector }
   /**
    * CR 406.1 (Exile). With `linked` (D-139, CR 607.2a: "Imprint", "exiled with this creature"): the cards exiled are remembered by the
    * permanent the ability belongs to, in the order they were exiled, for the static `takeFromLinkedExile` that reads them. The link is

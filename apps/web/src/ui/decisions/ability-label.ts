@@ -1106,6 +1106,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'cumulativeUpkeep':
       // CR 702.24a (D-127): the whole ability of the keyword, in the words of its reminder text.
       return `Put an age counter on this ${self}. Sacrifice it unless you ${unlessCostPhrase(effect.cost)} for each age counter on it`;
+    case 'extraTurn':
+      // CR 500.7: "take an extra turn after this one", "target player takes an extra turn after this one".
+      return `${playerVerb(effect.player, ability, 'take')} an extra turn after this one`;
     case 'becomeMonarch':
       // CR 725.1 (D-127): "you become the monarch", "its controller becomes the monarch".
       return `${playerVerb(effect.player, ability, 'become')} the monarch`;
