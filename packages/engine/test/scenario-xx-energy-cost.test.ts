@@ -54,3 +54,40 @@ describe('a mana ability that costs {E}', () => {
     g.expect.illegal(0, { cast: 'Grizzly Bears' });
   });
 });
+
+describe('"You may pay any amount of {E}. If you do, ..." (payAnyAmount with the symbol {E})', () => {
+  const BELLOWS = 'SYNTHETIC Energy Bellows';
+
+  test('the player chooses how many counters to pay, from none to all they have, and X is the number paid', () => {
+    const g = scenario()
+      .seat(0)
+      .energy(3)
+      .battlefield(BELLOWS)
+      .library('Island', 'Island', 'Island', 'Island')
+      .build();
+    g.act(0).activate(BELLOWS);
+    g.passAll();
+    const d = g.state.pending;
+    expect(d).toMatchObject({ kind: 'chooseX', purpose: 'payAnyAmount', min: 0, max: 3 });
+    g.act(0).chooseX(2);
+    g.expect.energy(0, 1);
+    g.expect.handSize(0, 2);
+  });
+
+  test('a player with no energy is not asked and nothing happens', () => {
+    const g = scenario().seat(0).battlefield(BELLOWS).library('Island').build();
+    g.act(0).activate(BELLOWS);
+    g.passAll();
+    g.expect.handSize(0, 0);
+    g.expect.energy(0, 0);
+  });
+
+  test('paying none draws nothing and keeps the counters', () => {
+    const g = scenario().seat(0).energy(3).battlefield(BELLOWS).library('Island').build();
+    g.act(0).activate(BELLOWS);
+    g.passAll();
+    g.act(0).chooseX(0);
+    g.expect.energy(0, 3);
+    g.expect.handSize(0, 0);
+  });
+});

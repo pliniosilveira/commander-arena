@@ -40,4 +40,25 @@ export const SYNTHETIC_ENERGY_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "{T}: You may pay any amount of {E}. If you do, draw that many cards."
+  singleFace({
+    name: 'SYNTHETIC Energy Bellows',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      '{T}: You may pay any amount of {E}. If you do, draw X cards, where X is the amount paid.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'payAnyAmount',
+          symbol: 'E',
+          ifPaid: { kind: 'draw', player: { kind: 'you' }, count: { kind: 'x' } },
+        },
+      },
+    ],
+  }),
 ];

@@ -270,7 +270,7 @@ function walkEffect(
         effect.cost,
         `${path}.cost`,
         out,
-        ['mana', 'payLife', 'discard'],
+        ['mana', 'payLife', 'discard', 'energy'],
         false,
         true,
       );

@@ -164,6 +164,7 @@ import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
+import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
@@ -1503,4 +1504,6 @@ export const EFFECT_RULES = [
   ...RECURSION_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,
+  // Aetherdrift energy deck (issue 105): "pay one or more {E}".
+  EFFECT_PAY_ENERGY_ANY,
 ];

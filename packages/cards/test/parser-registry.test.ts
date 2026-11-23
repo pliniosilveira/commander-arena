@@ -1262,6 +1262,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Forger's Foundry (issue 121): the rider of the mana the ability before it adds.
   'effect.mana-rider-exile': permanent((e) => `{T}: Add {U}. ${cap(e)}.`),
   // Bloodthirsty Adversary (issue 121): the payment and the ability it buys.
+  // The Aetherdrift energy deck (issue 105): the offer and what it buys, the amount defined by the payment.
+  'effect.pay-energy-any': permanent(
+    (e) => `At the beginning of your upkeep, you may ${e}. If you do, draw a card.`,
+  ),
+  'amount.where-x-energy-paid': permanent(
+    (e) =>
+      `At the beginning of your upkeep, you may pay one or more {E}. If you do, create an X/X colorless Construct artifact creature token, ${e}.`,
+  ),
   'effect.pay-any-number-of-times': permanent(
     (e) => `When ~ enters, you may ${e}. When you pay this cost one or more times, draw a card.`,
   ),

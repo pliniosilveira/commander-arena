@@ -8,6 +8,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { DAMAGED_PLAYERS_AMOUNT_RULES } from './damaged-players';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
+import { ENERGY_PAID_AMOUNT_RULES } from './energy-paid';
 import { EXPERIENCE_AMOUNT_RULES } from './experience';
 import { F144_AMOUNT_RULES } from './f144';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
@@ -506,6 +507,8 @@ export const AMOUNT_RULES = [
   // Issue 144 (Glimpse the Impossible): "for each card put into your graveyard this way".
   ...F144_AMOUNT_RULES,
   ...DISCARDED_TYPES_AMOUNT_RULES,
+  // Aetherdrift energy deck (issue 105): "where X is the amount of {E} paid this way".
+  ...ENERGY_PAID_AMOUNT_RULES,
   // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
   ...QUANDRIX_G_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".

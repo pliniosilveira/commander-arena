@@ -419,7 +419,7 @@ export function checkDragonsEffect(
             'the cost of one payment is mana symbols: numbers and colors, no X or hybrid',
           );
         }
-      } else if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
+      } else if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1', 'E'])) {
         issue(
           out,
           `${path}.symbol`,

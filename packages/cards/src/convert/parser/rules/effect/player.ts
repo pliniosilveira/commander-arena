@@ -18,7 +18,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrAmount, IrArg, IrClause, IrNoun, IrToken, Span } from '../../ir/types';
+import type { IrAmount, IrArg, IrClause, IrCost, IrNoun, IrToken, Span } from '../../ir/types';
 import { NUMBER_OR_X, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL as FOR_EACH, scaled } from '../amount/scaled';
 import { CARD_TYPES, typeWords } from '../noun/phrases';
@@ -332,6 +332,37 @@ const energyAction: Action = (subject, you, rule) => {
     actionClause(rule, 'gainEnergy', { player: subject, amount: value }, span),
   );
 };
+
+/**
+ * "you may pay eight {E}" and "you may pay one or more {E}" after ", then" (issue 105, Lightning Runner, CR 107.14, 118.3): the offer of an energy payment that comes second in a sentence
+ * about the player. Only "you may" (the player chooses as the ability resolves); the clause is optional, and the sentences after it say what the payment buys.
+ */
+const energyOfferAction: Action = (subject, you, rule) =>
+  subject.det !== 'you' || !you
+    ? never(rule)
+    : choice(
+        map(
+          spanned(
+            sequence(literal('you may '), family<IrCost>('cost', { only: ['cost.pay-energy'] })),
+          ),
+          ({ value, span }): IrClause => ({
+            ...actionClause(
+              rule,
+              'pay',
+              { cost: { kind: 'costList', costs: [value[1]], span, rule } },
+              span,
+            ),
+            optional: true,
+          }),
+        ),
+        map(
+          spanned(pattern(/you may pay one or more \{E\}(?![\p{L}\p{N}{])/u)),
+          ({ span }): IrClause => ({
+            ...actionClause(rule, 'payEnergyAny', {}, span),
+            optional: true,
+          }),
+        ),
+      );
 
 /** "get an experience counter", "gets two experience counters" (CR 122.1: the player puts that many experience counters on themselves; Meren of Clan Nel Toth). */
 const experienceAction: Action = (subject, you, rule) =>
@@ -817,6 +848,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         part('effect.player.mill', millAction),
         alone('effect.player.manifest', manifestAction),
         part('effect.player.energy', energyAction),
+        // Issue 105: ", then you may pay eight {E}".
+        alone('effect.player.energy-offer', energyOfferAction),
         part('effect.player.experience', experienceAction),
         alone('effect.player.sacrifice', sacrificeAction),
         alone('effect.player.exile-graveyard', exileGraveyardCardsAction),
