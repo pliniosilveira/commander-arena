@@ -1,0 +1,194 @@
+Commander
+1x Elminster
+
+Mainboard
+1x Adarkar Wastes
+1x Aminatou's Augury
+1x An Offer You Can't Refuse
+1x Arcane Signet
+1x Archaeomancer's Map
+1x Archmage Emeritus
+1x Augury Owl
+1x Azorius Signet
+1x Brainstorm
+1x Brainsurge
+1x Command Tower
+1x Counterspell
+1x Cryptic Annelid
+1x Crystal Grotto
+1x Decanter of Endless Water
+1x Deification
+1x Deliberate
+1x Denzilore Fatehold
+1x Deserted Beach
+1x Devout Invocation
+1x Disenchant
+1x Dovin's Veto
+1x Dusk // Dawn
+1x Elrond, Lord of Rivendell
+1x Elspeth, Sun's Champion
+1x Emeria's Call // Emeria, Shattered Skyclave
+1x Empyrean Eagle
+1x Entreat the Angels
+1x Faerie Seer
+1x Finale of Revelation
+1x Generous Gift
+1x Ghostly Prison
+1x Gideon's Memorial
+1x Glacial Fortress
+1x Heliod's Intervention
+1x Hermes, Overseer of Elpis
+1x Intangible Virtue
+1x Interpret the Signs
+13x Island
+1x Jace's Sanctum
+1x Jace, Mirror Mage
+1x Loyal Warhound
+1x Matoya, Archon Elder
+1x Mnemonic Deluge
+1x Myriad Landscape
+1x Mystic Sanctuary
+1x Mystic Speculation
+1x Netherese Puzzle-Ward
+1x Oath of Teferi
+1x Onakke Oathkeeper
+1x Opt
+1x Path to Exile
+12x Plains
+1x Ponder
+1x Prairie Stream
+1x Preordain
+1x Propaganda
+1x Pull from Tomorrow
+1x Reality Shift
+1x Reliquary Tower
+1x Scour All Possibilities
+1x Sephara, Sky's Blade
+1x Serum Visions
+1x Skullclamp
+1x Sol Ring
+1x Storm Herd
+1x Swords to Plowshares
+1x Talisman of Progress
+1x Talrand, Sky Summoner
+1x The Grey Havens
+1x The Reality Chip
+1x Thought Vessel
+1x Turbulent Shore
+1x Vanquish the Horde
+1x Wisdom of Ages
+1x Zhalfirin Void
+
+---
+
+Template report for "": 12 unsupported card(s).
+
+Ability templates the parser could not read (cards blocked, abilities, template, example):
+- 1 card(s), 1 ability(ies): As long as you control a creature, if damage dealt to a planeswalker you control of the chosen type would result in all loyalty counters on it being removed, instead all but N of those counters are removed.
+    e.g. As long as you control a creature, if damage dealt to a planeswalker you control of the chosen type would result in all loyalty counters on it being removed, instead all but one of those counters are removed.
+    cards: Deification
+- 1 card(s), 1 ability(ies): As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library.
+    e.g. As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library.
+    cards: The Reality Chip
+- 1 card(s), 1 ability(ies): As ~ enters, choose a planeswalker type.
+    e.g. As ~ enters, choose a planeswalker type.
+    cards: Deification
+- 1 card(s), 1 ability(ies): Choose N — • Destroy X target artifacts and/or enchantments. • Target player gains twice X life.
+    e.g. Choose one —
+• Destroy X target artifacts and/or enchantments.
+• Target player gains twice X life.
+    cards: Heliod's Intervention
+- 1 card(s), 1 ability(ies): Create N N/N white Angel Warrior creature tokens with flying. Non-Angel creatures you control gain indestructible until your next turn.
+    e.g. Create two 4/4 white Angel Warrior creature tokens with flying. Non-Angel creatures you control gain indestructible until your next turn.
+    cards: Emeria's Call // Emeria, Shattered Skyclave
+- 1 card(s), 1 ability(ies): Creatures can't attack planeswalkers you control unless their controller pays {M} for each creature they control that's attacking a planeswalker you control.
+    e.g. Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control.
+    cards: Onakke Oathkeeper
+- 1 card(s), 1 ability(ies): Exile target instant or sorcery card from a graveyard. Copy that card N times. You may cast the copies without paying their mana costs. Exile ~.
+    e.g. Exile target instant or sorcery card from a graveyard. Copy that card three times. You may cast the copies without paying their mana costs. Exile ~.
+    cards: Mnemonic Deluge
+- 1 card(s), 1 ability(ies): Reconfigure {M}
+    e.g. Reconfigure {2}{U}
+    cards: The Reality Chip
+- 1 card(s), 1 ability(ies): Return all instant and sorcery cards from your graveyard to your hand. You have no maximum hand size for the rest of the game.
+    e.g. Return all instant and sorcery cards from your graveyard to your hand. You have no maximum hand size for the rest of the game.
+    cards: Wisdom of Ages
+- 1 card(s), 1 ability(ies): Scry N, then reveal the top card of your library. Draw cards equal to that card's mana value.
+    e.g. Scry 3, then reveal the top card of your library. Draw cards equal to that card's mana value.
+    cards: Interpret the Signs
+- 1 card(s), 1 ability(ies): Tap any number of untapped creatures you control. Create a N/N white Angel creature token with flying for each creature tapped this way.
+    e.g. Tap any number of untapped creatures you control. Create a 4/4 white Angel creature token with flying for each creature tapped this way.
+    cards: Devout Invocation
+- 1 card(s), 1 ability(ies): Whenever you scry, the next instant or sorcery spell you cast this turn costs {X} less to cast, where X is the number of cards looked at while scrying this way.
+    e.g. Whenever you scry, the next instant or sorcery spell you cast this turn costs {X} less to cast, where X is the number of cards looked at while scrying this way.
+    cards: Elminster
+- 1 card(s), 1 ability(ies): You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.
+    e.g. You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.
+    cards: Oath of Teferi
+- 1 card(s), 1 ability(ies): {T}: Add N mana of any color among legendary creature cards in your graveyard.
+    e.g. {T}: Add one mana of any color among legendary creature cards in your graveyard.
+    cards: The Grey Havens
+- 1 card(s), 1 ability(ies): −N: Exile the top card of your library. Create a number of N/N blue Faerie Dragon creature tokens with flying equal to that card's mana value.
+    e.g. −3: Exile the top card of your library. Create a number of 1/1 blue Faerie Dragon creature tokens with flying equal to that card's mana value.
+    cards: Elminster
+
+Other reasons (not a parse failure):
+- 1 card(s): faces[N]: it refers to the chosen creature type but does not choose N as it enters (CR N.Nd)
+    cards: Deification
+
+Unsupported cards (12): Deification; Devout Invocation; Elminster; Emeria's Call // Emeria, Shattered Skyclave; Heliod's Intervention; Interpret the Signs; Mnemonic Deluge; Oath of Teferi; Onakke Oathkeeper; The Grey Havens; The Reality Chip; Wisdom of Ages
+
+Unsupported cards, and why each is blocked:
+
+### Deification
+{1}{W}  Enchantment
+- grammar: stopped at ", choose a planeswalker type." (closest rule replacement.as-enters-choose)
+- grammar: stopped at "long as you control a creature, if damage dealt to a planeswalker you control of the chosen type would result in all loyalty counters on it being removed, instead all but one of those counters are removed." (closest rule replacement.as-enters-choose)
+- faces[0]: it refers to the chosen creature type but does not choose one as it enters (CR 607.2d)
+
+### Devout Invocation
+{6}{W}  Sorcery
+- grammar: stopped at "any number of untapped creatures you control. Create a 4/4 white Angel creature token with flying for each creature tapped this way." (closest rule effect.tap-chosen)
+
+### Elminster
+{3}{W}{U}  Legendary Planeswalker — Elminster
+- grammar: stopped at "looked at while scrying this way." (closest rule amount.where-x)
+- grammar: "that card" has nothing to refer to
+
+### Emeria's Call // Emeria, Shattered Skyclave
+{4}{W}{W}{W}  Sorcery // Land
+- grammar: stopped at "until your next turn." (closest rule effect.gain-keyword-all)
+
+### Heliod's Intervention
+{X}{W}{W}  Instant
+- grammar: stopped at "twice X life." (closest rule effect.player.life)
+
+### Interpret the Signs
+{5}{U}  Sorcery
+- grammar: stopped at "card of your library. Draw cards equal to that card's mana value." (closest rule effect.reveal-put-all)
+
+### Mnemonic Deluge
+{6}{U}{U}{U}  Sorcery
+- grammar: stopped at "that card three times. You may cast the copies without paying their mana costs. Exile ~." (closest rule effect.copy-spell)
+
+### Oath of Teferi
+{3}{W}{U}  Legendary Enchantment
+- grammar: stopped at "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (closest rule none)
+
+### Onakke Oathkeeper
+{1}{W}  Creature — Ogre Spirit
+- grammar: stopped at "planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control." (closest rule static.permanents)
+
+### The Grey Havens
+Legendary Land
+- grammar: stopped at "among legendary creature cards in your graveyard." (closest rule effect.add-mana)
+
+### The Reality Chip
+{1}{U}  Legendary Artifact Creature — Equipment Jellyfish
+- grammar: stopped at "you may play lands and cast spells from the top of your library." (closest rule static.conditional-prefix)
+- grammar: stopped at "Reconfigure {2}{U}" (closest rule none)
+
+### Wisdom of Ages
+{4}{U}{U}{U}  Sorcery
+- grammar: stopped at "and sorcery cards from your graveyard to your hand. You have no maximum hand size for the rest of the game." (closest rule noun.all-graveyard-cards)
+
