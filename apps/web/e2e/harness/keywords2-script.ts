@@ -69,7 +69,11 @@ export async function drive(
   { until, cast, spare, keep = [], steps = 700 }: Drive,
 ): Promise<void> {
   const keepButton = page.getByRole('button', { name: 'Keep', exact: true });
-  const targets = page.getByRole('region', { name: 'Legal targets' });
+  // The legal targets are on the board (the panel lists only those it does not show), so the
+  // question is recognised by its prompt in the action bar.
+  const targets = page.locator('.dec-prompt', {
+    hasText: /^Choose (a|an|\d+|up to \d+) targets?\b/,
+  });
   for (let step = 0; step < steps; step += 1) {
     await settled(page);
     if (await keepButton.isVisible()) {
