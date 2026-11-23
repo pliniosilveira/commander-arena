@@ -1,5 +1,5 @@
 {
-  "parserVersion": 193,
+  "parserVersion": 194,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -7750,18 +7750,10 @@
     "a5b72c5d-4c73-49cd-9fc5-855856807ff2": {
       "name": "U.S.S. Stargazer, Here and There",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Picard Maneuver — Whenever ~ attacks, create a tapped and attacking 4/3 colorless Spacecraft Illusion artifact creature token with flying. Exile that token at end of combat.",
-          "reason": "notRunnable",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e3ef49b0"
+      "ast": "833f1fd4"
     },
     "a5cbd257-c836-493e-bb1a-76242619dea2": {
       "name": "Big Score",
@@ -11819,7 +11811,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1164,
+      "supported": 1165,
       "total": 1184
     }
   }
