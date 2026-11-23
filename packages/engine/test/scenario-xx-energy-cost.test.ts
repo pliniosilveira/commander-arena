@@ -91,3 +91,16 @@ describe('"You may pay any amount of {E}. If you do, ..." (payAnyAmount with the
     g.expect.handSize(0, 0);
   });
 });
+
+describe('a Vehicle token (an artifact with power and toughness, crew 2)', () => {
+  const MAKER = 'SYNTHETIC Hull Maker';
+
+  test('it is created as a Vehicle with crew, and is no creature until crewed (CR 301.7a, 208.3)', () => {
+    const g = scenario().seat(0).battlefield(MAKER, 'Grizzly Bears').build();
+    g.act(0).activate(MAKER);
+    g.passAll();
+    g.expect.zone('Hull', 'battlefield', { seat: 0 });
+    // CR 208.3, 301.7a: no power or toughness until it is crewed, and the keyword is on the token.
+    g.expect.derived('Hull', { types: ['artifact'], subtypes: ['Vehicle'], keywords: ['crew'] });
+  });
+});

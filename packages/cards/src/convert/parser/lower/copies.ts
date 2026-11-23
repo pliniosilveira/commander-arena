@@ -95,7 +95,8 @@ export function lowerCopyToken(
     exceptions = {
       ...exceptions,
       setPt: { power: extra.power, toughness: extra.toughness },
-      addSubtypes: [...extra.subtypes],
+      // Issue 105 (Saheeli, Radiant Creator): "a 5/5 artifact creature in addition to its other types" names no creature type.
+      ...(extra.subtypes.length === 0 ? {} : { addSubtypes: [...extra.subtypes] }),
       addTypes: types,
       ...(abilities.length === 0 ? {} : { abilities }),
     };

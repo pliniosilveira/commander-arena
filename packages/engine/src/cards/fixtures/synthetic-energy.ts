@@ -61,4 +61,40 @@ export const SYNTHETIC_ENERGY_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "{T}: Create a 3/3 colorless Vehicle artifact token named Hull with flying and crew 2."
+  singleFace({
+    name: 'SYNTHETIC Hull Maker',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: '{T}: Create a 3/3 colorless Vehicle artifact token named Hull with crew 2.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'createToken',
+          count: 1,
+          token: {
+            kind: 'custom',
+            definition: {
+              name: 'Hull',
+              manaCost: null,
+              supertypes: [],
+              types: ['artifact'],
+              subtypes: ['Vehicle'],
+              colors: [],
+              power: 3,
+              toughness: 3,
+              loyalty: null,
+              defense: null,
+              oracleText: 'Crew 2',
+              abilities: [{ kind: 'keyword', keyword: { kind: 'crew', power: 2 } }],
+            },
+          },
+        },
+      },
+    ],
+  }),
 ];

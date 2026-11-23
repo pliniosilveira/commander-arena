@@ -4555,7 +4555,11 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
         issue(out, `${path}.${key}`, `a creature token needs a numeric ${key}`);
       }
     } else if (v !== null) {
-      issue(out, `${path}.${key}`, `only a creature token has ${key}`);
+      // Issue 105 (CR 301.7, 302.1): a Vehicle token is an artifact with a power and a toughness that becomes a creature when it is crewed.
+      const vehicle = def.types?.includes('artifact') === true && def.subtypes?.includes('Vehicle');
+      if (!vehicle || typeof v !== 'number' || !Number.isSafeInteger(v)) {
+        issue(out, `${path}.${key}`, `only a creature token has ${key}`);
+      }
     }
   }
   // CR 306.5b, 310.4b (D-200): a planeswalker token enters with loyalty counters equal to its loyalty, a battle token with defense counters.

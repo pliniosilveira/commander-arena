@@ -2301,7 +2301,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     token.ptAmount !== true &&
     (token.keywords ?? []).length === 0 &&
     types.length > 0;
-  if (!noncreature && (!creature || definesPt === null)) {
+  // Issue 105 (Pia Nalaar, Chief Mechanic, CR 301.7, 302.1): a Vehicle token is an artifact with power and toughness that is no creature until it is crewed.
+  const vehicle =
+    !creature &&
+    types.length === 1 &&
+    types[0] === 'artifact' &&
+    token.subtypes?.includes('Vehicle') === true &&
+    (token.ptAmount === true || (token.power !== undefined && token.toughness !== undefined));
+  if (!vehicle && !noncreature && (!creature || definesPt === null)) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -2314,6 +2321,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       const unsupportedDevour = missingFeatures(['ability:keyword', 'keyword:devour']);
       if (unsupportedDevour.length > 0) return { ok: false, needs: unsupportedDevour, ...at };
       abilities.push({ kind: 'keyword', keyword: { kind: 'devour', count: Number(devour[1]) } });
+      continue;
+    }
+    // "with flying and crew 2" (issue 105, CR 702.122a): the keyword of a Vehicle token.
+    const crew = /^crew ([1-9]\d*)$/.exec(word);
+    if (crew !== null) {
+      const unsupportedCrew = missingFeatures(['ability:keyword', 'keyword:crew']);
+      if (unsupportedCrew.length > 0) return { ok: false, needs: unsupportedCrew, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'crew', power: Number(crew[1]) } });
       continue;
     }
     const toxic = /^toxic ([1-9]\d*)$/.exec(word);

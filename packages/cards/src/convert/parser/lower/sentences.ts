@@ -605,6 +605,8 @@ function lowerMayPay(
   sentence: IrSentence,
   next: IrSentence | undefined,
   ctx: LowerContext,
+  /** The sentences after the one of "When you do": they are part of that reflexive ability (CR 603.12), as in "... create a token. Sacrifice it at the beginning of the next end step." */
+  rest: readonly IrSentence[] = [],
 ): LowerResult<Effects> | null {
   const [clause, ...more] = sentence.clauses;
   if (clause?.verb !== 'pay') return null;
@@ -663,7 +665,8 @@ function lowerMayPay(
   const blocked = missingFeatures(needs);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
   if (paidReflexive) {
-    const reflexive = lowerReflexive(next, ctx);
+    const reflexive =
+      rest.length === 0 ? lowerReflexive(next, ctx) : lowerReflexiveBody(next, rest, ctx);
     if (!reflexive.ok) return reflexive;
     if (reflexive.value.kind !== 'reflexive') return refuse(next);
     return {
@@ -1644,6 +1647,32 @@ function lowerReflexive(next: IrSentence, ctx: LowerContext): LowerResult<Effect
 }
 
 /**
+ * The reflexive ability of "When you do, create a token that's a copy of target permanent you control, ... Sacrifice it at the beginning of the next end step." (issue 105, CR 603.12): the
+ * sentences after the one of "When you do" say what the same ability does next, so the token they name is the one it created. Its targets are its own.
+ */
+function lowerReflexiveBody(
+  first: IrSentence,
+  rest: readonly IrSentence[],
+  ctx: LowerContext,
+): LowerResult<Effect> {
+  const before = ctx.targets.length;
+  const { reflexive: _reflexive, ...plain } = first;
+  void _reflexive;
+  const body = lowerSentences([plain, ...rest], ctx);
+  if (!body.ok) return body;
+  const own = ctx.targets.splice(before);
+  return {
+    ok: true,
+    value: {
+      kind: 'reflexive',
+      ...(own.length > 0 ? { targets: own } : {}),
+      effect: ownSource(oneEffect(body.value), ctx),
+    },
+    rule: first.clauses[0]?.rule ?? first.rule,
+  };
+}
+
+/**
  * "Draw a card, then discard a card. When you discard a nonland card this way, put two charge counters on up to one target artifact." (Federation Fleet deck, group D, Seven of Nine,
  * Tertiary Adjunct; CR 603.12, 608.2c): the engine's `reflexive` ability with `ifThisWay` of `discardedNonland`, created when the discards before it in this resolution discarded a nonland card;
  * its targets are its own. It is the last sentence of the text and follows a plain instruction of the controller that discards. Any other shape is refused, never guessed.
@@ -2575,11 +2604,13 @@ function lowerStep(
     steps.push({ effects: chosenToken.value, replaceable: false });
     return { last: i + 1 };
   }
-  const offered = lowerMayPay(sentence, sentences[i + 1], ctx);
+  // Issue 105 (Saheeli, Radiant Creator): the sentences that follow "When you do, ..." belong to that reflexive ability.
+  const afterReflexive = sentences[i + 1]?.reflexive === true ? sentences.slice(i + 2) : [];
+  const offered = lowerMayPay(sentence, sentences[i + 1], ctx, afterReflexive);
   if (offered !== null) {
     if (!offered.ok) return stop(offered);
     steps.push({ effects: offered.value, replaceable: false });
-    return { last: i + 1 };
+    return { last: afterReflexive.length > 0 ? sentences.length - 1 : i + 1 };
   }
   // "You may discard a card. If you do, draw a card." and "You may exile it. When you do, ..." (stage P30, D-135, CR 608.2c, 603.12).
   const asked = lowerMay(sentence, sentences, i, ctx);
