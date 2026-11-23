@@ -25,13 +25,8 @@ export function Side({
   return (
     <div className="dec-versus-side" data-versus-side={who}>
       {commander !== '' && (
-        <Art
-          name={commander}
-          isToken={false}
-          commander
-          version="normal"
-          className="dec-versus-card"
-        />
+        // No search for a special commander printing here: the deck's own printing (the one chosen for it, or its list's) is drawn.
+        <Art name={commander} isToken={false} version="normal" className="dec-versus-card" />
       )}
       <span className="dec-versus-text">
         <span className="dec-versus-who">{label}</span>

@@ -16,6 +16,7 @@ const image = (id: string) => ({
   small: `https://cards.scryfall.io/small/front/${id}.jpg`,
   normal: `https://cards.scryfall.io/normal/front/${id}.jpg`,
   large: `https://cards.scryfall.io/large/front/${id}.jpg`,
+  art_crop: `https://cards.scryfall.io/art_crop/front/${id}.jpg`,
 });
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -137,7 +138,10 @@ test.describe('a built-in deck', () => {
     await images(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'My decks' }).click();
-    await page.locator(`[data-precon="${PRECON}"]`).getByRole('button', { name: /^View/ }).click();
+    const row = page.locator(`[data-precon="${PRECON}"]`);
+    // The cell of the deck list draws the commander in that printing too.
+    await expect(row.locator('img').first()).toHaveAttribute('src', /art_crop\/front\/listed\.jpg/);
+    await row.getByRole('button', { name: /^View/ }).click();
     await expect(page.locator('.deck-card img').first()).toHaveAttribute(
       'src',
       /normal\/front\/listed\.jpg/,

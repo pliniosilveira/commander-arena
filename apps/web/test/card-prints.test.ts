@@ -55,7 +55,12 @@ test('a malformed answer gives no printings', () => {
 test('a collection answer is read by set and number, not by position; foreign images are dropped', () => {
   const images = parseListedImages({
     data: [
-      { name: 'Card B', set: 'XYZ', collector_number: '12', image_uris: img('b') },
+      {
+        name: 'Card B',
+        set: 'XYZ',
+        collector_number: '12',
+        image_uris: { ...img('b'), art_crop: 'https://cards.scryfall.io/art_crop/front/b.jpg' },
+      },
       {
         name: 'Card C',
         set: 'abc',
@@ -69,6 +74,7 @@ test('a collection answer is read by set and number, not by position; foreign im
   expect(images.get(listedKey({ set: 'xyz', collector: '12' }))).toEqual({
     name: 'Card B',
     normal: 'https://cards.scryfall.io/normal/front/b.jpg',
+    artCrop: 'https://cards.scryfall.io/art_crop/front/b.jpg',
   });
   expect(parseListedImages(null).size).toBe(0);
 });

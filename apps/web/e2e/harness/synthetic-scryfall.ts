@@ -89,12 +89,13 @@ async function answerCollection(route: Route): Promise<void> {
     await route.fulfill({ status: 204, headers: CORS });
     return;
   }
-  const body = request.postDataJSON() as { identifiers: { name: string }[] };
+  const body = request.postDataJSON() as { identifiers: { name?: string }[] };
   const data: Record<string, unknown>[] = [];
-  const notFound: { name: string }[] = [];
-  for (const { name } of body.identifiers) {
-    const card = syntheticCard(name);
-    if (card === undefined) notFound.push({ name });
+  const notFound: { name?: string }[] = [];
+  for (const identifier of body.identifiers) {
+    // An identifier by set and number (a printing of a listed deck) names no card the fake knows.
+    const card = identifier.name === undefined ? undefined : syntheticCard(identifier.name);
+    if (card === undefined) notFound.push(identifier);
     else data.push(card);
   }
   await route.fulfill({

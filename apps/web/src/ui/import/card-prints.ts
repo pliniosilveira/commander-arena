@@ -132,6 +132,8 @@ export const listedKey = (key: ListedKey): string => `${key.set.toLowerCase()}/$
 export interface ListedImage {
   readonly name: string;
   readonly normal: string;
+  /** The cropped art of the printing, for the cells of the deck lists; null when Scryfall gives none. */
+  readonly artCrop: string | null;
 }
 
 /** The printings of a `/cards/collection` answer by `listedKey`; those without a Scryfall-hosted picture are left out. */
@@ -142,11 +144,14 @@ export function parseListedImages(answer: unknown): ReadonlyMap<string, ListedIm
   for (const raw of data) {
     if (typeof raw !== 'object' || raw === null) continue;
     const card = raw as Record<string, unknown>;
-    const normal = str(imagesOf(card)?.normal);
+    const uris = imagesOf(card);
+    const normal = str(uris?.normal);
+    const artCrop = str(uris?.art_crop);
     if (!HOST.test(normal)) continue;
     found.set(listedKey({ set: str(card.set), collector: str(card.collector_number) }), {
       name: str(card.name),
       normal,
+      artCrop: HOST.test(artCrop) ? artCrop : null,
     });
   }
   return found;
