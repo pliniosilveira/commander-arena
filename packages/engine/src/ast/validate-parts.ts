@@ -444,12 +444,21 @@ export function checkFilter(
     issue(out, `${path}.attackingOpponents`, "attackingOpponents must be true or 'players'");
   }
   // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
-  if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
+  if (f.attachedTo !== undefined) {
+    checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out, ownerScope);
+  }
   if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
     issue(
       out,
       `${path}.enchanted`,
       'enchanted must be a boolean (true: has an Aura, false: has none)',
+    );
+  }
+  if (f.equipped !== undefined && typeof f.equipped !== 'boolean') {
+    issue(
+      out,
+      `${path}.equipped`,
+      'equipped must be a boolean (true: has an Equipment, false: has none)',
     );
   }
   if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
@@ -474,6 +483,7 @@ export function checkFilter(
   if (
     (f.attachedTo !== undefined ||
       f.enchanted !== undefined ||
+      f.equipped !== undefined ||
       f.enchantedByYou === true ||
       f.hostOfSource === true) &&
     f.zone !== undefined &&
@@ -826,10 +836,20 @@ const HOST_FILTER_KEYS: readonly string[] = [
 ];
 
 /** D-422: what an `attachedTo` filter names: the source, its host, or a permanent a plain filter describes. */
-function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
+function checkAttachedTo(a: AttachedTo, path: string, out: Out, scope?: Scope): void {
   switch (a?.kind) {
     case 'source':
     case 'host':
+      return;
+    case 'sacrificedCost':
+      // CR 113.7a (Zack Fair): read from the last-known information of what the cost of the ability that is resolving sacrificed.
+      if (scope?.sacrificedCost !== true) {
+        issue(
+          out,
+          path,
+          "attachedTo 'sacrificedCost' needs an activated ability whose cost sacrifices a permanent, read as it resolves",
+        );
+      }
       return;
     case 'matching': {
       const inner = a.filter;
@@ -858,7 +878,7 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
       return;
     }
     default:
-      issue(out, path, `attachedTo is source, host or matching, not ${kindOf(a)}`);
+      issue(out, path, `attachedTo is source, host, matching or sacrificedCost, not ${kindOf(a)}`);
   }
 }
 
@@ -5491,9 +5511,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
       // controller's own permanents.
+      // Zack Fair (CR 113.7a): "attach an Equipment that was attached to ~" is a forced choice among the objects that were attached to the sacrificed permanent, whoever controls them.
       if (
         e.filter.controller !== 'you' &&
-        !(e.filter.controller === undefined && e.exactly !== true)
+        !(e.filter.controller === undefined && e.exactly !== true) &&
+        !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
       ) {
         issue(
           out,
@@ -6733,6 +6755,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'moveAllCounters':
       // CR 122.1: both permanents are targets of the ability (or the triggering permanent), as for a copy that names its original.
       checkRef(e.from, 'object', `${path}.from`, scope, out);
+      checkRef(e.to, 'object', `${path}.to`, scope, out);
+      break;
+    case 'putCountersOf':
+      // CR 122.1, 113.7a (Zack Fair): the permanent whose counters are copied is `this` or the permanent the cost sacrificed, last-known information once it is gone.
+      if (kindOf(e.from) === 'sacrificedCost') checkSacrificedCost(`${path}.from`, scope, out);
+      else if (kindOf(e.from) !== 'this') {
+        issue(
+          out,
+          `${path}.from`,
+          "putCountersOf takes the counters of 'this' or 'sacrificedCost'",
+        );
+      }
       checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
     case 'counter':

@@ -57,6 +57,8 @@ export interface FilterParts {
   readonly modified: boolean;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds. */
   readonly goaded: boolean;
+  /** "equipped" (CR 301.5): a permanent with an Equipment attached to it. */
+  readonly equipped: boolean;
   /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
   readonly commander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
@@ -83,6 +85,7 @@ export const NO_PARTS: FilterParts = {
   historic: false,
   modified: false,
   goaded: false,
+  equipped: false,
   commander: false,
   colorCount: undefined,
 };
@@ -140,6 +143,8 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('modified', (p) => ({ ...p, modified: true })),
   // CR 701.15b (Goad): "goaded creature".
   word('goaded', (p) => ({ ...p, goaded: true })),
+  // Limit Break deck, group 1 (CR 301.5): "equipped creature", a creature with an Equipment attached to it.
+  word('equipped', (p) => ({ ...p, equipped: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
   word('attacking', (p) => ({ ...p, attacking: true })),
   word('blocking', (p) => ({ ...p, blocking: true })),
@@ -245,6 +250,7 @@ export function toFilter(
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
     ...(p.goaded ? { goaded: true as const } : {}),
+    ...(p.equipped ? { equipped: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
@@ -891,6 +897,7 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.token === undefined &&
           !parts.attacking &&
           !parts.modified &&
+          !parts.equipped &&
           !parts.goaded,
       ),
       optional(
@@ -937,6 +944,7 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.token !== undefined ||
           parts.attacking ||
           parts.modified ||
+          parts.equipped ||
           parts.goaded
         )
           return fail(c, at);
@@ -1213,6 +1221,7 @@ export function graveyardPhrase(
       !parts.historic &&
       !parts.modified &&
       !parts.goaded &&
+      !parts.equipped &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
     if (!plain || left.length === 0) return fail(ctx, pos);
@@ -1262,13 +1271,17 @@ export function graveyardPhrase(
     };
   };
   // "Aura or Equipment card" (issue 89, Forum Filibuster, CR 205.3g, 205.3h): a card that is an Aura or is an Equipment, one card only (the subtypes of an enchantment and of an
+  // Limit Break deck, group 1 (Unfinished Business): "up to two target Aura and/or Equipment cards", the same cards said with "and/or", also in the plural.
   // artifact; no type word is said).
-  const auraOrEquipment: Parser<CardWords> = map(literal('Aura or Equipment '), () => ({
-    types: [],
-    anyOf: [],
-    subtypes: [],
-    subtypeAnyOf: ['Aura', 'Equipment'],
-  }));
+  const auraOrEquipment: Parser<CardWords> = map(
+    choice(literal('Aura or Equipment '), literal('Aura and/or Equipment ')),
+    () => ({
+      types: [],
+      anyOf: [],
+      subtypes: [],
+      subtypeAnyOf: ['Aura', 'Equipment'],
+    }),
+  );
   // "Equipment or Vehicle card" (Cid, Freeflier Pilot, CR 205.3g, 205.3h): a card that has either of two or more artifact or enchantment types, one card only; no card type is said,
   // so the words are the subtypes alone (a creature type after "or" is another reading, `subtypeChoiceWords`).
   const permanentSubtypeChoice: Parser<CardWords> = (ctx, pos) => {
@@ -1297,7 +1310,7 @@ export function graveyardPhrase(
     }),
   );
   const words: Parser<CardWords> = plural
-    ? choice(permanentCards, choiceOfTypes, quiet(historicWords), typed)
+    ? choice(permanentCards, choiceOfTypes, quiet(historicWords), auraOrEquipment, typed)
     : choice(
         permanentCards,
         withNonAura,

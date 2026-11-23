@@ -388,6 +388,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
     'up to one target Aura or Equipment card from your graveyard',
     'target Aura or Equipment card from your graveyard',
+    // Limit Break deck, group 1 (Unfinished Business): the plural, also with "and/or".
+    'two target Aura or Equipment cards from your graveyard',
+    'up to two target Aura and/or Equipment cards from your graveyard',
     // Junji, the Midnight Sky (CR 205.3d): a creature card that has no Dragon type.
     'target non-Dragon creature card from a graveyard',
     "target non-Zombie creature card from an opponent's graveyard",
@@ -424,9 +427,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',
-    'two target Aura or Equipment cards from your graveyard',
     'target Aura or Equipment from your graveyard',
     'target Aura or Equipment or Saga card from your graveyard',
+    'two target Aura and Equipment cards from your graveyard',
     'target permanent card with mana value less than or equal to the number of counters on that creature',
     'target permanent card with mana value less than or equal to the number of +1/+1 counters on that creature from your graveyard',
     'target permanent card with mana value less than or equal to the number of counters on target creature from your graveyard',

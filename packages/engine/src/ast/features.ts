@@ -262,6 +262,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeAllCounters',
     // Nexus Mentality: "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6).
     'moveAllCounters',
+    // Zack Fair: "Put ~'s counters on that creature" (CR 122.1, 113.7a): the counters a permanent had, as it last was.
+    'putCountersOf',
     // CR 122.5, 122.1 (Nesting Grounds, Eventide's Shadow, Glissa Sunslayer): the controller chooses which counters to move or remove.
     'moveCounter',
     'removeChosenCounters',
@@ -1051,7 +1053,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putWithThis',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
+    // Zack Fair: "an Equipment that was attached to ~" (`AttachedTo` `sacrificedCost`, last-known information, CR 113.7a).
+    'attachedToSacrificedCost',
     'enchanted',
+    // Limit Break deck, group 1: "equipped creature" (`ObjectFilter.equipped`).
+    'equipped',
     // D-647: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
     'enchantedByYou',
     // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
@@ -2083,8 +2089,12 @@ export const SELECTOR_KINDS = [
   'putWithThis',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
+  /** "An Equipment that was attached to ~" after ~ was sacrificed to pay a cost (Zack Fair, CR 113.7a): the engine's `AttachedTo` `sacrificedCost`. */
+  'attachedToSacrificedCost',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
   'enchanted',
+  /** "Equipped creature", "creatures that are equipped" (CR 301.5, Limit Break deck group 1): the engine's `ObjectFilter.equipped`. */
+  'equipped',
   /** "Enchanted by an Aura you control" (CR 303.4e, D-647): the engine's `ObjectFilter.enchantedByYou`. */
   'enchantedByYou',
   /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */
@@ -3010,6 +3020,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   untap: true,
   removeAllCounters: true,
   moveAllCounters: true,
+  putCountersOf: true,
   moveCounter: true,
   removeChosenCounters: true,
   removeCounters: true,

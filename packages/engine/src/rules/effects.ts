@@ -3593,6 +3593,33 @@ function runEffect(
       return done(moved, events);
     }
 
+    case 'putCountersOf': {
+      // CR 122.1, 122.6, 113.7a, 608.2h (Zack Fair): each counter the first permanent had, as it is or as it last was on the battlefield, is put onto the second, kind by kind,
+      // as any counters put on a permanent are (replacements and prevention of counters apply). Nothing is taken off the first.
+      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
+      const toId = resolveObjects(state, effect.to, ctx, targets)[0];
+      const from = fromId === undefined ? null : objectOrLki(state, fromId);
+      if (from === null || toId === undefined) return done(next);
+      const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
+      for (const [counter, count] of Object.entries(from.counters)) {
+        if (count <= 0) continue;
+        const put = putCountersOn(
+          state,
+          next,
+          toId,
+          counter,
+          count,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
     case 'moveCounter': {
       // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
       const fromId = resolveObjects(state, effect.from, ctx, targets)[0];

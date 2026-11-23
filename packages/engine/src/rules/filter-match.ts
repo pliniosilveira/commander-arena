@@ -99,6 +99,8 @@ export interface FilterContext {
   readonly attackersOfYouOrPlaneswalkers?: readonly ObjectId[];
   /** The number `manaValueAtMost` stands for (D-230), worked out by the caller that has the state. */
   readonly manaValueLimit?: number;
+  /** The permanents sacrificed to pay the cost of the ability that is resolving, for `attachedTo` `sacrificedCost` (CR 113.7a): read from the resolution by the caller; absent matches nothing. */
+  readonly costSacrificed?: readonly ObjectId[];
   /** The cards `notTriggerCard` leaves out (CR 400.7, 603.10a): the card the permanent the trigger is about became, read by the caller; absent leaves nothing out. */
   readonly excludedCards?: readonly ObjectId[];
   /** The creatures declared as blockers that are still in combat, for `blocking` (CR 509.1g): read from the combat in progress by the caller. */
@@ -172,6 +174,12 @@ function attachedToHolds(
   attached: AttachedTo,
   ctx: FilterContext,
 ): boolean {
+  // CR 113.7a, 301.5 (Zack Fair): "an Equipment that was attached to ~", ~ sacrificed to pay the cost: read from its last-known information, as the Equipment is attached to nothing now.
+  if (attached.kind === 'sacrificedCost') {
+    return (ctx.costSacrificed ?? []).some((id) =>
+      (state.lki[id]?.attachments ?? []).some((a) => a.id === obj.id),
+    );
+  }
   const target = obj.attachedTo;
   if (target === null) return false;
   if (attached.kind === 'source') return ctx.source !== null && target === ctx.source;
@@ -200,6 +208,7 @@ function hasAuraAttached(
   obj: GameObject,
   ctx: FilterContext,
   by?: SeatId,
+  subtype: 'Aura' | 'Equipment' = 'Aura',
 ): boolean | null {
   const describeOther = ctx.describeOther;
   if (describeOther === undefined) return null;
@@ -208,7 +217,7 @@ function hasAuraAttached(
     return (
       other !== undefined &&
       other.attachedTo === obj.id &&
-      describeOther(other).subtypes.includes('Aura') &&
+      describeOther(other).subtypes.includes(subtype) &&
       (by === undefined || controllerOf(state, other) === by)
     );
   });
@@ -264,6 +273,13 @@ export function matchesFilterWith(
     if (source === undefined || source.attachedTo !== obj.id) return false;
   }
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
+    return false;
+  }
+  // CR 301.5 (Equipment): "equipped creature", "creatures that are equipped": an Equipment is attached to it.
+  if (
+    filter.equipped !== undefined &&
+    hasAuraAttached(state, obj, ctx, undefined, 'Equipment') !== filter.equipped
+  ) {
     return false;
   }
   // CR 303.4e (D-647): "enchanted by an Aura you control".

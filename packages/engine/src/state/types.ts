@@ -866,6 +866,11 @@ export interface LastKnownInfo {
    * (`aurasAttachedToTriggerSubject`). Absent when none was.
    */
   readonly auras?: readonly { readonly id: ObjectId; readonly controller: SeatId }[];
+  /**
+   * Everything that was attached to it as it left the battlefield, whatever it is (an Aura, an Equipment, a Fortification), with the player who controlled each (CR 113.7a, 301.5,
+   * 303.4): "an Equipment that was attached to it" (`AttachedTo` `sacrificedCost`). Absent when nothing was.
+   */
+  readonly attachments?: readonly { readonly id: ObjectId; readonly controller: SeatId }[];
 }
 
 /**

@@ -582,3 +582,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Dauthi Voidwalker's exile replacement uses the first opponent; with several opponents the replacement order (CR 616.1) is not offered.
 - "Whenever one or more players lose life" (any player, batched) and "one or more opponents lose life for the first time each turn" are not read; only the opponents batch is (`lifeLost` with `batch`).
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
+- A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.

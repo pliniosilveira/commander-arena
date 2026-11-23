@@ -120,6 +120,7 @@ import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
+import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -692,7 +693,7 @@ const RETURN: Lowering<IrClause, Effects> = {
     let attachTo: { readonly kind: 'moved' } | undefined;
     if (hostNoun !== undefined) {
       if (zone !== 'battlefield' || hostNoun.kind !== 'noun') return failure(clause);
-      const host = objectRefOf(hostNoun, ctx, { token: true });
+      const host = objectRefOf(hostNoun, ctx, { token: true, moved: true });
       if (!host.ok) return host;
       if (host.value.kind !== 'moved') return failure(clause);
       const blockedHost = missingFeatures(['ability:attachedToMoved']);
@@ -1878,6 +1879,7 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
  * battlefield, and the destination one target. A spell cannot attach itself, a permanent that is
  * gone cannot be attached, and the engine's attach moves one object to one other.
  */
+const ATTACHABLE_SUBTYPES: readonly string[] = ['Aura', 'Equipment', 'Fortification'];
 const ATTACH: Lowering<IrClause, Effects> = {
   head: 'attach',
   id: 'lower.attach',
@@ -1901,16 +1903,33 @@ const ATTACH: Lowering<IrClause, Effects> = {
     const object = arg(clause, 'object');
     const to = arg(clause, 'to');
     if (object?.kind !== 'noun' || to?.kind !== 'noun') return failure(clause);
-    if (ctx.owner === 'spell' || ctx.selfGone) return failure(clause);
+    // Limit Break deck, group 1 (CR 701.3, 115.1): "attach up to one target Equipment you control to target Rebel you control", "attach any number of target Equipment to it": the
+    // Auras, Equipment or Fortifications are targets of the ability (a spell may name them: it does not attach itself).
+    const attachesTargets = object.det === 'target';
+    if (ctx.selfGone || (ctx.owner === 'spell' && !attachesTargets)) return failure(clause);
+    if (
+      attachesTargets &&
+      !(object.filter.subtypes ?? []).some((t) => ATTACHABLE_SUBTYPES.includes(t))
+    ) {
+      return failure(clause);
+    }
     if (to.plural || to.upTo || (to.count?.kind === 'number' && to.count.value !== 1)) {
       return failure(clause);
     }
     // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura the trigger is about, read for a trigger of an enchantment entering.
     const what = objectRefOf(object, ctx, { triggerSubject: true });
     if (!what.ok) return what;
-    if (what.value.kind !== 'this' && what.value.kind !== 'triggerSubject') return failure(clause);
+    if (
+      what.value.kind !== 'this' &&
+      what.value.kind !== 'triggerSubject' &&
+      what.value.kind !== 'target'
+    ) {
+      return failure(clause);
+    }
     const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
+    // A permanent is not attached to itself (CR 701.3b): "attach ~ to it" where "it" is `~` is no instruction the game can follow.
+    if (what.value.kind === 'this' && onto.value.kind === 'this') return failure(clause);
     return {
       ok: true,
       value: [{ kind: 'attach', object: what.value, to: onto.value }],
@@ -2789,6 +2808,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
+  ...LIMIT_BREAK_G1_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
