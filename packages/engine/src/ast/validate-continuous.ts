@@ -170,6 +170,15 @@ function checkSetTypes(
   if (e.types === undefined && e.subtypes === undefined) {
     issue(out, path, 'setTypes needs types, subtypes or both');
   }
+  // CR 612.8: "a land named Moon": a name that goes with the card types it is given.
+  if (e.name !== undefined) {
+    if (typeof e.name !== 'string' || e.name === '') {
+      issue(out, `${path}.name`, 'a name is a non-empty text');
+    }
+    if (e.types === undefined || e.additive === true) {
+      issue(out, `${path}.name`, 'a name goes with card types that replace the ones it has');
+    }
+  }
   // CR 611.2b (Minas Morgul): "for as long as that creature has a shadow counter on it": a counter kind, for good (`permanent`), with nothing else that lasts differently.
   if (e.whileHasCounter !== undefined) {
     if (typeof e.whileHasCounter !== 'string' || e.whileHasCounter === '') {

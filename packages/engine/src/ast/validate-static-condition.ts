@@ -324,6 +324,17 @@ export function checkStaticCondition(
     checkCondition(condition, `${path}.condition`, out);
     return;
   }
+  // CR 305.1, 401.5, 604.1: "As long as an opponent controls more lands than you, you may play lands from the top of your library": the permission is read as a land is
+  // played (`rules/library-play.ts`), with `evaluateCondition`, not by `derive`, so the condition may read the game as an `amountIs` condition does.
+  if (
+    s?.kind === 'playLandsFromTopOfLibrary' &&
+    condition.kind === 'amountIs' &&
+    typeof condition.amount !== 'number' &&
+    condition.amount?.kind === 'opponentsWithMore'
+  ) {
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
   // Issue 81 (Windcrag Siege, "Mardu — ..."; CR 607.2d): an additional trigger linked to an option the permanent chose as it entered, read by `rules/trigger-doubling.ts`. No other condition.
   if (s?.kind === 'doubleTriggers') {
     if (kindOf(condition) !== 'chosenOption') {

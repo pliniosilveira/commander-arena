@@ -134,7 +134,7 @@ export const CONDITION_EXILED_THIS_WAY = defineRule<IrCondition>({
 export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
   id: 'condition.it-matches',
   family: 'condition',
-  leading: ['it’s', "it's", 'it', 'that'],
+  leading: ['it’s', "it's", 'it', 'she', 'he', 'that'],
   cites: [
     'CR 608.2c (Resolving Spells and Abilities)',
     'CR 113.7a (Abilities)',
@@ -151,6 +151,9 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
     "it's an Elf Warrior",
     // Stage P32 (D-147): the same test said in the past, of a card an earlier instruction exiled.
     'it was a creature card',
+    // Princess Yue: the pronoun of a named card, in the past (a creature that died).
+    'she was a nonland creature',
+    'he was a legendary creature',
     'it was an Angel',
     'it was a Zombie card',
     // Stage P33 (D-150): the same test said of a noun, "that land is a Plains" (the permanent whose event triggered the ability).
@@ -172,6 +175,8 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
     'it is a Zombie card',
     'it was Zombie',
     'it was not a creature card',
+    'she is a nonland creature',
+    'she was nonland creature',
     "that's a Zombie card",
     'that land is Plains',
     'that land is not a Plains',
@@ -183,10 +188,9 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
     'it is legendary',
   ],
   parse: (ctx, pos) => {
-    const lead = spanned(pattern(/(it(?:['’]s| was)|that [a-z]+ (?:is|was)) (?:a|an) /iu))(
-      ctx,
-      pos,
-    );
+    const lead = spanned(
+      pattern(/(it(?:['’]s| was)|(?:she|he) was|that [a-z]+ (?:is|was)) (?:a|an) /iu),
+    )(ctx, pos);
     // "that creature is legendary" (Ringwraiths, CR 205.4 supertypes): the adjective alone, with no article and no type after it.
     const bare = lead.ok ? lead : spanned(pattern(/(that [a-z]+ (?:is|was)) /iu))(ctx, pos);
     if (!bare.ok) return bare;
@@ -205,7 +209,9 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
     if (!what.ok) return what;
     // The words that name the object: "it", or "that land" (stage P33); the binding pass finds what they mean.
     const words = (bare.value.value[1] ?? 'it').replace(/ (?:is|was)$/iu, '');
-    const named = words.toLowerCase().startsWith('it') ? 'it' : words;
+    // "She was a nonland creature" (Princess Yue): the pronoun of a card the text names, said of the permanent with the ability, as "it" is.
+    const pronoun = /^(?:it|she|he)(?![\p{L}\p{N}])/iu.exec(words)?.[0].toLowerCase();
+    const named = pronoun === undefined ? words : pronoun;
     const it: IrNoun = {
       kind: 'noun',
       det: 'anaphor',

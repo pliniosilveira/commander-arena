@@ -561,7 +561,8 @@ export function lowerCondition(
       // source, read as it last was once it has left the battlefield: the engine's `thisMatches`.
       if (
         (test.who.ref === undefined || test.who.ref === 'self') &&
-        test.who.filter.raw === 'it' &&
+        // "She was a nonland creature" (Princess Yue): the pronoun of a card the text names, said of the permanent with the ability, as "it" is.
+        /^(?:it|she|he)$/iu.test(test.who.filter.raw) &&
         itIsSelf &&
         ctx?.interveningCondition === true
       ) {

@@ -15,12 +15,14 @@ const ID = 'noun.target-permanent-you-own';
 export const NOUN_TARGET_PERMANENT_YOU_OWN = defineRule<IrNoun>({
   id: ID,
   family: 'noun',
-  leading: ['target'],
+  leading: ['target', 'another'],
   cites: ['CR 108.3 (Owner)', 'CR 115.1 (Targets)'],
   examples: [
     'target permanent you own',
     'target nonland permanent you own',
     'target artifact you own',
+    // Charming Prince (issue 590): "another" leaves the source out.
+    'another target creature you own',
   ],
   rejects: [
     'target permanent you control',
@@ -33,10 +35,12 @@ export const NOUN_TARGET_PERMANENT_YOU_OWN = defineRule<IrNoun>({
     'two target permanents you own',
     'permanent you own',
     'each permanent you own',
+    'another creature you own',
+    'another target creature you control you own',
   ],
   parse: (ctx, pos) => {
     // Looked at first, so that a "target ..." without the words stops where it always did (the diagnostics of the rules that read it).
-    const seen = pattern(/(?=target [^.,;:]*? you own(?![\p{L}\p{N}'’]))/iu)(ctx, pos);
+    const seen = pattern(/(?=(?:another )?target [^.,;:]*? you own(?![\p{L}\p{N}'’]))/iu)(ctx, pos);
     if (!seen.ok) return seen;
     const base = family<IrNoun>('noun', { only: ['noun.target-permanent'] })(ctx, pos);
     if (!base.ok) return base;
