@@ -1,11 +1,11 @@
 /**
  * What the commander popup of the table board shows (`CommanderPopup.tsx`): the seat's commander and
- * its tax, the commander damage the seat has taken in all, and every other player with the name of
- * their commander. Pure, so it is unit tested. The damage is the total only: the view keys commander
- * damage by card id with no owner, so it cannot be told per dealing commander yet (#535).
+ * its tax, and every other player with the name of their commander. Pure, so it is unit tested. The
+ * damage each commander has dealt is not shown: the view keys commander damage by card id with no
+ * owner, so it cannot be told per dealing commander yet (#535).
  */
 import type { GameView, ObjectView, SeatId, SeatView } from '@commander-arena/engine';
-import { commanderDamageTaken, commandersOf, commanderTaxes } from './resolve';
+import { commandersOf, commanderTaxes } from './resolve';
 import { opponentLabel } from './table-label';
 
 export interface PopupOther {
@@ -24,8 +24,6 @@ export interface CommanderPopup {
   readonly commanders: readonly ObjectView[];
   /** The tax of each commander, in order (the view does not say which is which, `commanderTaxes`). */
   readonly taxes: readonly number[];
-  /** The commander damage the seat has taken, from every commander together. */
-  readonly damageTaken: number;
   readonly others: readonly PopupOther[];
 }
 
@@ -35,7 +33,6 @@ export function commanderPopup(view: GameView, seat: SeatView): CommanderPopup {
     label: opponentLabel(view, seat.id),
     commanders: commandersOf(view, seat.id),
     taxes: commanderTaxes(seat),
-    damageTaken: commanderDamageTaken(view, seat.id).reduce((sum, d) => sum + d.amount, 0),
     others: view.seats
       .filter((s) => s.id !== seat.id)
       .map((s) => ({

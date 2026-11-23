@@ -12,7 +12,6 @@ import { Dialog } from '../decisions/Dialog';
 import { useInteraction } from '../interaction';
 import { CardFace } from './CardFace';
 import { commanderPopup } from './commander-popup-model';
-import { COMMANDER_DAMAGE_LOSS } from './PlayerStrip';
 
 export function CommanderPopup({
   view,
@@ -62,12 +61,6 @@ export function CommanderPopup({
           <h2 className="cmdr-heading" id="cmdr-h-damage">
             Commander Damage Taken
           </h2>
-          <p
-            className={popup.damageTaken > 0 ? 'board-warn' : 'board-dim'}
-            title={`Commander damage taken from every commander together. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`}
-          >
-            Total from all commanders: {popup.damageTaken}
-          </p>
           <ul className="cmdr-list" aria-label="The other players and their commanders">
             {popup.others.map((o) => (
               <li key={o.seat} className={o.lost ? 'board-dim' : ''} data-popup-seat={o.seat}>
