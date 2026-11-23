@@ -1,6 +1,5 @@
 import type { ArrangeCardsDecision, GameView, ObjectId, ObjectView } from '@commander-arena/engine';
 import { type CSSProperties, type DragEvent, useEffect, useState } from 'react';
-import { CardFace } from '../board/CardFace';
 import {
   type Arrangement,
   arrangeBadge,
@@ -17,6 +16,7 @@ import {
 import { BarButtons } from './BarButtons';
 import { Dialog } from './Dialog';
 import { useHoverProps } from './hover';
+import { CardPicture } from './MiniCard';
 import type { DecisionModel } from './model';
 import type { UiState } from './ui-state';
 
@@ -71,7 +71,7 @@ export function ArrangePanel({
     update((u) => ({ ...u, arrange: next(u.arrange) }));
     setFocus({ id, control });
   };
-  // The whole card (488:680), not just its top, so the rules text can be read when choosing.
+  // The card's picture alone (488:680), so the rules text can be read when choosing.
   const width = Math.max(
     120,
     Math.min(190, Math.floor((730 - 8 * (decision.cards.length - 1)) / decision.cards.length)),
@@ -79,7 +79,6 @@ export function ArrangePanel({
   const size = {
     '--hand-w': `${width}px`,
     '--hand-h': `${Math.round(width * 1.3935)}px`,
-    '--preview-card-w': `${width}px`,
   } as CSSProperties;
   const names: readonly Pile[] = hasOtherPile(decision) ? ['top', 'other'] : ['top'];
   const pileOf = (pile: Pile) => (pile === 'top' ? arrangement.top : arrangement.other);
@@ -180,7 +179,7 @@ export function ArrangePanel({
                     {...hoverProps(id)}
                   >
                     <div className="dec-card dec-arrange-face" style={size}>
-                      {face === undefined ? null : <CardFace object={face} variant="full" />}
+                      {face === undefined ? null : <CardPicture card={face} />}
                       {badge === null ? null : <span className="dec-card-badge">{badge}</span>}
                     </div>
                     <div className="dec-arrange-moves">
