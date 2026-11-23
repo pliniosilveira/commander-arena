@@ -9,7 +9,12 @@ import { DETHRONE_REMINDER, MYRIAD_REMINDER, READ_AHEAD_REMINDER } from '../../g
 import { EMBALM_REMINDER } from '../../game/embalm-text';
 import { DECAYED_REMINDER } from '../../game/gisa-g5-text';
 import { ETERNALIZE_REMINDER } from '../../game/hashaton-g5-text';
-import { devourReminder, ENCORE_REMINDER, RIOT_REMINDER } from '../../game/keywords-text';
+import {
+  devourReminder,
+  ENCORE_REMINDER,
+  NINJUTSU_REMINDER,
+  RIOT_REMINDER,
+} from '../../game/keywords-text';
 
 const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> = {
   flying: ['Fly', 'Flying'],
@@ -123,6 +128,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   eternalize: ['Et', `Eternalize (${ETERNALIZE_REMINDER})`],
   // Issue 104: Embalm (CR 702.128a).
   embalm: ['Emb', `Embalm (${EMBALM_REMINDER})`],
+  // CR 702.49a (Ninjutsu, unverified): the cost rides in the chip (`PARAMETERIZED`), the reminder in the tooltip.
+  ninjutsu: ['Nin', `Ninjutsu (${NINJUTSU_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
 };
@@ -214,6 +221,11 @@ const PARAMETERIZED: Readonly<
   hideaway: (text) =>
     [...text.matchAll(/\bhideaway\s+(\d+)/gi)].map(
       (m) => [`Hid ${m[1]}`, `Hideaway ${m[1]} (${hideawayReminder(Number(m[1]))})`] as const,
+    ),
+  // "Ninjutsu {1}{R}": one chip per instance (CR 702.49a).
+  ninjutsu: (text) =>
+    [...text.matchAll(/\bninjutsu\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Nin', `${withCost('Ninjutsu', m[1] ?? '')} (${NINJUTSU_REMINDER})`] as const,
     ),
   multikicker: (text) =>
     [...text.matchAll(/multikicker\s*((?:\{[^}]+\})+|—[^.(\n]*)/gi)].map(

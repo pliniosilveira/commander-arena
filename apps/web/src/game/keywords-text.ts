@@ -7,6 +7,10 @@
 export const ENCORE_REMINDER =
   'Exile this card from your graveyard: for each opponent, create a token that is a copy of it that attacks that opponent this turn if able. The tokens gain haste. Sacrifice them at the beginning of the next end step. Activate only as a sorcery.';
 
+/** The reminder of Ninjutsu (CR 702.49a, unverified rule number), for the tooltip of its chip. */
+export const NINJUTSU_REMINDER =
+  "Pay the cost and return an unblocked attacker you control to its owner's hand: put this card onto the battlefield from your hand tapped and attacking the same player, planeswalker or battle.";
+
 /** The effect of the ability Encore expands into, as the stack shows it (CR 702.141a). */
 export const ENCORE_EFFECT_TEXT =
   "For each opponent, create a token that's a copy of this card that attacks that opponent this turn if able. The tokens gain haste. Sacrifice them at the beginning of the next end step";
