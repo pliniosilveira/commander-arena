@@ -894,6 +894,8 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each cards discarded this way',
     'for each creature card discarded this way',
     'for each opponent who discarded a card this way',
+    'for each creature tapped this way',
+    'for each artifact tapped this way',
   ],
   parse: (ctx, pos) => {
     const exiled = pattern(/for each card exiled this way(?![\\p{L}\\p{N}])/iu)(ctx, pos);
@@ -960,6 +962,22 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: milled.pos },
         },
         pos: milled.pos,
+      };
+    }
+    // Devout Invocation (CR 701.26a, 608.2c): "for each creature tapped this way": the permanents the `tap` of a chosen set before it tapped.
+    const tapped = spanned(
+      pattern(new RegExp(`for each (${SINGLE_TYPE}) tapped this way${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (tapped.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'tapped',
+          words: [(tapped.value.value[1] ?? '').toLowerCase()],
+          span: tapped.value.span,
+        },
+        pos: tapped.pos,
       };
     }
     const r = spanned(
