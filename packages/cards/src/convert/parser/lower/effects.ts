@@ -1986,7 +1986,11 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
             kind: 'chooseObjects',
             id: objectsArg.ref,
             filter: anyPlayer ? filter.value : { ...filter.value, controller: 'you' },
-            count: 1,
+            // "each of up to two Soldiers you control" (CR 608.2d): the controller chooses none up to that many.
+            count:
+              objectsArg.upTo === true && objectsArg.count?.kind === 'number'
+                ? objectsArg.count.value
+                : 1,
             ...(objectsArg.upTo === true || anyPlayer ? {} : { exactly: true as const }),
           },
           {
