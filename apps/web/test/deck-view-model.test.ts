@@ -18,7 +18,7 @@ describe('deck screen grouping', () => {
     expect(typeGroupOf(card('C', 'Legendary Enchantment — Saga'))).toBe('Enchantment');
   });
 
-  test('groups in a fixed order, commander first, sorted by mana value', () => {
+  test('groups in a fixed order, commander first, sorted alphabetically', () => {
     const groups = groupEntries([
       entry(card('Forest', 'Basic Land — Forest'), 'main', 5),
       entry(card('Big', 'Creature — Giant', 5)),
@@ -26,7 +26,7 @@ describe('deck screen grouping', () => {
       entry(card('Boss', 'Legendary Creature — Elf', 3), 'commander'),
     ]);
     expect(groups.map((g) => g.group)).toEqual(['Commander', 'Creature', 'Land']);
-    expect(groups[1]?.entries.map((e) => e.card.stored.name)).toEqual(['Small', 'Big']);
+    expect(groups[1]?.entries.map((e) => e.card.stored.name)).toEqual(['Big', 'Small']);
     expect(groups[2]?.count).toBe(5);
   });
 });
