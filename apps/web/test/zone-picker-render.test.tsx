@@ -70,7 +70,7 @@ describe('Zone Picker grouping (issue 570)', () => {
     const view = store.getState().snapshot?.view;
     const card = view?.seats[view.viewer]?.hand?.[0];
     if (view === undefined || card === undefined) throw new Error('no hand');
-    const copies = [card, { ...card, id: card.id + 1000 }, { ...card, id: card.id + 2000 }];
+    const copies = [card, { ...card, id: 'o9001' as const }, { ...card, id: 'o9002' as const }];
     const list = <ZoneViewer title="Exile" objects={copies} onClose={() => undefined} />;
 
     const plain = render(store, list);
