@@ -133,6 +133,18 @@ export function lowerCopyToken(
       ...(abilities.length === 0 ? {} : { abilities }),
     };
   }
+  // "..., except it's an artifact and it loses all other card types" (Espers to Magicite, CR 707.9b): the card types the copy has instead of the ones it copies.
+  if (token.copySetTypes !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    const types = token.copySetTypes.filter((t): t is CardType =>
+      CARD_TYPES.includes(t as CardType),
+    );
+    if (types.length === 0 || types.length !== token.copySetTypes.length) {
+      return { ok: false, needs: [], ...at };
+    }
+    exceptions = { ...exceptions, setTypes: types };
+  }
   // "..., except their power is half that creature's power and their toughness is half ... Round up each time" (Saw in Half, CR 707.9b, 107.1a).
   if (token.copyHalfPt === true) {
     const missing = missingFeatures(['token:copyExceptions']);

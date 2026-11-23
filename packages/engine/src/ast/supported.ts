@@ -392,6 +392,7 @@ function walkEffect(
           (token.setPt !== undefined ||
             token.setColors !== undefined ||
             token.setCreatureTypes !== undefined ||
+            token.setTypes !== undefined ||
             token.noManaCost !== undefined) &&
           !SUPPORTED_FEATURES.tokenKinds.includes('copyExceptions')
         ) {

@@ -202,6 +202,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'reflexivePaid',
     // Issue 89: "Create a token. When you do, return ... attached to that token", "Return this card to the battlefield attached to that creature at the beginning of the next end step".
     'reflexiveMoved',
+    // Espers to Magicite: "Exile each opponent's graveyard. When you do, ..." (a `reflexive` effect with `ifMoved`).
+    'reflexiveIfMoved',
     'attachedToMoved',
     'delayedReturnAttached',
     // CR 400.7, 303.4: "Return enchanted creature card to the battlefield ..., attach this Aura to it" (Animate Dead): `moveToZone.putWithSource`, the permanent remembers the Aura.
@@ -1042,6 +1044,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
     'exiledWithSource',
+    // Espers to Magicite: "target creature card exiled this way" (`ObjectFilter.exiledThisWay`).
+    'exiledThisWay',
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
@@ -1950,6 +1954,8 @@ export const ABILITY_FEATURES = [
   'reflexivePaid',
   /** "Create a 2/1 token. When you do, ... attached to that token" (CR 603.12, 400.7j, issue 89): a `reflexive` effect with `carriesMoved` after a `createToken`. */
   'reflexiveMoved',
+  /** "Exile each opponent's graveyard. When you do, ..." (CR 603.12, 400.7j, Espers to Magicite): a `reflexive` effect with `ifMoved` and `carriesMoved` after an effect that moves objects. */
+  'reflexiveIfMoved',
   /** "Return target Aura or Equipment card from your graveyard to the battlefield attached to that token" (CR 303.4f, 303.4g, issue 89): a `moveToZone` with `attachTo` `moved`. */
   'attachedToMoved',
   /** "Return this card to the battlefield attached to that creature at the beginning of the next end step" (CR 603.7c, 303.4f, issue 89): a delayed `moveToZone` of `thisCard` with `attachTo` `moved`. */
@@ -2066,6 +2072,8 @@ export const SELECTOR_KINDS = [
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
   'exiledWithSource',
+  /** "Target creature card exiled this way" (CR 603.12, 400.7j, Espers to Magicite): the engine's `ObjectFilter.exiledThisWay`. */
+  'exiledThisWay',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
@@ -2659,7 +2667,7 @@ export const TOKEN_KINDS = [
   'copyOf',
   /** "Create two tapped Treasure tokens" (CR 110.5b, D-131): the engine's `createToken.tapped`. */
   'tapped',
-  /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `noManaCost`. */
+  /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `setTypes`, `noManaCost`. */
   'copyExceptions',
   /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-648): the engine's `createToken.attacking`. */
   'attacking',
@@ -2938,6 +2946,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   reflexiveModal: true,
   reflexivePaid: true,
   reflexiveMoved: true,
+  reflexiveIfMoved: true,
   attachedToMoved: true,
   delayedReturnAttached: true,
   putWithSource: true,

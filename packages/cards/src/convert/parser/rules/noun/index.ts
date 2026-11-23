@@ -39,6 +39,7 @@ import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
 import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
+import { ESPERS_NOUN_RULES } from './espers';
 import { ETERNAL_MIGHT_NOUN_RULES } from './eternal-might';
 import { FEDERATION_F_NOUN_RULES } from './federation-f';
 import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
@@ -1027,6 +1028,8 @@ export const NOUN_RULES = [
   // Lorehold Spirit deck, group 2 (issue 86): "target noncreature, nonland card from your graveyard" (read by `effect.exile` only) and "target card exiled with ~" (read by
   // `effect.cast-exiled-with-self` only).
   ...LOREHOLD_G2_NOUN_RULES,
+  // Espers to Magicite (issue 97): "up to one target creature card exiled this way", read by `effect.choose-card-exiled-this-way` only.
+  ...ESPERS_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "those creatures" and "X target creatures".
   ...HYLDA_G2_NOUN_RULES,
   NOUN_PLAYER_GRAVEYARD,

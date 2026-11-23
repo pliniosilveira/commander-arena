@@ -115,6 +115,8 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
+    // CR 603.12, 608.2b: "target creature card exiled this way" of a reflexive ability is read again as it resolves.
+    ...(obj.stack?.movedBefore === undefined ? {} : { moved: obj.stack.movedBefore }),
     // CR 608.2b: "mana value less than or equal to that spell's mana value" is read again as the ability resolves.
     ...(obj.stack?.triggerSubject === undefined
       ? {}
