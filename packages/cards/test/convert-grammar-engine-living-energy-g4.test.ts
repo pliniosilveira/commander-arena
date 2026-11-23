@@ -27,6 +27,7 @@ const MARVEL = real('Aetherworks Marvel');
 const PANHARMONICON = real('Panharmonicon');
 const AMPLIFIER = real('Aetheric Amplifier');
 const NISSA = real('Nissa, Worldsoul Speaker');
+const DRUID = real('Druid of Purification');
 
 describe('the cards read', () => {
   test.each([
@@ -83,6 +84,32 @@ describe('the cards read', () => {
         ],
       },
     });
+  });
+});
+
+describe('Druid of Purification', () => {
+  test('each player in turn order may choose an artifact or enchantment the controller does not control, and the chosen ones are destroyed', () => {
+    const def = DRUID.card.definition;
+    const g = scenario({ seats: 3 })
+      .define(def)
+      .seat(0)
+      .hand(def.name)
+      .pool('WWWWUUUUBBBBRRRRGGGG')
+      .seat(1)
+      .battlefield('Sol Ring')
+      .seat(2)
+      .battlefield('Sol Ring')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(def.name, { pay: true });
+    g.passAll();
+    expect(g.state.pending).toMatchObject({ kind: 'choosePermanent', seat: 0, min: 0, max: 1 });
+    g.act(0).choosePermanents({ name: 'Sol Ring', seat: 1 });
+    g.act(1).choosePermanents();
+    g.act(2).choosePermanents();
+    g.passAll();
+    g.expect.zone('Sol Ring', 'graveyard', { seat: 1 });
+    g.expect.zone('Sol Ring', 'battlefield', { seat: 2 });
   });
 });
 

@@ -907,6 +907,50 @@ function lowerPayEnergyAny(
   };
 }
 
+/**
+ * "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way." (issue 105, Druid of Purification; CR 101.4, 608.2d,
+ * 701.8): the two sentences are one engine `eachPlayerChoosesDestroy`. The permanents a player may choose are the noun of the first sentence, read from the controller of the effect.
+ * Null when the sentence is not such a choice; one that does not fit is refused, never guessed.
+ */
+function lowerEachPlayerChoosesDestroy(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  _ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'eachPlayerMayChoose') return null;
+  const next = sentences[i + 1];
+  const [then, ...thenMore] = next?.clauses ?? [];
+  const what = clause.args.what;
+  if (
+    more.length > 0 ||
+    clause.optional ||
+    clause.condition !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    next === undefined ||
+    next.condition !== undefined ||
+    next.where !== undefined ||
+    next.instead === true ||
+    then?.verb !== 'destroyChosenThisWay' ||
+    thenMore.length > 0 ||
+    what?.kind !== 'noun' ||
+    i + 2 < sentences.length
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:eachPlayerChoosesDestroy']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const filter = lowerFilter(what);
+  if (!filter.ok) return filter;
+  return {
+    ok: true,
+    value: [{ kind: 'eachPlayerChoosesDestroy', filter: filter.value }],
+    rule: clause.rule,
+  };
+}
+
 /** The effects the engine's `may` wraps: the ones whose doing it can tell (`validateCard` refuses the others, D-135). */
 const MAY_KINDS: ReadonlySet<string> = new Set([
   // D-206 (CR 701.3): "you may attach it to target creature you control. If you do, ...".
@@ -2524,6 +2568,13 @@ function lowerStep(
     return { last: i };
   }
   // "You may pay any amount of {R}. When you do, it deals that much damage to any target." (stage P34, D-152, CR 603.12, 118.1).
+  // Issue 105 (Druid of Purification): "Starting with you, each player may choose ... Destroy each permanent chosen this way."
+  const eachChoose = lowerEachPlayerChoosesDestroy(sentence, sentences, i, ctx);
+  if (eachChoose !== null) {
+    if (!eachChoose.ok) return stop(eachChoose);
+    steps.push({ effects: eachChoose.value, replaceable: false });
+    return { last: i + 1 };
+  }
   // Issue 105: "You may pay one or more {E}. If you do, ..." and "When you do, ...".
   const payEnergy = lowerPayEnergyAny(sentence, sentences, i, ctx);
   if (payEnergy !== null) {

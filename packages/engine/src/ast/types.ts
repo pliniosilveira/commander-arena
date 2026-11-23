@@ -4453,6 +4453,13 @@ export type Effect =
    */
   | { readonly kind: 'proliferate'; readonly times?: Amount }
   /**
+   * "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way." (Druid of Purification, issue 105; CR 101.4, 608.2d,
+   * 701.8): every player still in the game, in turn order starting with the controller of the effect (CR 101.4), may choose one permanent `filter` matches (a `choosePermanent` decision,
+   * none allowed; `filter.controller` is read from the controller of the effect), each choosing knowing the choices before. Then every permanent chosen is destroyed together. A permanent
+   * chosen by two players is destroyed once. Nothing is asked of a player with no candidate. See rules/choose-each.ts.
+   */
+  | { readonly kind: 'eachPlayerChoosesDestroy'; readonly filter: ObjectFilter }
+  /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that
    * they could cast (or, with `play`, also play) and does so without paying its mana cost, as CR 608.2g says: the steps of CR 601.2a-i

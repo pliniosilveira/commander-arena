@@ -495,6 +495,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castCard',
     // D-149: "proliferate" (CR 701.34).
     'proliferate',
+    // Issue 105: "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way."
+    'eachPlayerChoosesDestroy',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
     'exileTop',
     'mayPlay',
@@ -3085,6 +3087,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   myriad: true,
   exileIfLeaves: true,
   proliferate: true,
+  eachPlayerChoosesDestroy: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,

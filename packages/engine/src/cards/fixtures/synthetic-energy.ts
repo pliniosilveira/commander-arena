@@ -133,4 +133,26 @@ export const SYNTHETIC_ENERGY_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "When this creature enters, starting with you, each player may choose an artifact you don't control. Destroy each permanent chosen this way."
+  singleFace({
+    name: 'SYNTHETIC Round Purifier',
+    manaCost: ['1'],
+    types: ['creature'],
+    colors: [],
+    colorIdentity: [],
+    power: 1,
+    toughness: 1,
+    oracleText:
+      "When this creature enters, starting with you, each player may choose an artifact you don't control. Destroy each permanent chosen this way.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: {
+          kind: 'eachPlayerChoosesDestroy',
+          filter: { types: ['artifact'], controller: 'opponent' },
+        },
+      },
+    ],
+  }),
 ];

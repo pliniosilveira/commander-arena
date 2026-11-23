@@ -212,6 +212,16 @@ export function chooseSparedPermanent(view: GameView, d: ChoosePermanentDecision
  * entered is tapped too, so with another tapped land the older one goes back.
  */
 export function choosePermanentToReturn(view: GameView, d: ChoosePermanentDecision): Action {
+  // Issue 105 (Druid of Purification, CR 608.2d): "each player may choose a permanent ... destroy each permanent chosen": an optional choice of one. The agent chooses the best permanent of
+  // an opponent when the list has one, and never one of its own.
+  if (d.min === 0 && d.max === 1) {
+    const theirs = d.legal
+      .map((id) => findObject(view, id))
+      .filter((o): o is NonNullable<typeof o> => o !== undefined && o.controller !== view.viewer)
+      .sort((a, b) => permanentValue(view, b) - permanentValue(view, a));
+    const best = theirs[0];
+    return { kind: 'choosePermanents', objects: best === undefined ? [] : [best.id] };
+  }
   const ranked = d.legal
     .map((id, index) => {
       const o = findObject(view, id);

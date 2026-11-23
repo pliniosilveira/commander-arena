@@ -40,6 +40,7 @@ import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
+import { runChooseEach } from './choose-each';
 import { runChooseNumber } from './choose-number';
 import { runChooseOne } from './choose-one';
 import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
@@ -316,6 +317,7 @@ export function runInstruction(
   if (instruction.kind === 'chooseSacrifice') return runChooseSacrifice(state, res, instruction);
   if (instruction.kind === 'chooseMove') return runChooseMove(state, res, instruction);
   if (instruction.kind === 'chooseTap') return runChooseTap(state, res, instruction);
+  if (instruction.kind === 'chooseEach') return runChooseEach(state, res, instruction);
   if (instruction.kind === 'proliferate') return runProliferate(state, res, instruction);
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
@@ -3654,6 +3656,22 @@ function runEffect(
         ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
       };
     }
+
+    case 'eachPlayerChoosesDestroy':
+      // CR 101.4 (issue 105, Druid of Purification): the players choose in turn order starting with the controller (rules/choose-each.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseEach',
+            filter: effect.filter,
+            seats: seatsInOrder(state, res.controller),
+            picked: [],
+            chosen: null,
+          },
+        ],
+      );
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).

@@ -221,6 +221,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-spell-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'static.triggers-additional-time-entering-types': asIs,
   'static.pay-energy-alt-cost-permanents': asIs,
+  'effect.each-player-may-choose': permanent(
+    (e) => `When ~ enters, ${e}. Destroy each permanent chosen this way.`,
+  ),
+  'effect.destroy-chosen-this-way': permanent(
+    (e) =>
+      `When ~ enters, starting with you, each player may choose an artifact you don't control. ${cap(e)}.`,
+  ),
   'token.copy-except-additive-types': spell((e) => `Create ${e}.`),
   'modal.choose-bare': permanent(
     (e) => `{4}, {T}: ${e}. Activate only as a sorcery.\n• Draw a card.\n• You gain 1 life.`,

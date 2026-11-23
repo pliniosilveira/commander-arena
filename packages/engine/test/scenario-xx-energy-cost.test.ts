@@ -200,3 +200,46 @@ describe('"You may pay {E}{E} rather than pay the mana cost for permanent spells
     g.expect.illegal(0, { cast: BEAR, alternative: 'energyGrant' });
   });
 });
+
+describe('"Starting with you, each player may choose a permanent ... Destroy each permanent chosen this way" (eachPlayerChoosesDestroy)', () => {
+  const PURIFIER = 'SYNTHETIC Round Purifier';
+
+  const game = () =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .hand(PURIFIER)
+      .pool('W')
+      .seat(1)
+      .battlefield('Sol Ring')
+      .seat(2)
+      .battlefield('SYNTHETIC Energy Cell')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('the players choose in turn order, each seeing the permanents of everyone the controller does not control, and what was chosen is destroyed together', () => {
+    const g = game();
+    g.act(0).cast(PURIFIER, { pay: true });
+    g.passAll();
+    expect(g.state.pending).toMatchObject({ kind: 'choosePermanent', seat: 0, min: 0, max: 1 });
+    g.act(0).choosePermanents({ name: 'Sol Ring', seat: 1 });
+    expect(g.state.pending).toMatchObject({ kind: 'choosePermanent', seat: 1 });
+    g.act(1).choosePermanents();
+    expect(g.state.pending).toMatchObject({ kind: 'choosePermanent', seat: 2 });
+    g.act(2).choosePermanents({ name: 'SYNTHETIC Energy Cell', seat: 2 });
+    g.passAll();
+    g.expect.zone('Sol Ring', 'graveyard');
+    g.expect.zone('SYNTHETIC Energy Cell', 'graveyard');
+  });
+
+  test('a permanent chosen by two players is destroyed once, and choosing none destroys nothing', () => {
+    const g = game();
+    g.act(0).cast(PURIFIER, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents({ name: 'Sol Ring', seat: 1 });
+    g.act(1).choosePermanents({ name: 'Sol Ring', seat: 1 });
+    g.act(2).choosePermanents();
+    g.passAll();
+    g.expect.zone('Sol Ring', 'graveyard');
+    g.expect.zone('SYNTHETIC Energy Cell', 'battlefield', { seat: 2 });
+  });
+});

@@ -8369,6 +8369,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
       }
       break;
+    case 'eachPlayerChoosesDestroy':
+      // CR 101.4, 608.2d (issue 105): the permanents the players may choose are a filter of the battlefield, read from the controller of the effect.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
+      }
+      break;
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses what to give counters to as it resolves; `times` repeats it.
       if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);

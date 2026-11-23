@@ -1424,6 +1424,17 @@ export type Instruction =
       readonly objects: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
     }
+  /**
+   * "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way." (`eachPlayerChoosesDestroy`, issue 105): the
+   * players still to choose in order (`seats`), what was chosen so far (`picked`) and the answer to the question just asked (`chosen`, null until then). See rules/choose-each.ts.
+   */
+  | {
+      readonly kind: 'chooseEach';
+      readonly filter: ObjectFilter;
+      readonly seats: readonly SeatId[];
+      readonly picked: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+    }
   | {
       readonly kind: 'chooseTap';
       readonly filter: ObjectFilter;
