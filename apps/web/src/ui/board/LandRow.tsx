@@ -82,7 +82,7 @@ function LandColumnView({
   );
 }
 
-export function LandRow({ objects, roles, attachments }: RowProps) {
+export function LandRow({ objects, roles, attachments, inline }: RowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const scale = useTextScale();
@@ -104,7 +104,7 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
 
   return (
     <div
-      className={`board-row board-row-land${objects.length === 0 ? ' is-empty' : ''}`}
+      className={`board-row board-row-land${objects.length === 0 ? ' is-empty' : ''}${inline ? ' board-row-inline' : ''}`}
       style={style}
       data-row="land"
     >

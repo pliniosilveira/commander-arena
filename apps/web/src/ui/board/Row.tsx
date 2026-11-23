@@ -130,7 +130,7 @@ function GroupTile({
   );
 }
 
-function PlainRow({ kind, objects, roles, attachments }: RowProps) {
+function PlainRow({ kind, objects, roles, attachments, inline }: RowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const size = useMeasure(ref);
   const ix = useInteraction();
@@ -152,7 +152,7 @@ function PlainRow({ kind, objects, roles, attachments }: RowProps) {
 
   return (
     <div
-      className={`board-row board-row-${kind}${objects.length === 0 ? ' is-empty' : ''}`}
+      className={`board-row board-row-${kind}${objects.length === 0 ? ' is-empty' : ''}${inline ? ' board-row-inline' : ''}`}
       ref={ref}
       style={style}
       data-row={kind}
