@@ -894,8 +894,6 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each cards discarded this way',
     'for each creature card discarded this way',
     'for each opponent who discarded a card this way',
-    'for each creature tapped this way',
-    'for each artifact tapped this way',
   ],
   parse: (ctx, pos) => {
     const exiled = pattern(/for each card exiled this way(?![\\p{L}\\p{N}])/iu)(ctx, pos);
