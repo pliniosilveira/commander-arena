@@ -12,7 +12,7 @@ import { settled } from './harness/settle';
  * every time; the loop only waits for the page to settle.
  */
 const game = (seed: number) => `/?autostart=synthetic-sagas,swamp-forest&seed=${seed}`;
-const SEED = 1;
+const SEED = 2;
 const RITE = 'SYNTHETIC Rite of Three';
 
 const primary = (page: Page) => page.locator('.dec-bar [data-dec-primary]');

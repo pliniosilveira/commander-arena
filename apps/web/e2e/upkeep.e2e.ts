@@ -38,6 +38,7 @@ async function playUntil(
   cast: string | null = null,
 ): Promise<void> {
   const discard = page.getByRole('dialog', { name: /^Discard/ });
+  const orderDialog = page.getByRole('dialog', { name: 'Trigger order' });
   for (let step = 0; step < 900; step += 1) {
     await settled(page);
     if (await ready()) return;
@@ -52,6 +53,10 @@ async function playUntil(
         await cards.nth(i).click();
       }
       await confirm.click();
+    } else if (await orderDialog.isVisible()) {
+      // Several goblins hitting us at once trigger the monarch's steal several times: keep the
+      // order the game offers.
+      await orderDialog.getByRole('button', { name: 'Confirm order' }).click();
     } else if ((await page.locator('.dec-overlay').count()) > 0) {
       throw new Error('an unexpected dialog is open');
     } else if ((await handLand(page).count()) > 0) {
