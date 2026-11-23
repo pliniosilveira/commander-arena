@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { leaveHand } from './harness/pointer';
 import { settled } from './harness/settle';
 
 /**
@@ -118,6 +119,7 @@ test('an Adventure card: cast the Adventure, see it go on an adventure, then cas
   await expect(logText(page)).toContainText('Wise Owl goes on an adventure.');
 
   // The card is in the shared exile, marked, and not castable yet (two lands are untapped).
+  await leaveHand(page);
   await page.getByRole('button', { name: /^Open You exile/ }).click();
   const list = page.getByRole('dialog', { name: 'You exile' });
   await expect(list.getByLabel('Wise Owl')).toBeVisible();

@@ -3,6 +3,8 @@ import { expect, type Locator, type Page } from '@playwright/test';
 /** Settings are in a dialog behind the button at the bottom left: open it, act, close it again. */
 export async function withSettings<T>(page: Page, act: () => Promise<T>): Promise<T> {
   const toggle = page.locator('.settings-toggle');
+  // A card the pointer was last over shows its preview panel, which can cover the dialog's buttons.
+  await page.mouse.move(0, 0);
   await toggle.click();
   const result = await act();
   await toggle.click();
@@ -16,8 +18,13 @@ export const undoEnabled = (page: Page): Promise<boolean> =>
   withSettings(page, () => undoButton(page).isEnabled());
 
 /** Presses the Undo button of the Settings dialog. */
-export const clickUndo = (page: Page): Promise<void> =>
-  withSettings(page, () => undoButton(page).click());
+export async function clickUndo(page: Page): Promise<void> {
+  // The card of the stack's top is previewed over the left edge (z-index above the Settings dialog) and
+  // takes the pointer; a tap on it closes the preview, as a player would do to reach the dialog.
+  const preview = page.locator('[data-stack-preview="true"] .board-preview-card');
+  if (await preview.isVisible()) await preview.click();
+  await withSettings(page, () => undoButton(page).click());
+}
 
 /** Flips the Full Control or the Manual mana payment switch of the Settings dialog. */
 export async function toggleSetting(
