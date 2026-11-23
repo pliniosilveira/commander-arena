@@ -448,6 +448,7 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast a spell with mana value X or less from your hand without paying its mana cost',
     'you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost',
     'you may play the exiled card without paying its mana cost',
+    'you may cast any number of spells from your hand without paying their mana costs',
     'you may cast the exiled card without paying its mana cost',
     // Death Toll deck, group D: in a triggered ability the "you may" is the ability's own.
     'play the exiled card without paying its mana cost',
@@ -462,6 +463,8 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast a spell with mana value 5 or less from your graveyard without paying its mana cost',
     'you may cast a spell with mana value 5 or less without paying its mana cost',
     'you may cast two spells from your hand without paying their mana costs',
+    'you may cast any number of spells from your graveyard without paying their mana costs',
+    'you may cast any number of spells from your hand without paying its mana cost',
     'you may cast target spell from your hand without paying its mana cost',
     'you cast a spell from your hand without paying its mana cost',
     'you may play a card from your hand without paying its mana cost',
@@ -472,7 +475,7 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
   ],
   parse: single(
     'effect.cast-free',
-    choice<{ objects: IrNoun; play: boolean; written: boolean }>(
+    choice<{ objects: IrNoun; play: boolean; written: boolean; any?: true }>(
       (ctx, pos) => {
         // "you may cast ..."; inside a triggered ability the "you may" is the ability's (the clause is optional), so "cast ..." is read too, and the lowering asks for one of the two.
         const head = pattern(/(you may )?cast an? /iu)(ctx, pos);
@@ -524,6 +527,35 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
         };
       },
       (ctx, pos) => {
+        // Issue 105 (Aetherflux Conduit, CR 608.2g, 118.9): "you may cast any number of spells from your hand without paying their mana costs": one question after each spell.
+        const r = spanned(
+          pattern(
+            /(you may )?cast any number of spells from your hand without paying their mana costs(?![\p{L}\p{N}])/iu,
+          ),
+        )(ctx, pos);
+        if (!r.ok) return r;
+        const objects: IrNoun = {
+          kind: 'noun',
+          det: 'a',
+          filter: { zone: 'hand', notTypes: ['land'], raw: 'spells from your hand' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: r.value.span,
+          rule: 'effect.cast-free',
+        };
+        return {
+          ok: true,
+          value: {
+            objects,
+            play: false,
+            written: r.value.value[1] !== undefined,
+            any: true,
+          },
+          pos: r.pos,
+        };
+      },
+      (ctx, pos) => {
         const r = spanned(
           pattern(
             /(you may )?(cast|play) the exiled card without paying its mana cost(?![\p{L}\p{N}])/iu,
@@ -552,13 +584,14 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
         };
       },
     ),
-    ({ objects, play, written }) => ({
+    ({ objects, play, written, any }) => ({
       verb: 'castFree',
       args: {
         objects,
         play: flag('effect.cast-free', play, objects.span),
         // Whether the sentence said "you may" itself (a triggered ability's own "you may" makes the clause optional instead).
         mayWritten: flag('effect.cast-free', written, objects.span),
+        ...(any === true ? { anyNumber: flag('effect.cast-free', true, objects.span) } : {}),
       },
     }),
   ),

@@ -608,7 +608,7 @@ class Binder {
         return {
           ...arg,
           costs: arg.costs.map((cost) =>
-            cost.kind === 'payLife' && cost.definesX === true
+            (cost.kind === 'payLife' && cost.definesX === true) || cost.kind === 'energyAmount'
               ? { ...cost, amount: this.amount(cost.amount) }
               : cost,
           ),

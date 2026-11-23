@@ -21,7 +21,43 @@ const enterDoubler: Ability = {
   },
 };
 
+/** "If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time." (issue 105) */
+const artifactOrCreatureDoubler: Ability = {
+  kind: 'static',
+  static: {
+    kind: 'doubleTriggers',
+    subject: { kind: 'filter', filter: { controller: 'you' } },
+    cause: { kind: 'permanentEnters', entering: ['artifact', 'creature'] },
+  },
+};
+
 export const SYNTHETIC_YAROK_LIST: readonly CardDefinition[] = [
+  singleFace({
+    name: 'SYNTHETIC Artifact Echo',
+    manaCost: ['1'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'If an artifact or creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    abilities: [artifactOrCreatureDoubler],
+  }),
+  // "When this enchantment enters, you gain 1 life." (an enchantment is neither an artifact nor a creature)
+  singleFace({
+    name: 'SYNTHETIC Plain Aura Shrine',
+    manaCost: ['1'],
+    types: ['enchantment'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'When this enchantment enters, you gain 1 life.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: gain1,
+      },
+    ],
+  }),
   singleFace({
     name: 'SYNTHETIC Entry Doubler',
     manaCost: ['1'],

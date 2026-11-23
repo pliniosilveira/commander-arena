@@ -24,6 +24,7 @@ export interface Placement {
 export interface SeatSpec {
   life: number | null;
   poison: number;
+  energy: number;
   pool: ManaSpec[];
   mulligans: number;
   landsPlayed: number;
@@ -54,6 +55,7 @@ export function emptySeatSpec(): SeatSpec {
   return {
     life: null,
     poison: 0,
+    energy: 0,
     pool: [],
     mulligans: 0,
     landsPlayed: 0,

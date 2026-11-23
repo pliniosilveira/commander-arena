@@ -180,6 +180,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'mill':
       // D-208 (CR 701.17): "Mill a card".
       return `Mill ${countText(cost.count, 'card', 'cards')}`;
+    case 'energyAmount':
+      // Issue 105 (CR 107.14): "an amount of {E}", worked out as the offer is made.
+      return 'an amount of {E}';
     case 'energy':
       // D-209 (CR 107.14): "{E}{E}".
       return '{E}'.repeat(cost.count);

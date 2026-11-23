@@ -43,6 +43,7 @@ export function grantedEvokeOf(
   // An evoke cost is for a permanent spell (CR 702.74a: the permanent is sacrificed when it enters).
   if (!derive(state, spell).types.some(isPermanentType)) return null;
   for (const source of sources) {
+    if (source.alt.kind !== 'evoke') continue;
     if (controllerOf(state, source.object) !== seat) continue;
     if (
       source.condition !== undefined &&
@@ -62,6 +63,45 @@ export function grantedEvokeOf(
     }
   }
   return null;
+}
+
+/**
+ * The energy counters a static ability of a permanent lets `seat` pay rather than the mana cost of `spell` (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14), or null. Only for a
+ * permanent spell cast from the hand; the permanent that gives the least decides when several do. The caster must also have the counters (`canPaySpellCost`).
+ */
+export function grantedEnergyOf(
+  state: GameState,
+  seat: SeatId,
+  spell: GameObject,
+  zone: GameObject['zone'] | undefined,
+): number | null {
+  if (spell.stack !== null) return spell.stack.energyGrant ?? null;
+  if (zone !== 'hand' || spell.copyOf !== undefined) return null;
+  const sources = altCostGrantSources(state);
+  if (sources.length === 0) return null;
+  if (!derive(state, spell).types.some(isPermanentType)) return null;
+  let least: number | null = null;
+  for (const source of sources) {
+    if (source.alt.kind !== 'energy') continue;
+    if (controllerOf(state, source.object) !== seat) continue;
+    if (
+      source.condition !== undefined &&
+      !staticConditionHolds(state, source.condition, source.object)
+    ) {
+      continue;
+    }
+    if (
+      matchesFilter(
+        state,
+        spell,
+        { ...source.what, zone: 'stack' },
+        { controller: seat, source: source.object.id },
+      )
+    ) {
+      least = least === null ? source.alt.count : Math.min(least, source.alt.count);
+    }
+  }
+  return least;
 }
 
 /** The `StackData.evokeGrant` of a card cast for an evoke cost a static ability gave its spell: nothing for a card with a printed evoke cost. */

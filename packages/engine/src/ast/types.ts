@@ -1752,10 +1752,16 @@ export type Cost =
   | { readonly kind: 'mill'; readonly count: number }
   /**
    * "{E}{E}" as a cost (CR 107.14, 122.1, D-209): the payer removes `count` energy counters from themselves. A player with fewer cannot pay it (CR 118.3).
-   * Only the cost an `unlessPays` effect asks the player to pay ("discard a card at random unless you pay {E}{E}"); `validateCard` and the supported gate
-   * refuse it as the cost of an activated ability, a spell or a mana ability.
+   * The cost an `unlessPays` or a `mayPay` effect asks the player to pay ("discard a card at random unless you pay {E}{E}"), and (issue 105, "Pay {E}{E}: ...") the cost of an
+   * activated ability and of a mana ability; the supported gate refuses it as the cost of a spell.
    */
   | { readonly kind: 'energy'; readonly count: number }
+  /**
+   * "You may pay an amount of {E} equal to that permanent's mana value" (issue 105, Confiscation Coup; CR 107.14, 118.3, 608.2c): the energy the `mayPay` asks for is `amount`, worked out
+   * once as the instruction resolves into a plain `energy` cost the question and the payment read (`rules/life-amounts.ts`). Only in the cost of a `mayPay`; an amount of 0 or less is
+   * no question and nothing is bought.
+   */
+  | { readonly kind: 'energyAmount'; readonly amount: Amount }
   /**
    * "Return an artifact you control to its owner's hand" as a cost (D-139, CR 118.3, 701.21a analogue): `this` returns the permanent
    * the ability belongs to; a filter names the permanents the player may choose among (the ones they control, on the battlefield),
@@ -2852,7 +2858,11 @@ export type Effect =
    */
   | {
       readonly kind: 'payAnyAmount';
-      readonly symbol?: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      /**
+       * Issue 105 (CR 107.14, 118.3): `'E'` is the energy symbol: "You may pay one or more {E}. If you do, ..." asks how many energy counters to pay, from none to as many as the
+       * controller has (and `atMost`), and removes them as the cost.
+       */
+      readonly symbol?: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1' | 'E';
       /**
        * "You may pay {2}{R} any number of times" (Bloodthirsty Adversary, issue 121, CR 118.1, 603.12): what one payment costs, in place of `symbol` (a card names one of them): the mana symbols of
        * the cost (numbers and colors, no X or hybrid), paid as many times as the controller chooses, from none to as many times as they could pay now.
@@ -3737,6 +3747,12 @@ export type Effect =
    */
   | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "Double the number of each kind of counter you have" (issue 105, Aetheric Amplifier; CR 701.10, 122.1, 122.6): each player the selector names gets as many more counters of each kind
+   * they have as they have of it as the effect resolves (poison, energy and experience, the counters the engine keeps on players), each kind its own count, one event for each kind
+   * that changed. A player with none of a kind gets none of it.
+   */
+  | { readonly kind: 'doublePlayerCounters'; readonly player: PlayerSelector }
+  /**
    * "They get a number of poison counters equal to the difference" (CR 122.1, 704.5c; Vraska, Betrayal's Sting): each player the selector names gets `amount` poison counters
    * (a player's own counters, kept for the rest of the game), one `poisonChanged` event each. Nothing for an amount of 0 or less. A player with ten or more is out of the game
    * as a state-based action (CR 704.5c).
@@ -4436,6 +4452,13 @@ export type Effect =
    * whole action is done that many times in a row, each with its own choice; the amount is read once as the effect starts.
    */
   | { readonly kind: 'proliferate'; readonly times?: Amount }
+  /**
+   * "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way." (Druid of Purification, issue 105; CR 101.4, 608.2d,
+   * 701.8): every player still in the game, in turn order starting with the controller of the effect (CR 101.4), may choose one permanent `filter` matches (a `choosePermanent` decision,
+   * none allowed; `filter.controller` is read from the controller of the effect), each choosing knowing the choices before. Then every permanent chosen is destroyed together. A permanent
+   * chosen by two players is destroyed once. Nothing is asked of a player with no candidate. See rules/choose-each.ts.
+   */
+  | { readonly kind: 'eachPlayerChoosesDestroy'; readonly filter: ObjectFilter }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that
@@ -7314,6 +7337,17 @@ export type StaticEffect =
       readonly alt: { readonly kind: 'evoke'; readonly cost: readonly Cost[] };
     }
   /**
+   * "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (Nissa, Worldsoul Speaker, issue 105; CR 118.9, 601.2b, 107.14, 613.1f): a static ability of a
+   * permanent on the battlefield that gives the permanent spells its controller casts from their hand an alternative cost of `energy` energy counters and no mana (`CastAlternative`
+   * `energyGrant`), read as the spell is cast. A player with fewer counters can not cast that way. `what` is a filter of the spell as it is on the stack, `controller: 'you'`, no zone,
+   * owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantEnergyAlternative';
+      readonly what: ObjectFilter;
+      readonly energy: number;
+    }
+  /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
    * a characteristic-defining ability of the card it is printed on, working in every zone but the battlefield (a hand, a library, a graveyard, the stack, exile): the object is also a
    * creature of the creature types `subtypes` (layer 4, applied first like Changeling) and its power and toughness are `power` and `toughness` (layer 7a). The ability is of the
@@ -7855,7 +7889,14 @@ export type StaticEffect =
         // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
         | { readonly kind: 'creatureAttacks' }
         // Yarok, the Desecrated (CR 603.2d, 603.6a): "If a permanent entering causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a permanent entering the battlefield, under any player's control (`entersBattlefield`, `entersBatch`, `landfall`) counts.
-        | { readonly kind: 'permanentEnters' };
+        | {
+            readonly kind: 'permanentEnters';
+            /**
+             * Issue 105 (Panharmonicon, CR 603.2d): "If an artifact or creature entering causes a triggered ability of a permanent you control to trigger": only a permanent that has
+             * one of these card types as it enters counts (the object whose entering caused the trigger). A batch trigger names no one object, so it is not doubled with this.
+             */
+            readonly entering?: readonly CardType[];
+          };
     }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (CR 101.2, 601.2, 113.6, D-149): the ability of a card that works

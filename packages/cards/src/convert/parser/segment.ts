@@ -1454,11 +1454,55 @@ function shifted(sk: AbilitySkeleton, text: string, by: number): AbilitySkeleton
  * An activated ability's skeleton, the costs before the colon at `colon` and the effect after it (CR 602.1): modal, or sentences with
  * the "Activate only ..." restrictions that follow the effect.
  */
+/**
+ * "Choose one. Activate only as a sorcery." and its bullets (issue 105, Aetheric Amplifier; CR 700.2a, 602.5): the lead line of a modal activated ability that says its restriction right
+ * after "Choose one". The header is "Choose one" (the `modal.choose-bare` rule), the restriction is read as any other `restrictions` entry of an activated ability, and the bullets
+ * are the modes.
+ */
+function restrictedModalBody(
+  text: string,
+  from: number,
+): { header: Span; restriction: Span; modes: Span[] } | null {
+  const lead = /^(choose (?:one|two|one or both|one or more))\. (activate only [^\n•]*\.)\n•/i.exec(
+    text.slice(from),
+  );
+  if (lead === null) return null;
+  const lines = text.slice(from).split('\n');
+  const [first = '', ...bullets] = lines;
+  if (!bullets.every((line) => line.startsWith('•'))) return null;
+  const headerEnd = from + (lead[1] ?? '').length;
+  const restrictionStart = headerEnd + 2;
+  const modes: Span[] = [];
+  let at = from + first.length + 1;
+  for (const bullet of bullets) {
+    const start = at + (/^•\s*/.exec(bullet)?.[0].length ?? 0);
+    modes.push(trimmed(text, start, at + bullet.length));
+    at += bullet.length + 1;
+  }
+  return {
+    header: trimmed(text, from, headerEnd),
+    restriction: trimmed(text, restrictionStart, from + first.length),
+    modes,
+  };
+}
+
 function activatedSkeleton(
   text: string,
   colon: number,
   base: Omit<AbilitySkeleton, 'head'>,
 ): AbilitySkeleton {
+  // "{4}, {T}: Choose one. Activate only as a sorcery." and its bullets (issue 105).
+  const restricted = restrictedModalBody(text, trimmed(text, colon + 1, text.length).start);
+  if (restricted !== null) {
+    return {
+      ...base,
+      head: 'activated',
+      costs: costSpans(text, colon),
+      restrictions: [restricted.restriction],
+      modalHeader: restricted.header,
+      modes: restricted.modes,
+    };
+  }
   // "{2}, {T}: Choose one —" and its bullets (stage P19, CR 700.2a): the body is the modes.
   const modes = modalBody(text, trimmed(text, colon + 1, text.length).start);
   if (modes !== null) {

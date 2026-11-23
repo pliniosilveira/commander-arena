@@ -245,14 +245,14 @@ describe('a token that is a copy, from an ability on the permanent or a trigger 
 
 describe('what a copy can still not say (CR 707.9 "except", others stay unread)', () => {
   test.each([
-    ["Create a token that's a copy of target creature, except it's a 1/1.", ', except'],
+    ["Create a token that's a copy of target creature, except it's a 1/1.", 'except'],
     [
       "Create a token that's a copy of target creature, except it's an artifact in addition to its other types.",
-      ', except',
+      'except',
     ],
     [
       "Create a token that's a copy of target creature, except the token isn't legendary.",
-      ', except',
+      'except',
     ],
     ["Create a token that's a copy of target token you control.", 'token you control'],
     [

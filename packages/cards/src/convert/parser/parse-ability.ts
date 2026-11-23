@@ -253,6 +253,11 @@ function readModes(
   if (!header.ok) {
     return { ok: false, failure: failureOf(header, 0, 'modal', 'modal.choose', before) };
   }
+  // Issue 105: "Choose one" with no dash is the lead of a modal activated ability whose restriction follows it; anywhere else it is a lead line no rule reads.
+  if (header.value.rule === 'modal.choose-bare' && sk.head !== 'activated') {
+    const failure = { progress: 0, closestRule: 'modal.choose', slot: 'modal' as const };
+    return { ok: false, failure: { ...failure, recognised: before } };
+  }
   const seen = unique([...before, ...header.recognised]);
   const bodies: IrBody[] = [];
   const texts: string[] = [];

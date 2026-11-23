@@ -49,6 +49,8 @@ const ALTERNATIVES = [
   'impending',
   // `nextSpellPayLife`: not listed on a face, but granted by an effect (the list of cards is the one of the ordinary cast).
   'lifeForMana',
+  // Issue 105: `grantEnergyAlternative`, listed beside the ordinary cast when a permanent gives it.
+  'energyGrant',
 ] as const;
 
 export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[] {

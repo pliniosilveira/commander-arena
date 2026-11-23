@@ -81,7 +81,7 @@ import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
 import { SAME_NAME_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
-import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
+import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
@@ -984,6 +984,8 @@ export const NOUN_RULES = [
   NOUN_PLAYER,
   // Ahoy Mateys deck, group 10 (Siren Stormtamer): "target spell or ability that targets you or a creature you control" starts like "target spell", which reads a prefix of it: tried first.
   ...AHOY_G10_NOUN_RULES,
+  // Issue 105 (Disallow): "target spell, activated ability, or triggered ability", whose first words are those of `noun.target-spell`.
+  ...STACK_ABILITY_EARLY_NOUN_RULES,
   NOUN_TARGET_SPELL,
   ...SPELL_OR_CREATURE_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".

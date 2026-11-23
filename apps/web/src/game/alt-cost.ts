@@ -45,6 +45,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   impending: 'Impending',
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (Marshland Bloodcaster).
   lifeForMana: 'Pay life',
+  // Issue 105 (CR 118.9, 107.14, Nissa, Worldsoul Speaker): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+  energyGrant: 'Pay energy',
 };
 
 /** True for the alternatives whose cost the card's view carries: overload, evoke, dash, spectacle, escape. */

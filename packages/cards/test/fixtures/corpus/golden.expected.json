@@ -1,6 +1,14 @@
 {
-  "parserVersion": 193,
+  "parserVersion": 194,
   "cards": {
+    "00037840-6089-42ec-8c5c-281f9f474504": {
+      "name": "Nissa, Worldsoul Speaker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b67a0f72"
+    },
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
       "group": "acceptance",
@@ -174,7 +182,7 @@
           "text": "−7: Create ~'s Notebook, a legendary colorless Book artifact token with \"Spells you cast cost {2} less to cast\" and \"{T}: Draw a card.\"",
           "reason": "unrecognised",
           "slot": "token",
-          "closestRule": "effect.create-two-tokens"
+          "closestRule": "effect.create-three-tokens"
         }
       ],
       "reasons": [
@@ -1611,6 +1619,14 @@
       "reasons": [],
       "ast": "01389bc9"
     },
+    "20f602b3-814f-406c-b7eb-2d1fc98f8cf1": {
+      "name": "Saheeli, Radiant Creator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bec7dff8"
+    },
     "21254bdb-7b1f-4ac6-8fdd-f0ac2c35f47d": {
       "name": "Grim Flayer",
       "group": "acceptance",
@@ -1955,6 +1971,14 @@
       "reasons": [],
       "ast": "cd758de8"
     },
+    "295cd8e1-0830-46c1-9957-556afd4bcee6": {
+      "name": "Aetheric Amplifier",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cbc33e41"
+    },
     "2962fe4c-bf48-454b-8a6b-0f8253352ae8": {
       "name": "Spelunking",
       "group": "acceptance",
@@ -2276,6 +2300,14 @@
       "reasons": [],
       "ast": "5f4d22c9"
     },
+    "2f82b232-21ff-44cc-bc35-0999a1d1c52f": {
+      "name": "Lightning Runner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a9e8d550"
+    },
     "2fdc0d17-b683-4263-949e-4f74ec76badf": {
       "name": "Temur Battle Rage",
       "group": "acceptance",
@@ -2388,6 +2420,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "25724a77"
+    },
+    "31cb87bf-1020-4fd5-95f7-8ecb197d823b": {
+      "name": "Pia Nalaar, Chief Mechanic",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e94e0f72"
     },
     "31f15274-301b-47c5-ba19-0ced04520878": {
       "name": "Wayfarer's Bauble",
@@ -2588,6 +2628,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "622a03d8"
+    },
+    "355603d1-f62d-407a-8fa9-74e7dca8ecf9": {
+      "name": "Era of Innovation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75c964f2"
     },
     "35754a21-9fba-4370-a254-292918a777ba": {
       "name": "Nissa, Vastwood Seer // Nissa, Sage Animist",
@@ -3392,6 +3440,14 @@
       "reasons": [],
       "ast": "0b4af901"
     },
+    "470ec98e-120c-446d-ade6-7d80aa836b55": {
+      "name": "Aetherworks Marvel",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9b637ee6"
+    },
     "473da1b6-232b-4428-a66d-30262246b47a": {
       "name": "Emeria Shepherd",
       "group": "training",
@@ -3407,6 +3463,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fc980350"
+    },
+    "47c685b1-6e1e-4e08-8a52-9da6902df113": {
+      "name": "Aethersquall Ancient",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c3b5cdff"
     },
     "488ff0d9-a74c-4ba9-9c10-3aa88230c2bd": {
       "name": "Captain Janeway, Endgame",
@@ -3487,6 +3551,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a98d6e8c"
+    },
+    "4a00f56e-e558-4239-bc75-fb0af7639042": {
+      "name": "Peema Aether-Seer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "547a7283"
     },
     "4a25fab1-cabb-44b9-8a69-01fc1fc46bd4": {
       "name": "Silvanus's Invoker",
@@ -3753,6 +3825,14 @@
       "reasons": [],
       "ast": "fb10320f"
     },
+    "4f63d306-cc14-405c-8424-d8990c670c74": {
+      "name": "Territorial Aetherkite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4425c59d"
+    },
     "4f66489c-5a19-40ad-9126-461fa8231f1b": {
       "name": "Liliana, Untouched by Death",
       "group": "acceptance",
@@ -3938,6 +4018,14 @@
       "reasons": [],
       "ast": "b9306fd3"
     },
+    "53b2c8f2-db9a-4ab0-a4e8-17385b2fa3bd": {
+      "name": "Aethertide Whale",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f6760bac"
+    },
     "541744d9-449d-420a-a5a1-2fffba18450f": {
       "name": "Primal Beyond",
       "group": "acceptance",
@@ -4065,6 +4153,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8050fce"
+    },
+    "56e05b17-aa1d-483d-857c-4cab4f12aa8a": {
+      "name": "Triplicate Titan",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1ae970a4"
     },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
@@ -4326,6 +4422,14 @@
       "reasons": [],
       "ast": "9dc3bfb9"
     },
+    "5bb32efd-9e58-4021-bbda-4ffccfa1d601": {
+      "name": "Druid of Purification",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "25374717"
+    },
     "5bb4ee32-11c6-4ed4-a071-c3cf48070fff": {
       "name": "Embalmer's Tools",
       "group": "acceptance",
@@ -4574,6 +4678,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4a0a37db"
+    },
+    "61c89b11-65c9-4fda-bbcd-d84de25df801": {
+      "name": "Aether Hub",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "44261c48"
     },
     "61cceb14-9568-4a5e-9b56-07afa6407df2": {
       "name": "Inspired Sphinx",
@@ -5577,6 +5689,14 @@
       "reasons": [],
       "ast": "56215ff3"
     },
+    "76678885-3674-443d-b9a2-2a460cf6aac0": {
+      "name": "Panharmonicon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09f0f12e"
+    },
     "76bc6518-dea4-4a5c-a8a7-352cd297197b": {
       "name": "Ominous Harvest",
       "group": "acceptance",
@@ -5608,6 +5728,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e192cddc"
+    },
+    "775617cd-7264-4365-94c4-ffae4eb9ec8b": {
+      "name": "Aetherflux Conduit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "161ffad8"
     },
     "7777fab1-df3f-467f-b9e2-46dd2bd2166e": {
       "name": "Forsaken Monument",
@@ -6423,6 +6551,14 @@
       "reasons": [],
       "ast": "4dc1a174"
     },
+    "88600bd4-4dcc-4788-bba4-78b6cf5ad8f8": {
+      "name": "Peema Trailblazer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e76f4b95"
+    },
     "888e711a-1251-4704-8ef1-b4b98ec54b5a": {
       "name": "Nahiri's Lithoforming",
       "group": "acceptance",
@@ -6430,6 +6566,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e2253ae3"
+    },
+    "88b51e15-6630-4e14-a6b8-db0aa12e34ef": {
+      "name": "Disallow",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4105ffb1"
     },
     "88d0a394-79e2-42ac-9a37-1a7b78231941": {
       "name": "Thunderclap Drake",
@@ -7201,6 +7345,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bc2ae610"
+    },
+    "9b1f0780-072a-4fe6-91d8-e546a8aaea20": {
+      "name": "Rampaging Aetherhood",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ece1953e"
     },
     "9b2cdbed-c733-409b-b0e4-2c8960c25111": {
       "name": "Maskwood Nexus",
@@ -8863,6 +9015,14 @@
       "reasons": [],
       "ast": "4e265a4c"
     },
+    "be6cab52-b3ae-46a2-a581-2468a49bff25": {
+      "name": "Architect of the Untamed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "66d5aaa3"
+    },
     "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
       "name": "Renewed Solidarity",
       "group": "acceptance",
@@ -9007,6 +9167,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1970937d"
+    },
+    "c246cdb4-2fd8-487e-944e-3e52fbd1bbaa": {
+      "name": "Confiscation Coup",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da817e59"
     },
     "c26964c7-4259-4281-b450-f0c2ed34b37c": {
       "name": "Forgotten Creation",
@@ -9474,6 +9642,14 @@
       "reasons": [],
       "ast": "dbeec17a"
     },
+    "cb377c27-39a6-42b4-8c89-80a9a2350e81": {
+      "name": "Solar Transformer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09331d63"
+    },
     "cb68d1e4-36aa-4a00-b671-8959e7d526d4": {
       "name": "Lunar Convocation",
       "group": "acceptance",
@@ -9601,6 +9777,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "073e63aa"
+    },
+    "cdfcfd2b-966a-4e03-8ed5-4fa7fab423d0": {
+      "name": "Bespoke Battlewagon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "542c650b"
     },
     "ce00e0d0-c6f4-4fe8-97c3-7279b06d8fdb": {
       "name": "Crypt Incursion",
@@ -10090,6 +10274,14 @@
       "reasons": [],
       "ast": "47bd067a"
     },
+    "d9ec9a4f-0644-47c5-bc09-1201d5251bde": {
+      "name": "Aetherwind Basker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4abb19e"
+    },
     "d9ed7252-11d1-432b-9101-ac08cd28826d": {
       "name": "Beorn's Hospitality",
       "group": "acceptance",
@@ -10362,6 +10554,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "abf2e6df"
+    },
+    "df1a8846-b4da-4e9b-8cf3-ee687e4c606b": {
+      "name": "Servant of the Conduit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f01b94e"
     },
     "df8e0d1b-b47c-4807-9c9b-84dcec835254": {
       "name": "Colossal Grave-Reaver",
@@ -11519,6 +11719,14 @@
       "reasons": [],
       "ast": "afd5c3f8"
     },
+    "f82da236-e567-4221-a0bc-439a0c7e2b03": {
+      "name": "Whirler Virtuoso",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9292b11f"
+    },
     "f84850bc-6348-449e-bd82-bb39e2119bec": {
       "name": "Donatello, Turtle Techie",
       "group": "acceptance",
@@ -11819,8 +12027,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1164,
-      "total": 1184
+      "supported": 1190,
+      "total": 1210
     }
   }
 }

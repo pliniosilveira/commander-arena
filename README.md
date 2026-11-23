@@ -32,7 +32,7 @@ What exists today:
 - **The rules.** The stack, the turn structure and combat, triggered, activated and static abilities, replacement and prevention effects, tokens, copies, the common keywords, commander tax and commander damage, and split, Adventure, double-faced, meld and Saga cards.
 - **The opponent.** It plans its attacks and blocks by looking ahead, plans its mana and holds instants for a good moment.
 - **The table.** The board, your hand, a large card preview, the stack with arrows to what each spell targets, a game log, and a question on screen for every decision the rules ask of you. Cards and tokens show their real pictures, and every card is framed in its colours (a land in the colours of its mana).
-- **Thirty-two ready-made decks**, listed below, which you can also edit.
+- **Thirty-three ready-made decks**, listed below, which you can also edit.
 
 What does not exist yet: games with more than two players, play against other people online, an opponent that plans several turns ahead, and animation beyond combat damage and deaths. `docs/ROADMAP.md` has the full list.
 
@@ -78,6 +78,7 @@ The ready-made decks work without any setup:
 | Abzan Armor | A Commander precon led by Felothar the Steadfast. |
 | Scions & Spellcraft | A Commander precon led by Y'shtola, Night's Blessed. |
 | Ahoy Mateys | A Commander precon led by Admiral Brass, Unsinkable. |
+| Living Energy | A Commander precon led by Saheeli, Radiant Creator. |
 
 ## Playing with your own deck
 

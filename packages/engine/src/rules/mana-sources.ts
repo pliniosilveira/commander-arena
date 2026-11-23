@@ -20,6 +20,7 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import {
   canPayPhysicalCosts,
+  energyCostOf,
   isColorChoice,
   lifeLossOfActivating,
   manaAbilitiesOf,
@@ -80,6 +81,7 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
       if (produces.length === 0) continue;
       const symbols = manaCostSymbols(ability);
       const lifeLoss = lifeLossOfActivating(ability);
+      const energyCost = energyCostOf(ability);
       out.push({
         object: id,
         abilityIndex,
@@ -93,6 +95,7 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
         ...(symbols.length > 0 ? { cost: parseManaCost(symbols) } : {}),
         ...((ability.also?.length ?? 0) > 0 ? { extraEffect: true } : {}),
         ...(lifeLoss > 0 ? { lifeLoss } : {}),
+        ...(energyCost > 0 ? { energyCost } : {}),
       });
     }
   }
@@ -161,6 +164,7 @@ function planWithout(
     pool: getSeat(state, seat).manaPool,
     sources,
     lifeAvailable: lifeTotalIsLocked(state, seat) ? 0 : Math.max(0, getSeat(state, seat).life - 1),
+    energyAvailable: getSeat(state, seat).energy ?? 0,
     spell,
     ...(reserve ? { reserve } : {}),
   });

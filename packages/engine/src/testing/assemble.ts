@@ -330,6 +330,7 @@ export function assemble(
       id,
       life: s.life ?? settings.startingLife,
       poison: s.poison,
+      ...(s.energy > 0 ? { energy: s.energy } : {}),
       library: zones.library[id] ?? [],
       hand: zones.hand[id] ?? [],
       graveyard: zones.graveyard[id] ?? [],

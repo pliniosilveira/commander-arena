@@ -6,8 +6,9 @@
  * triggered ability is created (CR 603.12) with the number paid as "that much" (`rules/may-effects.ts`).
  * D-257: `atMost` caps the answer ("pay {X}, where X is less than or equal to the amount of life you gained"), and the symbol may be a generic {1}.
  */
-import type { Effect } from '../ast/types';
+import type { Cost, Effect } from '../ast/types';
 import type { SeatId } from '../ids';
+import { getSeat, patchSeat } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { amountOf } from './amounts';
 import { planFor } from './mana-engine';
@@ -29,11 +30,19 @@ function repeated(symbols: readonly string[], times: number): string[] {
 
 /** The most times `seat` could pay one payment of `symbols` right now (0 when not even once). */
 export function maxPayable(state: GameState, seat: SeatId, symbols: readonly string[]): number {
+  // CR 107.14, 118.3 (issue 105): energy is paid from the counters the player has, one for each time.
+  if (symbols[0] === 'E') return getSeat(state, seat).energy ?? 0;
   let n = 0;
   while (n < 40 && planFor(state, seat, repeated(symbols, n + 1), { ability: true }) !== null) {
     n += 1;
   }
   return n;
+}
+
+/** `times` payments of the effect as a cost: energy counters for the symbol {E} (CR 107.14), mana otherwise. */
+function costOf(effect: PayAnyAmount, times: number): Cost[] {
+  if (effect.symbol === 'E') return [{ kind: 'energy', count: times }];
+  return [{ kind: 'mana', symbols: repeated(symbolsPerPayment(effect), times) }];
 }
 
 export function runPayAmount(
@@ -78,11 +87,21 @@ export function runPayAmount(
         min: 0,
         max,
         perX: { mana: 0, life: 0 },
-        cost: [{ kind: 'mana', symbols: [...symbolsPerPayment(ins.effect)] }],
+        cost: costOf(ins.effect, 1),
       },
     };
   }
   if (ins.amount <= 0) return done(state);
+  if (ins.effect.symbol === 'E') {
+    // CR 107.14, 118.3 (issue 105): energy needs no choice of how to pay, so it is paid here, at once, and the follow-up runs with the number paid.
+    const had = getSeat(state, ins.seat).energy ?? 0;
+    if (had < ins.amount) return done(state);
+    return done(
+      patchSeat(state, ins.seat, { energy: had - ins.amount }),
+      [{ kind: 'energyChanged', seat: ins.seat, from: had, to: had - ins.amount }],
+      [{ kind: 'effect', effect: { ...ins.effect, paid: ins.amount } }],
+    );
+  }
   // The payment is asked as a "you may pay" cost is, once the amount is known: no second question.
   return done(
     state,
@@ -91,7 +110,7 @@ export function runPayAmount(
       {
         kind: 'unlessPays',
         seat: ins.seat,
-        cost: [{ kind: 'mana', symbols: repeated(symbolsPerPayment(ins.effect), ins.amount) }],
+        cost: costOf(ins.effect, ins.amount),
         stage: 'pay',
         effect: { ...ins.effect, paid: ins.amount },
         optional: false,

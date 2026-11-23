@@ -51,6 +51,8 @@ export interface PaymentSource {
    * loses more life in all, with the life paid for Phyrexian mana, than `lifeAvailable`.
    */
   readonly lifeLoss?: number;
+  /** The energy counters its controller pays when it is activated ("{T}, Pay {E}: Add one mana of any color", CR 107.14, 605.3); a plan taps no more than `energyAvailable` in all. */
+  readonly energyCost?: number;
   /**
    * The extra-effect preference of the planner counts the life this source costs, not just that it costs some: the several-uses sources of a mana ability a player was given
    * (`rules/player-mana.ts`) must lose to a permanent that makes the same mana for less life. Absent for every source of a permanent.
@@ -76,6 +78,8 @@ export interface PaymentRequest {
    * A caller that never wants to pay itself to 0 passes the life total minus 1.
    */
   readonly lifeAvailable: number;
+  /** The energy counters the plan may pay in all, for the `energyCost` of the sources it taps; absent means none is asked. */
+  readonly energyAvailable?: number;
   readonly spell: SpendTarget;
   /** Colors to keep available for other plays; a preference only, never a reason to fail. */
   readonly reserve?: readonly ManaColor[];

@@ -78,8 +78,10 @@ describe('the dimensions', () => {
       'exileFromGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
-      // D-209: "{E}{E}", paid in an `unlessPays` only.
+      // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
       'energy',
+      // Issue 105: "an amount of {E} equal to ...", the cost of a `mayPay`.
+      'energyAmount',
     ]);
     expect(SUPPORTED_FEATURES.durationKinds).toEqual([
       'untilEndOfTurn',
@@ -228,6 +230,8 @@ describe('the dimensions', () => {
       'grantFlashbackToGraveyardCards',
       // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
       'grantAlternativeCostToSpells',
+      // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+      'grantEnergyAlternative',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
