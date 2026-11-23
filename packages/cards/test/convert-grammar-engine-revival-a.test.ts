@@ -302,7 +302,7 @@ describe('"Pray — Once during each of your turns, you may cast a creature spel
     g.act(0).cast(discard.name, { pay: true });
     g.passAll();
     g.expect.zone(one.name, 'graveyard', { seat: 0 });
-    g.act(0).cast(one.name, { pay: true, from: 'graveyard' });
+    g.act(0).cast(one.name, { pay: true });
     g.passAll();
     g.expect.zone(one.name, 'battlefield', { seat: 0 });
     g.expect.invariants();
@@ -325,7 +325,7 @@ describe('"Pray — Once during each of your turns, you may cast a creature spel
       .build();
     g.act(0).cast(mill.name, { pay: true });
     g.passAll();
-    g.act(0).cast(one.name, { pay: true, from: 'graveyard' });
+    g.act(0).cast(one.name, { pay: true });
     g.passAll();
     g.expect.zone(one.name, 'battlefield', { seat: 0 });
     g.expect.illegal(0, { cast: two.name });
