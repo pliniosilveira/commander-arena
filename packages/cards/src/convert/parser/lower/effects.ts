@@ -35,6 +35,7 @@ import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
+import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { lowerCondition } from './conditions';
@@ -2800,6 +2801,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUICK_DRAW_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
+  ...CHOOSE_PER_OPPONENT_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...RETURNED_LAND_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
@@ -2941,6 +2943,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
       clause,
       scope === 'untilYourNextEndStep' ||
         scope === 'whileExiled' ||
+        scope === 'untilYouExileAnotherWithSelf' ||
         scope === 'whileYouControlSelf' ||
         scope === 'whileSelfRemains'
         ? []

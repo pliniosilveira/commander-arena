@@ -1767,6 +1767,49 @@ function lowerAfterDiscard(
 }
 
 /**
+ * "Scry 1, then exile the top card of your library. You may play that card this turn. When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is
+ * that card's mana value." (Cait Sith, Fortune Teller; CR 603.12, 701.13, 202.3): the engine's `reflexive` ability with `ifMoved` and `carriesMoved`, created when the exile of the top
+ * card before it moved a card; its targets are its own and "that card" is the card exiled. It is the last sentence of the text and follows an `exileTop` of the controller. Any other shape
+ * is refused, never guessed.
+ */
+function lowerAfterExile(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const refused = (needs?: readonly FeatureRef[]): StepResult => ({
+    stopped: needs === undefined ? refuse(sentence) : { ...refuse(sentence), needs },
+  });
+  if (
+    i !== sentences.length - 1 ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refused();
+  }
+  const exiles = steps
+    .flatMap((s) => s.effects)
+    .some((e) => e.kind === 'exileTop' && e.from === undefined);
+  if (!exiles || ctx.exiled !== 'top') return refused();
+  const blocked = missingFeatures(['effect:reflexive']);
+  if (blocked.length > 0) return refused(blocked);
+  const effect = lowerReflexive(sentence, ctx);
+  if (!effect.ok) return { stopped: effect };
+  if (effect.value.kind !== 'reflexive') return refused();
+  steps.push({
+    effects: [{ ...effect.value, ifMoved: true, carriesMoved: true }],
+    replaceable: false,
+  });
+  return { last: i };
+}
+
+/**
  * "When this land enters, sacrifice it. When you do, search your library for a basic Forest card, put it onto the battlefield tapped, then
  * shuffle and you gain 1 life." (stage P36, D-178, CR 603.12): the reflexive ability of an instruction that is not an offer. The first sentence is one
  * plain instruction of a kind the engine can tell was done (`sacrifice`, a move, a draw, ...), the first of its body so that nothing earlier is
@@ -2475,6 +2518,8 @@ function lowerStep(
   // "When you discard a nonland card this way, ..." (Federation Fleet deck, group D, CR 603.12): the reflexive ability of the discards before it.
   if (sentence.afterDiscard !== undefined)
     return lowerAfterDiscard(sentence, sentences, i, steps, ctx);
+  // "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability of the exile of the top card before it.
+  if (sentence.afterExile === true) return lowerAfterExile(sentence, sentences, i, steps, ctx);
   // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
   // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
   if (

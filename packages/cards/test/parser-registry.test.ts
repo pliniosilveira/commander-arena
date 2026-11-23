@@ -1109,6 +1109,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-from-hand': spell(
     (e) => `Draw a card. If ${e}, create a 1/1 white Spirit creature token.`,
   ),
+  // Foretell spells: the condition leads the sentence of a spell.
+  'condition.cast-from-exile': spell(
+    (e) => `Draw a card. If ${e}, create a 1/1 white Spirit creature token.`,
+  ),
   // Tataru Taru: the intervening "if" of a trigger about the player who drew.
   'condition.that-players-turn': permanent(
     (e) => `Whenever an opponent draws a card, if ${e}, create a tapped Treasure token.`,

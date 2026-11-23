@@ -2112,6 +2112,9 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
       }
       checkAmount(a, path, NO_SCOPE, out);
       break;
+    case 'asCast':
+      checkAmount(a, path, NO_SCOPE, out);
+      break;
     case 'half':
     case 'multiple':
       checkAmount({ ...a, of: 0 }, path, NO_SCOPE, out);
@@ -2511,6 +2514,10 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'sacrificedAsCost':
       // D-491 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
+      break;
+    case 'asCast':
+      // CR 601.2i: worked out once, as the spell is cast: an amount that reads the game then (no target, no X, nothing an earlier instruction made).
+      checkStateAmount(a.of, `${path}.of`, out, 'asCast');
       break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
@@ -8109,6 +8116,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (e.ifThisWay !== undefined) {
           issue(out, `${path}.afterPayment`, 'what triggers it is the payment: no ifThisWay');
         }
+      } else if (e.ifMoved !== undefined) {
+        // CR 603.12 (Cait Sith): "When you exile a card this way": made when the effect before it moved a card, which the ability then carries.
+        if (e.ifMoved !== true) issue(out, `${path}.ifMoved`, 'ifMoved must be true when present');
+        if (e.carriesMoved !== true || scope.movedAvailable !== true) {
+          issue(
+            out,
+            `${path}.ifMoved`,
+            'a reflexive ability after a move carries the objects an effect before it moved: carriesMoved, after an effect that moves objects',
+          );
+        }
+        if (e.ifThisWay !== undefined) {
+          issue(out, `${path}.ifMoved`, 'what triggers it is the move: no ifThisWay');
+        }
       } else if (scope.mayAvailable !== true) {
         issue(
           out,
@@ -8391,6 +8411,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkFilter(e.filter, `${path}.filter`, out);
       if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
+      }
+      break;
+    case 'chooseOnePerOpponentDestroy':
+      // CR 608.2d (Ultimate Magic: Meteor): the permanents are a filter of the battlefield with no controller (each opponent's own permanents are the candidates for that opponent).
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
+      }
+      if (e.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'the opponent is the player each choice is for: the filter names no controller',
+        );
       }
       break;
     case 'proliferate':

@@ -620,6 +620,21 @@ const EACH_OPPONENT_GAINS_CONTROL =
   /^each opponent gains control of the permanent for which they were chosen\.$/i;
 
 /**
+ * "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents." (Ultimate Magic: Meteor, CR 608.2d): the destruction is of the permanents the
+ * first sentence has the controller choose, so the two are read as one instruction (the first may follow the comma of a condition).
+ */
+const FOR_EACH_OPPONENT_CHOOSE =
+  /(?:^|, )for each opponent, choose an? [^.,]* that player controls\.$/i;
+const DESTROY_THE_CHOSEN_PERMANENTS = /^destroy the chosen permanents\.$/i;
+
+/**
+ * "Exile the top card of your library. You may play that card until you exile another card with ~." (Furious Rise, CR 607.2a): the permission is of the card the permanent exiled
+ * with this ability and ends as it exiles another, so the two sentences are read as one instruction (the first may follow the comma of a condition).
+ */
+const EXILE_TOP_CARD_SENTENCE = /(?:^|, )exile the top card of your library\.$/i;
+const PLAY_UNTIL_EXILE_ANOTHER = /^you may play that card until you exile another card with ~\.$/i;
+
+/**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
  * sentence says what happens to the card the first one makes the opponent choose, so the two are read as one instruction.
  */
@@ -1171,6 +1186,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
+        (said(a, FOR_EACH_OPPONENT_CHOOSE) && said(b, DESTROY_THE_CHOSEN_PERMANENTS)) ||
+        (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
         (said(a, LOOK_AT_TOP) &&

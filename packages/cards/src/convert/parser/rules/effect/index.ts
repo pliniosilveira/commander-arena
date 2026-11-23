@@ -46,6 +46,7 @@ import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
+import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
@@ -83,6 +84,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
+import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -1295,6 +1297,8 @@ export const EFFECT_RULES = [
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
   ...DACK_EFFECT_RULES,
+  ...EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES,
+  ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,

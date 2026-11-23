@@ -3693,6 +3693,23 @@ function runEffect(
         ],
       );
 
+    case 'chooseOnePerOpponentDestroy':
+      // CR 608.2d, 701.8 (Ultimate Magic: Meteor): the controller chooses one permanent for each opponent, in turn order (rules/choose-each.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseEach',
+            filter: effect.filter,
+            perOpponent: true,
+            seats: opponentsOf(state, res.controller),
+            picked: [],
+            chosen: null,
+          },
+        ],
+      );
+
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
       // "Proliferate X times": each time is its own choice, read once as the effect starts.

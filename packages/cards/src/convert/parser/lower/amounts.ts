@@ -530,8 +530,21 @@ export function lowerAmount(
       // "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once as the spell is cast, which only the total of a divided
       // damage is; anywhere else the same words would be read as the spell resolves.
       // "as you cast ~" names a spell: an ability has no cast (CR 601.2d, 602.2b), so its total is a number or an amount that reads no "cast".
-      if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
+      if (amount.asCast === true && ctx.owner !== 'spell') {
         return { ok: false, needs: [], at: amount.span, rule };
+      }
+      // CR 601.2i (Lifestream's Blessing): outside the total of a divided damage (which is read as the spell is cast anyway), an "as you cast this spell" aggregate is worked
+      // out when the spell is cast and kept: the engine's `asCast`. Only the plain battlefield group of the controller (the filter is read with "you" as the caster).
+      if (amount.asCast === true && !ctx.readAsCast) {
+        const wrapped = needs('asCast');
+        if (wrapped !== null) return wrapped;
+        if (typeof amount.of.filter.controller === 'object') {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        const { asCast: _asCast, ...plain } = amount;
+        const inner = lowerAmount(plain, ctx, rule);
+        if (!inner.ok) return inner;
+        return { ok: true, value: { kind: 'asCast', of: inner.value }, rule };
       }
       // "the greatest power among creatures they control" (Death Toll deck, group D, CR 109.4, 608.2c): the player is a target the ability declares, read as the amount is
       // worked out (the engine's `controlledBy` of a target, as in a count). Only a permanent of the battlefield, and only a target: any other player is left unread.

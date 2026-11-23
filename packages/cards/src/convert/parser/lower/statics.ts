@@ -892,6 +892,50 @@ function lowerPlayFromTop(
   };
 }
 
+/**
+ * "As long as ~ is attached to a creature, you may cast creature spells from the top of your library." (Summoning Materia; CR 601.3, 401.5): the engine's `castFromTopOfLibrary` of the
+ * spells the words name, with the condition the engine reads where the permission is used. The controller's own (the subject is "you"); no haste, no sacrifice.
+ */
+function lowerConditionalCastFromTop(
+  ability: Static,
+  part: IrStaticPart,
+  only: Extract<IrStaticEffect, { kind: 'castFromTop' }>,
+  condition: Condition,
+): LowerResult<readonly Ability[]> {
+  if (part.subject.det !== 'you' || only.gainsHaste || only.sacrifice !== undefined) {
+    return failure(ability);
+  }
+  const missing = missingFeatures([
+    'ability:static',
+    'ability:staticCondition',
+    'static:castFromTopOfLibrary',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const { zone: _zone, stackKind: _kind, ...described } = only.spells;
+  const spells = lowerFilter({
+    kind: 'noun',
+    det: 'a',
+    filter: described,
+    upTo: false,
+    plural: true,
+    other: false,
+    span: ability.span,
+    rule: ability.rule,
+  });
+  if (!spells.ok) return spells;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'static',
+        static: { kind: 'castFromTopOfLibrary', spells: spells.value },
+        condition,
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** One subject with what it gets or has: one engine `static` ability for each effect, with the condition when there is one. */
 function lowerPart(
   part: IrStaticPart,
@@ -1113,7 +1157,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     return lowerOptionStatic(ability, ctx);
   }
   // Stage P34 (D-152): mana that stays through steps and phases, casting spells from the top of the library.
-  if (isDragonStatic(first)) return lowerDragonStatic(ability);
+  // A permission to cast from the top of the library that holds "as long as ..." is lowered with the other conditional statics below (Summoning Materia).
+  if (
+    isDragonStatic(first) &&
+    !(first.kind === 'castFromTop' && statement.condition !== undefined)
+  ) {
+    return lowerDragonStatic(ability);
+  }
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   if (isGraveyardPlayStatic(first)) return lowerGraveyardPlayStatic(ability, ctx);
   // Stage P37 (D-180): lands that enter untapped, opponents that can't cast spells during your turn (with a condition, perhaps).
@@ -1335,6 +1385,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         const both = lowerPlayFromTop(ability, part, condition);
         if (!both.ok) return both;
         abilities.push(...both.value);
+        continue;
+      }
+      // "As long as ~ is attached to a creature, you may cast creature spells from the top of your library." (Summoning Materia).
+      if (only?.kind === 'castFromTop' && part.effects.length === 1) {
+        const cast = lowerConditionalCastFromTop(ability, part, only, condition);
+        if (!cast.ok) return cast;
+        abilities.push(...cast.value);
         continue;
       }
       if (only !== undefined && isPlayRule(only)) {

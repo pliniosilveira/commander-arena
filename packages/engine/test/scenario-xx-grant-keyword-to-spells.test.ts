@@ -59,6 +59,25 @@ const DEMO_BEAR = singleFace({
 });
 const demonstrating = lecturer(DEMONSTRATING, { kind: 'demonstrate' });
 const convoking = lecturer(CONVOKING, { kind: 'convoke' });
+const IMPROVISING = 'SYNTHETIC Improvising Statuary';
+const improvising = singleFace({
+  name: IMPROVISING,
+  manaCost: ['3'],
+  types: ['artifact'],
+  colors: [],
+  colorIdentity: [],
+  oracleText: 'SYNTHETIC: nonartifact spells you cast have improvise.',
+  abilities: [
+    {
+      kind: 'static',
+      static: {
+        kind: 'grantKeywordToSpells',
+        what: { notTypes: ['artifact'], controller: 'you' },
+        keyword: { kind: 'improvise' },
+      },
+    },
+  ],
+});
 
 const stackKinds = (g: ScenarioGame): string[] =>
   g.state.stack.map((id) => (g.state.objects[id] as GameObject).stack?.kind ?? '?');
@@ -332,5 +351,55 @@ describe('Convoke given to the creature spells you cast (CR 702.51a, 702.51b)', 
     g.act(0).choose({ kind: 'choosePayOptions', objects: [...d.candidates] });
     expect(g.state.pending?.kind).not.toBe('choosePayOptions');
     g.expect.stack([WURM]);
+  });
+});
+
+describe('Improvise given to the nonartifact spells you cast (CR 702.126a, 613.1f)', () => {
+  const SOL = 'Sol Ring';
+  const build = () =>
+    scenario()
+      .define(improvising)
+      .seat(0)
+      .hand(BEARS, SOL)
+      .battlefield(IMPROVISING, SOL, SOL)
+      .library('Island', 'Island')
+      .pool('G')
+      .seat(1)
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(improvising)).toEqual([]);
+  });
+
+  test('a nonartifact spell you cast may tap artifacts for its generic mana', () => {
+    const g = build();
+    g.act(0).cast(BEARS);
+    const d = g.state.pending;
+    if (d?.kind !== 'choosePayOptions')
+      throw new Error(`expected choosePayOptions, got ${d?.kind}`);
+    expect(d.mechanism).toBe('improvise');
+    expect(keywordsOf(g, BEARS)).toContain('improvise');
+  });
+
+  test('an artifact spell gets no improvise', () => {
+    const g = build();
+    g.act(0).cast(SOL);
+    expect(g.state.pending?.kind).not.toBe('choosePayOptions');
+  });
+
+  test('a nonartifact spell an opponent casts has no improvise', () => {
+    const g = scenario()
+      .define(improvising)
+      .seat(0)
+      .battlefield(IMPROVISING)
+      .seat(1)
+      .hand(BEARS)
+      .battlefield(SOL, SOL)
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 1 })
+      .build();
+    expect(g.act(1).try.cast(BEARS).ok).toBe(false);
   });
 });

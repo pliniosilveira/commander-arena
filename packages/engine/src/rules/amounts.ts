@@ -277,6 +277,11 @@ export function amountOf(
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  if (amount.kind === 'asCast') {
+    // CR 601.2i: the number worked out as the spell was cast, from last-known information once the spell has left the stack.
+    const spell = ctx.source === null ? null : objectOrLki(state, ctx.source);
+    return spell?.stack?.castAmount ?? 0;
+  }
   if (amount.kind === 'controllerLifeLostThisTurn') {
     return getSeat(state, ctx.controller).lifeLostThisTurn;
   }

@@ -814,7 +814,9 @@ export function lowerCondition(
       const test = c.test;
       if (test.kind !== 'castFromZone') return failure(c, []);
       // Transpose: "If this spell was cast from your hand" is the spell's own text (the engine reads the zone the spell on the stack was cast from).
-      if (test.zone === 'hand' && ctx?.owner !== 'spell') return failure(c, []);
+      if ((test.zone === 'hand' || test.zone === 'exile') && ctx?.owner !== 'spell') {
+        return failure(c, []);
+      }
       const blocked = missingFeatures(['condition:castFromZone']);
       return blocked.length > 0
         ? failure(c, blocked)

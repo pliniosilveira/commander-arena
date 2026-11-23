@@ -499,6 +499,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'proliferate',
     // Issue 105: "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way."
     'eachPlayerChoosesDestroy',
+    // Ultimate Magic: Meteor: "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents."
+    'chooseOnePerOpponentDestroy',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
     'exileTop',
     'mayPlay',
@@ -1572,6 +1574,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGainedThisTurn',
     'controllerLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
+    // CR 601.2i (Lifestream's Blessing): "... as you cast this spell", worked out when the spell is cast.
+    'asCast',
     'enteredThisTurn',
     'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
@@ -2687,6 +2691,8 @@ export const AMOUNT_KINDS = [
   'controllerLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
+  /** "The greatest power among creatures you controlled as you cast this spell" (CR 601.2i): the engine's `asCast`, worked out when the spell is cast. */
+  'asCast',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -3115,6 +3121,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileIfLeaves: true,
   proliferate: true,
   eachPlayerChoosesDestroy: true,
+  chooseOnePerOpponentDestroy: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,
