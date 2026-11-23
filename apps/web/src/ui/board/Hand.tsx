@@ -1,6 +1,6 @@
-/** The human's hand, in a straight row that scrolls sideways (A19), and the opponent's hand as card backs with a count. */
+/** The human's hand, in a straight row that always scrolls sideways (A19), with empty room at both ends, and the opponent's hand as card backs with a count. */
 import type { ObjectView } from '@commander-arena/engine';
-import { type CSSProperties, useEffect, useRef } from 'react';
+import { type CSSProperties, useEffect, useLayoutEffect, useRef } from 'react';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useTextScale } from '../panels/text-size';
@@ -126,6 +126,14 @@ export function Hand({
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
+  // Like the rows of the field, the hand always has room to scroll (empty room at both ends): a card
+  // can be brought clear of whatever covers the hand. At rest the cards are centred by scrolling to
+  // the middle; a change in the number of cards or the width re-centres.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-centre when these change
+  useLayoutEffect(() => {
+    const el = fanRef.current;
+    if (el !== null) el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
+  }, [cards.length, width, step]);
   const shown = size === null ? MIN_SHOWN : size.height;
   return (
     <section
