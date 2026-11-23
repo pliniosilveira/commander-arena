@@ -108,7 +108,9 @@
 .table-board .board-command {
   flex: 0 1 auto;
   min-width: 0;
-  margin-left: auto;
+  /* No auto margin: it would push the chip to the right edge and leave the rest at the left, not
+     centered in the bar (the strip centers its content). */
+  margin-left: 0;
 }
 /* The chip is a tenth narrower than the 190px it was: its name has two lines. */
 .table-board .board-cmdr {
