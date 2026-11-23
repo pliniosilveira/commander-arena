@@ -1100,12 +1100,21 @@ export function resolvePlayers(
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []
         : [ctx.declinedPlayer];
-    case 'discardedThisWay':
+    case 'discardedThisWay': {
       // D-210: "each player who discarded a card this way": the players of the `discard` effects of this resolution that discarded, in the order of CR 101.4.
+      // CR 701.9a (Snort): with `hand`, the players whose discard of their hand ran, an empty hand included; `of` narrows them to every player or every opponent.
+      const named =
+        selector.of === undefined ? undefined : resolvePlayers(state, selector.of, ctx, targets);
       return apnapOrder(
         state,
-        (ctx.thisWay?.discardedBy ?? []).filter((seat) => !getSeat(state, seat).hasLost),
+        (selector.hand === true
+          ? (ctx.thisWay?.discardedHandBy ?? [])
+          : (ctx.thisWay?.discardedBy ?? [])
+        ).filter(
+          (seat) => !getSeat(state, seat).hasLost && (named === undefined || named.includes(seat)),
+        ),
       );
+    }
     case 'couldntSacrificeThisWay':
       // CR 701.21a, 101.4 (Plaguecrafter): "each player who can't": the players the `sacrifice` effects of this resolution found nothing to sacrifice for, in the order of CR 101.4.
       return apnapOrder(

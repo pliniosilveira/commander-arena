@@ -60,6 +60,8 @@ export function permanentValue(view: GameView, o: ObjectView): number {
  * the limit (a creature with no power is always kept for free). Not a perfect packing, only a good one.
  */
 export function chooseCreaturesToKeep(view: GameView, d: ChoosePermanentDecision): Action {
+  // Archfiend of Depravity ("chooses up to two creatures they control, then sacrifices the rest"): no power limit, only a number of creatures, `max`.
+  const byCount = d.maxTotalPower === undefined;
   const limit = d.maxTotalPower ?? 0;
   const powers = d.powers ?? {};
   const ranked = d.legal
@@ -71,6 +73,10 @@ export function chooseCreaturesToKeep(view: GameView, d: ChoosePermanentDecision
   const kept: ObjectId[] = [];
   let total = 0;
   for (const r of ranked) {
+    if (byCount) {
+      if (kept.length < d.max) kept.push(r.id);
+      continue;
+    }
     const power = powers[r.id] ?? 0;
     if (total + power > limit) continue;
     kept.push(r.id);

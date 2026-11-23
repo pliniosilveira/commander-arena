@@ -101,6 +101,8 @@ export const DAMAGE_RECIPIENTS = [
   'noun.each-permanent-of-player',
   // Stage P34 (D-152): "each other opponent".
   'noun.each-other-opponent',
+  // Snort (CR 701.9a): "each opponent who discarded their hand this way", before `noun.player` would stop at "each opponent".
+  'noun.each-player-discarded-their-hand',
   // "~ deals 3 damage to that player" (stage P29, D-133): the player the event of the trigger is about.
   'noun.that-player',
   // "~ deals 2 damage to that permanent's controller" (stage P35, D-176, CR 109.4, 608.2h): the controller of an object the text named.

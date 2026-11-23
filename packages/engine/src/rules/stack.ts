@@ -341,6 +341,12 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                     ...(out.thisWay.discardedBy ?? []),
                   ]),
                 ],
+                discardedHandBy: [
+                  ...new Set([
+                    ...(res.thisWay?.discardedHandBy ?? []),
+                    ...(out.thisWay.discardedHandBy ?? []),
+                  ]),
+                ],
                 couldntSacrifice: [
                   ...new Set([
                     ...(res.thisWay?.couldntSacrifice ?? []),
@@ -701,7 +707,10 @@ export function answerResolutionChoice(
   }
   // CR 608.2d, 701.21a (Slaughter the Strong): the answer names the permanents kept; the rest of the ones the player controls that match are sacrificed (the ones that can't be, stay).
   const asked = state.pending;
-  if (head.kind === 'chooseSacrifice' && head.keepPowerAtMost !== undefined) {
+  if (
+    head.kind === 'chooseSacrifice' &&
+    (head.keepPowerAtMost !== undefined || head.keepCountAtMost !== undefined)
+  ) {
     if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
     const sacrificed = asked.legal.filter(
       (id) => !chosen.includes(id) && !cantBeSacrificed(state, id),

@@ -335,6 +335,28 @@ const MANA_VALUE_OF_HEAD =
 const MANA_VALUE_OF =
   (rule: string): Parser<IrAmount> =>
   (ctx, pos) => {
+    // "the mana value of the sacrificed permanent" (Shadow, Mysterious Assassin; CR 202.3, 113.7a): the same value, as the permanent last existed on the battlefield.
+    const lead = pattern(
+      /the mana value of (the sacrificed (?:creature|permanent|artifact))(?![\p{L}\p{N}'’])/iu,
+    )(ctx, pos);
+    if (lead.ok) {
+      const name = lead.value[1] ?? '';
+      const of: IrNoun = {
+        kind: 'noun',
+        det: 'sacrificed',
+        filter: { raw: name },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: lead.pos },
+        rule,
+      };
+      return {
+        ok: true,
+        value: { kind: 'manaValueOf', of, span: { start: pos, end: lead.pos } },
+        pos: lead.pos,
+      };
+    }
     const m = pattern(MANA_VALUE_OF_HEAD)(ctx, pos);
     if (!m.ok) return m;
     const head = m.value[1] ?? '';
@@ -638,6 +660,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'equal to the number of colors in your commanders’ color identity',
     'equal to the number of opponents you have',
+    'equal to the mana value of the sacrificed permanent',
+    'equal to the mana value of the sacrificed creature',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
     // Stage P44 (D-195, CR 701.38a): the votes for one option of the vote earlier in the text.
@@ -663,6 +687,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     "equal to the difference between that creature's power and its toughness and",
     "equal to that creature's power",
     'equal to its mana value',
+    'equal to the mana value of the sacrificed',
+    'equal to the mana value of the sacrificed land',
+    'equal to the mana value of a sacrificed permanent',
     'equal to the total life lost this way',
     'equal to the greatest power among creatures',
     'equal to the greatest power of creatures you control',

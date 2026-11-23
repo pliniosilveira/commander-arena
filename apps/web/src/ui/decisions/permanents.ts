@@ -53,6 +53,11 @@ export function isKeep(decision: CrewFields): boolean {
   return decision.purpose === 'keep';
 }
 
+/** A keep choice limited by total power (Slaughter the Strong) rather than by number (Archfiend of Depravity, "up to two creatures"). */
+function isKeepByPower(decision: CrewFields): boolean {
+  return isKeep(decision) && decision.maxTotalPower !== undefined;
+}
+
 /** True for the cost of a crew ability (CR 702.122a): tap creatures with enough total power. */
 export function isCrew(decision: CrewFields): boolean {
   return decision.purpose === 'crew';
@@ -93,7 +98,9 @@ export function permanentsReady(
   decision: Pick<ChoosePermanentDecision, 'min' | 'max'> & CrewFields,
 ): boolean {
   if (chosen.length < decision.min || chosen.length > decision.max) return false;
-  if (isKeep(decision) && crewTotal(chosen, decision) > (decision.maxTotalPower ?? 0)) return false;
+  if (isKeepByPower(decision) && crewTotal(chosen, decision) > (decision.maxTotalPower ?? 0)) {
+    return false;
+  }
   return !isCrew(decision) || crewTotal(chosen, decision) >= crewNeeded(decision);
 }
 
@@ -103,7 +110,7 @@ export function permanentsHint(
   decision: Pick<ChoosePermanentDecision, 'min' | 'max'> & CrewFields,
 ): string | null {
   if (permanentsReady(chosen, decision)) return null;
-  if (isKeep(decision))
+  if (isKeepByPower(decision))
     return `Keep creatures with total power ${decision.maxTotalPower ?? 0} or less`;
   if (isCrew(decision)) {
     return `Choose creatures with total power ${crewNeeded(decision)} or greater`;
@@ -133,6 +140,9 @@ export function permanentsDetail(
   decision: CrewFields & Partial<Pick<ChoosePermanentDecision, 'min' | 'devourQuality'>>,
 ): string {
   if (isCrew(decision)) return crewTotalText(chosen, decision);
+  if (isKeep(decision) && !isKeepByPower(decision)) {
+    return `Keeping ${plural(chosen.length, 'creature')}. The others are sacrificed.`;
+  }
   if (isKeep(decision)) {
     return `Keeping ${plural(chosen.length, 'creature')}, total power ${crewTotal(chosen, decision)} of at most ${decision.maxTotalPower ?? 0}. The others are sacrificed.`;
   }
@@ -372,6 +382,9 @@ export function choosePermanentPrompt(
 ): string {
   if (isFight(decision)) return fightPrompt(decision, index);
   // Slaughter the Strong (CR 608.2d, 701.21a): the creatures clicked are kept, the others sacrificed.
+  if (isKeep(decision) && decision.maxTotalPower === undefined) {
+    return `Choose up to ${plural(decision.max, 'creature')} you control to keep. Your other creatures are sacrificed (${nameOf(index, decision.source)}).`;
+  }
   if (isKeep(decision)) {
     return `Choose any number of creatures you control to keep, with total power ${decision.maxTotalPower ?? 0} or less. Your other creatures are sacrificed (${nameOf(index, decision.source)}).`;
   }

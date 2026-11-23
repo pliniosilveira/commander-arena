@@ -1335,7 +1335,16 @@ export type PlayerSelector =
    * "Each player who discarded a card this way" (D-210, CR 701.9): the players who discarded at least one card to the `discard` effects of this same resolution
    * so far, in the order CR 101.4 gives. Valid after a `discard` effect (or a `playersMay` of one) in the same sequence.
    */
-  | { readonly kind: 'discardedThisWay' }
+  | {
+      readonly kind: 'discardedThisWay';
+      /**
+       * "Each opponent who discarded their hand this way" (Snort; CR 701.9a, 101.4): with `hand`, the players whose `discard` of `hand` of this resolution ran, whatever their hand held (a player
+       * who discards an empty hand has discarded their hand), instead of those who discarded at least one card.
+       */
+      readonly hand?: true;
+      /** Only the players this selector (`eachPlayer` or `eachOpponent`) names, as the effect resolves; every player when left out. */
+      readonly of?: PlayerSelector;
+    }
   /**
    * "Each player who can't" after "each player sacrifices a creature or planeswalker of their choice" (CR 701.21a, 101.4, Plaguecrafter): the players for whom a `sacrifice` effect of
    * this same resolution had nothing to sacrifice (no permanent they control matched, so they sacrificed nothing), in the order CR 101.4 gives. A player who chose to sacrifice nothing
@@ -3451,7 +3460,13 @@ export type Effect =
       readonly kind: 'keepOrSacrifice';
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
-      readonly totalPowerAtMost: number;
+      /** The limit on the total power of what is kept; exactly one of this and `keepAtMost`. */
+      readonly totalPowerAtMost?: number;
+      /**
+       * "That player chooses up to two creatures they control, then sacrifices the rest" (CR 608.2d, 701.21a, 101.4; Archfiend of Depravity): the limit is on how many are kept, 0 or more,
+       * instead of on their total power. The player may keep fewer; one who controls no more than that many sacrifices nothing.
+       */
+      readonly keepAtMost?: number;
     }
   | {
       readonly kind: 'moveToZone';

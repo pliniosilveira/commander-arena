@@ -1070,7 +1070,10 @@ function runEffect(
             kind: 'chooseSacrifice' as const,
             filter: effect.filter,
             count: 0,
-            keepPowerAtMost: effect.totalPowerAtMost,
+            ...(effect.totalPowerAtMost === undefined
+              ? {}
+              : { keepPowerAtMost: effect.totalPowerAtMost }),
+            ...(effect.keepAtMost === undefined ? {} : { keepCountAtMost: effect.keepAtMost }),
             chosen: null,
             seat: first,
             ...(later.length === 0 ? {} : { together: { later, held: [] } }),
@@ -3016,7 +3019,16 @@ function runEffect(
       // CR 701.9: each player named discards that many cards, choosing which (CR 701.9b).
       const anyNumber = effect.anyNumber === true;
       // CR 701.9a: "discards their hand" is read for each player as their instruction runs (`runDiscard`), so there is no count here.
-      const wholeHand = effect.hand === true;
+      // "Discard your hand" written as the number of cards in the player's own hand is the same whole-hand discard (CR 701.9a), so an empty hand still discards its hand
+      // (Snort: "each opponent who discarded their hand this way").
+      const ownHandCount =
+        effect.player.kind === 'you' &&
+        typeof effect.count === 'object' &&
+        effect.count.kind === 'countOf' &&
+        Object.keys(effect.count.filter).length === 2 &&
+        effect.count.filter.zone === 'hand' &&
+        effect.count.filter.controller === 'you';
+      const wholeHand = effect.hand === true || ownHandCount;
       const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
       if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);

@@ -548,8 +548,12 @@ function recipientText(
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the caster promised the gift to.
       return 'the chosen player';
-    case 'discardedThisWay':
-      return 'each player who discarded a card this way';
+    case 'discardedThisWay': {
+      const group = to.of?.kind === 'eachOpponent' ? 'opponent' : 'player';
+      return to.hand === true
+        ? `each ${group} who discarded their hand this way`
+        : `each ${group} who discarded a card this way`;
+    }
     case 'couldntSacrificeThisWay':
       return "each player who can't";
     case 'attackedPlayers':
