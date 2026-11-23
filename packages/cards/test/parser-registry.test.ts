@@ -1182,6 +1182,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
+  'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,

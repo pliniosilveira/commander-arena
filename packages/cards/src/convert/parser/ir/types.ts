@@ -498,6 +498,12 @@ export interface IrFilter {
    * other targets of the text; the binding pass walks it as it walks `powerGreaterThanNoun`.
    */
   readonly sameNameAsNoun?: IrNoun;
+  /**
+   * "target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent" (Legions to Ashes, CR 608.2c): with `sameNameAsNoun`, the
+   * target it is is selected too (the engine's `each.plus`), and `controllerOfNamed`: the objects are controlled by the controller of that target (the engine's `controlledBy`).
+   */
+  readonly withNamedTarget?: true;
+  readonly controllerOfNamed?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */

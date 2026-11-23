@@ -1600,6 +1600,8 @@ export function checkObjectSelector(
     } else if (each.except !== undefined) {
       checkRef(each.except, 'object', `${path}.except`, scope, out);
     }
+    // CR 608.2c: "the target and all tokens ... with the same name": the object the effect names besides the filter's.
+    if (each.plus !== undefined) checkRef(each.plus, 'object', `${path}.plus`, scope, out);
     return;
   }
   checkRef(sel as ObjectRef, expect, path, scope, out);

@@ -542,6 +542,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile target noncreature, nonland card from your graveyard',
     // Soul Snare (CR 508.1b, 506.3): an attacker of the controller or of a planeswalker the controller controls.
     "exile target creature that's attacking you or a planeswalker you control",
+    // Legions to Ashes (CR 201.2, 608.2c): the target and the tokens with its name that its controller controls.
+    'exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent',
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -581,6 +583,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
+            // Legions to Ashes (CR 201.2, 608.2c): "exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent".
+            'noun.target-permanent-and-same-name-tokens',
             ...SELF_OR_PERMANENT_OPERANDS,
             // Stage P30 (D-135): "you may exile it" (the card a permanent became when it died, or a target of the text).
             'noun.it',

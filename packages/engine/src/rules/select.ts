@@ -955,10 +955,17 @@ export function resolveObjects(
       // D-151: "each other creature" besides the one the effect names (`except`), read now, with the targets.
       const left =
         selector.except === undefined ? [] : resolveObjects(state, selector.except, ctx, targets);
-      return objectsInZone(state, zone).filter(
+      const matched = objectsInZone(state, zone).filter(
         (id) =>
           !left.includes(id) && matchesFilter(state, getObject(state, id), selector.filter, named),
       );
+      if (selector.plus === undefined) return matched;
+      // CR 608.2c (Legions to Ashes): "the target and all tokens ... with the same name": the referenced object joins the set, once.
+      const inZone = new Set(objectsInZone(state, zone));
+      const extra = resolveObjects(state, selector.plus, ctx, targets).filter(
+        (id) => inZone.has(id) && !matched.includes(id) && !left.includes(id),
+      );
+      return [...matched, ...extra];
     }
     default: {
       const unreachable: never = selector;

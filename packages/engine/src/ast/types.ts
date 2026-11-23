@@ -1238,6 +1238,12 @@ export type ObjectSelector =
        * instead.
        */
       readonly except?: ObjectRef;
+      /**
+       * "Exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent" (Legions to Ashes, CR 608.2c): the object this
+       * reference names is selected too, besides the objects the filter matches, when it is in the zone the filter names (once if the filter matches it as well). Read as the effect
+       * resolves, with the targets: a reference that names nothing adds nothing.
+       */
+      readonly plus?: ObjectRef;
     };
 
 export type PlayerSelector =

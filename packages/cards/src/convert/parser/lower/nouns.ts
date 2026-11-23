@@ -88,6 +88,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:controllerRef',
   'selector:powerGreaterThan',
   'selector:sameNameAs',
+  'selector:eachPlus',
   'selector:bound',
   'selector:ownerRef',
   'selector:power',
@@ -1374,12 +1375,27 @@ function selectorOf(
       const named = selectorOf(nameNoun, ctx);
       if (!named.ok) return named;
       if (named.value.kind !== 'target') return failure(nameNoun, []);
-      const { sameNameAsNoun: _bound, ...rest } = noun.filter;
+      const { sameNameAsNoun: _bound, withNamedTarget, controllerOfNamed, ...rest } = noun.filter;
       const plain = lowerFilterAt(rest, noun, false);
       if (!plain.ok) return plain;
+      // "... and all tokens that player controls with the same name as that permanent" (Legions to Ashes, CR 608.2c): the tokens its controller controls, and the target too.
+      if (withNamedTarget === true || controllerOfNamed === true) {
+        const refusedPlus = gate(noun, ['selector:eachPlus']);
+        if (refusedPlus !== null) return refusedPlus;
+      }
       return {
         ok: true,
-        value: { kind: 'each', filter: { ...plain.value, sameNameAs: named.value } },
+        value: {
+          kind: 'each',
+          filter: {
+            ...plain.value,
+            sameNameAs: named.value,
+            ...(controllerOfNamed === true
+              ? { controlledBy: { kind: 'controllerOf', of: named.value } as const }
+              : {}),
+          },
+          ...(withNamedTarget === true ? { plus: named.value } : {}),
+        },
         rule: noun.rule,
       };
     }
