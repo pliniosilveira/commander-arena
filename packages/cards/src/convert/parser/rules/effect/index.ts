@@ -218,6 +218,7 @@ import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
 import { REVEAL_UNTIL_OTHER_EFFECT_RULES } from './reveal-until-other';
 import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
+import { REVIVAL_TRANCE_EFFECT_RULES } from './revival-trance';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -1364,6 +1365,8 @@ export const EFFECT_RULES = [
   ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
+  // Revival Trance deck (issue 97): "starting with the next opponent in turn order, each opponent chooses a creature card in your graveyard that hasn't been chosen".
+  ...REVIVAL_TRANCE_EFFECT_RULES,
   // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
   ...F144_EFFECT_RULES,
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.

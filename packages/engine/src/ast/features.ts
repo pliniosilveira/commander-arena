@@ -227,6 +227,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discard',
     // D-231: "Each player exiles a card from their graveyard" (Augusta).
     'exileOwnGraveyardCard',
+    // Rejoin the Fight: "each opponent chooses a creature card in your graveyard that hasn't been chosen".
+    'eachOpponentChoosesGraveyardCard',
     // D-231: Tragic Arrogance's choices of the permanents to keep and the sacrifice of the rest.
     'sparePermanents',
     // D-232: Coin of Fate's "An opponent chooses one of the exiled cards ...".
@@ -2966,6 +2968,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   draw: true,
   discard: true,
   exileOwnGraveyardCard: true,
+  eachOpponentChoosesGraveyardCard: true,
   sparePermanents: true,
   splitCostExiled: true,
   returnGraveyardPair: true,

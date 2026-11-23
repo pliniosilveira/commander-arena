@@ -7598,6 +7598,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       break;
+    case 'eachOpponentChoosesGraveyardCard':
+      // CR 404.1: the cards are in the controller's graveyard: a filter of that zone with no owner or controller of its own.
+      checkFilter(e.filter, `${path}.filter`, out, scope);
+      if (
+        e.filter.zone !== 'graveyard' ||
+        e.filter.controller !== undefined ||
+        e.filter.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the cards each opponent chooses are in the graveyard of the controller: zone "graveyard", no controller or owner',
+        );
+      }
+      break;
     case 'exileOwnGraveyardCard':
       // D-231: "each player exiles a card from their graveyard": the players of the selector, each choosing among their own cards.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);

@@ -162,6 +162,7 @@ import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
+import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -2820,6 +2821,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ARCANUM_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...PRIMORDIAL_LOWERINGS,
+  ...REVIVAL_TRANCE_LOWERINGS,
   ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,

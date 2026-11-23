@@ -2704,6 +2704,14 @@ export type Effect =
    */
   | { readonly kind: 'exileOwnGraveyardCard'; readonly players: PlayerSelector }
   /**
+   * "Starting with the next opponent in turn order, each opponent chooses a creature card in your graveyard that hasn't been chosen. Return each card chosen this way to the
+   * battlefield under your control." (Rejoin the Fight; CR 101.4, 608.2d, 404.1, 110.2a): each opponent of the controller still in the game, in turn order beginning with the one
+   * after the controller, chooses one card of the controller's graveyard that `filter` matches and no opponent chose before (a `chooseCards` decision of purpose `move`, nothing
+   * asked when exactly one card is left, nothing chosen when none is). Once the last has chosen, all the cards chosen enter the battlefield together under the controller's control.
+   * `filter` has `zone` `graveyard`, no controller or owner.
+   */
+  | { readonly kind: 'eachOpponentChoosesGraveyardCard'; readonly filter: ObjectFilter }
+  /**
    * "You may exile one of them from your graveyard" (CR 603.2c, 608.2d, 400.7, Lorehold group 1): of the cards that triggered this ability (`triggerCards`: the cards a batch
    * `discarded` trigger saw discarded, as the objects they became) the ones still in the graveyard of the controller, the controller chooses none or one and the card is exiled
    * (the choice is the offer: nothing is asked when no card is there). The card exiled is what `moved` names afterwards ("If you do, you may cast it this turn") and what

@@ -144,3 +144,38 @@ describe('Sepulchral Primordial', () => {
     expect(() => g.act(0).chooseTargets(BEARS, ANGEL)).toThrow();
   });
 });
+
+describe('Rejoin the Fight', () => {
+  const rejoin = real('Rejoin the Fight');
+  const ELVES = 'Llanowar Elves';
+  const ANGEL = 'Serra Angel';
+
+  /** Seat 0 has the sorcery in hand and the given library; 3 seats. */
+  const board = (graveyard: readonly string[], library: readonly string[]) =>
+    scenario({ seats: 3 })
+      .define(rejoin)
+      .seat(0)
+      .library(...library)
+      .hand(rejoin.name)
+      .pool('BCCCCC')
+      .graveyard(...graveyard)
+      .seat(1)
+      .seat(2)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('mills three, then the next opponent and the one after choose different creature cards, which enter under my control', () => {
+    const g = board([BEARS], [ELVES, ANGEL, 'Swamp', 'Swamp', 'Swamp']);
+    g.act(0).cast(rejoin.name, { pay: true });
+    g.passAll();
+    // Milled: Llanowar Elves, Serra Angel and a Swamp; the graveyard now holds three creature cards.
+    g.expect.pending('chooseCards', 1);
+    g.act(1).chooseCards({ name: ANGEL, seat: 0 });
+    g.expect.pending('chooseCards', 2);
+    g.act(2).chooseCards({ name: BEARS, seat: 0 });
+    g.expect.zone(ANGEL, 'battlefield', { seat: 0 });
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.zone(ELVES, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+});
