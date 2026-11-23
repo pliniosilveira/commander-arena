@@ -79,15 +79,15 @@ describe('the log', () => {
 
   test('the Ring and the damage recipient of a replacement name the numbered opponent too', () => {
     const s = state(3);
-    const ring: GameEvent = { kind: 'ringTempted', seat: 2, times: 1, bearer: null };
+    const ring: GameEvent = { kind: 'ringTempted', seat: 2, times: 1, bearer: null, first: true };
     expect(describeEvent(ring, s, s, 0)?.text).toContain(
       'The Ring tempts Opponent 2 (the first time).',
     );
     expect(describeEvent(ring, s, s, 0)?.text).toContain('Opponent 2 controls no creature');
-    const own: GameEvent = { kind: 'ringTempted', seat: 0, times: 1, bearer: null };
+    const own: GameEvent = { kind: 'ringTempted', seat: 0, times: 1, bearer: null, first: true };
     expect(describeEvent(own, s, s, 0)?.text).toContain('The Ring tempts you (the first time).');
     const one = state(2);
-    const theirs: GameEvent = { kind: 'ringTempted', seat: 1, times: 1, bearer: null };
+    const theirs: GameEvent = { kind: 'ringTempted', seat: 1, times: 1, bearer: null, first: true };
     expect(describeEvent(theirs, one, one, 0)?.text).toContain('The Ring tempts the opponent');
   });
 

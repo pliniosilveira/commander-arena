@@ -130,8 +130,8 @@ describe('the emblem strip', () => {
     expect(count(html, 'data-emblem-kind="emblem"')).toBe(2);
     expect(html).toContain('Creatures you control get +1/+1.');
     expect(html).toContain('can&#x27;t be countered.');
-    // They are shown once: in the strip, not also as a chip of the command zone, which keeps the two commanders.
-    expect(count(html, 'class="board-cmdr"')).toBe(2);
+    // They are shown once: in the strip, not also as a commander chip: the two chips are the two commanders.
+    expect(count(html, 'data-commander-chip=')).toBe(2);
   });
 
   test("the opponent's cards are in the opponent's strip and say whose they are", async () => {

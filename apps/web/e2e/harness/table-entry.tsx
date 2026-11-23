@@ -11,6 +11,8 @@ import { StoreProvider } from '../../src/ui/store-context';
 import '../../src/styles.css';
 
 const FILLER = Array.from({ length: 12 }, () => 'Island');
+/** Each seat's commander, in its command zone; seat 0's has been cast twice (tax +4). */
+const COMMANDERS = ['Isamaru, Hound of Konda', 'Serra Angel', 'Giant Spider', 'Grizzly Bears'];
 const FIELDS: readonly (readonly string[])[] = [
   ['Island', 'Island', 'Island', 'Grizzly Bears', 'Serra Angel', 'Sol Ring'],
   ['Forest', 'Forest', 'Giant Spider', 'Grizzly Bears'],
@@ -24,6 +26,7 @@ export function mount(opponents: number, lost: readonly number[] = []): void {
     b.seat(seat)
       .life(lost.includes(seat) ? 0 : 40)
       .library(...FILLER)
+      .commander(COMMANDERS[seat] ?? 'Grizzly Bears', seat === 0 ? { casts: 2 } : {})
       .battlefield(...(FIELDS[seat] ?? []));
     if (seat === 0) b.hand('Lightning Bolt', 'Grizzly Bears', 'Island', 'Sol Ring');
   }

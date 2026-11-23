@@ -117,17 +117,24 @@ describe('Board', () => {
     for (const id of drawn) expect(knownToViewer.has(id)).toBe(true);
   });
 
-  test('the strips show life, library, graveyard and the command zone with tax and damage', async () => {
+  test('the strips show life, library, graveyard and exile, and only the commander chip', async () => {
     const store = await gameAfter(0);
     const html = render(store, <Board />);
     expect(html).toContain('board-life-total');
     expect(html).toContain('Library');
     expect(html).toContain('Graveyard');
     expect(html).toContain('Open You exile');
-    expect(html).toContain('Tax +0');
-    expect(html).toContain('Cmdr dmg 0');
-    expect(html).toContain('Isamaru, Hound of Konda');
-    expect(html).toContain('Yargle, Glutton of Urborg');
+    // The tax and the commander damage are in the commander popup, not on the strip.
+    expect(html).not.toContain('Tax +');
+    expect(html).not.toContain('Cmdr dmg');
+    expect(html).not.toContain('Open You command zone');
+    // What is left of the commander is its chip, which opens the popup.
+    expect(html.match(/data-commander-chip="\d"/g)).toHaveLength(2);
+    expect(html).toContain('Commander Isamaru, Hound of Konda');
+    expect(html).toContain('Commander Yargle, Glutton of Urborg');
+    // Each chip has an info button, where the cost was, that opens the popup.
+    expect(html.match(/data-commander-info="\d"/g)).toHaveLength(2);
+    expect(html).toContain('About Isamaru, Hound of Konda');
   });
 
   test('the interaction contract drives glow, selection and dimming', async () => {

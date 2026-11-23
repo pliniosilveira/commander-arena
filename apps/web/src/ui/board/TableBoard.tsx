@@ -12,6 +12,7 @@ import './board.css';
 import './table.css';
 import { splitAttachments } from './attach';
 import { Field, ROW_ORDER_ME, ROW_ORDER_OPP, zoneContents } from './Board';
+import { CommanderPopup } from './CommanderPopup';
 import { exilePlayable } from './exile-play';
 import { Hand } from './Hand';
 import { OtherZonesStrip } from './OtherZonesStrip';
@@ -29,6 +30,8 @@ const HAND_CARD_SCALE = 0.85;
 export function TableBoard({ flow }: { flow?: ReactNode }) {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
+  // The seat whose commander popup is open.
+  const [commanderSeat, setCommanderSeat] = useState<number | null>(null);
   const looked = useLookedCards();
   const ix = useInteraction();
   const roles = useMemo(
@@ -69,6 +72,7 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
               seat={seat}
               onOpenZone={setZone}
               label={opponentLabel(view, seat.id)}
+              onOpenCommander={setCommanderSeat}
             />
             <Field
               view={view}
@@ -88,7 +92,12 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
             attachments={attachments}
             exile={exile}
           />
-          <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
+          <PlayerStrip
+            view={view}
+            seat={me}
+            onOpenZone={setZone}
+            onOpenCommander={setCommanderSeat}
+          />
           <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
           <Hand
             cards={me.hand ?? []}
@@ -104,6 +113,13 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
         >
           {flow}
         </aside>
+        {commanderSeat !== null && (
+          <CommanderPopup
+            view={view}
+            seatId={commanderSeat}
+            onClose={() => setCommanderSeat(null)}
+          />
+        )}
         {open !== null && (
           <ZoneViewer
             title={open.title}
