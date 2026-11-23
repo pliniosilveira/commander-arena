@@ -15,7 +15,7 @@ import { type Clauses, single } from './operands';
 /**
  * `effect.tap-chosen`: "tap X untapped Myr you control", "tap two untapped creatures you control", "tap an untapped artifact you control"
  * (stage P31, D-140, CR 701.26a: to tap; CR 608.2d: the player chooses which as the instruction runs; CR 302.6: summoning sickness does
- * not matter). The permanents are the player's own and untapped; "X" is the number the player chooses (any number, none to all), which
+ * not matter). The permanents are the player's own and untapped; "X" or "any number of" is the number the player chooses (none to all), which
  * the instructions after it read as "X".
  */
 export const EFFECT_TAP_CHOSEN = defineRule<Clauses>({
@@ -32,6 +32,8 @@ export const EFFECT_TAP_CHOSEN = defineRule<Clauses>({
     'tap X untapped creatures you control',
     'tap two untapped artifacts you control',
     'tap an untapped creature you control',
+    'tap any number of untapped creatures you control',
+    'tap any number of untapped artifacts you control',
   ],
   rejects: [
     'tap X untapped Myr',
@@ -40,6 +42,8 @@ export const EFFECT_TAP_CHOSEN = defineRule<Clauses>({
     'tap X target creatures',
     'tap target creature',
     'tap one untapped creature you control',
+    'tap any number of untapped creatures',
+    'tap any number of creatures you control',
   ],
   parse: single(
     'effect.tap-chosen',
@@ -47,7 +51,7 @@ export const EFFECT_TAP_CHOSEN = defineRule<Clauses>({
       const head = sequence(
         literal('tap '),
         choice<{ count: IrAmount | null; plural: boolean }>(
-          map(spanned(literal('X')), ({ span }) => ({
+          map(spanned(pattern(/(?:X|any number of)(?= untapped )/)), ({ span }) => ({
             count: { kind: 'x', span } as IrAmount,
             plural: true,
           })),

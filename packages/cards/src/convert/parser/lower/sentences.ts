@@ -1818,8 +1818,13 @@ function countsWhatHappened(
         (word === 'permanent' || names(earlier.args.objects).every((n) => n === word))
       );
     case 'tapped':
-      // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
-      return earlier.verb === 'tapChosen';
+      // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose; "for each creature tapped this way" names the kind it tapped.
+      return (
+        earlier.verb === 'tapChosen' &&
+        (word === undefined ||
+          word === 'permanent' ||
+          names(earlier.args.objects).every((n) => n === word))
+      );
     case 'exiledCreatures':
       // Issue 81 (Sunfall): "where X is the number of creatures exiled this way": an `exile` before it in the same text.
       return earlier.verb === 'exile';
