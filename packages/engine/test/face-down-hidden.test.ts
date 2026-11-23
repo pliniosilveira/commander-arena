@@ -372,6 +372,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   drawReplaced: [],
   libraryShuffled: [],
   dieRolled: [],
+  coinFlipped: [],
   milled: [],
   landPlayed: [],
   spellCast: [],

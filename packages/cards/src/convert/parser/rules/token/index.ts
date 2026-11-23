@@ -531,6 +531,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
     'Hero, a legendary 2/2 white Soldier creature token',
     'Primo, the Indivisible, a legendary 0/0 green and blue Fractal creature token',
     'Hero, a legendary 2/2 white Soldier creature token with flying',
+    'The Blackjack, a legendary 3/3 colorless Vehicle artifact token with flying and crew 2',
     'Dead Knight of Doom, a legendary 3/3 black Zombie Knight creature token with menace',
     'Hero, a legendary 2/2 white Soldier creature token with "When Hero dies, you gain 1 life."',
     'Hero, a legendary 2/2 white Soldier creature token with flying and "When Hero dies, you gain 1 life."',
@@ -540,6 +541,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   rejects: [
     'Smaug, a 6/6 red Dragon creature token',
     'Smaug, a legendary 6/6 red Dragon creature token with',
+    'The Blackjack, a legendary 3/3 colorless Vehicle artifact tokens with flying and crew 2',
     'Smaug, a legendary 6/6 red Dragon creature token with flash',
     'Smaug, a legendary 6/6 Dragon creature token',
     'Smaug, a legendary red Dragon creature token',
@@ -580,6 +582,8 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
             choice(
               map(literal(' artifact creature'), () => ['artifact', 'creature']),
               map(literal(' creature'), () => ['creature']),
+              // "The Blackjack, a legendary 3/3 colorless Vehicle artifact token with flying and crew 2" (CR 301.7, 111.4): a Vehicle is an artifact that is a creature only while crewed.
+              map(literal(' artifact'), () => ['artifact']),
             ),
             satisfy(TOKEN_WORD, (plural) => !plural),
             optional(

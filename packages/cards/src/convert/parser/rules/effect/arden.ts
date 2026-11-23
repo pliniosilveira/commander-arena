@@ -134,4 +134,39 @@ export const EFFECT_CLASH = defineRule<Clauses>({
   },
 });
 
-export const ARDEN_EFFECT_RULES = [EFFECT_ROLL_DIE, EFFECT_CLASH].map(quietly);
+/**
+ * `effect.flip-coin`: "flip a coin" (CR 705.2: for an effect that does not only care about heads or tails, the player who flips calls heads or tails and wins the flip when the
+ * call matches the result; "whenever you win a coin flip" reads it). The controller flips one coin. Not read: another number of coins ("flip two coins"), another player ("target
+ * opponent flips a coin", "each player flips a coin"), "flip a coin until", a stated result or caller, and the rest of a sentence.
+ */
+export const EFFECT_FLIP_COIN = defineRule<Clauses>({
+  id: 'effect.flip-coin',
+  family: 'effect',
+  leading: ['flip'],
+  cites: ['CR 705.1 (Flipping a Coin)', 'CR 705.2 (Flipping a Coin)'],
+  examples: ['flip a coin', 'Flip a coin'],
+  rejects: [
+    'flip two coins',
+    'flip a coin until you lose a flip',
+    'flip a coin and draw a card',
+    'flip coins',
+    'flips a coin',
+    'each player flips a coin',
+    'flip',
+    'flip a',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(new RegExp(`flip a coin${BOUNDARY}(?! and\\b| until\\b)`, 'iu')))(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause('effect.flip-coin', 'flipCoin', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
+export const ARDEN_EFFECT_RULES = [EFFECT_ROLL_DIE, EFFECT_CLASH, EFFECT_FLIP_COIN].map(quietly);

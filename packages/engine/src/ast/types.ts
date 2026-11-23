@@ -943,6 +943,11 @@ export interface ObjectFilter {
    */
   readonly powerLessThanSource?: true;
   /**
+   * Only objects whose power is greater than the power of this ability's source (CR 509.1b, 208.1): "~ can't be blocked by creatures with greater power". Read as
+   * `powerLessThanSource` is, as it is now; the mirror of it. Not with `powerLessThanSource`.
+   */
+  readonly powerGreaterThanSource?: true;
+  /**
    * "Aura attached to it", "Equipment attached to enchanted creature", "Aura you control that's attached to a creature" (CR 301.5, 303.4, 701.3, D-422): the object
    * is a permanent attached to another one (an Aura, an Equipment, a Fortification) and that other permanent is `source` (the permanent that has the ability: "attached
    * to it", "attached to this creature"), `host` (the permanent the source is attached to: "attached to enchanted creature") or a permanent that matches `filter` (a
@@ -4402,6 +4407,13 @@ export type Effect =
    */
   | { readonly kind: 'rollDie'; readonly sides: number }
   /**
+   * One coin flip with a call made (CR 705.2: "flip a coin" for an effect that does not only care about heads or tails): the controller's coin is flipped with a draw of the seeded
+   * generator of the game (SPEC 4.2), the event `coinFlipped` says the call, the result and whether they match, and the controller wins the flip when they do (CR 705.2), which "whenever you win a
+   * coin flip" (`winsCoinFlip`) reads. The call is the player's: "flip a coin" is lowered to a `chooseOne` of one `coinFlip` for each call, so the player is asked as it resolves. Only
+   * there (`validateCard`): the flip of another player is not run.
+   */
+  | { readonly kind: 'coinFlip'; readonly call: 'heads' | 'tails' }
+  /**
    * "Clash with an opponent" (CR 701.30a-d, 701.30b): the controller chooses an opponent (nothing is asked with one opponent in the game; with none the effect does nothing), then the two
    * each reveal the top card of their library at the same time (a player with no card reveals none), then the two decide in turn order (CR 101.4) whether to put the card they revealed on the
    * bottom of their library, and the cards move at the same time. The controller wins the clash if the card they revealed has a higher mana value than every other card revealed (CR 701.30d):
@@ -5380,6 +5392,11 @@ export type Trigger =
    * Every die of a roll counts apart. The roll that triggers it is the roll of `rollDie` (the event `dieRolled`).
    */
   | { readonly kind: 'rollsHighest'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
+   * "Whenever you win a coin flip" (CR 705.2, 705.3, 603.2; Setzer, Wandering Gambler): once each time the player `who` names (relative to the controller of this ability) wins a coin
+   * flip, which is the flip of a `coinFlip` whose call matched the result. A flip that nobody wins or loses (CR 705.2: an effect that only cares about heads or tails) is not run.
+   */
+  | { readonly kind: 'winsCoinFlip'; readonly who: 'you' | 'opponent' | 'any' }
   /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
@@ -8563,6 +8580,12 @@ export interface ModeChoice {
    * is 0. Only a triggered ability (no mode chosen removes it from the stack), not with `repeatable` or `maxIf`, and `max` is at least 2.
    */
   readonly allOrNone?: true;
+  /**
+   * "At the beginning of combat on your turn, choose one at random —" (CR 700.2): the engine, not the controller, chooses the mode, as the triggered ability goes on the stack,
+   * with a draw of the seeded generator of the game among the modes that can be chosen (a mode with no legal target cannot, CR 603.3c); no `chooseModes` decision is asked. Only a
+   * triggered ability that chooses exactly one mode (`min` 1, `max` 1), without `repeatable`, `maxIf`, `allOrNone` or `differentTargets`.
+   */
+  readonly random?: true;
   /**
    * "Each mode must target a different player." (CR 700.2d): no target is chosen for two of the chosen modes (the targets of one mode may still be several). A set of modes
    * for which each target slot cannot get a target of its own is not offered. Not with `repeatable`.
