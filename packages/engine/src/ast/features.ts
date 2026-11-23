@@ -227,6 +227,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discard',
     // D-231: "Each player exiles a card from their graveyard" (Augusta).
     'exileOwnGraveyardCard',
+    // Rejoin the Fight: "each opponent chooses a creature card in your graveyard that hasn't been chosen".
+    'eachOpponentChoosesGraveyardCard',
     // D-231: Tragic Arrogance's choices of the permanents to keep and the sacrifice of the rest.
     'sparePermanents',
     // D-232: Coin of Fate's "An opponent chooses one of the exiled cards ...".
@@ -1152,6 +1154,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerAtLeastChosenNumber',
     // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
     'sameNameAs',
+    // CR 608.2c (Legions to Ashes): `each.plus`, the target besides the tokens with its name.
+    'eachPlus',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -2202,6 +2206,8 @@ export const SELECTOR_KINDS = [
   'powerAtLeastChosenNumber',
   /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
   'sameNameAs',
+  /** "Target permanent and all tokens ... with the same name as that permanent" (CR 608.2c): the engine's `each.plus`. */
+  'eachPlus',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -2966,6 +2972,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   draw: true,
   discard: true,
   exileOwnGraveyardCard: true,
+  eachOpponentChoosesGraveyardCard: true,
   sparePermanents: true,
   splitCostExiled: true,
   returnGraveyardPair: true,

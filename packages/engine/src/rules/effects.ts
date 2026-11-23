@@ -3233,6 +3233,35 @@ function runEffect(
       );
     }
 
+    case 'eachOpponentChoosesGraveyardCard': {
+      // CR 101.4, 608.2d, 404.1, 110.2a (Rejoin the Fight): each opponent of the controller who is still in the game, starting with the next one in turn order, chooses a card of
+      // the controller's graveyard that no one chose before; the cards chosen then enter together under the controller's control.
+      const [first, ...later] = seatsInOrder(state, res.controller).filter(
+        (seat) => seat !== res.controller,
+      );
+      if (first === undefined) return done(state);
+      const { controller: _you, ...described } = effect.filter;
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: described,
+            count: 1,
+            to: 'battlefield' as const,
+            position: 'top' as const,
+            tapped: false,
+            controller: 'you' as const,
+            seat: first,
+            graveyardOf: res.controller,
+            together: { distinct: true as const, later, held: [] },
+            chosen: null,
+          },
+        ],
+      );
+    }
+
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
       const seats = resolvePlayers(state, effect.players, ctx, targets);

@@ -79,7 +79,7 @@ import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN, NOUN_THE_TOKEN } from './p
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
-import { SAME_NAME_NOUN_RULES } from './same-name';
+import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
@@ -1042,6 +1042,8 @@ export const NOUN_RULES = [
   ...AHOY_G7_NOUN_RULES,
   // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.
   ...ABZAN_ARMOR_NOUN_RULES,
+  // Legions to Ashes: "target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent", which `noun.target-permanent` would stop in the middle of.
+  ...SAME_NAME_TOKENS_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

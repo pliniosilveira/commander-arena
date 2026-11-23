@@ -1600,6 +1600,8 @@ export function checkObjectSelector(
     } else if (each.except !== undefined) {
       checkRef(each.except, 'object', `${path}.except`, scope, out);
     }
+    // CR 608.2c: "the target and all tokens ... with the same name": the object the effect names besides the filter's.
+    if (each.plus !== undefined) checkRef(each.plus, 'object', `${path}.plus`, scope, out);
     return;
   }
   checkRef(sel as ObjectRef, expect, path, scope, out);
@@ -7594,6 +7596,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
         }
+      }
+      break;
+    case 'eachOpponentChoosesGraveyardCard':
+      // CR 404.1: the cards are in the controller's graveyard: a filter of that zone with no owner or controller of its own.
+      checkFilter(e.filter, `${path}.filter`, out, scope);
+      if (
+        e.filter.zone !== 'graveyard' ||
+        e.filter.controller !== undefined ||
+        e.filter.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the cards each opponent chooses are in the graveyard of the controller: zone "graveyard", no controller or owner',
+        );
       }
       break;
     case 'exileOwnGraveyardCard':

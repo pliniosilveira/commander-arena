@@ -109,4 +109,76 @@ export const EFFECT_CAST_PER_OPPONENT_GRAVEYARD_FREE = defineRule<Clauses>({
   },
 });
 
-export const PRIMORDIAL_EFFECT_RULES = [EFFECT_CAST_PER_OPPONENT_GRAVEYARD_FREE].map(quietly);
+const PUT_ID = 'effect.put-per-opponent-graveyard';
+
+/**
+ * `effect.put-per-opponent-graveyard`: "for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield under your control"
+ * (Sepulchral Primordial; CR 115.1, 601.2c, 603.3d: one slot of targets, at most one card in the graveyard of each opponent, "up to one" letting a player choose none; CR 404.1: a card
+ * in a graveyard is its owner's; CR 110.2a: the cards enter under your control; CR 608.2c: they enter together). The engine's `moveToZone` of the slot (`onePerOpponent`), as "you may".
+ * Not read: a card without "up to", another count, a graveyard that is yours or any, "each player", another zone, "tapped", "under its owner's control", a join to another instruction.
+ */
+export const EFFECT_PUT_PER_OPPONENT_GRAVEYARD = defineRule<Clauses>({
+  id: PUT_ID,
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 404.1 (Graveyard)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: [
+    "for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield under your control",
+    "For each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield under your control",
+    "for each opponent, you may put up to one target artifact card from that player's graveyard onto the battlefield under your control",
+  ],
+  rejects: [
+    "for each opponent, you may put target creature card from that player's graveyard onto the battlefield under your control",
+    "for each opponent, you may put up to two target creature cards from that player's graveyard onto the battlefield under your control",
+    'for each opponent, you may put up to one target creature card from your graveyard onto the battlefield under your control',
+    'for each opponent, you may put up to one target creature card from a graveyard onto the battlefield under your control',
+    "for each player, you may put up to one target creature card from that player's graveyard onto the battlefield under your control",
+    "for each opponent, put up to one target creature card from that player's graveyard onto the battlefield under your control",
+    "for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield",
+    "for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield tapped under your control",
+    "for each opponent, you may put up to one target creature card from that player's graveyard into your hand",
+    "for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield under your control and draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const head = literal('for each opponent, you may put ')(ctx, pos);
+    if (!head.ok) return head;
+    const oneAt = head.pos + 'up to '.length;
+    const phrase = spanned(
+      sequence(literal('up to one target '), graveyardPhrase(false, 'fromThatPlayer')),
+    )(ctx, head.pos);
+    if (!phrase.ok) return phrase;
+    const tail = sequence(
+      literal(' onto the battlefield under your control'),
+      pattern(/(?=\.|$)/u),
+    )(ctx, phrase.pos);
+    if (!tail.ok) return tail;
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: phrase.value.value[1],
+      count: { kind: 'number', value: 1, span: { start: oneAt, end: oneAt + 'one'.length } },
+      upTo: true,
+      plural: false,
+      other: false,
+      perOpponent: true,
+      span: { start: head.pos, end: phrase.pos },
+      rule: PUT_ID,
+    };
+    const span = { start: pos, end: tail.pos };
+    return {
+      ok: true,
+      value: [makeClause(PUT_ID, 'putPerOpponentGraveyard', { objects: noun }, span)],
+      pos: tail.pos,
+    };
+  },
+});
+
+export const PRIMORDIAL_EFFECT_RULES = [
+  EFFECT_CAST_PER_OPPONENT_GRAVEYARD_FREE,
+  EFFECT_PUT_PER_OPPONENT_GRAVEYARD,
+].map(quietly);

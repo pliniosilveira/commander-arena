@@ -1458,6 +1458,8 @@ export type Instruction =
        * the first player; `later` are the players who choose after, `held` the cards chosen so far (`automatic`: the engine chose them, there being no more candidates than needed).
        */
       readonly together?: {
+        /** "Each opponent chooses a creature card in your graveyard that hasn't been chosen" (`eachOpponentChoosesGraveyardCard`): the cards held so far are not offered again, and all the cards held move as one batch. */
+        readonly distinct?: true;
         readonly later: readonly SeatId[];
         readonly held: readonly {
           readonly seat: SeatId;

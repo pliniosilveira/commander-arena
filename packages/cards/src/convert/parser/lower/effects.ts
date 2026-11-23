@@ -145,6 +145,7 @@ import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
+import { PRIMORDIAL_LOWERINGS } from './primordial';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
@@ -161,6 +162,7 @@ import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
+import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -2831,6 +2833,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Urianger Augurelt: "Look at the top card of your library. You may exile it face down." and "... you may play cards exiled with ~. Spells you cast this way cost {2} less to cast."
   ...ARCANUM_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
+  ...PRIMORDIAL_LOWERINGS,
+  ...REVIVAL_TRANCE_LOWERINGS,
   ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
