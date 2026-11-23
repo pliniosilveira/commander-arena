@@ -309,8 +309,8 @@ const EQUIPMENT: readonly Line[] = [
   {
     kind: 'equipment',
     text: 'Equipped creature gets +1/+1 and loses flying.\nEquip {2}',
-    expect: no('and loses flying.', 'static.attached'),
-    note: 'backlog: 3 cards',
+    expect: OK,
+    note: "backlog: 3 cards; read since the Limit Break deck (Colossus Hammer): the engine's loseKeyword static",
   },
   {
     kind: 'equipment',

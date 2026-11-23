@@ -437,10 +437,8 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'sorcery',
     text: '~ deals X damage to target creature, where X is the greatest power among creatures you control as you cast ~.',
-    expect: no('the greatest power among creatures you control as you cast ~.', 'effect.damage', {
-      reason: 'notRunnable',
-    }),
-    note: 'row 133, (c): read since stage P32 (D-147), and run only as the total of a divided damage: here X would be read as the spell resolves',
+    expect: OK,
+    note: "row 133, (c): read since stage P32 (D-147) as the total of a divided damage, and since the Limit Break deck (Lifestream's Blessing) anywhere in a spell: the engine's asCast amount is worked out as the spell is cast",
   },
   {
     kind: 'enchantment',

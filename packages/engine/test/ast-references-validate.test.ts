@@ -88,6 +88,8 @@ describe('amounts that read an object', () => {
       // CR 119.3 (Betor): the controller's own life lost this turn.
       'controllerLifeLostThisTurn',
       'lifeGainedOrLostThisTurn',
+      // Limit Break deck: an amount worked out as the spell is cast (Lifestream's Blessing).
+      'asCast',
       'enteredThisTurn',
       'diedThisTurn',
       // D-131.
@@ -124,6 +126,8 @@ describe('amounts that read an object', () => {
       // CR 608.2c (Jaws of Defeat): the positive gap between two amounts.
       'difference',
       'opponentCount',
+      // Limit Break deck (Melee): the opponents attacked this combat.
+      'opponentsAttackedThisCombat',
       'movedCount',
       'opponentsWithMore',
       // Slithermuse: "the difference" between the chosen player's hand and yours.
