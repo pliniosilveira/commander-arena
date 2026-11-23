@@ -100,8 +100,7 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
   ),
   // CR 700.4: "dies" means "is put into a graveyard from the battlefield", in either wording.
   dies: map(
-    // Issue 105 (Aetherworks Marvel): "a permanent you control is put into a graveyard": a permanent is on the battlefield, so it is the same event.
-    pattern(/ (?:dies|is put into a graveyard(?: from the battlefield)?)(?![\p{L}\p{N}])/iu),
+    pattern(/ (?:dies|is put into a graveyard from the battlefield)(?![\p{L}\p{N}])/iu),
     (): EventName => 'dies',
   ),
   attacks: map(pattern(/ attacks(?![\p{L}\p{N}])/iu), (): EventName => 'attacks'),
@@ -234,6 +233,48 @@ export const TRIGGER_ENTERS = singleEvent('trigger.enters', 'enters', {
   ],
 });
 
+/**
+ * `trigger.permanent-put-into-graveyard`: "a permanent you control is put into a graveyard" (issue 105, Aetherworks Marvel; CR 700.4, 603.6c: a permanent can only be put into a graveyard from the
+ * battlefield, so this is the event "dies" names). Only "a permanent you control": a card put into a graveyard from another zone is another event. Not read: "from anywhere", another noun, "~".
+ */
+export const TRIGGER_PERMANENT_PUT_INTO_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.permanent-put-into-graveyard',
+  family: 'trigger',
+  leading: ['a'],
+  cites: ['CR 700.4 (General)', 'CR 603.6c (Handling Triggered Abilities)'],
+  examples: ['a permanent you control is put into a graveyard'],
+  rejects: [
+    'a permanent you control is put into a graveyard from anywhere',
+    'a creature you control is put into a graveyard',
+    '~ is put into a graveyard',
+    'a permanent you control is put into a graveyard from the battlefield',
+    'permanents you control are put into a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a permanent you control is put into a graveyard(?![\p{L}\p{N}]| from)/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: 'trigger.permanent-put-into-graveyard',
+    };
+    return {
+      ok: true,
+      value: trigger('trigger.permanent-put-into-graveyard', span, 'dies', { subject }),
+      pos: r.pos,
+    };
+  },
+});
+
 /** `trigger.dies`: "~ dies", "a creature you control dies" (CR 700.4, 603.6c, 603.10a). */
 export const TRIGGER_DIES = singleEvent('trigger.dies', 'dies', {
   cites: [
@@ -246,7 +287,6 @@ export const TRIGGER_DIES = singleEvent('trigger.dies', 'dies', {
     'another creature you control dies',
     'a creature dies',
     '~ is put into a graveyard from the battlefield',
-    'a permanent you control is put into a graveyard',
     'another creature or artifact you control is put into a graveyard from the battlefield',
     'equipped creature dies',
     'enchanted creature dies',
@@ -1331,6 +1371,7 @@ export const TRIGGER_RULES = [
   // `trigger.enters` would stop at.
   ...ARTIFACT_TRIGGER_RULES,
   TRIGGER_ENTERS,
+  TRIGGER_PERMANENT_PUT_INTO_GRAVEYARD,
   TRIGGER_DIES,
   // Before the plain event: "attacks" is a prefix of "attacks alone" and of "attacks you or a planeswalker you control"
   // (stage P29), and the first rule that reads a prefix wins.

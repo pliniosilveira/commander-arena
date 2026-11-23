@@ -213,6 +213,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
   // Stage P51 (D-209): the energy cost is the payment of an "unless you pay" of a spell.
+  // The Aetherdrift energy deck (issue 105).
+  'trigger.permanent-put-into-graveyard': permanent((e) => `Whenever ${e}, you gain 1 life.`),
+  'cost.pay-energy-amount': permanent(
+    (e) => `At the beginning of your upkeep, you may ${e}. If you do, draw a card.`,
+  ),
+  'noun.target-spell-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
+  'static.triggers-additional-time-entering-types': asIs,
+  'token.copy-except-additive-types': spell((e) => `Create ${e}.`),
+  'modal.choose-bare': permanent(
+    (e) => `{4}, {T}: ${e}. Activate only as a sorcery.\n• Draw a card.\n• You gain 1 life.`,
+  ),
   'cost.pay-energy': permanent((e) => `${e}: Draw a card.`),
   'cost.energy': spell((e) => `Draw a card. Then discard a card at random unless you pay ${e}.`),
   'condition.control-commander': permanent(
