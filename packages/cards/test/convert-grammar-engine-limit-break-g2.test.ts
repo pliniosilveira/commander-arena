@@ -259,3 +259,128 @@ describe('Puresteel Paladin: draws when an Equipment enters; Equipment have equi
     g.expect.invariants();
   });
 });
+
+describe('Elena, Turk Recruit: a non-Assassin historic card returns; casting a historic spell adds a counter (CR 700.6, 603.2, 122.1)', () => {
+  const ELENA = 'Elena, Turk Recruit';
+  const elena = real(ELENA);
+  const LEGEND = 'SYNTHETIC Plain Legend';
+  const ASSASSIN = 'SYNTHETIC Assassin Legend';
+  const legend = parsed(LEGEND, 'Legendary Creature — Human', 'Flying', {
+    power: '2',
+    toughness: '2',
+    manaCost: '{W}',
+  });
+  const assassin = parsed(ASSASSIN, 'Legendary Creature — Human Assassin', 'Flying', {
+    power: '2',
+    toughness: '2',
+    manaCost: '{W}',
+  });
+
+  test('is valid', () => {
+    expect(validateCard(elena)).toEqual([]);
+  });
+
+  const enter = () => {
+    const g = scenario()
+      .define(elena)
+      .define(legend)
+      .define(assassin)
+      .seat(0)
+      .hand(ELENA)
+      .battlefield('Plains', 'Plains', 'Plains')
+      .graveyard('Sol Ring', 'Grizzly Bears', LEGEND, ASSASSIN)
+      .seat(1)
+      .build();
+    g.act(0).cast(ELENA, { pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('the trigger offers artifact and legendary cards that are not Assassins, nothing else', () => {
+    const g = enter();
+    g.expect.pending('targets', 0);
+    expect(() => g.act(0).chooseTargets({ name: 'Grizzly Bears' })).toThrow();
+    expect(() => g.act(0).chooseTargets({ name: ASSASSIN })).toThrow();
+  });
+
+  test.each(['Sol Ring', LEGEND])('%s returns to its owner\'s hand', (name) => {
+    const g = enter();
+    g.act(0).chooseTargets({ name });
+    g.passAll();
+    g.expect.zone(name, 'hand', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('casting a historic spell puts a +1/+1 counter on Elena; another spell does not', () => {
+    const g = scenario()
+      .define(elena)
+      .define(legend)
+      .seat(0)
+      .hand(LEGEND, 'Sol Ring', 'Grizzly Bears')
+      .battlefield(ELENA, 'Plains', 'Plains', 'Forest', 'Forest')
+      .seat(1)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast('Sol Ring', { pay: true });
+    g.passAll();
+    g.expect.counters(ELENA, { '+1/+1': 1 });
+    g.act(0).cast(LEGEND, { pay: true });
+    g.passAll();
+    g.expect.counters(ELENA, { '+1/+1': 2 });
+    g.act(0).cast('Grizzly Bears', { pay: true });
+    g.passAll();
+    g.expect.counters(ELENA, { '+1/+1': 2 });
+    g.expect.pt(ELENA, 3, 6);
+    g.expect.invariants();
+  });
+});
+
+describe('Cid, Freeflier Pilot: flying on your turn; returns an Equipment or Vehicle card (CR 613.1f, 604.1, 602.2)', () => {
+  const CID = 'Cid, Freeflier Pilot';
+  const cid = real(CID);
+  const WAGON = 'SYNTHETIC Test Wagon';
+  const wagon = parsed(WAGON, 'Artifact — Vehicle', 'Crew 1', {
+    power: '2',
+    toughness: '2',
+    manaCost: '{2}',
+  });
+
+  test('is valid', () => {
+    expect(validateCard(cid)).toEqual([]);
+  });
+
+  test('Cid has flying during its controller\'s turn only', () => {
+    const mine = scenario().define(cid).seat(0).battlefield(CID).seat(1).at('precombatMain', { active: 0 }).build();
+    mine.expect.derived(CID, { keywords: ['flying'] });
+    const theirs = scenario().define(cid).seat(0).battlefield(CID).seat(1).at('precombatMain', { active: 1 }).build();
+    theirs.expect.derived(CID, { keywords: [] });
+  });
+
+  const board = () =>
+    scenario()
+      .define(cid)
+      .define(wagon)
+      .define(syntheticCard(BLADE))
+      .seat(0)
+      .battlefield(CID, 'Plains', 'Plains')
+      .graveyard(BLADE, WAGON, 'Sol Ring', 'Grizzly Bears')
+      .seat(1)
+      .graveyard('Llanowar Elves')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test.each([BLADE, WAGON])('{2}, {T}: returns %s from your graveyard to your hand', (name) => {
+    const g = board();
+    g.act(0).activate(CID, { targets: [name], pay: true });
+    g.passAll();
+    g.expect.zone(name, 'hand', { seat: 0 });
+    g.expect.tapped(CID);
+    g.expect.invariants();
+  });
+
+  test.each(['Sol Ring', 'Grizzly Bears', 'Llanowar Elves'])('%s is not a legal target', (name) => {
+    const g = board();
+    expect(() => g.act(0).activate(CID, { targets: [name] })).toThrow();
+  });
+});
