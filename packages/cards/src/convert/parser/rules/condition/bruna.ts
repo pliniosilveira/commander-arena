@@ -243,12 +243,18 @@ export const CONDITION_CAST_FROM_GRAVEYARD_THIS_TURN = defineRule<IrCondition>({
 export const CONDITION_A_PLAYER_LOST_LIFE_THIS_TURN = defineRule<IrCondition>({
   id: 'condition.a-player-lost-life-this-turn',
   family: 'condition',
-  leading: ['a'],
-  cites: ['CR 119.3 (Life)', 'CR 603.4 (Handling Triggered Abilities)'],
+  leading: ['a', 'an'],
+  cites: [
+    'CR 119.3 (Life)',
+    'CR 102.2 (Players and Opponents)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
   examples: [
     'a player lost 4 or more life this turn',
     'a player lost four or more life this turn',
     'a player lost life this turn',
+    'an opponent lost 3 or more life this turn',
+    'an opponent lost life this turn',
   ],
   rejects: [
     'a player lost 4 or more life',
@@ -259,29 +265,38 @@ export const CONDITION_A_PLAYER_LOST_LIFE_THIS_TURN = defineRule<IrCondition>({
     'a player lost life',
     'a player lost life this turn and',
     'a player lost 4 or more life this turn and',
-    'an opponent lost 4 or more life this turn',
+    'an opponent lost 4 or more life',
+    'an opponent lost 4 life this turn',
+    'an opponent lost 4 or less life this turn',
+    'an opponents lost 4 or more life this turn',
     'a player gained 4 or more life this turn',
     'a player loses 4 or more life this turn',
     'a players lost 4 or more life this turn',
   ],
   parse: (ctx, pos) => {
-    const bare = pattern(new RegExp(`a player lost life this turn${BOUNDARY}`, 'iu'))(ctx, pos);
+    const who = pattern(/(a player|an opponent) lost /iu)(ctx, pos);
+    if (!who.ok) return who;
+    const opponent = /^an opponent$/iu.test(who.value[1] ?? '');
+    const bare = pattern(new RegExp(`life this turn${BOUNDARY}`, 'iu'))(ctx, who.pos);
     const r = bare.ok
       ? { ...bare, value: 1 }
       : (() => {
           const counted = sequence(
-            pattern(/a player lost /iu),
             spanned(satisfy(quantity, (n) => n >= 1)),
             pattern(new RegExp(` or more life this turn${BOUNDARY}`, 'iu')),
-          )(ctx, pos);
-          return counted.ok ? { ...counted, value: counted.value[1].value } : counted;
+          )(ctx, who.pos);
+          return counted.ok ? { ...counted, value: counted.value[0].value } : counted;
         })();
     if (!r.ok) return r;
     return {
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'aPlayerLostLifeThisTurn', atLeast: r.value },
+        test: {
+          kind: 'aPlayerLostLifeThisTurn',
+          atLeast: r.value,
+          ...(opponent ? { opponent: true as const } : {}),
+        },
         span: { start: pos, end: r.pos },
         rule: 'condition.a-player-lost-life-this-turn',
       },

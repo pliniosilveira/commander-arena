@@ -600,7 +600,10 @@ export function evaluateCondition(
       );
     case 'aPlayerLostLifeThisTurn':
       // CR 119.3: some player still in the game has lost at least that much life this turn (the seats' per-turn counters, reset as the turn ends).
-      return state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
+      // `opponent` (Sygg, River Cutthroat; CR 102.2): the players other than the controller, including one who has since left the game (Scryfall ruling of 2008-05-01).
+      return condition.opponent === true
+        ? state.seats.some((s) => s.id !== ctx.controller && s.lifeLostThisTurn >= condition.atLeast)
+        : state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10); D-444: only those with one of the card types they were cast with.
       return spellsCastThisTurnHolds(state, ctx.controller, condition);

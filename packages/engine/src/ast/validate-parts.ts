@@ -3908,6 +3908,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
+      if (c.opponent !== undefined && c.opponent !== true) {
+        issue(out, `${path}.opponent`, 'opponent, when given, must be true');
+      }
       break;
     case 'lifeGainedAndLostThisTurn':
       if (Object.keys(c).some((key) => key !== 'kind')) {

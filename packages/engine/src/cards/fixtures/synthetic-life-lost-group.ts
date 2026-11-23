@@ -44,6 +44,24 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "At the beginning of each end step, if an opponent lost 3 or more life this turn, you draw a card."
+  singleFace({
+    name: 'SYNTHETIC Opposing Watcher',
+    manaCost: ['1', 'U'],
+    types: ['enchantment'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText:
+      'At the beginning of each end step, if an opponent lost 3 or more life this turn, you draw a card.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'each' },
+        interveningIf: { kind: 'aPlayerLostLifeThisTurn', atLeast: 3, opponent: true },
+        effect: { kind: 'draw', player: YOU, count: 1 },
+      },
+    ],
+  }),
   // "At the beginning of your end step, put a soul counter on this artifact for each player who lost life this turn."
   singleFace({
     name: 'SYNTHETIC Soul Reaper',

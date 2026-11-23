@@ -163,7 +163,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:aPlayerLostLifeThisTurn']);
       return blocked.length > 0
         ? failure(c, blocked)
-        : ok({ kind: 'aPlayerLostLifeThisTurn', atLeast: test.atLeast });
+        : ok({
+            kind: 'aPlayerLostLifeThisTurn',
+            atLeast: test.atLeast,
+            ...(test.opponent === true ? { opponent: true as const } : {}),
+          });
     }
     case 'spellsCastThisTurn': {
       // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
