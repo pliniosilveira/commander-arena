@@ -11,6 +11,9 @@ const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
 const executablePath =
   process.env.CHROMIUM_PATH ?? (existsSync(SANDBOX_CHROMIUM) ? SANDBOX_CHROMIUM : undefined);
 
+/** The port of the preview server: 4173, or `E2E_PORT` so that several checkouts can run the browser tests side by side. */
+const PORT = process.env.E2E_PORT ?? '4173';
+
 export default defineConfig({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
@@ -19,15 +22,15 @@ export default defineConfig({
   reporter: [['list']],
   timeout: 60_000,
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${PORT}`,
     viewport: { width: 1366, height: 768 },
     // Traces cost a third of a run's CPU; turn one on with `--trace on` to debug a failure.
     trace: 'off',
     launchOptions: executablePath === undefined ? {} : { executablePath },
   },
   webServer: {
-    command: 'pnpm build && pnpm exec vite preview --port 4173 --strictPort',
-    url: 'http://localhost:4173',
+    command: `pnpm build && pnpm exec vite preview --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}`,
     reuseExistingServer: true,
     timeout: 120_000,
   },
