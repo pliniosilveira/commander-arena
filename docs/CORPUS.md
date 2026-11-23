@@ -38,7 +38,7 @@ Started by hand from the Actions tab. It reads https://archidekt.com/commander-p
 
 ## Printings of the precons (the workflow `Precon printings`)
 
-Started by hand. For each precon of the app that is the same deck on Archidekt (same cards and counts), it rewrites the `decklist` of the snapshot with the set and number Archidekt names for each card, so the board draws the commander's best picture: a special printing in that set, else in any set, else the listed one. It never touches the stored card data, leaves a deck with another list alone and lists it in the log, and pushes the result to the branch `precon-printings-<run id>` (a pull request from it is opened by hand, after one more real commit, because a push by the workflow does not start the checks).
+Started by hand. For each precon of the app that is the same deck on Archidekt (same cards and counts), it rewrites the `decklist` of the snapshot with the set and number Archidekt names for each card, so the deck screen, the deck lists and the board draw each card, the commander included, in the printing the deck names. It never touches the stored card data, leaves a deck with another list alone and lists it in the log, and pushes the result to the branch `precon-printings-<run id>` (a pull request from it is opened by hand, after one more real commit, because a push by the workflow does not start the checks).
 
 ## Replaying templates.json offline (`pnpm corpus:replay`)
 

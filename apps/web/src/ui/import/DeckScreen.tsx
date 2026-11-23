@@ -1,7 +1,11 @@
 /** The deck screen: every card of a deck in a grid, grouped by type; a click shows it large. */
+
+import { frontFaceName, type StoredCard } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
 import type { ImportReport, ImportService } from '../../import/types';
-import { Dialog } from './Dialog';
+import { CardPrintsDialog } from './CardPrintsDialog';
+import { type CardPrint, listedKey, useListedImages } from './card-prints';
+import { printingInText, printingsInText, withPrinting } from './deck-text';
 import { groupEntries, imageOf } from './deck-view-model';
 
 export function DeckScreen({
@@ -9,15 +13,21 @@ export function DeckScreen({
   text,
   service,
   onBack,
+  onSave,
 }: {
   name: string;
   text: string;
   service: ImportService;
   onBack: () => void;
+  /** Stores the deck's new text (a printing was chosen); absent when this deck cannot be changed. */
+  onSave?: (text: string) => Promise<void>;
 }) {
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // The deck's text as last saved, and the printings chosen in this visit (the grid shows them at once).
+  const [current, setCurrent] = useState(text);
+  const [picked, setPicked] = useState<ReadonlyMap<string, CardPrint>>(new Map());
 
   useEffect(() => {
     let live = true;
@@ -29,6 +39,28 @@ export function DeckScreen({
       live = false;
     };
   }, [service, text, name]);
+
+  const listed = printingsInText(current);
+  const images = useListedImages(
+    report !== null
+      ? report.entries.flatMap(({ card }) => {
+          const printing = listed.get(frontFaceName(card.stored.name).toLowerCase());
+          return printing === undefined ? [] : [printing];
+        })
+      : [],
+  );
+  /** The picture of a card in the grid: the printing chosen in this visit, then the listed one, then the default. */
+  const gridImage = (card: StoredCard): string | null => {
+    const printing = listed.get(frontFaceName(card.name).toLowerCase());
+    const image = printing === undefined ? undefined : images.get(listedKey(printing));
+    // A list that names the printing of another card must not draw that card.
+    const own =
+      image !== undefined &&
+      frontFaceName(image.name).toLowerCase() === frontFaceName(card.name).toLowerCase();
+    return (
+      picked.get(card.oracleId)?.normal ?? (own ? image.normal : null) ?? imageOf(card, 'normal')
+    );
+  };
 
   const groups = report === null ? [] : groupEntries(report.entries);
   const shown = report?.entries.find((e) => e.card.stored.oracleId === open)?.card.stored;
@@ -55,7 +87,7 @@ export function DeckScreen({
             </h2>
             <ul className="deck-grid">
               {entries.map(({ card, count: copies }) => {
-                const url = imageOf(card.stored, 'normal');
+                const url = gridImage(card.stored);
                 return (
                   <li key={card.stored.oracleId}>
                     <button
@@ -78,17 +110,28 @@ export function DeckScreen({
         ))}
       </div>
       {shown !== undefined && (
-        <Dialog title={shown.name} onClose={() => setOpen(null)}>
-          {imageOf(shown, 'large') === null ? (
-            <p>{shown.faces.map((f) => `${f.name}: ${f.oracleText}`).join('\n')}</p>
-          ) : (
-            <img
-              className="deck-card-large"
-              src={imageOf(shown, 'large') ?? undefined}
-              alt={shown.name}
-            />
-          )}
-        </Dialog>
+        <CardPrintsDialog
+          card={shown}
+          listed={printingInText(current, shown.name)}
+          onClose={() => setOpen(null)}
+          {...(onSave === undefined
+            ? {}
+            : {
+                onUse: async (print: CardPrint) => {
+                  const next = withPrinting(
+                    current,
+                    shown.name,
+                    print.setCode.toLowerCase(),
+                    print.collector,
+                  );
+                  if (next === null)
+                    throw new Error('This card’s line in the list cannot hold a printing.');
+                  await onSave(next);
+                  setCurrent(next);
+                  setPicked((now) => new Map(now).set(shown.oracleId, print));
+                },
+              })}
+        />
       )}
     </main>
   );

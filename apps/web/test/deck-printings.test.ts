@@ -1,10 +1,6 @@
 // A decklist that names the printings of its cards: the board draws those printings. Every Scryfall answer here is SYNTHETIC.
 import { expect, test } from 'vitest';
-import {
-  commanderArtQuery,
-  createPrintingLookup,
-  findCommanderArt,
-} from '../src/ui/board/commander-art';
+import { createPrintingLookup } from '../src/ui/board/commander-art';
 import {
   commanderPrintingOf,
   printingOf,
@@ -28,7 +24,10 @@ test('the commander line that names a printing gives its set and collector numbe
 
 test('a registered printing is found by the commander name, without case or back face', () => {
   registerDeckPrintings('Commander\n1x Two Faced (abc) 9\n');
-  expect(printingOf('TWO FACED // Other Side')).toEqual({ set: 'abc', collector: '9' });
+  expect(printingOf('TWO FACED // Other Side')).toEqual({
+    set: 'abc',
+    collector: '9',
+  });
   expect(printingOf('Never Registered')).toBeNull();
 });
 
@@ -64,51 +63,4 @@ test('a printing of another card is not used; one under another printed name, wh
     queueOf({ name: 'Zed the Test', printed_name: 'Renamed', image_uris: IMG }),
   );
   expect((await renamed('sld', '1', 'Zed the Test'))?.normal).toContain('/p.jpg');
-});
-
-test('the query can be limited to one set', () => {
-  expect(commanderArtQuery('Zed the Test', 'fdc')).toContain('set:fdc');
-  expect(commanderArtQuery('Zed the Test')).not.toContain('set:');
-});
-
-const art = (id: string) => ({ normal: `https://cards.scryfall.io/normal/front/${id}.jpg` });
-
-function lookupsOf(answers: { inSet?: string; anywhere?: string; listed?: string }) {
-  const asked: string[] = [];
-  return {
-    asked,
-    lookups: {
-      search: async (query: string) => {
-        asked.push(query.includes('set:fdc') ? 'inSet' : 'anywhere');
-        const id = query.includes('set:fdc') ? answers.inSet : answers.anywhere;
-        return id === undefined ? null : art(id);
-      },
-      printing: async () => {
-        asked.push('listed');
-        return answers.listed === undefined ? null : art(answers.listed);
-      },
-    },
-  };
-}
-
-const LISTED = { set: 'fdc', collector: '6' };
-
-test('a special printing in the listed set wins, then one in another set, then the listed one', async () => {
-  const a = lookupsOf({ inSet: 'in', anywhere: 'any', listed: 'list' });
-  expect((await findCommanderArt('Zed the Test', LISTED, a.lookups))?.normal).toContain('/in.jpg');
-  expect(a.asked).toEqual(['inSet']);
-  const b = lookupsOf({ anywhere: 'any', listed: 'list' });
-  expect((await findCommanderArt('Zed the Test', LISTED, b.lookups))?.normal).toContain('/any.jpg');
-  expect(b.asked).toEqual(['inSet', 'anywhere']);
-  const c = lookupsOf({ listed: 'list' });
-  expect((await findCommanderArt('Zed the Test', LISTED, c.lookups))?.normal).toContain(
-    '/list.jpg',
-  );
-  expect(c.asked).toEqual(['inSet', 'anywhere', 'listed']);
-});
-
-test('a list that names no printing searches any set and never asks for a listed one', async () => {
-  const none = lookupsOf({});
-  expect(await findCommanderArt('Zed the Test', null, none.lookups)).toBeNull();
-  expect(none.asked).toEqual(['anywhere']);
 });

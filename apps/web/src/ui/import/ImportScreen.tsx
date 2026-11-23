@@ -47,6 +47,8 @@ export function ImportScreen() {
     readonly name: string;
     readonly text: string;
     readonly service: ImportService;
+    /** Absent for a built-in deck: its printings are not offered. */
+    readonly onSave?: (text: string) => Promise<void>;
   } | null>(null);
   const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
@@ -224,7 +226,12 @@ export function ImportScreen() {
             loading={decks === null}
             onOpen={openSaved}
             onView={(deck) =>
-              setViewing({ name: deck.name, text: deck.text, service: env.service })
+              setViewing({
+                name: deck.name,
+                text: deck.text,
+                service: env.service,
+                onSave: (text) => env.decks.save({ name: deck.name, text }).then(refreshDecks),
+              })
             }
             onRemove={(deck) => void env.decks.remove(deck.id).then(refreshDecks)}
           />

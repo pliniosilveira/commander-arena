@@ -72,7 +72,6 @@ export function CommanderPopup({
                       isToken={false}
                       version="art_crop"
                       className="cmdr-art-img"
-                      commander
                     />
                   )}
                 </span>

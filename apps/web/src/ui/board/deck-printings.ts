@@ -11,6 +11,9 @@ export interface CardPrinting {
   readonly collector: string;
 }
 
+/** The tag a printing chosen on the deck screen carries on its line: `1 Name (fdc) 6 ^Chosen printing^`. */
+export const CHOSEN_TAG = 'Chosen printing';
+
 const known = new Map<string, CardPrinting>();
 const keyOf = (name: string): string => frontFaceName(name).toLowerCase();
 
@@ -18,7 +21,10 @@ const keyOf = (name: string): string => frontFaceName(name).toLowerCase();
 export function commanderPrintingOf(text: string): { name: string; printing: CardPrinting } | null {
   for (const entry of parseDecklist(text).sections.commander) {
     if (entry.set !== null && entry.collector !== null) {
-      return { name: entry.name, printing: { set: entry.set, collector: entry.collector } };
+      return {
+        name: entry.name,
+        printing: { set: entry.set, collector: entry.collector },
+      };
     }
   }
   return null;
