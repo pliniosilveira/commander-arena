@@ -184,7 +184,7 @@ const key = (k: string, bar: ReturnType<typeof harness>['model']['bar']) =>
       editable: false,
       foreignModalOpen: false,
     },
-    { bar, pinned: false, chooserOpen: false, canUndo: false },
+    { bar, chooserOpen: false, canUndo: false },
   );
 
 describe('the chooseModes model', () => {

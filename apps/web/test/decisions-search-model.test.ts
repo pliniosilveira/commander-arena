@@ -248,7 +248,7 @@ describe('chooseCards model', () => {
       editable: false,
       foreignModalOpen: false,
     });
-    const ctx = { bar: h.model().bar, pinned: false, chooserOpen: false, canUndo: false };
+    const ctx = { bar: h.model().bar, chooserOpen: false, canUndo: false };
     expect(keyCommand(key('Enter'), ctx)).toBe('primary');
     expect(keyCommand(key('Escape'), ctx)).toBeNull();
   });

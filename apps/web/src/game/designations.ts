@@ -3,7 +3,7 @@
  * D-243): the monarch (CR 725) and the Ring (CR 701.54c). Neither is an object of the engine's view
  * (the monarch is `GameView.monarch`, a seat; the Ring is `SeatView.ringTempted`, a count), so the page
  * builds an object of the view's own shape for each, with an id that no real object has, so the card
- * preview, the hover and the pin treat them like any card. Emblems that an effect made (CR 114, D-201)
+ * preview, the hover treats them like any card. Emblems that an effect made (CR 114, D-201)
  * are real objects of the command zone and need none. Nothing here is a card: no type, no mana cost,
  * no colour (CR 114.3).
  */

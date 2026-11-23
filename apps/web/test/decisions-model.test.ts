@@ -428,7 +428,6 @@ describe('keyboard', () => {
   });
   const ctx = (patch: Partial<KeyContext> = {}): KeyContext => ({
     bar: bar(),
-    pinned: false,
     chooserOpen: false,
     canUndo: false,
     ...patch,
@@ -458,11 +457,10 @@ describe('keyboard', () => {
     expect(keyCommand(ev(' ', { editable: true }), ctx())).toBeNull();
   });
 
-  test('Esc unpins first, then closes the chooser, then cancels; never two at once', () => {
-    const both = ctx({ bar: bar({ cancel: true }), pinned: true, chooserOpen: true });
-    expect(keyCommand(ev('Escape'), both)).toBe('unpin');
-    expect(keyCommand(ev('Escape'), { ...both, pinned: false })).toBe('closeChooser');
-    expect(keyCommand(ev('Escape'), { ...both, pinned: false, chooserOpen: false })).toBe('cancel');
+  test('Esc closes the chooser first, then cancels; never two at once', () => {
+    const both = ctx({ bar: bar({ cancel: true }), chooserOpen: true });
+    expect(keyCommand(ev('Escape'), both)).toBe('closeChooser');
+    expect(keyCommand(ev('Escape'), { ...both, chooserOpen: false })).toBe('cancel');
     expect(keyCommand(ev('Escape'), ctx())).toBeNull();
   });
 
@@ -470,7 +468,7 @@ describe('keyboard', () => {
     expect(keyCommand(ev('f'), ctx())).toBe('fullControl');
     expect(keyCommand(ev('F'), ctx())).toBe('fullControl');
     expect(keyCommand(ev('f', { ctrlKey: true }), ctx())).toBeNull();
-    expect(keyCommand(ev('Escape', { foreignModalOpen: true }), ctx({ pinned: true }))).toBeNull();
+    expect(keyCommand(ev('Escape', { foreignModalOpen: true }), ctx())).toBeNull();
     expect(keyCommand(ev(' ', { foreignModalOpen: true }), ctx())).toBeNull();
   });
 });

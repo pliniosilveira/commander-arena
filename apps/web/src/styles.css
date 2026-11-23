@@ -257,7 +257,7 @@ button {
 
 /* The card preview floats over the board at the left edge, centered vertically, and takes no room
    from the battlefield. The pointer passes through it (a card under it can still be hovered)
-   until the card is pinned, when it can be scrolled. */
+   until it is a reveal, when it can be scrolled. */
 .game > .board-preview {
   position: absolute;
   left: 8px;
@@ -272,7 +272,7 @@ button {
   pointer-events: none;
   box-shadow: var(--shadow);
 }
-.game > .board-preview[data-pinned="true"] {
+.game > .board-preview[data-dismissable="true"] {
   pointer-events: auto;
 }
 /* The card of the stack's top takes a tap (it closes the preview); the rest of the box lets the

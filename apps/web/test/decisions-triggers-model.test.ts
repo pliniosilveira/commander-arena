@@ -203,7 +203,7 @@ describe('choosePermanent model', () => {
       editable: false,
       foreignModalOpen: false,
     });
-    const ctx = () => ({ bar: h.model().bar, pinned: false, chooserOpen: false, canUndo: false });
+    const ctx = () => ({ bar: h.model().bar, chooserOpen: false, canUndo: false });
     expect(keyCommand(key('Enter'), ctx())).toBeNull();
     h.model().interaction.onObject(o(1));
     expect(keyCommand(key('Enter'), ctx())).toBe('primary');

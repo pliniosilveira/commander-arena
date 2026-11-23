@@ -1,6 +1,6 @@
 /**
  * Revealed cards in the preview panel (CR 701.20): the host reads the faces of a `cardsRevealed` event
- * (`revealed-cards.ts`) and the panel shows them when nothing is pinned or hovered; Esc clears them.
+ * (`revealed-cards.ts`) and the panel shows them when nothing is hovered; a player action clears them.
  * SYNTHETIC card data.
  */
 
@@ -43,10 +43,10 @@ test('with several reveals in one snapshot the latest one is kept', () => {
   expect(revealedCards(state, [])).toEqual([]);
 });
 
-test('the preview shows the revealed card, and Esc (unpin) clears it', () => {
+test('the preview shows the revealed card, and a tap clears it', () => {
   const store = createAppStore({ client: {} as GameClient });
   const revealed = revealedCards(state, [event(['c1'])]);
-  store.setState({ preview: { hovered: null, pinned: null, revealed } });
+  store.setState({ preview: { hovered: null, revealed } });
   const html = () =>
     renderToStaticMarkup(
       <StoreProvider store={{ ...store, getInitialState: store.getState }}>
@@ -55,6 +55,6 @@ test('the preview shows the revealed card, and Esc (unpin) clears it', () => {
     );
   expect(html()).toContain('data-preview-revealed');
   expect(html()).toContain('Synthetic Bear');
-  store.getState().pin(null);
+  store.setState({ preview: { hovered: null, revealed: [] } });
   expect(html()).not.toContain('data-preview-revealed');
 });

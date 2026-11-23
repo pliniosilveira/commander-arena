@@ -45,12 +45,12 @@ export function findObject(view: GameView, id: ObjectId): ObjectView | null {
 export interface PreviewChoice {
   /** The object to show, or null for nothing. */
   readonly id: ObjectId | null;
-  /** `stack` is the top of the stack, shown when nothing is pinned or hovered (issue 82). */
-  readonly source: 'pinned' | 'hovered' | 'stack' | 'none';
+  /** `stack` is the top of the stack, shown when nothing is hovered (issue 82). */
+  readonly source: 'hovered' | 'stack' | 'none';
 }
 
 /**
- * The object the preview panel shows. A pinned object wins, then the hovered one while the viewer can
+ * The object the preview panel shows. The hovered object is shown while the viewer can
  * still see it; with neither, the object on top of the stack, so the card that waits for the player's
  * pass is read without moving the pointer to the stack and back (issue 82). A hovered object that has
  * gone, with an empty stack, is still named ("Not visible any more"). An ability with no source (the
@@ -59,11 +59,9 @@ export interface PreviewChoice {
  */
 export function previewChoice(
   view: GameView,
-  pinned: ObjectId | null,
   hovered: ObjectId | null,
   dismissedStack: ObjectId | null = null,
 ): PreviewChoice {
-  if (pinned !== null) return { id: pinned, source: 'pinned' };
   if (hovered !== null && findObject(view, hovered) !== null)
     return { id: hovered, source: 'hovered' };
   const top = view.stack[view.stack.length - 1];

@@ -3,7 +3,7 @@
  * command zone). While a targets or chooseCards question is pending it also carries the question:
  * the card that asks, the prompt, the count and the buttons, so the choice is made in one place.
  * It covers the board only, so the preview panel stays visible and hovering a card works as everywhere else. It handles Esc itself,
- * in the capture phase, and stops the event so the decision layer's Esc (cancel, unpin) does not
+ * in the capture phase, and stops the event so the decision layer's Esc (cancel) does not
  * also fire while the viewer is open.
  */
 import type { ObjectView } from '@commander-arena/engine';

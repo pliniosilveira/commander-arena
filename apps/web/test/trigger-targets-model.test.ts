@@ -78,7 +78,6 @@ const triggerOnStack = card(20, 'Pyre Hound', {
 
 const keys = (ctx: Partial<KeyContext>): KeyContext => ({
   bar: null,
-  pinned: false,
   chooserOpen: false,
   canUndo: false,
   ...ctx,

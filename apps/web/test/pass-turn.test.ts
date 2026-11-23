@@ -328,7 +328,6 @@ describe('the buttons and the shortcut (issue 46)', () => {
   });
   const ctx = (bar: KeyContext['bar'], extra: Partial<KeyContext> = {}): KeyContext => ({
     bar,
-    pinned: false,
     chooserOpen: false,
     canUndo: false,
     ...extra,
@@ -341,10 +340,7 @@ describe('the buttons and the shortcut (issue 46)', () => {
     const inCombat = modelFor({ step: 'beginningOfCombat' }).model.bar;
     expect(keyCommand(key('p'), ctx(inCombat))).toBeNull();
     expect(keyCommand(key('p'), ctx(null))).toBeNull();
-    expect(keyCommand(key('Escape'), ctx(null, { passTurnActive: true, pinned: true }))).toBe(
-      'cancelPassTurn',
-    );
-    expect(keyCommand(key('Escape'), ctx(null, { pinned: true }))).toBe('unpin');
+    expect(keyCommand(key('Escape'), ctx(null, { passTurnActive: true }))).toBe('cancelPassTurn');
     // The primary key (Space) still presses the primary button.
     expect(keyCommand(key(' '), ctx(model.bar))).toBe('primary');
   });

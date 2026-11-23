@@ -44,7 +44,6 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const passTurn = useApp((s) => s.yieldTurn !== null);
   const error = useApp((s) => s.error);
   const fullControl = useApp((s) => s.settings.fullControl);
-  const pinned = useApp((s) => s.preview.pinned);
   const undoDepth = useApp((s) => s.snapshot?.undoDepth ?? 0);
   const manaTaps = useApp((s) => s.manaTaps);
   const options = useApp((s) => s.options);
@@ -172,13 +171,11 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
       : null;
   useDecisionKeys({
     bar: interactive && intro === null ? model.bar : null,
-    pinned: pinned !== null,
     chooserOpen: ui.chooser !== null,
     canUndo: undoDepth > 0 && !passing,
     passTurnActive: passTurn,
     cancelPassTurn: () => actions.cancelPassTurn(),
     undo: () => void actions.undo(),
-    unpin: () => actions.pin(null),
     closeChooser,
     toggleFullControl: () => actions.setSettings({ fullControl: !fullControl }),
   });

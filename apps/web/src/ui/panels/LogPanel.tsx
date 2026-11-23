@@ -41,7 +41,6 @@ function NameLink({ id, text }: { id: ObjectId; text: string }) {
       data-log-name={id}
       onMouseEnter={() => hover.onMouseEnter()}
       onMouseLeave={hover.onMouseLeave}
-      onContextMenu={hover.onContextMenu}
     >
       {text}
     </span>
@@ -82,7 +81,6 @@ function EntryRow({
       className={`pnl-log-entry pnl-log-${side}${entry.level === 'detail' ? ' pnl-log-detail' : ''}${hover === undefined ? '' : ' pnl-log-link'}`}
       onMouseEnter={hover?.onMouseEnter}
       onMouseLeave={hover?.onMouseLeave}
-      onContextMenu={hover?.onContextMenu}
     >
       <span className="pnl-log-text">{children ?? entry.text}</span>
       {showRule && entry.rule !== null && <span className="pnl-log-rule">{entry.rule}</span>}

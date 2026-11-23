@@ -42,13 +42,11 @@ export type ImportTab = 'import' | 'decks';
 export interface PreviewState {
   /** The object under the pointer (after the hover delay), shown in the fixed preview panel. */
   readonly hovered: ObjectId | null;
-  /** A pinned object stays until Esc (A19). */
-  readonly pinned: ObjectId | null;
   /** The top of the stack the player tapped away: its preview stays closed, a new top shows again. */
   readonly dismissedStack?: ObjectId | null;
   /**
-   * The cards a reveal showed (CR 701.20), read in the preview panel when nothing is pinned or hovered. The
-   * latest reveal replaces them; Esc (unpin), a new turn or a new game clears them.
+   * The cards a reveal showed (CR 701.20), read in the preview panel when nothing is hovered. The
+   * latest reveal replaces them; a player action, a new turn or a new game clears them.
    */
   readonly revealed: readonly RevealedCard[];
 }
@@ -155,7 +153,6 @@ export interface AppActions {
   toggleThisTurn(step: StepId): void;
   setManualPay(on: boolean): void;
   hover(id: ObjectId | null): void;
-  pin(id: ObjectId | null): void;
   /** Closes the preview of the object on top of the stack until another one is on top. */
   dismissStackPreview(id: ObjectId): void;
   clearError(): void;
@@ -218,7 +215,7 @@ export function createAppStore(options: StoreOptions): AppStore {
       }
       set((s) => {
         // Issue 82: an object that newly lands on top of the stack takes the preview panel, so it is
-        // read without moving the pointer. The hover is dropped (a pinned card stays, A19); the pointer
+        // read without moving the pointer. The hover is dropped ; the pointer
         // staying on another card does not bring that card back until it enters another one.
         const topBefore = s.snapshot?.view.stack.at(-1)?.id;
         const topNow = snapshot.view.stack.at(-1)?.id;
@@ -338,6 +335,14 @@ export function createAppStore(options: StoreOptions): AppStore {
      * that starts a "Pass turn"; any other click ends a running one.
      */
     async function runAct(action: Action, startYield: boolean): Promise<void> {
+      // Any action of the player closes the preview: the hover, a reveal and the stack's top card.
+      set((s) => ({
+        preview: {
+          hovered: null,
+          revealed: [],
+          dismissedStack: s.snapshot?.view.stack.at(-1)?.id ?? null,
+        },
+      }));
       if (busy) {
         // The autopilot is still passing: do not drop the click. Hold the autopilot at its next
         // step and run this action right after (a later click replaces an earlier queued one).
@@ -386,7 +391,7 @@ export function createAppStore(options: StoreOptions): AppStore {
       yieldTurn: null,
       busy: false,
       hostCall: null,
-      preview: { hovered: null, pinned: null, revealed: [] },
+      preview: { hovered: null, revealed: [] },
       manaTaps: [],
       error: null,
       stats: { humanActions: 0, autoPasses: 0 },
@@ -558,13 +563,6 @@ export function createAppStore(options: StoreOptions): AppStore {
 
       hover(id) {
         set((s) => ({ preview: { ...s.preview, hovered: id } }));
-      },
-
-      pin(id) {
-        // Esc unpins and also dismisses a reveal.
-        set((s) => ({
-          preview: { ...s.preview, pinned: id, ...(id === null ? { revealed: [] } : {}) },
-        }));
       },
 
       dismissStackPreview(id) {

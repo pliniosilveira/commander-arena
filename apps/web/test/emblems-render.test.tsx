@@ -207,7 +207,7 @@ describe('the preview of a card of the strip', () => {
   test('the monarch shows its words and whose it is', async () => {
     const store = await started();
     give(store, { monarch: 1 });
-    store.getState().pin(MONARCH_ID);
+    store.getState().hover(MONARCH_ID);
     const html = render(store, <PreviewPanel />);
     expect(html).toContain('The Monarch');
     expect(html).toContain('Designation');
@@ -218,7 +218,7 @@ describe('the preview of a card of the strip', () => {
   test('the Ring shows the abilities that are on and how many times it has tempted', async () => {
     const store = await started();
     give(store, { ring: { 0: 2 } });
-    store.getState().pin(ringId(0));
+    store.getState().hover(ringId(0));
     const html = render(store, <PreviewPanel />);
     expect(html).toContain('The Ring');
     expect(html).toContain('Emblem — tempted 2 times');
@@ -229,7 +229,7 @@ describe('the preview of a card of the strip', () => {
   test('an emblem of the command zone shows as an Emblem', async () => {
     const store = await started();
     give(store, { emblems: { 0: ['Creatures you control get +1/+1.'] } });
-    store.getState().pin('o900');
+    store.getState().hover('o900');
     const html = render(store, <PreviewPanel />);
     expect(html).toContain('Emblem');
     expect(html).toContain('Creatures you control get +1/+1.');

@@ -72,7 +72,7 @@ describe('a face-down foretold card of the opponent', () => {
     // Pinned in the preview: the placeholder explains itself and still names no card.
     const down = view.exile.find((o) => o.faceDown === true);
     if (down === undefined) throw new Error('no face-down card');
-    store.getState().pin(down.id);
+    store.getState().hover(down.id);
     const preview = render(store, <PreviewPanel />);
     expect(preview).toContain('A face-down card in exile');
     expect(preview).not.toContain(GIANT);
