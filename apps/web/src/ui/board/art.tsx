@@ -8,7 +8,7 @@
 import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
 import { type CSSProperties, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
-import { useListedArt } from './commander-art';
+import { useCommanderArt, useListedArt } from './commander-art';
 import type { ArtVersion } from './image-uris';
 import { useTokenArt } from './token-art';
 
@@ -72,14 +72,14 @@ export function Art({
   className,
   style,
   tokenDefinition,
+  commander = false,
   eager = false,
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
-  // TEMPORARY experiment: the commander is drawn from the printing its deck's list names (useListedArt), not from findCommanderArt's special printing.
-  const special: string | null = null;
+  const special = useCommanderArt(commander && !isToken ? name : null, version);
   // The printing the deck's list names (a precon from Archidekt): the front face only, as the lookup answers it.
   const listed = useListedArt(
-    !isToken && tokenDefinition === undefined && !back ? name : null,
+    !commander && !isToken && tokenDefinition === undefined && !back ? name : null,
     version,
   );
   if (listed.pending) return null;
