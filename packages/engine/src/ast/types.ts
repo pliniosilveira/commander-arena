@@ -6760,6 +6760,12 @@ export type StaticEffect =
       readonly cost: readonly Cost[];
       readonly planeswalkers?: true;
       /**
+       * "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's
+       * attacking a planeswalker you control." (CR 508.1d, 508.1h, 506.3): only attacks on the planeswalkers its controller controls
+       * cost `cost`; an attack on the controller as a player is free. Replaces `planeswalkers` (set both: invalid).
+       */
+      readonly planeswalkersOnly?: true;
+      /**
        * "Each creature with one or more counters on it can't attack you ... unless its controller pays {X}, where X is the
        * number of counters on that creature." (CR 508.1d, 508.1h, 122.1): only a creature with a counter of any kind is
        * taxed, and it pays `cost` once for each counter on it.

@@ -282,3 +282,60 @@ describe('"You may choose not to untap ~ during your untap step." (backlog: 44 c
     no.expect.step('upkeep', { active: 0, turn: 3 });
   });
 });
+
+describe('"Creatures can\'t attack planeswalkers you control unless their controller pays {1} for each creature ..." (CR 508.1d, 508.1h, 506.3)', () => {
+  const WARD = parsed(
+    'SYNTHETIC Parsed Walker Ward',
+    'Creature',
+    "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control.",
+    { manaCost: '{1}{W}', colors: ['W'], power: '0', toughness: '4' },
+  );
+
+  const atAttackers = (mountains: number) => {
+    const b = scenario({ seats: 3 })
+      .define(WARD)
+      .seat(0)
+      .library('Island', { count: 4 })
+      .battlefield(BEARS, ...Array.from({ length: mountains }, () => 'Mountain'));
+    b.seat(1).library('Island', { count: 4 }).battlefield(WARD.name, WALKER);
+    b.seat(2).library('Island', { count: 4 }).battlefield(WALKER);
+    const g = b.at('precombatMain', { active: 0 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    return g;
+  };
+
+  test('the lowering is the planeswalkers-only attack tax', () => {
+    expect(WARD.faces[0]?.abilities).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'attackTax',
+          cost: [{ kind: 'mana', symbols: ['1'] }],
+          planeswalkersOnly: true,
+        },
+      },
+    ]);
+  });
+
+  test('attacking its controller as a player is free, attacking its planeswalker costs {1}', () => {
+    const free = atAttackers(0);
+    free.act(0).attack(BEARS, { player: 1 });
+    free.expect.combat({ attackers: [BEARS] });
+
+    const taxed = atAttackers(1);
+    taxed.act(0).attack(BEARS, { name: WALKER, seat: 1 });
+    const d = taxed.state.pending;
+    if (d?.kind !== 'payMana') throw new Error(`expected payMana, got ${d?.kind}`);
+    expect(d.totalCost).toEqual(['1']);
+    taxed.act(0).payAuto();
+    taxed.expect.combat({ attackers: [BEARS] });
+  });
+
+  test('a planeswalker of another opponent is not taxed (every opponent, 3 seats)', () => {
+    const g = atAttackers(0);
+    const seat2Walker = g.state.battlefield.find((id) => g.state.objects[id]?.controller === 2);
+    expect(seat2Walker).toBeDefined();
+    g.act(0).declareAttackers([{ attacker: BEARS, target: seat2Walker as never }]);
+    g.expect.combat({ attackers: [BEARS] });
+  });
+});

@@ -1730,6 +1730,8 @@ export type IrStaticEffect =
       readonly kind: 'attackTax';
       readonly cost: IrCost;
       readonly planeswalkers?: true;
+      /** "Creatures can't attack planeswalkers you control unless ...": only the planeswalkers, not the controller (engine `planeswalkersOnly`). */
+      readonly planeswalkersOnly?: true;
       /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
       readonly perCounter?: true;
     }
