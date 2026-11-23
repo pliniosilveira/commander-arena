@@ -40,7 +40,8 @@ const BEFORE_END: readonly string[] = [
 export function playEnd(state: GameState, seat: SeatId, until: PlayUntil): EffectEnd {
   if (until === 'endOfTurn') return 'endOfTurn';
   // D-187: "for as long as they remain exiled": nothing ends it but the card leaving exile, which makes it a new object (CR 400.7).
-  if (until === 'whileExiled') return 'permanent';
+  // Furious Rise: no end of its own either; the next card the source exiles with `exileTop` `linked` ends it (`runExileTop`).
+  if (until === 'whileExiled' || until === 'untilSourceExilesAnother') return 'permanent';
   const taken = getSeat(state, seat).turnsTaken;
   // CR 500.1: "the end of your next turn" is the turn of the controller that comes after this moment: this turn is not it, even when it is theirs.
   if (until === 'endOfYourNextTurn') return { kind: 'turnEnd', seat, turnsTaken: taken + 1 };
@@ -64,6 +65,19 @@ export function runExileTop(
   if (owners.length === 0) return moving(state, []);
   const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
   const moves = moveInstructions(top, 'exile');
+  // CR 607.2a, 611.2a (Furious Rise): "until you exile another card with this enchantment": exiling another card with the permanent's linked ability ends the permission to play the one before.
+  const exiling =
+    effect.linked === true && res.source !== null && top.length > 0 ? res.source : null;
+  const current: GameState =
+    exiling === null
+      ? state
+      : {
+          ...state,
+          continuousEffects: state.continuousEffects.filter(
+            (e) =>
+              !(e.change.kind === 'playPermission' && e.change.endsWhenExilesAnother === exiling),
+          ),
+        };
   // CR 406.3 (D-187): "face down": no one may look at the cards.
   // CR 607.2a: "exiled with this enchantment": the permanent the ability belongs to remembers the cards (face up: the link of a face-down card is Hideaway's, which is another one).
   if (effect.linked === true && res.source !== null) {
@@ -71,7 +85,7 @@ export function runExileTop(
     // Lobelia, Defender of Bag End (CR 607.2a, 406.3): "look at the top card of each opponent's library and exile those cards face down": linked, face down, and the controller looked.
     const lookBy = effect.lookAt === true ? res.controller : undefined;
     return moving(
-      state,
+      current,
       moves.map((m) =>
         m.kind === 'move'
           ? {
@@ -85,7 +99,7 @@ export function runExileTop(
     );
   }
   return moving(
-    state,
+    current,
     effect.faceDown === true
       ? moves.map((m) => (m.kind === 'move' ? { ...m, faceDown: true as const } : m))
       : moves,
@@ -145,6 +159,10 @@ export function runMayPlay(
         ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
         // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast".
         ...(effect.lessGeneric === undefined ? {} : { lessGeneric: effect.lessGeneric }),
+        // Furious Rise (CR 607.2a): "until you exile another card with this enchantment".
+        ...(effect.lasts === 'untilSourceExilesAnother' && res.source !== null
+          ? { endsWhenExilesAnother: res.source }
+          : {}),
       },
     });
   }

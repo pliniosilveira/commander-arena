@@ -201,6 +201,8 @@ const LEAD_CONDITIONS = [
   'condition.the-player-is-opponent-with-cards',
   // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.
   'condition.cast-from-hand',
+  // Foretell spells (Lifestream's Blessing): "If this spell was cast from exile, ..." in the text of a spell.
+  'condition.cast-from-exile',
   ...LEAD_GAME_STATE_CONDITIONS,
   // Slithermuse: "If that player has more cards in hand than you, ..." after "Choose an opponent.".
   ...CHOSEN_PLAYER_CONDITION_RULES.map((r) => r.id),
@@ -338,6 +340,11 @@ interface SentenceOptions {
    * The activated and triggered abilities' bodies ask for it, where the lowering joins the two.
    */
   readonly afterDiscard?: boolean;
+  /**
+   * "When you exile a card this way, ..." may start the sentence (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability the exile of the sentences before it creates. Only the body
+   * of a triggered ability asks for it, where the lowering joins the two.
+   */
+  readonly afterExile?: boolean;
   /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
@@ -541,12 +548,21 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let condition: IrCondition | undefined;
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
+    let afterExile = false;
     if (options.afterDiscard === true) {
       const lead = literal('when you discard a nonland card this way, ')(ctx, start);
       if (lead.ok) {
         // The sentence is read as a reflexive one (no test of its own, no "you may"), and says which discards make it.
         reflexive = true;
         afterDiscard = 'nonland';
+        at = lead.pos;
+      }
+    }
+    if (options.afterExile === true && !reflexive) {
+      const lead = literal('when you exile a card this way, ')(ctx, start);
+      if (lead.ok) {
+        reflexive = true;
+        afterExile = true;
         at = lead.pos;
       }
     }
@@ -699,7 +715,10 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined ? { reflexive: true as const } : {}),
+        ...(reflexive && afterDiscard === undefined && !afterExile
+          ? { reflexive: true as const }
+          : {}),
+        ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
         ...(mayBy === undefined ? {} : { mayBy }),
@@ -768,4 +787,6 @@ export const TRIGGER_SENTENCE: Parser<IrSentence> = sentenceParser({
   ifYouDo: true,
   reflexive: true,
   delayed: true,
+  // Cait Sith, Fortune Teller: "When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is that card's mana value."
+  afterExile: true,
 });

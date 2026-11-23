@@ -61,7 +61,9 @@ import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { DACK_EFFECT_RULES } from './dack';
+import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
@@ -1295,6 +1297,8 @@ export const EFFECT_RULES = [
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
   ...DACK_EFFECT_RULES,
+  ...EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES,
+  ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,

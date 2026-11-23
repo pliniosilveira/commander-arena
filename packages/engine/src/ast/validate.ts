@@ -511,12 +511,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       if (
         s.keyword?.kind !== 'demonstrate' &&
         s.keyword?.kind !== 'convoke' &&
+        s.keyword?.kind !== 'improvise' &&
         s.keyword?.kind !== 'replicateAtManaCost'
       ) {
         issue(
           out,
           `${path}.keyword`,
-          'only demonstrate and convoke (and replicateAtManaCost) can be given to spells',
+          'only demonstrate, convoke and improvise (and replicateAtManaCost) can be given to spells',
         );
       }
       checkFilter(s.what, `${path}.what`, out);

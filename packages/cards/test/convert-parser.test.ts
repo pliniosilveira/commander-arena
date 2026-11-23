@@ -579,6 +579,7 @@ describe('unmatched abilities', () => {
       'condition.descended-this-turn',
       'condition.cast-from-graveyard',
       'condition.cast-from-hand',
+      'condition.cast-from-exile',
       'condition.mana-spent-or-more',
       'condition.spell-mana-value-or-more',
       'condition.total-mana-value-exiled-this-way',

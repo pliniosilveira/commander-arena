@@ -66,6 +66,7 @@ import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
+import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -2800,6 +2801,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUICK_DRAW_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
+  ...CHOOSE_PER_OPPONENT_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...RETURNED_LAND_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
@@ -2941,6 +2943,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
       clause,
       scope === 'untilYourNextEndStep' ||
         scope === 'whileExiled' ||
+        scope === 'untilYouExileAnotherWithSelf' ||
         scope === 'whileYouControlSelf' ||
         scope === 'whileSelfRemains'
         ? []

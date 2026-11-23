@@ -405,6 +405,11 @@ export interface StackData {
   readonly castFromCommandZone: boolean;
   /** The zone the spell was cast from (CR 601.2a, D-206): "if this spell was cast from a graveyard". Absent for an ability and for a copy. */
   readonly castFrom?: Zone;
+  /**
+   * The number an `asCast` amount of the spell's text worked out as the spell was cast (CR 601.2i: "the greatest power among creatures you controlled as you cast this spell"),
+   * written when the spell becomes cast (`rules/cast-amount.ts`). Absent for a spell with no such amount, for an ability and for a spell put on the stack without being cast.
+   */
+  readonly castAmount?: number;
   /** True when a kicker cost was paid at least once (CR 702.33d). Always false for an ability. */
   readonly kicked: boolean;
   /**
@@ -1433,6 +1438,11 @@ export type Instruction =
   | {
       readonly kind: 'chooseEach';
       readonly filter: ObjectFilter;
+      /**
+       * `chooseOnePerOpponentDestroy` (CR 608.2d): the controller of the effect chooses, for each of the opponents in `seats`, exactly one permanent that opponent controls; `seats`
+       * are then the opponents still to choose for, and the question is asked of the controller.
+       */
+      readonly perOpponent?: true;
       readonly seats: readonly SeatId[];
       readonly picked: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -2446,6 +2456,11 @@ export type ContinuousChange =
       readonly exileInstead?: true;
       /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
       readonly lessGeneric?: number;
+      /**
+       * "You may play that card until you exile another card with this enchantment" (`mayPlay.lasts` `untilSourceExilesAnother`, Furious Rise, CR 607.2a): the permanent whose linked
+       * ability exiled the card; the permission is removed as that permanent exiles another card with `exileTop` `linked` (`rules/impulse.ts`).
+       */
+      readonly endsWhenExilesAnother?: ObjectId;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,

@@ -311,6 +311,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the number of creatures attacking them';
     case 'lifeGainedThisTurn':
       return 'the amount of life you gained this turn';
+    case 'asCast': {
+      // CR 601.2i: worked out as the spell was cast.
+      const inner = amountPhrase(amount.of, ctx);
+      return inner === UNKNOWN_AMOUNT ? UNKNOWN_AMOUNT : `${inner} as you cast this spell`;
+    }
     case 'lifeGainedOrLostThisTurn':
       // CR 119.3 (Willowdusk, Essence Seer).
       return 'the amount of life you gained this turn or the amount of life you lost this turn, whichever is greater';

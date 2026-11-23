@@ -90,6 +90,7 @@ import {
   spellXCostOf,
 } from './cast-cost';
 import { answerGift, toGift } from './cast-gift';
+import { castAmountOf } from './cast-amount';
 import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
@@ -1790,7 +1791,15 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
   // and now it is one of them. A copy of a spell is not cast and is not counted (CR 707.10).
   if (obj.stack !== null) {
     const before = next.seats.reduce((n, s) => n + s.spellsCastThisTurn, 0);
-    next = patchObject(next, casting.object, { stack: { ...obj.stack, spellsCastBefore: before } });
+    // CR 601.2i (Lifestream's Blessing): "... as you cast this spell" is worked out now, as the spell becomes cast.
+    const castAmount = castAmountOf(next, getObject(next, casting.object), casting.seat);
+    next = patchObject(next, casting.object, {
+      stack: {
+        ...obj.stack,
+        spellsCastBefore: before,
+        ...(castAmount === undefined ? {} : { castAmount }),
+      },
+    });
     next = patchSeat(next, casting.seat, {
       spellsCastThisTurn: getSeat(next, casting.seat).spellsCastThisTurn + 1,
     });

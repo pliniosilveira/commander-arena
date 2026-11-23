@@ -114,7 +114,15 @@ export function checkDragonsEffect(
           issue(out, `${path}.free`, 'a free play does not spend mana as though of any color');
         }
       }
-      if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
+      if (
+        !isOneOf(e.lasts, [
+          'endOfTurn',
+          'endOfYourNextTurn',
+          'yourNextEndStep',
+          'whileExiled',
+          'untilSourceExilesAnother',
+        ])
+      ) {
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       if (e.lookAt !== undefined && e.lookAt !== true) {

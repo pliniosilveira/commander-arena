@@ -109,6 +109,42 @@ const PLAY_FROM_TOP_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   };
 };
 
+/**
+ * "you may cast creature spells from the top of your library" (Summoning Materia; CR 601.3, 401.5): the controller's permission to cast the top card of their library when it is a
+ * spell of a kind the words name (the engine's `castFromTopOfLibrary`). Only read after a condition ("As long as ~ is attached to a creature, ..."), where the lowering gives the
+ * permission that condition. The kind is a single card type in the plural ("creature spells", "artifact spells"); no other quality of the spell is read.
+ */
+const CAST_TYPE_FROM_TOP_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const r = pattern(
+    /you may cast (artifact|creature|enchantment|instant|sorcery|planeswalker) spells from the top of your library(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const type = (r.value[1] ?? '').toLowerCase();
+  return {
+    ok: true,
+    value: {
+      noun: {
+        kind: 'noun',
+        det: 'you',
+        filter: { raw: 'You' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: pos + 3 },
+        rule: 'static.conditional-prefix',
+      },
+      effects: [
+        {
+          kind: 'castFromTop',
+          spells: { types: [type], raw: `${type} spells` },
+          gainsHaste: false,
+        },
+      ],
+    },
+    pos: r.pos,
+  };
+};
+
 const ANY_UNIT: Parser<StaticUnit> = choice(
   SELF_BECOMES_UNIT,
   // Stage P68 (D-229): "~ isn't a creature".
@@ -121,6 +157,7 @@ const ANY_UNIT: Parser<StaticUnit> = choice(
   OPPONENTS_CANT_CAST_UNIT,
   ATTACHED_UNIT,
   PLAY_FROM_TOP_UNIT,
+  CAST_TYPE_FROM_TOP_UNIT,
 );
 
 /**

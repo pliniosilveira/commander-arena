@@ -755,6 +755,8 @@ export interface IrDuration extends IrNode {
     | 'untilYourNextEndStep'
     // "for as long as they remain exiled" (stage P41, D-188, CR 406.3): the permission of the cards an effect exiled, which ends only as they leave exile
     | 'whileExiled'
+    // "until you exile another card with ~" (Furious Rise, CR 607.2a, 611.2a): the permission of the card a linked ability exiled ends as that permanent exiles another one
+    | 'untilYouExileAnotherWithSelf'
     // "for as long as you control ~" (stage P42, D-190, CR 611.2b): the control an effect gave ends as the permanent with the ability leaves or changes controller
     | 'whileYouControlSelf'
     // "for as long as ~ remains on the battlefield" (stage P50, D-207, CR 611.2b): the effect of an ability of a permanent ends as that permanent leaves
@@ -1021,7 +1023,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'descendedThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
-    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' }
+    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' | 'exile' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
     // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"
@@ -1550,6 +1552,11 @@ export interface IrSentence extends IrNode {
    */
   readonly afterDiscard?: 'nonland';
   /**
+   * "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12, 701.13): a reflexive triggered ability created when the exile of the instructions before it in the same text
+   * exiled a card. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no exile of the top card came before.
+   */
+  readonly afterExile?: true;
+  /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
    * not `optional`: the question is this node's. Only in the body of a triggered ability.
@@ -2010,7 +2017,7 @@ export type IrStaticEffect =
    */
   | {
       readonly kind: 'spellKeyword';
-      readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
+      readonly keyword: 'demonstrate' | 'convoke' | 'improvise' | 'replicateAtManaCost';
     }
   /**
    * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9, 601.2b): the permanent spells the subject names (a noun with the controller

@@ -179,6 +179,14 @@ export type Amount =
    * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
    */
   | { readonly kind: 'lifeGainedOrLostThisTurn' }
+  /**
+   * "Draw X cards, where X is the greatest power among creatures you controlled as you cast this spell" (Lifestream's Blessing; CR 601.2i, 107.3c, 608.2c): `of` is worked out once, as
+   * the spell is cast (when it becomes cast, CR 601.2i, with its costs paid), and the number is kept on the spell (`StackData.castAmount`); the amount reads that number as the spell
+   * resolves, from its last-known information if it has left the stack. Only in the text of a spell (an ability on the stack has no cast, CR 602.2b): one `asCast` amount is kept for
+   * a spell, so a spell with two of them must have the same `of` in both. A copy of a spell (CR 707.10) has the number of the spell it copies. `of` is an amount that reads the game
+   * (a count, an aggregate), never a target or the X of the spell.
+   */
+  | { readonly kind: 'asCast'; readonly of: Amount }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
   | {
       readonly kind: 'enteredThisTurn';
@@ -2091,9 +2099,16 @@ export type ControlDuration =
  * of your next turn": the next turn of the controller of the effect, the current one not counted even when it is theirs) and `yourNextEndStep`
  * ("until your next end step": it ends as the next end step of the controller's begins, this turn's when it is theirs and that step has not
  * begun) and (D-187) `whileExiled` ("for as long as they remain exiled": no end of its own; a card that leaves exile is a new object, CR 400.7,
- * so the permission is gone with it).
+ * so the permission is gone with it) and `untilSourceExilesAnother` ("You may play that card until you exile another card with this enchantment", Furious Rise, CR 607.2a,
+ * 611.2a: the card is one the ability of a permanent exiled with `exileTop` `linked`; the permission has no end of its own but the card leaving exile, and it also ends as that
+ * permanent exiles its next card that way, which `exileTop` `linked` does as it exiles).
  */
-export type PlayUntil = 'endOfTurn' | 'endOfYourNextTurn' | 'yourNextEndStep' | 'whileExiled';
+export type PlayUntil =
+  | 'endOfTurn'
+  | 'endOfYourNextTurn'
+  | 'yourNextEndStep'
+  | 'whileExiled'
+  | 'untilSourceExilesAnother';
 
 /**
  * What a `sacrifice` effect sacrifices (CR 701.21). Only permanents the effect's controller
@@ -2559,6 +2574,12 @@ export type Effect =
        * instruction before the reflexive ability is a `createToken` (whose doing is a token created) or one of the kinds a `may` wraps.
        */
       readonly carriesMoved?: true;
+      /**
+       * "Exile the top card of your library. ... When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is that card's mana value" (Cait
+       * Sith, Fortune Teller; CR 603.12, 701.13): the ability is created when the effect before it in the sequence moved a card (`moved` is not empty), not when the player merely did
+       * something. Always with `carriesMoved`: the card is what `moved` names in the ability. An exile of the top card of an empty library moves nothing and creates none.
+       */
+      readonly ifMoved?: true;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -4487,6 +4508,13 @@ export type Effect =
    * chosen by two players is destroyed once. Nothing is asked of a player with no candidate. See rules/choose-each.ts.
    */
   | { readonly kind: 'eachPlayerChoosesDestroy'; readonly filter: ObjectFilter }
+  /**
+   * "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents." (Ultimate Magic: Meteor; CR 608.2d, 701.8, 102.2): the controller of the effect
+   * chooses one permanent `filter` matches (a permanent on the battlefield) from the permanents each opponent still in the game controls, in turn order (a `choosePermanent` decision
+   * of purpose 'effect', exactly one), asked of the controller and not of the opponent; nothing is asked for an opponent with no candidate. Then every permanent chosen is destroyed
+   * together. `filter` names what a permanent is, with no controller (the opponent is the player the choice is for). Works for any number of opponents. See rules/choose-each.ts.
+   */
+  | { readonly kind: 'chooseOnePerOpponentDestroy'; readonly filter: ObjectFilter }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that
@@ -7384,7 +7412,7 @@ export type StaticEffect =
    * "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, 613.1f, 604.2, 611.3a): a static ability of a permanent on the battlefield that gives the keyword `keyword` to the
    * spells its controller casts that `what` matches, in layer 6 with the permanent's timestamp, from the moment the spell is on the stack (CR 601.2a: it is cast from there), so that the
    * keyword is there as the spell is cast (the triggered ability of Demonstrate, "When you cast this spell", is found once the spell is on the stack, CR 601.2i, 603.2) and when its total
-   * cost is determined (Convoke, CR 702.51b). Only Demonstrate and Convoke, the keywords the engine reads from a spell as it is cast. Each grant of Demonstrate is one more instance (each
+   * cost is determined (Convoke, CR 702.51b). Only Demonstrate, Convoke and Improvise (CR 702.126a, "Nonartifact spells you cast have improvise"), the keywords the engine reads from a spell as it is cast. Each grant of Demonstrate is one more instance (each
    * triggers on its own); Convoke instances are redundant (CR 702.51d). A copy of a spell is not cast (CR 707.10) and gets nothing, nor does an ability on the stack. `what` is a filter of
    * the spell as it is on the stack (its types, colors, mana value and the like after layers 4 and 5) with `controller: 'you'` (the permanent's controller, "spells you cast"), and no zone,
    * owner, stack kind, keyword, combat or source test. A permanent that lost all its abilities gives nothing (CR 613.1f).
@@ -7397,7 +7425,7 @@ export type StaticEffect =
       readonly kind: 'grantKeywordToSpells';
       readonly what: ObjectFilter;
       readonly keyword:
-        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>
+        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
         | { readonly kind: 'replicateAtManaCost' };
     }
   /**

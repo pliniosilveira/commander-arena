@@ -7,6 +7,7 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId } from '../ids';
 import { objectsInZone } from '../state/ops';
+import { controllerOf } from './control';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -53,6 +54,29 @@ export function runChooseEach(
     return done(state, [], [{ ...ins, seats: ins.seats.slice(1), picked, chosen: null }]);
   }
   const [asked] = ins.seats;
+  if (ins.perOpponent === true) {
+    // CR 608.2d (`chooseOnePerOpponentDestroy`): the controller chooses one permanent for each opponent; an opponent with none to choose from is passed over.
+    if (asked === undefined) return finish(state, ins.picked);
+    const legal = chooseEachCandidates(state, res, ins.filter).filter((id) => {
+      const obj = state.objects[id];
+      return obj !== undefined && controllerOf(state, obj) === asked;
+    });
+    if (legal.length === 0) return done(state, [], [{ ...ins, seats: ins.seats.slice(1) }]);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat: res.controller,
+        source: res.object,
+        purpose: 'effect',
+        min: 1,
+        max: 1,
+        legal,
+      },
+    };
+  }
   const legal = chooseEachCandidates(state, res, ins.filter);
   // Nobody is left to ask, or there is nothing to choose: what was chosen is destroyed.
   if (asked === undefined || legal.length === 0) return finish(state, ins.picked);
