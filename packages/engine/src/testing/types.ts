@@ -590,6 +590,8 @@ export interface Expectations {
   zone(card: string, zone: Zone, options?: ZoneExpectation): void;
   noObject(card: string, options?: { readonly zone?: Zone; readonly seat?: SeatId }): void;
   life(seat: SeatId, life: number): void;
+  /** The seat has exactly this many energy counters (CR 107.14). */
+  energy(seat: SeatId, counters: number): void;
   tapped(card: CardRef, tapped?: boolean): void;
   /** What the permanent chose as it entered (D-100): exactly this, or nothing when `chosen` is null. */
   chosen(card: CardRef, chosen: ChosenValues | null): void;

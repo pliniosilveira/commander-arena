@@ -34,6 +34,8 @@ export interface ScenarioBuilder {
   seat(seat: SeatId): ScenarioBuilder;
   life(life: number): ScenarioBuilder;
   poison(counters: number): ScenarioBuilder;
+  /** Energy counters the seat starts with (CR 107.14, 122.1). */
+  energy(counters: number): ScenarioBuilder;
   /** Mana already in the seat's pool. */
   pool(mana: ManaSpec): ScenarioBuilder;
   mulligans(count: number): ScenarioBuilder;
@@ -148,6 +150,10 @@ export function scenario(options: ScenarioOptions = {}): ScenarioBuilder {
     },
     life(life) {
       seatSpec('life').life = life;
+      return builder;
+    },
+    energy(counters) {
+      seatSpec('energy').energy = counters;
       return builder;
     },
     poison(counters) {

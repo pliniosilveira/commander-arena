@@ -70,6 +70,7 @@ import { SYNTHETIC_EACH_TYPE_LIST } from './synthetic-each-type';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
 import { SYNTHETIC_ENCHANTED_LAND_MANA_LIST } from './synthetic-enchanted-land-mana';
+import { SYNTHETIC_ENERGY_LIST } from './synthetic-energy';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
@@ -485,6 +486,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_SLIVER_B_LIST,
   ...SYNTHETIC_DANITHA_G6_LIST,
   ...SYNTHETIC_DANITHA_G7_LIST,
+  ...SYNTHETIC_ENERGY_LIST,
   ...SYNTHETIC_FEATHER_G2_LIST,
   ...SYNTHETIC_GISA_G5_LIST,
   ...SYNTHETIC_HYLDA_G2_LIST,

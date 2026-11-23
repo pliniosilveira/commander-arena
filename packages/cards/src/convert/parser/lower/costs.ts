@@ -230,8 +230,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // CR 118.1: the source card exiles itself as an ordinary activation cost from its graveyard.
       return options.ordinary === true ? ok({ kind: 'exileThis' }) : failure(cost);
     case 'energy':
-      // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks, and nowhere else.
-      return options.unless === true && cost.count >= 1
+      // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks; issue 105: the cost of an activated ability and of a mana ability too.
+      return (options.unless === true || options.ordinary === true || options.mana === true) &&
+        cost.count >= 1
         ? ok({ kind: 'energy', count: cost.count })
         : failure(cost);
     case 'discard': {

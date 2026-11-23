@@ -365,7 +365,9 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         vec[C_EXTRA] =
           source.weighExtraByLife === true
             ? (source.lifeLoss ?? 0)
-            : source.extraEffect === true || (source.lifeLoss ?? 0) > 0
+            : source.extraEffect === true ||
+                (source.lifeLoss ?? 0) > 0 ||
+                (source.energyCost ?? 0) > 0
               ? 1
               : 0;
         entries.push({
@@ -563,10 +565,22 @@ export function planPayment(request: PaymentRequest): PaymentPlan | null {
     (n, t) => n + (lossOf.get(`${t.object}#${t.abilityIndex}`) ?? 0),
     plan.lifePaid,
   );
-  if (spent <= request.lifeAvailable) return plan;
+  const energyOf = new Map<string, number>();
+  for (const s of request.sources) energyOf.set(`${s.object}#${s.abilityIndex}`, s.energyCost ?? 0);
+  const energySpent = plan.taps.reduce(
+    (n, t) => n + (energyOf.get(`${t.object}#${t.abilityIndex}`) ?? 0),
+    0,
+  );
+  const withinEnergy = energySpent <= (request.energyAvailable ?? 0);
+  if (spent <= request.lifeAvailable && withinEnergy) return plan;
+  // CR 107.14, 118.3: a source that costs energy is left out when the plan would pay more than the player has.
   return planOnce({
     ...request,
-    sources: request.sources.filter((s) => (s.lifeLoss ?? 0) === 0),
+    sources: request.sources.filter(
+      (s) =>
+        (spent > request.lifeAvailable ? (s.lifeLoss ?? 0) === 0 : true) &&
+        (withinEnergy ? true : (s.energyCost ?? 0) === 0),
+    ),
   });
 }
 

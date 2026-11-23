@@ -17,6 +17,7 @@ import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
+import { PAY_ENERGY_COST_RULES } from './pay-energy';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -938,6 +939,8 @@ export const COST_RULES = [
   ...GISA_G4_COST_RULES,
   COST_MILL,
   COST_ENERGY,
+  // Aetherdrift energy deck (issue 105): "Pay {E}{E}", "Pay six {E}".
+  ...PAY_ENERGY_COST_RULES,
   COST_PAY_LIFE,
   COST_PAY_LIFE_AMOUNT,
   // Hashaton deck, group 2 (D-364): "pay that much life", read by `effect.pay` only.

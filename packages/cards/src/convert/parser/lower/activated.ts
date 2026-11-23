@@ -439,6 +439,8 @@ function lowerManaAbility(
   const manas = costs.value.filter((c) => c.kind === 'mana').length;
   const lives = costs.value.filter((c) => c.kind === 'payLife').length;
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
+  // Issue 105 (Aether Hub, CR 107.14): "Pay {E}", one such cost.
+  const energies = costs.value.filter((c) => c.kind === 'energy').length;
   // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
   const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
   // CR 118.3, 122.1 (Wall of Roots): "Put a -0/-1 counter on ~", one such cost, the permanent itself; it pays for the ability like a counter taken off it.
@@ -459,11 +461,13 @@ function lowerManaAbility(
       removals === 1 ||
       additions === 1 ||
       lives === 1 ||
+      energies === 1 ||
       // Relic of Legends (CR 605.3b): "Tap an untapped legendary creature you control: Add one mana of any color." needs no {T} of its own.
       tapsOther.length === 1) &&
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
+    energies <= 1 &&
     removals <= 1 &&
     additions <= 1 &&
     exerts <= 1 &&
@@ -476,6 +480,7 @@ function lowerManaAbility(
       manas +
       lives +
       mills +
+      energies +
       removals +
       additions +
       exerts +

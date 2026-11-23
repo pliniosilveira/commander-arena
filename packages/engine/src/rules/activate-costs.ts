@@ -20,7 +20,7 @@ import type { Cost, ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { PaymentPlan } from '../mana';
 import type { GameEvent } from '../state/events';
-import { getSeat, loseLifeBy, patchObject } from '../state/ops';
+import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
 import { exileCostCandidates } from './activation-exile';
 import { blightCandidates } from './blight-candidates';
@@ -45,6 +45,8 @@ import { moveObject } from './zones';
 export interface CostBreakdown {
   readonly tap: boolean;
   readonly life: number;
+  /** "Pay {E}{E}" (CR 107.14, 118.3, issue 105): the energy counters the payer removes from themselves. */
+  readonly energy: number;
   readonly counters: readonly { readonly counter: string; readonly count: number }[];
   /** The loyalty symbol (D-200, CR 606.4): the change to the source's loyalty counters, with an X worked out, or null for no loyalty cost. */
   readonly loyalty: number | null;
@@ -111,6 +113,7 @@ export interface CostBreakdown {
 export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
   let life = 0;
+  let energy = 0;
   let discardThis = false;
   let revealThis = false;
   let exileThis = false;
@@ -157,6 +160,9 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         break;
       case 'payXLife':
         life += x;
+        break;
+      case 'energy':
+        energy += cost.count;
         break;
       case 'removeCounters':
         if (cost.among !== undefined) {
@@ -277,6 +283,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   return {
     tap,
     life,
+    energy,
     hasX: hasX(abilityXCost(costs)),
     onlyChosenColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
@@ -337,6 +344,10 @@ function immediateRefusal(
     return `you have less than ${costs.life} life`;
   }
   if (costs.life > 0 && lifeTotalIsLocked(state, seat)) return 'your life total cannot change';
+  // CR 107.14, 118.3: energy is paid by removing that many counters from the player, who needs that many.
+  if (costs.energy > (getSeat(state, seat).energy ?? 0)) {
+    return `you have fewer than ${costs.energy} energy counters`;
+  }
   for (const { counter, count } of costs.counters) {
     if (source.zone !== 'battlefield' || (source.counters[counter] ?? 0) < count) {
       return `it has fewer than ${count} ${counter} counters`;
@@ -384,6 +395,11 @@ export function payImmediateCosts(
     const life = getSeat(state, seat).life;
     state = loseLifeBy(state, seat, costs.life);
     events.push({ kind: 'lifeChanged', seat, from: life, to: life - costs.life });
+  }
+  if (costs.energy > 0) {
+    const had = getSeat(state, seat).energy ?? 0;
+    state = patchSeat(state, seat, { energy: had - costs.energy });
+    events.push({ kind: 'energyChanged', seat, from: had, to: had - costs.energy });
   }
   for (const { counter, count } of costs.counters) {
     const obj = state.objects[source];

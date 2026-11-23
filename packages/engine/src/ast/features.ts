@@ -835,6 +835,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payLife',
     'mill',
     'tapPermanents',
+    // Issue 105 (Aether Hub): "{T}, Pay {E}: Add one mana of any color." (CR 107.14, 118.3, 605.3).
+    'energy',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
     'removeCounters',
     // Issue 144 (Arena of Glory): "{R}, {T}, Exert this land: Add {R}{R}." (CR 701.43a).
