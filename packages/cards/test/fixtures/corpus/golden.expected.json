@@ -1,5 +1,5 @@
 {
-  "parserVersion": 192,
+  "parserVersion": 193,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -4955,19 +4955,10 @@
     "68e45c07-96c5-4f87-a816-d9fa4f119740": {
       "name": "Gemcutter Buccaneer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Treasures you control are Equipment in addition to their other types and have \"Equipped creature gets +2/+0,\" equip Pirate {1}, and equip {3}.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8aa2cf1c"
+      "ast": "cddc32a1"
     },
     "690c7f8e-fea2-4920-afa7-02ff120701a1": {
       "name": "Spinerock Knoll",
@@ -11828,7 +11819,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1163,
+      "supported": 1164,
       "total": 1184
     }
   }

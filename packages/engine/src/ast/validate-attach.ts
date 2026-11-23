@@ -197,6 +197,32 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
     }
     return;
   }
+  if (k?.kind === 'equip') {
+    // CR 702.6a, 702.6c, 613.1f: "have equip Pirate {1} and equip {3}": an equip ability given to a group, with a mana cost and, for "equip [quality]", the creatures
+    // it may target. The permanent that is given it attaches as an Equipment does, so the ability that gives it goes with one that makes the group Equipment.
+    if (!Array.isArray(k.cost) || k.cost.length === 0 || k.cost.some((c) => c?.kind !== 'mana')) {
+      issue(out, `${path}.cost`, 'a granted equip costs mana only');
+    }
+    if (k.costReducedIf !== undefined) {
+      issue(out, `${path}.costReducedIf`, 'a granted equip has no cost reduction of its own');
+    }
+    if (k.restriction !== undefined) {
+      checkFilter(k.restriction, `${path}.restriction`, out);
+      if (
+        filterSome(
+          k.restriction,
+          (f) => f.zone !== undefined || f.owner !== undefined || f.controller !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.restriction`,
+          'an equip restriction names a quality of the creature: no zone, owner or controller',
+        );
+      }
+    }
+    return;
+  }
   if (!GRANTABLE_KEYWORDS.includes(k?.kind)) {
     issue(
       out,
