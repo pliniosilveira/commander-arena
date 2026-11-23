@@ -2471,3 +2471,21 @@
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+
+/* A zone viewer card that stands for several identical ones (issue 570). */
+.board-zone-card {
+  position: relative;
+}
+
+.board-zone-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  pointer-events: none;
+}

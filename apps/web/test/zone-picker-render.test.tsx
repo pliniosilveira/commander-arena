@@ -63,6 +63,29 @@ describe('Zone Picker', () => {
   });
 });
 
+describe('Zone Picker grouping (issue 570)', () => {
+  test('shows identical cards once with a count, except while a question is pending', async () => {
+    const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+    await store.getState().startGame({ seed: 1, humanDeck: OPPONENT, aiDeck: OPPONENT });
+    const view = store.getState().snapshot?.view;
+    const card = view?.seats[view.viewer]?.hand?.[0];
+    if (view === undefined || card === undefined) throw new Error('no hand');
+    const copies = [card, { ...card, id: card.id + 1000 }, { ...card, id: card.id + 2000 }];
+    const list = <ZoneViewer title="Exile" objects={copies} onClose={() => undefined} />;
+
+    const plain = render(store, list);
+    expect(plain.match(/data-object-id=/g)?.length).toBe(1);
+    expect(plain).toContain('data-zone-count="3"');
+
+    const asking = render(
+      store,
+      <ZoneDecisionProvider value={{ bar, source: card.id }}>{list}</ZoneDecisionProvider>,
+    );
+    expect(asking).not.toContain('data-zone-count');
+    expect(asking.match(/data-object-id=/g)?.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe('Zone Picker gate', () => {
   test('a closed picker holds every button back and offers to open it again', () => {
     let opened = 0;
