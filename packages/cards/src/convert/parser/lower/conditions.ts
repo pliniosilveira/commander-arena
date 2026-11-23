@@ -607,7 +607,7 @@ export function lowerCondition(
       // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
       const blocked = missingFeatures(['condition:objectMatches']);
       if (blocked.length > 0) return failure(c, blocked);
-      if (ctx?.milled !== true) return failure(c, []);
+      if (ctx?.milled !== true && ctx?.milledEach !== true) return failure(c, []);
       const filter = lowerFilter({
         kind: 'noun',
         det: 'a',

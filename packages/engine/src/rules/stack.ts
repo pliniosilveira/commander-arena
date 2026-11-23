@@ -257,6 +257,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...res,
         queue: [...out.front, ...res.queue.slice(1)],
         ...(out.lastMoved === undefined ? {} : { lastMoved: out.lastMoved }),
+        ...(out.milledCards === undefined ? {} : { milledCards: out.milledCards }),
         // D-177: the permanents sacrificed, for "that creature's power" in the same resolution and in a reflexive ability.
         ...(out.sacrificed === undefined
           ? {}

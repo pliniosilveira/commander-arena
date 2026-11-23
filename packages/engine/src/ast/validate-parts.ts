@@ -8388,6 +8388,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.duration`, 'the flashback is gained until end of turn');
       }
       break;
+    case 'mayCastOneMilled':
+      // Locke, Treasure Hunter: "you may cast a spell from among those cards": the cards a mill of the resolution milled, for the rest of the turn.
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
+      }
+      break;
     case 'mayCastSpells':
       // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.
       checkFilter(e.spells, `${path}.spells`, out);

@@ -16,6 +16,8 @@ export interface StepOutcome {
    * a move effect starting sets it empty, and each move adds the object it produced.
    */
   readonly lastMoved?: readonly ObjectId[];
+  /** The cards a `mill` instruction milled, which become `ResolutionContext.milledCards` (CR 701.17a). */
+  readonly milledCards?: readonly ObjectId[];
   /** How much life players lost in this instruction, added to `ResolutionContext.lifeLost` (D-120). */
   readonly lifeLost?: number;
   /** What this instruction did, added to `ResolutionContext.thisWay` for the `thisWay` amounts (D-131). */

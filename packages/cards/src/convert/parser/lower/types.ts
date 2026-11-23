@@ -313,6 +313,16 @@ export interface LowerContext {
    */
   milled: boolean;
   /**
+   * True right after a clause that was one mill by each player (Locke, Treasure Hunter, CR 701.17a, 608.2c): "If a land card was milled this way" reads the cards every player
+   * milled. Any other clause lowered after it makes it false again.
+   */
+  milledEach: boolean;
+  /**
+   * True once a mill by the controller or by each player was lowered (Locke, Treasure Hunter): "a spell from among those cards" names the cards the latest mill of the
+   * resolution milled (`mayCastOneMilled`), whatever was done in between. Never reset.
+   */
+  milledBefore: boolean;
+  /**
    * True right after a clause that was a `destroy` (issue 159, Necromantic Selection): "a creature card put into a graveyard this way" names the cards that destroy
    * put into graveyards, which the engine's `moved` holds until another instruction moves something.
    */
@@ -449,6 +459,8 @@ export function newContext(
     madeToken: null,
     chosenExiled: false,
     milled: false,
+    milledEach: false,
+    milledBefore: false,
     destroyed: false,
     createdToken: null,
     movedToHand: false,

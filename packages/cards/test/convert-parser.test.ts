@@ -975,6 +975,7 @@ describe('unmatched abilities', () => {
       'effect.roll-die',
       'effect.clash',
       'effect.flip-coin',
+      'effect.may-cast-one-from-among-those',
       'effect.poison-difference',
       'effect.gain-static-ability',
       'effect.becomes-creature-gains-static',

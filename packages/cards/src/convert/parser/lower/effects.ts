@@ -120,6 +120,7 @@ import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
+import { LOCKE_LOWERINGS } from './locke';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -1447,6 +1448,9 @@ function playerVerb(
       }
       // D-327: "Mill a card. You may play that card this turn.": the cards the controller milled are what "that card" of the sentence after it names.
       if (verb === 'mill' && player.value.kind === 'you') ctx.exiled = 'milled';
+      // Locke, Treasure Hunter: "a spell from among those cards" after a mill by the controller or by each player.
+      if (verb === 'mill' && (player.value.kind === 'you' || player.value.kind === 'eachPlayer'))
+        ctx.milledBefore = true;
       const effect: Effect =
         verb === 'draw' || verb === 'discard' || verb === 'mill'
           ? { kind: verb, player: player.value, count: amount.value }
@@ -2733,6 +2737,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
+  // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards" after a mill.
+  ...LOCKE_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
   ...AURA_GRAVEYARD_LOWERINGS,
   ...VRASKA_LOWERINGS,

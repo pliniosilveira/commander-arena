@@ -2653,6 +2653,13 @@ export type Effect =
       readonly duration: 'untilEndOfTurn';
     }
   /**
+   * "Until end of turn, you may cast a spell from among those cards" after a mill (Locke, Treasure Hunter; CR 701.17a, 601.2, 611.2a, 400.7j): until end of turn the controller of
+   * this effect may cast one spell from among the cards the latest `mill` of the resolution milled (`ResolutionContext.milledCards`), whoever owns them, from the graveyard they are
+   * in now (a card that left it is a new object and not covered). It is one spell for all the cards together: casting one uses up the permission for the others. The spell is cast
+   * at the timing of its type, paying its ordinary cost; a land card is no spell and is not covered. `duration` is `untilEndOfTurn`.
+   */
+  | { readonly kind: 'mayCastOneMilled'; readonly duration: 'untilEndOfTurn' }
+  /**
    * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 613.1f, 611.2a, 611.2c): the instant
    * and sorcery cards that `what` describes in the controller's graveyard as the effect resolves have flashback until the end of the turn, with the cost equal to their own mana cost
    * (CR 118.9). The cards are fixed as the effect resolves (CR 611.2c: an effect that changes characteristics affects the objects there then), so a card that enters the graveyard
