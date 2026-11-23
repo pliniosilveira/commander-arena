@@ -1083,7 +1083,16 @@ export function graveyardPhrase(
                   ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
                 );
   const choiceOfTypes: Parser<CardWords> = map(
-    sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
+    sequence(
+      choice(
+        typeChoice(CARD_TYPES, false, 'and/or'),
+        typeChoice(CARD_TYPES),
+        // Wisdom of Ages, "all instant and sorcery cards from your graveyard": in the plural the list names the kinds that are wanted, a card of any of them (CR 205.2a);
+        // never in the singular ("target artifact and creature card" is no card of the game).
+        ...(plural ? [typeChoice(CARD_TYPES, false, 'and')] : []),
+      ),
+      literal(' '),
+    ),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
   );
   // "non-Dragon creature card" (CR 205.3d): the card has none of these creature types.
