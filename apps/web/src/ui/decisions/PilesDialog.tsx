@@ -61,7 +61,7 @@ export function PilesDialog({
               ))}
               {pileOf(ids).map((card) => (
                 <li key={card.id}>
-                  <MiniCard card={card} width={84} />
+                  <MiniCard card={card} width={120} full />
                 </li>
               ))}
             </ul>
