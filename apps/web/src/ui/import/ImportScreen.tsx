@@ -220,6 +220,7 @@ export function ImportScreen() {
         <div className="imp-body">
           <SavedDecksView
             decks={decks}
+            choices={choices}
             loading={decks === null}
             onOpen={openSaved}
             onView={(deck) =>

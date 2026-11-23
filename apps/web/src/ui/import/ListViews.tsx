@@ -1,14 +1,18 @@
 /** "My decks": a presentational list; the screen loads and refreshes it. */
 import type { SavedDeck } from '../../import/types';
+import { type DeckChoice, savedDeckChoiceId } from '../../precons';
 
 export function SavedDecksView({
   decks,
+  choices = [],
   loading,
   onOpen,
   onView,
   onRemove,
 }: {
   decks: readonly SavedDeck[] | null;
+  /** The deck choices, for the commander and its art; a deck without one shows its name only. */
+  choices?: readonly DeckChoice[];
   loading: boolean;
   onOpen: (deck: SavedDeck) => void;
   onView: (deck: SavedDeck) => void;
@@ -31,25 +35,41 @@ export function SavedDecksView({
         <ul className="imp-list imp-saved">
           {[...decks]
             .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
-            .map((deck) => (
-              <li key={deck.id}>
-                <span>
-                  <strong>{deck.name}</strong>{' '}
-                  <span className="scr-help">saved {deck.savedAt.slice(0, 10)}</span>
-                </span>
-                <span className="imp-row-actions">
-                  <button type="button" className="scr-btn" onClick={() => onView(deck)}>
-                    View<span className="imp-sr"> {deck.name}</span>
-                  </button>
-                  <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
-                    Edit<span className="imp-sr"> {deck.name}</span>
-                  </button>
-                  <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
-                    Delete<span className="imp-sr"> {deck.name}</span>
-                  </button>
-                </span>
-              </li>
-            ))}
+            .map((deck) => {
+              const choice = choices.find((c) => c.id === savedDeckChoiceId(deck.id));
+              return (
+                <li key={deck.id}>
+                  {choice?.commanderImage !== undefined && (
+                    <img
+                      className="scr-deck-art"
+                      src={choice.commanderImage}
+                      alt=""
+                      loading="lazy"
+                      width={106}
+                      height={77}
+                    />
+                  )}
+                  <span className="scr-deck-text imp-precon-text">
+                    <span className="scr-deck-name">{deck.name}</span>
+                    {choice !== undefined && choice.commander !== '' && (
+                      <span className="scr-deck-commander">Commander: {choice.commander}</span>
+                    )}
+                    <span className="scr-deck-set">Saved {deck.savedAt.slice(0, 10)}</span>
+                  </span>
+                  <span className="imp-row-actions">
+                    <button type="button" className="scr-btn" onClick={() => onView(deck)}>
+                      View<span className="imp-sr"> {deck.name}</span>
+                    </button>
+                    <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
+                      Edit<span className="imp-sr"> {deck.name}</span>
+                    </button>
+                    <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
+                      Delete<span className="imp-sr"> {deck.name}</span>
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
         </ul>
       )}
     </section>
