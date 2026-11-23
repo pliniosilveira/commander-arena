@@ -615,9 +615,9 @@
 .board-row-back .board-row-inline .board-row-scroll,
 .board-row-back .board-row-land .board-row-scroll {
   padding-inline: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  justify-content: safe center;
+  /* No scroll of its own: the box is as wide as its cards and the field's one scroller moves it. */
+  overflow: visible;
+  justify-content: center;
 }
 
 .board-back-lands,
