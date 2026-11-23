@@ -19,7 +19,7 @@ import { addToPool, type PaymentPlan, parseManaCost, planPayment } from '../mana
 import type { ManaColor, ManaObject, ManaRestriction, ManaRider } from '../mana/types';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchSeat } from '../state/ops';
-import type { GameObject, GameState } from '../state/types';
+import type { GameObject, GameState, StepId } from '../state/types';
 import { derive } from './derive';
 import { runImmediateEffects } from './effects';
 import {
@@ -391,6 +391,15 @@ export function applyPaymentPlan(
   };
 }
 
+/** The steps of the combat phase that are not its last: mana kept "until end of combat" survives their end (CR 500.5a, 702.189a). */
+const STEPS_BEFORE_END_OF_COMBAT: readonly StepId[] = [
+  'beginningOfCombat',
+  'declareAttackers',
+  'declareBlockers',
+  'firstStrikeDamage',
+  'combatDamage',
+];
+
 /** The colors of mana that stay in the pool of `seat` as a step or phase ends (D-151: "You don't lose unspent red mana as steps and phases end"). */
 function colorsThatStay(state: GameState, seat: SeatId): ReadonlySet<ManaColor> {
   const keep = new Set<ManaColor>();
@@ -443,7 +452,14 @@ export function emptyManaPools(
       continue;
     }
     const keep = colorsThatStay(state, seat.id);
-    const kept = seat.manaPool.filter((m) => keep.has(m.color) || (m.stays === true && !endOfTurn));
+    // CR 500.5a, 702.189a (Firebending): "until end of combat" lasts through the steps of the combat phase and ends with the end of combat step.
+    const inCombat = STEPS_BEFORE_END_OF_COMBAT.includes(state.turn.step);
+    const kept = seat.manaPool.filter(
+      (m) =>
+        keep.has(m.color) ||
+        (m.stays === true && !endOfTurn) ||
+        (m.staysThroughCombat === true && inCombat),
+    );
     const lost = seat.manaPool.length - kept.length;
     if (lost === 0) continue;
     events.push({ kind: 'manaEmptied', seat: seat.id, count: lost });

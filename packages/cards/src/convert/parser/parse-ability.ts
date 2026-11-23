@@ -562,7 +562,7 @@ function readTriggered(sk: AbilitySkeleton, rules: RuleLookup): ParseOutcome {
 
 /**
  * "• Khans — At the beginning of your upkeep, ..." (stage P34, D-152, CR 607.2d): the ability is linked to the option the permanent chose,
- * which the engine reads for a triggered ability only; any other kind of ability under a name is read and not run.
+ * which the engine reads for a triggered ability, a static ability that makes a trigger happen again and a static change of a group's power, toughness or keywords; any other kind of ability under a name is read and not run.
  */
 function withOption(outcome: ParseOutcome, option: string): ParseOutcome {
   if (!outcome.ok) return outcome;
@@ -573,6 +573,14 @@ function withOption(outcome: ParseOutcome, option: string): ParseOutcome {
       ability.kind === 'static' &&
       ability.statement.effects.length === 1 &&
       ability.statement.effects[0]?.kind === 'doubleTriggers'
+    ) {
+      abilities.push({ ...ability, statement: { ...ability.statement, option } });
+      continue;
+    }
+    // Frostcliff Siege ("• Temur — Creatures you control get +1/+0 and have trample and haste."): a group's power and toughness change or keywords, linked to the option too.
+    if (
+      ability.kind === 'static' &&
+      ability.statement.effects.every((e) => e.kind === 'pt' || e.kind === 'grantKeyword')
     ) {
       abilities.push({ ...ability, statement: { ...ability.statement, option } });
       continue;

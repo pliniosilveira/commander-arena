@@ -37,6 +37,15 @@ function flag(rule: string, value: boolean, span: Span): IrFlag {
   return { kind: 'flag', value, span, rule };
 }
 
+type DoubleParts = [
+  string,
+  { value: { power: boolean; toughness: boolean }; span: Span },
+  string,
+  IrNoun,
+  string,
+  IrDuration,
+];
+
 /** What a doubling is of: "power and toughness", "power", "toughness". */
 const STATS = choice(
   map(literal('power and toughness'), () => ({ power: true, toughness: true })),
@@ -77,8 +86,15 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
     'double the power and toughness of creatures you control until end of turn',
     'double the power and toughness of ~ until end of turn',
     'double the power and toughness of all creatures until end of turn',
+    // Bulk Up (CR 701.10): the possessive of a single target.
+    "double target creature's power until end of turn",
+    "double target creature you control's toughness until end of turn",
   ],
   rejects: [
+    "double target creatures's power until end of turn",
+    "double target creature's power",
+    "double target creature's mana value until end of turn",
+    "double each creature's power until end of turn",
     'double the power and toughness of each creature you control',
     'double the power and toughness of each creature you control until your next turn',
     'double the power and toughness of target creatures until end of turn',
@@ -90,13 +106,37 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.double-pt',
-    sequence(
-      literal('double the '),
-      spanned(STATS),
-      literal(' of '),
-      family<IrNoun>('noun', { only: DOUBLE_SUBJECTS }),
-      literal(' '),
-      family<IrDuration>('duration'),
+    choice(
+      sequence(
+        literal('double the '),
+        spanned(STATS),
+        literal(' of '),
+        family<IrNoun>('noun', { only: DOUBLE_SUBJECTS }),
+        literal(' '),
+        family<IrDuration>('duration'),
+      ),
+      // Bulk Up: "double target creature's power until end of turn", the possessive of a single target.
+      map(
+        sequence(
+          literal('double '),
+          satisfy(
+            family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+            (noun) => !noun.plural && !noun.upTo && noun.count === undefined,
+          ),
+          literal("'s "),
+          spanned(STATS),
+          literal(' '),
+          family<IrDuration>('duration'),
+        ),
+        ([, objects, , stats, , duration]): DoubleParts => [
+          'double the ',
+          stats,
+          ' of ',
+          objects,
+          ' ',
+          duration,
+        ],
+      ),
     ),
     ([, stats, , objects, , duration]) => ({
       verb: 'doublePt',

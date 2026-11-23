@@ -32,6 +32,7 @@ import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
 import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
+import { CAST_WHILE_TRIGGER_RULES } from './cast-while';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
@@ -1334,6 +1335,8 @@ export const TRIGGER_RULES = [
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,
   TRIGGER_BECOMES_TARGET,
+  // Azula deck (issue 597): "you cast a spell while ~ is attacking", of which "you cast a spell" is a prefix.
+  ...CAST_WHILE_TRIGGER_RULES,
   TRIGGER_CAST,
   TRIGGER_LANDFALL,
   // Stage P37 (D-180): "you cycle this card".

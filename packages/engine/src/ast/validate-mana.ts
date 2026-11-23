@@ -37,6 +37,17 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       if (mp.staysUntilEndOfTurn !== undefined && mp.staysUntilEndOfTurn !== true) {
         issue(out, `${path}.staysUntilEndOfTurn`, 'staysUntilEndOfTurn is true or absent');
       }
+      // CR 702.189a (Firebending): "until end of combat", true or absent, and not both durations.
+      if (mp.staysUntilEndOfCombat !== undefined && mp.staysUntilEndOfCombat !== true) {
+        issue(out, `${path}.staysUntilEndOfCombat`, 'staysUntilEndOfCombat is true or absent');
+      }
+      if (mp.staysUntilEndOfCombat === true && mp.staysUntilEndOfTurn === true) {
+        issue(
+          out,
+          `${path}.staysUntilEndOfCombat`,
+          'the mana stays until end of turn or until end of combat, not both',
+        );
+      }
       break;
     case 'oneOf':
       // "Add {U} or {B}" is a choice among at least two different types of mana (CR 106.1b).

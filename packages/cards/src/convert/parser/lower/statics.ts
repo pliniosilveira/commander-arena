@@ -20,6 +20,7 @@ import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/type
 import {
   AFFLICT_WORD,
   ANNIHILATOR_WORD,
+  FIREBENDING_WORD,
   grantedKeyword,
   landwalkOf,
   MOBILIZE_WORD,
@@ -579,6 +580,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       if (ANNIHILATOR_WORD.test(effect.keyword)) {
         return ['static:grantKeyword', 'keyword:annihilator'];
       }
+      // CR 702.189a: the keyword node of a granted firebending.
+      if (FIREBENDING_WORD.test(effect.keyword)) {
+        return ['static:grantKeyword', 'keyword:firebending'];
+      }
       if (WARD_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:ward'];
       if (landwalkOf(effect.keyword) !== undefined) {
         return ['static:grantKeyword', 'keyword:landwalk'];
@@ -1079,10 +1084,34 @@ export function lowerStatic(ability: Static, ctx: LowerContext): LowerResult<rea
   };
 }
 
+/**
+ * "• Temur — Creatures you control get +1/+0 and have trample and haste." (CR 607.2d, 614.12; Frostcliff Siege): the changes work only while the permanent has the option
+ * it chose as it entered, which the engine reads as the static condition `chosenOption` (what no layer changes).
+ */
+function lowerOptionStatic(ability: Static, ctx: LowerContext): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const { option } = statement;
+  if (option === undefined || statement.condition !== undefined || statement.also !== undefined) {
+    return failure(ability);
+  }
+  if (!statement.effects.every((e) => e.kind === 'pt' || e.kind === 'grantKeyword')) {
+    return failure(ability);
+  }
+  const missing = missingFeatures(['ability:staticCondition', 'condition:chosenOption']);
+  if (missing.length > 0) return failure(ability, missing);
+  const condition: Condition = { kind: 'chosenOption', option };
+  const part: IrStaticPart = { subject: statement.subject, effects: statement.effects };
+  const done = lowerPart(part, ability, condition, ctx);
+  return done.ok ? { ok: true, value: done.value, rule: ability.rule } : done;
+}
+
 function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<readonly Ability[]> {
   const { statement } = ability;
   const [first, ...more] = statement.effects;
   if (first === undefined) return failure(ability);
+  if (statement.option !== undefined && first.kind !== 'doubleTriggers') {
+    return lowerOptionStatic(ability, ctx);
+  }
   // Stage P34 (D-152): mana that stays through steps and phases, casting spells from the top of the library.
   if (isDragonStatic(first)) return lowerDragonStatic(ability);
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."

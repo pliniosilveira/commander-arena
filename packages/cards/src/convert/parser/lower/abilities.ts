@@ -441,6 +441,7 @@ function lowerNumbered(
   kind:
     | 'toxic'
     | 'annihilator'
+    | 'firebending'
     | 'afflict'
     | 'dredge'
     | 'mobilize'
@@ -599,6 +600,7 @@ export function lowerKeyword(
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
+    ability.name === 'firebending' ||
     ability.name === 'afflict' ||
     ability.name === 'dredge' ||
     ability.name === 'mobilize' ||
@@ -1271,6 +1273,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:typecycling',
   'keyword:toxic',
   'keyword:annihilator',
+  'keyword:firebending',
   'keyword:afflict',
   'keyword:dredge',
   'keyword:mobilize',

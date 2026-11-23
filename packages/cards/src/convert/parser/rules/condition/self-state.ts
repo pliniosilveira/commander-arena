@@ -192,6 +192,41 @@ export const CONDITION_THIS_TAPPED = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.this-attacking`: "~ is attacking" (CR 506.4: a creature is attacking from the declare attackers step until it leaves combat). The permanent is the one the ability is on:
+ * the engine's `thisMatches` with the attacking status. Read as the "while" of a trigger (Fire Lord Azula: "Whenever you cast a spell while ~ is attacking").
+ * Not read: "it", another creature, a negative, "attacking a player".
+ */
+export const CONDITION_THIS_ATTACKING = defineRule<IrCondition>({
+  id: 'condition.this-attacking',
+  family: 'condition',
+  leading: ['~'],
+  cites: ['CR 506.4 (Combat Phase)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: ['~ is attacking'],
+  rejects: [
+    '~ is attacking.',
+    '~ is not attacking',
+    '~ is attacking you',
+    '~ is attacking and',
+    'it is attacking',
+    'another creature is attacking',
+    '~ attacking',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/~ is attacking(?![\p{L}\p{N}])(?!\s+\p{L})/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: condition('condition.this-attacking', pos, r.pos, {
+        kind: 'thisMatches',
+        filter: { attacking: true, raw: r.value.value[0] },
+        who: 'self',
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.attached-to`: "~ is attached to a creature", "it's attached to a creature" (CR 301.5, 303.4: an Equipment or an Aura is attached to a
  * permanent). The permanent is the one the ability is on, the host a creature: the engine's `objectMatches` of the permanent it is attached to.
  * Read as the condition of a static ability ("As long as this Equipment is attached to a creature, ..."). Not read: another kind of host,
@@ -565,6 +600,7 @@ export const SELF_STATE_CONDITION_RULES = [
   CONDITION_CONTROL_YOUR_COMMANDER,
   CONDITION_LIFE_TOTAL,
   CONDITION_THIS_TAPPED,
+  CONDITION_THIS_ATTACKING,
   CONDITION_ATTACHED_TO,
   CONDITION_PAIRED,
   CONDITION_THIS_HAS_COUNTER,

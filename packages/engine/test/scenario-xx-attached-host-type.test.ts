@@ -181,6 +181,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'landwalk',
         // D-640: annihilator carries a number, checked by `checkGrantedParameter`; each instance triggers separately.
         'annihilator',
+        // CR 702.189a: firebending carries a number, checked by `checkGrantedParameter`; each instance granted triggers separately.
+        'firebending',
         // D-638: ward carries a cost, checked by `checkGrantedParameter`; each instance granted is a triggered ability of its own.
         'ward',
         // D-478: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.

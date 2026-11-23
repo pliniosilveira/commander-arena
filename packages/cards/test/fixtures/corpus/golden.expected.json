@@ -1,5 +1,5 @@
 {
-  "parserVersion": 198,
+  "parserVersion": 199,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -1898,6 +1898,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "09ed541b"
+    },
+    "2631130e-63e2-43a3-914a-648e76722203": {
+      "name": "Fire Lord Azula",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "20b78f46"
     },
     "26e555f1-e0ed-4b84-8783-1c0c968f462d": {
       "name": "Deathcap Cultivator",
@@ -6319,6 +6327,14 @@
       "reasons": [],
       "ast": "ef95aec4"
     },
+    "81d72511-88b4-45ec-a5a9-e722caf55577": {
+      "name": "Mystical Teachings",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d4730e31"
+    },
     "82004860-e589-4e38-8d61-8c0210e4ea39": {
       "name": "Demonic Tutor",
       "group": "training",
@@ -7114,6 +7130,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8ff13d6e"
+    },
+    "93989dd7-2d3e-46e2-8e92-8d0479796087": {
+      "name": "Twinferno",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1457425d"
     },
     "939e6f71-185e-41f2-9d54-72cce06f1dce": {
       "name": "Thirst for Knowledge",
@@ -10964,6 +10988,14 @@
       "reasons": [],
       "ast": "4704e4be"
     },
+    "e7af31ff-fa1b-4225-b3bc-fde80ac72d0a": {
+      "name": "Frostcliff Siege",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9e6982a5"
+    },
     "e823639f-1308-47f6-9b51-8fd9a682489a": {
       "name": "Gnarlwood Dryad",
       "group": "acceptance",
@@ -11469,6 +11501,14 @@
       "reasons": [],
       "ast": "06186796"
     },
+    "f2000fb8-39c6-4ad6-a020-5245faaa1eba": {
+      "name": "Fire Nation Palace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cc4a2c15"
+    },
     "f21ce158-2925-4658-ab7b-b73718d31965": {
       "name": "Diluvian Primordial",
       "group": "acceptance",
@@ -11968,6 +12008,14 @@
       "reasons": [],
       "ast": "f35e22c5"
     },
+    "fade8af0-5fdb-4237-9dd6-48bfd1d62767": {
+      "name": "Bulk Up",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5e4c6da3"
+    },
     "fae37e28-e137-4177-b973-fa8b4dd8f409": {
       "name": "Generous Gift",
       "group": "training",
@@ -12164,8 +12212,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1209,
-      "total": 1228
+      "supported": 1215,
+      "total": 1234
     }
   }
 }

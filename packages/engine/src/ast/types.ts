@@ -4857,6 +4857,11 @@ export type ManaProduction =
        * a spell or a triggered ability, not a mana ability.
        */
       readonly staysUntilEndOfTurn?: true;
+      /**
+       * "Until end of combat, you don't lose this mana as steps and phases end" (CR 702.189a, 500.5a, Firebending): as `staysUntilEndOfTurn`, but the effect that keeps the mana ends with
+       * the combat phase, so the mana empties as the end of combat step ends. Not with `staysUntilEndOfTurn`.
+       */
+      readonly staysUntilEndOfCombat?: true;
     }
   /**
    * "Add two mana in any combination of colors." (D-151, CR 106.1b, 605.3b): `count` mana, each of a color of the five (colorless is not a color), chosen
@@ -5967,6 +5972,12 @@ export type Keyword =
    * (CR 702.86b).
    */
   | { readonly kind: 'annihilator'; readonly count: number }
+  /**
+   * CR 702.189a (Firebending): "Firebending N" means "Whenever this creature attacks, add N {R}. Until end of combat, you don't lose this mana as steps and phases end." A triggered
+   * ability the engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance triggers separately. `count` is N, a positive integer. Grantable:
+   * "Target creature you control gains firebending 4 until end of turn."
+   */
+  | { readonly kind: 'firebending'; readonly count: number }
   /**
    * CR 702.130a (Afflict, D-472): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." A triggered ability the
    * engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance triggers separately (CR 702.130b), so a creature that

@@ -40,6 +40,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   devoid: ['Dvd', 'Devoid'],
   exalted: ['Exl', 'Exalted'],
   annihilator: ['Ann', 'Annihilator'],
+  // Azula deck (CR 702.189a): Firebending N.
+  firebending: ['Fbd', 'Firebending'],
   // Gisa deck group 1 (D-472): Afflict N (CR 702.130a).
   afflict: ['Afl', 'Afflict'],
   // Issue 102: Dredge N (CR 702.52a).
@@ -131,6 +133,8 @@ const PARAMETERIZED: Readonly<
   Record<string, (text: string) => readonly (readonly [short: string, full: string])[]>
 > = {
   annihilator: (text) => numbered(text, 'Annihilator', 'Ann'),
+  // "Firebending 2": one chip per instance (CR 702.189a: each triggers separately).
+  firebending: (text) => numbered(text, 'Firebending', 'Fbd'),
   // "Afflict 3": one chip per instance (CR 702.130b: each triggers separately).
   afflict: (text) => numbered(text, 'Afflict', 'Afl'),
   dredge: (text) => numbered(text, 'Dredge', 'Dre'),

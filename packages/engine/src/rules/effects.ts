@@ -2599,6 +2599,10 @@ function runEffect(
           ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
           // D-650 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
           ...(production.staysUntilEndOfTurn === true ? { stays: true as const } : {}),
+          // CR 702.189a, 500.5a (Firebending): kept until the combat phase ends.
+          ...(production.staysUntilEndOfCombat === true
+            ? { staysThroughCombat: true as const }
+            : {}),
         })),
       ).flat();
       if (added.length === 0) return done(state);

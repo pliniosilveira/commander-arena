@@ -206,6 +206,9 @@ export const MOBILIZE_WORD = /^mobilize (?:([1-9]\d*)|power)$/;
 /** The grant words of an Annihilator (CR 702.86a): "annihilator 2", the word and a positive whole number written in digits (D-640). */
 export const ANNIHILATOR_WORD = /^annihilator ([1-9]\d*)$/;
 
+/** The grant words of a Firebending (CR 702.189a): "firebending 4", the word and a positive whole number written in digits. */
+export const FIREBENDING_WORD = /^firebending ([1-9]\d*)$/;
+
 /** The grant words of a Ward (CR 702.21a): "ward {2}", the word and a mana cost in braces (D-638). */
 export const WARD_WORD = /^ward ((?:\{[0-9WUBRGC]\})+)$/i;
 
@@ -228,6 +231,10 @@ export function grantedKeyword(word: string): Keyword | undefined {
   const annihilator = ANNIHILATOR_WORD.exec(word);
   if (annihilator?.[1] !== undefined) {
     return { kind: 'annihilator', count: Number(annihilator[1]) };
+  }
+  const firebending = FIREBENDING_WORD.exec(word);
+  if (firebending?.[1] !== undefined) {
+    return { kind: 'firebending', count: Number(firebending[1]) };
   }
   const ward = WARD_WORD.exec(word);
   if (ward?.[1] !== undefined) {

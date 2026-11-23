@@ -506,6 +506,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  // Azula deck (issue 597): "~ is attacking", the "while" of a cast trigger.
+  'condition.this-attacking': permanent(
+    (e) => `Whenever you cast a spell while ${e}, you gain 1 life.`,
+  ),
   // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
   'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
   // Quandrix Unlimited deck, group F (Mana Bloom): the counters of ~ all gone, in the intervening "if" of an upkeep trigger.
@@ -587,6 +591,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.attached-becomes': asIs,
   'static.pt-amount': asIs,
   'trigger.attacks-while': whenever,
+  'trigger.cast-while': whenever,
   'condition.dont-control-a': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.object-has-keyword': spell(
     (e) =>

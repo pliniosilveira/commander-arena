@@ -208,6 +208,8 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'fabricate',
   'ward',
   'annihilator',
+  // CR 702.189a: each instance of firebending is its own triggered ability (the ruling: "Multiple instances of firebending on the same creature trigger separately").
+  'firebending',
   'myriad',
   'demonstrate',
   'storm',
