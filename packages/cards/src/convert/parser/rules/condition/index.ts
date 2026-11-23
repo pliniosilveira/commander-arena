@@ -60,6 +60,7 @@ import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
+import { LIMIT_BREAK_G4_CONDITION_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
@@ -632,6 +633,8 @@ export const CONDITION_RULES = [
   ...SUBJECT_GREATER_CONDITION_RULES,
   // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
   ...FEDERATION_D_CONDITION_RULES,
+  // Limit Break deck, group 4: "~'s power is 7 or greater".
+  ...LIMIT_BREAK_G4_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".

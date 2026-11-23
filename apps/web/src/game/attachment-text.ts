@@ -125,6 +125,13 @@ export function targetedReductionWording(effect: StaticEffect, host: string | nu
   if (effect.kind === 'abilityCostReduction' && effect.abilities === 'ofObjects') {
     return graveyardReductionWording(effect);
   }
+  // Professor Hojo (CR 602.2b): the first ability of the turn that targets a creature of the controller; it names no host.
+  if (effect.kind === 'abilityCostReduction' && effect.abilities === 'firstTargetingYourCreature') {
+    const generic = mana(effect.amount);
+    return generic === null
+      ? null
+      : `The first activated ability you activate during your turn that targets a creature you control costs ${generic} less to activate`;
+  }
   if (host === null) return null;
   if (effect.kind === 'abilityCostReduction' && effect.abilities === 'equip') {
     const generic = mana(effect.amount);

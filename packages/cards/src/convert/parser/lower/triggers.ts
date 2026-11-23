@@ -466,18 +466,24 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       };
       const xCost = t.event === 'activatesAbility' && flagged('xCost');
       const anySource = t.event === 'activatesAbility' && flagged('anySource');
+      // Avalanche of Sector 7 (CR 602.2): "an ability of an artifact they control": the permanent whose ability it is, as a filter.
+      const sourceNoun = t.event === 'activatesAbility' ? t.args.ofSource : undefined;
+      if (sourceNoun !== undefined && sourceNoun.kind !== 'noun') return failure(t);
       const blocked = missingFeatures([
         `trigger:${t.event}`,
         ...(xCost || anySource ? (['trigger:activatesAbilityX'] as const) : []),
+        ...(sourceNoun === undefined ? [] : (['trigger:activatesAbilityOfSource'] as const)),
       ]);
-      return blocked.length > 0
-        ? failure(t, blocked)
-        : ok({
-            kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
-            who,
-            ...(xCost ? { xCost: true as const } : {}),
-            ...(anySource ? { anySource: true as const } : {}),
-          });
+      if (blocked.length > 0) return failure(t, blocked);
+      const ofSource = sourceNoun === undefined ? undefined : lowerFilter(sourceNoun);
+      if (ofSource !== undefined && !ofSource.ok) return ofSource;
+      return ok({
+        kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
+        who,
+        ...(xCost ? { xCost: true as const } : {}),
+        ...(anySource ? { anySource: true as const } : {}),
+        ...(ofSource === undefined ? {} : { ofSource: ofSource.value }),
+      });
     }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
@@ -517,11 +523,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         const blocked = missingFeatures(['trigger:becomesTargetSpell']);
         if (blocked.length > 0) return { ...failure(t), needs: blocked };
       }
+      // Professor Hojo (CR 602.2, 603.2c): "one or more creatures you control become the target of an activated ability".
+      if (t.activatedOnly === true || t.batch === true) {
+        const blocked = missingFeatures(['trigger:becomesTargetActivated']);
+        if (blocked.length > 0) return { ...failure(t), needs: blocked };
+      }
       return ok({
         kind: 'becomesTarget',
         what: what.value,
         by,
         ...(t.spellOnly === true ? { spellOnly: true as const } : {}),
+        ...(t.activatedOnly === true ? { activatedOnly: true as const } : {}),
+        ...(t.batch === true ? { batch: true as const } : {}),
       });
     }
     case 'upkeep':
@@ -1958,6 +1971,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:permanentSacrificed',
   'trigger:castSpell',
   'trigger:becomesTarget',
+  'trigger:becomesTargetActivated',
   'trigger:chapter',
   'trigger:step',
   'trigger:drawn',
@@ -1994,6 +2008,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:crimeCommitted',
   'trigger:tokenCreated',
   'trigger:activatesAbility',
+  'trigger:activatesAbilityOfSource',
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:lifeLostBatch',

@@ -31,6 +31,8 @@ export function beginCombatRecord(state: GameState, active: SeatId): GameState {
     ...state,
     ...(last === undefined ? {} : { lastCombatAttacks: last }),
     combatAttacks: { seat: active, attacks: [] },
+    // CR 500.8: counted for "the first combat phase of your turn" (`yourCombatPhase` with `first`).
+    turnLog: { ...state.turnLog, combatPhases: (state.turnLog.combatPhases ?? 0) + 1 },
   };
 }
 

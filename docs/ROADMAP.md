@@ -140,6 +140,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
+- Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
 - "As you cast this spell" amounts are worked out as the spell becomes cast, costs paid; only one such amount is kept for a spell, and only in a spell's own text.
 - "Until you exile another card with ~" is read only after exiling the top card of your own library, and ends the permission as that same permanent exiles its next card.

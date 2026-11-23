@@ -1217,6 +1217,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
             issue(out, `${path}.${flag}`, 'must be true when present');
           }
         }
+        // Avalanche of Sector 7: the permanent whose ability was activated (`ofSource`), read against the player who activated it.
+        if (t.ofSource !== undefined) checkFilter(t.ofSource, `${path}.ofSource`, out);
       }
       break;
     case 'cycled':
@@ -1232,6 +1234,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       if (t.spellOnly !== undefined && t.spellOnly !== true) {
         issue(out, `${path}.spellOnly`, 'spellOnly is true when present');
+      }
+      for (const flag of ['activatedOnly', 'batch'] as const) {
+        if (t[flag] !== undefined && t[flag] !== true) {
+          issue(out, `${path}.${flag}`, `${flag} is true when present`);
+        }
+      }
+      if (t.spellOnly === true && t.activatedOnly === true) {
+        issue(
+          out,
+          `${path}.activatedOnly`,
+          'a trigger is for spells or for activated abilities, not both',
+        );
       }
       break;
     case 'chapter':

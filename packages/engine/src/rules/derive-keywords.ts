@@ -204,6 +204,22 @@ const DETHRONE_ABILITY: Ability = {
 };
 
 /**
+ * CR 702.121a (Melee): "Whenever this creature attacks, it gets +1/+1 until end of turn for each opponent you attacked this combat." The attack that triggers it is recorded
+ * before the ability is put on the stack, and the number is counted as the ability resolves.
+ */
+const MELEE_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  effect: {
+    kind: 'modifyPt',
+    objects: { kind: 'this' },
+    power: { kind: 'opponentsAttackedThisCombat' },
+    toughness: { kind: 'opponentsAttackedThisCombat' },
+    duration: 'untilEndOfTurn',
+  },
+};
+
+/**
  * CR 702.147a (D-478): "Decayed" represents a static ability and a triggered ability: "This creature can't block" and "When this creature attacks, sacrifice it at end of
  * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
  * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
@@ -944,6 +960,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [hideawayAbility(ability.keyword.count)];
     case 'dethrone':
       return [DETHRONE_ABILITY];
+    case 'melee':
+      return [MELEE_ABILITY];
     case 'decayed':
       return [DECAYED_ABILITY];
     case 'myriad':

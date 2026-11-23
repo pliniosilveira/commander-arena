@@ -2772,6 +2772,11 @@ export interface TurnLog {
      * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.
      */
     readonly fromGraveyard?: SeatId;
+    /**
+     * The player who activated this ability with a creature they control among its targets (Professor Hojo: "the first activated ability you activate during your turn that targets a
+     * creature you control", CR 602.2b): set as the activation is finished, from the targets chosen then. Absent when the ability had no such target.
+     */
+    readonly targetedOwnCreature?: SeatId;
   }[];
   /**
    * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
@@ -2807,6 +2812,11 @@ export interface TurnLog {
    * speed is as it was.
    */
   readonly speedTriggered?: readonly SeatId[];
+  /**
+   * How many combat phases have begun this turn (CR 506.1, 500.8; Tifa, Martial Artist: "If it's the first combat phase of your turn"): counted as each combat phase's beginning of
+   * combat step begins, an added combat phase included. Absent until the first one began, so the state of a turn with no combat is as it was.
+   */
+  readonly combatPhases?: number;
   /**
    * Each triggered ability whose controller has taken the action it represents this turn (D-256): "Do this only once each turn" (CR 603.2h): the
    * source permanent, the ability on it and the player who took the action (the source's controller as the ability resolved).

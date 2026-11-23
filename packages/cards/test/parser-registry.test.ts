@@ -921,6 +921,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,
   'trigger.activate-ability': whenever,
+  // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
+  'trigger.activate-ability-of-kind': whenever,
+  'trigger.targets-activated-batch': whenever,
+  'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
+  'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
+  'noun.all-permanents-of-that-player': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, gain control of ${e}.`,
+  ),
+  'static.first-targeting-ability-cost-reduction': asIs,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,

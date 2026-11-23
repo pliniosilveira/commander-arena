@@ -6,7 +6,7 @@
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, zoneList } from '../state/ops';
 import type { ActivatedAbility, GameObject, GameState } from '../state/types';
-import { adjustedAbility, reducedForTargets } from './activate-adjust';
+import { adjustedAbility, mayReduceByTargets, reducedForTargets } from './activate-adjust';
 import { costRefusal } from './activate-costs';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -167,7 +167,7 @@ function reducibleForSomeTarget(
   ctx: { readonly controller: SeatId; readonly source: ObjectId },
 ): boolean {
   const spec = ability.targets?.[0];
-  if (ability.equip !== true || spec === undefined) return false;
+  if (spec === undefined || !mayReduceByTargets(state, seat, ability)) return false;
   return legalTargets(state, spec, ctx).some((t) => {
     if (t.kind !== 'object') return false;
     const reduced = reducedForTargets(state, seat, ability, [t.id]);

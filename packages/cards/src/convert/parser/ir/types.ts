@@ -1007,7 +1007,8 @@ export interface IrCondition extends IrNode {
     // Stage P41 (D-188): "it's your main phase" (CR 505.1): the precombat or the postcombat main phase of a turn of the controller
     | { readonly kind: 'yourMainPhase' }
     // Issue 144 (CR 506.1): "it's your combat phase"
-    | { readonly kind: 'yourCombatPhase' }
+    // `first` (Limit Break deck, Tifa, Martial Artist): "it's the first combat phase of your turn"
+    | { readonly kind: 'yourCombatPhase'; readonly first?: true }
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
@@ -1606,6 +1607,8 @@ export interface IrTrigger extends IrNode {
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
   readonly spellOnly?: true;
+  /** 'becomesTarget' (Limit Break deck, Professor Hojo, CR 602.2): only an activated ability triggers it. */
+  readonly activatedOnly?: true;
   /**
    * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
    * damaged, `player` or `opponent` (never a creature). `playerOrPlaneswalker` (D-373): "to a player or planeswalker".
@@ -1840,6 +1843,8 @@ export type IrStaticEffect =
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   // Helitrooper: "that target ~" (`targetsSelf`): the creature with the ability, not the permanent an Aura enchants.
   | { readonly kind: 'abilityCostReduction'; readonly amount: number; readonly targetsSelf?: true }
+  // "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Limit Break deck, Professor Hojo, CR 601.2f, 602.2b)
+  | { readonly kind: 'firstTargetingAbilityCostReduction'; readonly amount: number }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
   | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off

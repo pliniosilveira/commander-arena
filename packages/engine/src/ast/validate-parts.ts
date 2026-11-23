@@ -2101,6 +2101,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsWithMore':
     case 'chosenPlayerLead':
     case 'opponentCount':
+    case 'opponentsAttackedThisCombat':
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
@@ -2587,6 +2588,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'opponentCount':
+    case 'opponentsAttackedThisCombat':
       break;
     case 'movedCount':
       // CR 608.2c: what the instruction before it moved (`moved`): a trailing amount of the same resolution, never a number a static ability reads.
@@ -3615,9 +3617,13 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'cardLeftYourGraveyard':
     case 'descendedThisTurn':
     case 'yourMainPhase':
-    case 'yourCombatPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
+      break;
+    case 'yourCombatPhase':
+      // Issue 144: no parameters but `first` (Tifa, Martial Artist).
+      if (c.first !== undefined && c.first !== true)
+        issue(out, `${path}.first`, 'first is true or absent');
       break;
     case 'controlsGreatest':
       // D-139: the permanent with the greatest stat among those the filter matches; whose they are is the condition's business.
@@ -5997,19 +6003,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'gainControl': {
-      // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
+      // CR 613.1b (D-189): a layer 2 effect for the named permanents: a target, a group (`each`) or the permanent that caused the trigger.
       const named = kindOf(e.objects);
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
       else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
-      else if (named === 'this' && scope.owner === 'ability') {
+      else if (named === 'each') {
+        // CR 613.1b, 611.2c: "gain control of all artifacts that player controls": the group is fixed as the effect begins.
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      } else if (named === 'this' && scope.owner === 'ability') {
         // CR 613.1b: "that player gains control of this artifact" (the one player `player` names) or "gain control of ~" (the controller of the ability): the permanent with the ability.
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       } else
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target, the permanent that caused the trigger, or the permanent with the ability',
+          'gainControl names a target, a group, the permanent that caused the trigger, or the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);

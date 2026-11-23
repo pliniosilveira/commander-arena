@@ -888,11 +888,10 @@ export function lowerCountedPtStep(
 /** Whether the filter, or one of its `anyOf` members, is something a static ability's count cannot read (D-115). */
 function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
   // D-115, CR 613.8: the count reads types, colors, subtypes, controller and zone and never a power or a
-  // toughness (the filter rules read "with power 4 or greater", which the engine refuses here). The objects of
-  // another player ("your opponents control") are not counted by a static ability here; the cards in the graveyards
-  // of the opponents are the cards of their owners (CR 400.3), which a count reads (stage P28: "for each creature
-  // card in your opponents' graveyards").
-  const opponentsObjects = f.controller === 'opponent' && f.zone !== 'graveyard';
+  // toughness (the filter rules read "with power 4 or greater", which the engine refuses here). The permanents of
+  // the opponents ("artifacts your opponents control", Avalanche of Sector 7) are counted: who controls a permanent
+  // is a layer 2 result, applied before layer 7 and before the characteristic-defining abilities of layer 7a
+  // (CR 613.1b, 613.4a), which `typeViewOf` reads, so the count follows a change of control and cannot loop.
   return (
     f.power !== undefined ||
     f.toughness !== undefined ||
@@ -907,7 +906,6 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
     f.goaded === true ||
     // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
     (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
-    opponentsObjects ||
     typeof f.controller === 'object' ||
     (f.anyOf?.some((m) => staticCannotRead(m, keywords)) ?? false)
   );

@@ -837,7 +837,9 @@ export function lowerCondition(
     case 'yourCombatPhase': {
       // CR 506.1 (issue 144): the combat phase of the controller's turn, as the instruction runs.
       const blocked = missingFeatures(['condition:yourCombatPhase']);
-      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'yourCombatPhase' });
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'yourCombatPhase', ...(test.first === true ? { first: true as const } : {}) });
     }
     case 'playerDealtDamage': {
       // CR 120.3 (stage P34, D-152): the damage the player was dealt by any source this turn.
