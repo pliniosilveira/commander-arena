@@ -10,6 +10,7 @@ import { lookTakeRevealed, pickerCards } from '../decisions/cards-picker';
 import { useZoneGate } from '../decisions/zone-decision';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
+import { BackRow } from './BackRow';
 import { BlockArrows } from './BlockArrows';
 import { CommanderPopup } from './CommanderPopup';
 import { combatOrder, keptOrder } from './combat-order';
@@ -27,9 +28,11 @@ import { questionZoneToOpen, sameZone } from './target-zone';
 import { useCloseOnDecision } from './useCloseOnDecision';
 import { ZoneViewer } from './ZoneViewer';
 
-export const ROW_ORDER_ME: readonly RowKind[] = ['creature', 'other', 'land'];
+/** The two lines of a battlefield: the creatures, and the back line (lands, then other permanents). */
+export type FieldLine = 'creature' | 'back';
+export const ROW_ORDER_ME: readonly FieldLine[] = ['creature', 'back'];
 // Mirrored: the creatures of both players meet in the middle.
-export const ROW_ORDER_OPP: readonly RowKind[] = ['land', 'other', 'creature'];
+export const ROW_ORDER_OPP: readonly FieldLine[] = ['back', 'creature'];
 
 export function Field({
   view,
@@ -41,7 +44,7 @@ export function Field({
 }: {
   view: GameView;
   seat: number;
-  order: readonly RowKind[];
+  order: readonly FieldLine[];
   roles: ReturnType<typeof combatRoles>;
   attachments: Attachments;
   exile?: ExilePlayable | null;
@@ -77,15 +80,25 @@ export function Field({
       {/* The monarch, the Ring and the emblems of this player: a strip of small cards of their own (D-243). */}
       <EmblemStrip view={view} seat={seat} />
       <FieldRows>
-        {order.map((kind) => (
-          <BattlefieldRow
-            key={kind}
-            kind={kind}
-            objects={byKind(kind)}
-            roles={roles}
-            attachments={attachments.byHost}
-          />
-        ))}
+        {order.map((line) =>
+          line === 'creature' ? (
+            <BattlefieldRow
+              key={line}
+              kind="creature"
+              objects={byKind('creature')}
+              roles={roles}
+              attachments={attachments.byHost}
+            />
+          ) : (
+            <BackRow
+              key={line}
+              lands={byKind('land')}
+              others={byKind('other')}
+              roles={roles}
+              attachments={attachments.byHost}
+            />
+          ),
+        )}
       </FieldRows>
       {/* The cards the viewer may play from exile, over the right side of their own battlefield, apart from the emblems at the left (issue 49). */}
       {seat === view.viewer && (

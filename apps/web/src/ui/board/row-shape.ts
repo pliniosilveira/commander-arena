@@ -7,6 +7,8 @@ export const PAD_Y = 6;
 
 export interface RowProps {
   readonly kind: RowKind;
+  /** Drawn inside the shared back line: it measures and scrolls within its own box. */
+  readonly inline?: boolean;
   readonly objects: readonly ObjectView[];
   readonly roles: ReadonlyMap<string, CombatRole>;
   /** Auras and Equipment by the host they hang under (`splitAttachments`). */

@@ -590,6 +590,56 @@
   flex: 1 1 0;
 }
 
+/* The back line: lands, a small gap, then the other permanents (BackRow.tsx). It is as wide as the
+   view; the two parts measure and scroll inside their own boxes. */
+.board-row-back {
+  flex: 1 1 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100cqw;
+  box-sizing: border-box;
+}
+
+.board-row-back .board-row-inline {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.board-row-back .board-row-inline .board-row-view {
+  width: 100%;
+}
+
+.board-row-back .board-row-inline .board-row-scroll,
+.board-row-back .board-row-land .board-row-scroll {
+  padding-inline: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  justify-content: safe center;
+}
+
+/* Lands hug the gap from the left, the other permanents from the right. */
+.board-row-back.has-both .board-row-land .board-row-scroll {
+  justify-content: safe flex-end;
+}
+
+.board-back-others {
+  display: flex;
+  flex: none;
+  min-width: 0;
+}
+
+.board-row-back.has-both .board-back-others {
+  margin-left: 24px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border, rgba(128, 128, 128, 0.4));
+}
+
+.board-row-back.has-both .board-back-others .board-row-scroll {
+  justify-content: safe flex-start;
+}
+
 .board-row-land {
   flex: 1 1 0;
 }
