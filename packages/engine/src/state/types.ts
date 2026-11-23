@@ -554,6 +554,12 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (`castFree.creatureGains`, Strago and Relm, CR 608.2g,
+   * 613.1f): the abilities the permanent this creature spell becomes has, as a layer 6 effect that lasts while it stays on the battlefield (`rules/zones.ts`). It belongs to the spell and
+   * ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly creatureGains?: readonly Ability[];
+  /**
    * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
    * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
    * when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
@@ -2138,6 +2144,8 @@ export type Instruction =
       readonly remember?: true;
       /** `copyCardAndCast.cost` (Blue Mage's Cane, CR 118.9): the mana paid rather than the mana cost. */
       readonly payInstead?: readonly Cost[];
+      /** `castFree.creatureGains` (Strago and Relm): what a creature spell cast by this effect gives the permanent it becomes. */
+      readonly creatureGains?: readonly Ability[];
       readonly chosen: readonly ObjectId[] | null;
     };
 

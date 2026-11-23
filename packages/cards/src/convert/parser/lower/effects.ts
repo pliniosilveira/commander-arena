@@ -82,6 +82,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
+import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
@@ -2808,6 +2809,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
+  ...EXILE_UNTIL_CAST_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,

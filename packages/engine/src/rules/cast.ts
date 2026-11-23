@@ -33,7 +33,7 @@
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
 
-import type { Cost } from '../ast/types';
+import type { Ability, Cost } from '../ast/types';
 import { type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
@@ -182,6 +182,8 @@ export function beginCast(
     readonly exileInstead?: boolean;
     /** CR 118.9 (Blue Mage's Cane): with the `free` alternative, the mana paid rather than the mana cost. */
     readonly payInstead?: readonly Cost[];
+    /** Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...", kept for the permanent the spell becomes. */
+    readonly creatureGains?: readonly Ability[];
   } = {},
   /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
   permanentType?: CardType,
@@ -320,6 +322,8 @@ export function beginCast(
       (zone === 'exile' && !resolving && playPermissionAnyType(state, seat, obj.id))
         ? { anyManaType: true as const }
         : {}),
+      // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the spell carries it to the permanent it becomes.
+      ...(riders.creatureGains === undefined ? {} : { creatureGains: riders.creatureGains }),
       // D-359: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj)) ||

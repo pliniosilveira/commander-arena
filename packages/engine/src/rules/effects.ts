@@ -3475,6 +3475,7 @@ function runEffect(
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
             ...(effect.remember === true ? { remember: true as const } : {}),
+            ...(effect.creatureGains === undefined ? {} : { creatureGains: effect.creatureGains }),
             chosen: null,
           },
         ],

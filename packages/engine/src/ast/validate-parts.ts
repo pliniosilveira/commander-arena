@@ -7234,6 +7234,27 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.remember`, 'remember is true, for one spell (no max, no perOwner)');
         }
       }
+      // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...": the abilities of the permanent, for one spell cast from the cards an effect before moved.
+      if (e.creatureGains !== undefined) {
+        if (
+          !Array.isArray(e.creatureGains) ||
+          e.creatureGains.length === 0 ||
+          kindOf(e.objects) !== 'moved' ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.play !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.creatureGains`,
+            "creatureGains is a list of abilities, on the cards an effect before moved ('moved'), with no max, perOwner or play",
+          );
+        } else {
+          e.creatureGains.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.creatureGains[${i}]`, out);
+          });
+        }
+      }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
       if (e.filter !== undefined) {
         if (kindOf(objects) === 'choose') {
