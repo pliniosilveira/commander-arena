@@ -22,6 +22,7 @@ import { controlFact } from '../../game/korvold-text';
 import { laterFacts } from '../../game/later-text';
 import type { RevealedCard } from '../../game/revealed-cards';
 import { roomFacts } from '../../game/room-text';
+import { midNameOf, seatNameOf, startNameOf, startPossessiveOf } from '../../game/seat-name';
 import { castCostChanged, costsX, costText, symbolsText, withX } from '../decisions/cast-cost';
 import { faceCostText, faceFacts, faceRole } from '../decisions/layouts';
 import { chosenModeTexts } from '../decisions/modes-picker';
@@ -141,8 +142,8 @@ function PreviewDetails({ object }: { object: ObjectView }) {
     const mine = companionSeat === view.viewer;
     facts.push(
       brought
-        ? `${mine ? 'Your' : "The opponent's"} companion was brought into the game: it is an ordinary card now`
-        : `${mine ? 'Your' : "The opponent's"} companion, outside the game (${companionState(false)}). ${
+        ? `${startPossessiveOf(companionSeat, view.viewer, view.seats.length)} companion was brought into the game: it is an ordinary card now`
+        : `${startPossessiveOf(companionSeat, view.viewer, view.seats.length)} companion, outside the game (${companionState(false)}). ${
             mine ? 'You may bring it into your hand' : 'They may bring it into their hand'
           } once, for {3}`,
     );
@@ -151,8 +152,8 @@ function PreviewDetails({ object }: { object: ObjectView }) {
     const you = object.controller === view.viewer;
     facts.push(
       designation === 'monarch'
-        ? `${you ? 'You are' : 'The opponent is'} the monarch (CR 725.1)`
-        : `The Ring has tempted ${you ? 'you' : 'the opponent'} (CR 701.54c)`,
+        ? `${you ? 'You are' : `${startNameOf(object.controller, view.viewer, view.seats.length)} is`} the monarch (CR 725.1)`
+        : `The Ring has tempted ${midNameOf(object.controller, view.viewer, view.seats.length)} (CR 701.54c)`,
     );
   } else {
     if (view !== null)
@@ -440,9 +441,13 @@ function StackWords({ object }: { object: ObjectView }) {
 /** The cards a reveal showed (CR 701.20): who revealed them and from where, each with its cost, type line and text. */
 function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
   const viewer = useApp((s) => s.snapshot?.view.viewer ?? null);
+  const seatCount = useApp((s) => s.snapshot?.view.seats.length ?? 2);
   const first = cards[0];
   if (first === undefined) return null;
-  const who = first.seat === viewer ? 'You reveal' : 'Opponent reveals';
+  const who =
+    first.seat === viewer
+      ? 'You reveal'
+      : `${seatNameOf(first.seat, viewer ?? 0, seatCount)} reveals`;
   return (
     <div className="board-preview-revealed" data-preview-revealed>
       <div className="board-preview-bar">

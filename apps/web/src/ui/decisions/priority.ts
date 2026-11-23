@@ -8,6 +8,7 @@ import type {
   PriorityDecision,
 } from '@commander-arena/engine';
 import { isNamedAlternative } from '../../game/alt-cost';
+import { midPossessiveOf, possessiveOf } from '../../game/seat-name';
 import { canPassTurn } from '../../policy/should-stop';
 import { STEP_LABELS } from '../format';
 import { hasActivation, hasSpecialAction, type MenuItem, manaAction, menuItems } from './abilities';
@@ -282,10 +283,11 @@ export function passLabel(
 
 export function priorityPrompt(view: GameView, index: Index): string {
   const mine = view.activeSeat === view.viewer;
-  const where = `${mine ? 'Your' : "Opponent's"} turn, ${STEP_LABELS[view.step]}`;
+  const who = possessiveOf(view.activeSeat, view.viewer, view.seats.length);
+  const where = `${mine ? 'Your' : who} turn, ${STEP_LABELS[view.step]}`;
   const top = view.stack[view.stack.length - 1];
   if (top !== undefined) {
-    const owner = top.controller === view.viewer ? 'your' : "the opponent's";
+    const owner = midPossessiveOf(top.controller, view.viewer, view.seats.length);
     return `${nameOf(index, top.id)} (${owner}) is on the stack.`;
   }
   return where;

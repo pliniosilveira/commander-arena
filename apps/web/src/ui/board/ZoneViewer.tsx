@@ -10,6 +10,7 @@ import type { ObjectView } from '@commander-arena/engine';
 import { useEffect, useRef } from 'react';
 import { FACE_DOWN_NAME, isHiddenFaceDown } from '../../game/later-text';
 import type { LookedCard } from '../../game/looked-cards';
+import { possessiveOf } from '../../game/seat-name';
 import { useZoneDecision } from '../decisions/zone-decision';
 import { useDraggable } from '../dnd/DragProvider';
 import { typeLine } from '../format';
@@ -30,6 +31,7 @@ function ZoneCard({ object }: { object: ObjectView }) {
   const selected = ix.selected.has(object.id);
   const badge = ix.badge(object.id);
   const viewer = useApp((st) => st.snapshot?.view.viewer);
+  const seatCount = useApp((st) => st.snapshot?.view.seats.length ?? 2);
   // D-151 (CR 113.6b): a card that does something from the graveyard says what, under its picture and in its tooltip.
   const works = useStaticNotes(object.id);
   const fromGraveyard = object.zone === 'graveyard' && works !== undefined ? works : null;
@@ -60,7 +62,7 @@ function ZoneCard({ object }: { object: ObjectView }) {
       {object.zone === 'exile' && (
         // Exile is shared: whose card it is matters (a suspended card, a foretold one).
         <span className="board-zone-marks" data-exile-owner={object.owner}>
-          {object.owner === viewer ? 'Yours' : "Opponent's"}
+          {object.owner === viewer ? 'Yours' : possessiveOf(object.owner, viewer ?? 0, seatCount)}
         </span>
       )}
     </button>

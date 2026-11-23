@@ -3,6 +3,7 @@ import './commander.css';
 import type { GameView, ObjectView, SeatId, SeatView } from '@commander-arena/engine';
 import { restrictionWords, riderWords } from '../../game/angels-text';
 import { companionId, companionState } from '../../game/companion';
+import { midPossessiveOf, startPossessiveOf } from '../../game/seat-name';
 import { useDraggable, useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { ManaSymbol } from '../mana';
@@ -193,15 +194,15 @@ function CommanderChip({ object, onInfo }: { object: ObjectView; onInfo: () => v
 function CompanionChip({
   seat,
   companion,
-  mine,
+  owner,
 }: {
   seat: number;
   companion: CompanionView;
-  mine: boolean;
+  /** Whose companion it is, to open a sentence ("Your", "The opponent's", "Opponent 2's"). */
+  owner: string;
 }) {
   const hover = useHoverPreview(companionId(seat));
   const state = companionState(companion.brought);
-  const owner = mine ? 'Your' : "The opponent's";
   return (
     <button
       type="button"
@@ -228,8 +229,7 @@ function CompanionChip({
  * view while it is revealed, so an opponent's strip gets one only then. Hover shows the card in the
  * preview panel like any other.
  */
-function LibraryTop({ object, mine }: { object: ObjectView; mine: boolean }) {
-  const owner = mine ? 'your' : "the opponent's";
+function LibraryTop({ object, owner }: { object: ObjectView; owner: string }) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   // D-151 (CR 601.3): a permission to cast the top card of the library makes it clickable, like a card of the hand.
@@ -403,7 +403,12 @@ export function PlayerStrip({
         <span className="board-count-item" title="Cards in library">
           <span className="board-stat-label">Library</span>
           <b>{seat.libraryCount}</b>
-          {seat.libraryTop !== undefined && <LibraryTop object={seat.libraryTop} mine={mine} />}
+          {seat.libraryTop !== undefined && (
+            <LibraryTop
+              object={seat.libraryTop}
+              owner={midPossessiveOf(seat.id, view.viewer, view.seats.length)}
+            />
+          )}
         </span>
         {mine && seat.hand?.some((o) => o.keywords.includes('storm')) === true && (
           <span
@@ -452,7 +457,11 @@ export function PlayerStrip({
           <CommanderChip key={o.id} object={o} onInfo={() => onOpenCommander(seat.id)} />
         ))}
         {seat.companion !== undefined && (
-          <CompanionChip seat={seat.id} companion={seat.companion} mine={seat.id === view.viewer} />
+          <CompanionChip
+            seat={seat.id}
+            companion={seat.companion}
+            owner={startPossessiveOf(seat.id, view.viewer, view.seats.length)}
+          />
         )}
       </div>
     </div>

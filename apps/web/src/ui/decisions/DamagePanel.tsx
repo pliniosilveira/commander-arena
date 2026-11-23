@@ -72,7 +72,7 @@ function DamageSection({
       )}
       <ul className="dec-damage-rows">
         {recipientsOf(choice).map((row) => {
-          const name = recipientLabel(row.to, index, view.viewer);
+          const name = recipientLabel(row.to, index, view.viewer, view.seats.length);
           const amount = amountTo(ui.damage, choice.source, row.to);
           const card = row.to.kind === 'object' ? index.get(row.to.id) : undefined;
           return (

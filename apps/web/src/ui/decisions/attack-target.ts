@@ -39,14 +39,14 @@ function permanentKind(target: AttackTarget, index: Index): string {
  */
 export function attackTargetRows(
   d: Pick<ChooseOptionDecision, 'options' | 'attackTargets' | 'attacker'>,
-  view: Pick<GameView, 'viewer' | 'combat'>,
+  view: Pick<GameView, 'viewer' | 'combat' | 'seats'>,
   index: Index,
 ): readonly AttackTargetRow[] {
   const now = view.combat?.attackers.find((a) => a.object === d.attacker)?.target;
   return d.options.flatMap((option, i) => {
     const target = d.attackTargets?.[i];
     if (target === undefined) return [];
-    const label = `${attackTargetLabel(target, index, view.viewer)} (${permanentKind(target, index)})`;
+    const label = `${attackTargetLabel(target, index, view.viewer, view.seats.length)} (${permanentKind(target, index)})`;
     return [{ option, label, current: now !== undefined && sameAttackTarget(now, target) }];
   });
 }

@@ -395,7 +395,7 @@ export function DockPanel(props: OverlayProps): ReactNode {
         const candidate = d.candidates.find((c) => c.attacker === pick.attacker);
         return candidate !== undefined && candidate.targets.length > 1 ? [{ pick, candidate }] : [];
       });
-      const taxes = taxRows(d, ui.attacks, index, view.viewer);
+      const taxes = taxRows(d, ui.attacks, index, view.viewer, view.seats.length);
       const costs =
         taxes.length === 0 ? null : (
           <section className="dec-panel dec-attack-costs" aria-label="Cost of attacking">
@@ -453,7 +453,7 @@ export function DockPanel(props: OverlayProps): ReactNode {
                   >
                     {candidate.targets.map((t, i) => (
                       <option key={t.kind === 'player' ? `p${t.seat}` : t.object} value={i}>
-                        {attackTargetLabel(t, index, view.viewer)}
+                        {attackTargetLabel(t, index, view.viewer, view.seats.length)}
                       </option>
                     ))}
                   </select>

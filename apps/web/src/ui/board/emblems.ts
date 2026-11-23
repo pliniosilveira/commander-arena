@@ -4,6 +4,7 @@
  */
 import type { GameView, ObjectView, SeatId } from '@commander-arena/engine';
 import { monarchObject, ringObject } from '../../game/designations';
+import { possessiveOf } from '../../game/seat-name';
 import { seatLabel } from './resolve';
 
 export type EmblemKind = 'monarch' | 'ring' | 'emblem';
@@ -37,12 +38,14 @@ export function emblemCards(view: GameView, seat: SeatId): EmblemCard[] {
 export function emblemStripLabel(view: GameView, seat: SeatId): string {
   return seat === view.viewer
     ? 'Your emblems and designations'
-    : "Opponent's emblems and designations";
+    : `${possessiveOf(seat, view.viewer, view.seats.length)} emblems and designations`;
 }
 
 /** The short caption on the strip: whose cards these are. */
 export function emblemCaption(view: GameView, seat: SeatId): string {
-  return seatLabel(view, seat) === 'You' ? 'Yours' : "Opponent's";
+  return seatLabel(view, seat) === 'You'
+    ? 'Yours'
+    : possessiveOf(seat, view.viewer, view.seats.length);
 }
 
 /** The accessible name of one card: what it is, whose it is, and what it says. */
