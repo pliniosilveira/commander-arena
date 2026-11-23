@@ -34,6 +34,7 @@ import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
 import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
+import { isEquipmentKitStatic, lowerEquipmentKitStatic } from './equipment-kit';
 import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
@@ -650,6 +651,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:allCreatureTypes'];
     case 'handCycling':
       return ['static:grantKeywordToHandCards'];
+    case 'equipmentKit':
+      return ['static:setTypes', 'static:grantAbility', 'static:grantKeyword', 'keyword:equip'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
     case 'spellEvoke':
@@ -1048,6 +1051,11 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isKeepsDamage(first)) return lowerKeepsDamage(ability);
   // Issue 104 (CR 702.29a, 613.1f): "Each creature card in your hand has cycling {1}{U}."
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
+  // Issue 134 (CR 613.1d, 613.1f, 702.6a): a group that is Equipment as well, with a quoted "+N/+N" and equip abilities.
+  if (isEquipmentKitStatic(first)) {
+    const group = subjectOf(statement.subject, ctx);
+    return group.ok ? lowerEquipmentKitStatic(ability, group.value) : group;
+  }
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
   // Issue 105 (Nissa, Worldsoul Speaker, CR 118.9, 107.14): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."

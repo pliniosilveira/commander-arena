@@ -27,6 +27,7 @@ import { EACH_SPELL_COST_STATIC_RULES } from './each-spell-cost';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { EMINENCE_STATIC_RULES } from './eminence';
 import { STATIC_PAY_ENERGY_ALT_COST } from './energy-alt';
+import { EQUIPMENT_KIT_STATIC_RULES } from './equipment-kit';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
 import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
@@ -105,6 +106,8 @@ export const STATIC_RULES = [
   ...DEATH_TOLL_C_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
+  // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.
+  ...EQUIPMENT_KIT_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,

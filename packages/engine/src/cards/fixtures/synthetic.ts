@@ -95,6 +95,7 @@ import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
 import { SYNTHETIC_GISA_G3_LIST } from './synthetic-gisa-g3';
 import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
 import { SYNTHETIC_GISA_G5_LIST } from './synthetic-gisa-g5';
+import { SYNTHETIC_GRANTED_STATICS_LIST } from './synthetic-granted-statics';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GRAVEYARD_COPY_LIST } from './synthetic-graveyard-copy';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
@@ -445,6 +446,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ALT_COST_LIST,
   ...SYNTHETIC_EXERT_LIST,
   ...SYNTHETIC_EXTRA_TURNS_LIST,
+  ...SYNTHETIC_GRANTED_STATICS_LIST,
   ...SYNTHETIC_AMOUNT_LIST,
   ...SYNTHETIC_ANGELS_SHAPES_LIST,
   ...SYNTHETIC_ANGELS_STATICS_LIST,

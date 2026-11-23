@@ -590,7 +590,7 @@
   flex: 1 1 0;
 }
 
-/* The back line: lands, a small gap, then the other permanents (BackRow.tsx). It is as wide as the
+/* The back line: lands, a small plain gap, then the other permanents (BackRow.tsx). It is as wide as the
    view; the two parts measure and scroll inside their own boxes. */
 .board-row-back {
   flex: 1 1 0;
@@ -629,9 +629,7 @@
 }
 
 .board-row-back.has-both .board-back-others {
-  margin-left: 24px;
-  padding-left: 12px;
-  border-left: 1px solid var(--border, rgba(128, 128, 128, 0.4));
+  margin-left: 8px;
 }
 
 .board-row-land {

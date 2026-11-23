@@ -1019,7 +1019,7 @@
 }
 /* "Pick a pile" (PilesDialog.tsx, D-303, CR 700.3): the two piles side by side, a button under each. */
 .dec-piles {
-  width: min(720px, 94vw);
+  width: min(1000px, 94vw);
 }
 .dec-piles-row {
   display: flex;
@@ -1029,7 +1029,7 @@
   flex-wrap: wrap;
 }
 .dec-pile {
-  flex: 1 1 280px;
+  flex: 1 1 400px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1045,11 +1045,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  min-height: calc(84px * 1.4);
+  min-height: calc(120px * 1.3935);
 }
 .dec-pile-facedown {
-  width: 84px;
-  height: calc(84px * 1.4);
+  width: 120px;
+  height: calc(120px * 1.3935);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: repeating-linear-gradient(

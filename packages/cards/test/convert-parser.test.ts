@@ -1346,6 +1346,7 @@ describe('unmatched abilities', () => {
       'static.creature-off-battlefield',
       'static.every-creature-type',
       'static.hand-cards-have-cycling',
+      'static.group-is-equipment',
       'static.graveyard-cards-have-flashback',
       'static.attached',
       'static.permanents',

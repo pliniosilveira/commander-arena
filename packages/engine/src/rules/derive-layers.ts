@@ -170,6 +170,11 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
       );
     }
     // CR 702.29a (issue 104): a cycling ability is an activated ability of its own, so cycling with another cost is another ability; the same cost twice is redundant.
+    // CR 702.6d: equip abilities with another cost or another restriction are other abilities; the same one twice is redundant.
+    if (grant.keyword.kind === 'equip') {
+      const written = JSON.stringify(grant.keyword);
+      return list.some((a) => a.kind === 'keyword' && JSON.stringify(a.keyword) === written);
+    }
     if (grant.keyword.kind === 'cycling') {
       const written = JSON.stringify(grant.keyword);
       return list.some((a) => a.kind === 'keyword' && JSON.stringify(a.keyword) === written);
@@ -206,6 +211,8 @@ const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = [
   'cycling',
   'replicate',
   'encore',
+  // CR 702.6a: a granted equip is the activated ability it stands for ("Treasures you control have equip {3}").
+  'equip',
 ];
 
 function keywordKindOf(ability: Ability): string | null {

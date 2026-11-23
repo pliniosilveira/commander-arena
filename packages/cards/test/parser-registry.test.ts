@@ -939,6 +939,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-cards-have-encore': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
+  'static.group-is-equipment': asIs,
   'static.graveyard-cards-have-flashback': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,

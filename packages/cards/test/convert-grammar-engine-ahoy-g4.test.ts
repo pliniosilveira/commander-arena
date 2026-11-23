@@ -42,16 +42,16 @@ const vanilla = (name: string, types: string, power = '2', toughness = '2'): Car
   });
 
 describe('the real cards, whole', () => {
-  test.each(['Skeleton Crew', 'Don Andres, the Renegade'])('%s is supported', (name) => {
-    const imported = real(name);
-    expect(imported.support.unparsed).toEqual([]);
-    expect(imported.support.status).toBe('supported');
-    expect(validateCard(imported.definition)).toEqual([]);
-  });
-
-  test('Gemcutter Buccaneer is still unsupported (a granted static ability and granted equip abilities)', () => {
-    expect(real('Gemcutter Buccaneer').support.status).not.toBe('supported');
-  });
+  // Gemcutter Buccaneer was unsupported when this group was built; its own tests are in convert-grammar-engine-gemcutter.test.ts.
+  test.each(['Skeleton Crew', 'Don Andres, the Renegade', 'Gemcutter Buccaneer'])(
+    '%s is supported',
+    (name) => {
+      const imported = real(name);
+      expect(imported.support.unparsed).toEqual([]);
+      expect(imported.support.status).toBe('supported');
+      expect(validateCard(imported.definition)).toEqual([]);
+    },
+  );
 });
 
 describe('the grammar reads the lines', () => {

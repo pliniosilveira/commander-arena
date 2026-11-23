@@ -2007,6 +2007,16 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'handCycling'; readonly cardTypes: readonly string[]; readonly cost: IrCost }
   /**
+   * `are Equipment in addition to their other types and have "Equipped creature gets +2/+0," equip Pirate {1}, and equip {3}` (CR 613.1d, 613.1f, 702.6a, 702.6c): the group of
+   * the statement is Equipment as well, has the quoted "+N/+N" for the creature it equips and each equip ability (`subtype`: the creature type an "equip [type]" may target).
+   */
+  | {
+      readonly kind: 'equipmentKit';
+      readonly power: number;
+      readonly toughness: number;
+      readonly equips: readonly { readonly cost: IrCost; readonly subtype?: string }[];
+    }
+  /**
    * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 118.9, 613.1f): the cards of the graveyard of the
    * controller that `cards` names (a noun with no zone and no controller). The subject of the statement is `you`.
    */
