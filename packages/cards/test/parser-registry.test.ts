@@ -940,6 +940,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.buyback': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
+  // Ninjutsu (CR 702.49a): the keyword line stands alone.
+  'keyword.ninjutsu': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),

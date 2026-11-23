@@ -330,6 +330,7 @@ describe('unmatched abilities', () => {
       'keyword.station',
       'keyword.buyback',
       'keyword.plot',
+      'keyword.ninjutsu',
       'keyword.start-your-engines',
       'replacement.enters-tapped',
       'replacement.enters-tapped-with-counters',
