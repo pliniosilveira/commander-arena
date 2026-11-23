@@ -828,7 +828,7 @@ const RETURN_THIS_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
       sequence(
         literal('return '),
         operands(['noun.this-card'], 'effect.return'),
-        TO_THE_BATTLEFIELD,
+        satisfy(TO_THE_BATTLEFIELD, (z) => z.whose !== undefined),
       ),
       ([, objects, to]) => ({ objects, to }),
     ),

@@ -779,6 +779,8 @@ describe('unmatched abilities', () => {
       'effect.have-player-lose-life',
       'effect.lead-gain-mana-ability-all',
       'effect.gain-keyword-all-next-turn',
+      'effect.returned-is-named-land',
+      'effect.returned-gains-mana-ability',
       'effect.put-any-number-permanents-from-hand',
       'effect.put-any-number-from-hand',
       'effect.player-gets-emblem',
