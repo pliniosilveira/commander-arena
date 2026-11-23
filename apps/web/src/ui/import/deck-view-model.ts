@@ -50,15 +50,11 @@ export function groupEntries(entries: readonly ImportedEntry[]): readonly DeckGr
   return TYPE_GROUPS.flatMap((group) => {
     const list = buckets.get(group);
     if (list === undefined) return [];
-    const sorted = [...list].sort(
-      (a, b) =>
-        a.card.stored.cmc - b.card.stored.cmc ||
-        (a.card.stored.name < b.card.stored.name
-          ? -1
-          : a.card.stored.name > b.card.stored.name
-            ? 1
-            : 0),
-    );
+    const sorted = [...list].sort((a, b) => {
+      const an = a.card.stored.name.toLowerCase();
+      const bn = b.card.stored.name.toLowerCase();
+      return an < bn ? -1 : an > bn ? 1 : 0;
+    });
     return [{ group, entries: sorted, count: sorted.reduce((n, e) => n + e.count, 0) }];
   });
 }

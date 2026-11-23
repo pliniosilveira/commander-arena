@@ -486,6 +486,17 @@ export function checkAbilityCostReduction(
     checkObjectsAbilityReduction(s, path, out);
     return;
   }
+  if (s.abilities === 'firstTargetingYourCreature') {
+    // CR 602.2b (Professor Hojo): the amount alone, read as a cost reduction's is.
+    if (typeof s.amount === 'number') {
+      if (!isCount(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+      }
+    } else {
+      checkStateAmount(s.amount, `${path}.amount`, out, 'a cost reduction');
+    }
+    return;
+  }
   if (s.abilities !== 'equip') {
     issue(
       out,
@@ -496,7 +507,8 @@ export function checkAbilityCostReduction(
   if (s.targeting === undefined || s.targeting === null || typeof s.targeting !== 'object') {
     issue(out, `${path}.targeting`, 'an ability cost reduction needs a filter of what it targets');
   } else {
-    checkFilter(s.targeting, `${path}.targeting`, out);
+    // Helitrooper: "that target this creature" is `isSource`, the permanent with the ability, read here as in the filter of what a spell targets.
+    checkFilter(s.targeting, `${path}.targeting`, out, undefined, undefined, { sourceOk: true });
     if (
       filterSome(
         s.targeting,

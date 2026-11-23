@@ -620,6 +620,21 @@ const EACH_OPPONENT_GAINS_CONTROL =
   /^each opponent gains control of the permanent for which they were chosen\.$/i;
 
 /**
+ * "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents." (Ultimate Magic: Meteor, CR 608.2d): the destruction is of the permanents the
+ * first sentence has the controller choose, so the two are read as one instruction (the first may follow the comma of a condition).
+ */
+const FOR_EACH_OPPONENT_CHOOSE =
+  /(?:^|, )for each opponent, choose an? [^.,]* that player controls\.$/i;
+const DESTROY_THE_CHOSEN_PERMANENTS = /^destroy the chosen permanents\.$/i;
+
+/**
+ * "Exile the top card of your library. You may play that card until you exile another card with ~." (Furious Rise, CR 607.2a): the permission is of the card the permanent exiled
+ * with this ability and ends as it exiles another, so the two sentences are read as one instruction (the first may follow the comma of a condition).
+ */
+const EXILE_TOP_CARD_SENTENCE = /(?:^|, )exile the top card of your library\.$/i;
+const PLAY_UNTIL_EXILE_ANOTHER = /^you may play that card until you exile another card with ~\.$/i;
+
+/**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
  * sentence says what happens to the card the first one makes the opponent choose, so the two are read as one instruction.
  */
@@ -1158,6 +1173,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP_CARD) && said(b, YOU_MAY_EXILE_IT_FACE_DOWN)) ||
         (said(a, UNTIL_EOT_PLAY_CARDS_EXILED_WITH) && said(b, SPELLS_CAST_THIS_WAY_COST_LESS)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
+        // Explorer's Scope (CR 608.2c): a look at the top card and a land card that may be put onto the battlefield tapped (`effect.look-top-land-may-battlefield`).
+        (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_CARD_MAY_PUT_TAPPED)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
@@ -1171,6 +1188,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
+        (said(a, FOR_EACH_OPPONENT_CHOOSE) && said(b, DESTROY_THE_CHOSEN_PERMANENTS)) ||
+        (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
         (said(a, LOOK_AT_TOP) &&
@@ -1431,6 +1450,9 @@ function reflexiveModal(
   };
 }
 
+/** "Lightning — ": the name of a chapter of a Saga, between its numeral and its text. */
+const CHAPTER_NAME = /^\p{Lu}[\p{L}']*(?: \p{Lu}[\p{L}']*)? — /u;
+
 /** "Boast — " before the cost of an activated ability (CR 702.142a). */
 const BOAST_PREFIX = /^Boast — /u;
 
@@ -1573,12 +1595,14 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     // CR 714.2: a chapter symbol is a keyword ability that represents a triggered ability. The
     // numerals are the trigger; the body is read like the body of any triggered ability.
     const numerals = chapter[1] ?? '';
+    // A chapter may carry a name of its own before its text ("I — Lightning — ..."): a flavor name of one or two capitalized words, which is no rule (CR 714.2).
+    const name = CHAPTER_NAME.exec(text.slice(chapter[0].length));
     return {
       ...base,
       head: 'triggered',
       trigger: { start: 0, end: numerals.length },
       chapter: true,
-      sentences: splitSentences(text, chapter[0].length, text.length),
+      sentences: splitSentences(text, chapter[0].length + (name?.[0].length ?? 0), text.length),
     };
   }
 

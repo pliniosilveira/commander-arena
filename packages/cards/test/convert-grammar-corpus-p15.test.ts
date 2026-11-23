@@ -206,7 +206,7 @@ const NOUNS: readonly Line[] = [
   {
     kind: 'creature',
     text: 'When ~ enters, put a +1/+1 counter on each of up to two other target creatures.',
-    expect: no('other target creatures.', 'noun.target-permanent'),
+    expect: no('target creatures.', 'noun.each-of-up-to-permanents'),
     note: 'SYNTHETIC; "other target" is not Oracle wording ("another target")',
   },
 ];

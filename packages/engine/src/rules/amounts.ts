@@ -48,6 +48,7 @@ type StateAmount = Extract<
       | 'opponentsWithMore'
       | 'chosenPlayerLead'
       | 'opponentCount'
+      | 'opponentsAttackedThisCombat'
       | 'movedCount'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
@@ -103,6 +104,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'opponentsWithMore' ||
     amount.kind === 'chosenPlayerLead' ||
     amount.kind === 'opponentCount' ||
+    amount.kind === 'opponentsAttackedThisCombat' ||
     amount.kind === 'movedCount' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
@@ -277,6 +279,11 @@ export function amountOf(
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  if (amount.kind === 'asCast') {
+    // CR 601.2i: the number worked out as the spell was cast, from last-known information once the spell has left the stack.
+    const spell = ctx.source === null ? null : objectOrLki(state, ctx.source);
+    return spell?.stack?.castAmount ?? 0;
+  }
   if (amount.kind === 'controllerLifeLostThisTurn') {
     return getSeat(state, ctx.controller).lifeLostThisTurn;
   }
@@ -549,6 +556,13 @@ export function stateAmountOf(
     case 'opponentCount':
       // CR 102.2, 102.3: the opponents of the controller still in the game.
       return opponentsOf(state, ctx.controller).length;
+    case 'opponentsAttackedThisCombat': {
+      // CR 702.121a (Melee), 508.6: the opponents of the controller that creatures of the controller were declared attacking, in the combat phase in progress, each once.
+      const record = state.combatAttacks;
+      if (record === undefined || record.seat !== ctx.controller) return 0;
+      const attacked = new Set(record.attacks.map((a) => a.player));
+      return opponentsOf(state, ctx.controller).filter((seat) => attacked.has(seat)).length;
+    }
     case 'movedCount':
       // CR 608.2c: "that much" after cards were put somewhere: the objects the instruction before it moved (what `moved` names).
       return (ctx.moved ?? []).length;

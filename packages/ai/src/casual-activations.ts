@@ -44,6 +44,8 @@
  *
  * - A loyalty ability of a planeswalker of ours (D-203, CR 606), once a turn, by a small rule (casual-loyalty.ts).
  *
+ * - Ninjutsu (CR 702.49a): a creature card in hand with more power than our weakest unblocked attacker takes its place (casual-ninjutsu.ts).
+ *
  * Everything else is left unused: sacrifice outlets, life costs, pingers and pumps that target have
  * no benefit this agent can judge (the stronger agent will); the agent never concedes.
  */
@@ -66,6 +68,7 @@ import { isUnblockableAbility, wantsUnblockable } from './casual-evasion';
 import { wantsPlayExiled } from './casual-free';
 import { chooseLoyaltyActivation } from './casual-loyalty';
 import { modeScore } from './casual-modes';
+import { isNinjutsuAbility, wantsNinjutsu } from './casual-ninjutsu';
 import { landIsOnTop } from './casual-play-rules';
 import { returnsItself, wantsCastPermission, wantsGraveyardReturn } from './casual-recursion';
 import { isRegenerateAbility, wantsRegenerate } from './casual-regenerate';
@@ -227,6 +230,19 @@ export function chooseActivation(
     );
   });
   if (modal !== undefined) return act(modal);
+
+  // Ninjutsu (CR 702.49a): after the blockers, a creature card of ours in hand that hits harder than our weakest unblocked attacker (casual-ninjutsu.ts).
+  const ninjutsu = fresh.find((o) => {
+    const obj = findObject(view, o.object);
+    const ability = obj?.activated?.find((a) => a.abilityIndex === o.abilityIndex)?.ability;
+    return (
+      obj !== undefined &&
+      ability !== undefined &&
+      isNinjutsuAbility(ability) &&
+      wantsNinjutsu(view, obj)
+    );
+  });
+  if (ninjutsu !== undefined) return act(ninjutsu);
 
   // Unearth (CR 702.84a, D-124) and Encore (CR 702.141a, D-185): a creature card of ours in the graveyard that would attack safely this turn. Both
   // are a one-turn attacker that goes away at the end step (an Encore token is made for each opponent and must attack), so they are used alike.

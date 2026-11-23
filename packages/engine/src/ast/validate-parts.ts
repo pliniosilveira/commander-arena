@@ -395,7 +395,9 @@ export function checkFilter(
     'attacking',
     'attackingOrBlocking',
     'blocking',
+    'unblocked',
     'powerLessThanSource',
+    'powerGreaterThanSource',
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'discardedOrFromLibraryThisTurn',
@@ -443,12 +445,21 @@ export function checkFilter(
     issue(out, `${path}.attackingOpponents`, "attackingOpponents must be true or 'players'");
   }
   // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
-  if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
+  if (f.attachedTo !== undefined) {
+    checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out, ownerScope);
+  }
   if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
     issue(
       out,
       `${path}.enchanted`,
       'enchanted must be a boolean (true: has an Aura, false: has none)',
+    );
+  }
+  if (f.equipped !== undefined && typeof f.equipped !== 'boolean') {
+    issue(
+      out,
+      `${path}.equipped`,
+      'equipped must be a boolean (true: has an Equipment, false: has none)',
     );
   }
   if (f.notOwnedByYou !== undefined && f.notOwnedByYou !== true) {
@@ -473,6 +484,7 @@ export function checkFilter(
   if (
     (f.attachedTo !== undefined ||
       f.enchanted !== undefined ||
+      f.equipped !== undefined ||
       f.enchantedByYou === true ||
       f.hostOfSource === true) &&
     f.zone !== undefined &&
@@ -539,6 +551,7 @@ export function checkFilter(
     (f.attacking === true ||
       f.notAttacking === true ||
       f.blocking === true ||
+      f.unblocked === true ||
       f.attackingYou !== undefined ||
       f.attackingOpponents !== undefined ||
       f.attackingOrBlocking === true) &&
@@ -825,10 +838,20 @@ const HOST_FILTER_KEYS: readonly string[] = [
 ];
 
 /** D-422: what an `attachedTo` filter names: the source, its host, or a permanent a plain filter describes. */
-function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
+function checkAttachedTo(a: AttachedTo, path: string, out: Out, scope?: Scope): void {
   switch (a?.kind) {
     case 'source':
     case 'host':
+      return;
+    case 'sacrificedCost':
+      // CR 113.7a (Zack Fair): read from the last-known information of what the cost of the ability that is resolving sacrificed.
+      if (scope?.sacrificedCost !== true) {
+        issue(
+          out,
+          path,
+          "attachedTo 'sacrificedCost' needs an activated ability whose cost sacrifices a permanent, read as it resolves",
+        );
+      }
       return;
     case 'matching': {
       const inner = a.filter;
@@ -857,7 +880,7 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
       return;
     }
     default:
-      issue(out, path, `attachedTo is source, host or matching, not ${kindOf(a)}`);
+      issue(out, path, `attachedTo is source, host, matching or sacrificedCost, not ${kindOf(a)}`);
   }
 }
 
@@ -873,7 +896,9 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attackingOpponents !== undefined ||
   f.attackingOrBlocking !== undefined ||
   f.blocking !== undefined ||
+  f.unblocked !== undefined ||
   f.powerLessThanSource === true ||
+  f.powerGreaterThanSource === true ||
   f.powerAboveBase === true ||
   f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
@@ -1942,6 +1967,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
+  discardedValue: 'a discard effect',
   countersPut: 'an addCounters effect',
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
@@ -1988,6 +2014,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedCreature',
       'discardedNoncreature',
       'discardedNonland',
+      'discardedValue',
       'discardedInstantOrSorcery',
       'discardedMost',
       'discardedTypeCount',
@@ -2099,6 +2126,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsWithMore':
     case 'chosenPlayerLead':
     case 'opponentCount':
+    case 'opponentsAttackedThisCombat':
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
@@ -2110,6 +2138,9 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
       if (kindOf(a.of) !== 'this') {
         issue(out, `${path}.of`, `${label} reads the counters on this permanent only`);
       }
+      checkAmount(a, path, NO_SCOPE, out);
+      break;
+    case 'asCast':
       checkAmount(a, path, NO_SCOPE, out);
       break;
     case 'half':
@@ -2512,6 +2543,10 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'sacrificedAsCost':
       // D-491 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
       break;
+    case 'asCast':
+      // CR 601.2i: worked out once, as the spell is cast: an amount that reads the game then (no target, no X, nothing an earlier instruction made).
+      checkStateAmount(a.of, `${path}.of`, out, 'asCast');
+      break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
@@ -2578,6 +2613,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'opponentCount':
+    case 'opponentsAttackedThisCombat':
       break;
     case 'movedCount':
       // CR 608.2c: what the instruction before it moved (`moved`): a trailing amount of the same resolution, never a number a static ability reads.
@@ -3606,9 +3642,13 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'cardLeftYourGraveyard':
     case 'descendedThisTurn':
     case 'yourMainPhase':
-    case 'yourCombatPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
+      break;
+    case 'yourCombatPhase':
+      // Issue 144: no parameters but `first` (Tifa, Martial Artist).
+      if (c.first !== undefined && c.first !== true)
+        issue(out, `${path}.first`, 'first is true or absent');
       break;
     case 'controlsGreatest':
       // D-139: the permanent with the greatest stat among those the filter matches; whose they are is the condition's business.
@@ -5120,6 +5160,8 @@ export const MAY_EFFECT_KINDS = [
   'addMana',
   // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, put three +1/+1 counters on ~": life was lost when the amount was above 0.
   'loseLife',
+  // Sephiroth, Fallen Hero (CR 608.2d, 122.6): "you may put a cell counter on target creature. Until end of turn, ...": the counters are the one instruction the question is about.
+  'addCounters',
 ];
 
 /**
@@ -5474,9 +5516,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
       // controller's own permanents.
+      // Zack Fair (CR 113.7a): "attach an Equipment that was attached to ~" is a forced choice among the objects that were attached to the sacrificed permanent, whoever controls them.
       if (
         e.filter.controller !== 'you' &&
-        !(e.filter.controller === undefined && e.exactly !== true)
+        !(e.filter.controller === undefined && e.exactly !== true) &&
+        !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
       ) {
         issue(
           out,
@@ -5986,19 +6030,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'gainControl': {
-      // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
+      // CR 613.1b (D-189): a layer 2 effect for the named permanents: a target, a group (`each`) or the permanent that caused the trigger.
       const named = kindOf(e.objects);
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
       else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
-      else if (named === 'this' && scope.owner === 'ability') {
+      else if (named === 'each') {
+        // CR 613.1b, 611.2c: "gain control of all artifacts that player controls": the group is fixed as the effect begins.
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      } else if (named === 'this' && scope.owner === 'ability') {
         // CR 613.1b: "that player gains control of this artifact" (the one player `player` names) or "gain control of ~" (the controller of the ability): the permanent with the ability.
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       } else
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target, the permanent that caused the trigger, or the permanent with the ability',
+          'gainControl names a target, a group, the permanent that caused the trigger, or the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6713,6 +6760,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'moveAllCounters':
       // CR 122.1: both permanents are targets of the ability (or the triggering permanent), as for a copy that names its original.
       checkRef(e.from, 'object', `${path}.from`, scope, out);
+      checkRef(e.to, 'object', `${path}.to`, scope, out);
+      break;
+    case 'putCountersOf':
+      // CR 122.1, 113.7a (Zack Fair): the permanent whose counters are copied is `this` or the permanent the cost sacrificed, last-known information once it is gone.
+      if (kindOf(e.from) === 'sacrificedCost') checkSacrificedCost(`${path}.from`, scope, out);
+      else if (kindOf(e.from) !== 'this') {
+        issue(
+          out,
+          `${path}.from`,
+          "putCountersOf takes the counters of 'this' or 'sacrificedCost'",
+        );
+      }
       checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
     case 'counter':
@@ -8109,6 +8168,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (e.ifThisWay !== undefined) {
           issue(out, `${path}.afterPayment`, 'what triggers it is the payment: no ifThisWay');
         }
+      } else if (e.ifMoved !== undefined) {
+        // CR 603.12 (Cait Sith): "When you exile a card this way": made when the effect before it moved a card, which the ability then carries.
+        if (e.ifMoved !== true) issue(out, `${path}.ifMoved`, 'ifMoved must be true when present');
+        if (e.carriesMoved !== true || scope.movedAvailable !== true) {
+          issue(
+            out,
+            `${path}.ifMoved`,
+            'a reflexive ability after a move carries the objects an effect before it moved: carriesMoved, after an effect that moves objects',
+          );
+        }
+        if (e.ifThisWay !== undefined) {
+          issue(out, `${path}.ifMoved`, 'what triggers it is the move: no ifThisWay');
+        }
       } else if (scope.mayAvailable !== true) {
         issue(
           out,
@@ -8117,7 +8189,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       if (e.ifThisWay !== undefined) {
-        if (e.ifThisWay !== 'exiledNonland' && e.ifThisWay !== 'discardedNonland') {
+        if (
+          e.ifThisWay !== 'exiledNonland' &&
+          e.ifThisWay !== 'discardedNonland' &&
+          e.ifThisWay !== 'discarded'
+        ) {
           issue(out, `${path}.ifThisWay`, `unknown count ${JSON.stringify(e.ifThisWay)}`);
         } else if (!(scope.thisWay ?? []).includes(e.ifThisWay)) {
           issue(
@@ -8154,7 +8230,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // D-177: the reflexive ability reads the permanent the resolution that created it sacrificed.
         ...(scope.sacrificedEarlier === true ? { sacrificedEarlier: true } : {}),
         // D-231: and the count the `ifThisWay` names.
-        ...(e.ifThisWay === undefined ? {} : { thisWay: [e.ifThisWay] }),
+        // Summon: Kujata: a reflexive ability of the cards discarded also reads their total mana value ("that card's mana value", `discardedValue`), counted with them.
+        ...(e.ifThisWay === undefined
+          ? {}
+          : {
+              thisWay:
+                e.ifThisWay === 'discarded' ? [e.ifThisWay, 'discardedValue'] : [e.ifThisWay],
+            }),
         checkAbility: scope.checkAbility,
         checkContinuous: scope.checkContinuous,
         checkEffectExt: scope.checkEffectExt,
@@ -8391,6 +8473,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkFilter(e.filter, `${path}.filter`, out);
       if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
+      }
+      break;
+    case 'chooseOnePerOpponentDestroy':
+      // CR 608.2d (Ultimate Magic: Meteor): the permanents are a filter of the battlefield with no controller (each opponent's own permanents are the candidates for that opponent).
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
+      }
+      if (e.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'the opponent is the player each choice is for: the filter names no controller',
+        );
       }
       break;
     case 'proliferate':

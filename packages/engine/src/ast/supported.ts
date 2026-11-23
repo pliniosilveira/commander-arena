@@ -936,6 +936,9 @@ function walkAbility(
           'payLife',
           'sacrifice',
         ]);
+      } else if (a.keyword.kind === 'ninjutsu') {
+        // CR 702.49a (unverified): paid like any activation cost; only mana is run (rules/derive-keywords.ts adds the return of an unblocked attacker).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'echo') {
         // CR 702.30a: paid as the echo trigger resolves (rules/pay-unless.ts); mana only, no X (D-127).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);

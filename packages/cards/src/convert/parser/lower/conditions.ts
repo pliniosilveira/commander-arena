@@ -571,6 +571,14 @@ export function lowerCondition(
         const matched = lowerFilter({ ...test.who, det: 'self', filter: test.filter });
         return matched.ok ? ok({ kind: 'thisMatches', filter: matched.value }) : matched;
       }
+      // "Then if ~ has power 7 or greater, create two Treasure tokens" (Cloud, Ex-SOLDIER, CR 208.1, 608.2c): the permanent with the ability, as it is when the instruction is
+      // worked out: the engine's `thisMatches`. Only an ability of a permanent that is still there.
+      if (test.who.det === 'self' && ctx?.owner === 'ability' && !ctx.selfGone) {
+        const thisBlocked = missingFeatures(['condition:thisMatches']);
+        if (thisBlocked.length > 0) return failure(c, thisBlocked);
+        const matched = lowerFilter({ ...test.who, filter: test.filter });
+        return matched.ok ? ok({ kind: 'thisMatches', filter: matched.value }) : matched;
+      }
       const id = test.who.ref ?? '';
       // "Put a card exiled with ~ into its owner's graveyard. If it's a land card" (stage P50, D-207): the card the instruction before moved.
       if (id === 'moved') {
@@ -584,6 +592,8 @@ export function lowerCondition(
       if (!filter.ok) return filter;
       const of =
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
+      // Conformer Shuriken (CR 208.1, 608.2c): "If that creature has greater power than ~, ... equal to the difference": the instruction after it counts the gap between the two powers.
+      if (filter.value.powerGreaterThanSource === true) at.comparedPowerOf = of;
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
     case 'manaValueAtMostAmount': {
@@ -814,7 +824,9 @@ export function lowerCondition(
       const test = c.test;
       if (test.kind !== 'castFromZone') return failure(c, []);
       // Transpose: "If this spell was cast from your hand" is the spell's own text (the engine reads the zone the spell on the stack was cast from).
-      if (test.zone === 'hand' && ctx?.owner !== 'spell') return failure(c, []);
+      if ((test.zone === 'hand' || test.zone === 'exile') && ctx?.owner !== 'spell') {
+        return failure(c, []);
+      }
       const blocked = missingFeatures(['condition:castFromZone']);
       return blocked.length > 0
         ? failure(c, blocked)
@@ -833,7 +845,9 @@ export function lowerCondition(
     case 'yourCombatPhase': {
       // CR 506.1 (issue 144): the combat phase of the controller's turn, as the instruction runs.
       const blocked = missingFeatures(['condition:yourCombatPhase']);
-      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'yourCombatPhase' });
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'yourCombatPhase', ...(test.first === true ? { first: true as const } : {}) });
     }
     case 'playerDealtDamage': {
       // CR 120.3 (stage P34, D-152): the damage the player was dealt by any source this turn.

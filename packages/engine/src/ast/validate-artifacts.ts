@@ -84,7 +84,9 @@ function readsLinkedExile(e: unknown): boolean {
   return (
     choosesFromExile(e) ||
     // D-230: "return the exiled card": the `linkedExile` reference (Fiend Hunter, Skyclave Apparition, the token Hofri makes).
-    text.includes('"kind":"linkedExile"')
+    text.includes('"kind":"linkedExile"') ||
+    // Furious Rise (CR 607.2a): "You may play that card until you exile another card with this enchantment": the permission is read from the card the linked exile made.
+    text.includes('"lasts":"untilSourceExilesAnother"')
   );
 }
 

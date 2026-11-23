@@ -15,6 +15,7 @@ import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
 import { GIFT_KEYWORD_RULES } from './gift';
 import { LATER_KEYWORD_RULES } from './later';
 import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
+import { NINJUTSU_KEYWORD_RULES } from './ninjutsu';
 import { numberedKeyword } from './numbered';
 import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { PLOT_KEYWORD_RULES } from './plot';
@@ -432,6 +433,8 @@ export const KEYWORD_RULES = [
   ...GALADRIEL_G3_KEYWORD_RULES,
   // CR 702.170a (Plot): "Plot {3}{U}".
   ...PLOT_KEYWORD_RULES,
+  // CR 702.49a (Ninjutsu, unverified): "Ninjutsu {1}{R}".
+  ...NINJUTSU_KEYWORD_RULES,
   // CR 702.179a (Start your engines!), issue 144.
   ...SPEED_KEYWORD_RULES,
 ];

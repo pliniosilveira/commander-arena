@@ -209,6 +209,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'dethrone':
+    case 'melee':
     case 'myriad':
     case 'decayed':
       // CR 702.105a, 702.116a (D-151): no parameter.
@@ -320,6 +321,17 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       // D-135 and issue 57 group 5: card and tapped Fish gifts have engine effects.
       if (k.gift !== 'card' && k.gift !== 'tappedFish') {
         issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported`);
+      }
+      return true;
+    case 'ninjutsu':
+      // CR 702.49a (unverified: the CR text is not in the repository): the cost is paid like any activation cost, and the return of an unblocked attacker is the engine's own.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'returnToHand')) {
+        issue(
+          out,
+          `${path}.cost`,
+          'ninjutsu already returns an unblocked attacker; do not list returnToHand',
+        );
       }
       return true;
     case 'echo':

@@ -1303,6 +1303,18 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
       rule: cast.rule,
     };
   }
+  // Limit Break deck (Yuffie, Materia Hunter; CR 608.2d, 701.3): "Then you may attach an Equipment you control to ~.": the choice of none or one Equipment is the offer itself (the engine's
+  // `chooseObjects` of up to one, and an `attach` of nothing does nothing), so it is not wrapped in a `may`.
+  if (clause?.verb === 'attachOwnToSelf' && clause.optional && more.length === 0) {
+    if (
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined
+    ) {
+      return refuse(sentence);
+    }
+    return lowerClauses([{ ...clause, optional: false }], ctx);
+  }
   // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped.": a card chosen from the graveyard, the choice of none or one is
   // the offer itself (the engine's `moveToZone` of a `choose` with `optional`), so it is not wrapped in a `may`.
   if (clause?.verb === 'putFromZone' && clause.optional && more.length === 0) {
@@ -1756,11 +1768,61 @@ function lowerAfterDiscard(
   if (!discards) return refused();
   const blocked = missingFeatures(['effect:reflexive']);
   if (blocked.length > 0) return refused(blocked);
+  ctx.discardedCardValue = sentence.afterDiscard === 'any';
+  const effect = lowerReflexive(sentence, ctx);
+  ctx.discardedCardValue = false;
+  if (!effect.ok) return { stopped: effect };
+  if (effect.value.kind !== 'reflexive') return refused();
+  steps.push({
+    effects: [
+      {
+        ...effect.value,
+        ifThisWay: sentence.afterDiscard === 'any' ? 'discarded' : 'discardedNonland',
+      },
+    ],
+    replaceable: false,
+  });
+  return { last: i };
+}
+
+/**
+ * "Scry 1, then exile the top card of your library. You may play that card this turn. When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is
+ * that card's mana value." (Cait Sith, Fortune Teller; CR 603.12, 701.13, 202.3): the engine's `reflexive` ability with `ifMoved` and `carriesMoved`, created when the exile of the top
+ * card before it moved a card; its targets are its own and "that card" is the card exiled. It is the last sentence of the text and follows an `exileTop` of the controller. Any other shape
+ * is refused, never guessed.
+ */
+function lowerAfterExile(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const refused = (needs?: readonly FeatureRef[]): StepResult => ({
+    stopped: needs === undefined ? refuse(sentence) : { ...refuse(sentence), needs },
+  });
+  if (
+    i !== sentences.length - 1 ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refused();
+  }
+  const exiles = steps
+    .flatMap((s) => s.effects)
+    .some((e) => e.kind === 'exileTop' && e.from === undefined);
+  if (!exiles || ctx.exiled !== 'top') return refused();
+  const blocked = missingFeatures(['effect:reflexive']);
+  if (blocked.length > 0) return refused(blocked);
   const effect = lowerReflexive(sentence, ctx);
   if (!effect.ok) return { stopped: effect };
   if (effect.value.kind !== 'reflexive') return refused();
   steps.push({
-    effects: [{ ...effect.value, ifThisWay: 'discardedNonland' }],
+    effects: [{ ...effect.value, ifMoved: true, carriesMoved: true }],
     replaceable: false,
   });
   return { last: i };
@@ -2475,6 +2537,8 @@ function lowerStep(
   // "When you discard a nonland card this way, ..." (Federation Fleet deck, group D, CR 603.12): the reflexive ability of the discards before it.
   if (sentence.afterDiscard !== undefined)
     return lowerAfterDiscard(sentence, sentences, i, steps, ctx);
+  // "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability of the exile of the top card before it.
+  if (sentence.afterExile === true) return lowerAfterExile(sentence, sentences, i, steps, ctx);
   // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
   // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
   if (

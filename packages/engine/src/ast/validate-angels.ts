@@ -111,7 +111,8 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
               f.attackingYou !== undefined ||
               f.attackingOpponents !== undefined ||
               f.attackingOrBlocking !== undefined ||
-              f.blocking !== undefined,
+              f.blocking !== undefined ||
+              f.unblocked !== undefined,
           )
         ) {
           issue(
@@ -262,8 +263,10 @@ function checkEnteringFilter(what: ObjectFilter, path: string, out: AstIssue[]):
         f.attackingOpponents !== undefined ||
         f.attackingOrBlocking !== undefined ||
         f.blocking !== undefined ||
+        f.unblocked !== undefined ||
         f.manaValueX !== undefined ||
         f.powerLessThanSource !== undefined ||
+        f.powerGreaterThanSource !== undefined ||
         f.controllerDealtDamageBySource !== undefined ||
         f.tapped !== undefined,
     )

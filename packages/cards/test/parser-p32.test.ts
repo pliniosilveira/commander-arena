@@ -874,7 +874,7 @@ describe('"Enchanted creature loses all abilities and is a ... creature with bas
     'Enchanted creature loses all abilities and is a green Elk creature in addition to its other types.',
     'Enchanted creature loses all abilities and is a green Elk creature with power and toughness 3/3.',
     'Enchanted creature is a green Banana creature.',
-    'Enchanted creature loses flying.',
+    'Enchanted creature loses flying until end of turn.',
   ])('stays unread: %s', (text) => {
     expect(drop(text, 'enchantment', ['Aura'])).toMatchObject({ reason: 'unrecognised' });
   });
@@ -1523,13 +1523,8 @@ describe('"~ deals X damage divided as you choose among ..." (CR 601.2d, 120.3)'
     ).toMatchObject({ reason: 'notRunnable' });
   });
 
+  // Limit Break deck (Lifestream's Blessing): in a spell the total as it is cast is worked out as the spell is cast (the engine's `asCast`); an ability has no cast.
   test('the total as the spell is cast is read nowhere else', () => {
-    expect(
-      dropped(
-        '~ deals X damage to target creature, where X is the greatest power among creatures you control as you cast ~.',
-        'sorcery',
-      ),
-    ).toMatchObject({ reason: 'notRunnable' });
     expect(
       dropped(
         '{T}: ~ deals X damage divided as you choose among any number of target creatures, where X is the greatest power among creatures you control as you cast ~.',

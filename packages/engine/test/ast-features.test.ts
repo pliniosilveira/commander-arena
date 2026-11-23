@@ -249,6 +249,8 @@ describe('the dimensions', () => {
       'modifyPt',
       'characteristicPt',
       'grantKeyword',
+      // Colossus Hammer (CR 613.1f): "Equipped creature gets +10/+10 and loses flying".
+      'loseKeyword',
       'grantAbility',
       'restriction',
       'costReduction',
