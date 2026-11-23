@@ -10,7 +10,7 @@ import type { TargetSpec } from '../ast/types';
 import type { ObjectId } from '../ids';
 import { patchObject } from '../state/ops';
 import type { CastingContext, GameState } from '../state/types';
-import { reducedForTargets } from './activate-adjust';
+import { mayReduceByTargets, reducedForTargets } from './activate-adjust';
 import { costRefusal } from './activate-costs';
 import {
   alternativeOfStack,
@@ -95,7 +95,9 @@ export function payableEquipTargets(
   ctx: SelectContext,
 ): PayableOnly {
   const activation = casting.activation;
-  if (activation === null || activation.ability.equip !== true) return null;
+  if (activation === null || !mayReduceByTargets(before, casting.seat, activation.ability)) {
+    return null;
+  }
   if (abilityReductionSources(before).length === 0) return null;
   const slot = payableSlotOf(specs);
   const spec = specs[slot];

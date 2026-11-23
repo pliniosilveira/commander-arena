@@ -116,11 +116,34 @@ export function equipReductionFor(
   ability: ActivatedAbility,
   targets: readonly ObjectId[],
 ): number {
-  if (ability.equip !== true || targets.length === 0) return 0;
+  if (targets.length === 0) return 0;
   let total = 0;
   for (const source of abilityReductionSources(state)) {
-    if (source.targeting === undefined || controllerOf(state, source.object) !== seat) continue;
+    if (controllerOf(state, source.object) !== seat) continue;
     const ctx = { controller: seat, source: source.object.id };
+    // CR 602.2b (Professor Hojo): the first ability of the turn that targets a creature of the activator, on their own turn, whatever the ability is.
+    if (source.firstTargetingYourCreature === true) {
+      if (
+        state.turn.activeSeat === seat &&
+        !state.turnLog.activated.some((a) => a.targetedOwnCreature === seat) &&
+        targets.some((id) => {
+          const target = state.objects[id];
+          return (
+            target !== undefined &&
+            matchesFilter(
+              state,
+              target,
+              { zone: 'battlefield', types: ['creature'], controller: 'you' },
+              ctx,
+            )
+          );
+        })
+      ) {
+        total += amountOf(state, source.amount, ctx, []);
+      }
+      continue;
+    }
+    if (ability.equip !== true || source.targeting === undefined) continue;
     const aimed = targets.some((id) => {
       const target = state.objects[id];
       return (
@@ -131,6 +154,25 @@ export function equipReductionFor(
     if (aimed) total += amountOf(state, source.amount, ctx, []);
   }
   return total;
+}
+
+/**
+ * Whether a static ability could reduce the cost of this ability for some choice of targets (`equipReductionFor`): the Equip reduction of an Equip ability, the "first ability that targets a
+ * creature you control" reduction of any ability of `seat` on their own turn. The question "may this be activated at all?" and the offer of targets read it (D-425).
+ */
+export function mayReduceByTargets(
+  state: GameState,
+  seat: SeatId,
+  ability: ActivatedAbility,
+): boolean {
+  return abilityReductionSources(state).some(
+    (s) =>
+      controllerOf(state, s.object) === seat &&
+      (s.firstTargetingYourCreature === true
+        ? state.turn.activeSeat === seat &&
+          !state.turnLog.activated.some((a) => a.targetedOwnCreature === seat)
+        : s.targeting !== undefined && ability.equip === true),
+  );
 }
 
 /** The ability with the generic mana of its cost reduced for these targets (`equipReductionFor`); the same object when nothing applies. */

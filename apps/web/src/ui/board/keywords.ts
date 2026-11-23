@@ -110,6 +110,10 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // The Dragons slice (D-151): the reminder text (CR 702.155a, 702.105a, 702.116a) rides in the tooltip.
   readAhead: ['RA', `Read ahead (${READ_AHEAD_REMINDER})`],
   dethrone: ['Dth', `Dethrone (${DETHRONE_REMINDER})`],
+  melee: [
+    'Mel',
+    'Melee (Whenever this creature attacks, it gets +1/+1 until end of turn for each opponent you attacked this combat.)',
+  ],
   myriad: ['Myr', `Myriad (${MYRIAD_REMINDER})`],
   // Gisa deck group 5 (D-478): the reminder text (CR 702.147a) rides in the tooltip.
   decayed: ['Dec', `Decayed (${DECAYED_REMINDER})`],

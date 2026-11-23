@@ -630,6 +630,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerCondition',
     // D-177: "becomes the target of a spell" (`becomesTarget` with `spellOnly`).
     'becomesTargetSpell',
+    // Professor Hojo: "one or more creatures you control become the target of an activated ability" (`becomesTarget` with `activatedOnly` and `batch`).
+    'becomesTargetActivated',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
     // Issue 100: "whenever you cast your first instant or sorcery spell each turn" (`castSpell` with `firstOfKind`).
@@ -651,6 +653,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersFromGraveyard',
     // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
     'activatesAbilityX',
+    // Avalanche of Sector 7: "an opponent activates an ability of an artifact they control" (`activatesAbility` with `ofSource`).
+    'activatesAbilityOfSource',
     // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" (`countersAdded` with `each`).
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
@@ -794,6 +798,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'readAhead',
     'dethrone',
     'myriad',
+    // Melee (CR 702.121): the keyword of Tifa, Martial Artist.
+    'melee',
     // D-478: Decayed (CR 702.147).
     'decayed',
   ],
@@ -1614,6 +1620,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'extreme',
     'difference',
     'opponentCount',
+    'opponentsAttackedThisCombat',
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
     'opponentsWithMore',
@@ -1964,6 +1971,8 @@ export const TRIGGER_FEATURES = [
   'triggerCondition',
   /** "Whenever this creature becomes the target of a spell" (CR 603.2, D-177): the engine's `becomesTarget` with `spellOnly`. */
   'becomesTargetSpell',
+  /** "Whenever one or more creatures you control become the target of an activated ability" (CR 603.2c, 602.2): the engine's `becomesTarget` with `activatedOnly` and `batch`. */
+  'becomesTargetActivated',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
   /** "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i): the engine's `castSpell` with `firstOfKind`. */
@@ -1986,6 +1995,8 @@ export const TRIGGER_FEATURES = [
   'entersFromGraveyard',
   /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
   'activatesAbilityX',
+  /** "Whenever an opponent activates an ability of an artifact they control" (CR 602.2, 603.2): the engine's `activatesAbility` with `ofSource`. */
+  'activatesAbilityOfSource',
   /** "Whenever a -1/-1 counter is put on a creature" (CR 122.6, 603.2): the engine's `countersAdded` with `each`, once for each counter. */
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
@@ -2744,6 +2755,8 @@ export const AMOUNT_KINDS = [
   'difference',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
+  /** "Each opponent you attacked this combat" (CR 702.121a, Melee): the engine's `opponentsAttackedThisCombat`. */
+  'opponentsAttackedThisCombat',
   /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */
   'movedCount',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
@@ -3194,6 +3207,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leavesToAnyOf: true,
   triggerCondition: true,
   becomesTargetSpell: true,
+  becomesTargetActivated: true,
   castNth: true,
   castFirstOfKind: true,
   castDuringOpponentTurn: true,
@@ -3205,6 +3219,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tapBatch: true,
   entersFromGraveyard: true,
   activatesAbilityX: true,
+  activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
 };
@@ -3307,6 +3322,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   hideaway: true,
   readAhead: true,
   dethrone: true,
+  melee: true,
   myriad: true,
   decayed: true,
 };

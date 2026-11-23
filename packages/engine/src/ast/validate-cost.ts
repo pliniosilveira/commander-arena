@@ -486,6 +486,17 @@ export function checkAbilityCostReduction(
     checkObjectsAbilityReduction(s, path, out);
     return;
   }
+  if (s.abilities === 'firstTargetingYourCreature') {
+    // CR 602.2b (Professor Hojo): the amount alone, read as a cost reduction's is.
+    if (typeof s.amount === 'number') {
+      if (!isCount(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+      }
+    } else {
+      checkStateAmount(s.amount, `${path}.amount`, out, 'a cost reduction');
+    }
+    return;
+  }
   if (s.abilities !== 'equip') {
     issue(
       out,

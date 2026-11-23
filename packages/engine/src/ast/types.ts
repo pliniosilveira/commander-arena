@@ -415,6 +415,12 @@ export type Amount =
    */
   | { readonly kind: 'opponentCount' }
   /**
+   * "Each opponent you attacked this combat" (CR 702.121a Melee, 508.6; Tifa, Martial Artist): how many of the controller's opponents still in the game were attacked, as players,
+   * by the controller's creatures in the combat phase in progress (`GameState.combatAttacks`: a creature attacking a planeswalker or a battle attacks that permanent, not its controller),
+   * each opponent once however many creatures attacked them. 0 outside a combat phase of the controller. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'opponentsAttackedThisCombat' }
+  /**
    * "That much" after cards were put somewhere (Valakut Exploration, CR 608.2c): the number of objects `moved` names, the cards the instruction before it moved
    * (`moveToZone`, `exile`, `exileTop`), counted as the amount is read. 0 when it moved nothing. Not for a static ability.
    */
@@ -4260,7 +4266,7 @@ export type Effect =
   /**
    * "Gain control of target creature until end of turn", "Gain control of that artifact until the end of your next turn", "Gain control of target
    * creature for as long as you control this" (CR 613.1b, 611.2, D-189): a layer 2 continuous effect that gives the controller of the effect control of
-   * each permanent `objects` names, which must be a `target` or the `triggerSubject` permanent. The set is fixed when it begins (CR 611.2c); a permanent
+   * each permanent `objects` names, which must be a `target`, the `triggerSubject` permanent, `this` or a group (`each`: "gain control of all artifacts that player controls"). The set is fixed when it begins (CR 611.2c); a permanent
    * that is no longer on the battlefield is skipped (CR 608.2b; a Treasure sacrificed for the mana that triggered the ability is such an object).
    * The effect has a timestamp (CR 613.7b): the one that began last decides when several give control of the same permanent. `duration`:
    * `untilEndOfTurn` (cleanup, CR 514.2), `untilEndOfYourNextTurn` (the end of the next turn of the controller that comes after this moment, even
@@ -5182,6 +5188,12 @@ export type Trigger =
        * both readings), not only an ability of a permanent. Without it only an ability of a permanent counts. A mana ability is never put on the stack and never triggers it.
        */
       readonly anySource?: true;
+      /**
+       * "Whenever an opponent activates an ability of an artifact they control" (Avalanche of Sector 7, CR 602.2, 603.2): only an ability whose source is a permanent that matches this
+       * filter, as it was as the ability was activated (last-known information once it has left, CR 113.7a). The filter's `controller` is read against the players of the event:
+       * `triggerPlayer` is the player who activated the ability ("they control"), `you` the controller of this ability. It names no zone.
+       */
+      readonly ofSource?: ObjectFilter;
     }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }
@@ -5628,6 +5640,15 @@ export type Trigger =
        * it, not an ability. Left out: a spell or an ability.
        */
       readonly spellOnly?: true;
+      /**
+       * "Whenever one or more creatures you control become the target of an activated ability" (Professor Hojo, CR 603.2, 602.2, 601.2c): only an activated ability triggers it (a
+       * loyalty ability is one), not a spell or a triggered ability. Not with `spellOnly`.
+       */
+      readonly activatedOnly?: true;
+      /**
+       * "One or more" (CR 603.2c): the ability triggers once for the spell or ability that chose the targets, however many of the permanents `what` names it targets, not once for each of them.
+       */
+      readonly batch?: true;
     }
   /**
    * A chapter ability of a Saga (CR 714.2): "I", "II", "I, II" and so on. `from` and `to` are the
@@ -6275,6 +6296,11 @@ export type Keyword =
    */
   | { readonly kind: 'dethrone' }
   /**
+   * CR 702.121a (Melee; Tifa, Martial Artist): "Whenever this creature attacks, it gets +1/+1 until end of turn for each opponent you attacked this combat." A triggered ability that
+   * `derive` writes (`rules/derive-keywords.ts`): a `modifyPt` of the creature by the amount `opponentsAttackedThisCombat`, counted as the ability resolves. Each instance triggers separately.
+   */
+  | { readonly kind: 'melee' }
+  /**
    * CR 702.147a (Decayed, D-478): "This creature can't block" and "When this creature attacks, sacrifice it at end of combat." `derive` expands it into a static
    * `restriction` `cantBlock` of the creature and a triggered ability (`rules/derive-keywords.ts`). Grantable, and a decayed counter gives it (CR 122.1b).
    */
@@ -6725,8 +6751,9 @@ export type Condition =
   /**
    * "If it's your combat phase, there is an additional combat phase after this phase." (issue 144, CR 506.1, 500.8): true while the game is in the combat phase of a turn of
    * the condition's controller. Read where the condition is read; the stack empties before a phase ends (CR 117.4), so a spell resolving in a combat step is read in that phase.
+   * `first` (Tifa, Martial Artist: "If it's the first combat phase of your turn"): it is also the first combat phase of this turn to have begun (`TurnLog.combatPhases`), an additional one counting as a combat phase.
    */
-  | { readonly kind: 'yourCombatPhase' }
+  | { readonly kind: 'yourCombatPhase'; readonly first?: true }
   /**
    * "During your turn, equipped creature has flying." (CR 611.3a, 613.8, D-206): true while the active player is the controller of the ability
    * or static ability. The active player is no characteristic and no layer changes it, so a static ability may read it. Read where the condition is
@@ -7721,6 +7748,19 @@ export type StaticEffect =
       readonly kind: 'abilityCostReduction';
       readonly abilities: 'equip';
       readonly targeting: ObjectFilter;
+      readonly amount: Amount;
+    }
+  /**
+   * "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Professor Hojo, CR 601.2f, 602.2b, 118.7, 602.2): a static ability of a
+   * permanent on the battlefield that takes `amount` generic mana off the generic part of the mana cost of an activated ability (a loyalty ability and an Equip ability included) its controller activates
+   * during their own turn when one of the targets the activation chose is a creature that player controls, and no activated ability that player activated earlier this turn had such a target
+   * (`TurnLog.activated`: `targetedOwnCreature`, recorded as each activation is finished, whatever permanent the static ability is on). The targets are chosen before the total cost is determined
+   * (CR 602.2b), so the cost is worked out after them; the question "may this ability be activated at all?" assumes the most favourable target, as for the Equip reduction. Never below zero, only the
+   * generic part, and it adds to the other reductions of the ability.
+   */
+  | {
+      readonly kind: 'abilityCostReduction';
+      readonly abilities: 'firstTargetingYourCreature';
       readonly amount: Amount;
     }
   /**

@@ -628,6 +628,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'costIncrease':
       return ['static:costIncrease'];
     case 'abilityCostReduction':
+    case 'firstTargetingAbilityCostReduction':
     case 'graveyardAbilityCostReduction':
     case 'permanentAbilityCostReduction':
     case 'creatureAbilityCostReductionByPower':
@@ -1363,6 +1364,29 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
     return lowerAbilityCostReduction(ability, first, more.length, ctx);
+  // "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Limit Break deck, Professor Hojo, CR 601.2f, 602.2b).
+  if (first.kind === 'firstTargetingAbilityCostReduction') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:abilityCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'abilityCostReduction',
+            abilities: 'firstTargetingYourCreature',
+            amount: first.amount,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);

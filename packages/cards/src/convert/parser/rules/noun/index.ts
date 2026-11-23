@@ -58,6 +58,7 @@ import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
 import { NOUN_LIBRARY_CARD_MANA_VALUE_X } from './library-mv-x';
+import { LIMIT_BREAK_G4_EARLY_NOUN_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
@@ -1048,6 +1049,8 @@ export const NOUN_RULES = [
   ...ENCHANTED_BY_YOU_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
   ...HYLDA_G2_EARLY_NOUN_RULES,
+  // Limit Break deck, group 4: "all artifacts that player controls", whose first words are those of `noun.all-permanents`.
+  ...LIMIT_BREAK_G4_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
   ...ABZAN_SPELLS_NOUN_RULES,

@@ -393,6 +393,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'opponentCount':
       // CR 102.2: Rot Hulk's "where X is the number of opponents you have".
       return 'the number of opponents you have';
+    case 'opponentsAttackedThisCombat':
+      // CR 702.121a (Melee): "for each opponent you attacked this combat".
+      return 'the number of opponents you attacked this combat';
     case 'thisWay':
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':

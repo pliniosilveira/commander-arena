@@ -155,6 +155,8 @@ export interface AbilityReductionSource {
   readonly objects?: ObjectFilter;
   /** `abilityCostReduction` `minTotal` (issue 345): the mana the cost keeps at least. */
   readonly minTotal?: number;
+  /** "The first activated ability you activate during your turn that targets a creature you control costs {2} less" (Professor Hojo): see `abilityCostReduction`. */
+  readonly firstTargetingYourCreature?: true;
   readonly amount: Amount;
 }
 
@@ -403,7 +405,9 @@ function abilityReductionsOf(
               amount: a.static.amount,
               ...(a.static.minTotal === undefined ? {} : { minTotal: a.static.minTotal }),
             }
-          : { object, targeting: a.static.targeting, amount: a.static.amount },
+          : a.static.abilities === 'firstTargetingYourCreature'
+            ? { object, firstTargetingYourCreature: true, amount: a.static.amount }
+            : { object, targeting: a.static.targeting, amount: a.static.amount },
       );
     }
   }

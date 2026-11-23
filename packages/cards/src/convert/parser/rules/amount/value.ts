@@ -240,6 +240,35 @@ const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
   return r.ok ? { ok: true, value: { kind: 'opponentCount', span: r.value.span }, pos: r.pos } : r;
 };
 
+/**
+ * "the number of opponents who control more creatures than you", "the number of opponents who have more life than you" (CR 102.2, 608.2c; Limit Break deck, Heidegger, Shinra Executive): the same
+ * count as `amount.for-each-opponent` ("for each opponent who controls more creatures than you"): the opponents still in the game whose total is greater (or, with "fewer", smaller) than the
+ * controller's, now. The verb goes with its stat ("controls" creatures, "has" life or cards in hand).
+ */
+const NUMBER_OF_OPPONENTS_WITH_MORE: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(
+      /the number of opponents who (?:(?:has|have|controls?) (more|fewer) (life|cards in hand|creatures)) than you(?![\p{L}\p{N}'’])/iu,
+    ),
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const word = (r.value.value[2] ?? '').toLowerCase();
+  const fewer = (r.value.value[1] ?? '').toLowerCase() === 'fewer';
+  const verb = /(has|have|controls?)/i.exec(r.value.value[0] ?? '')?.[1]?.toLowerCase();
+  if ((word === 'creatures') !== (verb === 'control' || verb === 'controls')) return fail(ctx, pos);
+  const stat = word === 'life' ? 'life' : word === 'creatures' ? 'creatures' : 'cardsInHand';
+  return {
+    ok: true,
+    value: {
+      kind: 'opponentsWithMore',
+      stat,
+      ...(fewer ? { fewer: true as const } : {}),
+      span: r.value.span,
+    },
+    pos: r.pos,
+  };
+};
+
 /** "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3): the controller's commanders, in any zone. */
 const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(pattern(/the greatest mana value among your commanders(?![\p{L}\p{N}'’])/iu))(
@@ -436,6 +465,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     DEVOTION,
     COMMANDER_COLORS,
     OPPONENT_COUNT,
+    // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
+    NUMBER_OF_OPPONENTS_WITH_MORE,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),

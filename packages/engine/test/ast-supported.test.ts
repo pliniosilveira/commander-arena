@@ -106,6 +106,7 @@ const EXECUTABLE_KEYWORDS = [
   'rebound', // convert-grammar-engine-scions-e
   'reconfigure', // scenario-xx-reconfigure
   'dethrone', // scenario-xx-extra-combat
+  'melee', // convert-grammar-engine-limit-break-g4 (Tifa, Martial Artist)
   'myriad', // scenario-xx-extra-combat
   'decayed', // scenario-xx-gisa-g5-decayed (D-478)
 ];
@@ -231,6 +232,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   escalate: { kind: 'escalate', cost: [{ kind: 'mana', symbols: ['1'] }] },
   hideaway: { kind: 'hideaway', count: 3 },
   dethrone: { kind: 'dethrone' },
+  melee: { kind: 'melee' },
   readAhead: { kind: 'readAhead' },
   rebound: { kind: 'rebound' },
   reconfigure: { kind: 'reconfigure', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
@@ -442,6 +444,8 @@ describe('supported feature gate', () => {
       'triggerCondition',
       // D-177: "becomes the target of a spell".
       'becomesTargetSpell',
+      // Professor Hojo: "one or more creatures you control become the target of an activated ability".
+      'becomesTargetActivated',
       'castNth',
       // Issue 100: "whenever you cast your first instant or sorcery spell each turn".
       'castFirstOfKind',
@@ -457,6 +461,8 @@ describe('supported feature gate', () => {
       'entersFromGraveyard',
       // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}".
       'activatesAbilityX',
+      // Avalanche of Sector 7: "an opponent activates an ability of an artifact they control".
+      'activatesAbilityOfSource',
       // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature".
       'countersAddedEach',
       // "Whenever one or more opponents lose life".

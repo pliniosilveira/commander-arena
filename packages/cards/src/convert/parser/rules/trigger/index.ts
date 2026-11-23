@@ -56,6 +56,7 @@ import { HOFRI_TRIGGER_RULES } from './hofri';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
+import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
@@ -1412,6 +1413,8 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_D_TRIGGER_RULES,
   // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
   ...ACTIVATES_ABILITY_TRIGGER_RULES,
+  // Limit Break deck, group 4 (Professor Hojo): "one or more creatures you control become the target of an activated ability".
+  ...LIMIT_BREAK_G4_TRIGGER_RULES,
   // Hylda deck, group 1 (issue 42, D-510, D-513): "you tap an untapped creature an opponent controls", "you scry".
   ...HYLDA_G1_TRIGGER_RULES,
   // Galadriel deck, group 1 (issue 43): "you scry or surveil", "you surveil".
