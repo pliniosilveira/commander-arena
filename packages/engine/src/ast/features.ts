@@ -404,6 +404,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
+    // Issue 97 (Kefka): "each player who owns a spell you cast this way loses life equal to its mana value".
+    'loseLifeManaValue',
     // D-131: "mill N cards" (CR 701.17).
     'mill',
     // D-309: "manifest the top card of your library" (CR 701.40), and the face-down permanent it makes.
@@ -3086,6 +3088,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   extraTurn: true,
+  loseLifeManaValue: true,
   delayedTrigger: true,
   prepare: true,
   copyCardAndCast: true,

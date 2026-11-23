@@ -3412,6 +3412,15 @@ export type Effect =
    */
   | { readonly kind: 'extraTurn'; readonly player: PlayerSelector }
   /**
+   * "Each player who owns a spell you cast this way loses life equal to its mana value" (Kefka, Dancing Mad, issue 97; CR 202.3, 119.3, 101.4): of the objects `spells` names (`moved`) only those that are
+   * spells on the stack count (the ones a `castFree` with `remember` cast: they are still there while the ability resolves, CR 608.2g); for each, in APNAP order of their owners, its owner loses life equal to
+   * its mana value (an {X} counts as the X announced, CR 202.3e).
+   */
+  | {
+      readonly kind: 'loseLifeManaValue';
+      readonly spells: Extract<ObjectRef, { readonly kind: 'moved' }>;
+    }
+  /**
    * CR 406.1 (Exile). With `linked` (D-139, CR 607.2a: "Imprint", "exiled with this creature"): the cards exiled are remembered by the
    * permanent the ability belongs to, in the order they were exiled, for the static `takeFromLinkedExile` that reads them. The link is
    * the permanent's own: it is lost when the permanent leaves the battlefield (CR 400.7), and a card that leaves exile is not
@@ -3426,6 +3435,11 @@ export type Effect =
        * generator (nobody chooses); with one or none there is nothing to pick. With `each` of a filter of cards in a zone outside the battlefield.
        */
       readonly atRandom?: true;
+      /**
+       * "Exile a card at random from each opponent's graveyard" (Kefka, Dancing Mad, issue 97; CR 701.13, 101.4): with `atRandom`, one card is picked for each owner of the objects `objects` names
+       * (one seeded pick per graveyard, owners in APNAP order), not one overall. An owner with no card has none exiled.
+       */
+      readonly perOwner?: true;
       /**
        * "Exile target nonland permanent ... until this enchantment leaves the battlefield" (CR 610.3, D-149): the cards are returned to the battlefield
        * under their owners' control (CR 610.3c) when the permanent the ability belongs to leaves the battlefield. If it has left already as the
@@ -4586,6 +4600,7 @@ export type Effect =
       /**
        * "Target opponent may cast a spell from their hand without paying its mana cost. If they do, you copy that spell." (CR 608.2g, 707.10, Cmdr. Troi): the spell cast is what `moved`
        * names afterwards (a `copySpell` of it). With `player` and a `choose` selector of the hand of that player: they choose among the spells in their own hand that they could cast.
+       * With `max` (Kefka, Dancing Mad, issue 97) the spells cast are all added to `moved`, and the cards offered stay those `moved` named as the effect began.
        */
       readonly remember?: true;
     }

@@ -348,6 +348,11 @@ export interface LowerContext {
    */
   lastEffectKind: string | null;
   /**
+   * True when the last instruction lowered was a `castFree` that remembers the spells it cast (Kefka, Dancing Mad, issue 97): "each player who owns a spell you cast this way" reads them. Set after
+   * every instruction, so it holds only right after that cast.
+   */
+  lastCastRemembered: boolean;
+  /**
    * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
    * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
    */
@@ -456,6 +461,7 @@ export function newContext(
     exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
+    lastCastRemembered: false,
     lastCounteredGroup: null,
     randomYardCard: false,
     choseAPlayer: false,

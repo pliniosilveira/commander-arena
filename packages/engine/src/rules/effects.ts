@@ -115,6 +115,7 @@ import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
+import { runLoseLifeManaValue } from './lose-life-mana-value';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
 import {
@@ -1190,10 +1191,30 @@ function runEffect(
         )
         .filter((id) => state.objects[id] !== undefined);
       // Issue 121 (Arcane Bombardment, CR 701.13, 701.9b analogue): "exile an instant or sorcery card at random from your graveyard": the one card is picked by the game's seeded generator.
-      const picked =
-        effect.atRandom === true && named.length > 1 ? pickRandom(named, state.rng) : null;
-      const ids = picked === null ? named : [picked[0]];
-      const drawn = picked === null ? state : { ...state, rng: picked[1] };
+      // Issue 97 (Kefka, CR 101.4): `perOwner`: one pick for each owner, the owners in APNAP order, each pick drawing from the generator in turn.
+      let ids: readonly ObjectId[] = named;
+      let drawn = state;
+      if (effect.atRandom === true && effect.perOwner === true) {
+        ids = [];
+        for (const owner of apnapOrder(
+          state,
+          named.flatMap((id) => {
+            const o = state.objects[id];
+            return o === undefined ? [] : [o.owner];
+          }),
+        )) {
+          const own = named.filter((id) => state.objects[id]?.owner === owner);
+          if (own.length > 1) {
+            const [one, rng] = pickRandom(own, drawn.rng);
+            ids = [...ids, one];
+            drawn = { ...drawn, rng };
+          } else ids = [...ids, ...own];
+        }
+      } else if (effect.atRandom === true && named.length > 1) {
+        const [one, rng] = pickRandom(named, state.rng);
+        ids = [one];
+        drawn = { ...state, rng };
+      }
       // CR 610.3a, 610.3b (D-149): "until this leaves the battlefield": if it already has, as the exile would happen, nothing moves.
       if (
         effect.until === 'sourceLeaves' &&
@@ -2168,6 +2189,10 @@ function runEffect(
       const r = becomeMonarch(state, seat);
       return done(r.state, r.events);
     }
+
+    case 'loseLifeManaValue':
+      // Issue 97 (Kefka, CR 202.3, 119.3): the owner of each spell cast this way loses life equal to its mana value.
+      return runLoseLifeManaValue(state, resolveObjects(state, effect.spells, ctx, targets));
 
     case 'extraTurn': {
       // CR 500.7: the turn is added directly after the current one; several players are given theirs one at a time in APNAP order, and the most recently created
@@ -3458,6 +3483,14 @@ function runEffect(
         );
       }
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
+      // Issue 97 (Kefka): "any number of spells from among cards exiled this way", remembering each spell: the cards offered are fixed as the effect begins, because `moved` then grows with the spells cast.
+      const fixed =
+        effect.remember === true && effect.max !== undefined
+          ? resolveObjects(state, effect.objects as ObjectRef, ctx, targets).filter(
+              (id) => state.objects[id]?.zone === 'exile',
+            )
+          : undefined;
+      if (fixed?.length === 0) return { ...done(state), resetPerformed: true };
       // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
       const [caster] =
         effect.player === undefined ? [] : resolvePlayers(state, effect.player, ctx, targets);
@@ -3475,6 +3508,7 @@ function runEffect(
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
             ...(effect.remember === true ? { remember: true as const } : {}),
+            ...(fixed === undefined ? {} : { cards: fixed, cardsZone: 'exile' as const }),
             chosen: null,
           },
         ],

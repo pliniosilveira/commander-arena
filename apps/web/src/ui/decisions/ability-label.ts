@@ -1114,6 +1114,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'extraTurn':
       // CR 500.7: "take an extra turn after this one", "target player takes an extra turn after this one".
       return `${playerVerb(effect.player, ability, 'take')} an extra turn after this one`;
+    case 'loseLifeManaValue':
+      // Issue 97 (Kefka): "each player who owns a spell you cast this way loses life equal to its mana value".
+      return 'Each player who owns a spell cast this way loses life equal to its mana value';
     case 'becomeMonarch':
       // CR 725.1 (D-127): "you become the monarch", "its controller becomes the monarch".
       return `${playerVerb(effect.player, ability, 'become')} the monarch`;
