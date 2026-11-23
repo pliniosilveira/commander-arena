@@ -119,6 +119,9 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'split second',
     'Toxic 1',
     'Annihilator 2',
+    // CR 702.189a: Firebending N.
+    'Firebending 2',
+    'Haste, firebending 4',
     // D-472 (CR 702.130a): Afflict N.
     'Afflict 3',
     // Issue 102 (CR 702.52a): Dredge N.
@@ -257,6 +260,10 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Dredge',
     'Dredge 0',
     'Dredge X',
+    'Firebending',
+    'Firebending 0',
+    'Firebending X',
+    'Firebending {R}',
     'Afflict',
     'Afflict 0',
     'Afflict X',

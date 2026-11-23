@@ -140,6 +140,10 @@ export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[])
     // D-640 (CR 702.86a): "annihilator 2", a positive whole number.
     issue(out, `${path}.count`, 'annihilator needs a positive integer');
   }
+  if (k?.kind === 'firebending' && (!isCount(k.count) || k.count < 1)) {
+    // CR 702.189a: "firebending 4", a positive whole number.
+    issue(out, `${path}.count`, 'firebending needs a positive integer');
+  }
   if (k?.kind === 'ward') {
     // D-638 (CR 702.21a): the cost is paid when the ward ability resolves (rules/pay-unless.ts): mana, life and discarding, as for a printed ward.
     if (!Array.isArray(k.cost) || k.cost.length === 0) {

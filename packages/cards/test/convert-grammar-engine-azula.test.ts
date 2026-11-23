@@ -5,7 +5,7 @@ import { type CardDefinition, syntheticCard, validateCard } from '@commander-are
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
 
 const GOLDEN = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -139,5 +139,104 @@ describe('Frostcliff Siege: abilities linked to the option chosen as it entered 
     const g = board('Jeskai');
     g.expect.pt('Grizzly Bears', 2, 2);
     g.expect.derived('Grizzly Bears', { keywords: [] });
+  });
+});
+
+describe('Firebending N (CR 702.189a, 500.5a): add N {R} as it attacks, kept until end of combat', () => {
+  const BENDER = parsed('SYNTHETIC Parsed Firebender', 'Creature — Human Monk', 'Firebending 2', {
+    manaCost: '{1}{R}',
+    colors: ['R'],
+    power: 2,
+    toughness: 2,
+  });
+  const NAME = BENDER.name;
+  const FILLER = Array.from({ length: 8 }, () => 'Island');
+
+  const attack = () => {
+    const g = scenario()
+      .define(BENDER)
+      .seat(0)
+      .library(...FILLER)
+      .battlefield(NAME)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: NAME }]);
+    return g;
+  };
+
+  test('is valid and is a triggered ability the engine expands', () => {
+    expect(validateCard(BENDER)).toEqual([]);
+  });
+
+  test('the trigger uses the stack, adds {R}{R} when it resolves', () => {
+    const g = attack();
+    g.expect.stack([`${NAME} (ability)`]);
+    g.expect.pool(0, {});
+    g.passAll();
+    g.expect.pool(0, { R: 2 });
+    g.expect.invariants();
+  });
+
+  test('the mana is still there through the combat steps and gone when combat ends', () => {
+    const g = attack();
+    g.passAll();
+    g.expect.pool(0, { R: 2 });
+    g.advanceTo('combatDamage');
+    g.expect.pool(0, { R: 2 });
+    g.advanceTo('endOfCombat');
+    g.expect.pool(0, { R: 2 });
+    g.advanceTo('postcombatMain');
+    g.expect.pool(0, {});
+  });
+});
+
+describe('Fire Nation Palace: {1}{R}, {T}: Target creature you control gains firebending 4 until end of turn', () => {
+  const PALACE = 'Fire Nation Palace';
+  const palace = real(PALACE);
+
+  test('is valid', () => {
+    expect(validateCard(palace)).toEqual([]);
+  });
+
+  test('it enters tapped unless I control a basic land (CR 614.1d)', () => {
+    for (const [lands, tapped] of [
+      [['Mountain'], false],
+      [[], true],
+    ] as const) {
+      const g = scenario()
+        .define(palace)
+        .seat(0)
+        .hand(PALACE)
+        .battlefield(...lands)
+        .library('Island', 'Island')
+        .seat(1)
+        .library('Island', 'Island')
+        .at('precombatMain', { active: 0 })
+        .build();
+      g.act(0).playLand(PALACE);
+      g.expect.tapped(PALACE, tapped);
+    }
+  });
+
+  test('the creature gains firebending 4 and attacking adds {R}{R}{R}{R}', () => {
+    const g = scenario()
+      .define(palace)
+      .seat(0)
+      .battlefield(PALACE, 'Mountain', 'Mountain', 'Grizzly Bears')
+      .library('Island', 'Island')
+      .seat(1)
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(PALACE, { ability: 2, targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.derived('Grizzly Bears', { keywords: ['firebending'] });
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 'Grizzly Bears' }]);
+    g.passAll();
+    g.expect.pool(0, { R: 4 });
   });
 });

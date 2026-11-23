@@ -97,7 +97,12 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
     // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
     const keyword = grantedKeyword(word.name);
     if (keyword === undefined) return failure(clause);
-    if (keyword.kind === 'afflict' || keyword.kind === 'mobilize' || keyword.kind === 'landwalk') {
+    if (
+      keyword.kind === 'afflict' ||
+      keyword.kind === 'mobilize' ||
+      keyword.kind === 'firebending' ||
+      keyword.kind === 'landwalk'
+    ) {
       const blocked = missingFeatures([`keyword:${keyword.kind}`]);
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };

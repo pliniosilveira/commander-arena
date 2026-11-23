@@ -21,6 +21,11 @@ export const KEYWORD_WORD: Parser<string> = choice(
     pattern(new RegExp(`annihilator\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),
     (m) => `annihilator ${m[1]}` as string,
   ),
+  // CR 702.189a: "firebending 4", the number in digits, the word kept with its number ("firebending 4").
+  map(
+    pattern(new RegExp(`firebending\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),
+    (m) => `firebending ${m[1]}` as string,
+  ),
   // D-638 (CR 702.21a): "ward {2}", the mana cost in braces, the word kept with its cost ("ward {2}").
   map(
     pattern(new RegExp(`ward\\s+((?:\\{[0-9WUBRGC]\\})+)${BOUNDARY}`, 'iu')),

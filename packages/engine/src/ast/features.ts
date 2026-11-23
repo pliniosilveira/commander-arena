@@ -715,6 +715,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'nightbound',
     'exalted',
     'annihilator',
+    // CR 702.189: Firebending N.
+    'firebending',
     // D-472: Afflict N (CR 702.130).
     'afflict',
     // Issue 102 (Life from the Loam): Dredge N (CR 702.52).
@@ -1090,6 +1092,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokensPerOpponent',
     // D-650: "Until end of turn, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfTurn`).
     'manaStays',
+    // CR 702.189a, 500.5a: "Until end of combat, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfCombat`).
+    'manaStaysThroughCombat',
     // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
     'tokensPerPrevented',
     'moved',
@@ -1737,6 +1741,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'mobilize',
   // D-638: ward (CR 702.21): "Enchanted creature has ward {2}"; each instance granted is a triggered ability of its own, like afflict's.
   'ward',
+  // CR 702.189: firebending: "Target creature you control gains firebending 4 until end of turn"; each instance granted triggers separately.
+  'firebending',
   // D-640: annihilator (CR 702.86): "Enchanted creature has annihilator 2"; each instance granted triggers separately (CR 702.86b), like afflict's.
   'annihilator',
   // CR 702.116a, 702.116b (Myriad): given to a creature by a static ability or an effect ("Creatures you control have myriad"); each instance is its own triggered ability.
@@ -2108,6 +2114,8 @@ export const SELECTOR_KINDS = [
   'tokensPerOpponent',
   /** "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-650): the engine's `staysUntilEndOfTurn` of a fixed `addMana` production. */
   'manaStays',
+  /** "Until end of combat, you don't lose this mana as steps and phases end" (CR 702.189a, 500.5a): the engine's `staysUntilEndOfCombat` of a fixed `addMana` production. */
+  'manaStaysThroughCombat',
   /** "For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the engine's `preventDamage.perPrevented`. */
   'tokensPerPrevented',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
@@ -3248,6 +3256,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   nightbound: true,
   exalted: true,
   annihilator: true,
+  firebending: true,
   afflict: true,
   dredge: true,
   mobilize: true,

@@ -20,6 +20,7 @@ import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/type
 import {
   AFFLICT_WORD,
   ANNIHILATOR_WORD,
+  FIREBENDING_WORD,
   grantedKeyword,
   landwalkOf,
   MOBILIZE_WORD,
@@ -578,6 +579,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       // D-640, D-638: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
       if (ANNIHILATOR_WORD.test(effect.keyword)) {
         return ['static:grantKeyword', 'keyword:annihilator'];
+      }
+      // CR 702.189a: the keyword node of a granted firebending.
+      if (FIREBENDING_WORD.test(effect.keyword)) {
+        return ['static:grantKeyword', 'keyword:firebending'];
       }
       if (WARD_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:ward'];
       if (landwalkOf(effect.keyword) !== undefined) {

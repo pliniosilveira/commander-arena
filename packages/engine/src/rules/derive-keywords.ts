@@ -243,6 +243,25 @@ function annihilatorAbility(count: number): Ability {
 }
 
 /**
+ * CR 702.189a: "Firebending N" means "Whenever this creature attacks, add N {R}. Until end of combat, you don't lose this mana as steps and phases end." The mana is added to the
+ * pool of the controller of the ability and kept until the combat phase ends (CR 500.5a).
+ */
+function firebendingAbility(count: number): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'attacks', what: { kind: 'this' } },
+    effect: {
+      kind: 'addMana',
+      mana: {
+        kind: 'fixed',
+        mana: Array.from({ length: count }, () => 'R' as const),
+        staysUntilEndOfCombat: true,
+      },
+    },
+  };
+}
+
+/**
  * CR 702.130a (D-472): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." The defending player is the one
  * the creature attacks (CR 508.5); each instance triggers separately (CR 702.130b).
  */
@@ -859,6 +878,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY];
     case 'annihilator':
       return [annihilatorAbility(ability.keyword.count)];
+    case 'firebending':
+      return [firebendingAbility(ability.keyword.count)];
     case 'afflict':
       return [afflictAbility(ability.keyword.count)];
     // CR 702.52a (issue 102): a replacement of the draw read from the graveyard (`rules/dredge.ts`), not an ability the permanent has.

@@ -224,6 +224,7 @@ export function grantedKeywordWords(keyword: Keyword): string {
       : `${keyword.landType.toLowerCase()}walk`;
   }
   if (keyword.kind === 'afflict') return `afflict ${keyword.count}`;
+  if (keyword.kind === 'firebending') return `firebending ${keyword.count}`;
   if (keyword.kind === 'mobilize') {
     return keyword.count === 'power'
       ? 'mobilize X, where X is its power'
