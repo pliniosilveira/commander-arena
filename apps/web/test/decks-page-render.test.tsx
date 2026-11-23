@@ -25,7 +25,7 @@ describe('the precons on the decks page (issue 93)', () => {
       />,
     );
     expect(out).toContain('SYNTHETIC Zombies');
-    expect(out).toContain('Built in');
+    expect(out).not.toContain('Built in');
     expect(out).toContain('Commander: SYNTHETIC Commander');
     expect(out).toContain('precon-toggle');
     expect(out).toContain('checked=""');

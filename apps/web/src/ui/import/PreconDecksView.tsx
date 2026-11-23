@@ -37,14 +37,33 @@ export function PreconDecksView({
             .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
             .map((deck) => (
               <li key={deck.id} data-precon={deck.id}>
-                <span>
-                  <strong>{deck.name}</strong>{' '}
-                  <span className="imp-tag" data-testid="precon-tag" data-edited={deck.edited}>
-                    {deck.edited ? 'Edited by you' : 'Built in'}
-                  </span>{' '}
-                  <span className="scr-help">
-                    {deck.commander === '' ? '' : `Commander: ${deck.commander}`}
+                {deck.commanderImage !== undefined && (
+                  <img
+                    className="scr-deck-art"
+                    src={deck.commanderImage}
+                    alt=""
+                    loading="lazy"
+                    width={106}
+                    height={77}
+                  />
+                )}
+                <span className="scr-deck-text imp-precon-text">
+                  <span className="scr-deck-name">
+                    {deck.name}
+                    {deck.edited && (
+                      <span className="imp-tag" data-testid="precon-tag" data-edited>
+                        Edited by you
+                      </span>
+                    )}
                   </span>
+                  {deck.commander !== '' && (
+                    <span className="scr-deck-commander">Commander: {deck.commander}</span>
+                  )}
+                  {(deck.set !== undefined || deck.year !== undefined) && (
+                    <span className="scr-deck-set">
+                      {[deck.set, deck.year].filter((part) => part !== undefined).join(' · ')}
+                    </span>
+                  )}
                 </span>
                 <span className="imp-row-actions">
                   <label className="scr-help">

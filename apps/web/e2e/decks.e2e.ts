@@ -85,7 +85,7 @@ test.describe('precons on the decks page', () => {
     await fakeScryfall(page);
     await openDecks(page);
     await expect(page.getByTestId('precon-decks').locator('li')).toHaveCount(installed.length);
-    await expect(row(page).getByTestId('precon-tag')).toHaveText('Built in');
+    await expect(row(page).getByTestId('precon-tag')).toHaveCount(0);
     await expect(row(page).getByRole('button', { name: /^Reset to default/ })).toHaveCount(0);
 
     // Replace a card with one that is not in the precon: it is looked up and judged.
@@ -110,7 +110,7 @@ test.describe('precons on the decks page', () => {
     await expect(row(page).getByTestId('precon-tag')).toHaveText('Edited by you');
     await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
-    await expect(row(page).getByTestId('precon-tag')).toHaveText('Built in');
+    await expect(row(page).getByTestId('precon-tag')).toHaveCount(0);
 
     // The shipped list was never changed.
     await row(page).getByRole('button', { name: /^Edit/ }).click();
