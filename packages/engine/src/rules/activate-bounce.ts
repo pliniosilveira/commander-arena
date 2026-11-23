@@ -10,6 +10,7 @@
  */
 import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
+import { patchObject } from '../state/ops';
 import type { ActivationContext, CastingContext, GameState } from '../state/types';
 import { breakDown } from './activate-costs';
 import { controllerOf } from './control';
@@ -28,6 +29,23 @@ function inProgress(
   const casting = state.casting;
   const activation = casting?.activation ?? null;
   return casting && activation ? { casting, activation } : null;
+}
+
+/** Writes what the attacker `id` is attacking on the ability `ability` that is being paid for (`StackData.returnedAttack`), when it is attacking. */
+function rememberAttack(state: GameState, ability: ObjectId, id: ObjectId): GameState {
+  const entry = state.combat?.attackers.find((a) => a.object === id);
+  const stack = state.objects[ability]?.stack;
+  if (entry === undefined || stack == null) return state;
+  return patchObject(state, ability, {
+    stack: {
+      ...stack,
+      returnedAttack: {
+        target: entry.target,
+        ...(entry.defender === undefined ? {} : { defender: entry.defender }),
+        ...(entry.targetGone === true ? { targetGone: true as const } : {}),
+      },
+    },
+  });
 }
 
 /**
@@ -53,6 +71,8 @@ function returnAll(
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== casting.seat) {
       return fail("That permanent cannot be returned to its owner's hand");
     }
+    // CR 702.49a (Ninjutsu, unverified): what the returned attacker was attacking is written on the ability before it leaves combat, for `enterAttacking.asReturned`.
+    current = rememberAttack(current, casting.object, id);
     const moved = moveObject(
       current,
       toBottom

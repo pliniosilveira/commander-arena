@@ -67,6 +67,7 @@ const EXECUTABLE_KEYWORDS = [
   'splitSecond', // scenario-xx-split-second
   'startYourEngines', // scenario-xx-speed-s144
   'typecycling', // scenario-xx-typecycling
+  'ninjutsu', // scenario-xx-ninjutsu (CR 702.49a, unverified)
   'multikicker', // scenario-xx-multikicker
   'buyback', // scenario-xx-galadriel-g3-spells
   'skulk', // scenario-xx-keywords2-combat
@@ -194,6 +195,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
     filter: { subtypes: ['Island'] },
     cost: [{ kind: 'mana', symbols: ['2'] }],
   },
+  ninjutsu: { kind: 'ninjutsu', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
   multikicker: { kind: 'multikicker', cost: [{ kind: 'mana', symbols: ['2'] }] },
   buyback: { kind: 'buyback', cost: [{ kind: 'mana', symbols: ['2'] }] },
   skulk: { kind: 'skulk' },

@@ -416,6 +416,32 @@ function returnWithCounter(counter: string): Ability {
 }
 
 /**
+ * CR 702.49a (Ninjutsu; UNVERIFIED: the CR text is not in the repository): "Ninjutsu [cost]" means "[Cost], Return an unblocked attacker you control to hand: Put this card onto the
+ * battlefield from your hand tapped and attacking." It functions only from the hand. The return is the cost (paid by `rules/activate-bounce.ts`, which records what the creature was
+ * attacking), and `enterAttacking` with `asReturned` makes the card attack that same player, planeswalker or battle.
+ */
+function ninjutsuAbility(cost: readonly Cost[]): Ability {
+  return {
+    kind: 'activated',
+    cost: [
+      ...cost,
+      {
+        kind: 'returnToHand',
+        what: { types: ['creature'], unblocked: true },
+      },
+    ],
+    effect: {
+      kind: 'sequence',
+      effects: [
+        { kind: 'moveToZone', objects: { kind: 'this' }, to: 'battlefield', tapped: true },
+        { kind: 'enterAttacking', objects: { kind: 'moved' }, asReturned: true },
+      ],
+    },
+    functionsIn: 'hand',
+  };
+}
+
+/**
  * CR 702.29e: "[Type]cycling [cost]" means "[Cost], Discard this card: Search your library for a [type]
  * card, reveal it, and put it into your hand. Then shuffle your library." Like Cycling it functions only from
  * the hand (CR 702.29f). Finding nothing is allowed (CR 701.23b), and the library is shuffled anyway.
@@ -912,6 +938,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [returnWithCounter('-1/-1')];
     case 'undying':
       return [returnWithCounter('+1/+1')];
+    case 'ninjutsu':
+      return [ninjutsuAbility(ability.keyword.cost)];
     case 'typecycling':
       return [typecyclingAbility(ability.keyword.filter, ability.keyword.cost)];
     case 'battleCry':

@@ -572,7 +572,10 @@ export function checkDragonsEffect(
       ) {
         issue(out, `${path}.thatPlayerOrTheirPlaneswalkers`, 'it is true or left out');
       }
-      if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
+      if (e.asReturned !== undefined) {
+        // Ninjutsu (CR 702.49a, unverified): the engine writes it into the keyword's expansion, which is never read from a card.
+        issue(out, `${path}.asReturned`, 'asReturned is written by the engine for Ninjutsu');
+      } else if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
       }
       return true;

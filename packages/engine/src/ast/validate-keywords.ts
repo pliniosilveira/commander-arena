@@ -323,6 +323,17 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported`);
       }
       return true;
+    case 'ninjutsu':
+      // CR 702.49a (unverified: the CR text is not in the repository): the cost is paid like any activation cost, and the return of an unblocked attacker is the engine's own.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'returnToHand')) {
+        issue(
+          out,
+          `${path}.cost`,
+          'ninjutsu already returns an unblocked attacker; do not list returnToHand',
+        );
+      }
+      return true;
     case 'echo':
     case 'cumulativeUpkeep':
       // CR 702.30a, 702.24a (D-127): a cost paid as the upkeep trigger resolves; there must be one to pay.

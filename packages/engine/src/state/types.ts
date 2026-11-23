@@ -639,6 +639,11 @@ export interface StackData {
    */
   readonly exiledAsCost?: readonly ObjectId[];
   /**
+   * For an activated ability whose cost returned an attacking creature to its owner's hand (Ninjutsu, CR 702.49a, UNVERIFIED rule text): what that creature was attacking as it left
+   * combat (the attacked player, planeswalker or battle, and the defending player of a permanent), which `enterAttacking.asReturned` reads. Absent for every other object.
+   */
+  readonly returnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
+  /**
    * For a spell cast with the optional blight of its additional cost paid (CR 118.8, 701.68a): true, which the condition `additionalCostPaid` reads (from last-known information once the
    * spell has left the stack). Absent when it was not paid and for every other object.
    */
@@ -2227,6 +2232,8 @@ export interface ResolutionContext {
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What the attacker returned to pay the cost of the activated ability that is resolving was attacking (`StackData.returnedAttack`), for `enterAttacking.asReturned` (Ninjutsu). Absent for any other spell or ability. */
+  readonly costReturnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
   /** What `tappedAsCostPower` means (CR 702.184a): `StackData.tappedPowerAsCost`. */
   readonly costTappedPower?: number;
   /** The cards the cost of this activated ability exiled from the graveyard (D-232, `StackData.exiledAsCost`). */

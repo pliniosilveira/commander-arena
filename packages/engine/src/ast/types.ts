@@ -910,6 +910,12 @@ export interface ObjectFilter {
    */
   readonly blocking?: true;
   /**
+   * Only unblocked attackers (CR 509.1h): a creature declared as an attacker that is still in combat and no creature blocked, once the blockers are declared (the declare blockers step
+   * and later; before it no attacker is unblocked). Read where `attacking` is read, and refused where it is refused. UNVERIFIED rule number: the CR text is not in the repository.
+   * The engine writes it for the return cost of Ninjutsu.
+   */
+  readonly unblocked?: true;
+  /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
    * you" counts the attackers whose attack target is that player, not one attacking a planeswalker or battle they
    * control. It implies `attacking`. Read where `attacking` is read, and refused where it is refused. `'orPlaneswalkers'` ("creature that's attacking you or a planeswalker you control",
@@ -3014,6 +3020,11 @@ export type Effect =
   | {
       readonly kind: 'enterAttacking';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * Written by the engine for Ninjutsu (CR 702.49a, UNVERIFIED): the creature enters attacking what the creature returned as the cost had been attacking (`StackData.returnedAttack`),
+       * with no choice of target (CR 508.4 does not apply to it), and in any step after the blockers were declared. A card cannot write it (`validateCard`).
+       */
+      readonly asReturned?: true;
       readonly thatPlayerOrTheirPlaneswalkers?: true;
     }
   /**
@@ -6104,6 +6115,13 @@ export type Keyword =
    * `payLife` costs are supported.
    */
   | { readonly kind: 'typecycling'; readonly filter: ObjectFilter; readonly cost: readonly Cost[] }
+  /**
+   * Ninjutsu (CR 702.49a, UNVERIFIED: the CR text is not in the repository): "Ninjutsu [cost]" means "[Cost], Return an unblocked attacker you control to hand: Put this card onto the
+   * battlefield from your hand tapped and attacking." An activated ability that functions only from the hand, expanded by the engine (`rules/derive-keywords.ts`); it can be activated
+   * only while an unblocked attacker you control exists (the declare blockers step and later). The card enters attacking the same player, planeswalker or battle the returned creature
+   * attacked (recorded as the cost is paid, `StackData.returnedAttack`). Only `mana` costs are supported.
+   */
+  | { readonly kind: 'ninjutsu'; readonly cost: readonly Cost[] }
   /**
    * CR 702.33c (Multikicker): "Multikicker [cost]" means "You may pay an additional [cost] any number of
    * times as you cast this spell." A kicker cost (CR 702.33c): the caster is asked how many times to pay
