@@ -163,7 +163,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:aPlayerLostLifeThisTurn']);
       return blocked.length > 0
         ? failure(c, blocked)
-        : ok({ kind: 'aPlayerLostLifeThisTurn', atLeast: test.atLeast });
+        : ok({
+            kind: 'aPlayerLostLifeThisTurn',
+            atLeast: test.atLeast,
+            ...(test.opponent === true ? { opponent: true as const } : {}),
+          });
     }
     case 'spellsCastThisTurn': {
       // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
@@ -552,6 +556,19 @@ export function lowerCondition(
         const matched = lowerFilter({ ...test.who, det: 'a', filter: test.filter });
         if (!matched.ok) return matched;
         return ok({ kind: 'objectMatches', of: { kind: 'triggerSubject' }, filter: matched.value });
+      }
+      // "When ~ dies, if it was a creature, ..." (Enduring Tenacity, CR 603.4, 603.10a, 113.7a): the intervening "if" of an ability about the source itself, whose "it" is the
+      // source, read as it last was once it has left the battlefield: the engine's `thisMatches`.
+      if (
+        (test.who.ref === undefined || test.who.ref === 'self') &&
+        test.who.filter.raw === 'it' &&
+        itIsSelf &&
+        ctx?.interveningCondition === true
+      ) {
+        const thisBlocked = missingFeatures(['condition:thisMatches']);
+        if (thisBlocked.length > 0) return failure(c, thisBlocked);
+        const matched = lowerFilter({ ...test.who, det: 'self', filter: test.filter });
+        return matched.ok ? ok({ kind: 'thisMatches', filter: matched.value }) : matched;
       }
       const id = test.who.ref ?? '';
       // "Put a card exiled with ~ into its owner's graveyard. If it's a land card" (stage P50, D-207): the card the instruction before moved.

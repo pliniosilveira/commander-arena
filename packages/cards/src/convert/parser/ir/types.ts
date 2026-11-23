@@ -838,7 +838,11 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'castFromGraveyardThisTurn' }
     | { readonly kind: 'lifeGainedAndLostThisTurn' }
     // "a player lost 4 or more life this turn" (CR 119.3, 603.4): some player, any player
-    | { readonly kind: 'aPlayerLostLifeThisTurn'; readonly atLeast: number }
+    | {
+        readonly kind: 'aPlayerLostLifeThisTurn';
+        readonly atLeast: number;
+        readonly opponent?: true;
+      }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
     // D-444 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
     | {

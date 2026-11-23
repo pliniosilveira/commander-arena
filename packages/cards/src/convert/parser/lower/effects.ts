@@ -80,6 +80,7 @@ import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
+import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
@@ -2720,6 +2721,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...ENDURING_LOWERINGS,
   // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
   ...WITHERBLOOM_C_LOWERINGS,
   // Issue 258 (D-585): the sentence after "Choose a color.", reported alone (the pair is lowered by `lowerStep`).

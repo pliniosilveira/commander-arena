@@ -992,6 +992,7 @@ describe('unmatched abilities', () => {
       'effect.becomes-subtype-in-addition',
       'effect.opponents-attacking-do-same',
       'effect.return-destroyed-card',
+      'effect.it-is-an-enchantment',
       'effect.player-adds-chosen-color-mana',
       'effect.add-mana-each-color',
       'effect.each-opponent-choose-keep',

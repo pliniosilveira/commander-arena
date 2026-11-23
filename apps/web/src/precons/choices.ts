@@ -36,6 +36,8 @@ export interface DeckChoice {
   readonly kind: 'precon' | 'saved';
   /** A precon the player edited: the list in use is theirs, not the one that shipped. */
   readonly edited: boolean;
+  /** False for a precon the player switched off: not offered in the pickers, never random. */
+  readonly enabled?: boolean;
 }
 
 /** The first name of the Commander section of a decklist, as written; empty when there is none. */
@@ -57,6 +59,7 @@ export function deckChoices(
   overrides: readonly SavedDeck[],
   saved: readonly SavedDeck[],
   looks: ReadonlyMap<string, CommanderLook> = new Map(),
+  disabled: ReadonlySet<string> = new Set(),
 ): readonly DeckChoice[] {
   const override = new Map<string, SavedDeck>();
   for (const deck of overrides) if (deck.preconId !== undefined) override.set(deck.preconId, deck);
@@ -78,6 +81,7 @@ export function deckChoices(
       ...(precon.year === undefined ? {} : { year: precon.year }),
       kind: 'precon',
       edited: mine !== undefined,
+      enabled: !disabled.has(precon.id),
     };
   });
   const fromSaved = saved.map((deck): DeckChoice => {

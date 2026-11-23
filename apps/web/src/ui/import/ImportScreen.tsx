@@ -48,7 +48,7 @@ export function ImportScreen() {
     readonly text: string;
     readonly service: ImportService;
   } | null>(null);
-  const { choices, refresh: refreshChoices } = useDeckChoices();
+  const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
   const refreshDecks = useCallback(() => {
     env.decks.list().then(setDecks, () => setDecks(null));
@@ -96,19 +96,6 @@ export function ImportScreen() {
     } catch (e) {
       setSaveMessage(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
     }
-  };
-
-  /** Opens a precon in the editor: your saved version of it, or the list it shipped with. */
-  const editPrecon = async (precon: DeckChoice) => {
-    const mine = (await env.decks.overrides()).find((deck) => deck.preconId === precon.id);
-    setEditing({ id: precon.id, name: precon.name });
-    setSaveMessage(null);
-    setTab('import');
-    void flow.start({
-      text: mine?.text ?? defaultListOf(precon.id),
-      name: precon.name,
-      service: precons.editorService(precon.id),
-    });
   };
 
   /** "Reset to default": forgets your version; an editor open on that precon shows the shipped list again. */
@@ -242,7 +229,7 @@ export function ImportScreen() {
           />
           <PreconDecksView
             precons={choices.filter((choice) => choice.kind === 'precon')}
-            onEdit={(precon) => void editPrecon(precon)}
+            onToggle={setPreconEnabled}
             onView={(precon) => void viewPrecon(precon)}
             onReset={(precon) => void resetPrecon(precon)}
           />

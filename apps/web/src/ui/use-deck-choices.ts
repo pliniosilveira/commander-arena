@@ -7,7 +7,13 @@ import { normalizeNameKey } from '@commander-arena/cards';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SavedDeck } from '../import/types';
 import type { CommanderLook } from '../precons';
-import { commanderNameOf, type DeckChoice, deckChoices } from '../precons';
+import {
+  commanderNameOf,
+  type DeckChoice,
+  deckChoices,
+  loadDisabledPrecons,
+  saveDisabledPrecons,
+} from '../precons';
 import { useOptionalImportEnv } from './import/import-context';
 import { usePrecons } from './precons-context';
 
@@ -15,6 +21,8 @@ export interface DeckChoices {
   readonly choices: readonly DeckChoice[];
   /** Reads the deck store again (after a save, a delete or a reset). */
   refresh(): void;
+  /** Switches a built-in precon on or off for the pickers and the Random buttons. */
+  setPreconEnabled(id: string, enabled: boolean): void;
 }
 
 export function useDeckChoices(): DeckChoices {
@@ -73,9 +81,20 @@ export function useDeckChoices(): DeckChoices {
     };
   }, [env, stored.saved]);
 
+  const [disabled, setDisabled] = useState<ReadonlySet<string>>(() => loadDisabledPrecons());
+  const setPreconEnabled = useCallback((id: string, enabled: boolean) => {
+    setDisabled((current) => {
+      const next = new Set(current);
+      if (enabled) next.delete(id);
+      else next.add(id);
+      saveDisabledPrecons(next);
+      return next;
+    });
+  }, []);
+
   const choices = useMemo(
-    () => deckChoices(precons.list, stored.overrides, stored.saved, looks),
-    [precons.list, stored, looks],
+    () => deckChoices(precons.list, stored.overrides, stored.saved, looks, disabled),
+    [precons.list, stored, looks, disabled],
   );
-  return { choices, refresh };
+  return { choices, refresh, setPreconEnabled };
 }

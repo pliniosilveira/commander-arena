@@ -6816,7 +6816,15 @@ export type Condition =
    * "If a player lost 4 or more life this turn" (CR 119.3, 603.4): some player still in the game, any player, lost at least `atLeast` life in all this turn (damage, life loss and life paid,
    * summed: `SeatState.lifeLostThisTurn`). Reads the seats' counters only, so it is read as the event happens and again as the ability resolves. Not for a static ability.
    */
-  | { readonly kind: 'aPlayerLostLifeThisTurn'; readonly atLeast: number }
+  | {
+      readonly kind: 'aPlayerLostLifeThisTurn';
+      readonly atLeast: number;
+      /**
+       * "If an opponent lost 3 or more life this turn" (CR 119.3, 102.2; Sygg, River Cutthroat): only the other players count, and a player who has since left the game still counts
+       * (the 2008 ruling: it checks a player who was an opponent when they left), since their per-turn counter stays on the seat.
+       */
+      readonly opponent?: true;
+    }
   /**
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
