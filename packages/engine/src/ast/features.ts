@@ -640,6 +640,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castDuringYourTurn',
     // Issue 102 (River Kelpie): "enters from a graveyard" (`entersBattlefield` with `fromGraveyard`).
     'entersBattlefieldFromGraveyard',
+    // Revival Trance (Flayer of the Hatebound): "enters from your graveyard" (`entersBattlefield` with `fromGraveyard` and `graveyardOwner`).
+    'entersBattlefieldFromYourGraveyard',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -1976,6 +1978,8 @@ export const TRIGGER_FEATURES = [
   'leftGraveyardDuringYourTurn',
   /** "Whenever this creature or another permanent enters from a graveyard" (issue 102, CR 603.6a): `entersBattlefield` with `fromGraveyard`. */
   'entersBattlefieldFromGraveyard',
+  /** "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 404.1): `entersBattlefield` with `fromGraveyard` and `graveyardOwner: 'you'`. */
+  'entersBattlefieldFromYourGraveyard',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -3200,6 +3204,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castDuringYourTurn: true,
   leftGraveyardDuringYourTurn: true,
   entersBattlefieldFromGraveyard: true,
+  entersBattlefieldFromYourGraveyard: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,

@@ -449,6 +449,7 @@ describe('supported feature gate', () => {
       'castDuringYourTurn',
       // Issue 102: "enters from a graveyard" and "leaves your graveyard during your turn".
       'entersBattlefieldFromGraveyard',
+      'entersBattlefieldFromYourGraveyard',
       'leftGraveyardDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',

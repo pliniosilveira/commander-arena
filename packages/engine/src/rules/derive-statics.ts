@@ -213,6 +213,8 @@ export interface GraveyardPlaySource {
   readonly eachType?: true;
   /** Issue 102 (Kotis): the other cards of the graveyard a spell cast with this permission exiles as an additional cost. */
   readonly exileOthers?: number;
+  /** Banon, the Returners' Leader: only a card put into the graveyard this turn from a zone other than the battlefield may be cast with this permission. */
+  readonly putElsewhereThisTurn?: true;
 }
 
 /**
@@ -455,6 +457,7 @@ function graveyardPlaysOf(
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
         ...(a.static.exileOthers === undefined ? {} : { exileOthers: a.static.exileOthers }),
+        ...(a.static.putElsewhereThisTurn === true ? { putElsewhereThisTurn: true as const } : {}),
       });
     }
     if (a.kind === 'static' && a.static.kind === 'playFromGraveyardEachType') {

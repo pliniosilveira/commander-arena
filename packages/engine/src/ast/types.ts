@@ -5024,6 +5024,11 @@ export type Trigger =
        * graveyard (the zone it moved from, read as the event happens), never a token and not a spell that was merely cast from there.
        */
       readonly fromGraveyard?: true;
+      /**
+       * "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 400.7, 404.1: a graveyard is its owner's): the graveyard it came from is one of the controller of
+       * this ability, that is, the permanent is owned by that player. Only with `fromGraveyard`.
+       */
+      readonly graveyardOwner?: 'you';
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**
@@ -8061,6 +8066,12 @@ export type StaticEffect =
        * as the cost is paid (the spell cannot be cast that way with fewer). Only with `cast`.
        */
       readonly exileOthers?: number;
+      /**
+       * "Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn." (Banon,
+       * the Returners' Leader; CR 601.2a, 404.1, 400.7): only a card that was put into the graveyard this turn from a zone other than the battlefield (a hand, a library, the stack; read from
+       * `TurnLog.graveyardedElsewhere`, so a card that moved on and came back is a new object and does not count). Only with `cast`, and not with `land`.
+       */
+      readonly putElsewhereThisTurn?: true;
     }
   /**
    * "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1, 113.6): while the permanent has the

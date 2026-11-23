@@ -114,9 +114,14 @@ export const TRIGGER_YOU_ATTACK_WITH_ONE_OR_MORE = defineRule<IrTrigger>({
     'CR 603.2 (Handling Triggered Abilities)',
     'CR 603.2c (Handling Triggered Abilities)',
   ],
-  examples: ['you attack with one or more Birds'],
+  examples: [
+    'you attack with one or more Birds',
+    'you attack with one or more legendary creatures',
+  ],
   rejects: [
     'you attack with one or more noncreature permanents',
+    'you attack with one or more legendary permanents',
+    'you attack with one or more legendary noncreature permanents',
     'you attack with one or more creatures',
     'you attack with two or more Birds',
     'you attack with one or more Birds or Elves',
@@ -134,8 +139,14 @@ export const TRIGGER_YOU_ATTACK_WITH_ONE_OR_MORE = defineRule<IrTrigger>({
     if (
       phrase.value.types?.some((type) => type !== 'creature') ||
       phrase.value.notTypes?.includes('creature') ||
-      (phrase.value.subtypes?.length ?? 0) === 0 ||
-      phrase.value.subtypes?.some((type) => !CREATURE_TYPES.includes(type))
+      phrase.value.subtypes?.some((type) => !CREATURE_TYPES.includes(type)) ||
+      // A group named by a creature type, or by "legendary creatures" (CR 205.4: a supertype); "legendary permanents" is not a group of creatures.
+      ((phrase.value.subtypes?.length ?? 0) === 0 &&
+        !(
+          phrase.value.types?.length === 1 &&
+          phrase.value.types[0] === 'creature' &&
+          (phrase.value.supertypes?.length ?? 0) > 0
+        ))
     ) {
       return fail(ctx, pos);
     }

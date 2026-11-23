@@ -888,6 +888,8 @@ function matches(
       // D-135: "enters untapped" / "enters tapped": how it entered, as it is the moment the event is noticed (the state its
       // enters replacements, CR 614.1c, left it in).
       if (trigger.tapped !== undefined && subject?.tapped !== trigger.tapped) return false;
+      // CR 400.7, 404.1 (Flayer of the Hatebound): "from your graveyard": a graveyard is its owner's, so the permanent is owned by the controller of this ability.
+      if (trigger.graveyardOwner === 'you' && subject?.owner !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'diesBatch':
     case 'entersBatch':
