@@ -122,6 +122,7 @@ import {
 } from './mana';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MELD_EFFECT_RULES } from './meld';
+import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
 import { NEXT_SPELL_EFFECT_RULES } from './next-spell';
 import { NILS_EFFECT_RULES } from './nils';
@@ -1152,6 +1153,7 @@ export const EFFECT_RULES = [
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
   ...PRISMARI_G2_EFFECT_RULES,
+  ...MNEMONIC_DELUGE_EFFECT_RULES,
   ...MARDU_SURGE_EFFECT_RULES,
   // Prismari deck, group 3 (issue 87, D-660 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into
   // your hand", "shuffle your library, then reveal cards ... exile that card ...", "as many times as you choose, you may exile ...", "each player exiles cards ... until they exile a nonland card",

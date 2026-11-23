@@ -1532,9 +1532,12 @@ function runEffect(
       const copies: ObjectId[] = [];
       for (const card of exiled) {
         if (card.card === null) continue;
-        const made = makeCardCopy(withCopies, card.card, res.controller);
-        withCopies = made.state;
-        copies.push(made.copy);
+        // CR 707.12: "Copy that card three times" makes each copy separately (`times`).
+        for (let n = 0; n < (effect.times ?? 1); n += 1) {
+          const made = makeCardCopy(withCopies, card.card, res.controller);
+          withCopies = made.state;
+          copies.push(made.copy);
+        }
       }
       return {
         ...done(

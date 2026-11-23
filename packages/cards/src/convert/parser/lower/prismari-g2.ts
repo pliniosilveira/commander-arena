@@ -36,7 +36,19 @@ const COPY_CARD_AND_CAST: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     // The card the exile before it put into exile (`moved`), the exile of a target the text chose: read by the engine as it is in exile.
     if (ctx.exiledRef === null) return failure(clause);
-    const effect: Effect = { kind: 'copyCardAndCast', objects: { kind: 'moved' } };
+    // "Copy that card three times" (Mnemonic Deluge): the number of copies of each card.
+    let times: number | undefined;
+    if (arg(clause, 'times') !== undefined) {
+      const amount = amountArg(clause, 'times', ctx);
+      if (!amount.ok) return amount;
+      if (typeof amount.value !== 'number' || amount.value < 2) return failure(clause);
+      times = amount.value;
+    }
+    const effect: Effect = {
+      kind: 'copyCardAndCast',
+      objects: { kind: 'moved' },
+      ...(times === undefined ? {} : { times }),
+    };
     return { ok: true, value: [effect], rule: clause.rule };
   },
 };

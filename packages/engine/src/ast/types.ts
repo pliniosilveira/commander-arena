@@ -2025,6 +2025,11 @@ export type Effect =
         ObjectRef,
         { readonly kind: 'moved' | 'boundObjects' | 'linkedExile' }
       >;
+      /**
+       * "Copy that card three times. You may cast the copies without paying their mana costs." (CR 707.12, Mnemonic Deluge): the number of copies made of each card, 2 or more (omitted:
+       * one). The controller may cast any number of the copies, one after the other.
+       */
+      readonly times?: number;
     }
   | {
       readonly kind: 'delayedCombatDamage';

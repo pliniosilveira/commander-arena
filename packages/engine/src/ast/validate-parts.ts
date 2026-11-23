@@ -6458,6 +6458,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }
+      if (e.times !== undefined && !(Number.isSafeInteger(e.times) && e.times >= 2)) {
+        issue(out, `${path}.times`, 'times is a whole number of 2 or more when present');
+      }
       break;
     case 'castFree': {
       // CR 608.2g (D-145): a card chosen from the hand, or the card an earlier effect or a linked exile names; `play` also allows a land.
