@@ -264,6 +264,7 @@ function checkEnteringFilter(what: ObjectFilter, path: string, out: AstIssue[]):
         f.blocking !== undefined ||
         f.manaValueX !== undefined ||
         f.powerLessThanSource !== undefined ||
+        f.powerGreaterThanSource !== undefined ||
         f.controllerDealtDamageBySource !== undefined ||
         f.tapped !== undefined,
     )

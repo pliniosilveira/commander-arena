@@ -943,6 +943,11 @@ export interface ObjectFilter {
    */
   readonly powerLessThanSource?: true;
   /**
+   * Only objects whose power is greater than the power of this ability's source (CR 509.1b, 208.1): "~ can't be blocked by creatures with greater power". Read as
+   * `powerLessThanSource` is, as it is now; the mirror of it. Not with `powerLessThanSource`.
+   */
+  readonly powerGreaterThanSource?: true;
+  /**
    * "Aura attached to it", "Equipment attached to enchanted creature", "Aura you control that's attached to a creature" (CR 301.5, 303.4, 701.3, D-422): the object
    * is a permanent attached to another one (an Aura, an Equipment, a Fortification) and that other permanent is `source` (the permanent that has the ability: "attached
    * to it", "attached to this creature"), `host` (the permanent the source is attached to: "attached to enchanted creature") or a permanent that matches `filter` (a

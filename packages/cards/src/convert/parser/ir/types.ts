@@ -500,6 +500,8 @@ export interface IrFilter {
   readonly sameNameAsNoun?: IrNoun;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
+  /** "can't be blocked by creatures with greater power" (CR 509.1b, 208.1): the engine's `powerGreaterThanSource`. */
+  readonly powerGreaterThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /**
