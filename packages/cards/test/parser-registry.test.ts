@@ -1484,6 +1484,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
   'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
+  // The examples end with a sentence, or with the quote of the ability a creature spell gains.
+  'effect.player-exiles-until-cast': permanent(
+    (e) => `When ~ enters, ${e}${e.endsWith('"') ? '' : '.'}`,
+  ),
   'effect.controller-reveals-until-puts': spell(
     (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
   ),

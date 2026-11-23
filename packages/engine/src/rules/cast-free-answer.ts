@@ -55,6 +55,7 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
   const begun = beginCast(state, caster, card, 'free', 0, true, false, {
     ...(a.head.exileInstead === true ? { exileInstead: true } : {}),
     ...(a.head.payInstead === undefined ? {} : { payInstead: a.head.payInstead }),
+    ...(a.head.creatureGains === undefined ? {} : { creatureGains: a.head.creatureGains }),
   });
   if (!begun.ok) return begun;
   const resolving = begun.state.resolution;

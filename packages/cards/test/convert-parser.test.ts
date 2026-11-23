@@ -781,6 +781,7 @@ describe('unmatched abilities', () => {
       'effect.pay-or-cant-attack-planeswalkers',
       'effect.player-reveals-until-you-put',
       'effect.controller-reveals-until-puts',
+      'effect.player-exiles-until-cast',
       'effect.lead-becomes-land-creature-keywords',
       'effect.becomes-land-creature-trailing',
       'effect.it-becomes-land-creature-keywords',

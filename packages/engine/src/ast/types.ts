@@ -4640,6 +4640,12 @@ export type Effect =
        * With `max` (Kefka, Dancing Mad, issue 97) the spells cast are all added to `moved`, and the cards offered stay those `moved` named as the effect began.
        */
       readonly remember?: true;
+      /**
+       * "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f, 400.7): the
+       * abilities the permanent a creature spell cast by this effect becomes has for as long as it stays on the battlefield (one `grantAbility` effect each, permanent, as the spell
+       * resolves; a spell that is not a creature, or does not resolve, gives nothing). Only with `objects` a `moved` reference, and not with `max`, `perOwner` or `play`.
+       */
+      readonly creatureGains?: readonly Ability[];
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it

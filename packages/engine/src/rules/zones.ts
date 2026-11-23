@@ -57,6 +57,7 @@ import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { entryCounters } from './counter-bonus';
+import { applyCreatureGains } from './creature-gains';
 import { quietFlow } from './damage-order';
 import { entersTransformed } from './day-night';
 import { derive, oracleTextOf } from './derive';
@@ -1149,6 +1150,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         },
       ],
     };
+  }
+  // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the permanent a creature spell with that rider becomes has the abilities.
+  if (
+    to === 'battlefield' &&
+    old.zone === 'stack' &&
+    old.stack?.creatureGains !== undefined &&
+    derive(state, old).types.includes('creature')
+  ) {
+    next = applyCreatureGains(next, newId, old.stack.creatureGains);
   }
   // D-232: "If you cast a spell this way, that artifact enters tapped" / "If you do, it gains ...": what the permission of a permanent gives the permanent.
   if (to === 'battlefield' && old.zone === 'stack' && old.stack?.graveyardPlay !== undefined) {

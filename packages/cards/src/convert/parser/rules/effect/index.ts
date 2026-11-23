@@ -84,6 +84,7 @@ import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
+import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -1316,6 +1317,8 @@ export const EFFECT_RULES = [
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
+  // Strago and Relm (issue 97): "Target opponent exiles cards from the top of their library until they exile ... You may cast that card without paying its mana cost."
+  ...EXILE_UNTIL_CAST_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   ...LAND_CREATURE_ABILITY_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
