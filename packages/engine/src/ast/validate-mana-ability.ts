@@ -4,7 +4,7 @@
  * and the one a static `grantAbility` gives. Split from `validate.ts` and `validate-mana.ts`.
  */
 import { CARD_TYPES, COLORS } from '../characteristics';
-import type { ManaAbility } from './types';
+import type { ManaAbility, ObjectFilter } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
 import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
@@ -13,7 +13,9 @@ import {
   checkCosts,
   checkDelayedCast,
   checkEnumList,
+  checkFilter,
   checkStateAmount,
+  filterSome,
 } from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
@@ -124,6 +126,30 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   }
   if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
     issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
+  }
+  if (a.production?.kind === 'anyColorAmong') {
+    // CR 106.1b: the cards whose colors are looked at; the filter reads a zone and what the objects are, nothing of the combat, a target or X.
+    const filter = a.production.filter as ObjectFilter | undefined | null;
+    if (filter === undefined || filter === null) {
+      issue(out, `${path}.production.filter`, 'anyColorAmong needs a filter for the objects');
+    } else {
+      checkFilter(filter, `${path}.production.filter`, out);
+      if (filterSome(filter, (f) => f.stackKind !== undefined || f.zone === 'stack')) {
+        issue(
+          out,
+          `${path}.production.filter.zone`,
+          'the stack has no cards to read colors from here',
+        );
+      }
+    }
+    // The colors are read before the costs are paid (CR 605.3a), so a cost that gives up a permanent could change them.
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice')) {
+      issue(
+        out,
+        `${path}.cost`,
+        'the colors are read before the costs are paid: no cost that gives up a permanent',
+      );
+    }
   }
   if (a.production?.kind === 'couldProduce') {
     // The permanents whose mana is looked at are on the battlefield (CR 106.7).
@@ -384,7 +410,10 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           'producedType is only the effect of a triggered mana ability',
         );
       }
-      if (a.instead.production?.kind === 'couldProduce') {
+      if (
+        a.instead.production?.kind === 'couldProduce' ||
+        a.instead.production?.kind === 'anyColorAmong'
+      ) {
         issue(
           out,
           `${path}.instead.production`,

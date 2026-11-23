@@ -1002,6 +1002,8 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
       return spec.what.or === undefined
         ? { kind: 'chosenColor' }
         : { kind: 'chosenColor', or: spec.what.or };
+    case 'colorsAmongCards':
+    // Lowered by `lowerManaAbility`, which reads the filter of the cards; an instruction of a spell has no color choice.
     case 'thatColor':
     case 'anyOneColorX':
     case 'producedType':

@@ -1025,6 +1025,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'anyColor'; readonly count?: number }
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
+    // "one mana of any color among legendary creature cards in your graveyard" (CR 106.1b, 105.2): a color the cards `of` names have between them; the noun is a plural group of cards
+    | { readonly kind: 'colorsAmongCards'; readonly of: IrNoun }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
     // issue 144 (Throne of Eldraine): "four mana of the chosen color" has `count` 4
     | {

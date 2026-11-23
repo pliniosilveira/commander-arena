@@ -4419,6 +4419,14 @@ export type ManaProduction =
    */
   | { readonly kind: 'anyColorAmount'; readonly amount: Amount }
   /**
+   * "{T}: Add one mana of any color among legendary creature cards in your graveyard." (The Grey Havens; CR 106.1b, 105.2, 605.3b): one mana of a color that the objects
+   * `filter` matches have between them (colorless is no color), in the zone the filter names (the battlefield when it names none), chosen as the ability resolves (so the
+   * activation names it, like `anyColor`). The colors are read as the ability is activated, for its controller with its permanent as "this"; a filter's `controller` is relative
+   * to that controller (in a graveyard or exile, the owner), so in a game of several players "you" never means another seat. With no such color the ability makes no mana.
+   * Only a mana ability (`validateCard`).
+   */
+  | { readonly kind: 'anyColorAmong'; readonly filter: ObjectFilter }
+  /**
    * "{T}: Add one mana of any color that a land an opponent controls could produce." (Exotic
    * Orchard, Fellwar Stone) and "... of any type that a land you control could produce." (Reflecting
    * Pool), D-099: one mana of a type that a permanent matching `lands` could produce (CR 106.7),

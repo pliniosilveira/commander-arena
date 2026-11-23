@@ -116,6 +116,18 @@ export function colorsAmongForSource(
   filter: ObjectFilter,
   source: GameObject,
 ): number {
+  return colorSetAmongForSource(state, filter, source).size;
+}
+
+/**
+ * CR 105.2, 106.1b ("Add one mana of any color among ..."): the colors the objects the filter matches have between them, in any zone the filter names (the battlefield when
+ * it names none); colorless is no color. The same read as `colorsAmongForSource`, which counts them.
+ */
+export function colorSetAmongForSource(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+): Set<Color> {
   const zone = filter.zone ?? 'battlefield';
   const chosen = chosenOf(state, source.id);
   const ctx = {
@@ -131,7 +143,7 @@ export function colorsAmongForSource(
     if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
     for (const color of view.colors) seen.add(color);
   }
-  return seen.size;
+  return seen;
 }
 
 /**

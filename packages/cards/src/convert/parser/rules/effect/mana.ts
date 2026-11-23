@@ -15,6 +15,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrManaSpec, Span } from '../../ir/types';
+import { counted } from '../amount/count';
 import { FOR_EACH_TAIL } from '../amount/scaled';
 import { defineRule, spanned } from '../registry';
 import { type Clauses, single } from './operands';
@@ -131,6 +132,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     "add one mana of any color in your commander's color identity",
     'add {r}{r}, {r}{w}, or {w}{w}',
     'add {g}{g} or {w}{w}',
+    'add one mana of any color among legendary creature cards in your graveyard',
+    'add one mana of any color among cards in your graveyard',
+    'add one mana of any color among creature cards in your graveyard',
     'add one mana of any color that a land an opponent controls could produce',
     'add one mana of any type that a land you control could produce',
     // Stage P33 (D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered.
@@ -164,6 +168,10 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {U} or two mana of the chosen color',
     'add {U}{B} or one mana of the chosen color',
     'add two mana of any color',
+    'add one mana of any color among',
+    'add one mana of any color among creatures you control and then draw a card',
+    'add one mana of any color among creature card in your graveyard',
+    'add one mana of any colors among creature cards in your graveyard',
     'add four mana of any one color',
     'add two mana of one color',
     'add {R}{W}, {W}{R}, or {R}{R}',
@@ -237,6 +245,14 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
               kind: 'chosenColor' as const,
               count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
             })),
+            // The Grey Havens (CR 106.1b, 105.2, 605.3b): one mana of a color the cards of a zone have between them.
+            map(
+              satisfy(
+                sequence(literal('one mana of any color among '), counted('effect.add-mana', true)),
+                ([, of]) => of.filter.card === true && !of.other,
+              ),
+              ([, of]) => ({ kind: 'colorsAmongCards' as const, of }),
+            ),
             map(literal('one mana of any color'), () => ({ kind: 'anyColor' as const })),
             // Nykthos, Shrine to Nyx (CR 605.3b, 700.5): after "Choose a color.", as many mana of it as the devotion to it. Read here, lowered only after that sentence.
             map(
