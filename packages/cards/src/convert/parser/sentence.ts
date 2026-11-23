@@ -542,11 +542,15 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
     if (options.afterDiscard === true) {
-      const lead = literal('when you discard a nonland card this way, ')(ctx, start);
+      // "When you discard a card this way, ..." (Summon: Kujata) is made by any card, the nonland one by a card that is not a land.
+      const lead = choice(
+        map(literal('when you discard a nonland card this way, '), () => 'nonland' as const),
+        map(literal('when you discard a card this way, '), () => 'any' as const),
+      )(ctx, start);
       if (lead.ok) {
         // The sentence is read as a reflexive one (no test of its own, no "you may"), and says which discards make it.
         reflexive = true;
-        afterDiscard = 'nonland';
+        afterDiscard = lead.value;
         at = lead.pos;
       }
     }
@@ -767,5 +771,7 @@ export const TRIGGER_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Summon: Kujata (chapter III): "Discard a card, then draw two cards. When you discard a card this way, ~ deals damage equal to that card's mana value to each opponent."
+  afterDiscard: true,
   delayed: true,
 });

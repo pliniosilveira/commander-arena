@@ -2298,6 +2298,8 @@ export interface ThisWayCounts {
   readonly discardedNoncreature?: number;
   /** The nonland cards discarded by `discard` effects (Federation Fleet group D: "When you discard a nonland card this way", CR 603.12). */
   readonly discardedNonland?: number;
+  /** The total mana value of the cards discarded by `discard` effects, each as it was in the hand (Summon: Kujata: "that card's mana value", CR 202.3, 608.2c). */
+  readonly discardedValue?: number;
   /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
   readonly countersPut?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */

@@ -393,6 +393,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.number-of': permanent((e) => `When ~ dies, create ${e}.`),
   'noun.self': spell((e) => `Put a +1/+1 counter on ${e}.`),
   'noun.a-permanent': spell((e) => `Sacrifice ${e}.`),
+  'noun.each-of-up-to-permanents': spell((e) => `Put a +1/+1 counter on ${e}.`),
   // Issue 144 (Fountainport).
   'noun.a-token': permanent((e) => `Sacrifice ${e}: Draw a card.`),
   'noun.up-to-one-permanent': spell((e) => `Put two +1/+1 counters on ${e}.`),
@@ -559,6 +560,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.pay-life-amount': permanent((e) => `${e}: Draw a card.`),
   'modal.choose': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   'modal.choose-commander': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  'modal.choose-commander-trigger': permanent(
+    (e) => `At the beginning of combat on your turn, ${e}\n• Draw a card.\n• You gain 1 life.`,
+  ),
   // Stage P31 (D-139, D-140): the Artifacts slice. Living weapon is a line of its own; the costs come after {T} or a mana symbol; the
   // triggers, the condition after a trigger, the restrictions after an effect, the nouns in the instruction that reads them.
   'keyword.living-weapon': asIs,

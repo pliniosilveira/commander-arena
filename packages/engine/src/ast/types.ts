@@ -527,6 +527,8 @@ export type ThisWayKind =
   | 'discardedNoncreature'
   // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.
   | 'discardedNonland'
+  // CR 202.3, 608.2c (Summon: Kujata): "that card's mana value": the total mana value of the cards `discard` effects discarded.
+  | 'discardedValue'
   // Federation Fleet deck, group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way": the counters `addCounters` effects of this resolution put on objects.
   | 'countersPut'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.

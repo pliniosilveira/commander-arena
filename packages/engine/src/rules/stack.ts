@@ -311,6 +311,14 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   : {
                       countersPut: (res.thisWay?.countersPut ?? 0) + (out.thisWay.countersPut ?? 0),
                     }),
+                // Left out until there is some, so the state of every game that never reads it is what it was.
+                ...(res.thisWay?.discardedValue === undefined &&
+                out.thisWay.discardedValue === undefined
+                  ? {}
+                  : {
+                      discardedValue:
+                        (res.thisWay?.discardedValue ?? 0) + (out.thisWay.discardedValue ?? 0),
+                    }),
                 searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
                 ...mergeTypes(res.thisWay?.discardedTypes, out.thisWay.discardedTypes),
                 // Issue 279: the greatest number one player discarded, not a sum.
