@@ -1458,7 +1458,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
       // D-653 (CR 604.1): the keyword works on its controller's turn only, "gains first strike during your turn until end of turn".
-      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duringYourTurn === true ? ' during your turn' : ''}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duringYourTurn === true ? ' during your turn' : ''}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : effect.duration === 'untilYourNextTurn' ? ' until your next turn' : ''}`;
     case 'exileSpellWithTimeCounters':
       // D-651 (CR 608.2n, 122.1, 702.62b): "Exile this spell with three time counters on it".
       return `Exile this spell with ${effect.count} time counters on it`;
