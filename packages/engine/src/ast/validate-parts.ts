@@ -8420,7 +8420,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter.zone`, 'the permanents are on the battlefield');
       }
       if (e.filter?.controller !== undefined) {
-        issue(out, `${path}.filter.controller`, 'the opponent is the player each choice is for: the filter names no controller');
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'the opponent is the player each choice is for: the filter names no controller',
+        );
       }
       break;
     case 'proliferate':

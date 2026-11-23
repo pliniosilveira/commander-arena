@@ -140,6 +140,8 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
+- "As you cast this spell" amounts are worked out as the spell becomes cast, costs paid; only one such amount is kept for a spell, and only in a spell's own text.
+- "Until you exile another card with ~" is read only after exiling the top card of your own library, and ends the permission as that same permanent exiles its next card.
 - Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - A name set by `setTypes` (CR 612.8) applies in timestamp order with layer 4, not as layer 3, and only "it's a land named X" after a returned card is read.
 - Explore emits no event and ignores APNAP order.

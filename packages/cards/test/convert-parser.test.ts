@@ -771,6 +771,8 @@ describe('unmatched abilities', () => {
       'effect.reveal-until-opponents',
       'effect.goad-moved-forever',
       'effect.assign-control-to-opponents',
+      'effect.exile-top-play-until-another',
+      'effect.for-each-opponent-choose-destroy',
       'effect.reveal-until-chosen-type',
       'effect.pay-or-cant-attack-planeswalkers',
       'effect.player-reveals-until-you-put',

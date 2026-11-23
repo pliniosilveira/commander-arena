@@ -7,8 +7,8 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId } from '../ids';
 import { objectsInZone } from '../state/ops';
-import { controllerOf } from './control';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { controllerOf } from './control';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
 

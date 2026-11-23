@@ -1158,7 +1158,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   }
   // Stage P34 (D-152): mana that stays through steps and phases, casting spells from the top of the library.
   // A permission to cast from the top of the library that holds "as long as ..." is lowered with the other conditional statics below (Summoning Materia).
-  if (isDragonStatic(first) && !(first.kind === 'castFromTop' && statement.condition !== undefined)) {
+  if (
+    isDragonStatic(first) &&
+    !(first.kind === 'castFromTop' && statement.condition !== undefined)
+  ) {
     return lowerDragonStatic(ability);
   }
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."

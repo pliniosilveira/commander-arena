@@ -75,6 +75,7 @@ import {
   answerTap,
   payAdditionalCosts,
 } from './cast-additional';
+import { castAmountOf } from './cast-amount';
 import {
   alternativeOfStack,
   type CastAlternative,
@@ -90,7 +91,6 @@ import {
   spellXCostOf,
 } from './cast-cost';
 import { answerGift, toGift } from './cast-gift';
-import { castAmountOf } from './cast-amount';
 import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';

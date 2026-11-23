@@ -16,11 +16,7 @@ export const EFFECT_FOR_EACH_OPPONENT_CHOOSE_DESTROY = defineRule<Clauses>({
   id: 'effect.for-each-opponent-choose-destroy',
   family: 'effect',
   leading: ['for'],
-  cites: [
-    'CR 608.2d (Resolving Spells and Abilities)',
-    'CR 701.8 (Destroy)',
-    'CR 102.2 (Players)',
-  ],
+  cites: ['CR 608.2d (Resolving Spells and Abilities)', 'CR 701.8 (Destroy)', 'CR 102.2 (Players)'],
   examples: [
     'for each opponent, choose an artifact or land that player controls. Destroy the chosen permanents',
     'for each opponent, choose an artifact that player controls. Destroy the chosen permanents',

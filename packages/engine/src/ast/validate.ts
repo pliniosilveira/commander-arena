@@ -517,7 +517,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(
           out,
           `${path}.keyword`,
-          'only demonstrate, convoke and improvise (and replicateAtManaCost) can be given to spells',
+          'only demonstrate and convoke (and improvise, replicateAtManaCost) can be given to spells',
         );
       }
       checkFilter(s.what, `${path}.what`, out);
