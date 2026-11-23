@@ -4646,6 +4646,14 @@ export type Effect =
        * resolves; a spell that is not a creature, or does not resolve, gives nothing). Only with `objects` a `moved` reference, and not with `max`, `perOwner` or `play`.
        */
       readonly creatureGains?: readonly Ability[];
+      /**
+       * "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (Summon: Esper Valigarmanda, issue 97; CR 608.2g, 601.2, 609.4b):
+       * the spell is cast as this resolves paying its mana cost (not for free), with the mana the effects before it added to the pool or any other the controller can pay. Only with `objects`
+       * `linkedExile`, and with no `play`, `max`, `perOwner`, `player`, `remember` or `exileInstead`.
+       */
+      readonly paying?: true;
+      /** "... and mana of any type can be spent to cast that spell" (CR 609.4b): the spell cast with `paying` can be paid with any mana for any symbol of its cost. Needs `paying`. */
+      readonly anyManaType?: true;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it

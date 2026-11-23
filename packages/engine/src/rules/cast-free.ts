@@ -38,7 +38,15 @@ export function freeCandidates(
   res: ResolutionContext,
   ins: Pick<
     CastFreeInstruction,
-    'objects' | 'play' | 'filter' | 'cards' | 'cardsZone' | 'seat' | 'payInstead'
+    | 'objects'
+    | 'play'
+    | 'filter'
+    | 'cards'
+    | 'cardsZone'
+    | 'seat'
+    | 'payInstead'
+    | 'paying'
+    | 'anyManaType'
   >,
 ): ObjectId[] {
   // "... then they may cast that card": the player the effect names casts it, not always its controller.
@@ -94,8 +102,9 @@ export function freeCandidates(
       state,
       seat,
       card,
-      card.zone === 'graveyard' ? 'freeGraveyard' : 'free',
-      false,
+      // Summon: Esper Valigarmanda (CR 608.2g, 609.4b): `paying` casts the card for its mana cost, with any mana when the effect says so.
+      ins.paying === true ? 'normal' : card.zone === 'graveyard' ? 'freeGraveyard' : 'free',
+      ins.anyManaType === true,
       ins.payInstead,
     );
   });
@@ -168,7 +177,13 @@ export function runCastFree(
                         ? 'a card from your graveyard'
                         : 'a card from your hand'
                       : 'the exiled card'
-            } ${ins.payInstead === undefined ? 'without paying its mana cost' : 'by paying its alternative cost'}`
+            } ${
+              ins.paying === true
+                ? 'by paying its mana cost'
+                : ins.payInstead === undefined
+                  ? 'without paying its mana cost'
+                  : 'by paying its alternative cost'
+            }`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${
               ins.remaining === 'any'

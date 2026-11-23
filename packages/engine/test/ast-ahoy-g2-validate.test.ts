@@ -108,10 +108,11 @@ describe('a card from each graveyard, exiled with the permanent', () => {
     ).toBe(true);
   });
 
-  test('the choice is optional, of one card, from the graveyard, into exile', () => {
+  test('the choice is of one card, from the graveyard, into exile (optional, or not: issue 97, Summon: Esper Valigarmanda)', () => {
     const bad = (e: Effect) =>
       messages(creature([enters(e)])).some((m) => m.includes('eachGraveyard is true'));
-    expect(bad(each({}, { optional: undefined }))).toBe(true);
+    expect(bad(each({}, { optional: undefined }))).toBe(false);
+    expect(bad(each({}, { optional: false }))).toBe(true);
     expect(bad(each({}, { count: 2 }))).toBe(true);
     expect(bad(each({ to: 'hand' }))).toBe(true);
     expect(

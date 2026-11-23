@@ -2146,6 +2146,9 @@ export type Instruction =
       readonly payInstead?: readonly Cost[];
       /** `castFree.creatureGains` (Strago and Relm): what a creature spell cast by this effect gives the permanent it becomes. */
       readonly creatureGains?: readonly Ability[];
+      /** `castFree.paying` (Summon: Esper Valigarmanda): the spell is cast paying its mana cost, with `anyManaType` as a rider of that spell. */
+      readonly paying?: true;
+      readonly anyManaType?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
