@@ -152,6 +152,8 @@ export interface FilterContext {
   readonly entered?: readonly ObjectId[];
   /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
   readonly linkedExile?: readonly ObjectId[];
+  /** The cards the resolution that created the reflexive ability moved (`exiledThisWay`, Espers to Magicite, CR 603.12, 400.7j): read by the caller; absent fails the flag closed. */
+  readonly exiledThisWay?: readonly ObjectId[];
   /**
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
@@ -463,6 +465,7 @@ export function matchesFilterWith(
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
   // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
   if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
+  if (filter.exiledThisWay === true && !(ctx.exiledThisWay ?? []).includes(obj.id)) return false;
   // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura": the object remembers the source, as the same object.
   if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
     return false;

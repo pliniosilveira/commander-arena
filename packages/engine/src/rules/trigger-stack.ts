@@ -249,6 +249,8 @@ function runQueue(input: GameState): PutResult {
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
       ...(trigger.damaged === undefined ? {} : { triggerDamaged: trigger.damaged }),
       ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
+      // CR 603.12, 400.7j: "target creature card exiled this way" of a reflexive ability reads what the resolution that created it exiled.
+      ...(trigger.movedBefore === undefined ? {} : { moved: trigger.movedBefore }),
       // CR 603.3d: a target filter that reads the object that caused the trigger ("mana value ... that spell's mana value").
       ...(trigger.subject === null || !readsTriggerSubject(trigger.ability)
         ? {}

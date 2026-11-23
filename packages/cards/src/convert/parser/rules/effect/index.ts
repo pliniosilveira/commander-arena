@@ -82,6 +82,7 @@ import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
+import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
@@ -1234,6 +1235,8 @@ export const EFFECT_RULES = [
   // Ahoy Mateys deck, group 7: "Until end of turn, it gains haste and becomes a Pirate in addition to its other types." and "That creature doesn't untap during its controller's untap step for as long as you control ~." start like the plain lead-gain and doesn't-untap rules, and are tried first.
   ...AHOY_G7_EFFECT_RULES,
   ...AHOY_G8_EFFECT_RULES,
+  // Espers to Magicite (issue 97): "Choose up to one target creature card exiled this way." starts like the plain choose rules and is tried first.
+  ...ESPERS_EFFECT_RULES,
   ...BLACK_GATE_EFFECT_RULES,
   // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,

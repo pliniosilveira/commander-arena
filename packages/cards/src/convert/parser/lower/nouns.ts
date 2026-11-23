@@ -383,6 +383,11 @@ function lowerFilterAt(
     if (inner || filter.zone !== 'exile') return bad([]);
     parts.push('selector:exiledWithSource');
   }
+  // Espers to Magicite: "target creature card exiled this way" (CR 603.12), read where the filter is matched against the game with what the reflexive ability carries (a target slot); never a member of a choice, and a card in exile.
+  if (filter.exiledThisWay === true) {
+    if (inner || filter.zone !== 'exile') return bad([]);
+    parts.push('selector:exiledThisWay');
+  }
   // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
   if (filter.putWithSelf === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -632,6 +637,7 @@ function lowerFilterAt(
           },
         }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
+    ...(filter.exiledThisWay === true ? { exiledThisWay: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),

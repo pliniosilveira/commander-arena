@@ -1502,6 +1502,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-at-least-subtypes': permanent(
     (e) => `You may cast this card from your graveyard as long as ${e}.`,
   ),
+  // Espers to Magicite (issue 97): the noun and the token of "Exile each opponent's graveyard. When you do, choose up to one target creature card exiled this way. Create a token that's a copy of that card, except ...".
+  'noun.target-card-exiled-this-way': spell(
+    (e) =>
+      `Exile each opponent's graveyard. When you do, choose ${e}. Create a token that's a copy of that card, except it's an artifact and it loses all other card types.`,
+  ),
+  'token.copy-except-set-types': spell(
+    (e) =>
+      `Exile each opponent's graveyard. When you do, choose up to one target creature card exiled this way. Create ${e}.`,
+  ),
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
   ),

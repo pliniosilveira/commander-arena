@@ -452,6 +452,8 @@ export interface IrFilter {
   readonly controllerDealtCombatDamageBy?: { readonly atLeast: number; readonly subtype: string };
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
   readonly exiledWithSelf?: true;
+  /** "target creature card exiled this way" (Espers to Magicite, CR 603.12): a card in exile that the resolution before the reflexive ability exiled (the engine's `exiledThisWay`). */
+  readonly exiledThisWay?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
   readonly putWithSelf?: true;
   /**
@@ -1410,6 +1412,11 @@ export interface IrToken extends IrNode {
     readonly keywords: readonly string[];
   };
   readonly copyStartingLoyalty?: number;
+  /**
+   * "..., except it's an artifact and it loses all other card types" (Espers to Magicite, CR 707.9b): with `copyOf`, the copy has exactly these card types (as written, lowercase),
+   * instead of the ones it copies (the engine's `copyOf.setTypes`).
+   */
+  readonly copySetTypes?: readonly string[];
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   /** "create a tapped and attacking X/X ... creature token" (CR 508.4): the tokens enter tapped and attacking, never declared as attackers; with `tapped`. */

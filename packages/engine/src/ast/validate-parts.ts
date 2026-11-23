@@ -408,6 +408,7 @@ export function checkFilter(
     'firstXSpellThisTurn',
     'enteredThisTurn',
     'exiledWithSource',
+    'exiledThisWay',
     'putWithSource',
     'singleTarget',
     'modified',
@@ -580,6 +581,14 @@ export function checkFilter(
       out,
       `${path}.exiledWithSource`,
       "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
+    );
+  }
+  // CR 603.12 (Espers to Magicite): "card exiled this way" is a card in exile.
+  if (f.exiledThisWay === true && f.zone !== 'exile') {
+    issue(
+      out,
+      `${path}.exiledThisWay`,
+      "only a card in exile was exiled this way: the filter's zone is 'exile'",
     );
   }
   // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura" is a permanent.
@@ -887,6 +896,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
+  f.exiledThisWay !== undefined ||
   f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
@@ -4737,6 +4747,21 @@ function checkCopyExceptions(
       checkEnumList(out, `${path}.addTypes`, spec.addTypes, CARD_TYPES, 'card type');
     }
   }
+  // CR 707.9b (Espers to Magicite): "except it's an artifact and it loses all other card types".
+  if (spec.setTypes !== undefined) {
+    if (!Array.isArray(spec.setTypes) || spec.setTypes.length === 0) {
+      issue(out, `${path}.setTypes`, 'setTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.setTypes`, spec.setTypes, CARD_TYPES, 'card type');
+    }
+    if (spec.addTypes !== undefined) {
+      issue(
+        out,
+        path,
+        'a copy is given card types instead of its own (setTypes) or in addition to them (addTypes), not both',
+      );
+    }
+  }
   if (spec.setColors !== undefined) {
     if (!Array.isArray(spec.setColors) || spec.setColors.some((c) => !isOneOf(c, COLORS))) {
       issue(out, `${path}.setColors`, 'setColors is a list of colors');
@@ -8162,11 +8187,37 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (e.ifThisWay !== undefined) {
           issue(out, `${path}.afterPayment`, 'what triggers it is the payment: no ifThisWay');
         }
+      } else if (e.ifMoved === true) {
+        // CR 603.12 (Espers to Magicite): "Exile each opponent's graveyard. When you do, ...": created when the instruction before it moved an object, which it carries.
+        if (e.carriesMoved !== true || scope.movedAvailable !== true) {
+          issue(
+            out,
+            `${path}.ifMoved`,
+            'ifMoved needs carriesMoved and an effect before it in the sequence that moves objects',
+          );
+        }
+        if (e.ifThisWay !== undefined) {
+          issue(out, `${path}.ifMoved`, 'what triggers it is the move: no ifThisWay');
+        }
       } else if (scope.mayAvailable !== true) {
         issue(
           out,
           path,
           'a reflexive trigger ("when you do") needs a "may" effect before it in the sequence',
+        );
+      }
+      if (e.ifMoved !== undefined && e.ifMoved !== true) {
+        issue(out, `${path}.ifMoved`, 'ifMoved must be true when present');
+      }
+      // CR 603.12, 400.7j: a slot for "card exiled this way" reads the objects the reflexive ability carries.
+      if (
+        e.carriesMoved !== true &&
+        JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true')
+      ) {
+        issue(
+          out,
+          `${path}.targets`,
+          'a card exiled this way is named by a reflexive ability that carries what the effect before it moved (carriesMoved)',
         );
       }
       if (e.ifThisWay !== undefined) {

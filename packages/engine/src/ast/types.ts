@@ -786,6 +786,12 @@ export interface ObjectFilter {
    */
   readonly exiledWithSource?: true;
   /**
+   * "Target creature card exiled this way" (Espers to Magicite, CR 603.12, 400.7j): the object is one of the cards the effect before the `reflexive` ability that has this slot exiled in the
+   * resolution that created it (`reflexive.carriesMoved`: the cards it moved). A card that left exile since is a new object (CR 400.7) and does not match. Read only in a target slot of
+   * such a reflexive ability; the filter's zone is `exile`.
+   */
+  readonly exiledThisWay?: true;
+  /**
    * "Creature put onto the battlefield with this Aura" (CR 303.4, 400.7, 702.5a; Animate Dead): the object is a permanent that an effect of the source of the filter (an Aura) put
    * onto the battlefield with `moveToZone.putWithSource`, and it is still that same object (one that left and came back is a new object, CR 400.7). Read where the filter is matched
    * against the game with the source: an enchant ability's filter (the Aura it belongs to is the source), a target slot, an `each` selector. The filter's zone is the battlefield.
@@ -2069,6 +2075,11 @@ export type TokenSpec =
        */
       readonly addTypes?: readonly CardType[];
       /**
+       * "..., except it's an artifact and it loses all other card types" (Espers to Magicite, CR 707.9b): the copy has exactly these card types, instead of the ones it copies; its creature
+       * types go with the creature type it loses (the subtypes of the types it keeps stay). Part of the copiable values. Never empty, and not with `addTypes`.
+       */
+      readonly setTypes?: readonly CardType[];
+      /**
        * "..., except it's a 4/4 black Zombie" (D-382, CR 707.9b, 707.9d): the copy is exactly these creature types, instead of the ones it copies (the other subtypes of the
        * original stay: they belong to card types the copy keeps). A characteristic-defining ability that defines creature types (changeling) is not copied. Not with `addSubtypes`.
        */
@@ -2593,6 +2604,11 @@ export type Effect =
        * instruction before the reflexive ability is a `createToken` (whose doing is a token created) or one of the kinds a `may` wraps.
        */
       readonly carriesMoved?: true;
+      /**
+       * "Exile each opponent's graveyard. When you do, ..." (Espers to Magicite, CR 603.12): the ability is created when the instruction before it, one that moves objects, moved at least one
+       * (not when a "may" was accepted): what that resolution made or moved is carried (`carriesMoved` is required) and the ability is not created when nothing was.
+       */
+      readonly ifMoved?: true;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
