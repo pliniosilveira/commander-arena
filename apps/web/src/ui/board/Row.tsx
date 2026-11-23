@@ -16,6 +16,7 @@ import { useTextScale } from '../panels/text-size';
 import { HostStack } from './Attached';
 import { stripWidth } from './attach';
 import { CARD_TOP_ASPECT, cardTopHeight } from './card-top';
+import { useCreatureScale } from './creature-scale';
 import { LandRow } from './LandRow';
 import { layoutRow, type RowSpec } from './layout';
 import { useMeasure } from './measure';
@@ -135,7 +136,8 @@ function PlainRow({ kind, objects, roles, attachments, inline }: RowProps) {
   const size = useMeasure(ref);
   const ix = useInteraction();
   const extraW = objects.reduce((n, o) => n + stripWidth(attachments.get(o.id)?.length ?? 0), 0);
-  const scale = useTextScale();
+  const creatureScale = useCreatureScale();
+  const scale = useTextScale() * (kind === 'creature' ? creatureScale : 1);
   const spec = rowSpec(kind, size?.height ?? 100, extraW, scale);
   // Permanents that differ in what the player acts on must not hide inside one group.
   const extraKey = useCallback(

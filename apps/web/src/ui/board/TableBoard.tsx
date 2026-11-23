@@ -14,6 +14,7 @@ import { splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
 import { Field, ROW_ORDER_ME, ROW_ORDER_OPP, zoneContents } from './Board';
 import { CommanderPopup } from './CommanderPopup';
+import { CreatureScaleContext, TABLE_CREATURE_SCALE } from './creature-scale';
 import { exilePlayable } from './exile-play';
 import { Hand } from './Hand';
 import { OtherZonesStrip } from './OtherZonesStrip';
@@ -56,83 +57,85 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
   const cell = (key: string): CSSProperties => ({ gridArea: key });
   const open = zone === null ? null : zoneContents(view, zone, looked);
   return (
-    <PairFocusProvider>
-      <section
-        className="table-board"
-        aria-label="Battlefield"
-        data-opponents={opponents.length}
-        style={{ gridTemplateAreas: areas.gridTemplateAreas }}
-      >
-        {opponents.map((seat, i) => (
-          <div
-            key={seat.id}
-            className="table-cell table-opp"
-            style={cell(`opp${i + 1}`)}
-            data-table-seat={seat.id}
-          >
-            <PlayerStrip
-              view={view}
-              seat={seat}
-              onOpenZone={setZone}
-              label={opponentLabel(view, seat.id)}
-              onOpenCommander={setCommanderSeat}
-            />
+    <CreatureScaleContext.Provider value={TABLE_CREATURE_SCALE}>
+      <PairFocusProvider>
+        <section
+          className="table-board"
+          aria-label="Battlefield"
+          data-opponents={opponents.length}
+          style={{ gridTemplateAreas: areas.gridTemplateAreas }}
+        >
+          {opponents.map((seat, i) => (
+            <div
+              key={seat.id}
+              className="table-cell table-opp"
+              style={cell(`opp${i + 1}`)}
+              data-table-seat={seat.id}
+            >
+              <PlayerStrip
+                view={view}
+                seat={seat}
+                onOpenZone={setZone}
+                label={opponentLabel(view, seat.id)}
+                onOpenCommander={setCommanderSeat}
+              />
+              <Field
+                view={view}
+                seat={seat.id}
+                order={ROW_ORDER_OPP}
+                roles={roles}
+                attachments={attachments}
+              />
+            </div>
+          ))}
+          <div className="table-cell table-me" style={cell('me')} data-table-seat={me.id}>
             <Field
               view={view}
-              seat={seat.id}
-              order={ROW_ORDER_OPP}
+              seat={me.id}
+              order={ROW_ORDER_ME}
               roles={roles}
               attachments={attachments}
+              exile={exile}
+            />
+            <PlayerStrip
+              view={view}
+              seat={me}
+              onOpenZone={setZone}
+              onOpenCommander={setCommanderSeat}
+            />
+            <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
+            <Hand
+              cards={me.hand ?? []}
+              active={view.activeSeat === me.id}
+              cardScale={HAND_CARD_SCALE}
             />
           </div>
-        ))}
-        <div className="table-cell table-me" style={cell('me')} data-table-seat={me.id}>
-          <Field
-            view={view}
-            seat={me.id}
-            order={ROW_ORDER_ME}
-            roles={roles}
-            attachments={attachments}
-            exile={exile}
-          />
-          <PlayerStrip
-            view={view}
-            seat={me}
-            onOpenZone={setZone}
-            onOpenCommander={setCommanderSeat}
-          />
-          <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
-          <Hand
-            cards={me.hand ?? []}
-            active={view.activeSeat === me.id}
-            cardScale={HAND_CARD_SCALE}
-          />
-        </div>
-        <aside
-          className="table-cell table-flow"
-          style={cell('flow')}
-          data-testid="table-flow"
-          aria-label="Turn"
-        >
-          {flow}
-        </aside>
-        {commanderSeat !== null && (
-          <CommanderPopup
-            view={view}
-            seatId={commanderSeat}
-            onClose={() => setCommanderSeat(null)}
-          />
-        )}
-        <BlockArrows roles={roles} />
-        {open !== null && (
-          <ZoneViewer
-            title={open.title}
-            objects={open.objects}
-            {...(open.others === undefined ? {} : { others: open.others })}
-            onClose={() => setZone(null)}
-          />
-        )}
-      </section>
-    </PairFocusProvider>
+          <aside
+            className="table-cell table-flow"
+            style={cell('flow')}
+            data-testid="table-flow"
+            aria-label="Turn"
+          >
+            {flow}
+          </aside>
+          {commanderSeat !== null && (
+            <CommanderPopup
+              view={view}
+              seatId={commanderSeat}
+              onClose={() => setCommanderSeat(null)}
+            />
+          )}
+          <BlockArrows roles={roles} />
+          {open !== null && (
+            <ZoneViewer
+              title={open.title}
+              objects={open.objects}
+              {...(open.others === undefined ? {} : { others: open.others })}
+              onClose={() => setZone(null)}
+            />
+          )}
+        </section>
+      </PairFocusProvider>
+    </CreatureScaleContext.Provider>
   );
 }
