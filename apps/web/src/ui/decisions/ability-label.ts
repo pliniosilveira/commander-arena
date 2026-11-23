@@ -1378,6 +1378,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
           ? ''
           : '. When you cast it this turn, this creature gains all activated abilities of that card until end of turn'
       }`;
+    case 'mayCastOneMilled':
+      // CR 601.2, 611.2a (Locke, Treasure Hunter): "Until end of turn, you may cast a spell from among those cards".
+      return 'Until end of turn, you may cast a spell from among those cards';
     case 'mayCastSpells':
       // Issue 159 (CR 601.2, 611.2a): "You may cast Zombie spells from your graveyard this turn".
       // The one word of the filter: a creature type ("Zombie spells") or a card type ("creature spells").

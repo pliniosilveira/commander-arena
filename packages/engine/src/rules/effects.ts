@@ -121,6 +121,7 @@ import { runManifest } from './manifest';
 import {
   runGainActivatedAbilitiesOf,
   runMayCast,
+  runMayCastOneMilled,
   runMayCastSpells,
   runPaidReflexive,
   runReflexive,
@@ -2310,6 +2311,9 @@ function runEffect(
     case 'gainEscape':
       // CR 702.138a, 611.2c: "Until end of turn, each creature card in your graveyard gains escape" (rules/escape-grant.ts).
       return runGainEscape(state, res, effect);
+    case 'mayCastOneMilled':
+      // CR 601.2, 611.2a (Locke, Treasure Hunter): "you may cast a spell from among those cards" (rules/may-effects.ts).
+      return runMayCastOneMilled(state, res);
     case 'mayCastSpells':
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);
@@ -2415,6 +2419,7 @@ function runEffect(
         ...done(next, events),
         performed: milled,
         lastMoved: cardsMilled,
+        milledCards: cardsMilled,
         ...(value > 0 || milledCreatures > 0
           ? {
               thisWay: {

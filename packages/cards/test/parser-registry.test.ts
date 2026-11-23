@@ -934,6 +934,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
   'trigger.win-coin-flip': whenever,
   'effect.flip-coin': spell((e) => `${cap(e)}.`),
+  // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
+  'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
   'keyword.buyback': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,

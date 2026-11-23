@@ -439,6 +439,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCast',
     // Issue 159: "You may cast Zombie spells from your graveyard this turn".
     'mayCastSpells',
+    // Locke, Treasure Hunter: "Until end of turn, you may cast a spell from among those cards" after a mill (one spell, whoever owns the cards).
+    'mayCastOneMilled',
     // Issue 159: "this creature gains all activated abilities of that card until end of turn".
     'gainActivatedAbilitiesOf',
     // "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a).
@@ -3107,6 +3109,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   reflexive: true,
   mayCast: true,
   mayCastSpells: true,
+  mayCastOneMilled: true,
   gainActivatedAbilitiesOf: true,
   gainFlashbackFromManaCost: true,
   gainEscape: true,

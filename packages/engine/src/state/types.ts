@@ -2201,6 +2201,12 @@ export interface ResolutionContext {
    */
   readonly lastMoved?: readonly ObjectId[];
   /**
+   * The cards the latest `mill` instruction of this resolution milled, from every library it took from (CR 701.17a, 400.7j): what "those cards" names in a sentence after other
+   * instructions have moved things (Locke, Treasure Hunter: "each player mills a card. If a land card was milled this way, create a Treasure token. ... you may cast a spell from
+   * among those cards"), read by `mayCastOneMilled`. Absent until a mill ran.
+   */
+  readonly milledCards?: readonly ObjectId[];
+  /**
    * What `triggerSubject` means for a triggered ability that reads it: the object whose event
    * caused the trigger (`StackData.triggerSubject`). Absent for everything else.
    */
@@ -2387,6 +2393,11 @@ export type ContinuousChange =
       readonly spells?: ObjectFilter;
       /** "You may cast target creature card in a graveyard this turn" (`mayCast.anyGraveyard`, issue 159): the named card may be in any player's graveyard. */
       readonly anyGraveyard?: true;
+      /**
+       * "you may cast a spell from among those cards" (`mayCastOneMilled`, CR 601.2): the permissions an effect made for the cards it names share this key, and casting a spell with
+       * one of them uses up all of them, because the effect allows one spell, not one for each card (`rules/cast.ts`).
+       */
+      readonly oneOf?: string;
       /**
        * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.

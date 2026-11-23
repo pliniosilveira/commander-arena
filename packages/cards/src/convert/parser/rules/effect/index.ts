@@ -136,6 +136,7 @@ import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
+import { LOCKE_EFFECT_RULES } from './locke';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -1456,6 +1457,8 @@ export const EFFECT_RULES = [
   ...CROSS_ZONE_EFFECT_RULES,
   // Stage P69 (D-271): rolling a die, "roll a four-sided die".
   ...ARDEN_EFFECT_RULES,
+  // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards".
+  ...LOCKE_EFFECT_RULES,
   // Stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
   ...GRANTED_STATIC_EFFECT_RULES,
   // Stage P69 (D-272): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".
