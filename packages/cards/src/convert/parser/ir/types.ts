@@ -1593,6 +1593,8 @@ export interface IrTrigger extends IrNode {
   readonly duringTurn?: 'you' | 'opponent';
   /** 'enters' (issue 102, River Kelpie, CR 603.6a): "enters from a graveyard", the permanent came from a graveyard. */
   readonly fromGraveyard?: true;
+  /** 'enters' with `fromGraveyard`: "enters from your graveyard", the graveyard is the controller's (CR 404.1). */
+  readonly yourGraveyard?: true;
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */

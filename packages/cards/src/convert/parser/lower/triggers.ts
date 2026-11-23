@@ -189,7 +189,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (!what.ok) return what;
       // "enters from a graveyard" (issue 102, River Kelpie, CR 603.6a): the zone it came from, as the event is noticed.
       if (t.fromGraveyard === true) {
-        const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
+        const blocked = missingFeatures([
+          'trigger:entersBattlefieldFromGraveyard',
+          ...(t.yourGraveyard === true
+            ? (['trigger:entersBattlefieldFromYourGraveyard'] as const)
+            : []),
+        ]);
         if (blocked.length > 0) return failure(t, blocked);
       }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
@@ -198,6 +203,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
         ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
+        ...(t.fromGraveyard === true && t.yourGraveyard === true
+          ? { graveyardOwner: 'you' as const }
+          : {}),
       });
     }
     case 'attacks': {
@@ -1978,6 +1986,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:lifeLostBatch',
   'trigger:notAsAttacker',
   'trigger:entersBattlefieldFromGraveyard',
+  'trigger:entersBattlefieldFromYourGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',

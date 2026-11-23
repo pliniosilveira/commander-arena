@@ -416,7 +416,7 @@ export const EFFECT_DAMAGE_IT = defineRule<Clauses>({
 export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
   id: 'effect.damage-by-it',
   family: 'effect',
-  leading: ['it'],
+  leading: ['it', 'that'],
   cites: ['CR 120.2 (Damage)', 'CR 113.7a (Abilities)', 'CR 115.4 (Targets)'],
   examples: [
     'it deals 1 damage to you',
@@ -430,8 +430,13 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     // Grave Danger (issue 159, Lotleth Giant): the count after "for each" multiplies the quantity (CR 608.2c).
     'it deals 1 damage to target opponent for each creature card in your graveyard',
     'it deals 2 damage to each opponent for each creature you control',
+    // The creature the trigger is about, said by name (Flayer of the Hatebound).
+    'that creature deals damage equal to its power to any target',
+    'that permanent deals 2 damage to each opponent',
   ],
   rejects: [
+    'that creatures deals 1 damage to you',
+    'that player deals 1 damage to you',
     'it deals X damage to target opponent for each creature you control',
     'it deals 1 damage to target opponent for each',
     'it deals damage equal to its power',
@@ -446,7 +451,7 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     'effect.damage-by-it',
     satisfy(
       sequence(
-        family<IrNoun>('noun', { only: ['noun.it'] }),
+        family<IrNoun>('noun', { only: ['noun.it', 'noun.that-object'] }),
         literal(' deals '),
         DAMAGE_AMOUNT,
         literal(' to '),

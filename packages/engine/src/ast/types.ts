@@ -5024,6 +5024,11 @@ export type Trigger =
        * graveyard (the zone it moved from, read as the event happens), never a token and not a spell that was merely cast from there.
        */
       readonly fromGraveyard?: true;
+      /**
+       * "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 400.7, 404.1: a graveyard is its owner's): the graveyard it came from is one of the controller of
+       * this ability, that is, the permanent is owned by that player. Only with `fromGraveyard`.
+       */
+      readonly graveyardOwner?: 'you';
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**

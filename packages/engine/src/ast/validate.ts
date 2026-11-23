@@ -1046,6 +1046,13 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       issue(out, `${path}.at`, `unknown attack target ${JSON.stringify(at)}`);
     }
   }
+  // CR 603.6a, 404.1: "enters from your graveyard" is an enters trigger from a graveyard.
+  if (t?.kind === 'entersBattlefield' && t.graveyardOwner !== undefined) {
+    if (t.graveyardOwner !== 'you') issue(out, `${path}.graveyardOwner`, "graveyardOwner is 'you'");
+    if (t.fromGraveyard !== true) {
+      issue(out, `${path}.graveyardOwner`, 'graveyardOwner needs fromGraveyard');
+    }
+  }
   switch (t?.kind) {
     case 'entersBattlefield':
     case 'dies':
