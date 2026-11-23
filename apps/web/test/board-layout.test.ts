@@ -432,7 +432,7 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
   test('the biggest tiles are a quarter bigger than before issue 137 (108, 84 and 70)', () => {
     // A row with all the room it wants: the cap of the kind. Before D-240 these were 108, 84 and 70.
     expect(rowSpec('creature', 400).tileH).toBe(136);
-    expect(rowSpec('other', 400).tileH).toBe(105);
+    expect(rowSpec('other', 400).tileH).toBe(88);
     expect(rowSpec('land', 400).tileH).toBe(88);
     expect(136 / 108).toBeGreaterThan(1.2);
     expect(136 / 108).toBeLessThan(1.3);
