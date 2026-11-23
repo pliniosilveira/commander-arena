@@ -1355,6 +1355,8 @@
      scroll, to the right of them. */
   padding: 0 12px 0 96px;
   background: linear-gradient(0deg, var(--bg-sunken), var(--bg));
+  /* its width is the unit (cqw) of the empty room at the ends of the fan */
+  container-type: inline-size;
 }
 
 .board-hand-fan {
@@ -1366,7 +1368,8 @@
      taller than the area by that rise, and the strip above the cards does not take the pointer. */
   height: calc(100% + 110px);
   margin-top: -110px;
-  padding: 0 20px;
+  /* Empty room at both ends, as the rows of the field have: the hand scrolls even when it fits. */
+  padding: 0 50cqw;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
