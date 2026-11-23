@@ -1111,6 +1111,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'putCounters'; readonly counter: string; readonly count: number }
     // "Return an artifact you control to its owner's hand", "Return ~ to its owner's hand" (stage P31, CR 118.3): `count` of them
     | { readonly kind: 'returnToHand'; readonly what: IrNoun; readonly count: number }
+    // "Put ~ on the bottom of its owner's library" (CR 118.3, 401.4): the permanent itself
+    | { readonly kind: 'putThisOnLibraryBottom' }
     // The loyalty symbol of a loyalty ability, "+1", "−2", "0", "−X" (stage P47, D-202, CR 606.4, 606.5): a change, or 'x' for "−X"
     | { readonly kind: 'loyalty'; readonly change: number | 'x' }
   );

@@ -236,6 +236,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'returnToHand': {
       // D-139: "Return an artifact you control to its owner's hand", "Return two lands you control to their owner's
       // hand", "Return this artifact to its owner's hand".
+      // CR 401.4: "Put this creature on the bottom of its owner's library".
+      if (cost.toLibraryBottom === true)
+        return `Put this ${self} on the bottom of its owner's library`;
       if ('kind' in cost.what) return `Return this ${self} to its owner's hand`;
       const count = cost.count ?? 1;
       return `Return ${sacrificeWhat(cost.what, count)} you control to ${count > 1 ? "their owner's" : "its owner's"} hand`;

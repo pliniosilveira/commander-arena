@@ -265,8 +265,17 @@ export function describeEvent(
     case 'turnBegan':
       return line(
         'major',
-        `${turnLabel(event.seat, viewer, event.turn, after.seats.length)} begins.`,
+        // CR 500.7: an extra turn says so.
+        `${turnLabel(event.seat, viewer, event.turn, after.seats.length, after.extraTurnsTaken)} begins${event.extra === true ? ' (an extra turn)' : ''}.`,
         event.seat,
+      );
+    case 'extraTurnAdded':
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'take', 'takes')} an extra turn after this one.`,
+        event.seat,
+        [],
+        'CR 500.7',
       );
     case 'stepBegan':
       return line(

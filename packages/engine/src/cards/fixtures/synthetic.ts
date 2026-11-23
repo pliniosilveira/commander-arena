@@ -77,6 +77,7 @@ import { SYNTHETIC_EVASION_LIMITS_LIST } from './synthetic-evasion-limits';
 import { SYNTHETIC_EVOKE_GRANT_LIST } from './synthetic-evoke-grant';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
+import { SYNTHETIC_EXTRA_TURNS_LIST } from './synthetic-extra-turns';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -442,6 +443,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PT_LIST,
   ...SYNTHETIC_ALT_COST_LIST,
   ...SYNTHETIC_EXERT_LIST,
+  ...SYNTHETIC_EXTRA_TURNS_LIST,
   ...SYNTHETIC_AMOUNT_LIST,
   ...SYNTHETIC_ANGELS_SHAPES_LIST,
   ...SYNTHETIC_ANGELS_STATICS_LIST,

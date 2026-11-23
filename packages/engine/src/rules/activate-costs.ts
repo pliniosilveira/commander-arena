@@ -83,6 +83,8 @@ export interface CostBreakdown {
   readonly bounce: 'this' | ObjectFilter | null;
   /** How many of them; 1 for the source and for an ordinary cost. */
   readonly bounceCount: number;
+  /** The return cost puts the permanent on the bottom of its owner's library instead of their hand (`returnToHand.toLibraryBottom`, CR 401.4). */
+  readonly bounceToLibraryBottom: boolean;
   /** "Exile two creature cards from your graveyard" (D-232): the cards of the graveyard the cost exiles, or null for none. */
   readonly exileCards: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The untapped permanents to tap (D-133, "Tap three untapped Zombies you control"), or null. */
@@ -127,6 +129,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let sacrifices = 0;
   let bounce: CostBreakdown['bounce'] = null;
   let bounceCount = 1;
+  let bounceToLibraryBottom = false;
   let bounces = 0;
   let exileCards: CostBreakdown['exileCards'] = null;
   let exileCardsCosts = 0;
@@ -178,6 +181,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         bounces += 1;
         bounce = 'kind' in cost.what ? 'this' : cost.what;
         bounceCount = cost.count ?? 1;
+        bounceToLibraryBottom = cost.toLibraryBottom === true;
         break;
       case 'discardThis':
         discardThis = true;
@@ -297,6 +301,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     sacrificeAlongside,
     bounce,
     bounceCount,
+    bounceToLibraryBottom,
     exileCards,
     tapPermanents,
     untapPermanents,

@@ -468,7 +468,7 @@ export class GameHost implements GameClient {
         id: this.logId++,
         turn: after.turn.number,
         activeSeat: after.turn.activeSeat,
-        round: roundOf(after.turn.number, after.seats.length),
+        round: roundOf(after.turn.number, after.seats.length, after.extraTurnsTaken),
         ...described,
       });
     }

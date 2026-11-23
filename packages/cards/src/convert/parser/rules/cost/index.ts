@@ -11,6 +11,7 @@ import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
+import { EXTRA_TURN_COST_RULES } from './extra-turns';
 import { FEDERATION_D_COST_RULES } from './federation-d';
 import { GISA_G4_COST_RULES } from './gisa-g4';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
@@ -934,6 +935,8 @@ export const COST_RULES = [
   COST_DISCARD_FILTERED,
   // Stage P68 (D-229): "Discard this card", "Exile ~".
   ...HOFRI_COST_RULES,
+  // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
+  ...EXTRA_TURN_COST_RULES,
   // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,
