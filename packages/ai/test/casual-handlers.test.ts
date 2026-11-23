@@ -119,6 +119,7 @@ function view(spec: ViewSpec = {}): GameView {
     pending: null,
     decidingSeat: 0,
     commanderDamage: {},
+    commanderDamageSources: {},
     result: null,
   };
 }

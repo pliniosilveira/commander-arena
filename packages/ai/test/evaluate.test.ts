@@ -362,6 +362,7 @@ describe('the score and its terms', () => {
       battlefield: BASE.battlefield,
       seats: BASE.seats.map((s) => ({ ...s, life: 40, handCount: 3, poison: 0 })),
       commanderDamage: {},
+      commanderDamageSources: {},
     };
     expect(scoreOf(even, 0)).toBeCloseTo(0, 9);
     expect(scoreOf(even, 1)).toBeCloseTo(0, 9);

@@ -215,23 +215,26 @@ export function commanderTaxes(seat: SeatView): number[] {
 }
 
 export interface CommanderDamage {
-  /** The dealing commander's name when it can be told apart, otherwise null. */
-  readonly source: string | null;
+  /** The seat whose commander dealt the damage, when the view says (it always does). */
+  readonly from: SeatId | null;
   readonly amount: number;
+  /** The dealing commander's name in a two-seat game with one commander, otherwise null. */
+  readonly name: string | null;
 }
 
 /**
- * Commander damage taken by `seat` (CR 903.10a), one row per dealing commander. Keys are
- * `${seat}:${cardId}`; a name is attached only when exactly one opposing commander is visible and
- * exactly one has dealt damage, since the card id cannot be resolved to a name otherwise.
+ * Commander damage taken by `seat` (CR 903.10a), one row per dealing commander, with the seat that
+ * owns it (`GameView.commanderDamageSources`), so several opponents can be told apart.
  */
 export function commanderDamageTaken(view: GameView, seat: SeatId): CommanderDamage[] {
-  const rows = Object.entries(view.commanderDamage)
-    .filter(([key]) => key.startsWith(`${seat}:`))
-    .map(([, amount]) => amount);
+  const rows = Object.entries(view.commanderDamage).filter(([key]) => key.startsWith(`${seat}:`));
   const sources = view.seats.filter((s) => s.id !== seat).flatMap((s) => commandersOf(view, s.id));
-  const only = rows.length === 1 && sources.length === 1 ? (sources[0]?.name ?? null) : null;
-  return rows.map((amount) => ({ source: only, amount }));
+  const only = view.seats.length === 2 && rows.length === 1 && sources.length === 1;
+  return rows.map(([key, amount]) => ({
+    from: view.commanderDamageSources[key] ?? null,
+    amount,
+    name: only ? (sources[0]?.name ?? null) : null,
+  }));
 }
 
 const BAND_VAR: Readonly<Record<Color, string>> = {

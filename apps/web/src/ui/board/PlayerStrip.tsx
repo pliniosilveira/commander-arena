@@ -12,6 +12,7 @@ import { CostDisplay } from './CardFace';
 import { HandBacks } from './Hand';
 import { useHoverPreview } from './hover';
 import { bandBackground, commanderDamageTaken, commandersOf, seatLabel } from './resolve';
+import { opponentLabel } from './table-label';
 
 /** The public data of a revealed companion (the engine's `CompanionView` is not exported by name). */
 type CompanionView = NonNullable<SeatView['companion']>;
@@ -74,9 +75,16 @@ export function ringTitle(tempted: number): string {
 export const COMMANDER_DAMAGE_LOSS = 21;
 
 /** The tooltip of a commander damage chip: whose commander, how much, and the rule. */
-export function commanderDamageTitle(who: string, source: string | null, amount: number): string {
-  const from = source === null ? 'a commander' : source;
-  return `${who} ${who === 'You' ? 'have' : 'has'} taken ${amount} combat damage from ${from}. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`;
+export function commanderDamageTitle(
+  who: string,
+  d: { from: SeatId | null; name: string | null; amount: number },
+  view: GameView,
+): string {
+  const named = view.seats.length > 2 && d.from !== null;
+  const from = named
+    ? `${opponentLabel(view, d.from as SeatId)}'s commander`
+    : (d.name ?? 'a commander');
+  return `${who} ${who === 'You' ? 'have' : 'has'} taken ${d.amount} combat damage from ${from}. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`;
 }
 
 const POOL_ORDER = ['W', 'U', 'B', 'R', 'G', 'C'] as const;
@@ -383,10 +391,13 @@ export function PlayerStrip({
               // biome-ignore lint/suspicious/noArrayIndexKey: positional list of chips
               key={i}
               className={`board-flag board-flag-cmdrdmg${d.amount >= COMMANDER_DAMAGE_LOSS - 5 ? ' is-near' : ''}`}
-              title={commanderDamageTitle(who, d.source, d.amount)}
+              title={commanderDamageTitle(who, d, view)}
               data-cmdr-damage={d.amount}
             >
               Cmdr {d.amount}/{COMMANDER_DAMAGE_LOSS}
+              {d.from !== null && view.seats.length > 2
+                ? ` from ${opponentLabel(view, d.from)}`
+                : ''}
             </span>
           ))}
           {active && <span className="board-flag board-flag-turn">Turn</span>}

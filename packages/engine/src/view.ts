@@ -601,7 +601,24 @@ export interface GameView {
     readonly sourceName: string;
   };
   readonly commanderDamage: Readonly<Record<string, number>>;
+  /**
+   * The seat whose commander dealt each `commanderDamage` entry, by the same key (CR 903.10a,
+   * 704.6c): "who is close to 21" in a game with several opponents.
+   */
+  readonly commanderDamageSources: Readonly<Record<string, SeatId>>;
   readonly result: GameResult | null;
+}
+
+/** The owner of the commander behind each commander damage key (`"<victim>:<cardId>"`). */
+function commanderDamageSources(state: GameState): Record<string, SeatId> {
+  const owners = new Map<string, SeatId>();
+  for (const s of state.seats) for (const c of s.commanders) owners.set(c, s.id);
+  const out: Record<string, SeatId> = {};
+  for (const key of Object.keys(state.commanderDamage)) {
+    const owner = owners.get(key.slice(key.indexOf(':') + 1));
+    if (owner !== undefined) out[key] = owner;
+  }
+  return out;
 }
 
 /** `castCost` and `additionalCosts` of a card that is not a permanent (see `ObjectView`). */
@@ -1111,6 +1128,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
         }
       : {}),
     commanderDamage: state.commanderDamage,
+    commanderDamageSources: commanderDamageSources(state),
     result: state.result,
   };
 }
