@@ -1299,7 +1299,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (missing.length > 0) return failure(ability, missing);
     const abilities: Ability[] = [];
     for (const part of parts) {
-      // The play rules that take a condition: the attack tax, read where the attack is declared.
+      // The play rules that take a condition: the attack tax, read where the attack is declared, and the lands played from the top of the library, read as a land is played.
       const [only] = part.effects;
       // "As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library." (The Reality Chip): both permissions, with the condition.
       if (isPlayFromTopPair(part.effects)) {
@@ -1309,7 +1309,11 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         continue;
       }
       if (only !== undefined && isPlayRule(only)) {
-        if (part.effects.length > 1 || only.kind !== 'attackTax') return failure(ability);
+        if (
+          part.effects.length > 1 ||
+          (only.kind !== 'attackTax' && only.kind !== 'playLandsFromTopOfLibrary')
+        )
+          return failure(ability);
         const lowered = lowerPlayRule(ability, only);
         if (!lowered.ok) return lowered;
         abilities.push(...lowered.value.map((a): Ability => ({ ...a, condition }) as Ability));

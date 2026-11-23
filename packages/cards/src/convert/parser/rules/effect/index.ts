@@ -211,6 +211,7 @@ import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
+import { RETURNED_LAND_EFFECT_RULES } from './returned-land';
 import { REVEAL_CHOSEN_TYPE_EFFECT_RULES } from './reveal-chosen-type';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
@@ -810,16 +811,27 @@ const RETURN_THE_CHOSEN_CARDS: Parser<{ objects: IrNoun | IrNounList; to: IrZone
  * its owner's graveyard when "When enchanted creature dies" resolves).
  */
 const RETURN_THIS_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
-  map(
-    sequence(
-      literal('return '),
-      operands(['noun.this-card'], 'effect.return'),
-      spanned(OWNERS_HAND),
+  choice(
+    map(
+      sequence(
+        literal('return '),
+        operands(['noun.this-card'], 'effect.return'),
+        spanned(OWNERS_HAND),
+      ),
+      ([, objects, to]) => ({
+        objects,
+        to: zone('effect.return', to.span, 'hand', { whose: 'owner' }),
+      }),
     ),
-    ([, objects, to]) => ({
-      objects,
-      to: zone('effect.return', to.span, 'hand', { whose: 'owner' }),
-    }),
+    // Princess Yue (CR 400.7, 603.10a): "When ~ dies, return this card to the battlefield tapped under your control": the card the permanent became in the graveyard.
+    map(
+      sequence(
+        literal('return '),
+        operands(['noun.this-card'], 'effect.return'),
+        TO_THE_BATTLEFIELD,
+      ),
+      ([, objects, to]) => ({ objects, to }),
+    ),
   ),
 );
 
@@ -947,6 +959,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return that nonland permanent card to the battlefield',
     'return that card to your hand',
     "return this card to its owner's hand",
+    // Princess Yue: the card a dying creature became, back onto the battlefield.
+    'return this card to the battlefield tapped under your control',
     // D-362 (Victimize): the cards an earlier sentence chose as targets.
     'return the chosen cards to the battlefield',
     'return the chosen cards to the battlefield tapped',
@@ -1290,6 +1304,7 @@ export const EFFECT_RULES = [
   ...SONG_FREYALISE_EFFECT_RULES,
   // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
   ...GAIN_NEXT_TURN_EFFECT_RULES,
+  ...RETURNED_LAND_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,

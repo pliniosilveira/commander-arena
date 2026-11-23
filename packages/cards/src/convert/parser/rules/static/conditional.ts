@@ -290,6 +290,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as ~ has four or more +1/+1 counters on it, it has flying and vigilance.',
     // The Reality Chip (CR 305.1, 601.3, 401.5): both permissions of the top card of the library, while ~ is attached to a creature.
     'As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library.',
+    // Verge Rangers: the permission to play lands from the top of the library while an opponent controls more lands.
+    'As long as an opponent controls more lands than you, you may play lands from the top of your library.',
   ],
   rejects: [
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',
@@ -317,10 +319,33 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as ~ is attached to a creature, you may play lands and cast creature spells from the top of your library.',
     'As long as ~ is attached to a creature, you may play lands from the top of your library.',
     'As long as ~ is attached to a creature, you may play lands and cast spells from the top of your graveyard.',
+    'As long as an opponent controls more lands than you, ~ gets +1/+1.',
+    'As long as an opponent controls more lands than you, you may play lands from the top of your graveyard.',
+    'As long as you control a Forest, you may play lands from the top of your library.',
   ],
   parse: (ctx, pos) => {
     const lead = literal('as long as ')(ctx, pos);
     if (!lead.ok) return lead;
+    // Verge Rangers (CR 305.1, 401.5, 611.3a): "As long as an opponent controls more lands than you, you may play lands from the top of your library." The permission is read as
+    // a land is played, so its condition may compare the lands of the players (`condition.opponent-has-more`), which a layer effect's condition may not.
+    const compare = sequence(
+      family<IrCondition>('condition', { only: ['condition.opponent-has-more'] }),
+      literal(', '),
+      family<IrStatic>('static', { only: ['static.play-lands-from-top'] }),
+    )(ctx, lead.pos);
+    if (compare.ok) {
+      const [condition, , play] = compare.value;
+      return {
+        ok: true,
+        value: {
+          ...play,
+          condition,
+          span: { start: pos, end: compare.pos },
+          rule: 'static.conditional-prefix',
+        },
+        pos: compare.pos,
+      };
+    }
     // "As long as this card is in your graveyard and you control a Mountain, ..." (stage P34, D-152, CR 113.6b): the ability works from the
     // graveyard, which the engine says as `functionsIn`; what follows "and" is the condition of the engine.
     const grave = literal('this card is in your graveyard')(ctx, lead.pos);

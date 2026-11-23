@@ -3882,6 +3882,11 @@ export type Effect =
       readonly subtypes?: readonly Subtype[];
       readonly additive?: true;
       /**
+       * "She's a land named Moon" (Princess Yue, CR 612.8, 201.2): the object's name becomes this one and it loses any names it had. Needs `types`. A continuous effect that sets
+       * a name is applied with the type-changing ones, in timestamp order (no effect that depends on another is modelled, `docs/ROADMAP.md`).
+       */
+      readonly name?: string;
+      /**
        * "Creatures you control gain all creature types" (CR 205.3m, 613.1d, 702.73a): every creature type is added to the objects, in addition to the ones they have
        * (so it is `additive` by nature, the flag is not set with it) and with no `types` or `subtypes` of its own. The same layer 4 effect a changeling is, for the
        * objects the selector named as the effect began (CR 611.2c).

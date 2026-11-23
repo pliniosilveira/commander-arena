@@ -113,6 +113,15 @@ export function applyTypeLayer(
   return types === base.types && subtypes === base.subtypes ? base : { types, subtypes };
 }
 
+/** CR 612.8: the name an object has after the effects that set it, the last one winning (timestamp order, CR 613.7). */
+export function applyNameEffects(base: string, effects: readonly ContinuousEffect[]): string {
+  let name = base;
+  for (const e of ofKind(effects, 'setTypes')) {
+    if (e.change.name !== undefined) name = e.change.name;
+  }
+  return name;
+}
+
 // ---- Layer 5 (CR 613.1e)
 
 /**

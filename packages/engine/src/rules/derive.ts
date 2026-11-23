@@ -40,6 +40,7 @@ import { characteristicPtOf } from './derive-count';
 import { expandKeywords, keywordKindsOf } from './derive-keywords';
 import {
   applyAbilityLayer,
+  applyNameEffects,
   applyPtLayers,
   basePtOf,
   counterPtBonus,
@@ -333,6 +334,7 @@ function finish(
   const baseValues = creature ? basePtOf(ptBase, withStaticSets(obj, effects, fx.sets)) : NO_PT;
   const typed: Derived = {
     ...input,
+    name: applyNameEffects(input.name, effects),
     basePower: baseValues.power,
     baseToughness: baseValues.toughness,
     types: line.types,

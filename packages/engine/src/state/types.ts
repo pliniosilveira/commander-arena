@@ -2621,6 +2621,8 @@ export type ContinuousChange =
       readonly subtypes?: readonly Subtype[];
       /** CR 205.1b: add to the types and subtypes the object has instead of replacing them. */
       readonly additive?: true;
+      /** CR 612.8: the object's name becomes this one (it loses any names it had). */
+      readonly name?: string;
       /** D-229 (CR 205.1a): card types the object loses ("isn't a creature"); the subtypes only they allowed go with them. */
       readonly remove?: readonly CardType[];
     }

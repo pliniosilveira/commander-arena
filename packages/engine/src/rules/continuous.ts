@@ -85,6 +85,7 @@ function changeOf(
         ...(node.types === undefined ? {} : { types: node.types }),
         ...(node.subtypes === undefined ? {} : { subtypes: node.subtypes }),
         ...(node.additive === true ? { additive: true as const } : {}),
+        ...(node.name === undefined ? {} : { name: node.name }),
       };
     case 'setColors':
       return {
