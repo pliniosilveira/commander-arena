@@ -25,9 +25,10 @@ const SAHEELI = real('Saheeli, Radiant Creator');
 const CONDUIT = real('Aetherflux Conduit');
 const MARVEL = real('Aetherworks Marvel');
 const PANHARMONICON = real('Panharmonicon');
+const AMPLIFIER = real('Aetheric Amplifier');
 
 describe('the cards read', () => {
-  test.each([COUP, DISALLOW, TITAN, PIA, SAHEELI, CONDUIT, MARVEL, PANHARMONICON])(
+  test.each([COUP, DISALLOW, TITAN, PIA, SAHEELI, CONDUIT, MARVEL, PANHARMONICON, AMPLIFIER])(
     '$golden.name: supported, nothing left unparsed, validateCard is clean',
     ({ card }) => {
       expect(card.support.status).toBe('supported');
@@ -73,6 +74,41 @@ describe('the cards read', () => {
         ],
       },
     });
+  });
+});
+
+describe('Aetheric Amplifier', () => {
+  const activated = () =>
+    AMPLIFIER.card.definition.faces[0]?.abilities.find(
+      (a) => a.kind === 'activated' && a.modes !== undefined,
+    );
+
+  test('is a modal activated ability with the timing of a sorcery and two modes', () => {
+    expect(activated()).toMatchObject({
+      timing: 'sorcery',
+      cost: [{ kind: 'mana', symbols: ['4'] }, { kind: 'tap' }],
+      chooseModes: { min: 1, max: 1 },
+      modes: [
+        { effect: { kind: 'doubleCounters', objects: { kind: 'target' } } },
+        { effect: { kind: 'doublePlayerCounters', player: { kind: 'you' } } },
+      ],
+    });
+  });
+
+  test('the second mode doubles the energy the player has, and only a sorcery-timed activation is offered', () => {
+    const def = AMPLIFIER.card.definition;
+    const g = scenario()
+      .define(def)
+      .seat(0)
+      .energy(3)
+      .pool('WWWW')
+      .battlefield(def.name)
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).activate(def.name, { modes: [1], pay: true });
+    g.passAll();
+    g.expect.energy(0, 6);
   });
 });
 

@@ -2424,6 +2424,25 @@ const BASIC_LAND_MANA: Readonly<Record<string, ManaColor | undefined>> = {
   Forest: 'G',
 };
 
+/** "Double the number of each kind of counter you have" (issue 105, CR 701.10, 122.1): the engine's `doublePlayerCounters` of the controller. */
+const DOUBLE_PLAYER_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'doublePlayerCounters',
+  id: 'lower.double-player-counters',
+  needs: ['effect:doublePlayerCounters'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    if (player.value.kind !== 'you') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'doublePlayerCounters', player: player.value }],
+      rule: clause.rule,
+    };
+  },
+};
+
 const PLAYER_LOCK: Lowering<IrClause, Effects> = {
   head: 'playerLock',
   id: 'lower.player-lock',
@@ -2611,6 +2630,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainLife'),
   playerVerb('gainEnergy'),
   playerVerb('gainExperience'),
+  DOUBLE_PLAYER_COUNTERS,
   playerVerb('loseLife'),
   PLAYER_LOCK,
   PLAYER_PROTECTION,

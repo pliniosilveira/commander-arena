@@ -272,6 +272,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainEnergy',
     // CR 122.1: "You get an experience counter" (`gainExperience`).
     'gainExperience',
+    // Issue 105: "Double the number of each kind of counter you have" (`doublePlayerCounters`).
+    'doublePlayerCounters',
     // CR 122.1: "They get a number of poison counters equal to the difference" (`givePoison`).
     'givePoison',
     // CR 702.179c: "Increase your speed by 1" (`increaseSpeed`).
@@ -2949,6 +2951,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeAllPlayerCounters: true,
   gainEnergy: true,
   gainExperience: true,
+  doublePlayerCounters: true,
   givePoison: true,
   increaseSpeed: true,
   noMaxHandSizeForGame: true,

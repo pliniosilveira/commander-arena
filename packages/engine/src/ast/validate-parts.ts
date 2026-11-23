@@ -7664,6 +7664,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.unless`, 'only a discard has an "unless you discard" alternative');
       }
       break;
+    case 'doublePlayerCounters':
+      // Issue 105 (CR 701.10, 122.1): each player the selector names doubles their own counters.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
     case 'gainLife':
     case 'loseLife':
     case 'gainEnergy':

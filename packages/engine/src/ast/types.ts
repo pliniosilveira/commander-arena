@@ -3736,6 +3736,12 @@ export type Effect =
    */
   | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "Double the number of each kind of counter you have" (issue 105, Aetheric Amplifier; CR 701.10, 122.1, 122.6): each player the selector names gets as many more counters of each kind
+   * they have as they have of it as the effect resolves (poison, energy and experience, the counters the engine keeps on players), each kind its own count, one event for each kind
+   * that changed. A player with none of a kind gets none of it.
+   */
+  | { readonly kind: 'doublePlayerCounters'; readonly player: PlayerSelector }
+  /**
    * "They get a number of poison counters equal to the difference" (CR 122.1, 704.5c; Vraska, Betrayal's Sting): each player the selector names gets `amount` poison counters
    * (a player's own counters, kept for the rest of the game), one `poisonChanged` event each. Nothing for an amount of 0 or less. A player with ten or more is out of the game
    * as a state-based action (CR 704.5c).

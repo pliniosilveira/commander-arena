@@ -2948,6 +2948,27 @@ function runEffect(
       return done(next, events);
     }
 
+    case 'doublePlayerCounters': {
+      // CR 701.10, 122.1 (issue 105, Aetheric Amplifier): each player named puts as many counters of each kind as they have of it: poison, energy and experience.
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const have = getSeat(next, seat);
+        const poison = have.poison;
+        const energy = have.energy ?? 0;
+        const experience = have.experience ?? 0;
+        next = patchSeat(next, seat, {
+          ...(poison > 0 ? { poison: poison * 2 } : {}),
+          ...(energy > 0 ? { energy: energy * 2 } : {}),
+          ...(experience > 0 ? { experience: experience * 2 } : {}),
+        });
+        if (poison > 0) events.push({ kind: 'poisonChanged', seat, from: poison, to: poison * 2 });
+        if (energy > 0) events.push({ kind: 'energyChanged', seat, from: energy, to: energy * 2 });
+        if (experience > 0) {
+          events.push({ kind: 'experienceChanged', seat, from: experience, to: experience * 2 });
+        }
+      }
+      return done(next, events);
+    }
+
     case 'increaseSpeed': {
       // CR 702.179c: no speed becomes that value; otherwise it goes up by the amount (rules/speed.ts).
       const amount = amountOf(state, effect.amount, ctx, targets);

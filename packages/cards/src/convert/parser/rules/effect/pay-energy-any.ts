@@ -24,7 +24,7 @@ export const EFFECT_PAY_ENERGY_ANY = defineRule<Clauses>({
     'pays one or more {E}',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/pay one or more \{E\}(?![\p{L}\p{N}{])/u)(ctx, pos);
+    const r = pattern(/pay one or more \{E\}(?![\p{L}\p{N}{])/iu)(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,

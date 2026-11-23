@@ -81,6 +81,40 @@ export const MODAL_CHOOSE = defineRule<IrModeHeader>({
 });
 
 /**
+ * `modal.choose-bare`: "Choose one" with no dash, the lead of a modal activated ability whose restriction follows it in the same line ("{4}, {T}: Choose one. Activate only as a sorcery.", issue 105,
+ * Aetheric Amplifier; CR 700.2, 602.5). The restriction is read by the restriction rules; this reads only the words that say how many modes. Not read: the dash, another number, a longer line.
+ */
+export const MODAL_CHOOSE_BARE = defineRule<IrModeHeader>({
+  id: 'modal.choose-bare',
+  family: 'modal',
+  leading: ['choose'],
+  cites: ['CR 700.2 (General)', 'CR 700.2a (General)', 'CR 602.5 (Activating Activated Abilities)'],
+  examples: ['Choose one', 'choose two', 'Choose one or both', 'Choose one or more'],
+  rejects: [
+    'Choose one —',
+    'Choose three',
+    'Choose one.',
+    'Choose one at random',
+    'Choose up to one',
+    'Choose X',
+    'Choose one or both or more',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/choose (one or both|one or more|one|two)$/i)(ctx, pos);
+    if (!r.ok) return r;
+    const choose = CHOICES.get((r.value[1] ?? '').toLowerCase());
+    if (choose === undefined) return { ok: false };
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose,
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-bare',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
+/**
  * `modal.choose-commander`: "Choose one. If you control a commander as you cast ~, you may choose both
  * instead." (CR 700.2, 903.3d). One mode is chosen, or both when the controller controls a commander as
  * the spell is cast (the engine's `maxIf`, read as the modes are chosen). It fits a spell with exactly two
@@ -457,6 +491,7 @@ export const MODAL_CHOOSE_MAY_DIFFERENT = defineRule<IrModeHeader>({
 
 export const MODAL_RULES = [
   MODAL_CHOOSE,
+  MODAL_CHOOSE_BARE,
   MODAL_CHOOSE_COMMANDER,
   MODAL_CHOOSE_WIDEN,
   MODAL_CHOOSE_KICKED,
