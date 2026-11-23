@@ -19,6 +19,7 @@ import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
+import { KEEP_ONE_LOYALTY_REPLACEMENT_RULES } from './keep-one-loyalty';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
 import { PAY_LIFE_REPLACEMENT_RULES } from './pay-life';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
@@ -134,6 +135,7 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
     'As ~ enters, choose a card type',
+    'As this enchantment enters, choose a planeswalker type.',
     'As ~ enters, choose a card type other than creature.',
     'As ~ enters, choose two card types.',
     'As ~ enters, you may choose a card type.',
@@ -151,7 +153,7 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(ENTERS, literal('it enters the battlefield'), literal('it enters')),
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
-        pattern(/, choose a (creature type|color|card type)\./i),
+        pattern(/, choose a (creature type|color|card type|planeswalker type)\./i),
         // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
         pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
@@ -163,7 +165,11 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     const span = { start: pos, end: r.pos };
     const id = 'replacement.as-enters-choose';
     const kind = (tail[1] ?? '').toLowerCase();
-    const plain = kind === 'color' || kind === 'creature type' || kind === 'card type';
+    const plain =
+      kind === 'color' ||
+      kind === 'creature type' ||
+      kind === 'card type' ||
+      kind === 'planeswalker type';
     const names = plain ? null : optionNames(tail[1] ?? '');
     if (!plain && names === null) return fail(ctx, pos);
     const excluded = EXCLUDED_COLORS[(tail[2] ?? '').toLowerCase()];
@@ -171,7 +177,14 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       names === null
         ? {
             kind: 'choiceKind',
-            what: kind === 'color' ? 'color' : kind === 'card type' ? 'cardType' : 'creatureType',
+            what:
+              kind === 'color'
+                ? 'color'
+                : kind === 'card type'
+                  ? 'cardType'
+                  : kind === 'planeswalker type'
+                    ? 'planeswalkerType'
+                    : 'creatureType',
             ...(excluded === undefined ? {} : { except: excluded }),
             span,
             rule: id,
@@ -348,6 +361,8 @@ export const REPLACEMENT_RULES = [
   ...DANITHA_G4_REPLACEMENT_RULES,
   // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."
   ...GISA_G5_REPLACEMENT_RULES,
+  // Deification: "As long as you control a creature, if damage dealt to a planeswalker you control ... instead all but one of those counters are removed."
+  ...KEEP_ONE_LOYALTY_REPLACEMENT_RULES,
   // Phyrexian Processor: "As ~ enters, pay any amount of life."
   ...PAY_LIFE_REPLACEMENT_RULES,
 ];

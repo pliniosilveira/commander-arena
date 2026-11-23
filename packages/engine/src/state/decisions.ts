@@ -852,6 +852,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'creatureType'
     | 'color'
     | 'cardType'
+    | 'planeswalkerType'
     | 'lifePaid'
     | 'option'
     | 'attackTarget'

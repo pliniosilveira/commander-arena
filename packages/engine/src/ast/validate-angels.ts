@@ -3,11 +3,12 @@
  * what they need of the card they are printed on. `validate.ts` and `validate-parts.ts` call into this file for the kinds they do not
  * know themselves.
  */
-import type { Amount, ObjectFilter, Replacement, StaticEffect, Trigger } from './types';
+import type { Amount, Condition, ObjectFilter, Replacement, StaticEffect, Trigger } from './types';
 import { checkProtectionTypes } from './validate-attach';
 import { isCount, isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
+  checkCondition,
   checkCosts,
   checkFilter,
   checkManaSpentType,
@@ -200,6 +201,19 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       // D-332: the draw of the controller; the condition is read as it would happen, for the controller, with nothing else.
       if (r.while !== undefined) checkPlainCondition(r.while, `${path}.while`, out);
       return true;
+    case 'keepOneLoyalty': {
+      // CR 614.1a, 120.3c (Deification): the planeswalkers the controller controls, and an "as long as" the engine reads as the damage is dealt.
+      checkFilter(r.planeswalkers, `${path}.planeswalkers`, out);
+      if (r.planeswalkers?.controller !== 'you') {
+        issue(
+          out,
+          `${path}.planeswalkers`,
+          'the planeswalkers are those the controller controls (controller: you)',
+        );
+      }
+      if (r.while !== undefined) checkKeepOneLoyaltyCondition(r.while, `${path}.while`, out);
+      return true;
+    }
     case 'drawInstead':
       // D-379 (CR 614.1a, 614.11): the draws of the controller are replaced by more draws, all but the first of each draw step (the only form the engine runs).
       if (!Number.isInteger(r.count) || r.count < 2) {
@@ -382,5 +396,33 @@ function checkBlockTax(
   }
   if (s.whileAttacking !== undefined && s.whileAttacking !== true) {
     issue(out, `${path}.whileAttacking`, 'whileAttacking is true or absent');
+  }
+}
+
+const LOYALTY_FLOOR_CONDITIONS = [
+  'controlsAtLeast',
+  'lifeTotal',
+  'controlCommander',
+  'cardsInGraveyard',
+  'cardsInLibrary',
+  'yourTurn',
+  'and',
+  'or',
+  'not',
+] as const;
+
+/** The `while` of a `keepOneLoyalty` (CR 614.1a): read with `evaluateCondition` for the controller of the permanent as the damage is dealt, with no trigger or earlier instruction. */
+function checkKeepOneLoyaltyCondition(c: Condition, path: string, out: AstIssue[]): void {
+  checkCondition(c, path, out);
+  if (!(LOYALTY_FLOOR_CONDITIONS as readonly string[]).includes(c?.kind)) {
+    issue(out, path, `a keepOneLoyalty condition cannot read ${kindOf(c)}`);
+    return;
+  }
+  if (c.kind === 'and' || c.kind === 'or') {
+    for (const [i, t] of (c.terms ?? []).entries()) {
+      checkKeepOneLoyaltyCondition(t, `${path}.terms[${i}]`, out);
+    }
+  } else if (c.kind === 'not') {
+    checkKeepOneLoyaltyCondition(c.term, `${path}.term`, out);
   }
 }

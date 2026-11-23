@@ -919,6 +919,11 @@ export interface ObjectFilter {
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
+   * "Of the chosen type" said of planeswalkers (CR 205.3j, 607.2d; Deification): the object has the planeswalker type the source permanent chose as it entered
+   * (`GameObject.chosen.planeswalkerType`, an `asEntersChoose` of `planeswalkerType`). Matches nothing without that choice.
+   */
+  readonly chosenPlaneswalkerType?: true;
+  /**
    * For stack objects: spells only, abilities only, or (D-207, CR 113.3c, 603.1) triggered abilities only ("target triggered ability"). A member of an
    * `anyOf` may set it when the outer filter does not ("target triggered ability or colorless spell": the outer filter has `zone: 'stack'`, one member
    * `stackKind: 'triggeredAbility'` and one `stackKind: 'spell'` with `colorless`).
@@ -6363,10 +6368,17 @@ export type Replacement =
       readonly kind: 'asEntersChoose';
       /**
        * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
+       * `planeswalkerType` (CR 205.3j, "As this enchantment enters, choose a planeswalker type"): one of `PLANESWALKER_TYPES`; read by the `chosenPlaneswalkerType` quality of a filter.
        * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
        * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
        */
-      readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
+      readonly what:
+        | 'creatureType'
+        | 'color'
+        | 'option'
+        | 'cardType'
+        | 'planeswalkerType'
+        | 'lifePaid';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -6573,6 +6585,19 @@ export type Replacement =
    * the other cards of a sequence of draws are not skipped they are still drawn (CR 614.11a, 121.6b): each draw is replaced on its own.
    */
   | { readonly kind: 'skipDraw'; readonly while?: Condition }
+  /**
+   * "As long as you control a creature, if damage dealt to a planeswalker you control of the chosen type would result in all loyalty counters on it being removed, instead all but
+   * one of those counters are removed." (CR 614.1a, 120.3c, 704.5i; Deification): a replacement effect of a permanent on the battlefield for the damage dealt to a planeswalker
+   * that `planeswalkers` matches (read for the planeswalker as it is, with `controller: 'you'` required: the controller of the permanent with the ability; `chosenPlaneswalkerType`
+   * reads the choice of the permanent with the ability). It replaces the result of the damage, not the damage: when the damage would remove every loyalty counter the planeswalker
+   * has (and it has at least one), all but one are removed. `while` is the "as long as" condition, read for the controller of the permanent as the damage is dealt
+   * (`controlsAtLeast`, `lifeTotal`, `controlCommander`, `cardsInGraveyard`, `cardsInLibrary`, `yourTurn`, `and`, `or`, `not`). It is the ability of the permanent (lost with "loses all abilities").
+   */
+  | {
+      readonly kind: 'keepOneLoyalty';
+      readonly planeswalkers: ObjectFilter;
+      readonly while?: Condition;
+    }
   /**
    * "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead." (D-379, CR 614.1a, 614.11, 614.11a,
    * 614.5, 504.1; the Hashaton deck, Bard, King of Dale): a replacement effect of a permanent on the battlefield for the cards its controller would

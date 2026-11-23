@@ -750,6 +750,20 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const when = lowerCondition(event.condition);
     return when.ok ? built({ kind: 'skipDraw', while: when.value }) : when;
   }
+  if (event.verb === 'keepOneLoyalty') {
+    // CR 614.1a, 120.3c (Deification): the damage dealt to the planeswalkers of the controller removes all but one loyalty counter instead of all of them.
+    const walkers = event.args.planeswalkers;
+    if (walkers?.kind !== 'noun') return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:keepOneLoyalty']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(walkers);
+    if (!lowered.ok) return lowered;
+    const { zone, ...planeswalkers } = lowered.value;
+    void zone;
+    if (event.condition === undefined) return built({ kind: 'keepOneLoyalty', planeswalkers });
+    const when = lowerCondition(event.condition);
+    return when.ok ? built({ kind: 'keepOneLoyalty', planeswalkers, while: when.value }) : when;
+  }
   if (event.verb === 'umbraArmor') {
     // CR 702.89a (Danitha deck, D-417): the keyword of an Aura; the engine checks that the face is one.
     const blocked = gate(ability, ['ability:replacement', 'replacement:umbraArmor']);
@@ -1208,6 +1222,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:asEntersChoose',
   'replacement:entersAsCopy',
   'replacement:skipDraw',
+  'replacement:keepOneLoyalty',
   'replacement:tokensInstead',
   'replacement:countersPlus',
   'replacement:damageBonus',

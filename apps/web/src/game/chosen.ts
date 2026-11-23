@@ -25,6 +25,7 @@ export function optionText(
     | 'creatureType'
     | 'color'
     | 'cardType'
+    | 'planeswalkerType'
     | 'lifePaid'
     | 'attackTarget'
     | 'assignOpponent'
@@ -61,6 +62,7 @@ export function purposeNoun(
     | 'creatureType'
     | 'color'
     | 'cardType'
+    | 'planeswalkerType'
     | 'lifePaid'
     | 'attackTarget'
     | 'assignOpponent'
@@ -89,6 +91,7 @@ export function purposeNoun(
   if (purpose === 'playerChoice') return 'player with the most life';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
+  if (purpose === 'planeswalkerType') return 'planeswalker type';
   if (purpose === 'lifePaid') return 'amount of life to pay';
   return purpose === 'color' ? 'color' : 'creature type';
 }
@@ -123,6 +126,14 @@ export function chosenLabel(object: Pick<ObjectView, 'chosen'>): ChosenLabel | n
       short: chosen.cardType,
       title: `Chosen card type: ${chosen.cardType}`,
       heading: 'Chosen card type',
+    };
+  }
+  // CR 205.3j: "choose a planeswalker type" (Deification).
+  if (chosen.planeswalkerType !== undefined) {
+    return {
+      short: chosen.planeswalkerType,
+      title: `Chosen planeswalker type: ${chosen.planeswalkerType}`,
+      heading: 'Chosen planeswalker type',
     };
   }
   // D-151: a name from the list the card gives, as "choose Khans or Dragons" (the noun is the one `purposeNoun` uses).

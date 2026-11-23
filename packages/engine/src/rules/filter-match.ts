@@ -455,6 +455,11 @@ export function matchesFilterWith(
     const color = ctx.sourceChosen?.color;
     if (color === undefined || !d.colors.includes(color)) return false;
   }
+  // CR 205.3j, 607.2d: "planeswalkers ... of the chosen type" is the planeswalker type the source chose as it entered.
+  if (filter.chosenPlaneswalkerType === true) {
+    const type = ctx.sourceChosen?.planeswalkerType;
+    if (type === undefined || !d.subtypes.includes(type)) return false;
+  }
   // D-261, CR 205.3m: "shares a creature type with it": a creature type (CR 205.3m: the subtypes of creatures and kindreds) that both have.
   if (filter.sharesCreatureTypeWith !== undefined) {
     const theirs = ctx.subjectSubtypes;

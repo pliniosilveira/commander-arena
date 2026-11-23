@@ -19,7 +19,12 @@ export function OptionDialog({
   act: (action: Action) => void;
 }) {
   const choose = (option: string) => act({ kind: 'chooseOption', option });
-  const label = d.purpose === 'color' ? 'Choose a color' : 'Choose a creature type';
+  const label =
+    d.purpose === 'color'
+      ? 'Choose a color'
+      : d.purpose === 'planeswalkerType'
+        ? 'Choose a planeswalker type'
+        : 'Choose a creature type';
   return (
     <Dialog label={label} className="dec-option">
       <h2 className="dec-title">{d.sourceName}</h2>
@@ -79,6 +84,7 @@ function TypePicker({
   view: GameView;
   choose: (option: string) => void;
 }) {
+  const noun = decision.purpose === 'planeswalkerType' ? 'planeswalker type' : 'creature type';
   const listId = useId();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -122,14 +128,14 @@ function TypePicker({
         type="text"
         className="dec-search"
         role="combobox"
-        aria-label="Search creature types"
+        aria-label={`Search ${noun}s`}
         aria-expanded="true"
         aria-controls={listId}
         aria-activedescendant={current === undefined ? undefined : optionId(current.key)}
         aria-autocomplete="list"
         autoComplete="off"
         spellCheck={false}
-        placeholder={`Type to search ${decision.options.length} creature types`}
+        placeholder={`Type to search ${decision.options.length} ${noun}s`}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -137,13 +143,18 @@ function TypePicker({
         }}
         onKeyDown={onKey}
       />
-      <div id={listId} className="dec-type-list" role="listbox" aria-label="Creature types">
+      <div
+        id={listId}
+        className="dec-type-list"
+        role="listbox"
+        aria-label={`${noun[0]?.toUpperCase()}${noun.slice(1)}s`}
+      >
         {rows.map((row, i) => {
           const heading =
             query.trim() === '' && row.group !== lastGroup
               ? row.group === 'suggested'
                 ? 'Suggested'
-                : 'All creature types'
+                : `All ${noun}s`
               : null;
           lastGroup = row.group;
           return (
@@ -165,9 +176,7 @@ function TypePicker({
             </div>
           );
         })}
-        {rows.length === 0 ? (
-          <p className="dec-sub dec-type-none">No creature type matches.</p>
-        ) : null}
+        {rows.length === 0 ? <p className="dec-sub dec-type-none">No {noun} matches.</p> : null}
       </div>
     </div>
   );
