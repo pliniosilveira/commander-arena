@@ -4352,6 +4352,11 @@ export type Effect =
    */
   | { readonly kind: 'attach'; readonly object: ObjectRef; readonly to: ObjectRef }
   /**
+   * CR 701.3d (Attach), 702.151a (Reconfigure): `object` (an Aura or Equipment) becomes unattached from the permanent it is attached to and stays on the battlefield. One that is attached to nothing
+   * does nothing. The second ability of the Reconfigure keyword is this effect on "this permanent".
+   */
+  | { readonly kind: 'unattach'; readonly object: ObjectRef }
+  /**
    * An instruction that depends on the game as it is when the instruction runs (CR 608.2c: "If
    * [condition], [effect]. Otherwise, [else]"): `condition` is checked at that moment, not when the
    * spell or ability was put on the stack, and `effect` runs if it holds, else `else` (when there is
@@ -5214,6 +5219,12 @@ export type Keyword =
        */
       readonly restriction?: ObjectFilter;
     }
+  /**
+   * CR 702.151a (Reconfigure): "Reconfigure [cost]" means "[Cost]: Attach this permanent to another target creature you control. Activate only as a sorcery." and "[Cost]: Unattach this
+   * permanent. Activate only if this permanent is attached to a creature and only as a sorcery." The engine expands it when it derives the object's abilities (`rules/derive-keywords.ts`);
+   * CR 702.151b: while it is attached, the Equipment is not a creature (`rules/derive-view.ts`), and CR 301.5c lets an Equipment that is a creature equip only with this keyword.
+   */
+  | { readonly kind: 'reconfigure'; readonly cost: readonly Cost[] }
   /**
    * CR 702.33a (Kicker): "Kicker [cost]" means "You may pay an additional [cost] as you cast this
    * spell." The caster is asked while casting (CR 601.2b, before targets), and a kicked spell pays

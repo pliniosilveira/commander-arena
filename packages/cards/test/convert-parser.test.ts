@@ -290,6 +290,7 @@ describe('unmatched abilities', () => {
       'keyword.equip-quality',
       'keyword.equip-commander',
       'keyword.equip-legendary',
+      'keyword.reconfigure',
       'keyword.kicker',
       'keyword.kicker-and-or',
       'keyword.multikicker',

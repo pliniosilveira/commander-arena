@@ -1360,6 +1360,8 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const onto = effect.to.kind === 'triggerSubject' ? 'that creature' : object(effect.to);
       return `Attach ${object(effect.object)} to ${onto}`;
     }
+    case 'unattach':
+      return `Unattach ${object(effect.object)}`;
     case 'tap':
       // D-139 (CR 701.26a): "You may tap any number of untapped Myr you control".
       return effect.objects.kind === 'choose'

@@ -154,6 +154,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'reconfigure':
+      // CR 702.151a: "[Cost]: Attach this permanent to another target creature you control."
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
+        issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
+      }
+      break;
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."
       checkCosts(k.cost, `${path}.cost`, out);

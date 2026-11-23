@@ -57,6 +57,7 @@ function gate(node: At, needs: readonly FeatureRef[]): LowerFailure | null {
 const KEYWORD_RULE = {
   cycling: 'keyword.cycling',
   equip: 'keyword.equip',
+  reconfigure: 'keyword.reconfigure',
   kicker: 'keyword.kicker',
   multikicker: 'keyword.multikicker',
   flashback: 'keyword.flashback',
@@ -76,6 +77,7 @@ const KEYWORD_RULE = {
 type CostedKeyword =
   | 'cycling'
   | 'equip'
+  | 'reconfigure'
   | 'kicker'
   | 'multikicker'
   | 'flashback'
@@ -202,6 +204,7 @@ function lowerCostedKeyword(
   // own check says it does not pay one, a discard is paid since D-095.
   const kinds =
     name === 'flashback' ||
+    name === 'reconfigure' ||
     name === 'multikicker' ||
     name === 'unearth' ||
     name === 'encore' ||
@@ -548,6 +551,7 @@ export function lowerKeyword(
   if (
     ability.name === 'cycling' ||
     ability.name === 'equip' ||
+    ability.name === 'reconfigure' ||
     ability.name === 'kicker' ||
     ability.name === 'multikicker' ||
     ability.name === 'flashback' ||
@@ -1160,6 +1164,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'ability:keyword',
   'keyword:cycling',
   'keyword:equip',
+  'keyword:reconfigure',
   'keyword:kicker',
   'keyword:multikicker',
   'keyword:typecycling',

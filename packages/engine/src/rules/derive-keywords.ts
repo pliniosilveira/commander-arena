@@ -1,6 +1,6 @@
 /**
  * Keywords that are shorthand for an ability of another kind, expanded when `derive` computes an
- * object's abilities: Cycling (CR 702.29a), Equip (CR 702.6a), Prowess (CR 702.108a), Ward
+ * object's abilities: Cycling (CR 702.29a), Equip (CR 702.6a), Reconfigure (CR 702.151a), Prowess (CR 702.108a), Ward
  * (CR 702.21a), Crew (CR 702.122a), Station (CR 702.184a), and (D-110) typecycling (CR 702.29e), Exalted (CR 702.83a),
  * Annihilator (CR 702.86a), Persist (CR 702.79a) and Undying (CR 702.93a); and (D-120) Battle cry
  * (CR 702.91a), Mentor (CR 702.134a), Evolve (CR 702.100a), Bushido (CR 702.45a), Extort (CR 702.101a),
@@ -50,6 +50,39 @@ function equipAbility(cost: readonly Cost[], restriction?: ObjectFilter): Abilit
     // D-425: what "Equip abilities you activate that target ..." names.
     equip: true,
   };
+}
+
+/**
+ * CR 702.151a (Reconfigure): "Reconfigure [cost]" means "[Cost]: Attach this permanent to another target creature you control. Activate only as a sorcery." and "[Cost]: Unattach this
+ * permanent. Activate only if this permanent is attached to a creature and only as a sorcery." The first is an equip-like ability (but `equip` is not set: it is not an Equip ability,
+ * CR 702.6a), the second runs only while the permanent is attached to a creature.
+ */
+function reconfigureAbilities(cost: readonly Cost[]): Ability[] {
+  return [
+    {
+      kind: 'activated',
+      cost,
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { types: ['creature'], controller: 'you', other: true } },
+        },
+      ],
+      effect: { kind: 'attach', object: { kind: 'this' }, to: { kind: 'target', id: 't1' } },
+      timing: 'sorcery',
+    },
+    {
+      kind: 'activated',
+      cost,
+      effect: { kind: 'unattach', object: { kind: 'this' } },
+      timing: 'sorcery',
+      activateOnlyIf: {
+        kind: 'objectMatches',
+        of: { kind: 'attached' },
+        filter: { types: ['creature'] },
+      },
+    },
+  ];
 }
 
 /**
@@ -758,6 +791,8 @@ export function expansionOf(ability: Ability): Ability[] {
       ];
     case 'equip':
       return [equipAbility(ability.keyword.cost, ability.keyword.restriction)];
+    case 'reconfigure':
+      return reconfigureAbilities(ability.keyword.cost);
     case 'prowess':
       return [PROWESS_ABILITY];
     case 'ward':

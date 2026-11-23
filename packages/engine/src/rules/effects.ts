@@ -32,7 +32,7 @@ import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { runAssignControl } from './assign-control';
-import { attachEntered, attachObject } from './attach';
+import { attachEntered, attachObject, unattach } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
@@ -3178,6 +3178,18 @@ function runEffect(
       }
       // D-206 (CR 701.3b): "you may attach it to target creature you control. If you do, ...": it was done when something was attached.
       return { ...done(next, events), performed: attached };
+    }
+
+    case 'unattach': {
+      // CR 701.3d, 702.151a (Reconfigure): each permanent the reference names that is on the battlefield and attached to a permanent becomes unattached and stays.
+      for (const id of resolveObjects(state, effect.object, ctx, targets)) {
+        const obj = next.objects[id];
+        if (obj?.zone !== 'battlefield' || obj.attachedTo === null) continue;
+        const r = unattach(next, id, obj.attachedTo, 'effect');
+        next = r.state;
+        events.push(...r.events);
+      }
+      return done(next, events);
     }
 
     case 'moveAllCounters': {

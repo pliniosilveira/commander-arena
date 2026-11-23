@@ -174,6 +174,8 @@ export interface LibraryCastSource {
   readonly object: GameObject;
   readonly spells: ObjectFilter;
   readonly gainsHaste: boolean;
+  /** "As long as ~ is attached to a creature, you may cast spells from the top of your library": read where the permission is used. */
+  readonly condition?: Condition;
   /** The permanent sacrificed as an additional cost of a spell cast this way ("by sacrificing a nonland permanent"); absent for none. */
   readonly sacrifice?: ObjectFilter;
 }
@@ -396,6 +398,7 @@ function libraryCastsOf(object: GameObject, abilities: readonly Ability[]): Libr
         object,
         spells: a.static.spells,
         gainsHaste: a.static.gainsHaste === true,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
         ...(a.static.sacrifice === undefined ? {} : { sacrifice: a.static.sacrifice }),
       });
     }

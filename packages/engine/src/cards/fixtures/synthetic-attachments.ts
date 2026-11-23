@@ -128,6 +128,56 @@ export const SYNTHETIC_ATTACHMENT_LIST: readonly CardDefinition[] = [
     oracleText: 'Equipped creature gets +3/+0. Equip-Pay 2 life.',
     abilities: [pt(3, 0), equip({ kind: 'payLife', amount: 2 })],
   }),
+  // ---- Equipment creatures (CR 301.5c, 702.151)
+  singleFace({
+    name: 'SYNTHETIC Reconfigure Blade',
+    manaCost: ['1', 'U'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Equipment', 'Construct'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 1,
+    toughness: 3,
+    oracleText: 'Equipped creature gets +2/+0. Reconfigure {2}',
+    abilities: [pt(2, 0), { kind: 'keyword', keyword: { kind: 'reconfigure', cost: [mana('2')] } }],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Library Chip',
+    manaCost: ['1', 'U'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Equipment', 'Jellyfish'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 0,
+    toughness: 4,
+    oracleText:
+      'As long as this is attached to a creature, you may play lands and cast spells from the top of your library. Reconfigure {2}',
+    abilities: [
+      {
+        kind: 'static',
+        static: { kind: 'playLandsFromTopOfLibrary' },
+        condition: { kind: 'objectMatches', of: ATTACHED, filter: CREATURE },
+      },
+      {
+        kind: 'static',
+        static: { kind: 'castFromTopOfLibrary', spells: {} },
+        condition: { kind: 'objectMatches', of: ATTACHED, filter: CREATURE },
+      },
+      { kind: 'keyword', keyword: { kind: 'reconfigure', cost: [mana('2')] } },
+    ],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Plain Equipment Creature',
+    manaCost: ['1'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Equipment', 'Construct'],
+    colors: [],
+    colorIdentity: [],
+    power: 1,
+    toughness: 1,
+    oracleText: 'Equipped creature gets +2/+0. Equip {1}',
+    abilities: [pt(2, 0), equip(mana('1'))],
+  }),
   // ---- Static abilities with a filter subject
   singleFace({
     name: 'SYNTHETIC Anthem',
