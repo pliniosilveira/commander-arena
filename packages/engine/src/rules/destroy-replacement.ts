@@ -33,13 +33,14 @@ import { moveObject } from './zones';
 /** One effect that can replace the destruction: the key is the answer to the question. */
 interface DestroyEffect {
   readonly key: string;
-  readonly kind: 'regenerate' | 'umbra';
+  readonly kind: 'regenerate' | 'umbra' | 'shieldCounter';
   /** The Aura of an Umbra armor. */
   readonly aura?: GameObject;
   readonly auraName?: string;
 }
 
 const REGENERATE_KEY = 'regenerate';
+const SHIELD_COUNTER_KEY = 'shieldCounter';
 const umbraKey = (aura: ObjectId): string => `umbra:${aura}`;
 
 const hasIndestructible = (state: GameState, obj: GameObject): boolean =>
@@ -67,8 +68,15 @@ function effectsOf(
   state: GameState,
   id: ObjectId,
   cantBeRegenerated: boolean,
+  during: 'resolution' | 'sba',
 ): readonly DestroyEffect[] {
   const effects: DestroyEffect[] = [];
+  // CR 122.1c (Shield counters): "If this permanent would be destroyed as the result of an effect, instead remove a shield counter from it." Lethal damage and
+  // deathtouch (CR 704.5g, 704.5h) are no effect: that damage was prevented already, and a creature that dies of it is not saved by the counter. It goes first in the
+  // default order, as the replacement that costs the permanent nothing it needs this turn (a regeneration shield taps it).
+  if (during === 'resolution' && (state.objects[id]?.counters.shield ?? 0) >= 1) {
+    effects.push({ key: SHIELD_COUNTER_KEY, kind: 'shieldCounter' });
+  }
   // CR 701.19c: a destruction that can't be regenerated is not replaced by a regeneration shield, which stays.
   if (!cantBeRegenerated && hasRegenerationShield(state, id)) {
     effects.push({ key: REGENERATE_KEY, kind: 'regenerate' });
@@ -111,6 +119,18 @@ function applyEffect(
   readonly events: GameEvent[];
   readonly destroyed?: readonly ObjectId[];
 } {
+  if (effect.kind === 'shieldCounter') {
+    const obj = state.objects[id];
+    const had = obj?.counters.shield ?? 0;
+    if (obj === undefined || had < 1) return { state, events: [] };
+    const { shield: _, ...others } = obj.counters;
+    return {
+      state: patchObject(state, id, {
+        counters: had > 1 ? { ...others, shield: had - 1 } : others,
+      }),
+      events: [{ kind: 'counterRemoved', object: id, counter: 'shield', count: 1 }],
+    };
+  }
   if (effect.kind === 'regenerate') {
     return regenerateInstead(state, id) ?? { state, events: [] };
   }
@@ -153,9 +173,11 @@ export interface DestroyAsked {
 }
 
 const textOf = (effect: DestroyEffect): string =>
-  effect.kind === 'regenerate'
-    ? 'Regenerate it instead: remove all damage from it, tap it and remove it from combat'
-    : `Remove all damage from it and destroy ${effect.auraName ?? 'the Aura'} instead (Umbra armor)`;
+  effect.kind === 'shieldCounter'
+    ? 'Remove a shield counter from it instead'
+    : effect.kind === 'regenerate'
+      ? 'Regenerate it instead: remove all damage from it, tap it and remove it from combat'
+      : `Remove all damage from it and destroy ${effect.auraName ?? 'the Aura'} instead (Umbra armor)`;
 
 function question(
   state: GameState,
@@ -203,7 +225,7 @@ export function settleDestruction(
 ): Destruction | DestroyAsked {
   const obj = state.objects[id];
   if (obj?.zone !== 'battlefield') return { kind: 'replaced', state, events: [] };
-  const effects = effectsOf(state, id, cantBeRegenerated);
+  const effects = effectsOf(state, id, cantBeRegenerated, during);
   const [first] = effects;
   if (first === undefined) return { kind: 'destroyed' };
   let pick = first;
@@ -231,6 +253,6 @@ export function answerDestruction(
 ): { readonly state: GameState; readonly events: GameEvent[] } | null {
   const obj = state.objects[id];
   if (obj?.zone !== 'battlefield') return null;
-  const effect = effectsOf(state, id, false).find((e) => e.key === option);
+  const effect = effectsOf(state, id, false, 'sba').find((e) => e.key === option);
   return effect === undefined ? null : applyEffect(state, id, effect);
 }

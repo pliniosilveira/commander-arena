@@ -159,6 +159,9 @@ function addShields(
   return { ...next, continuousEffects: [...next.continuousEffects, ...created] };
 }
 
+/** The `index` of the prevention effect that shield counters make (CR 122.1c): it is no ability of the permanent, so it has no place in its abilities. */
+export const SHIELD_COUNTER_INDEX = -1;
+
 /** A static `preventDamageToThis` of the permanent that would be dealt the damage (D-149): the permanent and the index of the ability in its derived abilities. */
 export interface StaticPrevention {
   readonly object: ObjectId;
@@ -195,6 +198,17 @@ export function staticPreventions(
       });
     }
   });
+  // CR 122.1c (Shield counters): one or more shield counters make one prevention effect, "If damage would be dealt to this permanent, prevent that damage and
+  // remove a shield counter from it". It is a prevention effect of the permanent, not an ability (so losing all abilities does not turn it off), and it is listed
+  // last so the default order spends the counter only when nothing else prevents the damage.
+  if ((obj.counters.shield ?? 0) >= 1) {
+    found.push({
+      object: obj.id,
+      index: SHIELD_COUNTER_INDEX,
+      scope: 'all',
+      removeCounter: 'shield',
+    });
+  }
   return found;
 }
 
