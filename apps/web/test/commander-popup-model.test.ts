@@ -63,14 +63,6 @@ describe('commanderPopup', () => {
     expect(popup.commanders.map((c) => c.name)).toEqual(['Isamaru']);
   });
 
-  test('the total commander damage taken is the sum over every commander', () => {
-    const popup = commanderPopup(
-      view(seats, { '0:c2': 7, '0:c3': 5, '1:c1': 20 }),
-      seats[0] as SeatView,
-    );
-    expect(popup.damageTaken).toBe(12);
-  });
-
   test('a commander in a hidden zone is not named, and the row says so with an empty list', () => {
     const hidden = [seat(0, [commander('o1', 0, 'Isamaru')]), seat(1, []), seat(2)];
     const popup = commanderPopup(view(hidden), hidden[0] as SeatView);

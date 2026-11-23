@@ -203,7 +203,7 @@ test('the strip keeps only the commander chip; its info button opens the command
   await expect(rows.nth(1)).toContainText('Giant Spider');
   await expect(rows.nth(2)).toContainText('Opponent 3');
   await expect(rows.nth(2)).toContainText('Grizzly Bears');
-  await expect(popup.getByText('Total from all commanders: 0')).toBeVisible();
+  await expect(popup.getByText('Total from all commanders')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/table-commander.png' });
   // Esc closes it.
   await page.keyboard.press('Escape');
