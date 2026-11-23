@@ -119,9 +119,17 @@ describe('static.pt-count: "gets +N/+M for each ..." (CR 611.3a, 613.4c)', () =>
   test.each([
     '~ gets +1/+1 for each creature you control with power 3 or greater.',
     '~ gets +1/+1 for each creature you control with toughness 2 or less.',
-    '~ gets +1/+1 for each artifact your opponents control.',
   ])('"%s" is read and refused: the engine counts neither (CR 613.8)', (text) => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'notRunnable' });
+  });
+
+  // Limit Break deck (Avalanche of Sector 7, CR 613.1b, 613.4a, 613.4c): who controls a permanent is a layer 2 result, applied before layer 7, so the permanents of the opponents are
+  // counted (the count follows a change of control and cannot loop); only a power or a toughness in the count stays refused.
+  test('"~ gets +1/+1 for each artifact your opponents control." counts the opponents\' artifacts', () => {
+    const theirs = count({ types: ['artifact'], controller: 'opponent' });
+    expect(statics('~ gets +1/+1 for each artifact your opponents control.', 'creature')).toEqual([
+      { kind: 'modifyPt', subject: THIS, power: theirs, toughness: theirs },
+    ]);
   });
 });
 
@@ -175,11 +183,20 @@ describe('static.defines-pt: a characteristic-defining ability (CR 604.3, 208.2a
   });
 
   test.each([
-    "~'s power and toughness are each equal to the number of lands your opponents control.",
     "~'s power and toughness are each equal to the number of cards in target opponent’s hand.",
     "~'s power and toughness are each equal to the number of creatures you control with power 3 or greater.",
   ])('"%s" is read and refused', (text) => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'notRunnable' });
+  });
+
+  test('the lands the opponents control are counted (Limit Break deck, CR 613.1b, 613.4a)', () => {
+    const theirs = count({ types: ['land'], controller: 'opponent' });
+    expect(
+      statics(
+        "~'s power and toughness are each equal to the number of lands your opponents control.",
+        'creature',
+      ),
+    ).toEqual([{ kind: 'characteristicPt', power: theirs, toughness: theirs }]);
   });
 });
 

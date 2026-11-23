@@ -6,8 +6,8 @@
  */
 import type { Effect } from '../ast/types';
 import { opponentsOf } from '../state/ops';
-import type { ChosenTarget, GameState, ResolutionContext } from '../state/types';
-import { attackerDefender, defendingPlayerOf } from './defending';
+import type { AttackerState, ChosenTarget, GameState, ResolutionContext } from '../state/types';
+import { attackedTarget, attackerDefender, defendingPlayerOf } from './defending';
 import { derive } from './derive';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -23,6 +23,7 @@ export function runEnterAttacking(
 ): StepOutcome {
   const combat = state.combat;
   if (combat === null) return done(state);
+  if (effect.asReturned === true) return enterLikeReturned(state, res, effect, ctx, targets);
   // The player the source attacks; else, when the source is not attacking (an ability of "whenever you attack"), the player the first declared attacker attacks; else the first
   // opponent of the controller (CR 508.4: the controller chooses; with one choice there is none to make).
   const [firstAttacker] = combat.attackers;
@@ -67,4 +68,42 @@ export function runEnterAttacking(
       ...(effect.thatPlayerOrTheirPlaneswalkers === true ? { among: target } : {}),
     })),
   );
+}
+
+/**
+ * Ninjutsu (CR 702.49a, unverified: the CR text is not in the repository): the card enters attacking the player, planeswalker or battle the creature returned as the cost was
+ * attacking (`ResolutionContext.costReturnedAttack`), so nobody chooses a target. It was never declared as an attacker. When nothing was recorded (the cost returned no attacker)
+ * nothing enters attacking. A planeswalker or battle that has left the battlefield leaves the creature attacking nothing, as it does for the creature it replaces (CR 506.4).
+ */
+function enterLikeReturned(
+  state: GameState,
+  res: ResolutionContext,
+  effect: EnterAttacking,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const combat = state.combat;
+  const recorded = res.costReturnedAttack;
+  if (combat === null || recorded === undefined) return done(state);
+  const entering = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
+    const obj = state.objects[id];
+    return (
+      obj !== undefined &&
+      obj.zone === 'battlefield' &&
+      derive(state, obj).types.includes('creature') &&
+      !combat.attackers.some((a) => a.object === id)
+    );
+  });
+  if (entering.length === 0) return done(state);
+  const added: AttackerState[] = entering.map((object) => {
+    const entry: AttackerState = {
+      object,
+      target: recorded.target,
+      blocked: false,
+      ...(recorded.defender === undefined ? {} : { defender: recorded.defender }),
+      ...(recorded.targetGone === true ? { targetGone: true as const } : {}),
+    };
+    return attackedTarget(state, entry) === null ? { ...entry, targetGone: true as const } : entry;
+  });
+  return done({ ...state, combat: { ...combat, attackers: [...combat.attackers, ...added] } });
 }

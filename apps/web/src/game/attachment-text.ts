@@ -43,6 +43,8 @@ export function attachedToWords(filter: ObjectFilter): string | null {
   if (to === undefined) return '';
   // The host of the sentence's subject: "gets +2/+2 for each Aura attached to it" is said of the permanent itself or of the one it is attached to.
   if (to.kind === 'source' || to.kind === 'host') return ' attached to it';
+  // A permanent sacrificed as a cost (Zack Fair): its attachments are read from last-known information, which no phrase of this text says.
+  if (to.kind === 'sacrificedCost') return null;
   const { types, ...rest } = to.filter;
   if (Object.keys(rest).length > 0 || types === undefined || types.length === 0) return null;
   const kind = types.join(' or ');
@@ -124,6 +126,13 @@ function graveyardReductionWording(
 export function targetedReductionWording(effect: StaticEffect, host: string | null): string | null {
   if (effect.kind === 'abilityCostReduction' && effect.abilities === 'ofObjects') {
     return graveyardReductionWording(effect);
+  }
+  // Professor Hojo (CR 602.2b): the first ability of the turn that targets a creature of the controller; it names no host.
+  if (effect.kind === 'abilityCostReduction' && effect.abilities === 'firstTargetingYourCreature') {
+    const generic = mana(effect.amount);
+    return generic === null
+      ? null
+      : `The first activated ability you activate during your turn that targets a creature you control costs ${generic} less to activate`;
   }
   if (host === null) return null;
   if (effect.kind === 'abilityCostReduction' && effect.abilities === 'equip') {

@@ -22,7 +22,7 @@ const ALLOWED: ReadonlySet<string> = new Set([
 /**
  * `static.spells-you-cast-have-keyword`: "Creature spells you cast have demonstrate." A static ability of a permanent that gives a keyword to the spells its controller casts that the
  * subject names, as they are cast (CR 702.144a: Demonstrate triggers when its spell is cast; CR 702.51a: Convoke applies while its spell is on the stack). The engine's
- * `grantKeywordToSpells`, for the keywords it reads from a spell as it is cast: Demonstrate and Convoke. The subject is the same one the cost reductions of spells read ("Artifact spells",
+ * `grantKeywordToSpells`, for the keywords it reads from a spell as it is cast: Demonstrate, Convoke and Improvise (CR 702.126a). The subject is the same one the cost reductions of spells read ("Artifact spells",
  * "Creature spells", "Red creature spells", "Instant and sorcery spells"). Not read: spells of other players or of every player ("Creature spells have ...", "... your opponents cast"),
  * other qualities of the spell ("with flying", "with power 4 or greater"), other keywords, two keywords, a keyword with a cost, a duration, no period.
  */
@@ -40,6 +40,7 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
     'Creature spells you cast have demonstrate.',
     'Creature spells you cast have convoke.',
     'Spells you cast have convoke.',
+    'Nonartifact spells you cast have improvise.',
     'Noncreature spells you cast have demonstrate.',
     'Red creature spells you cast have convoke.',
     'Instant and sorcery spells you cast have demonstrate.',
@@ -71,6 +72,7 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
           choice(
             map(literal('demonstrate'), () => 'demonstrate' as const),
             map(literal('convoke'), () => 'convoke' as const),
+            map(literal('improvise'), () => 'improvise' as const),
           ),
         ),
       ),

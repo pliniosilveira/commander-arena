@@ -49,6 +49,7 @@ type Modifier = Extract<
     kind:
       | 'modifyPt'
       | 'grantKeyword'
+      | 'loseKeyword'
       | 'grantAbility'
       | 'restriction'
       | 'goaded'
@@ -155,6 +156,8 @@ export interface AbilityReductionSource {
   readonly objects?: ObjectFilter;
   /** `abilityCostReduction` `minTotal` (issue 345): the mana the cost keeps at least. */
   readonly minTotal?: number;
+  /** "The first activated ability you activate during your turn that targets a creature you control costs {2} less" (Professor Hojo): see `abilityCostReduction`. */
+  readonly firstTargetingYourCreature?: true;
   readonly amount: Amount;
 }
 
@@ -235,7 +238,7 @@ interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
   readonly keyword:
-    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
     | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;
@@ -331,6 +334,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
     a.kind === 'static' &&
     (a.static.kind === 'modifyPt' ||
       a.static.kind === 'grantKeyword' ||
+      a.static.kind === 'loseKeyword' ||
       a.static.kind === 'grantAbility' ||
       a.static.kind === 'restriction' ||
       a.static.kind === 'goaded' ||
@@ -403,7 +407,9 @@ function abilityReductionsOf(
               amount: a.static.amount,
               ...(a.static.minTotal === undefined ? {} : { minTotal: a.static.minTotal }),
             }
-          : { object, targeting: a.static.targeting, amount: a.static.amount },
+          : a.static.abilities === 'firstTargetingYourCreature'
+            ? { object, firstTargetingYourCreature: true, amount: a.static.amount }
+            : { object, targeting: a.static.targeting, amount: a.static.amount },
       );
     }
   }
@@ -1145,6 +1151,13 @@ export function staticEffectsOn(
       }
       grants.push({
         ability: { kind: 'keyword', keyword },
+        timestamp: source.object.timestamp,
+      });
+    } else if (mod.kind === 'loseKeyword') {
+      // CR 613.1f (Colossus Hammer): "Equipped creature loses flying", layer 6, with the Equipment's timestamp.
+      grants.push({
+        ability: null,
+        loses: mod.keyword.kind,
         timestamp: source.object.timestamp,
       });
     } else if (mod.kind === 'loseAllAbilities') {

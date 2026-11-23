@@ -82,6 +82,8 @@ interface Occurrence {
   readonly seat: SeatId | null;
   /** For `becomesTarget`: the object that became a target, while `subject` is what targeted it. */
   readonly target?: ObjectId;
+  /** For `becomesTarget` with `batch`: the objects the same spell or ability targeted in the events before this one of the same batch (CR 603.2c: "one or more" triggers once). */
+  readonly earlierTargets?: readonly ObjectId[];
   /** For `chapter`: the chapter number that was reached (CR 714.2b). */
   readonly chapter?: number;
   /** For `dealsCombatDamage`: what the damage was dealt to. */
@@ -588,7 +590,23 @@ function occurrences(
     case 'becomesTarget':
       // CR 702.21a: the spell or ability is the subject, the permanent it targeted the `target`.
       return event.kind === 'becameTarget'
-        ? [{ subject: event.by, seat: event.seat, target: event.object, player: event.seat }]
+        ? [
+            {
+              subject: event.by,
+              seat: event.seat,
+              target: event.object,
+              player: event.seat,
+              ...(trigger.batch === true
+                ? {
+                    earlierTargets: batch.events
+                      .slice(0, batch.index)
+                      .flatMap((e) =>
+                        e.kind === 'becameTarget' && e.by === event.by ? [e.object] : [],
+                      ),
+                  }
+                : {}),
+            },
+          ]
         : [];
     case 'state':
       // CR 603.8 (D-139): a state trigger has no event: it is found from the state (`rules/state-triggers.ts`).
@@ -986,6 +1004,22 @@ function matches(
       // CR 700.13, 111.2, 602.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 602.2, 113.7a: "an ability of an artifact they control": the source of the ability activated, as it was as the ability was activated.
+      if (trigger.kind === 'activatesAbility' && trigger.ofSource !== undefined) {
+        const sourceId = subject?.stack?.source ?? null;
+        const source = sourceId === null ? null : objectOrLki(state, sourceId);
+        if (
+          source === null ||
+          !matchesFilter(
+            state,
+            source,
+            { ...trigger.ofSource, zone: source.zone },
+            { ...ctx, ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }) },
+          )
+        ) {
+          return false;
+        }
+      }
       return true;
     case 'lifeGained':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
@@ -1178,8 +1212,17 @@ function matches(
         const by = occ.subject === null ? null : objectOrLki(state, occ.subject);
         if (by?.stack?.kind !== 'spell') return false;
       }
+      // CR 602.2 (Professor Hojo): "the target of an activated ability": the object that targeted it is on the stack as an activated ability.
+      if (trigger.activatedOnly === true) {
+        const by = occ.subject === null ? null : objectOrLki(state, occ.subject);
+        if (by?.stack?.kind !== 'ability' || by.stack.ability?.kind !== 'activated') return false;
+      }
       const target = occ.target === undefined ? null : objectOrLki(state, occ.target);
-      return matchesWhat(state, trigger.what, target, candidate);
+      if (!matchesWhat(state, trigger.what, target, candidate)) return false;
+      // CR 603.2c: "one or more": only the first permanent the same spell or ability targets that `what` names makes it trigger.
+      return !(occ.earlierTargets ?? []).some((earlier) =>
+        matchesWhat(state, trigger.what, objectOrLki(state, earlier), candidate),
+      );
     }
     default: {
       const unreachable: never = trigger;

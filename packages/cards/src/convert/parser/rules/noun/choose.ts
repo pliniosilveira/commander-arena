@@ -124,6 +124,54 @@ export const NOUN_A_PERMANENT = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.each-of-up-to-permanents`: "each of up to two Soldiers you control" (CR 608.2d: not a target, so the controller chooses none up to that many of their own permanents as the
+ * instruction resolves). The plural kind says "you control" (a choice among another player's permanents is not read), and the count is two or more.
+ */
+export const NOUN_EACH_OF_UP_TO_PERMANENTS = defineRule<IrNoun>({
+  id: 'noun.each-of-up-to-permanents',
+  family: 'noun',
+  leading: ['each'],
+  cites: ['CR 608.2d (Resolving Spells and Abilities)'],
+  examples: [
+    'each of up to two Soldiers you control',
+    'each of up to three creatures you control',
+    'each of up to two other creatures you control',
+  ],
+  rejects: [
+    'each of up to two Soldiers',
+    'each of up to one Soldiers you control',
+    'each of up to two target creatures',
+    'each of up to two creatures an opponent controls',
+    'up to two Soldiers you control',
+    'each of two Soldiers you control',
+    'each of up to two',
+  ],
+  parse: node<Bare, IrNoun>(
+    'noun.each-of-up-to-permanents',
+    map(
+      sequence(
+        literal('each of up to '),
+        spanned(satisfy(quantity, (n) => n >= 2)),
+        literal(' '),
+        optional(
+          map(literal('other '), () => true),
+          false,
+        ),
+        satisfy(chosenPhrase(true), (filter) => filter.controller === 'you'),
+      ),
+      ([, count, , other, filter]) =>
+        bare('a', filter, {
+          count: { kind: 'number', value: count.value, span: count.span },
+          plural: true,
+          upTo: true,
+          other,
+        }),
+    ),
+    (b) => b,
+  ),
+});
+
 /** `noun.up-to-one-permanent`: one optional resolving selection, distinct from ordinary `a creature`. */
 export const NOUN_UP_TO_ONE_PERMANENT = defineRule<IrNoun>({
   id: 'noun.up-to-one-permanent',
@@ -553,6 +601,7 @@ export const CHOOSE_NOUN_RULES = [
   // Meren deck, Braids: "a permanent of their choice that shares a card type with it", before the plain "a permanent" that would read its first words.
   ...BRAIDS_NOUN_RULES,
   NOUN_A_PERMANENT,
+  NOUN_EACH_OF_UP_TO_PERMANENTS,
   NOUN_A_TOKEN,
   NOUN_ANY_NUMBER_PERMANENTS,
   NOUN_ONE_OR_MORE_PERMANENTS,

@@ -243,6 +243,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       if (cost.toLibraryBottom === true)
         return `Put this ${self} on the bottom of its owner's library`;
       if ('kind' in cost.what) return `Return this ${self} to its owner's hand`;
+      // CR 702.49a (Ninjutsu, unverified): "Return an unblocked attacker you control to its owner's hand".
+      if (cost.what.unblocked === true)
+        return "Return an unblocked attacker you control to its owner's hand";
       const count = cost.count ?? 1;
       return `Return ${sacrificeWhat(cost.what, count)} you control to ${count > 1 ? "their owner's" : "its owner's"} hand`;
     }

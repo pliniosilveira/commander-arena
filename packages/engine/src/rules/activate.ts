@@ -56,6 +56,7 @@ import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
 import { distinctAssignments } from './sacrifice-groups';
+import { matchesFilter } from './select';
 import { setPending } from './set-pending';
 import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
@@ -736,6 +737,27 @@ export function answerReturnCommander(
   return answerBounceCommander(state, object, toCommandZone, payDiscard);
 }
 
+/** Whether the ability on the stack has a creature `seat` controls among its targets (CR 115.1, 602.2b), read now, as the activation is finished. */
+function targetsOwnCreature(
+  state: GameState,
+  stackObject: ObjectId,
+  seat: SeatId,
+  source: ObjectId,
+): boolean {
+  return (state.objects[stackObject]?.stack?.chosenTargets ?? []).some((t) => {
+    const target = t.kind === 'object' ? state.objects[t.id] : undefined;
+    return (
+      target !== undefined &&
+      matchesFilter(
+        state,
+        target,
+        { zone: 'battlefield', types: ['creature'], controller: 'you' },
+        { controller: seat, source },
+      )
+    );
+  });
+}
+
 /** CR 602.2b, 601.2i: the ability is activated; its controller receives priority (CR 117.3c). */
 function finishActivation(state: GameState, events: GameEvent[]): Result {
   const casting = state.casting;
@@ -773,6 +795,10 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
           // Issue 159: "activated an ability of a card in a graveyard this turn": the card was in a graveyard as the ability was activated (`casting.fromZone`, read
           // before the cost moved it).
           ...(casting.fromZone === 'graveyard' ? { fromGraveyard: casting.seat } : {}),
+          // CR 602.2b (Professor Hojo): the first ability activated this turn that targets a creature its activator controls.
+          ...(targetsOwnCreature(state, casting.object, casting.seat, activation.source)
+            ? { targetedOwnCreature: casting.seat }
+            : {}),
         },
       ],
     },

@@ -393,6 +393,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.number-of': permanent((e) => `When ~ dies, create ${e}.`),
   'noun.self': spell((e) => `Put a +1/+1 counter on ${e}.`),
   'noun.a-permanent': spell((e) => `Sacrifice ${e}.`),
+  'noun.each-of-up-to-permanents': spell((e) => `Put a +1/+1 counter on ${e}.`),
   // Issue 144 (Fountainport).
   'noun.a-token': permanent((e) => `Sacrifice ${e}: Draw a card.`),
   'noun.up-to-one-permanent': spell((e) => `Put two +1/+1 counters on ${e}.`),
@@ -559,6 +560,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.pay-life-amount': permanent((e) => `${e}: Draw a card.`),
   'modal.choose': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   'modal.choose-commander': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  'modal.choose-commander-trigger': permanent(
+    (e) => `At the beginning of combat on your turn, ${e}\n• Draw a card.\n• You gain 1 life.`,
+  ),
   // Stage P31 (D-139, D-140): the Artifacts slice. Living weapon is a line of its own; the costs come after {T} or a mana symbol; the
   // triggers, the condition after a trigger, the restrictions after an effect, the nouns in the instruction that reads them.
   'keyword.living-weapon': asIs,
@@ -921,6 +925,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,
   'trigger.activate-ability': whenever,
+  // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
+  'trigger.activate-ability-of-kind': whenever,
+  'trigger.targets-activated-batch': whenever,
+  'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
+  'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
+  'noun.all-permanents-of-that-player': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, gain control of ${e}.`,
+  ),
+  'static.first-targeting-ability-cost-reduction': asIs,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
@@ -931,6 +944,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.buyback': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
+  // Ninjutsu (CR 702.49a): the keyword line stands alone.
+  'keyword.ninjutsu': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
@@ -1109,6 +1124,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-from-hand': spell(
     (e) => `Draw a card. If ${e}, create a 1/1 white Spirit creature token.`,
   ),
+  // Foretell spells: the condition leads the sentence of a spell.
+  'condition.cast-from-exile': spell(
+    (e) => `Draw a card. If ${e}, create a 1/1 white Spirit creature token.`,
+  ),
   // Tataru Taru: the intervening "if" of a trigger about the player who drew.
   'condition.that-players-turn': permanent(
     (e) => `Whenever an opponent draws a card, if ${e}, create a tapped Treasure token.`,
@@ -1121,6 +1140,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Yavimaya Bloomsage.
   'condition.that-object-power': spell(
     (e) => `Put a +1/+1 counter on target creature you control. Then if ${e}, draw a card.`,
+  ),
+  // Conformer Shuriken.
+  'condition.that-object-greater-power-than-self': spell(
+    (e) => `Tap target creature. If ${e}, draw a card.`,
   ),
   // Issue 233 (Martial Coup).
   'condition.x-at-least': spell(

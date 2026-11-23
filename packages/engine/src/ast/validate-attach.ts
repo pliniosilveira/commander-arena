@@ -92,7 +92,13 @@ export function checkStaticSubject(
       // D-422: `derive` reads the group before layers 6 and 7 with the view of each permanent alone: a permanent that has an Aura attached, or one attached to a permanent of a
       // kind, needs the view of another object, which only a count or a condition is given.
       if (
-        filterSome(s.filter, (f) => f.enchanted !== undefined || f.attachedTo?.kind === 'matching')
+        filterSome(
+          s.filter,
+          (f) =>
+            f.enchanted !== undefined ||
+            f.equipped !== undefined ||
+            f.attachedTo?.kind === 'matching',
+        )
       ) {
         issue(
           out,

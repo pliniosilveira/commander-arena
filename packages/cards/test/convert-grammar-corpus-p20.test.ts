@@ -210,10 +210,8 @@ const SYNTHETIC: readonly Line[] = [
     kind: 'creature',
     stats: ['*', '*'],
     text: "~'s power and toughness are each equal to the number of lands your opponents control.",
-    expect: no('equal to the number of lands your opponents control.', 'static.defines-pt', {
-      reason: 'notRunnable',
-    }),
-    note: 'SYNTHETIC; the objects of another player are not counted by a static ability',
+    expect: OK,
+    note: 'SYNTHETIC; read since the Limit Break deck (Avalanche of Sector 7): the permanents of the opponents are counted, control being a layer 2 result',
   },
   {
     kind: 'creature',

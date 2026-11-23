@@ -126,8 +126,9 @@ describe('the commander widening (CR 700.2, 903.3d)', () => {
       'as you cast ~, you may choose all instead.',
     ],
     [
+      // A spell does not say it: only a triggered ability reads it (`modal.choose-commander-trigger`).
       'Choose one. If you control a commander, you may choose both instead.',
-      ', you may choose both instead.',
+      'Choose one. If you control a commander, you may choose both instead.',
     ],
     [
       'Choose two. If you control a commander as you cast ~, you may choose both instead.',

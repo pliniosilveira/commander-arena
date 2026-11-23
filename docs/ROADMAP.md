@@ -139,7 +139,11 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
+- Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
+- "As you cast this spell" amounts are worked out as the spell becomes cast, costs paid; only one such amount is kept for a spell, and only in a spell's own text.
+- "Until you exile another card with ~" is read only after exiling the top card of your own library, and ends the permission as that same permanent exiles its next card.
 - Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - A name set by `setTypes` (CR 612.8) applies in timestamp order with layer 4, not as layer 3, and only "it's a land named X" after a returned card is read.
 - Explore emits no event and ignores APNAP order.
@@ -578,3 +582,5 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Dauthi Voidwalker's exile replacement uses the first opponent; with several opponents the replacement order (CR 616.1) is not offered.
 - "Whenever one or more players lose life" (any player, batched) and "one or more opponents lose life for the first time each turn" are not read; only the opponents batch is (`lifeLost` with `batch`).
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
+- A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
+- Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.

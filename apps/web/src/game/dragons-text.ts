@@ -51,6 +51,7 @@ const PLAY_UNTIL: Readonly<Record<PlayUntil, string>> = {
   endOfYourNextTurn: 'until the end of your next turn',
   yourNextEndStep: 'until your next end step',
   whileExiled: 'for as long as they remain exiled',
+  untilSourceExilesAnother: 'until you exile another card with this permanent',
 };
 
 /**

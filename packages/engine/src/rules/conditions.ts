@@ -560,7 +560,12 @@ export function evaluateCondition(
       );
     case 'yourCombatPhase':
       // CR 506.1 (issue 144): the combat phase, of a turn of the controller (the beginning of combat, declare attackers, ... end of combat steps are all part of it).
-      return state.turn.activeSeat === ctx.controller && state.turn.phase === 'combat';
+      // `first` (CR 500.8): the first combat phase to begin this turn, so an additional combat phase is the second.
+      return (
+        state.turn.activeSeat === ctx.controller &&
+        state.turn.phase === 'combat' &&
+        (condition.first !== true || (state.turnLog.combatPhases ?? 0) === 1)
+      );
     case 'chosenOption':
       // CR 607.2d, 614.12a (D-151): the option the source chose as it entered; read from last-known information once it has left (CR 113.7a).
       return chosenOf(state, ctx.source)?.option === condition.option;

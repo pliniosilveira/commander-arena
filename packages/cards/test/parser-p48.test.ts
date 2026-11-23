@@ -358,8 +358,9 @@ describe('"That token gains haste until end of turn" and "then attach ~ to it": 
   });
 
   test('"attach ~ to it" with no token before it, and "attach it to it" are not read', () => {
+    // Limit Break deck, group 1: with no token "it" is the permanent with the ability, which cannot be attached to itself (CR 701.3b), so the line is refused as not runnable.
     expect(dropped('When ~ enters, attach ~ to it.', 'artifact', ['Equipment'])).toMatchObject({
-      reason: 'unboundReference',
+      reason: 'notRunnable',
     });
     expect(
       dropped(
@@ -367,7 +368,7 @@ describe('"That token gains haste until end of turn" and "then attach ~ to it": 
         'artifact',
         ['Equipment'],
       ),
-    ).toMatchObject({ reason: 'unboundReference' });
+    ).toMatchObject({ reason: 'notRunnable' });
   });
 });
 

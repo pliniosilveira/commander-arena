@@ -46,6 +46,7 @@ import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
+import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
@@ -83,6 +84,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
+import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -134,6 +136,7 @@ import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
+import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -846,8 +849,13 @@ const TO_BATTLEFIELD_AHEAD = /^return [^.]*? to the battlefield/i;
  * " attached to that token" after the battlefield (issue 89, Forum Filibuster, CR 303.4f, 400.7j): an Aura or an Equipment card put onto the battlefield attached to the token the
  * sentences before it made, which names it, so nothing is asked. Only the token: another host is another statement.
  */
+// Limit Break deck, group 1 (Unfinished Business, CR 303.4f, 400.7j): "... attached to that creature", the creature an instruction before it in the sentence returned (a target the binding
+// pass names, which the lowering reads as the engine's `moved`).
 const ATTACHED_TO_THAT_TOKEN: Parser<IrNoun> = map(
-  sequence(literal(' attached to '), family<IrNoun>('noun', { only: ['noun.that-token'] })),
+  sequence(
+    literal(' attached to '),
+    family<IrNoun>('noun', { only: ['noun.that-token', 'noun.that-object'] }),
+  ),
   ([, host]) => host,
 );
 
@@ -967,6 +975,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
     'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
     'return target Aura card from your graveyard to the battlefield attached to that token',
+    // Limit Break deck, group 1 (Unfinished Business): the creature the instruction before returned.
+    'return target Aura card from your graveyard to the battlefield attached to that creature',
+    'return up to two target Aura and/or Equipment cards from your graveyard to the battlefield attached to that creature',
   ],
   rejects: [
     "return that card to its owner's hand",
@@ -1007,7 +1018,6 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from your graveyard to your hand attached to that token',
     'return target creature card from your graveyard to the battlefield attached to target creature',
     'return target creature card from your graveyard to the battlefield attached to it',
-    'return target creature card from your graveyard to the battlefield attached to that creature',
     'return target creature card from your graveyard to the battlefield attached to those tokens',
     'return target creature card from your graveyard to the battlefield attached to',
   ],
@@ -1295,6 +1305,8 @@ export const EFFECT_RULES = [
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
   ...DACK_EFFECT_RULES,
+  ...EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES,
+  ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
@@ -1340,6 +1352,8 @@ export const EFFECT_RULES = [
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
+  // Limit Break deck, group 1 (Zack Fair): "Put ~'s counters on that creature", "attach an Equipment that was attached to ~ to that creature".
+  ...LIMIT_BREAK_G1_EFFECT_RULES,
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,

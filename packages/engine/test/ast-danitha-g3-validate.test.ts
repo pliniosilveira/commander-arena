@@ -87,7 +87,7 @@ describe('the attachment fields of a filter', () => {
     [
       'an unknown host kind',
       { subtypes: ['Aura'], attachedTo: { kind: 'anything' } } as unknown as ObjectFilter,
-      /attachedTo is source, host or matching/,
+      /attachedTo is source, host, matching or sacrificedCost/,
     ],
     [
       'a matching host that reads power',

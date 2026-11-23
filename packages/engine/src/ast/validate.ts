@@ -429,7 +429,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
             f.attackingYou !== undefined ||
             f.attackingOpponents !== undefined ||
             f.attackingOrBlocking !== undefined ||
-            f.blocking !== undefined,
+            f.blocking !== undefined ||
+            f.unblocked !== undefined,
         )
       ) {
         issue(out, `${path}.what`, 'a replacement of a death does not read the combat');
@@ -511,12 +512,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       if (
         s.keyword?.kind !== 'demonstrate' &&
         s.keyword?.kind !== 'convoke' &&
+        s.keyword?.kind !== 'improvise' &&
         s.keyword?.kind !== 'replicateAtManaCost'
       ) {
         issue(
           out,
           `${path}.keyword`,
-          'only demonstrate and convoke (and replicateAtManaCost) can be given to spells',
+          'only demonstrate and convoke (and improvise, replicateAtManaCost) can be given to spells',
         );
       }
       checkFilter(s.what, `${path}.what`, out);
@@ -802,6 +804,18 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       // D-185: riot is applied as a permanent enters, so only a group the battlefield names can give it (CR 614.12).
       if (s.keyword?.kind === 'riot' && s.subject?.kind !== 'filter') {
         issue(out, `${path}.subject`, 'riot is given to a group of permanents, as they enter');
+      }
+      break;
+    case 'loseKeyword':
+      // Colossus Hammer (CR 613.1f): a keyword without parameters taken from the subject.
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
+      checkGrantedKeyword(s.keyword, `${path}.keyword`, out);
+      if (
+        typeof s.keyword === 'object' &&
+        s.keyword !== null &&
+        Object.keys(s.keyword).length > 1
+      ) {
+        issue(out, `${path}.keyword`, 'only a keyword without parameters is taken away');
       }
       break;
     case 'restriction':
@@ -1204,6 +1218,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
             issue(out, `${path}.${flag}`, 'must be true when present');
           }
         }
+        // Avalanche of Sector 7: the permanent whose ability was activated (`ofSource`), read against the player who activated it.
+        if (t.ofSource !== undefined) checkFilter(t.ofSource, `${path}.ofSource`, out);
       }
       break;
     case 'cycled':
@@ -1219,6 +1235,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       if (t.spellOnly !== undefined && t.spellOnly !== true) {
         issue(out, `${path}.spellOnly`, 'spellOnly is true when present');
+      }
+      for (const flag of ['activatedOnly', 'batch'] as const) {
+        if (t[flag] !== undefined && t[flag] !== true) {
+          issue(out, `${path}.${flag}`, `${flag} is true when present`);
+        }
+      }
+      if (t.spellOnly === true && t.activatedOnly === true) {
+        issue(
+          out,
+          `${path}.activatedOnly`,
+          'a trigger is for spells or for activated abilities, not both',
+        );
       }
       break;
     case 'chapter':

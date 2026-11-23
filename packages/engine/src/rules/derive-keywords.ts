@@ -204,6 +204,22 @@ const DETHRONE_ABILITY: Ability = {
 };
 
 /**
+ * CR 702.121a (Melee): "Whenever this creature attacks, it gets +1/+1 until end of turn for each opponent you attacked this combat." The attack that triggers it is recorded
+ * before the ability is put on the stack, and the number is counted as the ability resolves.
+ */
+const MELEE_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  effect: {
+    kind: 'modifyPt',
+    objects: { kind: 'this' },
+    power: { kind: 'opponentsAttackedThisCombat' },
+    toughness: { kind: 'opponentsAttackedThisCombat' },
+    duration: 'untilEndOfTurn',
+  },
+};
+
+/**
  * CR 702.147a (D-478): "Decayed" represents a static ability and a triggered ability: "This creature can't block" and "When this creature attacks, sacrifice it at end of
  * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
  * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
@@ -396,6 +412,32 @@ function returnWithCounter(counter: string): Ability {
       controller: 'owner',
       withCounters: { counter, count: 1 },
     },
+  };
+}
+
+/**
+ * CR 702.49a (Ninjutsu; UNVERIFIED: the CR text is not in the repository): "Ninjutsu [cost]" means "[Cost], Return an unblocked attacker you control to hand: Put this card onto the
+ * battlefield from your hand tapped and attacking." It functions only from the hand. The return is the cost (paid by `rules/activate-bounce.ts`, which records what the creature was
+ * attacking), and `enterAttacking` with `asReturned` makes the card attack that same player, planeswalker or battle.
+ */
+function ninjutsuAbility(cost: readonly Cost[]): Ability {
+  return {
+    kind: 'activated',
+    cost: [
+      ...cost,
+      {
+        kind: 'returnToHand',
+        what: { types: ['creature'], unblocked: true },
+      },
+    ],
+    effect: {
+      kind: 'sequence',
+      effects: [
+        { kind: 'moveToZone', objects: { kind: 'this' }, to: 'battlefield', tapped: true },
+        { kind: 'enterAttacking', objects: { kind: 'moved' }, asReturned: true },
+      ],
+    },
+    functionsIn: 'hand',
   };
 }
 
@@ -896,6 +938,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [returnWithCounter('-1/-1')];
     case 'undying':
       return [returnWithCounter('+1/+1')];
+    case 'ninjutsu':
+      return [ninjutsuAbility(ability.keyword.cost)];
     case 'typecycling':
       return [typecyclingAbility(ability.keyword.filter, ability.keyword.cost)];
     case 'battleCry':
@@ -944,6 +988,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [hideawayAbility(ability.keyword.count)];
     case 'dethrone':
       return [DETHRONE_ABILITY];
+    case 'melee':
+      return [MELEE_ABILITY];
     case 'decayed':
       return [DECAYED_ABILITY];
     case 'myriad':

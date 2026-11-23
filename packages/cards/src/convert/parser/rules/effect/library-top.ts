@@ -156,8 +156,48 @@ export const EFFECT_LOOK_TOP_LAND_ELSE_HAND = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.look-top-land-may-battlefield`: "look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped" (Explorer's Scope; CR 608.2c, 701.20a:
+ * nothing says reveal, so the card is not shown while it stays, 401.2: a card not put onto the battlefield stays on top of the library). The engine's `lookAtTop` of one card with a
+ * `take` of the kind onto the battlefield tapped, the rest left on top. The kind is what `effect.look-take` reads. Not read: the card put untapped, "reveal it", a second branch ("If you
+ * don't ..."), another place, a second card, another library.
+ */
+export const EFFECT_LOOK_TOP_LAND_MAY_BATTLEFIELD = defineRule<Clauses>({
+  id: 'effect.look-top-land-may-battlefield',
+  family: 'effect',
+  leading: ['look'],
+  cites: [
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 701.20a (Reveal)',
+    'CR 401.2 (Library)',
+  ],
+  examples: [
+    "Look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped",
+    'look at the top card of your library. if it’s a creature card, you may put it onto the battlefield tapped',
+  ],
+  rejects: [
+    "look at the top card of your library. if it's a land card, you may put it onto the battlefield",
+    "look at the top card of your library. if it's a land card, put it onto the battlefield tapped",
+    "look at the top card of your library. if it's a land card, you may reveal it and put it onto the battlefield tapped",
+    "look at the top card of your library. if it's a land card, you may put it into your hand",
+    "look at the top two cards of your library. if it's a land card, you may put it onto the battlefield tapped",
+    "look at the top card of target player’s library. if it's a land card, you may put it onto the battlefield tapped",
+    "look at the top card of your library. if it's a land card, you may put it onto the battlefield tapped. if you don't put the card onto the battlefield, put it into your hand",
+  ],
+  parse: single(
+    'effect.look-top-land-may-battlefield',
+    sequence(
+      pattern(/look at the top card of your library\. if it['’]s /iu),
+      TAKEN_CARD,
+      pattern(new RegExp(`, you may put it onto the battlefield tapped${BOUNDARY}`, 'iu')),
+    ),
+    ([, take]) => ({ verb: 'lookTopMayBattlefield', args: { take } }),
+  ),
+});
+
 export const LIBRARY_TOP_EFFECT_RULES = [
   EFFECT_REVEAL_PUT_ONE_BATTLEFIELD,
   EFFECT_LOOK_TOP_X_ONE_ON_TOP,
   EFFECT_LOOK_TOP_LAND_ELSE_HAND,
+  EFFECT_LOOK_TOP_LAND_MAY_BATTLEFIELD,
 ];

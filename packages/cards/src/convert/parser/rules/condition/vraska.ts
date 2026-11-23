@@ -206,6 +206,47 @@ export const CONDITION_CAST_FROM_HAND = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.cast-from-exile`: "~ was cast from exile" (CR 601.2a, 603.4, 702.143a (Foretell): "If this spell was cast from exile" on a foretold or otherwise exile-cast spell; the card's own name or
+ * "this spell" reads as `~`): the spell the text belongs to was cast from exile. The engine's `castFromZone` of exile. Not read: another zone, "from your exile", "was not cast from exile",
+ * another spell ("that spell").
+ */
+export const CONDITION_CAST_FROM_EXILE = defineRule<IrCondition>({
+  id: 'condition.cast-from-exile',
+  family: 'condition',
+  leading: ['~'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 603.4 (Handling Triggered Abilities)',
+    'CR 702.143a (Foretell)',
+  ],
+  examples: ['~ was cast from exile'],
+  rejects: [
+    '~ was cast from exile.',
+    '~ was cast from your exile',
+    '~ was cast from a graveyard',
+    '~ was cast from your hand',
+    '~ was cast',
+    '~ was not cast from exile',
+    '~ was cast from exile or your hand',
+    'that spell was cast from exile',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/~ was cast from exile(?![\p{L}\p{N}])(?! or)/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'castFromZone', zone: 'exile' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.cast-from-exile',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.it-targets`: "it targets a tapped creature" (CR 601.2c, 601.2f, stage P50, D-207: the targets are chosen before the cost is determined): the
  * spell the text belongs to has a chosen target that is a permanent of this kind. The engine's `spellTargets`, read as the total cost is determined. Not
  * read: a player ("it targets you"), a count, a plural, "it doesn't target", another spell.
@@ -305,4 +346,5 @@ export const VRASKA_CONDITION_RULES = [
   CONDITION_DESCENDED_THIS_TURN,
   CONDITION_CAST_FROM_GRAVEYARD,
   CONDITION_CAST_FROM_HAND,
+  CONDITION_CAST_FROM_EXILE,
 ];

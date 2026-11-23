@@ -34,7 +34,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
-import { BOUNDARY } from '../noun/phrases';
+import { BOUNDARY, permanentPhrase } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { CARD_TYPES_AMONG_THOSE_VALUE, CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
@@ -131,6 +131,34 @@ export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
 const AGGREGATE_HEAD = /the (greatest|total) (power|toughness|mana value) (among|of) /iu;
 
 /**
+ * "creatures you controlled as you cast ~" (CR 601.2i): a group of the permanents the caster controlled as the spell was cast, and the position after " as you cast ~". The group is
+ * a plural type phrase with no controller of its own (`permanentPhrase`), the controller being "you".
+ */
+function pastControlled(
+  ctx: Parameters<Parser<unknown>>[0],
+  pos: number,
+): { readonly noun: IrNoun; readonly pos: number } | null {
+  const phrase = permanentPhrase(true, 'all')(ctx, pos);
+  if (!phrase.ok || phrase.value.controller !== undefined) return null;
+  const tail = literal(' you controlled as you cast ~')(ctx, phrase.pos);
+  if (!tail.ok) return null;
+  const raw = ctx.text.slice(pos, tail.pos);
+  return {
+    noun: {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...phrase.value, controller: 'you', raw },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: tail.pos },
+      rule: 'amount.where-x',
+    },
+    pos: tail.pos,
+  };
+}
+
+/**
  * "the greatest power among creatures you control", "the total power of creatures you control", "the greatest mana
  * value among artifacts you control" (CR 208.1, 202.3): over the objects a group names, the largest or the sum of
  * a stat. "Greatest" goes with "among"; "total" with "of" or "among".
@@ -144,6 +172,23 @@ const AGGREGATE = (rule: string): Parser<IrAmount> => {
     const stat = (head.value.value[2] ?? '').toLowerCase();
     const prep = (head.value.value[3] ?? '').toLowerCase();
     if (how === 'greatest' && prep !== 'among') return fail(ctx, pos);
+    // "the greatest power among creatures you controlled as you cast ~" (Lifestream's Blessing, CR 601.2i): the creatures the caster had as the spell was cast. The past tense is
+    // read only with "as you cast ~" (anywhere else "controlled" would say a time the engine does not track).
+    const past = pastControlled(ctx, head.pos);
+    if (past !== null) {
+      return {
+        ok: true,
+        value: {
+          kind: 'aggregate',
+          how,
+          stat: stat === 'mana value' ? 'manaValue' : (stat as 'power' | 'toughness'),
+          of: past.noun,
+          asCast: true as const,
+          span: { start: pos, end: past.pos },
+        },
+        pos: past.pos,
+      };
+    }
     const of = group(ctx, head.pos);
     if (!of.ok) return of;
     // " as you cast ~" (stage P32, D-147, CR 601.2d): the total of a divided damage is read once, as the spell is cast.
@@ -238,6 +283,35 @@ const ATTACKERS_GREATEST_POWER: Parser<IrAmount> = (ctx, pos) => {
 const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(pattern(/the number of opponents you have(?![\p{L}\p{N}'’])/iu))(ctx, pos);
   return r.ok ? { ok: true, value: { kind: 'opponentCount', span: r.value.span }, pos: r.pos } : r;
+};
+
+/**
+ * "the number of opponents who control more creatures than you", "the number of opponents who have more life than you" (CR 102.2, 608.2c; Limit Break deck, Heidegger, Shinra Executive): the same
+ * count as `amount.for-each-opponent` ("for each opponent who controls more creatures than you"): the opponents still in the game whose total is greater (or, with "fewer", smaller) than the
+ * controller's, now. The verb goes with its stat ("controls" creatures, "has" life or cards in hand).
+ */
+const NUMBER_OF_OPPONENTS_WITH_MORE: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(
+      /the number of opponents who (?:(?:has|have|controls?) (more|fewer) (life|cards in hand|creatures)) than you(?![\p{L}\p{N}'’])/iu,
+    ),
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const word = (r.value.value[2] ?? '').toLowerCase();
+  const fewer = (r.value.value[1] ?? '').toLowerCase() === 'fewer';
+  const verb = /(has|have|controls?)/i.exec(r.value.value[0] ?? '')?.[1]?.toLowerCase();
+  if ((word === 'creatures') !== (verb === 'control' || verb === 'controls')) return fail(ctx, pos);
+  const stat = word === 'life' ? 'life' : word === 'creatures' ? 'creatures' : 'cardsInHand';
+  return {
+    ok: true,
+    value: {
+      kind: 'opponentsWithMore',
+      stat,
+      ...(fewer ? { fewer: true as const } : {}),
+      span: r.value.span,
+    },
+    pos: r.pos,
+  };
 };
 
 /** "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3): the controller's commanders, in any zone. */
@@ -436,6 +510,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     DEVOTION,
     COMMANDER_COLORS,
     OPPONENT_COUNT,
+    // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
+    NUMBER_OF_OPPONENTS_WITH_MORE,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),

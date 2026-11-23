@@ -114,7 +114,15 @@ export function checkDragonsEffect(
           issue(out, `${path}.free`, 'a free play does not spend mana as though of any color');
         }
       }
-      if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
+      if (
+        !isOneOf(e.lasts, [
+          'endOfTurn',
+          'endOfYourNextTurn',
+          'yourNextEndStep',
+          'whileExiled',
+          'untilSourceExilesAnother',
+        ])
+      ) {
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       if (e.lookAt !== undefined && e.lookAt !== true) {
@@ -564,7 +572,10 @@ export function checkDragonsEffect(
       ) {
         issue(out, `${path}.thatPlayerOrTheirPlaneswalkers`, 'it is true or left out');
       }
-      if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
+      if (e.asReturned !== undefined) {
+        // Ninjutsu (CR 702.49a, unverified): the engine writes it into the keyword's expansion, which is never read from a card.
+        issue(out, `${path}.asReturned`, 'asReturned is written by the engine for Ninjutsu');
+      } else if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
       }
       return true;

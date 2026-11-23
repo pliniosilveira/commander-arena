@@ -60,6 +60,7 @@ import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
+import { LIMIT_BREAK_G4_CONDITION_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
@@ -75,7 +76,10 @@ import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { SUBJECT_GREATER_CONDITION_RULES } from './subject-greater';
-import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
+import {
+  CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
+  CONDITION_THAT_OBJECT_POWER,
+} from './that-object-power';
 import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
@@ -629,6 +633,8 @@ export const CONDITION_RULES = [
   ...SUBJECT_GREATER_CONDITION_RULES,
   // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
   ...FEDERATION_D_CONDITION_RULES,
+  // Limit Break deck, group 4: "~'s power is 7 or greater".
+  ...LIMIT_BREAK_G4_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
@@ -656,6 +662,7 @@ export const CONDITION_RULES = [
   CONDITION_ADDITIONAL_COST_PAID,
   CONDITION_X_AT_LEAST,
   CONDITION_THAT_OBJECT_POWER,
+  CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
   ...EXPERIENCE_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,

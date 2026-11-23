@@ -72,6 +72,7 @@ const KEYWORD_RULE = {
   escalate: 'keyword.escalate',
   buyback: 'keyword.buyback',
   plot: 'keyword.plot',
+  ninjutsu: 'keyword.ninjutsu',
 } as const;
 
 type CostedKeyword =
@@ -91,7 +92,8 @@ type CostedKeyword =
   | 'replicate'
   | 'escalate'
   | 'buyback'
-  | 'plot';
+  | 'plot'
+  | 'ninjutsu';
 
 /**
  * "Cycling {2}" (CR 702.29a), "Equip {1}" (CR 702.6a), "Kicker {2}" (CR 702.33a), "Multikicker {2}"
@@ -215,7 +217,8 @@ function lowerCostedKeyword(
     name === 'replicate' ||
     name === 'escalate' ||
     name === 'buyback' ||
-    name === 'plot'
+    name === 'plot' ||
+    name === 'ninjutsu'
       ? ['mana']
       : name === 'ward'
         ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
@@ -581,6 +584,7 @@ export function lowerKeyword(
     ability.name === 'escalate' ||
     ability.name === 'buyback' ||
     ability.name === 'plot' ||
+    ability.name === 'ninjutsu' ||
     ability.name === 'ward'
   ) {
     return lowerCostedKeyword(ability, ability.name);
@@ -1302,6 +1306,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:replicate',
   'keyword:buyback',
   'keyword:plot',
+  'keyword:ninjutsu',
   'keyword:echo',
   'keyword:cumulativeUpkeep',
   'keyword:ward',

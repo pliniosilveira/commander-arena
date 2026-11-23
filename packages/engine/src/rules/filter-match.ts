@@ -99,10 +99,14 @@ export interface FilterContext {
   readonly attackersOfYouOrPlaneswalkers?: readonly ObjectId[];
   /** The number `manaValueAtMost` stands for (D-230), worked out by the caller that has the state. */
   readonly manaValueLimit?: number;
+  /** The permanents sacrificed to pay the cost of the ability that is resolving, for `attachedTo` `sacrificedCost` (CR 113.7a): read from the resolution by the caller; absent matches nothing. */
+  readonly costSacrificed?: readonly ObjectId[];
   /** The cards `notTriggerCard` leaves out (CR 400.7, 603.10a): the card the permanent the trigger is about became, read by the caller; absent leaves nothing out. */
   readonly excludedCards?: readonly ObjectId[];
   /** The creatures declared as blockers that are still in combat, for `blocking` (CR 509.1g): read from the combat in progress by the caller. */
   readonly blockers?: readonly ObjectId[];
+  /** The attackers no creature blocked once the blockers were declared, for `unblocked` (CR 509.1h, unverified number): read from the combat in progress by the caller; without it the flag matches nothing. */
+  readonly unblockedAttackers?: readonly ObjectId[];
   /** The creatures that are attacking or blocking, for `attackingOrBlocking` (D-229): read from the combat in progress by the caller. */
   readonly inCombat?: readonly ObjectId[];
   /**
@@ -172,6 +176,12 @@ function attachedToHolds(
   attached: AttachedTo,
   ctx: FilterContext,
 ): boolean {
+  // CR 113.7a, 301.5 (Zack Fair): "an Equipment that was attached to ~", ~ sacrificed to pay the cost: read from its last-known information, as the Equipment is attached to nothing now.
+  if (attached.kind === 'sacrificedCost') {
+    return (ctx.costSacrificed ?? []).some((id) =>
+      (state.lki[id]?.attachments ?? []).some((a) => a.id === obj.id),
+    );
+  }
   const target = obj.attachedTo;
   if (target === null) return false;
   if (attached.kind === 'source') return ctx.source !== null && target === ctx.source;
@@ -200,6 +210,7 @@ function hasAuraAttached(
   obj: GameObject,
   ctx: FilterContext,
   by?: SeatId,
+  subtype: 'Aura' | 'Equipment' = 'Aura',
 ): boolean | null {
   const describeOther = ctx.describeOther;
   if (describeOther === undefined) return null;
@@ -208,7 +219,7 @@ function hasAuraAttached(
     return (
       other !== undefined &&
       other.attachedTo === obj.id &&
-      describeOther(other).subtypes.includes('Aura') &&
+      describeOther(other).subtypes.includes(subtype) &&
       (by === undefined || controllerOf(state, other) === by)
     );
   });
@@ -266,6 +277,13 @@ export function matchesFilterWith(
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
     return false;
   }
+  // CR 301.5 (Equipment): "equipped creature", "creatures that are equipped": an Equipment is attached to it.
+  if (
+    filter.equipped !== undefined &&
+    hasAuraAttached(state, obj, ctx, undefined, 'Equipment') !== filter.equipped
+  ) {
+    return false;
+  }
   // CR 303.4e (D-647): "enchanted by an Aura you control".
   if (filter.enchantedByYou === true && hasAuraAttached(state, obj, ctx, ctx.controller) !== true) {
     return false;
@@ -283,6 +301,8 @@ export function matchesFilterWith(
   if (filter.notAttacking === true && (ctx.attackers ?? []).includes(obj.id)) return false;
   // CR 509.1g: a blocking creature is one declared as a blocker that is still in combat.
   if (filter.blocking === true && !(ctx.blockers ?? []).includes(obj.id)) return false;
+  // CR 509.1h (Ninjutsu): an unblocked creature is an attacker still in combat that no creature blocked, after the blockers were declared.
+  if (filter.unblocked === true && !(ctx.unblockedAttackers ?? []).includes(obj.id)) return false;
   // CR 506.4, 509.1g (D-229): "attacking or blocking" is a creature declared as an attacker or a blocker that is still in combat.
   if (filter.attackingOrBlocking === true && !(ctx.inCombat ?? []).includes(obj.id)) return false;
   // D-131: "attacking you" is an attacker whose attack target is the controller as a player.
@@ -474,6 +494,14 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power < power)) return false;
+  }
+  // CR 208.1, 608.2c (Conformer Shuriken): "has greater power than this creature": more than the power of this ability's source.
+  if (filter.powerGreaterThanSource === true) {
+    const power = ctx.sourcePower;
+    if (power === null || power === undefined || d.power === null || d.power === undefined) {
+      return false;
+    }
+    if (!(d.power > power)) return false;
   }
   // CR 208.1, 608.2c: "with power greater than target creature's power": more than the power of the object the effect names.
   if (filter.powerGreaterThan !== undefined) {
