@@ -215,9 +215,12 @@ describe('budget', () => {
     'after a warm-up pass, the corpus parses 20 times in under 1.5 ms per card on average',
     () => {
       for (const card of cards) analyse(card);
-      const start = performance.now();
+      // CPU time of this test's own process, not the clock: a shared CI runner that runs several test files at once makes the clock count the time spent waiting for a
+      // processor (the same code took 0.4 ms per card on a free machine and 1.8 ms on the runner), which says nothing about the parser. Each test file has a process of its own.
+      const start = process.cpuUsage();
       for (let i = 0; i < 20; i++) for (const card of cards) analyse(card);
-      const perCard = (performance.now() - start) / (20 * cards.length);
+      const used = process.cpuUsage(start);
+      const perCard = (used.user + used.system) / 1000 / (20 * cards.length);
       expect(perCard).toBeLessThan(1.5);
       // The 20 passes outgrew the default timeout; the guard is the average per card.
     },
