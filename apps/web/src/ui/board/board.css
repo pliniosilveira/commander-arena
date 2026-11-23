@@ -1359,16 +1359,23 @@
 
 .board-hand-fan {
   display: flex;
-  justify-content: center;
+  /* safe: a hand wider than the area starts at its left edge and scrolls, it is not cut on both sides */
+  justify-content: safe center;
   align-items: flex-end;
   /* The scroll box clips what leaves it, and a lifted card rises well above the hand: the box is
      taller than the area by that rise, and the strip above the cards does not take the pointer. */
   height: calc(100% + 110px);
   margin-top: -110px;
   padding: 0 20px;
-  /* No scrolling: the cards overlap to fit (Hand.tsx), so the whole hand is always in sight. */
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
   pointer-events: none;
+}
+
+.board-hand-fan::-webkit-scrollbar {
+  display: none;
 }
 
 .board-hand-fan > * {
