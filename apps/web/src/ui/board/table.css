@@ -76,3 +76,39 @@
 .table-board .board-hand {
   height: clamp(88px, 10vh, 108px);
 }
+
+/*
+ * A strip on this board is one row, to give the battlefield the height: the life box, a 2x2 of
+ * counts (Hand and Library over Graveyard and Exile) and the commander chip, side by side. The
+ * 1v1 board keeps its strips as they are.
+ */
+.table-board .board-strip {
+  flex-wrap: nowrap;
+  gap: 4px 10px;
+  min-height: 0;
+  padding: 4px 8px;
+}
+.table-board .board-counts {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: start;
+  gap: 2px 16px;
+}
+/* The same inset for the four so the two columns line up (the zone buttons have padding to show a hover). */
+.table-board .board-counts .board-count-item {
+  padding: 0 4px;
+}
+/* The card backs next to the hand count are left out: the number says it. */
+.table-board .board-backs {
+  display: none;
+}
+.table-board .board-command {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+/* The chip is a tenth narrower than the 190px it was: its name has two lines. */
+.table-board .board-cmdr {
+  max-width: 171px;
+}

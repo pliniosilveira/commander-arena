@@ -222,3 +222,46 @@ test('your own commander popup shows its tax and a Cast button when it can be ca
   // Cast Isamaru: {W}; the scenario gives no white mana, so only the Close button is offered.
   await expect(popup.getByRole('button', { name: 'Close' })).toBeVisible();
 });
+
+for (const [width, height] of [
+  [1440, 900],
+  [1280, 720],
+] as const) {
+  test(`an opponent strip is one row at ${width} wide: life, a 2x2 of counts, the commander chip`, async ({
+    page,
+  }) => {
+    await show(page, 3, width, height);
+    const strip = page.locator('.table-opp').first().locator('.board-strip');
+    const box = (selector: string) => strip.locator(selector).first().boundingBox();
+    const life = await box('.board-life');
+    const counts = await box('.board-counts');
+    const chip = await box('.board-command .board-cmdr');
+    const stripBox = await strip.boundingBox();
+    if (!life || !counts || !chip || !stripBox) throw new Error('missing boxes');
+    // One row: the three blocks sit side by side, their middles at about the same height.
+    const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+    expect(Math.abs(mid(life) - mid(counts))).toBeLessThan(14);
+    expect(Math.abs(mid(chip) - mid(counts))).toBeLessThan(14);
+    expect(life.x + life.width).toBeLessThanOrEqual(counts.x + 1);
+    expect(counts.x + counts.width).toBeLessThanOrEqual(chip.x + 1);
+    // Far shorter than the three rows it was.
+    expect(stripBox.height).toBeLessThan(90);
+    // The counts are a 2x2: Hand and Library on top, Graveyard and Exile below, in two columns.
+    const item = async (label: string) =>
+      strip.locator('.board-count-item', { hasText: label }).first().boundingBox();
+    const [hand, library, graveyard, exile] = await Promise.all(
+      ['Hand', 'Library', 'Graveyard', 'Exile'].map(item),
+    );
+    if (!hand || !library || !graveyard || !exile) throw new Error('missing counts');
+    expect(Math.abs(hand.y - library.y)).toBeLessThan(4);
+    expect(Math.abs(graveyard.y - exile.y)).toBeLessThan(4);
+    expect(graveyard.y).toBeGreaterThan(hand.y + hand.height - 4);
+    expect(Math.abs(hand.x - graveyard.x)).toBeLessThan(4);
+    expect(Math.abs(library.x - exile.x)).toBeLessThan(4);
+    expect(library.x).toBeGreaterThan(hand.x + hand.width - 4);
+    // No card backs next to the hand count, and the chip is 10 percent narrower than the 190 px it was.
+    await expect(strip.locator('.board-backs')).toBeHidden();
+    expect(chip.width).toBeLessThanOrEqual(0.9 * 190 + 1);
+    if (width === 1440) await page.screenshot({ path: 'test-results/table-strip.png' });
+  });
+}
