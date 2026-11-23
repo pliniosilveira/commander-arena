@@ -110,6 +110,20 @@ export function graveyardCostOf(face: CardFace | null): readonly Cost[] | null {
   return null;
 }
 
+/**
+ * CR 702.152a, 601.2a ("You may cast this card from your graveyard using its blitz ability."): whether the face has that permission and lists a blitz cost to use it with. It is a
+ * permission to cast the card for its blitz cost only, never for its mana cost (`mayCastFromGraveyard` does not read it).
+ */
+export function mayCastBlitzFromGraveyard(face: CardFace | null): boolean {
+  return (
+    alternativeOf(face, 'blitz') !== null &&
+    face?.abilities.some(
+      (a) =>
+        a.kind === 'static' && a.static.kind === 'castFromGraveyard' && a.static.using === 'blitz',
+    ) === true
+  );
+}
+
 /** The flashback cost of the face, or null when it has no flashback (CR 702.34a). */
 export function flashbackCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'flashback');

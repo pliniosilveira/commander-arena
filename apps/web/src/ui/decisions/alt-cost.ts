@@ -30,6 +30,8 @@ export function alternativeLabel(kind: NamedAlternative, card: ObjectView | unde
   // CR 702.74a: "Evoke—Exile a red card from your hand": no mana, the exile of a card of the hand.
   if (entry.exileFromHand !== undefined) return evokeExileLabel(entry);
   const label = `${ALTERNATIVE_NAMES[kind]} ${symbolsText(withX(entry.cost, 0))}`;
+  // CR 702.152a: "Blitz {2}{R}{R}, discard a card" (`AlternativeCostView.discard`).
+  if (entry.discard !== undefined) return `${label}, discard ${plural(entry.discard, 'card')}`;
   return entry.exile === undefined ? label : `${label}, exile ${plural(entry.exile, 'other card')}`;
 }
 

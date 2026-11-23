@@ -43,6 +43,7 @@ import {
   kickerLikeCostOf,
   manaCostAsFlashbackCost,
   manaSymbolsOf,
+  mayCastBlitzFromGraveyard,
   modeCostsOf,
   namedAlternativeCostOf,
   replicateCostOf,
@@ -151,7 +152,8 @@ export function isNamedAlternative(
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
     alternative === 'payLife' ||
-    alternative === 'impending'
+    alternative === 'impending' ||
+    alternative === 'blitz'
   );
 }
 
@@ -523,6 +525,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   discard += (perX.discard ?? 0) * x;
   // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
   if (alternative === 'retrace' || alternative === 'jumpStart') discard += 1;
+  // CR 702.152a, 118.9 ("Blitz—{2}{R}{R}, Discard a card."): the cards of the hand a blitz cost discards are part of the alternative cost.
+  if (alternative === 'blitz') discard += alternativeOf(face, 'blitz')?.discard ?? 0;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(
@@ -871,6 +875,8 @@ export interface AlternativeCostInfo {
   readonly sacrifice?: TapRequirement;
   /** For an evoke cost that exiles a card from the hand (CR 702.74a): the kind of card exiled too. */
   readonly exileFromHand?: ObjectFilter;
+  /** For a blitz cost (CR 702.152a): how many cards of the hand are discarded too. */
+  readonly discard?: number;
 }
 
 /**
@@ -915,7 +921,10 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
         : alt.kind === 'foretell'
           ? 'exile'
           : 'hand';
-    if (home !== (zone === 'command' ? 'hand' : zone)) continue;
+    // CR 702.152a: a blitz cost is paid for a cast from the hand, and from the graveyard when the card says it may be cast from there using its blitz ability.
+    const blitzHere =
+      alt.kind === 'blitz' && zone === 'graveyard' && mayCastBlitzFromGraveyard(face ?? null);
+    if (home !== (zone === 'command' ? 'hand' : zone) && !blitzHere) continue;
     const { symbols, exile, tap, sacrifice, sacrificeCount, exileFromHand, exileFromHandRequired } =
       spellCost(state, {
         seat: obj.owner,
@@ -931,6 +940,7 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
       ...(exile > 0 ? { exile } : {}),
       ...(tap === null ? {} : { tap }),
       ...(alt.kind === 'payLife' ? { life: alt.life } : {}),
+      ...(alt.kind === 'blitz' && (alt.discard ?? 0) > 0 ? { discard: alt.discard } : {}),
       ...(exileFromHandRequired === true && exileFromHand !== null ? { exileFromHand } : {}),
       ...((alt.kind === 'sacrificeFromGraveyard' || alt.kind === 'sacrificePermanents') &&
       sacrifice !== null

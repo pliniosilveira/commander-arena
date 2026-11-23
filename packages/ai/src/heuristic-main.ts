@@ -45,6 +45,7 @@ import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import {
   choosePriorityAction,
+  isGraveyardBlitz,
   type Play,
   spellPlays,
   spendOf,
@@ -194,7 +195,9 @@ function casualRemainder(
         o.alternative !== 'escape' &&
         o.alternative !== 'retrace' &&
         o.alternative !== 'jumpStart' &&
-        o.alternative !== 'harmonize'
+        o.alternative !== 'harmonize' &&
+        // CR 702.152a: a card blitzed from the graveyard is the casual rules' to cast (`casual-priority.ts`); the hand casts are the heuristic's own.
+        !isGraveyardBlitz(view, o)
       ),
   );
   return choosePriorityAction(view, { ...d, options }, think.draw, activations);

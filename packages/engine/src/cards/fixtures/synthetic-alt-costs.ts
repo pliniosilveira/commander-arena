@@ -248,6 +248,60 @@ export const SYNTHETIC_ALT_COST_LIST: readonly CardDefinition[] = [
     abilities: [enters({ kind: 'gainLife', player: { kind: 'you' }, amount: 1 })],
   }),
 
+  // ---- Blitz (CR 702.152): the permission to cast from the graveyard, the discard in the cost.
+  singleFace({
+    name: 'SYNTHETIC Blitz Monk',
+    manaCost: ['4', 'R'],
+    types: ['creature'],
+    subtypes: ['Human', 'Monk'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 4,
+    toughness: 3,
+    oracleText:
+      'Blitz—{2}{R}{R}, Discard a card. You may cast this card from your graveyard using its blitz ability.',
+    alternativeCosts: [{ kind: 'blitz', cost: mana('2', 'R', 'R'), discard: 1 }],
+    abilities: [{ kind: 'static', static: { kind: 'castFromGraveyard', using: 'blitz' } }],
+  }),
+  // A blitz cost of mana only and no permission to cast from the graveyard.
+  singleFace({
+    name: 'SYNTHETIC Blitz Rusher',
+    manaCost: ['3', 'R'],
+    types: ['creature'],
+    subtypes: ['Goblin'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Blitz {1}{R}',
+    alternativeCosts: [{ kind: 'blitz', cost: mana('1', 'R') }],
+  }),
+
+  // A blitz creature that can copy itself: the token copy has none of what the blitz cost gave the permanent (CR 707.2).
+  singleFace({
+    name: 'SYNTHETIC Blitz Cloner',
+    manaCost: ['3', 'R'],
+    types: ['creature'],
+    subtypes: ['Shapeshifter'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 2,
+    toughness: 2,
+    oracleText: "Blitz {1}{R}. {1}: Create a token that's a copy of this creature.",
+    alternativeCosts: [{ kind: 'blitz', cost: mana('1', 'R') }],
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['1'] }],
+        effect: {
+          kind: 'createToken',
+          token: { kind: 'copyOf', object: { kind: 'this' } },
+          count: 1,
+        },
+      },
+    ],
+  }),
+
   // ---- Spectacle (CR 702.137): "if an opponent lost life this turn" is the engine's condition.
   singleFace({
     name: 'SYNTHETIC Spectacle Raider',

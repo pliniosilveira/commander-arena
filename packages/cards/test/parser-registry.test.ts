@@ -154,6 +154,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.reconfigure': asIs,
   'keyword.escape': asIs,
   'keyword.impending': asIs,
+  'keyword.blitz': asIs,
+  'keyword.blitz-discard': asIs,
   'static.eminence-cost-reduction': asIs,
   'static.each-spell-cost-reduction': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
