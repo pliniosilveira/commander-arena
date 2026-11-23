@@ -1,8 +1,8 @@
 /**
- * #23: when the player must pick a target and every legal one is a card in one graveyard, the targets
- * panel offers a button that opens that graveyard (never opened by itself), so they can read the cards
- * (hover shows each in the preview) and pick one. Targets elsewhere (the battlefield, a player, two
- * graveyards) would be hidden by the list, so nothing is opened for them.
+ * #23: when the player must pick a target and every legal one is a card in one graveyard, that
+ * graveyard is opened for them in the Zone Picker (the targets panel keeps a button to open it again),
+ * so they can read the cards (hover shows each in the preview) and pick them. Targets elsewhere (the
+ * battlefield, a player, two graveyards) would be hidden by the list, so nothing is opened for them.
  */
 import type { ChooseCardsDecision, GameView } from '@commander-arena/engine';
 import { allLegalTargets } from '../decisions/targeting';
@@ -47,13 +47,15 @@ const PICKER_PURPOSES: ReadonlySet<ChooseCardsDecision['purpose']> = new Set([
 ]);
 
 /**
- * The Zone Picker a question opens by itself: the cards of a library search (the library is hidden,
+ * The Zone Picker a question opens by itself: the graveyard of #23, the cards of a library search (the library is hidden,
  * so the picker lists the matching cards the engine shows the searcher), the cards looked at or
  * revealed from the top of the library, or the cards a question chooses in a graveyard or in exile
  * ("return a creature card from your graveyard", "exile a card from your graveyard"). Cards of the
  * hand are already on the board, so a hand question opens nothing.
  */
 export function questionZoneToOpen(view: GameView): QuestionZone | null {
+  const graveyard = targetZoneToOpen(view);
+  if (graveyard !== null) return { zone: graveyard, name: 'graveyard' };
   const pending = view.pending;
   if (pending?.kind !== 'chooseCards' || pending.seat !== view.viewer) return null;
   if (pending.legal.length === 0 || !PICKER_PURPOSES.has(pending.purpose)) return null;
