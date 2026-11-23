@@ -38,11 +38,11 @@ export function runReflexive(
   effect: Extract<Effect, { kind: 'reflexive' }>,
 ): StepOutcome {
   // CR 603.12 (D-231): "When one or more nonland cards are exiled this way": created when this resolution counted one, not when it merely did something.
-  if (effect.ifMoved === true) {
-    // CR 603.12 (Espers to Magicite): "Exile each opponent's graveyard. When you do, ...": created when the instruction before it moved at least one object.
-    if ((res.lastMoved?.length ?? 0) === 0) return done(state);
-  } else if (effect.ifThisWay !== undefined) {
+  if (effect.ifThisWay !== undefined) {
     if ((res.thisWay?.[effect.ifThisWay] ?? 0) <= 0) return done(state);
+  } else if (effect.ifMoved === true) {
+    // CR 603.12 (Cait Sith, Espers to Magicite): "When you exile a card this way", "When you do" after an exile: created when the instruction before it moved a card.
+    if ((res.lastMoved ?? []).length === 0) return done(state);
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
   // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, fixed now.
   const sacrificedCount = res.sacrificed?.length ?? 0;

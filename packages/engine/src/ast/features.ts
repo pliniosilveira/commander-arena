@@ -272,6 +272,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeAllCounters',
     // Nexus Mentality: "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6).
     'moveAllCounters',
+    // Zack Fair: "Put ~'s counters on that creature" (CR 122.1, 113.7a): the counters a permanent had, as it last was.
+    'putCountersOf',
     // CR 122.5, 122.1 (Nesting Grounds, Eventide's Shadow, Glissa Sunslayer): the controller chooses which counters to move or remove.
     'moveCounter',
     'removeChosenCounters',
@@ -515,6 +517,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'proliferate',
     // Issue 105: "Starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way."
     'eachPlayerChoosesDestroy',
+    // Ultimate Magic: Meteor: "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents."
+    'chooseOnePerOpponentDestroy',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
     'exileTop',
     'mayPlay',
@@ -648,6 +652,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerCondition',
     // D-177: "becomes the target of a spell" (`becomesTarget` with `spellOnly`).
     'becomesTargetSpell',
+    // Professor Hojo: "one or more creatures you control become the target of an activated ability" (`becomesTarget` with `activatedOnly` and `batch`).
+    'becomesTargetActivated',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
     // Issue 100: "whenever you cast your first instant or sorcery spell each turn" (`castSpell` with `firstOfKind`).
@@ -671,6 +677,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersFromGraveyard',
     // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
     'activatesAbilityX',
+    // Avalanche of Sector 7: "an opponent activates an ability of an artifact they control" (`activatesAbility` with `ofSource`).
+    'activatesAbilityOfSource',
     // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" (`countersAdded` with `each`).
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
@@ -754,6 +762,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'toxic',
     'splitSecond',
     'typecycling',
+    'ninjutsu',
     'multikicker',
     // D-120: keyword batch 2.
     'skulk',
@@ -814,6 +823,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'readAhead',
     'dethrone',
     'myriad',
+    // Melee (CR 702.121): the keyword of Tifa, Martial Artist.
+    'melee',
     // D-478: Decayed (CR 702.147).
     'decayed',
   ],
@@ -1065,7 +1076,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putWithThis',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
+    // Zack Fair: "an Equipment that was attached to ~" (`AttachedTo` `sacrificedCost`, last-known information, CR 113.7a).
+    'attachedToSacrificedCost',
     'enchanted',
+    // Limit Break deck, group 1: "equipped creature" (`ObjectFilter.equipped`).
+    'equipped',
     // D-647: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
     'enchantedByYou',
     // Don Andres: "each creature you control but don't own", "a noncreature spell you don't own" (`ObjectFilter.notOwnedByYou`).
@@ -1158,8 +1173,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attacking',
     'notAttacking',
     'blocking',
+    // CR 509.1h (UNVERIFIED number; Ninjutsu): `ObjectFilter.unblocked`, an attacker no creature blocked.
+    'unblocked',
     'powerLessThanSource',
-    // CR 509.1b: `ObjectFilter.powerGreaterThanSource`, "can't be blocked by creatures with greater power".
+    // Conformer Shuriken: `ObjectFilter.powerGreaterThanSource`, "that creature has greater power than this creature".
     'powerGreaterThanSource',
     // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
     'monarchController',
@@ -1466,6 +1483,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modifyPt',
     'characteristicPt',
     'grantKeyword',
+    // Colossus Hammer (CR 613.1f): "Equipped creature gets +10/+10 and loses flying".
+    'loseKeyword',
     'grantAbility',
     'restriction',
     'costReduction',
@@ -1598,6 +1617,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGainedThisTurn',
     'controllerLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
+    // CR 601.2i (Lifestream's Blessing): "... as you cast this spell", worked out when the spell is cast.
+    'asCast',
     'enteredThisTurn',
     'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
@@ -1640,6 +1661,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'extreme',
     'difference',
     'opponentCount',
+    'opponentsAttackedThisCombat',
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
     'opponentsWithMore',
@@ -2000,6 +2022,8 @@ export const TRIGGER_FEATURES = [
   'triggerCondition',
   /** "Whenever this creature becomes the target of a spell" (CR 603.2, D-177): the engine's `becomesTarget` with `spellOnly`. */
   'becomesTargetSpell',
+  /** "Whenever one or more creatures you control become the target of an activated ability" (CR 603.2c, 602.2): the engine's `becomesTarget` with `activatedOnly` and `batch`. */
+  'becomesTargetActivated',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
   /** "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i): the engine's `castSpell` with `firstOfKind`. */
@@ -2024,6 +2048,8 @@ export const TRIGGER_FEATURES = [
   'entersFromGraveyard',
   /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
   'activatesAbilityX',
+  /** "Whenever an opponent activates an ability of an artifact they control" (CR 602.2, 603.2): the engine's `activatesAbility` with `ofSource`. */
+  'activatesAbilityOfSource',
   /** "Whenever a -1/-1 counter is put on a creature" (CR 122.6, 603.2): the engine's `countersAdded` with `each`, once for each counter. */
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
@@ -2104,8 +2130,12 @@ export const SELECTOR_KINDS = [
   'putWithThis',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
+  /** "An Equipment that was attached to ~" after ~ was sacrificed to pay a cost (Zack Fair, CR 113.7a): the engine's `AttachedTo` `sacrificedCost`. */
+  'attachedToSacrificedCost',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
   'enchanted',
+  /** "Equipped creature", "creatures that are equipped" (CR 301.5, Limit Break deck group 1): the engine's `ObjectFilter.equipped`. */
+  'equipped',
   /** "Enchanted by an Aura you control" (CR 303.4e, D-647): the engine's `ObjectFilter.enchantedByYou`. */
   'enchantedByYou',
   /** "You don't own" (`ObjectFilter.notOwnedByYou`): the object's owner is not the controller of the ability reading the filter. */
@@ -2222,9 +2252,11 @@ export const SELECTOR_KINDS = [
   'notAttacking',
   /** "Blocking creatures" (CR 509.1g): the engine's `ObjectFilter.blocking`. */
   'blocking',
+  /** "Unblocked attackers" (Ninjutsu, CR 509.1h unverified): the engine's `ObjectFilter.unblocked`. */
+  'unblocked',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
-  /** "Creatures with greater power than this creature" (CR 509.1b, 208.1): the engine's `ObjectFilter.powerGreaterThanSource`. */
+  /** "That creature has greater power than this creature" (Conformer Shuriken, CR 208.1): the engine's `ObjectFilter.powerGreaterThanSource`. */
   'powerGreaterThanSource',
   /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
   'monarchController',
@@ -2535,6 +2567,8 @@ export const STATIC_KINDS = [
   /** "Equipped creature gets +N/+N", "Creatures you control get +1/+1" (CR 613.4c). */
   'modifyPt',
   'grantKeyword',
+  /** "Equipped creature loses flying" (CR 613.1f, Colossus Hammer): the engine's static `loseKeyword`. */
+  'loseKeyword',
   'grantAbility',
   'cantBeBlocked',
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
@@ -2731,6 +2765,8 @@ export const AMOUNT_KINDS = [
   'controllerLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
+  /** "The greatest power among creatures you controlled as you cast this spell" (CR 601.2i): the engine's `asCast`, worked out when the spell is cast. */
+  'asCast',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -2788,6 +2824,8 @@ export const AMOUNT_KINDS = [
   'difference',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
+  /** "Each opponent you attacked this combat" (CR 702.121a, Melee): the engine's `opponentsAttackedThisCombat`. */
+  'opponentsAttackedThisCombat',
   /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */
   'movedCount',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
@@ -3033,6 +3071,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   untap: true,
   removeAllCounters: true,
   moveAllCounters: true,
+  putCountersOf: true,
   moveCounter: true,
   removeChosenCounters: true,
   removeCounters: true,
@@ -3168,6 +3207,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileIfLeaves: true,
   proliferate: true,
   eachPlayerChoosesDestroy: true,
+  chooseOnePerOpponentDestroy: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,
@@ -3248,6 +3288,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leavesToAnyOf: true,
   triggerCondition: true,
   becomesTargetSpell: true,
+  becomesTargetActivated: true,
   castNth: true,
   castFirstOfKind: true,
   castDuringOpponentTurn: true,
@@ -3260,6 +3301,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tapBatch: true,
   entersFromGraveyard: true,
   activatesAbilityX: true,
+  activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
 };
@@ -3324,6 +3366,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   toxic: true,
   splitSecond: true,
   typecycling: true,
+  ninjutsu: true,
   multikicker: true,
   skulk: true,
   battleCry: true,
@@ -3362,6 +3405,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   hideaway: true,
   readAhead: true,
   dethrone: true,
+  melee: true,
   myriad: true,
   decayed: true,
 };

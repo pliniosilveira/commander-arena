@@ -79,12 +79,16 @@ describe('gainControl', () => {
     expect(validateCard(withSpell(THEFT, gain({ duration: 'forever' }))).length).toBeGreaterThan(0);
   });
 
-  test('only a target or the triggering permanent is named: not "each", not "this", not a target that does not exist', () => {
+  // Limit Break deck (Hellkite Tyrant: "gain control of all artifacts that player controls"): a group of permanents is named by `each`.
+  test('a group named by "each" is valid', () => {
     expect(
       validateCard(
         withSpell(THEFT, gain({ objects: { kind: 'each', filter: { types: ['creature'] } } })),
-      ).length,
-    ).toBeGreaterThan(0);
+      ),
+    ).toEqual([]);
+  });
+
+  test('only a target, a group or the triggering permanent is named: not "this", not a target that does not exist', () => {
     expect(
       validateCard(withSpell(THEFT, gain({ objects: { kind: 'this' } }))).length,
     ).toBeGreaterThan(0);

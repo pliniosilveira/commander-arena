@@ -55,6 +55,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature an opponent controls until end of turn',
     'gain control of ~',
     'gain control of ~ until end of turn',
+    'gain control of all artifacts that player controls',
     'gain control of target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn',
   ],
   rejects: [
@@ -86,12 +87,17 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
             'noun.target-permanent',
             // Ahoy Mateys group 7 (Admiral Beckett Brass): "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn".
             'noun.target-permanent-controller-dealt-damage-by',
+            // Limit Break deck, group 4 (Hellkite Tyrant): "gain control of all artifacts that player controls", a group of the permanents the player the text named controls.
+            'noun.all-permanents-of-that-player',
             'noun.that-object',
             'noun.it',
             'noun.self',
           ],
         }),
-        (n) => !n.plural && !n.upTo && n.filter.player === undefined,
+        (n) =>
+          (!n.plural || n.rule === 'noun.all-permanents-of-that-player') &&
+          !n.upTo &&
+          n.filter.player === undefined,
         (_n, _ctx, start) => start,
       ),
       DURATION,

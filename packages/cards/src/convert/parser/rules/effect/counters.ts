@@ -56,7 +56,12 @@ const COUNTER_OPERANDS = [
  * D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control", one permanent the controller chooses as the effect resolves. Only the plain
  * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
  */
-const ADD_COUNTERS_OPERANDS = [...COUNTER_OPERANDS, 'noun.a-permanent'] as const;
+const ADD_COUNTERS_OPERANDS = [
+  ...COUNTER_OPERANDS,
+  'noun.a-permanent',
+  // "each of up to two Soldiers you control": a resolving choice of up to that many.
+  'noun.each-of-up-to-permanents',
+] as const;
 
 export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   id: 'effect.add-counters',
@@ -86,6 +91,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put that many +1/+1 counters on ~',
     'you put two +1/+1 counters on a creature you control',
     'put two +1/+1 counters on a creature you control',
+    'put a +1/+1 counter on each of up to two Soldiers you control',
   ],
   rejects: [
     'you put two +1/+1 counters on target creature and draw a card',

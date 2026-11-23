@@ -70,6 +70,7 @@ const PLAY_UNTIL: Readonly<Record<string, PlayUntil>> = {
   untilEndOfNextTurn: 'endOfYourNextTurn',
   untilYourNextEndStep: 'yourNextEndStep',
   whileExiled: 'whileExiled',
+  untilYouExileAnotherWithSelf: 'untilSourceExilesAnother',
 };
 
 /**

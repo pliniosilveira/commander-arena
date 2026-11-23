@@ -32,6 +32,7 @@ import { GIDEON_NEEDS } from './gideon';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
 import { LOCKE_NEEDS } from './locke';
+import { LIMIT_BREAK_G1_NEEDS } from './limit-break-g1';
 import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS, MODE_CHOICE_NEEDS, MODE_COST_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
@@ -163,6 +164,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ARDEN_NEEDS,
     ...LOCKE_NEEDS,
     ...AURA_GRAVEYARD_NEEDS,
+    ...LIMIT_BREAK_G1_NEEDS,
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,

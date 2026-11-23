@@ -405,6 +405,11 @@ export interface StackData {
   readonly castFromCommandZone: boolean;
   /** The zone the spell was cast from (CR 601.2a, D-206): "if this spell was cast from a graveyard". Absent for an ability and for a copy. */
   readonly castFrom?: Zone;
+  /**
+   * The number an `asCast` amount of the spell's text worked out as the spell was cast (CR 601.2i: "the greatest power among creatures you controlled as you cast this spell"),
+   * written when the spell becomes cast (`rules/cast-amount.ts`). Absent for a spell with no such amount, for an ability and for a spell put on the stack without being cast.
+   */
+  readonly castAmount?: number;
   /** True when a kicker cost was paid at least once (CR 702.33d). Always false for an ability. */
   readonly kicked: boolean;
   /**
@@ -640,6 +645,11 @@ export interface StackData {
    */
   readonly exiledAsCost?: readonly ObjectId[];
   /**
+   * For an activated ability whose cost returned an attacking creature to its owner's hand (Ninjutsu, CR 702.49a, UNVERIFIED rule text): what that creature was attacking as it left
+   * combat (the attacked player, planeswalker or battle, and the defending player of a permanent), which `enterAttacking.asReturned` reads. Absent for every other object.
+   */
+  readonly returnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
+  /**
    * For a spell cast with the optional blight of its additional cost paid (CR 118.8, 701.68a): true, which the condition `additionalCostPaid` reads (from last-known information once the
    * spell has left the stack). Absent when it was not paid and for every other object.
    */
@@ -867,6 +877,11 @@ export interface LastKnownInfo {
    * (`aurasAttachedToTriggerSubject`). Absent when none was.
    */
   readonly auras?: readonly { readonly id: ObjectId; readonly controller: SeatId }[];
+  /**
+   * Everything that was attached to it as it left the battlefield, whatever it is (an Aura, an Equipment, a Fortification), with the player who controlled each (CR 113.7a, 301.5,
+   * 303.4): "an Equipment that was attached to it" (`AttachedTo` `sacrificedCost`). Absent when nothing was.
+   */
+  readonly attachments?: readonly { readonly id: ObjectId; readonly controller: SeatId }[];
 }
 
 /**
@@ -1441,6 +1456,11 @@ export type Instruction =
   | {
       readonly kind: 'chooseEach';
       readonly filter: ObjectFilter;
+      /**
+       * `chooseOnePerOpponentDestroy` (CR 608.2d): the controller of the effect chooses, for each of the opponents in `seats`, exactly one permanent that opponent controls; `seats`
+       * are then the opponents still to choose for, and the question is asked of the controller.
+       */
+      readonly perOpponent?: true;
       readonly seats: readonly SeatId[];
       readonly picked: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -2238,6 +2258,8 @@ export interface ResolutionContext {
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What the attacker returned to pay the cost of the activated ability that is resolving was attacking (`StackData.returnedAttack`), for `enterAttacking.asReturned` (Ninjutsu). Absent for any other spell or ability. */
+  readonly costReturnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
   /** What `tappedAsCostPower` means (CR 702.184a): `StackData.tappedPowerAsCost`. */
   readonly costTappedPower?: number;
   /** The cards the cost of this activated ability exiled from the graveyard (D-232, `StackData.exiledAsCost`). */
@@ -2319,6 +2341,8 @@ export interface ThisWayCounts {
   readonly discardedNoncreature?: number;
   /** The nonland cards discarded by `discard` effects (Federation Fleet group D: "When you discard a nonland card this way", CR 603.12). */
   readonly discardedNonland?: number;
+  /** The total mana value of the cards discarded by `discard` effects, each as it was in the hand (Summon: Kujata: "that card's mana value", CR 202.3, 608.2c). */
+  readonly discardedValue?: number;
   /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
   readonly countersPut?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
@@ -2474,6 +2498,11 @@ export type ContinuousChange =
       readonly exileInstead?: true;
       /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
       readonly lessGeneric?: number;
+      /**
+       * "You may play that card until you exile another card with this enchantment" (`mayPlay.lasts` `untilSourceExilesAnother`, Furious Rise, CR 607.2a): the permanent whose linked
+       * ability exiled the card; the permission is removed as that permanent exiles another card with `exileTop` `linked` (`rules/impulse.ts`).
+       */
+      readonly endsWhenExilesAnother?: ObjectId;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,
@@ -2785,6 +2814,11 @@ export interface TurnLog {
      * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.
      */
     readonly fromGraveyard?: SeatId;
+    /**
+     * The player who activated this ability with a creature they control among its targets (Professor Hojo: "the first activated ability you activate during your turn that targets a
+     * creature you control", CR 602.2b): set as the activation is finished, from the targets chosen then. Absent when the ability had no such target.
+     */
+    readonly targetedOwnCreature?: SeatId;
   }[];
   /**
    * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
@@ -2820,6 +2854,11 @@ export interface TurnLog {
    * speed is as it was.
    */
   readonly speedTriggered?: readonly SeatId[];
+  /**
+   * How many combat phases have begun this turn (CR 506.1, 500.8; Tifa, Martial Artist: "If it's the first combat phase of your turn"): counted as each combat phase's beginning of
+   * combat step begins, an added combat phase included. Absent until the first one began, so the state of a turn with no combat is as it was.
+   */
+  readonly combatPhases?: number;
   /**
    * Each triggered ability whose controller has taken the action it represents this turn (D-256): "Do this only once each turn" (CR 603.2h): the
    * source permanent, the ability on it and the player who took the action (the source's controller as the ability resolved).

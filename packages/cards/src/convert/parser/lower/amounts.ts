@@ -177,6 +177,14 @@ export function lowerAmount(
         if (blockedMoved !== null) return blockedMoved;
         return { ok: true, value: { kind: 'manaValueOf', of: { kind: 'moved' } }, rule };
       }
+      // CR 202.3, 603.12, 608.2c (Summon: Kujata): "When you discard a card this way, ~ deals damage equal to that card's mana value to each opponent": the engine's `thisWay` `discardedValue`, the mana
+      // value of the card the discard before the reflexive ability discarded (read from the hand, before it left).
+      if (amount.of.det === 'anaphor' && amount.of.ref === 'discarded') {
+        if (!ctx.discardedCardValue) return { ok: false, needs: [], at: amount.span, rule };
+        const blockedValue = needs('thisWay');
+        if (blockedValue !== null) return blockedValue;
+        return { ok: true, value: { kind: 'thisWay', what: 'discardedValue' }, rule };
+      }
       const of = objectRefOf(amount.of, ctx, { triggerSubject: true, sacrificed: true });
       if (!of.ok) return of;
       const blocked = needs('manaValueOf');
@@ -530,8 +538,21 @@ export function lowerAmount(
       // "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once as the spell is cast, which only the total of a divided
       // damage is; anywhere else the same words would be read as the spell resolves.
       // "as you cast ~" names a spell: an ability has no cast (CR 601.2d, 602.2b), so its total is a number or an amount that reads no "cast".
-      if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
+      if (amount.asCast === true && ctx.owner !== 'spell') {
         return { ok: false, needs: [], at: amount.span, rule };
+      }
+      // CR 601.2i (Lifestream's Blessing): outside the total of a divided damage (which is read as the spell is cast anyway), an "as you cast this spell" aggregate is worked
+      // out when the spell is cast and kept: the engine's `asCast`. Only the plain battlefield group of the controller (the filter is read with "you" as the caster).
+      if (amount.asCast === true && !ctx.readAsCast) {
+        const wrapped = needs('asCast');
+        if (wrapped !== null) return wrapped;
+        if (typeof amount.of.filter.controller === 'object') {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        const { asCast: _asCast, ...plain } = amount;
+        const inner = lowerAmount(plain, ctx, rule);
+        if (!inner.ok) return inner;
+        return { ok: true, value: { kind: 'asCast', of: inner.value }, rule };
       }
       // "the greatest power among creatures they control" (Death Toll deck, group D, CR 109.4, 608.2c): the player is a target the ability declares, read as the amount is
       // worked out (the engine's `controlledBy` of a target, as in a count). Only a permanent of the battlefield, and only a target: any other player is left unread.
@@ -716,6 +737,23 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'playerCount', of: of.value }, rule };
     }
     case 'chosenPlayerLead': {
+      // CR 608.2c (Conformer Shuriken): "If that creature has greater power than ~, ... equal to the difference": the gap between the two powers the condition before it compared. The
+      // condition says the first is the greater, so the gap is never negative.
+      if (!ctx.choseAPlayer && ctx.comparedPowerOf !== null) {
+        const gap = needs('difference') ?? needs('powerOf');
+        if (gap !== null) return gap;
+        return {
+          ok: true,
+          value: {
+            kind: 'difference',
+            of: [
+              { kind: 'powerOf', of: ctx.comparedPowerOf },
+              { kind: 'powerOf', of: { kind: 'this' } },
+            ],
+          },
+          rule,
+        };
+      }
       // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
       const blocked = needs('chosenPlayerLead');
       if (blocked !== null) return blocked;
@@ -858,11 +896,10 @@ export function lowerCountedPtStep(
 /** Whether the filter, or one of its `anyOf` members, is something a static ability's count cannot read (D-115). */
 function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
   // D-115, CR 613.8: the count reads types, colors, subtypes, controller and zone and never a power or a
-  // toughness (the filter rules read "with power 4 or greater", which the engine refuses here). The objects of
-  // another player ("your opponents control") are not counted by a static ability here; the cards in the graveyards
-  // of the opponents are the cards of their owners (CR 400.3), which a count reads (stage P28: "for each creature
-  // card in your opponents' graveyards").
-  const opponentsObjects = f.controller === 'opponent' && f.zone !== 'graveyard';
+  // toughness (the filter rules read "with power 4 or greater", which the engine refuses here). The permanents of
+  // the opponents ("artifacts your opponents control", Avalanche of Sector 7) are counted: who controls a permanent
+  // is a layer 2 result, applied before layer 7 and before the characteristic-defining abilities of layer 7a
+  // (CR 613.1b, 613.4a), which `typeViewOf` reads, so the count follows a change of control and cannot loop.
   return (
     f.power !== undefined ||
     f.toughness !== undefined ||
@@ -877,7 +914,6 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
     f.goaded === true ||
     // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
     (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
-    opponentsObjects ||
     typeof f.controller === 'object' ||
     (f.anyOf?.some((m) => staticCannotRead(m, keywords)) ?? false)
   );

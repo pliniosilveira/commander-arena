@@ -160,11 +160,32 @@ describe('"This creature gets +1/+1 for each other creature you control with fly
     ]);
   });
 
+  // Limit Break deck (Avalanche of Sector 7, CR 613.1b, 613.4c): the permanents of the opponents are counted by a static ability, since who controls them is decided in layer 2.
+  test('the creatures your opponents control with flying are counted (SYNTHETIC)', () => {
+    const parsed = read(
+      'This creature gets +1/+1 for each creature your opponents control with flying.',
+    );
+    const theirs = {
+      kind: 'countOf',
+      filter: { types: ['creature'], controller: 'opponent', keywords: ['flying'] },
+    } as const;
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'modifyPt',
+          subject: { kind: 'this' },
+          power: theirs,
+          toughness: theirs,
+        },
+      },
+    ]);
+  });
+
   test.each([
     // a characteristic-defining ability (layer 7a) cannot read layer 6
     "This creature's power and toughness are each equal to the number of creatures you control with flying.",
-    // the objects of another player are not counted by a static ability
-    'This creature gets +1/+1 for each creature your opponents control with flying.',
     'This creature gets +1/+1 for each other creature you control with flying',
     'This creature gets +1/+1 for each other creature you control with flying until end of turn.',
   ])('near miss: %s', (text) => NOT_READ(text));

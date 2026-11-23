@@ -411,6 +411,13 @@ export function runDiscard(
       return types.includes('instant') || types.includes('sorcery');
     }),
   );
+  // CR 202.3 (Summon: Kujata): "that card's mana value", read before the card leaves the hand; the total of the cards discarded, as an {X} in the cost of a card in the hand counts 0.
+  const discardedValue = chosen.reduce((total, id) => {
+    const card = state.objects[id];
+    return card?.zone === 'hand'
+      ? total + manaValueOfCost(derive(state, card).manaCost, card)
+      : total;
+  }, 0);
   // Occult Epiphany (CR 205.2a): the card types of the cards discarded, read before they leave the hand; a card with two types counts for both.
   const discardedTypes = [
     ...new Set(
@@ -475,6 +482,7 @@ export function runDiscard(
       discardedNoncreature: discardedCards - discardedCreatures,
       ...(discardedNonlands > 0 ? { discardedNonland: discardedNonlands } : {}),
       discardedInstantOrSorcery: discardedSpells,
+      ...(discardedCards > 0 ? { discardedValue } : {}),
       ...(discardedCards > 0 ? { discardedTypes, discardedTypeCount: discardedTypes.length } : {}),
       // Issue 279: this player's own number; the resolution keeps the greatest of them (`stack.ts`).
       discardedMost: discardedCards,

@@ -261,9 +261,17 @@ function recordLki(
       ? [{ id, controller: controllerOf(state, attachment) }]
       : [];
   });
+  // CR 113.7a, 301.5: whatever is attached to it now (an Equipment too), for "an Equipment that was attached to it".
+  const attachments = state.battlefield.flatMap((id) => {
+    const attachment = state.objects[id];
+    return attachment?.attachedTo === obj.id
+      ? [{ id, controller: controllerOf(state, attachment) }]
+      : [];
+  });
   const info: LastKnownInfo = {
     ...(departedTogether === undefined ? {} : { departedTogether }),
     ...(auras.length === 0 ? {} : { auras }),
+    ...(attachments.length === 0 ? {} : { attachments }),
     // CR 113.7a: what it was just before it left, including who controlled it then (a control-changing effect, CR 613.1b, is not kept).
     object: { ...obj, controller: controllerOf(state, obj) },
     characteristics: {

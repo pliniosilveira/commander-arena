@@ -79,6 +79,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
   'condition.that-object-power',
+  // Conformer Shuriken: "If that creature has greater power than ~, put a number of +1/+1 counters on ~ equal to the difference."
+  'condition.that-object-greater-power-than-self',
   // Meren of Clan Nel Toth: "If that card's mana value is less than or equal to the number of experience counters you have, return it to the battlefield."
   'condition.that-mana-value-at-most',
 ] as const;
@@ -124,6 +126,8 @@ const TURN_CONDITIONS = [
   'condition.no-spell-cast-this-turn',
   // Issue 144 (Great Train Heist): "If it's your combat phase, there is an additional combat phase after this phase." (CR 506.1, 500.8).
   'condition.your-combat-phase',
+  // Limit Break deck, group 4 (Tifa, Martial Artist): "If it's the first combat phase of your turn, there is an additional combat phase after this phase."
+  'condition.first-combat-phase',
   // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
   'condition.entered-this-turn',
 ] as const;
@@ -201,6 +205,8 @@ const LEAD_CONDITIONS = [
   'condition.the-player-is-opponent-with-cards',
   // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.
   'condition.cast-from-hand',
+  // Foretell spells (Lifestream's Blessing): "If this spell was cast from exile, ..." in the text of a spell.
+  'condition.cast-from-exile',
   ...LEAD_GAME_STATE_CONDITIONS,
   // Slithermuse: "If that player has more cards in hand than you, ..." after "Choose an opponent.".
   ...CHOSEN_PLAYER_CONDITION_RULES.map((r) => r.id),
@@ -286,6 +292,8 @@ const TRAILING_CONDITIONS = [
   'condition.it-was-attacking',
   // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
   'condition.its-stat-greater-than-each-other',
+  // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
+  'condition.this-power',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -338,6 +346,11 @@ interface SentenceOptions {
    * The activated and triggered abilities' bodies ask for it, where the lowering joins the two.
    */
   readonly afterDiscard?: boolean;
+  /**
+   * "When you exile a card this way, ..." may start the sentence (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability the exile of the sentences before it creates. Only the body
+   * of a triggered ability asks for it, where the lowering joins the two.
+   */
+  readonly afterExile?: boolean;
   /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
@@ -541,12 +554,25 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let condition: IrCondition | undefined;
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
+    let afterExile = false;
     if (options.afterDiscard === true) {
-      const lead = literal('when you discard a nonland card this way, ')(ctx, start);
+      // "When you discard a card this way, ..." (Summon: Kujata) is made by any card, the nonland one by a card that is not a land.
+      const lead = choice(
+        map(literal('when you discard a nonland card this way, '), () => 'nonland' as const),
+        map(literal('when you discard a card this way, '), () => 'any' as const),
+      )(ctx, start);
       if (lead.ok) {
         // The sentence is read as a reflexive one (no test of its own, no "you may"), and says which discards make it.
         reflexive = true;
-        afterDiscard = 'nonland';
+        afterDiscard = lead.value;
+        at = lead.pos;
+      }
+    }
+    if (options.afterExile === true && !reflexive) {
+      const lead = literal('when you exile a card this way, ')(ctx, start);
+      if (lead.ok) {
+        reflexive = true;
+        afterExile = true;
         at = lead.pos;
       }
     }
@@ -699,7 +725,10 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined ? { reflexive: true as const } : {}),
+        ...(reflexive && afterDiscard === undefined && !afterExile
+          ? { reflexive: true as const }
+          : {}),
+        ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
         ...(mayBy === undefined ? {} : { mayBy }),
@@ -767,5 +796,9 @@ export const TRIGGER_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Summon: Kujata (chapter III): "Discard a card, then draw two cards. When you discard a card this way, ~ deals damage equal to that card's mana value to each opponent."
+  afterDiscard: true,
   delayed: true,
+  // Cait Sith, Fortune Teller: "When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is that card's mana value."
+  afterExile: true,
 });

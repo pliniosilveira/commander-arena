@@ -501,17 +501,26 @@ export function describeEvent(
       );
     }
     case 'abilityActivated': {
-      // Cycling is the only ability that works from the hand (CR 702.29a), and the ability on the
-      // stack keeps its text, so it tells a cycled card from an ordinary activation.
+      // Cycling (CR 702.29a) and Ninjutsu (CR 702.49a, unverified) work from the hand, and the ability on the
+      // stack keeps its text, so it tells a cycled card, or a Ninja put in play, from an ordinary activation.
       const stacked = event.stackObject === null ? undefined : after.objects[event.stackObject];
-      const cycled =
+      const fromHand =
         stacked?.stack?.ability?.kind === 'activated' &&
         stacked.stack.ability.functionsIn === 'hand';
+      const ninjutsu =
+        fromHand &&
+        stacked?.stack?.ability?.kind === 'activated' &&
+        stacked.stack.ability.cost.some(
+          (c) => c.kind === 'returnToHand' && 'unblocked' in c.what && c.what.unblocked === true,
+        );
+      const cycled = fromHand && !ninjutsu;
       const described = line(
         'major',
         cycled
           ? `${who(event.seat)} ${verb(event.seat, 'cycle', 'cycles')} ${name(event.source)}.`
-          : `${who(event.seat)} ${verb(event.seat, 'activate', 'activates')} ${name(event.source)}'s ability${event.x === undefined ? '' : ` with X = ${event.x}`}.`,
+          : ninjutsu
+            ? `${who(event.seat)} ${verb(event.seat, 'activate', 'activates')} the ninjutsu ability of ${name(event.source)}.`
+            : `${who(event.seat)} ${verb(event.seat, 'activate', 'activates')} ${name(event.source)}'s ability${event.x === undefined ? '' : ` with X = ${event.x}`}.`,
         event.seat,
         [event.source],
         cycled ? 'CR 702.29' : 'CR 602',

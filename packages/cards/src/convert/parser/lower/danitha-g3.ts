@@ -50,14 +50,15 @@ export function lowerAbilityCostReduction(
     more > 0 ||
     statement.condition !== undefined ||
     statement.also !== undefined ||
-    !ctx.faceSubtypes.includes('Aura')
+    (effect.targetsSelf !== true && !ctx.faceSubtypes.includes('Aura'))
   ) {
     return failure(ability);
   }
+  // Helitrooper: "that target ~" is the permanent with the ability (`isSource`), whatever it is; "enchanted creature" is the host of an Aura.
   const blocked = missingFeatures([
     'ability:static',
     'static:abilityCostReduction',
-    'selector:hostOfSource',
+    effect.targetsSelf === true ? 'selector:isSource' : 'selector:hostOfSource',
   ]);
   if (blocked.length > 0) return { ...failure(ability), needs: blocked };
   return {
@@ -68,7 +69,7 @@ export function lowerAbilityCostReduction(
         static: {
           kind: 'abilityCostReduction',
           abilities: 'equip',
-          targeting: { hostOfSource: true },
+          targeting: effect.targetsSelf === true ? { isSource: true } : { hostOfSource: true },
           amount: effect.amount,
         },
       },

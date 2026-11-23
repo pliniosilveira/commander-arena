@@ -59,6 +59,7 @@ import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
 import { NOUN_LIBRARY_CARD_MANA_VALUE_X } from './library-mv-x';
+import { LIMIT_BREAK_G4_EARLY_NOUN_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
@@ -388,6 +389,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
     'up to one target Aura or Equipment card from your graveyard',
     'target Aura or Equipment card from your graveyard',
+    // Limit Break deck, group 1 (Unfinished Business): the plural, also with "and/or".
+    'two target Aura or Equipment cards from your graveyard',
+    'up to two target Aura and/or Equipment cards from your graveyard',
     // Junji, the Midnight Sky (CR 205.3d): a creature card that has no Dragon type.
     'target non-Dragon creature card from a graveyard',
     "target non-Zombie creature card from an opponent's graveyard",
@@ -424,9 +428,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',
-    'two target Aura or Equipment cards from your graveyard',
     'target Aura or Equipment from your graveyard',
     'target Aura or Equipment or Saga card from your graveyard',
+    'two target Aura and Equipment cards from your graveyard',
     'target permanent card with mana value less than or equal to the number of counters on that creature',
     'target permanent card with mana value less than or equal to the number of +1/+1 counters on that creature from your graveyard',
     'target permanent card with mana value less than or equal to the number of counters on target creature from your graveyard',
@@ -1053,6 +1057,8 @@ export const NOUN_RULES = [
   ...ENCHANTED_BY_YOU_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
   ...HYLDA_G2_EARLY_NOUN_RULES,
+  // Limit Break deck, group 4: "all artifacts that player controls", whose first words are those of `noun.all-permanents`.
+  ...LIMIT_BREAK_G4_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
   ...ABZAN_SPELLS_NOUN_RULES,

@@ -485,7 +485,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return negate ? "it's not your turn" : "it's your turn";
     case 'yourCombatPhase':
       // Issue 144 (CR 506.1): "if it's your combat phase".
-      return `it's ${negate ? 'not ' : ''}your combat phase`;
+      return `it's ${negate ? 'not ' : ''}${condition.first === true ? 'the first' : 'your'} combat phase${condition.first === true ? ' of your turn' : ''}`;
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;

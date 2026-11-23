@@ -140,6 +140,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
+  'selector:equipped',
   'selector:enchantedByYou',
   'selector:notOwnedByYou',
   'selector:ownedByYou',
@@ -500,6 +501,11 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
+  // CR 301.5: "equipped creature": an Equipment is attached, read where the filter is matched against the game with the permanent's attachments.
+  if (filter.equipped === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:equipped');
+  }
   // CR 108.3: "you don't own", read where the filter is matched against an object.
   if (filter.notOwnedByYou === true) parts.push('selector:notOwnedByYou');
   // CR 108.3: "you own", read where the filter is matched against an object.
@@ -666,6 +672,7 @@ function lowerFilterAt(
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
+    ...(filter.equipped === true ? { equipped: true as const } : {}),
     ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
     ...(filter.notOwnedByYou === true ? { notOwnedByYou: true as const } : {}),
     ...(filter.ownedByYou === true ? { ownedByYou: true as const } : {}),
@@ -1741,6 +1748,8 @@ export function recipientOf(
     noun.det === 'controllerOf' ||
     // Snort: "deals 5 damage to each opponent who discarded their hand this way" (CR 701.9a).
     (noun.det === 'discardedThisWay' && noun.discardedHand === true) ||
+    // Barret Wallace (CR 508.5): "it deals damage equal to ... to defending player".
+    noun.det === 'defendingPlayer' ||
     (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);

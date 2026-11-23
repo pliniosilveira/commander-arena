@@ -170,6 +170,18 @@ export function isEmbalm(ability: ActivatedAbility): boolean {
   );
 }
 
+/**
+ * True for Ninjutsu's expansion (CR 702.49a, unverified): an ability from the hand whose cost returns an unblocked attacker you control to its owner's hand (`unblocked`).
+ */
+export function isNinjutsu(ability: ActivatedAbility): boolean {
+  return (
+    ability.functionsIn === 'hand' &&
+    ability.cost.some(
+      (c) => c.kind === 'returnToHand' && 'unblocked' in c.what && c.what.unblocked === true,
+    )
+  );
+}
+
 /** True for Unearth's expansion: an ability from the graveyard whose effect is `unearth` (CR 702.84a, D-124). */
 export function isUnearth(ability: ActivatedAbility): boolean {
   return ability.effect.kind === 'unearth';
@@ -1902,6 +1914,13 @@ export function activationLabel(
     return costKeyword(
       'Cycling',
       ability.cost.filter((c) => c.kind !== 'discardThis'),
+    );
+  }
+  // CR 702.49a: "Ninjutsu {1}{R}": the return of the attacker is part of the keyword, not of the price.
+  if (isNinjutsu(ability)) {
+    return costKeyword(
+      'Ninjutsu',
+      ability.cost.filter((c) => c.kind !== 'returnToHand'),
     );
   }
   if (isEquip(ability)) return costKeyword('Equip', ability.cost);

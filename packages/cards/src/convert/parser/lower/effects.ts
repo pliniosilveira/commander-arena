@@ -35,6 +35,7 @@ import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
+import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { lowerCondition } from './conditions';
@@ -123,6 +124,7 @@ import { KEFKA_LOWERINGS } from './kefka';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LOCKE_LOWERINGS } from './locke';
+import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -710,7 +712,7 @@ const RETURN: Lowering<IrClause, Effects> = {
     let attachTo: { readonly kind: 'moved' } | undefined;
     if (hostNoun !== undefined) {
       if (zone !== 'battlefield' || hostNoun.kind !== 'noun') return failure(clause);
-      const host = objectRefOf(hostNoun, ctx, { token: true });
+      const host = objectRefOf(hostNoun, ctx, { token: true, moved: true });
       if (!host.ok) return host;
       if (host.value.kind !== 'moved') return failure(clause);
       const blockedHost = missingFeatures(['ability:attachedToMoved']);
@@ -1899,6 +1901,7 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
  * battlefield, and the destination one target. A spell cannot attach itself, a permanent that is
  * gone cannot be attached, and the engine's attach moves one object to one other.
  */
+const ATTACHABLE_SUBTYPES: readonly string[] = ['Aura', 'Equipment', 'Fortification'];
 const ATTACH: Lowering<IrClause, Effects> = {
   head: 'attach',
   id: 'lower.attach',
@@ -1922,16 +1925,33 @@ const ATTACH: Lowering<IrClause, Effects> = {
     const object = arg(clause, 'object');
     const to = arg(clause, 'to');
     if (object?.kind !== 'noun' || to?.kind !== 'noun') return failure(clause);
-    if (ctx.owner === 'spell' || ctx.selfGone) return failure(clause);
+    // Limit Break deck, group 1 (CR 701.3, 115.1): "attach up to one target Equipment you control to target Rebel you control", "attach any number of target Equipment to it": the
+    // Auras, Equipment or Fortifications are targets of the ability (a spell may name them: it does not attach itself).
+    const attachesTargets = object.det === 'target';
+    if (ctx.selfGone || (ctx.owner === 'spell' && !attachesTargets)) return failure(clause);
+    if (
+      attachesTargets &&
+      !(object.filter.subtypes ?? []).some((t) => ATTACHABLE_SUBTYPES.includes(t))
+    ) {
+      return failure(clause);
+    }
     if (to.plural || to.upTo || (to.count?.kind === 'number' && to.count.value !== 1)) {
       return failure(clause);
     }
     // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura the trigger is about, read for a trigger of an enchantment entering.
     const what = objectRefOf(object, ctx, { triggerSubject: true });
     if (!what.ok) return what;
-    if (what.value.kind !== 'this' && what.value.kind !== 'triggerSubject') return failure(clause);
+    if (
+      what.value.kind !== 'this' &&
+      what.value.kind !== 'triggerSubject' &&
+      what.value.kind !== 'target'
+    ) {
+      return failure(clause);
+    }
     const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
+    // A permanent is not attached to itself (CR 701.3b): "attach ~ to it" where "it" is `~` is no instruction the game can follow.
+    if (what.value.kind === 'this' && onto.value.kind === 'this') return failure(clause);
     return {
       ok: true,
       value: [{ kind: 'attach', object: what.value, to: onto.value }],
@@ -2008,7 +2028,11 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
             kind: 'chooseObjects',
             id: objectsArg.ref,
             filter: anyPlayer ? filter.value : { ...filter.value, controller: 'you' },
-            count: 1,
+            // "each of up to two Soldiers you control" (CR 608.2d): the controller chooses none up to that many.
+            count:
+              objectsArg.upTo === true && objectsArg.count?.kind === 'number'
+                ? objectsArg.count.value
+                : 1,
             ...(objectsArg.upTo === true || anyPlayer ? {} : { exactly: true as const }),
           },
           {
@@ -2812,6 +2836,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
+  ...LIMIT_BREAK_G1_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
@@ -2827,6 +2852,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KEFKA_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
+  ...CHOOSE_PER_OPPONENT_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...RETURNED_LAND_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
@@ -2970,6 +2996,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
       clause,
       scope === 'untilYourNextEndStep' ||
         scope === 'whileExiled' ||
+        scope === 'untilYouExileAnotherWithSelf' ||
         scope === 'whileYouControlSelf' ||
         scope === 'whileSelfRemains'
         ? []

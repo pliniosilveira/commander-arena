@@ -186,6 +186,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'discardedValue':
+      // Summon: Kujata (CR 608.2c): "damage equal to that card's mana value" after a discard.
+      return 'the total mana value of the cards discarded this way';
     case 'destroyedValue':
       // Convert to Slime: "the total mana value of permanents destroyed this way".
       return 'the total mana value of the permanents destroyed this way';
@@ -311,6 +314,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the number of creatures attacking them';
     case 'lifeGainedThisTurn':
       return 'the amount of life you gained this turn';
+    case 'asCast': {
+      // CR 601.2i: worked out as the spell was cast.
+      const inner = amountPhrase(amount.of, ctx);
+      return inner === UNKNOWN_AMOUNT ? UNKNOWN_AMOUNT : `${inner} as you cast this spell`;
+    }
     case 'lifeGainedOrLostThisTurn':
       // CR 119.3 (Willowdusk, Essence Seer).
       return 'the amount of life you gained this turn or the amount of life you lost this turn, whichever is greater';
@@ -393,6 +401,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'opponentCount':
       // CR 102.2: Rot Hulk's "where X is the number of opponents you have".
       return 'the number of opponents you have';
+    case 'opponentsAttackedThisCombat':
+      // CR 702.121a (Melee): "for each opponent you attacked this combat".
+      return 'the number of opponents you attacked this combat';
     case 'thisWay':
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':

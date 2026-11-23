@@ -481,18 +481,24 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       };
       const xCost = t.event === 'activatesAbility' && flagged('xCost');
       const anySource = t.event === 'activatesAbility' && flagged('anySource');
+      // Avalanche of Sector 7 (CR 602.2): "an ability of an artifact they control": the permanent whose ability it is, as a filter.
+      const sourceNoun = t.event === 'activatesAbility' ? t.args.ofSource : undefined;
+      if (sourceNoun !== undefined && sourceNoun.kind !== 'noun') return failure(t);
       const blocked = missingFeatures([
         `trigger:${t.event}`,
         ...(xCost || anySource ? (['trigger:activatesAbilityX'] as const) : []),
+        ...(sourceNoun === undefined ? [] : (['trigger:activatesAbilityOfSource'] as const)),
       ]);
-      return blocked.length > 0
-        ? failure(t, blocked)
-        : ok({
-            kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
-            who,
-            ...(xCost ? { xCost: true as const } : {}),
-            ...(anySource ? { anySource: true as const } : {}),
-          });
+      if (blocked.length > 0) return failure(t, blocked);
+      const ofSource = sourceNoun === undefined ? undefined : lowerFilter(sourceNoun);
+      if (ofSource !== undefined && !ofSource.ok) return ofSource;
+      return ok({
+        kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
+        who,
+        ...(xCost ? { xCost: true as const } : {}),
+        ...(anySource ? { anySource: true as const } : {}),
+        ...(ofSource === undefined ? {} : { ofSource: ofSource.value }),
+      });
     }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
@@ -532,11 +538,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         const blocked = missingFeatures(['trigger:becomesTargetSpell']);
         if (blocked.length > 0) return { ...failure(t), needs: blocked };
       }
+      // Professor Hojo (CR 602.2, 603.2c): "one or more creatures you control become the target of an activated ability".
+      if (t.activatedOnly === true || t.batch === true) {
+        const blocked = missingFeatures(['trigger:becomesTargetActivated']);
+        if (blocked.length > 0) return { ...failure(t), needs: blocked };
+      }
       return ok({
         kind: 'becomesTarget',
         what: what.value,
         by,
         ...(t.spellOnly === true ? { spellOnly: true as const } : {}),
+        ...(t.activatedOnly === true ? { activatedOnly: true as const } : {}),
+        ...(t.batch === true ? { batch: true as const } : {}),
       });
     }
     case 'upkeep':
@@ -1732,6 +1745,8 @@ function lowerTriggeredAbility(
       (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
+      // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
+      c.verb === 'attachOwnToSelf' ||
       // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
       // engine's `may` of the mill alone (the ability's own `optional` would cover the whole effect); a trigger of the one offer keeps the ability's `optional`.
       (c.verb === 'mill' && sentences.length > 1));
@@ -1770,7 +1785,23 @@ function lowerTriggeredAbility(
         objects.det === 'anaphor'
       );
     });
-  if (optional && ((others.length !== 1 && !chain) || conditional)) return failure(ability);
+  // Sephiroth, Fallen Hero (CR 608.2d, 603.3d): "you may put a cell counter on target creature. Until end of turn, each modified creature you control has base power and toughness 7/5.":
+  // the "you may" is of the first instruction alone (the target is chosen as the ability goes on the stack, the question is asked as it resolves), and the sentences after it are
+  // not about what it did, so it is the engine's `may` of that one instruction and not the ability's own `optional`, which would also drop the rest.
+  const mayFirst =
+    optional &&
+    !chain &&
+    !conditional &&
+    first !== undefined &&
+    first.verb === 'addCounters' &&
+    first.optional &&
+    others.length > 1 &&
+    rest.every((c) => !c.optional) &&
+    sentences[0]?.clauses[0] === first &&
+    missingFeatures(['effect:may']).length === 0;
+  if (optional && !mayFirst && ((others.length !== 1 && !chain) || conditional)) {
+    return failure(ability);
+  }
   // A "you may" of the whole ability beside an offer would be two questions for one effect.
   if (optional && sentences.some((s, i) => offerSentence(s) || mayOffer(s, i))) {
     return failure(ability);
@@ -1795,7 +1826,12 @@ function lowerTriggeredAbility(
   );
   ctx.graveyardSource = false;
   if (!lowered.ok) return lowered;
-  const effects = lowered.value;
+  let effects: readonly Effect[] = lowered.value;
+  if (mayFirst) {
+    const [head, ...tail] = effects;
+    if (head?.kind !== 'addCounters') return failure(ability);
+    effects = [{ kind: 'may', effect: head }, ...tail];
+  }
   const [only] = effects;
   const effect: Effect =
     effects.length === 1 && only !== undefined ? only : { kind: 'sequence', effects: [...effects] };
@@ -1850,7 +1886,7 @@ function lowerTriggeredAbility(
       trigger,
       ...targets,
       effect,
-      ...(optional ? { optional: true } : {}),
+      ...(optional && !mayFirst ? { optional: true } : {}),
       ...(interveningIf === undefined ? {} : { interveningIf }),
       ...(triggerCondition === undefined ? {} : { triggerCondition }),
       ...(once ? { oncePerTurn: true as const } : {}),
@@ -1957,6 +1993,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:permanentSacrificed',
   'trigger:castSpell',
   'trigger:becomesTarget',
+  'trigger:becomesTargetActivated',
   'trigger:chapter',
   'trigger:step',
   'trigger:drawn',
@@ -1993,6 +2030,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:crimeCommitted',
   'trigger:tokenCreated',
   'trigger:activatesAbility',
+  'trigger:activatesAbilityOfSource',
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:lifeLostBatch',

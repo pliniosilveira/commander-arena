@@ -284,6 +284,9 @@ export function matchesFilter(
     ...(filter.blocking === true || (filter.anyOf?.some((m) => m.blocking === true) ?? false)
       ? { blockers: (state.combat?.blocks ?? []).map((b) => b.blocker) }
       : {}),
+    ...(filter.unblocked === true || (filter.anyOf?.some((m) => m.unblocked === true) ?? false)
+      ? { unblockedAttackers: unblockedAttackers(state) }
+      : {}),
     ...(filter.attackingOrBlocking === true ||
     (filter.anyOf?.some((m) => m.attackingOrBlocking === true) ?? false)
       ? { inCombat: creaturesInCombat(state) }
@@ -378,6 +381,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.attacking === true ||
     f.notAttacking === true ||
     f.blocking === true ||
+    f.unblocked === true ||
     f.attackingYou !== undefined ||
     f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
@@ -524,6 +528,18 @@ function manaValueLimitOf(
     return manaValueOfCost(cost, live ?? state.lki[ctx.triggerSubject]?.object);
   }
   return 0;
+}
+
+/**
+ * The attackers no creature blocked (CR 509.1h, unverified number): still on the battlefield and in combat, `blocked` false, and only once the blockers were declared. Priority is
+ * given in the declare blockers step only after every defending player declared, so the step and the later combat steps are the ones in which an attacker is unblocked.
+ */
+function unblockedAttackers(state: GameState): readonly ObjectId[] {
+  const step = state.turn.step;
+  if (step !== 'declareBlockers' && step !== 'firstStrikeDamage' && step !== 'combatDamage') {
+    return [];
+  }
+  return (state.combat?.attackers ?? []).filter((a) => !a.blocked).map((a) => a.object);
 }
 
 function attackingCreatures(state: GameState): readonly ObjectId[] {

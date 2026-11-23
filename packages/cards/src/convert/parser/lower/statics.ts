@@ -33,6 +33,7 @@ import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } fro
 import { isAngelStatic, lowerAngelStatic } from './angels';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
+import { lowerCost } from './costs';
 import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { isEquipmentKitStatic, lowerEquipmentKitStatic } from './equipment-kit';
@@ -278,6 +279,18 @@ function effectOf(
       const keyword = grantedKeyword(effect.keyword);
       if (keyword === undefined || (effect.params ?? []).length > 0) return failure(at);
       return ok({ kind: 'grantKeyword', subject, keyword });
+    }
+    case 'grantEquip': {
+      // CR 702.6a (Puresteel Paladin): an Equip ability given to a group of Equipment, with its mana cost; the engine expands the keyword where it derives the abilities.
+      const cost = lowerCost(effect.cost);
+      if (!cost.ok) return cost;
+      return ok({ kind: 'grantKeyword', subject, keyword: { kind: 'equip', cost: [cost.value] } });
+    }
+    case 'loseKeyword': {
+      // CR 613.1f (Colossus Hammer): a keyword without parameters; the engine takes it away in layer 6.
+      const keyword = grantedKeyword(effect.keyword);
+      if (keyword === undefined || Object.keys(keyword).length !== 1) return failure(at);
+      return ok({ kind: 'loseKeyword', subject, keyword });
     }
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
@@ -590,6 +603,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
         return ['static:grantKeyword', 'keyword:landwalk'];
       }
       return ['static:grantKeyword'];
+    case 'loseKeyword':
+      return ['static:loseKeyword'];
+    case 'grantEquip':
+      return ['static:grantKeyword', 'keyword:equip'];
     case 'grantProtection':
       return ['static:grantKeyword', 'keyword:protection'];
     case 'grantQuoted':
@@ -629,6 +646,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'costIncrease':
       return ['static:costIncrease'];
     case 'abilityCostReduction':
+    case 'firstTargetingAbilityCostReduction':
     case 'graveyardAbilityCostReduction':
     case 'permanentAbilityCostReduction':
     case 'creatureAbilityCostReductionByPower':
@@ -834,6 +852,8 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'ptTimesAttacked':
     case 'ptCountersOnSource':
     case 'grantKeyword':
+    case 'grantEquip':
+    case 'loseKeyword':
     case 'grantProtection':
     case 'grantAbility':
     case 'attackTax':
@@ -888,6 +908,50 @@ function lowerPlayFromTop(
     value: [
       { kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' }, condition },
       { kind: 'static', static: { kind: 'castFromTopOfLibrary', spells: {} }, condition },
+    ],
+    rule: ability.rule,
+  };
+}
+
+/**
+ * "As long as ~ is attached to a creature, you may cast creature spells from the top of your library." (Summoning Materia; CR 601.3, 401.5): the engine's `castFromTopOfLibrary` of the
+ * spells the words name, with the condition the engine reads where the permission is used. The controller's own (the subject is "you"); no haste, no sacrifice.
+ */
+function lowerConditionalCastFromTop(
+  ability: Static,
+  part: IrStaticPart,
+  only: Extract<IrStaticEffect, { kind: 'castFromTop' }>,
+  condition: Condition,
+): LowerResult<readonly Ability[]> {
+  if (part.subject.det !== 'you' || only.gainsHaste || only.sacrifice !== undefined) {
+    return failure(ability);
+  }
+  const missing = missingFeatures([
+    'ability:static',
+    'ability:staticCondition',
+    'static:castFromTopOfLibrary',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const { zone: _zone, stackKind: _kind, ...described } = only.spells;
+  const spells = lowerFilter({
+    kind: 'noun',
+    det: 'a',
+    filter: described,
+    upTo: false,
+    plural: true,
+    other: false,
+    span: ability.span,
+    rule: ability.rule,
+  });
+  if (!spells.ok) return spells;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'static',
+        static: { kind: 'castFromTopOfLibrary', spells: spells.value },
+        condition,
+      },
     ],
     rule: ability.rule,
   };
@@ -1114,7 +1178,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     return lowerOptionStatic(ability, ctx);
   }
   // Stage P34 (D-152): mana that stays through steps and phases, casting spells from the top of the library.
-  if (isDragonStatic(first)) return lowerDragonStatic(ability);
+  // A permission to cast from the top of the library that holds "as long as ..." is lowered with the other conditional statics below (Summoning Materia).
+  if (
+    isDragonStatic(first) &&
+    !(first.kind === 'castFromTop' && statement.condition !== undefined)
+  ) {
+    return lowerDragonStatic(ability);
+  }
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   if (isGraveyardPlayStatic(first)) return lowerGraveyardPlayStatic(ability, ctx);
   // Stage P37 (D-180): lands that enter untapped, opponents that can't cast spells during your turn (with a condition, perhaps).
@@ -1338,6 +1408,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         abilities.push(...both.value);
         continue;
       }
+      // "As long as ~ is attached to a creature, you may cast creature spells from the top of your library." (Summoning Materia).
+      if (only?.kind === 'castFromTop' && part.effects.length === 1) {
+        const cast = lowerConditionalCastFromTop(ability, part, only, condition);
+        if (!cast.ok) return cast;
+        abilities.push(...cast.value);
+        continue;
+      }
       if (only !== undefined && isPlayRule(only)) {
         if (
           part.effects.length > 1 ||
@@ -1364,6 +1441,29 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
     return lowerAbilityCostReduction(ability, first, more.length, ctx);
+  // "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Limit Break deck, Professor Hojo, CR 601.2f, 602.2b).
+  if (first.kind === 'firstTargetingAbilityCostReduction') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:abilityCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'abilityCostReduction',
+            abilities: 'firstTargetingYourCreature',
+            amount: first.amount,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
@@ -1593,6 +1693,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',
+  'static:loseKeyword',
   'static:grantAbility',
   'static:restriction',
   'static:costReduction',

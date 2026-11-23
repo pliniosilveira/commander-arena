@@ -469,6 +469,8 @@ export interface IrFilter {
     | { readonly kind: 'type'; readonly types: readonly string[] };
   /** "that aren't enchanted" (`false`), "that are enchanted" (`true`) (D-426, CR 303.4): the permanent has no Aura attached to it (or has one). */
   readonly enchanted?: boolean;
+  /** "equipped creature", "equipped attacking creature you control" (Limit Break deck group 1, CR 301.5): the permanent has an Equipment attached to it (the engine's `equipped`). */
+  readonly equipped?: true;
   /** "enchanted by an Aura you control" (D-647, CR 303.4e): the engine's `enchantedByYou`. */
   readonly enchantedByYou?: true;
   /** "but don't own", "you don't own" (CR 108.3): the engine's `notOwnedByYou`. */
@@ -510,7 +512,7 @@ export interface IrFilter {
   readonly controllerOfNamed?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
-  /** "can't be blocked by creatures with greater power" (CR 509.1b, 208.1): the engine's `powerGreaterThanSource`. */
+  /** "that creature has greater power than ~" (Conformer Shuriken, CR 208.1): the engine's `powerGreaterThanSource`. */
   readonly powerGreaterThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
@@ -767,6 +769,8 @@ export interface IrDuration extends IrNode {
     | 'untilYourNextEndStep'
     // "for as long as they remain exiled" (stage P41, D-188, CR 406.3): the permission of the cards an effect exiled, which ends only as they leave exile
     | 'whileExiled'
+    // "until you exile another card with ~" (Furious Rise, CR 607.2a, 611.2a): the permission of the card a linked ability exiled ends as that permanent exiles another one
+    | 'untilYouExileAnotherWithSelf'
     // "for as long as you control ~" (stage P42, D-190, CR 611.2b): the control an effect gave ends as the permanent with the ability leaves or changes controller
     | 'whileYouControlSelf'
     // "for as long as ~ remains on the battlefield" (stage P50, D-207, CR 611.2b): the effect of an ability of a permanent ends as that permanent leaves
@@ -1015,7 +1019,8 @@ export interface IrCondition extends IrNode {
     // Stage P41 (D-188): "it's your main phase" (CR 505.1): the precombat or the postcombat main phase of a turn of the controller
     | { readonly kind: 'yourMainPhase' }
     // Issue 144 (CR 506.1): "it's your combat phase"
-    | { readonly kind: 'yourCombatPhase' }
+    // `first` (Limit Break deck, Tifa, Martial Artist): "it's the first combat phase of your turn"
+    | { readonly kind: 'yourCombatPhase'; readonly first?: true }
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
@@ -1033,7 +1038,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'descendedThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
-    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' }
+    | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' | 'exile' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
     // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"
@@ -1565,7 +1570,12 @@ export interface IrSentence extends IrNode {
    * "When you discard a nonland card this way, ..." (Federation Fleet deck, group D, CR 603.12, 608.2c): a reflexive triggered ability created when the discards of the instructions before it
    * in the same text discarded a card of the kind. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no discard came before.
    */
-  readonly afterDiscard?: 'nonland';
+  readonly afterDiscard?: 'nonland' | 'any';
+  /**
+   * "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12, 701.13): a reflexive triggered ability created when the exile of the instructions before it in the same text
+   * exiled a card. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no exile of the top card came before.
+   */
+  readonly afterExile?: true;
   /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
@@ -1616,6 +1626,8 @@ export interface IrTrigger extends IrNode {
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
   readonly spellOnly?: true;
+  /** 'becomesTarget' (Limit Break deck, Professor Hojo, CR 602.2): only an activated ability triggers it. */
+  readonly activatedOnly?: true;
   /**
    * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
    * damaged, `player` or `opponent` (never a creature). `playerOrPlaneswalker` (D-373): "to a player or planeswalker".
@@ -1792,6 +1804,10 @@ export type IrStaticEffect =
       readonly count: IrAmount;
     }
   | { readonly kind: 'grantKeyword'; readonly keyword: string; readonly params?: readonly IrArg[] }
+  // Colossus Hammer (CR 613.1f): "loses flying": a keyword without parameters the subject no longer has (the engine's `loseKeyword`).
+  | { readonly kind: 'loseKeyword'; readonly keyword: string }
+  // Puresteel Paladin (CR 702.6a): "have equip {0}": the Equip ability a group of Equipment is given, with a plain mana cost (the engine's `grantKeyword` of `equip`).
+  | { readonly kind: 'grantEquip'; readonly cost: IrCost }
   /**
    * `has protection from red and from blue` (stage P70, D-259, CR 702.16): protection from the colors the statement names (`colors`, color words as
    * written, lowercase) or, when `commanderIdentity` is set, "each color that's not in your commander's color identity" (CR 903.4, 903.4f). One of the two.
@@ -1844,7 +1860,10 @@ export type IrStaticEffect =
   /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
   | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
-  | { readonly kind: 'abilityCostReduction'; readonly amount: number }
+  // Helitrooper: "that target ~" (`targetsSelf`): the creature with the ability, not the permanent an Aura enchants.
+  | { readonly kind: 'abilityCostReduction'; readonly amount: number; readonly targetsSelf?: true }
+  // "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Limit Break deck, Professor Hojo, CR 601.2f, 602.2b)
+  | { readonly kind: 'firstTargetingAbilityCostReduction'; readonly amount: number }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
   | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
@@ -2034,7 +2053,7 @@ export type IrStaticEffect =
    */
   | {
       readonly kind: 'spellKeyword';
-      readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
+      readonly keyword: 'demonstrate' | 'convoke' | 'improvise' | 'replicateAtManaCost';
     }
   /**
    * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9, 601.2b): the permanent spells the subject names (a noun with the controller

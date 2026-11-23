@@ -54,6 +54,7 @@ export type SimpleKeyword = Extract<
   | 'rebound'
   | 'readAhead'
   | 'dethrone'
+  | 'melee'
   | 'myriad'
   | 'decayed'
   | 'riot'
@@ -141,6 +142,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],
+  // Limit Break deck, group 4 (CR 702.121a, Tifa, Martial Artist): a printed ability, never granted (the engine's `GRANTABLE_KEYWORDS` does not list it).
+  ['melee', 'melee'],
   ['myriad', 'myriad'],
   // D-478 (CR 702.147a): Decayed is a printed ability ("Decayed" on a card with the reminder text), the keyword of a token ("with decayed"), a keyword counter and a grant.
   ['decayed', 'decayed'],

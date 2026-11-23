@@ -39,6 +39,7 @@ import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
 import { HOFRI_STATIC_RULES } from './hofri';
 import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
+import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
 import { MELD_STATIC_RULES } from './meld';
 import { OMNATH_STATIC_RULES } from './omnath';
 import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
@@ -164,6 +165,8 @@ export const STATIC_RULES = [
   ...CANT_BE_SACRIFICED_STATIC_RULES,
   // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   ...DANITHA_G3_STATIC_RULES,
+  // Limit Break deck, group 4 (Professor Hojo): "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate."
+  ...LIMIT_BREAK_G4_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
   // Food and Fellowship deck, group B (Sam): "Activated abilities of Foods you control cost {1} less to activate."
