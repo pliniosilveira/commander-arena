@@ -89,6 +89,12 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
             </div>
           ))}
           <div className="table-cell table-me" style={cell('me')} data-table-seat={me.id}>
+            <PlayerStrip
+              view={view}
+              seat={me}
+              onOpenZone={setZone}
+              onOpenCommander={setCommanderSeat}
+            />
             <Field
               view={view}
               seat={me.id}
@@ -96,12 +102,6 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
               roles={roles}
               attachments={attachments}
               exile={exile}
-            />
-            <PlayerStrip
-              view={view}
-              seat={me}
-              onOpenZone={setZone}
-              onOpenCommander={setCommanderSeat}
             />
             <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
             <Hand

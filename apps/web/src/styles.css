@@ -275,6 +275,15 @@ button {
 .game > .board-preview[data-pinned="true"] {
   pointer-events: auto;
 }
+/* The table board (3 or more players): the preview sits just above the log button instead of
+   the middle of the edge, so it covers the opponents' row less. */
+.game[data-testid="game-table-board"] > .board-preview {
+  top: auto;
+  /* Starts just above the log button (`.log-toggle`, bottom: 44px). */
+  bottom: 80px;
+  transform: none;
+  max-height: calc(100% - 88px);
+}
 /* The card of the stack's top takes a tap (it closes the preview); the rest of the box lets the
    pointer through, so a target under it (your life total) stays clickable. */
 .game > .board-preview[data-stack-preview="true"] .board-preview-card {

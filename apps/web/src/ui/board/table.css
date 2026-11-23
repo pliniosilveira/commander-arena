@@ -87,6 +87,8 @@
   gap: 4px 10px;
   min-height: 0;
   padding: 4px 8px;
+  /* The life, counts and commander chip are centered in the bar. */
+  justify-content: center;
 }
 .table-board .board-counts {
   flex: none;
