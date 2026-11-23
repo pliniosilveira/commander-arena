@@ -72,11 +72,11 @@ export function faceDownBadgeTitle(o: ObjectView): string {
 }
 
 /** The log line of a manifest: "You manifest the top card of your library", "Opponent manifests the top card of your library". It names no card (CR 708.5). */
-export function manifestedLine(who: 'You' | 'Opponent', yours: boolean, library: string): string {
+export function manifestedLine(who: string, yours: boolean, library: string): string {
   return `${who} ${yours ? 'manifest' : 'manifests'} the top card of ${library}.`;
 }
 
 /** The log line of turning a face-down permanent face up: the card is public from then on (CR 708.8). */
-export function turnedUpLine(who: 'You' | 'Opponent', yours: boolean, name: string): string {
+export function turnedUpLine(who: string, yours: boolean, name: string): string {
   return `${who} ${yours ? 'turn' : 'turns'} a face-down card face up: it is ${name}.`;
 }

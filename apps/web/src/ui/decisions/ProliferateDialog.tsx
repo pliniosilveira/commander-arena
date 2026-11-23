@@ -112,7 +112,12 @@ export function ProliferateDialog({
                     update((u) => ({ ...u, players: togglePlayer(u.players, d, seat) }))
                   }
                 >
-                  {poisonChipLabel(seat, view.viewer, view.seats[seat]?.poison ?? 0)}
+                  {poisonChipLabel(
+                    seat,
+                    view.viewer,
+                    view.seats[seat]?.poison ?? 0,
+                    view.seats.length,
+                  )}
                 </button>
               </li>
             ))}

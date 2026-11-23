@@ -5,6 +5,7 @@
  */
 import type { GameView, ObjectView } from '@commander-arena/engine';
 import { exileMarks, FACE_DOWN_NAME, isHiddenFaceDown } from '../../game/later-text';
+import { bareMidPossessiveOf } from '../../game/seat-name';
 import { useInteraction } from '../interaction';
 import { type ExilePlayable, exilePlayable } from './exile-play';
 import { useHoverPreview } from './hover';
@@ -15,7 +16,16 @@ import './later.css';
  * time counters (either player's, CR 702.62b), the viewer's own foretold card, the other player's face-down
  * card ("Face-down card (face down)", and nothing else: the view has no more to give).
  */
-function StatusChip({ object, mine }: { object: ObjectView; mine: boolean }) {
+function StatusChip({
+  object,
+  mine,
+  owner,
+}: {
+  object: ObjectView;
+  mine: boolean;
+  /** Whose card it is, after the name ("opponent's", "Opponent 2's"). */
+  owner: string;
+}) {
   const hover = useHoverPreview(object.id);
   const hidden = isHiddenFaceDown(object);
   const name = hidden ? FACE_DOWN_NAME : object.name;
@@ -27,13 +37,13 @@ function StatusChip({ object, mine }: { object: ObjectView; mine: boolean }) {
       className={`board-exile-chip${mine ? '' : ' is-opponent'}`}
       data-object-id={object.id}
       data-exile-owner={object.owner}
-      aria-label={`${name} ${label}${mine ? '' : ", opponent's"}`}
+      aria-label={`${name} ${label}${mine ? '' : `, ${owner}`}`}
       // biome-ignore lint/a11y/noNoninteractiveTabindex: focusing a chip previews the card for keyboard users
       tabIndex={0}
       {...hover}
     >
       <b>{name}</b> <span>{label}</span>
-      {mine ? null : <span> {"(opponent's)"}</span>}
+      {mine ? null : <span> {`(${owner})`}</span>}
     </li>
   );
 }
@@ -48,7 +58,12 @@ export function OtherZonesStrip({ view, exile }: { view: GameView; exile?: Exile
   return (
     <ul className="board-exile-strip" aria-label="Suspended and foretold cards in exile">
       {status.map((o) => (
-        <StatusChip key={o.id} object={o} mine={o.owner === view.viewer} />
+        <StatusChip
+          key={o.id}
+          object={o}
+          mine={o.owner === view.viewer}
+          owner={bareMidPossessiveOf(o.owner, view.viewer, view.seats.length)}
+        />
       ))}
     </ul>
   );

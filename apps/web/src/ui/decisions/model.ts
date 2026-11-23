@@ -333,7 +333,7 @@ function handlers(
       const slots = slotStatuses(d.specs, ui.targets);
       const need = slots.reduce((n, s) => n + Math.max(0, s.spec.min - s.count), 0);
       const prompt = targetsPrompt(d, index, slot);
-      const kept = keptDivisionText(d, index, view.viewer);
+      const kept = keptDivisionText(d, index, view.viewer, view.seats.length);
       const detail = [
         ...slots.map((s, i) =>
           d.specs.length > 1
@@ -763,7 +763,7 @@ function handlers(
       const label = (id: ObjectId) => ui.attacks.find((a) => a.attacker === id);
       const seats = attackableSeats(d.candidates);
       // The cost of attacking (CR 508.1h, D-125): what the chosen attack would cost to pay.
-      const taxLine = taxDetail(taxRows(d, ui.attacks, index, view.viewer));
+      const taxLine = taxDetail(taxRows(d, ui.attacks, index, view.viewer, view.seats.length));
       return {
         interaction: interaction({
           clickable: new Set(d.candidates.map((c) => c.attacker)),

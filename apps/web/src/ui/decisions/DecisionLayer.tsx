@@ -130,7 +130,8 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const dnd: DndPlan =
     interactive && view !== null && pending !== null
       ? {
-          spec: (id, source) => dragSpec(pending, ui, objectIndex(view), view.viewer, id, source),
+          spec: (id, source) =>
+            dragSpec(pending, ui, objectIndex(view), view.viewer, id, source, view.seats.length),
           drop: (id, source, target) => {
             const result = resolveDrop(
               pending,
@@ -140,6 +141,7 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
               id,
               source,
               target,
+              view.seats.length,
             );
             if (result.kind === 'click') model.interaction.onObject(id);
             else if (result.kind === 'act') act(result.action);

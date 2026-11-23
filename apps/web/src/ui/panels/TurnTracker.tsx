@@ -89,7 +89,9 @@ export function TurnTracker() {
             data-monarch-hud={view.monarch}
           >
             <span aria-hidden="true">{'♛ '}</span>
-            {view.monarch === view.viewer ? 'You are the monarch' : 'Opponent is the monarch'}
+            {view.monarch === view.viewer
+              ? 'You are the monarch'
+              : `${seatName(view.monarch, view.viewer, view.seats.length)} is the monarch`}
           </span>
         )}
         {view.dayNight !== null && (
@@ -109,7 +111,7 @@ export function TurnTracker() {
         {fallbacks > 0 && (
           <span
             className="pnl-chip pnl-chip-warn"
-            title="The opponent AI ran out of time and a safe default move was used instead."
+            title={`${view.seats.length > 2 ? 'An opponent' : 'The opponent'} AI ran out of time and a safe default move was used instead.`}
           >
             AI fallback ×{fallbacks}
           </span>
@@ -129,7 +131,7 @@ export function TurnTracker() {
                   type="button"
                   className={cls}
                   aria-pressed={stopped}
-                  title={`${stopped ? 'Remove the stop at' : 'Stop at'} ${label} on ${mine ? 'your' : "the opponent's"} turns`}
+                  title={`${stopped ? 'Remove the stop at' : 'Stop at'} ${label} on ${mine ? 'your' : view.seats.length > 2 ? "an opponent's" : "the opponent's"} turns`}
                   onClick={() => toggleStop(side, step)}
                 >
                   {label}

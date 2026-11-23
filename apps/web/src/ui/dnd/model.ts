@@ -54,7 +54,7 @@ export function labelFor(spec: DragSpec | null, target: DropTarget): string | nu
 
 /**
  * The zones the object may be dropped on right now, or null when it may not be dragged at all.
- * `viewer` is the human seat, used only to word the labels.
+ * `viewer` is the human seat and `seatCount` the seats in the game, used only to word the labels.
  */
 export function dragSpec(
   pending: PendingDecision,
@@ -63,6 +63,7 @@ export function dragSpec(
   viewer: SeatId,
   id: ObjectId,
   source: DragSource,
+  seatCount = 2,
 ): DragSpec | null {
   switch (pending.kind) {
     case 'priority':
@@ -76,7 +77,7 @@ export function dragSpec(
         t.kind === 'player'
           ? {
               target: { kind: 'seat', seat: t.seat },
-              label: `Attack ${seatLabel(t.seat, viewer)}`,
+              label: `Attack ${seatLabel(t.seat, viewer, seatCount)}`,
             }
           : {
               target: { kind: 'object', id: t.object },
@@ -113,8 +114,9 @@ export function resolveDrop(
   id: ObjectId,
   source: DragSource,
   target: DropTarget,
+  seatCount = 2,
 ): DropResult {
-  if (!accepts(dragSpec(pending, ui, index, viewer, id, source), target)) return NONE;
+  if (!accepts(dragSpec(pending, ui, index, viewer, id, source, seatCount), target)) return NONE;
   switch (pending.kind) {
     case 'priority':
       return priorityGesture(pending, index, viewer, id, source)?.drop(target) ?? NONE;

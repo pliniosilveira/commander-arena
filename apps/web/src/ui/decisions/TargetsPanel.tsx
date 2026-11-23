@@ -107,7 +107,7 @@ export function TargetsPanel({
         update={update}
         hoverProps={hoverProps}
       />
-      <KeptDivision decision={d} index={index} viewer={view.viewer} />
+      <KeptDivision decision={d} index={index} viewer={view.viewer} seatCount={view.seats.length} />
       {d.specs.map((spec) => (
         <DivisionSection
           key={spec.specId}
@@ -237,19 +237,21 @@ function KeptDivision({
   decision,
   index,
   viewer,
+  seatCount,
 }: {
   decision: TargetsDecision;
   index: Index;
   viewer: SeatId;
+  seatCount: number;
 }) {
-  if (keptDivisionText(decision, index, viewer) === null) return null;
+  if (keptDivisionText(decision, index, viewer, seatCount) === null) return null;
   return (
     <fieldset className="dec-divide dec-divide-kept" data-divide-kept aria-label="Division kept">
       <legend>Division of the original</legend>
       <ul className="dec-damage-rows">
         {keptTargets(decision).map((t) => (
           <li key={targetKey(t)} className="dec-damage-row">
-            <span className="dec-damage-name">{shareLabel(t, index, viewer)}</span>
+            <span className="dec-damage-name">{shareLabel(t, index, viewer, seatCount)}</span>
           </li>
         ))}
       </ul>
