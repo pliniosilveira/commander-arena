@@ -2,7 +2,7 @@
  * Builds the `Interaction` for the pending decision, provides it to its children (the board) and
  * draws the action bar plus every decision overlay (SPEC 10 "Action bar", "Decisions").
  */
-import type { Action } from '@commander-arena/engine';
+import type { Action, DecisionId } from '@commander-arena/engine';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { untappableSources } from '../../store';
@@ -67,6 +67,8 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   // The Zone Picker of a question about one graveyard: open or closed, and "open it again" requests.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerRequest, setPickerRequest] = useState(0);
+  // The decision whose trigger order dialog the player closed to look at the board.
+  const [orderClosedFor, setOrderClosedFor] = useState<DecisionId | null>(null);
 
   const pending = view?.pending ?? null;
   const ui = uiFor(stored, pending);
@@ -108,6 +110,9 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   // Confirm waits while the picker is closed: the choice is made with the cards in view.
   const questionZone = view === null ? null : questionZoneToOpen(view);
   const waitsForPicker = builtModel !== null && questionZone !== null && !pickerOpen;
+  // The trigger order is a dialog: closed it shows the board, and Confirm waits in the dock until
+  // the dialog is open again. Closing belongs to one decision.
+  const orderClosed = pending?.kind === 'orderTriggers' && orderClosedFor === pending.id;
   const model =
     builtModel !== null && waitsForPicker
       ? {
@@ -116,7 +121,14 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
             setPickerRequest((n) => n + 1),
           ),
         }
-      : builtModel;
+      : builtModel !== null && pending?.kind === 'orderTriggers'
+        ? {
+            ...builtModel,
+            bar: orderClosed
+              ? barWhileClosed(builtModel.bar, 'trigger order', () => setOrderClosedFor(null))
+              : { ...builtModel.bar, inOverlay: true },
+          }
+        : builtModel;
   const interactive = model !== null && !passing;
   // A land tapped for mana whose mana is unspent can be clicked to take the tap back (issue 19).
   const interaction = interactive
@@ -173,7 +185,17 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
 
   const overlayProps =
     interactive && view !== null && pending !== null
-      ? { view, pending, ui, model, update, act, error, intro }
+      ? {
+          view,
+          pending,
+          ui,
+          model,
+          update,
+          act,
+          error,
+          intro,
+          orderDialog: { closed: orderClosed, close: () => setOrderClosedFor(pending.id) },
+        }
       : null;
   const showToast = error !== null && !(pending !== null && INLINE_ERROR.has(pending.kind));
 

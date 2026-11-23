@@ -60,6 +60,8 @@ export interface OverlayProps {
   readonly error: string | null;
   /** The screen before the opening hand is up: Start game moves on to the mulligan. */
   readonly intro?: { readonly onStart: () => void } | null;
+  /** The trigger order dialog can be closed to look at the board; the layer owns whether it is. */
+  readonly orderDialog?: { readonly closed: boolean; readonly close: () => void };
 }
 
 const none = () => null;
@@ -133,7 +135,25 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
         <ProliferateDialog key={d.id} d={d} view={view} ui={ui} model={model} update={update} />
       ) : null,
     chooseCards: none,
-    orderTriggers: none,
+    // A dialog that can be closed to look at the board; Confirm exists only inside it.
+    orderTriggers: (d) =>
+      props.orderDialog?.closed === true ? null : (
+        <Dialog label="Trigger order" className="dec-order-dialog">
+          <button
+            type="button"
+            className="dec-order-close dec-step"
+            aria-label="Close to look at the board"
+            title="Close to look at the board"
+            onClick={props.orderDialog?.close}
+          >
+            ×
+          </button>
+          <h2 className="dec-title">{model.bar.prompt}</h2>
+          <OrderPanel decision={d} index={index} ui={ui} update={update} />
+          <p className="dec-sub">{model.bar.detail}</p>
+          <BarButtons buttons={model.bar.buttons} />
+        </Dialog>
+      ),
 
     arrangeCards: (d) => (
       <ArrangePanel key={d.id} decision={d} view={view} ui={ui} model={model} update={update} />
@@ -297,7 +317,8 @@ export function DockPanel(props: OverlayProps): ReactNode {
 
     chooseCards: (d) => <CardPickerPanel decision={d} view={view} ui={ui} update={update} />,
 
-    orderTriggers: (d) => <OrderPanel decision={d} index={index} ui={ui} update={update} />,
+    // The order is a modal: see ModalOverlay.
+    orderTriggers: none,
 
     targets: (d) => <TargetsPanel decision={d} view={view} ui={ui} update={update} />,
 
