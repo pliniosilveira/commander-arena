@@ -407,6 +407,7 @@ describe('supported feature gate', () => {
         'playsCard',
         'unblockedAttackBatch',
         'upkeep',
+        'winsCoinFlip',
       ].sort(),
     );
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('triggered');
