@@ -22,6 +22,12 @@ import {
   startFromForm,
   startTableFromForm,
 } from './menu-model';
+import {
+  OPPONENT_COUNTS,
+  type OpponentCount,
+  readStoredOpponentCount,
+  storeOpponentCount,
+} from './opponent-count';
 import './screens.css';
 
 export const HOW_TO_PLAY: readonly string[] = [
@@ -34,8 +40,6 @@ export const HOW_TO_PLAY: readonly string[] = [
   'Arrows on the screen point from a spell on the stack to its targets.',
 ];
 
-const OPPONENT_COUNTS = [1, 2, 3] as const;
-
 export function Menu() {
   const actions = useActions();
   const precons = usePrecons();
@@ -44,7 +48,13 @@ export function Menu() {
   const [level, setLevel] = useState<ChallengeLevel>('easy');
   // With more than one opponent the deck dialog repeats, once per opponent, and the last deck starts
   // the game (`startTableFromForm`).
-  const [opponents, setOpponents] = useState<(typeof OPPONENT_COUNTS)[number]>(1);
+  const [opponents, setOpponentsState] = useState<OpponentCount>(
+    () => readStoredOpponentCount() ?? 1,
+  );
+  const setOpponents = (n: OpponentCount) => {
+    setOpponentsState(n);
+    storeOpponentCount(n);
+  };
   const [opponentIndex, setOpponentIndex] = useState(0);
   const [opponentDecks, setOpponentDecks] = useState<readonly string[]>([]);
   // Medium and Hard offer only the challenges that have emblems for them.
