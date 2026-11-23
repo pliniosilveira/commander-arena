@@ -766,6 +766,8 @@ describe('unmatched abilities', () => {
       'effect.exile-at-random',
       'effect.copy-linked-exiled-and-cast',
       'effect.mana-rider-exile',
+      'effect.exile-at-random-each-opponent-graveyard',
+      'effect.owners-lose-life-spells-cast-this-way',
       'effect.owner-puts-on-library',
       'effect.incubate',
       'effect.cast-milled-each-player',
