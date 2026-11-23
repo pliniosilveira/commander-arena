@@ -85,7 +85,7 @@ test('the targets of a chosen mode are grouped under "Mode N: text" in the dock 
   expect(view?.pending?.kind).toBe('targets');
   const html = renderWith(store, layer);
   expect(html).toContain('Mode 1: Deals 3 damage to target creature');
-  expect(html).toContain('dec-target-group');
+  expect(html).not.toContain('dec-target-group');
   expect(html).toContain(
     `Mode 1: Deals 3 damage to target creature. Choose a target for ${THREE}.`,
   );

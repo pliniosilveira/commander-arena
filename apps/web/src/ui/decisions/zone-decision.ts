@@ -34,9 +34,11 @@ export interface ZoneGate {
   setOpen(open: boolean): void;
   /** Changes each time the player asks to open the picker again. */
   readonly request: number;
+  /** Asks the board to open the question's zone; the player pressed a button for it. */
+  ask(): void;
 }
 
-const NO_GATE: ZoneGate = { open: false, setOpen: () => {}, request: 0 };
+const NO_GATE: ZoneGate = { open: false, setOpen: () => {}, request: 0, ask: () => {} };
 
 const ZoneGateContext = createContext<ZoneGate>(NO_GATE);
 

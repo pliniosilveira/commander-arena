@@ -311,7 +311,7 @@ describe('the targets of an Aura-exiling enchantment and of a copy', () => {
   const elf = obj(2, 'Elf', { controller: 1, owner: 1 });
   const spell = obj(9, 'Grasp of Law', { zone: 'stack', types: ['enchantment'] });
 
-  test('one for each opponent: a heading for each opponent, their permanents under it', () => {
+  test('one for each opponent: the permanents are chosen on the board, no chips', () => {
     const decision = {
       id: 'd',
       seat: 0,
@@ -336,11 +336,7 @@ describe('the targets of an Aura-exiling enchantment and of a copy', () => {
         update={none}
       />,
     );
-    expect(out).toContain('data-group="1"');
-    expect(out).toContain('Opponent&#x27;s permanents: up to one');
-    expect(out).toContain('Goblin');
-    expect(out).toContain('Elf');
-    expect(out.match(/aria-pressed="true"/g)?.length).toBe(1);
+    expect(out).toBe('');
   });
 
   test('a copy of a divided spell shows the shares and no stepper', () => {

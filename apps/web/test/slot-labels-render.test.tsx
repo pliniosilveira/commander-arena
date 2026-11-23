@@ -56,14 +56,11 @@ describe('one list of targets for each slot of a spell with several targets', ()
     ],
   } as unknown as TargetsDecision;
 
-  test('each slot has a heading with what it takes and its own chips', () => {
+  test('battlefield and player targets get no chips: the board shows them', () => {
     const ui = { ...initialUi(decision), targets: [] as ChosenTarget[] };
     const out = renderToStaticMarkup(
       <TargetsPanel decision={decision} view={view} ui={ui} update={none} />,
     );
-    expect(out).toContain('Slot 1: target player');
-    expect(out).toContain('Slot 2: target creature you control');
-    expect(out).toContain('data-slot="pal"');
-    expect(out).toContain('Grizzly Bears');
+    expect(out).toBe('');
   });
 });
