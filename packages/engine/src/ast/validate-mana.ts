@@ -97,6 +97,8 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
         }
       }
       break;
+    case 'anyColorAmong': // the filter is checked with the mana ability (validate-mana-ability.ts)
+      break;
     case 'couldProduce':
       // The `lands` filter is checked with the mana ability (validate-mana-ability.ts).
       if (mp.anyType !== undefined && typeof mp.anyType !== 'boolean') {

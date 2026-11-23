@@ -357,21 +357,32 @@ function cards(plural: boolean): Parser<IrFilter> {
   const colors = many(
     map(pattern(/(white|blue|black|red|green) /iu), (m) => (m[1] ?? '').toLowerCase()),
   );
+  // The Grey Havens (CR 205.4): "legendary creature cards in your graveyard": the supertype words before the card types.
+  const supertypes = many(
+    map(pattern(/(legendary|basic|snow) /iu), (m) => (m[1] ?? '').toLowerCase()),
+  );
   const single: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
       colors,
+      supertypes,
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
       where,
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [colorWords, { subtypes, types }, , place] = r.value;
+    const [colorWords, supertypeWords, { subtypes, types }, , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
     const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
     const base = toFilter(
       place.zone,
-      { ...NO_PARTS, types, colors: colorWords, controller: simpleController },
+      {
+        ...NO_PARTS,
+        types,
+        colors: colorWords,
+        supertypes: supertypeWords,
+        controller: simpleController,
+      },
       raw,
     );
     return {

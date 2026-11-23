@@ -798,6 +798,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add one mana of any color among legendary creature cards in your graveyard." (`anyColorAmong`)
+    'anyColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
     'producedType',
   ],
@@ -3015,6 +3017,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  anyColorAmong: true,
   producedType: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
