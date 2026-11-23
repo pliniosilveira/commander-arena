@@ -103,6 +103,7 @@ function view(setup: Setup = {}): GameView {
     pending: { kind: 'priority', id: 'd1', seat: 0, options },
     decidingSeat: 0,
     commanderDamage: {},
+    commanderDamageSources: {},
     result: null,
   };
 }

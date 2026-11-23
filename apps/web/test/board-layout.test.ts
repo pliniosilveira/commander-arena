@@ -305,13 +305,37 @@ describe('combat roles and commander damage', () => {
       { id: 0, ...bare },
       { id: 1, ...bare },
     ] as unknown as GameView['seats'];
-    const v = view({ seats, battlefield: [commander], commanderDamage: { '0:card7': 5 } });
-    expect(commanderDamageTaken(v, 0)).toEqual([{ source: 'Yargle', amount: 5 }]);
+    const v = view({
+      seats,
+      battlefield: [commander],
+      commanderDamage: { '0:card7': 5 },
+      commanderDamageSources: { '0:card7': 1 },
+    });
+    expect(commanderDamageTaken(v, 0)).toEqual([{ from: 1, name: 'Yargle', amount: 5 }]);
     expect(commanderDamageTaken(v, 1)).toEqual([]);
-    const two = view({ seats, battlefield: [commander], commanderDamage: { '0:a': 5, '0:b': 2 } });
+    const two = view({
+      seats,
+      battlefield: [commander],
+      commanderDamage: { '0:a': 5, '0:b': 2 },
+      commanderDamageSources: { '0:a': 1, '0:b': 1 },
+    });
     expect(commanderDamageTaken(two, 0)).toEqual([
-      { source: null, amount: 5 },
-      { source: null, amount: 2 },
+      { from: 1, name: null, amount: 5 },
+      { from: 1, name: null, amount: 2 },
+    ]);
+  });
+
+  test('with three seats each row names the seat whose commander dealt it (#535)', () => {
+    const bare = { graveyard: [], command: [], hand: null };
+    const seats = [0, 1, 2].map((id) => ({ id, ...bare })) as unknown as GameView['seats'];
+    const v = view({
+      seats,
+      commanderDamage: { '0:a': 9, '0:b': 2 },
+      commanderDamageSources: { '0:a': 1, '0:b': 2 },
+    });
+    expect(commanderDamageTaken(v, 0)).toEqual([
+      { from: 1, name: null, amount: 9 },
+      { from: 2, name: null, amount: 2 },
     ]);
   });
 });

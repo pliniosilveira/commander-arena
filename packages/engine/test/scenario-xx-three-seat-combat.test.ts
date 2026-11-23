@@ -4,7 +4,7 @@
 // Cards are SYNTHETIC (src/cards/fixtures) or real fixtures.
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
-import { applyAction, type GameState } from '../src/index';
+import { applyAction, type GameState, getView } from '../src/index';
 import { attackCandidates, requiredAttackers } from '../src/rules/combat-legality';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
@@ -189,6 +189,32 @@ describe('commander damage with three seats (CR 903.10a, 704.6c)', () => {
     g.advanceTo('postcombatMain');
     // Isamaru's 2 make 14 from it and 12 from Yargle: 26 together, neither at 21.
     expect(g.state.seats[1]?.hasLost).toBe(false);
+  });
+
+  test('the view names the seat whose commander dealt each commander damage entry (#535)', () => {
+    const g = scenario({ seats: 3 })
+      .seat(0)
+      .battlefield(YARGLE, { commander: true, label: 'y' })
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .seat(2)
+      .battlefield(ISAMARU, { commander: true, label: 'i' })
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack('y', { player: 1 });
+    g.advanceTo('postcombatMain');
+    g.advanceTo('declareAttackers', { turn: 5 });
+    g.act(2).attack('i', { player: 1 });
+    g.advanceTo('postcombatMain');
+    const view = getView(g.state, 1);
+    const entries = Object.entries(view.commanderDamage).filter(([k]) => k.startsWith('1:'));
+    expect(entries.map(([k, n]) => [view.commanderDamageSources[k], n]).sort()).toEqual([
+      [0, 9],
+      [2, 2],
+    ]);
   });
 });
 
