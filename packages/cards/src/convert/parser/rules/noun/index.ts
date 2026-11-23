@@ -573,7 +573,10 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
   parse: (ctx, pos) => {
     const own = node<IrFilter, IrNoun>(
       ID.allGraveyard,
-      map(sequence(literal('all '), graveyardPhrase(true)), ([, filter]) => filter),
+      map(
+        sequence(literal('all '), graveyardPhrase(true, 'from', undefined, true)),
+        ([, filter]) => filter,
+      ),
       (filter) => bare('each', filter, { plural: true }),
     )(ctx, pos);
     if (own.ok) return own;

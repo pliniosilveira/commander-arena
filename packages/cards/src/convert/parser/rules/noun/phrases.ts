@@ -1053,6 +1053,8 @@ export function graveyardPhrase(
   // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
   // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
   amountLimit?: Parser<IrAmount>,
+  // "all instant and sorcery cards": only the "all" form reads a list joined by "and" as a choice of kinds; "target creature and planeswalker cards" stays unread.
+  andList = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
     preposition === 'fromTheirs'
@@ -1089,7 +1091,7 @@ export function graveyardPhrase(
         typeChoice(CARD_TYPES),
         // Wisdom of Ages, "all instant and sorcery cards from your graveyard": in the plural the list names the kinds that are wanted, a card of any of them (CR 205.2a);
         // never in the singular ("target artifact and creature card" is no card of the game).
-        ...(plural ? [typeChoice(CARD_TYPES, false, 'and')] : []),
+        ...(plural && andList ? [typeChoice(CARD_TYPES, false, 'and')] : []),
       ),
       literal(' '),
     ),
