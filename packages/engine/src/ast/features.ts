@@ -477,6 +477,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
     'revealTopDuel',
+    // CR 701.20a, 400.7j: "reveal the top card of your library. Draw cards equal to that card's mana value" (the card revealed is `moved` for what follows).
+    'revealTopCard',
     // CR 701.20a, 608.2c: "Reveal the top card of your library. If it's a creature card, ... If it's a land card, ..." (several branches on one revealed card).
     'revealTopBranches',
     // CR 702.5a, 613.1f: "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (Animate Dead).
@@ -2813,6 +2815,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   nextSpellPayLife: true,
   revealTop: true,
   revealTopDuel: true,
+  revealTopCard: true,
   revealTopBranches: true,
   replaceEnchant: true,
   behold: true,

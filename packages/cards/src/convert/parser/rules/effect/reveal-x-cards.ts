@@ -216,9 +216,44 @@ export const EFFECT_UNTAP_THOSE_LANDS = defineRule<Clauses>({
   })),
 });
 
+/**
+ * `effect.reveal-top-card`: "reveal the top card of your library" as an instruction of its own, with the card it shows left for what follows to read ("Scry 3, then reveal the top
+ * card of your library. Draw cards equal to that card's mana value." Interpret the Signs; CR 701.20a: revealing shows the card to every player and it stays in the library; CR 608.2c).
+ * "That card" of a later instruction of the same text is the card revealed (the binding pass, the engine's `moved`). The engine's `revealTopCard` of your own library. Not read: more
+ * than the top card, another library, a count of cards, another zone. The sentences that give the card an "If it's ..." test are other rules (`effect.reveal-top-then`).
+ */
+export const EFFECT_REVEAL_TOP_CARD = defineRule<Clauses>({
+  id: 'effect.reveal-top-card',
+  family: 'effect',
+  leading: ['reveal'],
+  cites: [
+    'CR 701.20a (Reveal)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 401.5 (Library)',
+  ],
+  examples: ['reveal the top card of your library'],
+  rejects: [
+    'reveal the top two cards of your library',
+    'reveal the top cards of your library',
+    'reveal the top card of target player’s library',
+    'reveal the top card of each player’s library',
+    'reveal the top card of your graveyard',
+    'reveal the top card of their library',
+    'reveal your top card',
+    // Another sentence about the card is one of the other reveal rules (reveal-top-then, reveal-top-branches, reveal-top-cast), never this one with a tail left unread.
+    "reveal the top card of your library. If it's a land card, you gain 1 life",
+  ],
+  parse: single(
+    'effect.reveal-top-card',
+    pattern(/reveal the top card of your library(?![\p{L}\p{N}])(?!\.\s*\S)/iu),
+    () => ({ verb: 'revealTopCard', args: {} }),
+  ),
+});
+
 export const REVEAL_X_CARDS_EFFECT_RULES = [
   EFFECT_REVEAL_UNTIL_X,
   EFFECT_REVEAL_UNTIL_X_GRAVEYARD,
   EFFECT_REVEAL_PUT_ALL,
   EFFECT_UNTAP_THOSE_LANDS,
+  EFFECT_REVEAL_TOP_CARD,
 ];
