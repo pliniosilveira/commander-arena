@@ -429,7 +429,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
             f.attackingYou !== undefined ||
             f.attackingOpponents !== undefined ||
             f.attackingOrBlocking !== undefined ||
-            f.blocking !== undefined,
+            f.blocking !== undefined ||
+            f.unblocked !== undefined,
         )
       ) {
         issue(out, `${path}.what`, 'a replacement of a death does not read the combat');

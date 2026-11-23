@@ -742,6 +742,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'toxic',
     'splitSecond',
     'typecycling',
+    'ninjutsu',
     'multikicker',
     // D-120: keyword batch 2.
     'skulk',
@@ -1150,6 +1151,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attacking',
     'notAttacking',
     'blocking',
+    // CR 509.1h (UNVERIFIED number; Ninjutsu): `ObjectFilter.unblocked`, an attacker no creature blocked.
+    'unblocked',
     'powerLessThanSource',
     // Conformer Shuriken: `ObjectFilter.powerGreaterThanSource`, "that creature has greater power than this creature".
     'powerGreaterThanSource',
@@ -2211,6 +2214,8 @@ export const SELECTOR_KINDS = [
   'notAttacking',
   /** "Blocking creatures" (CR 509.1g): the engine's `ObjectFilter.blocking`. */
   'blocking',
+  /** "Unblocked attackers" (Ninjutsu, CR 509.1h unverified): the engine's `ObjectFilter.unblocked`. */
+  'unblocked',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
   /** "That creature has greater power than this creature" (Conformer Shuriken, CR 208.1): the engine's `ObjectFilter.powerGreaterThanSource`. */
@@ -3310,6 +3315,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   toxic: true,
   splitSecond: true,
   typecycling: true,
+  ninjutsu: true,
   multikicker: true,
   skulk: true,
   battleCry: true,

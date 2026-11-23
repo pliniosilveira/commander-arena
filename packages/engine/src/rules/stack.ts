@@ -186,6 +186,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { costTappedPower: obj.stack.tappedPowerAsCost }),
       ...(obj.stack?.exiledAsCost === undefined ? {} : { costExiled: obj.stack.exiledAsCost }),
+      ...(obj.stack?.returnedAttack === undefined
+        ? {}
+        : { costReturnedAttack: obj.stack.returnedAttack }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").

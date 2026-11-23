@@ -186,6 +186,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'discardedValue':
+      // Summon: Kujata (CR 608.2c): "damage equal to that card's mana value" after a discard.
+      return 'the total mana value of the cards discarded this way';
     case 'destroyedValue':
       // Convert to Slime: "the total mana value of permanents destroyed this way".
       return 'the total mana value of the permanents destroyed this way';
