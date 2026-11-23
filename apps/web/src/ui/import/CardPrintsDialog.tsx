@@ -44,11 +44,16 @@ export function CardPrintsDialog({
       (e) => setSaving(e instanceof Error ? e.message : String(e)),
     );
   };
+  // A built-in deck is only looked at: its printings are not offered (`onUse` absent).
+  const selectable = onUse !== undefined;
   const picture = selected?.large ?? imageOf(card, 'large');
 
   return (
     <Dialog title={card.name} onClose={onClose} wide>
-      <div className="deck-prints" data-testid="card-dialog">
+      <div
+        className={selectable ? 'deck-prints' : 'deck-prints deck-prints-single'}
+        data-testid="card-dialog"
+      >
         <div className="deck-prints-picture">
           {picture === null ? (
             <p>{card.faces.map((f) => `${f.name}: ${f.oracleText}`).join('\n')}</p>
@@ -56,60 +61,65 @@ export function CardPrintsDialog({
             <img className="deck-card-large" src={picture} alt={card.name} />
           )}
         </div>
-        <section className="deck-prints-list" aria-label="Printings">
-          <h3>Printings{state.status === 'ready' && ` (${prints.length})`}</h3>
-          {state.status === 'loading' && <p aria-live="polite">Loading the printings…</p>}
-          {state.status === 'ready' && prints.length === 0 && (
-            <p className="scr-help">The other printings could not be loaded.</p>
-          )}
-          {prints.length > 0 && (
-            <fieldset className="deck-prints-items">
-              <legend className="deck-prints-legend">Choose a printing</legend>
-              {prints.map((print) => {
-                const on = print.id === selected?.id;
-                return (
-                  <label key={print.id} className={on ? 'deck-print deck-print-on' : 'deck-print'}>
-                    <input
-                      type="radio"
-                      name="card-print"
-                      className="deck-print-input"
-                      checked={on}
-                      onChange={() => {
-                        setChosen(print.id);
-                        setSaving('idle');
-                      }}
-                    />
-                    <span className="deck-print-name">{printLabel(print)}</span>
-                    <span className="deck-print-meta">
-                      {print.setCode} · {print.released.slice(0, 4)} · {print.rarity}
-                      {print.foilOnly && ' · foil only'}
-                    </span>
-                  </label>
-                );
-              })}
-            </fieldset>
-          )}
-          {onUse !== undefined && prints.length > 0 && (
-            <div className="deck-prints-use">
-              <button
-                type="button"
-                className="scr-btn"
-                disabled={!canUse || saving === 'busy'}
-                onClick={use}
-              >
-                Use in this deck
-              </button>
-              {saving === 'done' && (
-                <span role="status">Saved: the game will draw this printing.</span>
-              )}
-              {saving !== 'idle' && saving !== 'busy' && saving !== 'done' && (
-                <span role="alert" className="imp-alert">
-                  {saving}
-                </span>
-              )}
-            </div>
-          )}
-        </section>
+        {selectable && (
+          <section className="deck-prints-list" aria-label="Printings">
+            <h3>Printings{state.status === 'ready' && ` (${prints.length})`}</h3>
+            {state.status === 'loading' && <p aria-live="polite">Loading the printings…</p>}
+            {state.status === 'ready' && prints.length === 0 && (
+              <p className="scr-help">The other printings could not be loaded.</p>
+            )}
+            {prints.length > 0 && (
+              <fieldset className="deck-prints-items">
+                <legend className="deck-prints-legend">Choose a printing</legend>
+                {prints.map((print) => {
+                  const on = print.id === selected?.id;
+                  return (
+                    <label
+                      key={print.id}
+                      className={on ? 'deck-print deck-print-on' : 'deck-print'}
+                    >
+                      <input
+                        type="radio"
+                        name="card-print"
+                        className="deck-print-input"
+                        checked={on}
+                        onChange={() => {
+                          setChosen(print.id);
+                          setSaving('idle');
+                        }}
+                      />
+                      <span className="deck-print-name">{printLabel(print)}</span>
+                      <span className="deck-print-meta">
+                        {print.setCode} · {print.released.slice(0, 4)} · {print.rarity}
+                        {print.foilOnly && ' · foil only'}
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+            )}
+            {onUse !== undefined && prints.length > 0 && (
+              <div className="deck-prints-use">
+                <button
+                  type="button"
+                  className="scr-btn"
+                  disabled={!canUse || saving === 'busy'}
+                  onClick={use}
+                >
+                  Use in this deck
+                </button>
+                {saving === 'done' && (
+                  <span role="status">Saved: the game will draw this printing.</span>
+                )}
+                {saving !== 'idle' && saving !== 'busy' && saving !== 'done' && (
+                  <span role="alert" className="imp-alert">
+                    {saving}
+                  </span>
+                )}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </Dialog>
   );

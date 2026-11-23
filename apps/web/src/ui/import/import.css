@@ -475,6 +475,9 @@ code {
   aspect-ratio: 488 / 680;
   object-fit: contain;
 }
+.deck-prints-single {
+  grid-template-columns: 1fr;
+}
 .deck-prints-use {
   display: flex;
   flex-wrap: wrap;
