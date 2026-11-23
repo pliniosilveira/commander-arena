@@ -69,7 +69,7 @@ export function DeckDialog({
   const [colorFilter, setColorFilter] = useState<readonly ColorFilter[]>([]);
   const needle = query.trim().toLowerCase();
   const inTab = decks
-    .filter((deck) => deck.kind === tab)
+    .filter((deck) => deck.kind === tab && deck.enabled !== false)
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
   // The search matches the name and the commander, ignoring case.
   const shown = inTab.filter(

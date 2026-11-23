@@ -1,4 +1,6 @@
 /** The real precons of the app (D-137): snapshots, the offline client and the deck builder. */
+
+export { loadDisabledPrecons, saveDisabledPrecons } from './availability';
 export {
   buildPreconDeck,
   createPrecons,
