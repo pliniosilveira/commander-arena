@@ -868,11 +868,18 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         // ability has no condition (the engine would not check it) and works on the battlefield.
         checkAbility(s.ability, `${path}.ability`, out);
         const inner = s.ability.static;
-        if (inner.subject?.kind !== 'filter') {
+        // CR 301.5, 613.4c: "Treasures you control ... have \"Equipped creature gets +2/+0\"": the permanent the one with the ability is attached to (it is given the
+        // Equipment type by another ability; attached to nothing it gives nothing).
+        const attachedHost =
+          inner.subject?.kind === 'attached' &&
+          !('andThis' in inner.subject && inner.subject.andThis === true);
+        if (attachedHost) {
+          // Nothing more to check: the subject reads no characteristic.
+        } else if (inner.subject?.kind !== 'filter') {
           issue(
             out,
             `${path}.ability.static.subject`,
-            'a granted "+N/+N" or keyword ability gives to a group of permanents (a filter subject)',
+            'a granted "+N/+N" or keyword ability gives to a group of permanents (a filter subject) or to the permanent it is attached to',
           );
         } else if (
           filterSome(
