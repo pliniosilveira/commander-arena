@@ -24,7 +24,7 @@ import { PlayerStrip, type ZoneRef } from './PlayerStrip';
 import { PairFocusProvider } from './pair-focus';
 import { BattlefieldRow } from './Row';
 import { combatRoles, type RowKind, rowKindOf, seatLabel } from './resolve';
-import { questionZoneToOpen, sameZone } from './target-zone';
+import { questionZoneToOpen, sameZone, targetZoneToOpen } from './target-zone';
 import { useCloseOnDecision } from './useCloseOnDecision';
 import { ZoneViewer } from './ZoneViewer';
 
@@ -162,6 +162,10 @@ export function Board() {
   const toOpenKey = toOpen === null ? null : `${toOpen.kind}${'seat' in toOpen ? toOpen.seat : ''}`;
   const toOpenRef = useRef(toOpen);
   toOpenRef.current = toOpen;
+  // The graveyard of a targets question opens only when the player asks for it (the panel's button).
+  const askable = view === null ? null : targetZoneToOpen(view);
+  const askableRef = useRef(askable);
+  askableRef.current = askable;
   const autoOpened = useRef(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `toOpenKey` is what tells a new question; the zone itself is read from the ref
   useEffect(() => {
@@ -183,7 +187,8 @@ export function Board() {
   useEffect(() => {
     if (request === lastRequest.current) return;
     lastRequest.current = request;
-    if (toOpenRef.current !== null) setZone(toOpenRef.current);
+    const asked = toOpenRef.current ?? askableRef.current;
+    if (asked !== null) setZone(asked);
   }, [request]);
   const ix = useInteraction();
   const pendingBlocks = ix.pendingBlocks;

@@ -230,7 +230,12 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
       <InteractionProvider value={interaction}>
         <ZoneDecisionProvider value={zoneDecision}>
           <ZoneGateProvider
-            value={{ open: pickerOpen, setOpen: setPickerOpen, request: pickerRequest }}
+            value={{
+              open: pickerOpen,
+              setOpen: setPickerOpen,
+              request: pickerRequest,
+              ask: () => setPickerRequest((n) => n + 1),
+            }}
           >
             <DragProvider plan={dnd}>{children}</DragProvider>
           </ZoneGateProvider>

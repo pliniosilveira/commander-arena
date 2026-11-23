@@ -1,7 +1,7 @@
 /**
- * #23: when the player must pick a target and every legal one is a card in one graveyard, that
- * graveyard is opened for them, so they can read the cards (hover shows each in the preview) and
- * pick one without hunting for the button. Targets elsewhere (the battlefield, a player, two
+ * #23: when the player must pick a target and every legal one is a card in one graveyard, the targets
+ * panel offers a button that opens that graveyard (never opened by itself), so they can read the cards
+ * (hover shows each in the preview) and pick one. Targets elsewhere (the battlefield, a player, two
  * graveyards) would be hidden by the list, so nothing is opened for them.
  */
 import type { GameView } from '@commander-arena/engine';
@@ -30,13 +30,11 @@ export interface QuestionZone {
 }
 
 /**
- * The Zone Picker a question opens by itself: the graveyard of #23, the cards of a library search
+ * The Zone Picker a question opens by itself: the cards of a library search
  * (the library is hidden, so the picker lists the matching cards the engine shows the searcher), or
  * the cards looked at or revealed from the top of the library.
  */
 export function questionZoneToOpen(view: GameView): QuestionZone | null {
-  const graveyard = targetZoneToOpen(view);
-  if (graveyard !== null) return { zone: graveyard, name: 'graveyard' };
   const pending = view.pending;
   if (pending?.kind !== 'chooseCards' || pending.seat !== view.viewer) return null;
   if (pending.zone !== 'library' || pending.legal.length === 0) return null;
