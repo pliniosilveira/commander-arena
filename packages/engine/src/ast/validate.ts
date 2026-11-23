@@ -2360,6 +2360,7 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
       out,
       false,
       true,
+      xAllowed,
     );
     return;
   }

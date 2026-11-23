@@ -395,6 +395,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.x': spell((e) => `Draw ${e} cards.`),
   // Quandrix Unlimited deck, group D2: the rounding of "half X" is written next to the X.
   'amount.half-x': spell((e) => `You gain ${e} life.`),
+  'amount.twice-x': spell((e) => `You gain ${e} life.`),
   'amount.article': spell((e) => `Draw ${e} card.`),
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.that-spells-mana-value': permanent(

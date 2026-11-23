@@ -1106,7 +1106,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.countX`,
-          "only a slot of a spell's own text (not an ability or a mode) takes as many targets as the X announced",
+          "only a slot of a spell's own text or of a mode of a spell with an X (not an ability) takes as many targets as the X announced",
         );
       } else if (
         (spec.min !== undefined && spec.min !== 0) ||

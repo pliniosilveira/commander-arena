@@ -1220,6 +1220,7 @@ describe('unmatched abilities', () => {
       'amount.for-each-mana-spent',
       'amount.for-each-vote',
       'amount.half-x',
+      'amount.twice-x',
       'static.no-maximum-hand-size',
       'static.creature-off-battlefield',
       'static.every-creature-type',
