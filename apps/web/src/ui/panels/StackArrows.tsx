@@ -48,9 +48,11 @@ function measure(items: readonly ObjectView[]): Placed[] {
     item.targets.forEach((target, i) => {
       const selector =
         target.kind === 'object'
-          ? `[data-object-id="${cssEscape(target.id)}"]`
+          ? `[data-object-id="${cssEscape(target.id)}"]:not(.cmdr-chip-main)`
           : `[data-seat="${target.seat}"]`;
-      const to = visible(selector);
+      const to =
+        visible(selector) ??
+        (target.kind === 'object' ? visible(`[data-object-id="${cssEscape(target.id)}"]`) : null);
       if (to === null) return;
       // Alternate the bow so two arrows from one item do not overlap.
       const start = facingEdge(from, to);
