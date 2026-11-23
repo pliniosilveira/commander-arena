@@ -363,7 +363,9 @@ export const TAX_COST: Parser<readonly string[]> = satisfy(
  * Annex, Baird, Steward of Argive, Archon of Absolution) (CR 508.1d: a creature that can't attack unless a cost is
  * paid; 508.1h: the total cost of the attackers is paid as they are declared). The cost is mana (plain, hybrid or
  * Phyrexian symbols) and the same for each attacker; the second form, with the planeswalkers, ends "each of those
- * creatures", the first "each creature they control that's attacking you", and the two do not mix. Not read: a cost
+ * creatures", the first "each creature they control that's attacking you", and the two do not mix. "Creatures can't attack
+ * planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you
+ * control." (Onakke Oathkeeper) taxes only the planeswalkers (`planeswalkersOnly`, CR 506.3). Not read: a cost
  * that is not mana, {X} or any count ("pays {X} for each of those creatures, where X is the number of enchantments
  * you control", Sphere of Safety), "can't attack you" with no cost, another subject ("Creatures your opponents
  * control", "Attacking creatures"), "each opponent", and a cost to block.
@@ -386,8 +388,13 @@ export const STATIC_ATTACK_TAX = defineRule<IrStatic>({
     "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of those creatures.",
     "Creatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
     "Creatures can't attack you or planeswalkers you control unless their controller pays {R/W}{1} for each of those creatures.",
+    "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control.",
   ],
   rejects: [
+    "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control",
+    "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking you.",
+    "Creatures can't attack you unless their controller pays {1} for each creature they control that's attacking a planeswalker you control.",
+    "Creatures can't attack planeswalkers you control unless their controller pays {X} for each creature they control that's attacking a planeswalker you control.",
     "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you",
     "Creatures can't attack you unless their controller pays {X} for each creature they control that's attacking you.",
     "Creatures can't attack you unless their controller pays {2} for each creature.",
@@ -406,6 +413,7 @@ export const STATIC_ATTACK_TAX = defineRule<IrStatic>({
     "Creatures can't attack me unless their controller pays {2} for each creature they control that's attacking you.",
     "Creatures can't attack your opponents unless their controller pays {2} for each creature they control that's attacking you.",
     "Creatures can't attack planeswalkers you control unless their controller pays {2} for each of those creatures.",
+    "Creatures can't attack battles you control unless their controller pays {1} for each creature they control that's attacking a battle you control.",
     "Creatures can't attack you unless you pay {2} for each creature they control that's attacking you.",
     "Creatures can't attack you unless their controller pays {2} for each creature that's attacking you.",
     "Creatures can't block you unless their controller pays {2} for each creature they control that's blocking you.",
@@ -416,19 +424,23 @@ export const STATIC_ATTACK_TAX = defineRule<IrStatic>({
   ],
   parse: (ctx, pos) => {
     const head = pattern(
-      /creatures can['’]t attack you( or planeswalkers you control)? unless their controller pays /i,
+      /creatures can['’]t attack (you( or planeswalkers you control)?|planeswalkers you control) unless their controller pays /i,
     )(ctx, pos);
     if (!head.ok) return head;
-    const planeswalkers = head.value[1] !== undefined;
+    // CR 506.3: "attack planeswalkers you control" names only the planeswalkers; "attack you" the player and, with the tail, the planeswalkers too.
+    const walkersOnly = head.value[1]?.toLowerCase() === 'planeswalkers you control';
+    const planeswalkers = head.value[2] !== undefined;
     const cost = TAX_COST(ctx, head.pos);
     if (!cost.ok) return cost;
     const tail = pattern(
-      /\s+for each (creature they control that['’]s attacking you|of those creatures)\./iy,
+      /\s+for each (creature they control that['’]s attacking (?:you|a planeswalker you control)|of those creatures)\./iy,
     )(ctx, cost.pos);
     if (!tail.ok) return tail;
-    const ofThose = (tail.value[1] ?? '').toLowerCase() === 'of those creatures';
+    const tailText = (tail.value[1] ?? '').toLowerCase();
+    const ofThose = tailText === 'of those creatures';
     // The wording says what it covers: "of those creatures" are the creatures that attack you or a planeswalker.
     if (ofThose !== planeswalkers) return fail(ctx, cost.pos);
+    if (walkersOnly !== tailText.endsWith('a planeswalker you control')) return fail(ctx, cost.pos);
     const costStart = head.pos;
     const costNode: IrCost = {
       kind: 'mana',
@@ -448,6 +460,7 @@ export const STATIC_ATTACK_TAX = defineRule<IrStatic>({
       kind: 'attackTax',
       cost: costNode,
       ...(planeswalkers ? { planeswalkers: true as const } : {}),
+      ...(walkersOnly ? { planeswalkersOnly: true as const } : {}),
     };
     return { ok: true, value: statement('static.attack-tax', who, effect, span), pos: tail.pos };
   },
@@ -742,6 +755,51 @@ export const STATIC_ACTIVATE_AS_THOUGH_HASTE = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.loyalty-activation-limit`: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3: a loyalty
+ * ability is activated only if no player has activated a loyalty ability of that permanent this turn; the static ability allows a second activation). The planeswalkers of the
+ * controller, two activations. Not read: another number ("three times"), another set of planeswalkers (all, an opponent's), a line with more text.
+ */
+export const STATIC_LOYALTY_ACTIVATION_LIMIT = defineRule<IrStatic>({
+  id: 'static.loyalty-activation-limit',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 606.3 (Loyalty Abilities)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.',
+  ],
+  rejects: [
+    'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once',
+    'You may activate the loyalty abilities of planeswalkers you control three times each turn rather than only once.',
+    'You may activate the loyalty abilities of planeswalkers twice each turn rather than only once.',
+    'You may activate the loyalty abilities of planeswalkers your opponents control twice each turn rather than only once.',
+    'You may activate the loyalty abilities of creatures you control twice each turn rather than only once.',
+    'You may activate loyalty abilities of planeswalkers you control as though they had haste.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.loyalty-activation-limit',
+    );
+    return {
+      ok: true,
+      value: statement(
+        'static.loyalty-activation-limit',
+        who,
+        { kind: 'loyaltyActivationLimit', timesEachTurn: 2 },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
@@ -750,6 +808,7 @@ export const PLAY_RULE_STATIC_RULES = [
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
   STATIC_ACTIVATE_AS_THOUGH_HASTE,
+  STATIC_LOYALTY_ACTIVATION_LIMIT,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,

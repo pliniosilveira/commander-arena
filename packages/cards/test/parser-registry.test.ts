@@ -124,6 +124,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 345: the play-from-the-top lines are lines of their own.
   'static.look-and-play-lands-from-top': asIs,
   'static.activate-as-though-haste': asIs,
+  'static.loyalty-activation-limit': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,

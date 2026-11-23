@@ -5,7 +5,7 @@
  * permanents (CR 604.1), so a permanent that lost its abilities taxes nothing.
  *
  * - Whose attack: the tax is on attacking its controller (`target` a player) and, with `planeswalkers`, the
- *   planeswalkers that controller controls (CR 506.3). A battle is never taxed. Several taxes on the same
+ *   planeswalkers that controller controls (CR 506.3); with `planeswalkersOnly`, only those planeswalkers. A battle is never taxed. Several taxes on the same
  *   target add up, and each attacker pays the whole of it (CR 508.1h: the total cost is the sum).
  * - Paying: at CR 508.1f the attackers are tapped, then at CR 508.1h the cost is paid, so a creature that
  *   attacks cannot tap for the mana of its own tax (unless it has vigilance). `payableAttackTax` plans the
@@ -35,6 +35,7 @@ interface Tax {
   readonly controller: SeatId;
   readonly symbols: readonly string[];
   readonly planeswalkers: boolean;
+  readonly planeswalkersOnly: boolean;
   readonly perCounter: boolean;
 }
 
@@ -67,7 +68,8 @@ function taxesOnBoard(state: GameState): Tax[] {
         source: id,
         controller: controllerOf(state, obj),
         symbols: manaSymbolsOf(a.static.cost),
-        planeswalkers: a.static.planeswalkers === true,
+        planeswalkers: a.static.planeswalkers === true || a.static.planeswalkersOnly === true,
+        planeswalkersOnly: a.static.planeswalkersOnly === true,
         perCounter: a.static.perCounter === true,
       });
     }
@@ -77,7 +79,8 @@ function taxesOnBoard(state: GameState): Tax[] {
 
 /** Whether the tax covers an attack on `target` (CR 506.3). */
 function covers(state: GameState, tax: Tax, target: AttackTarget): boolean {
-  if (target.kind === 'player') return target.seat === tax.controller;
+  // "Creatures can't attack planeswalkers you control unless ...": the controller as a player is not covered.
+  if (target.kind === 'player') return !tax.planeswalkersOnly && target.seat === tax.controller;
   if (!tax.planeswalkers) return false;
   const obj = state.objects[target.object];
   return (

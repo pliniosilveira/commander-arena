@@ -17,13 +17,19 @@ const landDrops = (count: number, eachPlayer?: true): Ability => ({
 });
 
 /** "Creatures can't attack you unless their controller pays [mana] for each creature attacking you" (CR 508.1h). */
-const attackTax = (symbols: string[], planeswalkers?: true, perCounter?: true): Ability => ({
+const attackTax = (
+  symbols: string[],
+  planeswalkers?: true,
+  perCounter?: true,
+  planeswalkersOnly?: true,
+): Ability => ({
   kind: 'static',
   static: {
     kind: 'attackTax',
     cost: [{ kind: 'mana', symbols }],
     ...(planeswalkers ? { planeswalkers } : {}),
     ...(perCounter ? { perCounter } : {}),
+    ...(planeswalkersOnly ? { planeswalkersOnly } : {}),
   },
 });
 
@@ -197,6 +203,36 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
     oracleText:
       "Creatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
     abilities: [attackTax(['1'], true)],
+  }),
+  // "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3).
+  singleFace({
+    name: 'SYNTHETIC Twice Oath',
+    manaCost: ['2', 'W', 'U'],
+    types: ['enchantment'],
+    colors: ['W', 'U'],
+    colorIdentity: ['W', 'U'],
+    oracleText:
+      'You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'loyaltyActivationLimit',
+          planeswalkers: { types: ['planeswalker'], controller: 'you' },
+          timesEachTurn: 2,
+        },
+      },
+    ],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Tax Walker Ward',
+    manaCost: ['1', 'W'],
+    types: ['enchantment'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control.",
+    abilities: [attackTax(['1'], undefined, undefined, true)],
   }),
   singleFace({
     name: 'SYNTHETIC Tax Counter',

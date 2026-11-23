@@ -280,6 +280,8 @@ describe('the dimensions', () => {
       'playLandsFromGraveyard',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
+      // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
+      'loyaltyActivationLimit',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
       // D-282: "Your opponents can't cast spells with mana value 3 or less."

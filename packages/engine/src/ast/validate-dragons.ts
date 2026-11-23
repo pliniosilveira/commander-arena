@@ -687,6 +687,29 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
         );
       }
       return true;
+    case 'loyaltyActivationLimit':
+      // CR 606.3: the planeswalkers are battlefield permanents, read for the controller of the permanent with the permanent as the source.
+      checkFilter(s.planeswalkers, `${path}.planeswalkers`, out);
+      if (
+        filterSome(
+          s.planeswalkers,
+          (f) => f.zone !== undefined || f.stackKind !== undefined || readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.planeswalkers`,
+          'the planeswalkers are battlefield permanents: no zone, stackKind, or anything read from the game',
+        );
+      }
+      if (!Number.isInteger(s.timesEachTurn) || s.timesEachTurn < 2) {
+        issue(
+          out,
+          `${path}.timesEachTurn`,
+          'timesEachTurn is an integer of 2 or more (CR 606.3 allows one)',
+        );
+      }
+      return true;
     case 'playLandsFromGraveyard':
     case 'playLandsFromTopOfLibrary':
       // CR 305.1: the land cards that may be played from the graveyard or the top of the library, as the card there is.

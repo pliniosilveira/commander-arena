@@ -1361,6 +1361,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playLandsFromGraveyard',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
     'activateAsThoughHaste',
+    // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
+    'loyaltyActivationLimit',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -2337,6 +2339,8 @@ export const STATIC_KINDS = [
   'playLandsFromGraveyard',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
   'activateAsThoughHaste',
+  /** "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once" (CR 606.3): the engine's `loyaltyActivationLimit`. */
+  'loyaltyActivationLimit',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
   /** "The \"legend rule\" doesn't apply to Slivers you control" (CR 704.5j): the engine's `legendRuleDoesntApply`. */

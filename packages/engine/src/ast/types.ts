@@ -6760,6 +6760,12 @@ export type StaticEffect =
       readonly cost: readonly Cost[];
       readonly planeswalkers?: true;
       /**
+       * "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's
+       * attacking a planeswalker you control." (CR 508.1d, 508.1h, 506.3): only attacks on the planeswalkers its controller controls
+       * cost `cost`; an attack on the controller as a player is free. Replaces `planeswalkers` (set both: invalid).
+       */
+      readonly planeswalkersOnly?: true;
+      /**
        * "Each creature with one or more counters on it can't attack you ... unless its controller pays {X}, where X is the
        * number of counters on that creature." (CR 508.1d, 508.1h, 122.1): only a creature with a counter of any kind is
        * taxed, and it pays `cost` once for each counter on it.
@@ -7284,6 +7290,17 @@ export type StaticEffect =
    * cost. It is no haste: the creature still cannot attack, and it is not shown with the keyword. A creature of another player never gets it.
    */
   | { readonly kind: 'activateAsThoughHaste'; readonly creatures: ObjectFilter }
+  /**
+   * "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3, 606.4): while the permanent has the ability, the
+   * loyalty abilities of each planeswalker `planeswalkers` describes (battlefield permanents, read for the controller of the permanent with the permanent as the source) may
+   * be activated `timesEachTurn` times in a turn instead of once; the limit is still counted for the planeswalker as a whole, over all its loyalty abilities, and the
+   * loyalty cost of each activation is paid in full (CR 606.4). Sorcery timing still applies. The greatest `timesEachTurn` among the permanents that apply is the limit.
+   */
+  | {
+      readonly kind: 'loyaltyActivationLimit';
+      readonly planeswalkers: ObjectFilter;
+      readonly timesEachTurn: number;
+    }
   /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative

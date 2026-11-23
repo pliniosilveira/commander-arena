@@ -1726,6 +1726,8 @@ export type IrStaticEffect =
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
   | { readonly kind: 'activateAsThoughHaste' }
+  /** "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once." (CR 606.3). The subject is `you`. */
+  | { readonly kind: 'loyaltyActivationLimit'; readonly timesEachTurn: number }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of
@@ -1736,6 +1738,8 @@ export type IrStaticEffect =
       readonly kind: 'attackTax';
       readonly cost: IrCost;
       readonly planeswalkers?: true;
+      /** "Creatures can't attack planeswalkers you control unless ...": only the planeswalkers, not the controller (engine `planeswalkersOnly`). */
+      readonly planeswalkersOnly?: true;
       /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
       readonly perCounter?: true;
     }

@@ -26,6 +26,7 @@ const TOLL = 'SYNTHETIC Tax Toll'; // {1}
 const WARDEN = 'SYNTHETIC Tax Warden'; // a creature, {1}
 const RUNE = 'SYNTHETIC Tax Rune'; // {R}
 const AEGIS = 'SYNTHETIC Tax Aegis'; // {1}, also for planeswalkers
+const WARD = 'SYNTHETIC Tax Walker Ward'; // {1}, only for planeswalkers
 const BLOOD = 'SYNTHETIC Tax Blood'; // {W/P}, also for planeswalkers
 const WALKER = 'SYNTHETIC Vanilla Planeswalker';
 const BEARS = 'Grizzly Bears';
@@ -405,6 +406,52 @@ describe('who pays and for what (CR 506.3, 508.1h)', () => {
     g.expect.combat({ attackers: [BEARS] });
   });
 
+  test("the planeswalkers-only form taxes attacks on its controller's planeswalkers, not on the player", () => {
+    const g = atAttackers(
+      (b) => b.battlefield(BEARS, ...mountains(1)),
+      (b) => b.battlefield(WARD, WALKER),
+    );
+    expect(declaration(g).attackCosts).toEqual([
+      { target: { kind: 'permanent', object: g.id(WALKER) }, cost: ['1'], affordable: 1 },
+    ]);
+    g.act(0).attack(BEARS, { player: 1 });
+    g.expect.combat({ attackers: [BEARS] });
+  });
+
+  test('the planeswalkers-only form charges {1} for each creature attacking a planeswalker', () => {
+    const g = atAttackers(
+      (b) => b.battlefield(...bears(2), ...mountains(2)),
+      (b) => b.battlefield(WARD, WALKER),
+    );
+    g.act(0).declareAttackers([
+      { attacker: 'Grizzly Bears[0]', target: WALKER },
+      { attacker: 'Grizzly Bears[1]', target: WALKER },
+    ]);
+    expect(payment(g).totalCost).toEqual(['1', '1']);
+    g.act(0).payAuto();
+    g.expect.combat({ attackers: ['Grizzly Bears[0]', 'Grizzly Bears[1]'] });
+  });
+
+  test('the planeswalkers-only form cannot be paid for: the attack on the planeswalker is refused', () => {
+    const g = atAttackers(
+      (b) => b.battlefield(BEARS),
+      (b) => b.battlefield(WARD, WALKER),
+    );
+    expect(declaration(g).attackCosts?.[0]?.affordable).toBe(0);
+  });
+
+  test("the planeswalkers-only form taxes the planeswalkers of a third player's table too, and only its controller's", () => {
+    // Seat 1's Ward does not tax an attack on a planeswalker of seat 2.
+    const b = scenario({ seats: 3 }).seat(0).library('Island', { count: 4 });
+    b.battlefield(BEARS);
+    b.seat(1).library('Island', { count: 4 }).battlefield(WARD);
+    b.seat(2).library('Island', { count: 4 }).battlefield(WALKER);
+    const g = b.at('precombatMain', { active: 0 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(BEARS, WALKER);
+    g.expect.combat({ attackers: [BEARS] });
+  });
+
   test('a battle is never taxed by the planeswalker form (it names planeswalkers)', () => {
     const g = atAttackers(
       (b) => b.battlefield(BEARS),
@@ -560,16 +607,30 @@ describe('validation and features', () => {
     ).toEqual(['ability.static.planeswalkers']);
   });
 
+  test('planeswalkersOnly excludes planeswalkers and must be true', () => {
+    expect(
+      validateAbility(ability(mana('1'), { planeswalkersOnly: false })).map((i) => i.path),
+    ).toEqual(['ability.static.planeswalkersOnly']);
+    expect(
+      validateAbility(ability(mana('1'), { planeswalkers: true, planeswalkersOnly: true })).map(
+        (i) => i.path,
+      ),
+    ).toEqual(['ability.static.planeswalkersOnly']);
+  });
+
   test('the feature is supported', () => {
     expect(isFeatureSupported('static:attackTax')).toBe(true);
   });
 
-  test.each([GATE, TOLL, WARDEN, RUNE, AEGIS, BLOOD])('the fixture %s is a valid card', (name) => {
-    const def = scenario()
-      .seat(0)
-      .battlefield(name)
-      .build()
-      .state.definitions.find((d) => d.name === name);
-    expect(def && validateCard(def)).toEqual([]);
-  });
+  test.each([GATE, TOLL, WARDEN, RUNE, AEGIS, WARD, BLOOD])(
+    'the fixture %s is a valid card',
+    (name) => {
+      const def = scenario()
+        .seat(0)
+        .battlefield(name)
+        .build()
+        .state.definitions.find((d) => d.name === name);
+      expect(def && validateCard(def)).toEqual([]);
+    },
+  );
 });
