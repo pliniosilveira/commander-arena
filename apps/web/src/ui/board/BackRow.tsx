@@ -16,10 +16,6 @@ type Props = Pick<RowProps, 'roles' | 'attachments'> & {
   readonly others: RowProps['objects'];
 };
 
-/** At most this share of the line goes to the other permanents; past it they scroll. */
-const OTHER_SHARE = 0.6;
-/** The plain space between the lands and the other permanents (board.css), with no divider. */
-const DIVIDER_GAP = 24;
 const DIVIDER_PAD = 0;
 
 export function BackRow({ lands, others, roles, attachments }: Props) {
@@ -31,9 +27,9 @@ export function BackRow({ lands, others, roles, attachments }: Props) {
   const spec = rowSpec('other', height, 0, scale);
   const extra = others.reduce((n, o) => n + stripWidth(attachments.get(o.id)?.length ?? 0), 0);
   const natural = others.length * spec.preferredW + (others.length - 1) * GAP + extra + 2 * PAD_Y;
-  const width = size?.width ?? 0;
   const both = lands.length > 0 && others.length > 0;
-  const otherW = Math.round(Math.min(natural, width * OTHER_SHARE || natural)) + DIVIDER_PAD;
+  // Both parts take the room their cards need: the field's one sideways scroller moves the line.
+  const otherW = Math.round(natural) + DIVIDER_PAD;
   // The lands at the room they want (the overlap as loose as it goes), cut to what the line has left.
   const columns = groupLands(lands, (o) => attachments.has(o.id));
   const sized = layoutLands(columns, null, height - 2 * PAD_Y, landSpec(scale));
@@ -49,8 +45,7 @@ export function BackRow({ lands, others, roles, attachments }: Props) {
     }, 0) +
     Math.max(0, columns.length - 1) * LAND_GAP +
     2 * PAD_Y;
-  const room = width === 0 ? landNatural : width - 16 - (both ? otherW + DIVIDER_GAP : 0);
-  const landW = Math.round(Math.max(0, Math.min(landNatural, room)));
+  const landW = Math.round(landNatural);
   return (
     <div className={`board-row board-row-back${both ? ' has-both' : ''}`} data-row="back">
       {/* Measures the visible width of the field, as the other rows do. */}
