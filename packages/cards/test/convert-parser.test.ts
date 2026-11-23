@@ -1466,6 +1466,7 @@ describe('unmatched abilities', () => {
       'modal.choose-kicked',
       'modal.choose-not-repeated',
       'modal.choose-not-repeated-source',
+      'modal.choose-random',
       'modal.choose-repeatable',
       'modal.tiered',
       'modal.spree',

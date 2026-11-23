@@ -8524,6 +8524,12 @@ export interface ModeChoice {
    */
   readonly allOrNone?: true;
   /**
+   * "At the beginning of combat on your turn, choose one at random —" (CR 700.2): the engine, not the controller, chooses the mode, as the triggered ability goes on the stack,
+   * with a draw of the seeded generator of the game among the modes that can be chosen (a mode with no legal target cannot, CR 603.3c); no `chooseModes` decision is asked. Only a
+   * triggered ability that chooses exactly one mode (`min` 1, `max` 1), without `repeatable`, `maxIf`, `allOrNone` or `differentTargets`.
+   */
+  readonly random?: true;
+  /**
    * "Each mode must target a different player." (CR 700.2d): no target is chosen for two of the chosen modes (the targets of one mode may still be several). A set of modes
    * for which each target slot cannot get a target of its own is not offered. Not with `repeatable`.
    */

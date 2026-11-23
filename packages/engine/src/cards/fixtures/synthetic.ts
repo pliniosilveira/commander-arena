@@ -177,6 +177,7 @@ import { SYNTHETIC_PRISMARI_G2_LIST } from './synthetic-prismari-g2';
 import { SYNTHETIC_PRISMARI_G3_LIST } from './synthetic-prismari-g3';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
 import { SYNTHETIC_QUICK_DRAW_LIST } from './synthetic-quick-draw';
+import { SYNTHETIC_RANDOM_MODE_LIST } from './synthetic-random-mode';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
 import { SYNTHETIC_REPEATABLE_LIST } from './synthetic-repeatable';
@@ -459,6 +460,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LOREHOLD_G3_LIST,
   ...SYNTHETIC_LOSE_GAME_LIST,
   ...SYNTHETIC_DICE_LIST,
+  ...SYNTHETIC_RANDOM_MODE_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,
   ...SYNTHETIC_DEVOTION_MANA_LIST,
   ...SYNTHETIC_COLOR_AMONG_MANA_LIST,

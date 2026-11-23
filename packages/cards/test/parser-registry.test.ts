@@ -806,6 +806,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated-source': permanent(
     (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
   ),
+  'modal.choose-random': permanent(
+    (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
+  ),
   // Scriv, the Obligator (CR 303.4f): an Aura token created attached to a target, and the "it's attacking one of your opponents" condition.
   'token.aura': permanent(
     (e) =>

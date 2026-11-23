@@ -183,6 +183,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
     'modeAllOrNone',
     'modeDifferentTargets',
+    // CR 700.2: "choose one at random" (`ModeChoice.random`): a mode drawn from the seeded generator as the triggered ability goes on the stack.
+    'modeRandom',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
@@ -1924,6 +1926,8 @@ export const ABILITY_FEATURES = [
   'modeAllOrNone',
   /** "Each mode must target a different player." (CR 700.2d): `ModeChoice.differentTargets`, no target is chosen for two of the chosen modes. */
   'modeDifferentTargets',
+  /** "At the beginning of combat on your turn, choose one at random —" (CR 700.2): `ModeChoice.random`, the engine chooses the mode with the seeded generator as the ability goes on the stack. */
+  'modeRandom',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
@@ -2918,6 +2922,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeCost: true,
   modeAllOrNone: true,
   modeDifferentTargets: true,
+  modeRandom: true,
   sacrificeX: true,
   exileFromGraveyardX: true,
   discardCostX: true,

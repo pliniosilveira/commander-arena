@@ -2296,6 +2296,8 @@ export interface IrModeChoice {
   readonly allOrNone?: true;
   /** "Each mode must target a different player." (CR 700.2d): the engine's `ModeChoice.differentTargets`. */
   readonly differentTargets?: true;
+  /** "Choose one at random —" (CR 700.2): the engine's `ModeChoice.random`, the mode is drawn from the seeded generator as the triggered ability goes on the stack. */
+  readonly random?: true;
 }
 
 /** The header line of a modal spell or ability ("Choose one —"), read by the `modal` rules. */
