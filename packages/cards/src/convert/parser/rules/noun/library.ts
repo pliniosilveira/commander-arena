@@ -27,6 +27,8 @@ import {
   CARD_TYPES,
   type FilterParts,
   MODIFIER,
+  KEYWORD_SUFFIX,
+  type KeywordSuffix,
   NO_PARTS,
   PERMANENT_CARD_TYPES,
   toFilter,
@@ -181,10 +183,28 @@ export function libraryPhrase(plural: boolean): Parser<IrFilter> {
       plural || kind.ok || modifiers.value.length > 0
         ? null
         : quiet(pattern(NAMED_SUFFIX))(ctx, shared.pos);
-    const end = named?.ok === true ? named.pos : shared.pos;
+    // Mystical Teachings (CR 702.8a, 701.23): "a card with flash": the keyword the card has, one only, had and never "without" (the rest of a list is left unread).
+    const withKeyword =
+      named?.ok === true || shared.pos !== word.pos
+        ? null
+        : quiet(
+            choice(
+              satisfy(KEYWORD_SUFFIX, (k) => k.has),
+              map(
+                pattern(new RegExp(` with flash${BOUNDARY}`, 'u')),
+                (): KeywordSuffix => ({ has: true, keyword: 'flash' }),
+              ),
+            ),
+          )(ctx, word.pos);
+    const end =
+      named?.ok === true ? named.pos : withKeyword?.ok === true ? withKeyword.pos : shared.pos;
     const filter = toFilter(
       'library',
-      { ...parts, types: 'types' in kinds ? kinds.types : [] },
+      {
+        ...parts,
+        types: 'types' in kinds ? kinds.types : [],
+        keywords: withKeyword?.ok === true ? [withKeyword.value.keyword] : [],
+      },
       ctx.text.slice(pos, end),
     );
     return {
@@ -297,6 +317,10 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     // Issue 104 (CR 201.2): a card of a given name.
     "a card named God-Pharaoh's Gift",
     'a card named Regna, the Redeemer',
+    // Mystical Teachings (CR 702.8a): a card that has a keyword, alone or as one of the kinds of a choice.
+    'a card with flash',
+    'a creature card with flying',
+    'an instant card or a card with flash',
   ],
   rejects: [
     'a basic land',
@@ -351,6 +375,8 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'any number of creature cards that share a land type with total mana value 6 or less',
     'a creature card with total mana value 6 or less',
     'up to two creature cards with total mana value 6 or less',
+    'a card without flash',
+    'a card with flash and haste',
     'a card named',
     'a card named gift',
     'a creature card named Regna',

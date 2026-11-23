@@ -1751,6 +1751,8 @@ export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
   ...GRANTABLE_KEYWORDS,
   'toxic',
   'flanking',
+  // CR 702.8a (Flash): "a card with flash" in a library search (Mystical Teachings); flash is printed, never granted, so only a filter reads it.
+  'flash',
 ];
 
 /**
