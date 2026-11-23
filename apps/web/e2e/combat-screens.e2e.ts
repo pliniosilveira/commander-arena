@@ -77,7 +77,10 @@ test.describe('issue 92: dividing combat damage leaves the board visible', () =>
     const row = panel.locator('[data-damage-row]').first();
     const id = await row.getAttribute('data-damage-row');
     await row.hover();
-    await expect(page.locator(`[data-object-id="${id}"][data-assign-hot="true"]`)).toBeVisible();
+    // A commander on the battlefield is lit on its tile and on its command-zone chip alike (same id): the tile is the board.
+    await expect(
+      page.locator(`.board-tile[data-object-id="${id}"][data-assign-hot="true"]`),
+    ).toBeVisible();
     await expect(page.locator('.board-preview')).toContainText('Yargle, Glutton of Urborg', {
       timeout: 5_000,
     });
