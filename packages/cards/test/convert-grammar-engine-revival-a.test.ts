@@ -246,3 +246,99 @@ describe('"Whenever you attack with one or more legendary creatures, you may pay
     g.expect.zone(hound.name, 'graveyard', { seat: 0 });
   });
 });
+
+describe('"Pray — Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn." (CR 601.2a, 404.1, 400.7)', () => {
+  const banon = parsed(
+    'SYNTHETIC Parsed Returners',
+    'Legendary Creature — Human Noble',
+    'Pray — Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn.',
+    { manaCost: '{1}{W}', power: '1', toughness: '1', colors: ['W'] },
+  );
+  const discard = parsed('SYNTHETIC Parsed Discard', 'Sorcery', 'Discard a card.', {
+    manaCost: '{B}',
+    colors: ['B'],
+  });
+  const mill = parsed('SYNTHETIC Parsed Mill', 'Sorcery', 'Mill two cards.', {
+    manaCost: '{B}',
+    colors: ['B'],
+  });
+  const bear = (name: string) =>
+    parsed(name, 'Creature — Bear', '', {
+      manaCost: '{B}',
+      power: '2',
+      toughness: '2',
+      colors: ['B'],
+    });
+  const one = bear('SYNTHETIC Parsed Bear One');
+  const two = bear('SYNTHETIC Parsed Bear Two');
+  const build = (build: (b: ReturnType<typeof base>) => ReturnType<typeof base>) =>
+    build(
+      base()
+        .define(banon)
+        .define(discard)
+        .define(mill)
+        .define(one)
+        .define(two)
+        .battlefield(banon.name, 'Swamp', 'Swamp', 'Swamp', 'Swamp'),
+    )
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('lowers to a once-each-turn graveyard cast of creature spells put there elsewhere', () => {
+    expect(banon.faces[0]?.abilities).toMatchObject([
+      {
+        kind: 'static',
+        static: {
+          kind: 'playFromGraveyardOnceEachTurn',
+          cast: { types: ['creature'] },
+          putElsewhereThisTurn: true,
+        },
+      },
+    ]);
+  });
+
+  test('a creature card discarded this turn may be cast from the graveyard', () => {
+    const g = build((b) => b.hand(discard.name, one.name));
+    g.act(0).cast(discard.name, { pay: true });
+    g.passAll();
+    g.expect.zone(one.name, 'graveyard', { seat: 0 });
+    g.act(0).cast(one.name, { pay: true, from: 'graveyard' });
+    g.passAll();
+    g.expect.zone(one.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a creature card milled this turn may be cast, but only one a turn (once during each of your turns)', () => {
+    const g = scenario()
+      .define(banon)
+      .define(mill)
+      .define(one)
+      .define(two)
+      .seat(0)
+      .library(one.name, two.name, ...LIB)
+      .hand(mill.name)
+      .battlefield(banon.name, 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIB)
+      .seat(0)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(mill.name, { pay: true });
+    g.passAll();
+    g.act(0).cast(one.name, { pay: true, from: 'graveyard' });
+    g.passAll();
+    g.expect.zone(one.name, 'battlefield', { seat: 0 });
+    g.expect.illegal(0, { cast: two.name });
+  });
+
+  test('a creature card that died this turn, or was there before it, may not be cast', () => {
+    const g = build((b) =>
+      b.hand('Lightning Bolt').graveyard(two.name).battlefield(one.name, 'Mountain'),
+    );
+    g.act(0).cast('Lightning Bolt', { pay: true, targets: [{ name: one.name }] });
+    g.passAll();
+    g.expect.zone(one.name, 'graveyard', { seat: 0 });
+    g.expect.illegal(0, { cast: one.name });
+    g.expect.illegal(0, { cast: two.name });
+  });
+});

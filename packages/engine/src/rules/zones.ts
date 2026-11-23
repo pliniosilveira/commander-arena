@@ -1246,6 +1246,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       },
     };
   }
+  // CR 404.1, 400.7: a card put into a graveyard from anywhere but the battlefield ("put there from anywhere other than the battlefield this turn").
+  if (to === 'graveyard' && old.zone !== 'battlefield' && created.card !== null) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        graveyardedElsewhere: [...(next.turnLog.graveyardedElsewhere ?? []), newId],
+      },
+    };
+  }
   // CR 701.9, 701.17, 404.1: a card put into a graveyard from a library ("that was discarded or put there from a library this turn"); a discard is recorded by `discardOne`.
   if (old.zone === 'library' && to === 'graveyard' && created.card !== null) {
     next = {

@@ -2854,6 +2854,11 @@ export interface TurnLog {
    */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
   /**
+   * Each card put into a graveyard this turn from a zone other than the battlefield (a hand, a library, the stack, exile, the command zone), by the id it has in the graveyard (CR 404.1,
+   * 400.7; Banon, the Returners' Leader: "put there from anywhere other than the battlefield this turn"). A token is not a card. Absent until one was recorded.
+   */
+  readonly graveyardedElsewhere?: readonly ObjectId[];
+  /**
    * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
    * whether it is a token. Absent until one left, so the state of a game where none did is as it was.
    */

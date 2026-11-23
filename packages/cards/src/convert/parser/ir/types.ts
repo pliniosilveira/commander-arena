@@ -2184,6 +2184,8 @@ export type IrStaticEffect =
       readonly gains?: IrQuotedAbility;
       /** "by exiling three other cards from your graveyard in addition to paying its other costs" (issue 102, Kotis, CR 601.2f): the other cards of the graveyard exiled as the cost. */
       readonly exileOthers?: number;
+      /** "from among cards in your graveyard that were put there from anywhere other than the battlefield this turn" (Banon, CR 404.1): the engine's `putElsewhereThisTurn`. */
+      readonly putElsewhereThisTurn?: true;
     }
   /**
    * "Lands you control enter untapped." (stage P37, D-180, CR 614.1c, 614.12): the permanents that enter under the controller's control and that

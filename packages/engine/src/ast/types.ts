@@ -8066,6 +8066,12 @@ export type StaticEffect =
        * as the cost is paid (the spell cannot be cast that way with fewer). Only with `cast`.
        */
       readonly exileOthers?: number;
+      /**
+       * "Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn." (Banon,
+       * the Returners' Leader; CR 601.2a, 404.1, 400.7): only a card that was put into the graveyard this turn from a zone other than the battlefield (a hand, a library, the stack; read from
+       * `TurnLog.graveyardedElsewhere`, so a card that moved on and came back is a new object and does not count). Only with `cast`, and not with `land`.
+       */
+      readonly putElsewhereThisTurn?: true;
     }
   /**
    * "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1, 113.6): while the permanent has the
