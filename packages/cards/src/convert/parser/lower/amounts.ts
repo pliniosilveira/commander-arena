@@ -169,7 +169,9 @@ export function lowerAmount(
     case 'manaValueOf': {
       // Issue 345 (Tavern Brawler, CR 202.3, 608.2h): "exile the top card of your library. ~ gets +X/+0 until end of turn, where X is that card's mana value": the card the instruction
       // before it exiled (`moved`), whose mana value is read as the effect runs.
-      if (amount.of.det === 'anaphor' && ctx.exiled === 'top') {
+      // CR 701.20a, 400.7j, 202.3: "Reveal the top card of your library. Draw cards equal to that card's mana value", "Exile the top card of your library. Create a number of tokens equal to
+      // that card's mana value": the binding pass names the card an earlier instruction revealed or exiled `moved`; a card with no mana cost has mana value 0 and an empty `moved` is 0.
+      if (amount.of.det === 'anaphor' && (ctx.exiled === 'top' || amount.of.ref === 'moved')) {
         const blockedMoved = needs('manaValueOf');
         if (blockedMoved !== null) return blockedMoved;
         return { ok: true, value: { kind: 'manaValueOf', of: { kind: 'moved' } }, rule };

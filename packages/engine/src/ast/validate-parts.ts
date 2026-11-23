@@ -3640,6 +3640,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
+    // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
+    e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
     // Death Toll deck group B: the cards `chooseRandomFromGraveyard` picked are "it" ("If it's a creature card, put it onto the battlefield").

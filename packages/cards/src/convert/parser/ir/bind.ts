@@ -98,6 +98,12 @@ interface Antecedent {
   readonly plainToken?: true;
   /** A creature token with a power and toughness of its own (issue 100): "it" that gains a keyword in the sentence after it is the token. */
   readonly itTokenGains?: true;
+  /**
+   * The card an earlier instruction of the same text revealed or exiled from a library ("Reveal the top card of your library. Draw cards equal to that card's mana value", "Exile the top
+   * card of your library. Create a number of tokens equal to that card's mana value"; CR 701.20a, 701.13, 608.2c): only "that card" may mean it, never "it" (which the instructions
+   * that put a card somewhere would read as the card moved).
+   */
+  readonly thatCardOnly?: true;
 }
 
 const key = (span: Span) => `${span.start}:${span.end}`;
@@ -339,6 +345,7 @@ class Binder {
                   this.clauseVerb === 'grantKeyword' &&
                   /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
+            (a.thatCardOnly !== true || /^that card$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             !a.noun.plural &&
             compatible(a.noun.filter, pronoun.type) &&
@@ -636,6 +643,13 @@ class Binder {
       });
     }
     const before = this.antecedents.length;
+    // CR 701.20a, 701.13, 608.2c: the card "Reveal the top card of your library" or "Exile the top card of your library" took is what "that card" of a later instruction names, the
+    // engine's `moved`. Only one card: "the top two cards" has no "that card".
+    const takesOneTopCard =
+      clause.verb === 'revealTopCard' ||
+      (clause.verb === 'exileTop' &&
+        clause.args.count?.kind === 'number' &&
+        clause.args.count.value === 1);
     for (const [name, value] of entries) {
       const seen = this.antecedents.length;
       args[name] = this.arg(value);
@@ -708,6 +722,23 @@ class Binder {
     if (clause.verb === 'exileRandomFromHand' || clause.verb === 'chooseRandomGraveyardCard') {
       this.antecedents.push({
         kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'card' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
+    if (takesOneTopCard) {
+      this.antecedents.push({
+        kind: 'object',
+        thatCardOnly: true,
         noun: {
           kind: 'noun',
           det: 'a',

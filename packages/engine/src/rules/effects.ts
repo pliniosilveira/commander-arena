@@ -149,6 +149,7 @@ import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealTopBranches } from './reveal-top-branches';
+import { runRevealTopCard } from './reveal-top-card';
 import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
@@ -3362,6 +3363,10 @@ function runEffect(
     case 'revealTopBranches':
       // CR 701.20a, 608.2c: reveal the top card once and do each branch it matches (rules/reveal-top-branches.ts).
       return runRevealTopBranches(state, res, effect, ctx, targets);
+
+    case 'revealTopCard':
+      // CR 701.20a, 400.7j: reveal the top card; it is `moved` for the effects after it (rules/reveal-top-card.ts).
+      return runRevealTopCard(state, effect, ctx, targets);
 
     case 'revealTopDuel':
       // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).

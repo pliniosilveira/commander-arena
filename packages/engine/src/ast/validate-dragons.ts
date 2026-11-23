@@ -238,6 +238,10 @@ export function checkDragonsEffect(
         }
       }
       return true;
+    case 'revealTopCard':
+      // CR 701.20a: the players who reveal the top card of their own library.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      return true;
     case 'revealTopDuel':
       // CR 701.20a, 119.3: "the other player" is defined only when exactly two players are named, so the selector is `all` of two members.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);

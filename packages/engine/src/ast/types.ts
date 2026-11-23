@@ -2615,6 +2615,13 @@ export type Effect =
    */
   | { readonly kind: 'revealTopDuel'; readonly players: PlayerSelector }
   /**
+   * "Scry 3, then reveal the top card of your library. Draw cards equal to that card's mana value." (CR 701.20a Reveal, 400.7j, 202.3, 608.2c): each player `player` names reveals
+   * the top card of their own library (a `cardsRevealed` event; nothing for an empty library) and the card stays on top. The card revealed is what `moved` names for the effects after
+   * it in the same sequence ("that card's mana value"); `moved` is empty when no card was revealed, so an amount read from it is 0. With several players, `moved` is the card of the last
+   * seat named that had one.
+   */
+  | { readonly kind: 'revealTopCard'; readonly player: PlayerSelector }
+  /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\"" (CR 702.5a, 613.1f, 611.2a, 303.4c; Animate Dead): the
    * Aura `objects` names (`this`) stops having the enchant ability `loses` and has the enchant ability `gains` instead, for as long as it stays on the battlefield (a layer 6 continuous
    * effect with its own timestamp; the permanent that leaves and returns is a new object, CR 400.7). What it may be attached to, and what state-based actions check (CR 704.5m), is read

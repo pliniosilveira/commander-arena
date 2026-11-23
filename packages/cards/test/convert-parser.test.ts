@@ -689,6 +689,7 @@ describe('unmatched abilities', () => {
       'effect.reveal-until-x-graveyard',
       'effect.reveal-put-all',
       'effect.untap-those-lands',
+      'effect.reveal-top-card',
       'effect.reveal-until-that-many',
       'effect.copy-spell-twice',
       'effect.tap-and-stun-those-creatures',
