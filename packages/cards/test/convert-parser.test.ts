@@ -869,6 +869,7 @@ describe('unmatched abilities', () => {
       'effect.shuffle-self-and-graveyard',
       'effect.put-self-counters',
       'effect.attach-was-attached',
+      'effect.attach-own-to-self',
       'effect.shuffle-graveyard-cards',
       'effect.move-all-counters',
       'effect.bottom-graveyard-random',

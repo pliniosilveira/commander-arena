@@ -1725,6 +1725,8 @@ function lowerTriggeredAbility(
       (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
+      // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
+      c.verb === 'attachOwnToSelf' ||
       // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
       // engine's `may` of the mill alone (the ability's own `optional` would cover the whole effect); a trigger of the one offer keeps the ability's `optional`.
       (c.verb === 'mill' && sentences.length > 1));

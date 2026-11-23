@@ -69,9 +69,37 @@ const ATTACH_WAS_ATTACHED: Lowering<IrClause, Effects> = {
   },
 };
 
+/** The id of the Equipment the controller picks among their own. */
+const OWN_EQUIPMENT = 'ownEquipment';
+
+const ATTACH_OWN_TO_SELF: Lowering<IrClause, Effects> = {
+  head: 'attachOwnToSelf',
+  id: 'lower.attach-own-to-self',
+  needs: ['effect:chooseObjects', 'effect:attach', 'selector:chosen'],
+  // "You may attach an Equipment you control to ~": the choice of up to one Equipment is the offer, so the clause's own "may" is not wrapped around it again.
+  acceptsOptional: true,
+  lower(clause, ctx) {
+    const to = arg(clause, 'to');
+    if (to?.kind !== 'noun' || to.det !== 'self' || ctx.owner !== 'ability' || ctx.selfGone) {
+      return failure(clause);
+    }
+    const effects: Effect[] = [
+      {
+        kind: 'chooseObjects',
+        id: OWN_EQUIPMENT,
+        filter: { zone: 'battlefield', subtypes: ['Equipment'], controller: 'you' },
+        count: 1,
+      },
+      { kind: 'attach', object: { kind: 'chosen', id: OWN_EQUIPMENT }, to: { kind: 'this' } },
+    ];
+    return { ok: true, value: effects, rule: clause.rule };
+  },
+};
+
 export const LIMIT_BREAK_G1_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PUT_COUNTERS_OF,
   ATTACH_WAS_ATTACHED,
+  ATTACH_OWN_TO_SELF,
 ];
 
 /** Features the lowerings of this file can name, for the dimension test. */

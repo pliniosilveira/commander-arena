@@ -108,7 +108,44 @@ export const EFFECT_ATTACH_WAS_ATTACHED = defineRule<Clauses>({
   ),
 });
 
+const ATTACH_OWN_ID = 'effect.attach-own-to-self';
+
+/**
+ * `effect.attach-own-to-self`: "attach an Equipment you control to ~" (CR 701.3, 301.5, 608.2d: Yuffie, Materia Hunter's "you may attach an Equipment you control to ~"): the controller
+ * of the ability picks, as it resolves, one Equipment they control, or none, and attaches it to the permanent with the ability. The engine's `chooseObjects` of up to one Equipment, then
+ * `attach` of what was chosen. Not read: "an Aura", "target Equipment" (`effect.attach`), "each", "all", another host than `~`, an Equipment that is not "you control".
+ */
+export const EFFECT_ATTACH_OWN_TO_SELF = defineRule<Clauses>({
+  id: ATTACH_OWN_ID,
+  family: 'effect',
+  leading: ['attach'],
+  cites: [
+    'CR 701.3 (Attach)',
+    'CR 301.5 (Artifacts)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: ['attach an Equipment you control to ~'],
+  rejects: [
+    'attach an Aura you control to ~',
+    'attach each Equipment you control to ~',
+    'attach all Equipment you control to ~',
+    'attach an Equipment to ~',
+    'attach an Equipment you control to that creature',
+    'attach an Equipment you control to target creature',
+    'attach an Equipment you control',
+  ],
+  parse: single(
+    ATTACH_OWN_ID,
+    sequence(literal('attach an Equipment you control to '), spanned(literal('~'))),
+    ([, tilde]) => ({
+      verb: 'attachOwnToSelf',
+      args: { to: selfNoun(tilde.span, ATTACH_OWN_ID) },
+    }),
+  ),
+});
+
 export const LIMIT_BREAK_G1_EFFECT_RULES = [
   EFFECT_PUT_SELF_COUNTERS,
   EFFECT_ATTACH_WAS_ATTACHED,
+  EFFECT_ATTACH_OWN_TO_SELF,
 ].map(quietly);
