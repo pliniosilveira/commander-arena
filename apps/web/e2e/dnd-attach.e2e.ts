@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { leaveHand } from './harness/pointer';
 import { settled } from './harness/settle';
 
 /**
@@ -188,7 +189,7 @@ test('flashback by drag: a card carried out of the graveyard list reaches the bo
   await playUntil(page, async () => (await chip(page, 'SYNTHETIC Flash Gain').count()) > 0);
 
   // The last click left the pointer over a hand card, whose hover pop-up covers the strip: move off it.
-  await page.mouse.move(5, 5);
+  await leaveHand(page);
   await page.getByRole('button', { name: /^Open You graveyard/ }).click();
   const list = page.getByRole('dialog', { name: /graveyard/ });
   const card = list.getByLabel('SYNTHETIC Flash Gain').first();
