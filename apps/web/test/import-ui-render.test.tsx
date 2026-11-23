@@ -398,7 +398,7 @@ describe('other views', () => {
       />,
     );
     expect(out).toContain('SYNTHETIC One');
-    expect(out).toContain('>Open<');
+    expect(out).toContain('>Edit<');
     expect(out).toContain('>Delete<');
     expect(
       renderToStaticMarkup(

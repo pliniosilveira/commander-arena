@@ -18,7 +18,7 @@ export function SavedDecksView({
     <section className="imp-section" aria-labelledby="imp-decks-h">
       <h2 id="imp-decks-h">My decks</h2>
       <p className="scr-help">
-        Saved in this browser only. A saved deck keeps your pasted list; opening it imports it
+        Saved in this browser only. A saved deck keeps your pasted list; editing it imports it
         again, so it needs a connection to Scryfall.
       </p>
       {decks === null ? (
@@ -38,11 +38,11 @@ export function SavedDecksView({
                   <span className="scr-help">saved {deck.savedAt.slice(0, 10)}</span>
                 </span>
                 <span className="imp-row-actions">
-                  <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
-                    Open<span className="imp-sr"> {deck.name}</span>
-                  </button>
                   <button type="button" className="scr-btn" onClick={() => onView(deck)}>
                     View<span className="imp-sr"> {deck.name}</span>
+                  </button>
+                  <button type="button" className="scr-btn" onClick={() => onOpen(deck)}>
+                    Edit<span className="imp-sr"> {deck.name}</span>
                   </button>
                   <button type="button" className="scr-btn" onClick={() => onRemove(deck)}>
                     Delete<span className="imp-sr"> {deck.name}</span>
