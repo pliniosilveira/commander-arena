@@ -43,13 +43,12 @@ const xSpell = parsed('SYNTHETIC X Spell', 'Sorcery', 'Draw a card.', { manaCost
 const FILLER = ['Forest', 'Forest', 'Forest', 'Forest', 'Forest', 'Forest', 'Forest', 'Forest'];
 
 describe('the real Interpret the Signs and the synthetic Elminster ability are read', () => {
-  test('the real Elminster is still unsupported (its other abilities belong to another group)', () => {
+  test('the real Elminster, scry trigger and -3 ability together, is supported', () => {
     const card = GOLDEN.find((c) => c.name === 'Elminster');
     if (card === undefined) throw new Error('no Elminster');
     const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
-    expect(imported.support.status).toBe('unsupported');
-    // Only the first ability (the scry trigger) is unread; the -3 ability is not among the reasons.
-    expect(imported.support.unparsed.map((u) => u.ability)).toEqual([0]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.support.unparsed).toEqual([]);
   });
 
   test('"that card" with nothing revealed or exiled before it stays an unbound reference', () => {
