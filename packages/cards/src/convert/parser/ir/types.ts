@@ -1555,7 +1555,7 @@ export interface IrSentence extends IrNode {
    * "When you discard a nonland card this way, ..." (Federation Fleet deck, group D, CR 603.12, 608.2c): a reflexive triggered ability created when the discards of the instructions before it
    * in the same text discarded a card of the kind. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no discard came before.
    */
-  readonly afterDiscard?: 'nonland';
+  readonly afterDiscard?: 'nonland' | 'any';
   /**
    * "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12, 701.13): a reflexive triggered ability created when the exile of the instructions before it in the same text
    * exiled a card. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no exile of the top card came before.

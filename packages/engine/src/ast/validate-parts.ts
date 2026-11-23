@@ -1964,6 +1964,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
+  discardedValue: 'a discard effect',
   countersPut: 'an addCounters effect',
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
@@ -2010,6 +2011,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedCreature',
       'discardedNoncreature',
       'discardedNonland',
+      'discardedValue',
       'discardedInstantOrSorcery',
       'discardedMost',
       'discardedTypeCount',
@@ -8184,7 +8186,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       if (e.ifThisWay !== undefined) {
-        if (e.ifThisWay !== 'exiledNonland' && e.ifThisWay !== 'discardedNonland') {
+        if (
+          e.ifThisWay !== 'exiledNonland' &&
+          e.ifThisWay !== 'discardedNonland' &&
+          e.ifThisWay !== 'discarded'
+        ) {
           issue(out, `${path}.ifThisWay`, `unknown count ${JSON.stringify(e.ifThisWay)}`);
         } else if (!(scope.thisWay ?? []).includes(e.ifThisWay)) {
           issue(
@@ -8221,7 +8227,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // D-177: the reflexive ability reads the permanent the resolution that created it sacrificed.
         ...(scope.sacrificedEarlier === true ? { sacrificedEarlier: true } : {}),
         // D-231: and the count the `ifThisWay` names.
-        ...(e.ifThisWay === undefined ? {} : { thisWay: [e.ifThisWay] }),
+        // Summon: Kujata: a reflexive ability of the cards discarded also reads their total mana value ("that card's mana value", `discardedValue`), counted with them.
+        ...(e.ifThisWay === undefined
+          ? {}
+          : {
+              thisWay:
+                e.ifThisWay === 'discarded' ? [e.ifThisWay, 'discardedValue'] : [e.ifThisWay],
+            }),
         checkAbility: scope.checkAbility,
         checkContinuous: scope.checkContinuous,
         checkEffectExt: scope.checkEffectExt,

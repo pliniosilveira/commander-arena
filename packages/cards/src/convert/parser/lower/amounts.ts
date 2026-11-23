@@ -177,6 +177,14 @@ export function lowerAmount(
         if (blockedMoved !== null) return blockedMoved;
         return { ok: true, value: { kind: 'manaValueOf', of: { kind: 'moved' } }, rule };
       }
+      // CR 202.3, 603.12, 608.2c (Summon: Kujata): "When you discard a card this way, ~ deals damage equal to that card's mana value to each opponent": the engine's `thisWay` `discardedValue`, the mana
+      // value of the card the discard before the reflexive ability discarded (read from the hand, before it left).
+      if (amount.of.det === 'anaphor' && amount.of.ref === 'discarded') {
+        if (!ctx.discardedCardValue) return { ok: false, needs: [], at: amount.span, rule };
+        const blockedValue = needs('thisWay');
+        if (blockedValue !== null) return blockedValue;
+        return { ok: true, value: { kind: 'thisWay', what: 'discardedValue' }, rule };
+      }
       const of = objectRefOf(amount.of, ctx, { triggerSubject: true, sacrificed: true });
       if (!of.ok) return of;
       const blocked = needs('manaValueOf');

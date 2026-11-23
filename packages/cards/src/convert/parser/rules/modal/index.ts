@@ -131,7 +131,6 @@ export const MODAL_CHOOSE_COMMANDER = defineRule<IrModeHeader>({
   ],
   rejects: [
     'Choose one. If you control a commander as you cast ~, you may choose both instead',
-    'Choose one. If you control a commander, you may choose both instead.',
     'Choose one. If you control two commanders as you cast ~, you may choose both instead.',
     'Choose one. If an opponent controls a commander as you cast ~, you may choose both instead.',
     'Choose one. If you control a commander as you cast ~, you may choose all instead.',
@@ -150,6 +149,46 @@ export const MODAL_CHOOSE_COMMANDER = defineRule<IrModeHeader>({
       choose: { min: 1, max: 1, exactly: 2, widen: r.value[1] },
       span: { start: pos, end: r.pos },
       rule: 'modal.choose-commander',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
+/**
+ * `modal.choose-commander-trigger`: "Choose one. If you control a commander, you may choose both instead." of a triggered ability (CR 700.2, 700.2b, 903.3d: the modes of a triggered
+ * ability are chosen as it is put on the stack, and "you control a commander" is checked then). Same choice as `modal.choose-commander`, without "as you cast ~", which a triggered
+ * ability has nothing to say; a spell or an activated ability does not use this wording, and the ability reading refuses it there. Exactly two modes (what "both" means).
+ */
+export const MODAL_CHOOSE_COMMANDER_TRIGGER = defineRule<IrModeHeader>({
+  id: 'modal.choose-commander-trigger',
+  family: 'modal',
+  leading: ['choose'],
+  cites: ['CR 700.2 (General)', 'CR 700.2b (General)', 'CR 903.3d (Commander)'],
+  examples: [
+    'Choose one. If you control a commander, you may choose both instead.',
+    'choose one. if you control a commander, you may choose both instead.',
+  ],
+  rejects: [
+    'Choose one. If you control a commander, you may choose both instead',
+    'Choose one. If you control a commander as you cast ~, you may choose both instead.',
+    'Choose one. If you control two commanders, you may choose both instead.',
+    'Choose one. If an opponent controls a commander, you may choose both instead.',
+    'Choose one. If you control a commander, you may choose all instead.',
+    'Choose two. If you control a commander, you may choose both instead.',
+    'Choose one —',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('choose one. if '),
+      family<IrCondition>('condition', { only: ['condition.control-commander'] }),
+      literal(', you may choose both instead.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 1, exactly: 2, widen: r.value[1] },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-commander-trigger',
     };
     return { ok: true, value: header, pos: r.pos };
   },
@@ -493,6 +532,7 @@ export const MODAL_RULES = [
   MODAL_CHOOSE,
   MODAL_CHOOSE_BARE,
   MODAL_CHOOSE_COMMANDER,
+  MODAL_CHOOSE_COMMANDER_TRIGGER,
   MODAL_CHOOSE_WIDEN,
   MODAL_CHOOSE_KICKED,
   MODAL_CHOOSE_NOT_REPEATED,

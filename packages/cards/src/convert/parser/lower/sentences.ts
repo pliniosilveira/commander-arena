@@ -1756,11 +1756,18 @@ function lowerAfterDiscard(
   if (!discards) return refused();
   const blocked = missingFeatures(['effect:reflexive']);
   if (blocked.length > 0) return refused(blocked);
+  ctx.discardedCardValue = sentence.afterDiscard === 'any';
   const effect = lowerReflexive(sentence, ctx);
+  ctx.discardedCardValue = false;
   if (!effect.ok) return { stopped: effect };
   if (effect.value.kind !== 'reflexive') return refused();
   steps.push({
-    effects: [{ ...effect.value, ifThisWay: 'discardedNonland' }],
+    effects: [
+      {
+        ...effect.value,
+        ifThisWay: sentence.afterDiscard === 'any' ? 'discarded' : 'discardedNonland',
+      },
+    ],
     replaceable: false,
   });
   return { last: i };

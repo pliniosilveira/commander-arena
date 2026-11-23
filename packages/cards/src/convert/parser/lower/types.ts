@@ -271,6 +271,8 @@ export interface LowerContext {
    * "discard any number of cards" discarded. The engine's `thisWay` names which.
    */
   thisWay: 'sacrificed' | 'discarded';
+  /** True while the reflexive ability of "When you discard a card this way" is lowered (Summon: Kujata): "that card's mana value" is the mana value of the card the discard before it discarded. */
+  discardedCardValue: boolean;
   /** True in the body of a triggered ability whose every event is life being gained (D-256, CR 119.9): `triggerDamage` is the life gained. */
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
@@ -437,6 +439,7 @@ export function newContext(
     exiled: null,
     exiledFaceDown: false,
     thisWay: 'sacrificed',
+    discardedCardValue: false,
     lifeGainTrigger: false,
     scryTrigger: false,
     payReflexive: false,

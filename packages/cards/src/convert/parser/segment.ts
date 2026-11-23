@@ -1450,6 +1450,9 @@ function reflexiveModal(
   };
 }
 
+/** "Lightning — ": the name of a chapter of a Saga, between its numeral and its text. */
+const CHAPTER_NAME = /^\p{Lu}[\p{L}']*(?: \p{Lu}[\p{L}']*)? — /u;
+
 /** "Boast — " before the cost of an activated ability (CR 702.142a). */
 const BOAST_PREFIX = /^Boast — /u;
 
@@ -1592,12 +1595,14 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     // CR 714.2: a chapter symbol is a keyword ability that represents a triggered ability. The
     // numerals are the trigger; the body is read like the body of any triggered ability.
     const numerals = chapter[1] ?? '';
+    // A chapter may carry a name of its own before its text ("I — Lightning — ..."): a flavor name of one or two capitalized words, which is no rule (CR 714.2).
+    const name = CHAPTER_NAME.exec(text.slice(chapter[0].length));
     return {
       ...base,
       head: 'triggered',
       trigger: { start: 0, end: numerals.length },
       chapter: true,
-      sentences: splitSentences(text, chapter[0].length, text.length),
+      sentences: splitSentences(text, chapter[0].length + (name?.[0].length ?? 0), text.length),
     };
   }
 
