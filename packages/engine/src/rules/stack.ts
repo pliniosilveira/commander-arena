@@ -341,6 +341,12 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                     ...(out.thisWay.discardedBy ?? []),
                   ]),
                 ],
+                discardedHandBy: [
+                  ...new Set([
+                    ...(res.thisWay?.discardedHandBy ?? []),
+                    ...(out.thisWay.discardedHandBy ?? []),
+                  ]),
+                ],
                 couldntSacrifice: [
                   ...new Set([
                     ...(res.thisWay?.couldntSacrifice ?? []),

@@ -2314,6 +2314,8 @@ export interface ThisWayCounts {
   readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
+  /** The players whose `discard` of their `hand` ran, an empty hand included (Snort: "each opponent who discarded their hand this way"), in the order they did. */
+  readonly discardedHandBy?: readonly SeatId[];
   /** The players who had nothing to sacrifice to a `sacrifice` effect that names a choice (Plaguecrafter: "each player who can't"), in the order they were asked. */
   readonly couldntSacrifice?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */

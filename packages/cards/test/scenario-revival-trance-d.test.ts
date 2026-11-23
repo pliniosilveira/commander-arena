@@ -121,6 +121,64 @@ describe('Archfiend of Depravity: "At the beginning of each opponent\'s end step
   });
 });
 
+describe('Snort: "Each player may discard their hand and draw five cards. Then Snort deals 5 damage to each opponent who discarded their hand this way."', () => {
+  const SNORT = real('Snort');
+  const CARD = 'Island';
+
+  const start = (seats: 2 | 3 | 4, hands: readonly number[]) => {
+    const b = scenario({ seats }).define(SNORT);
+    b.seat(0)
+      .life(20)
+      .hand(SNORT.name, ...Array.from({ length: hands[0] ?? 0 }, () => CARD))
+      .library(...FILLER, ...FILLER)
+      .pool('CCCR');
+    for (let seat = 1; seat < seats; seat += 1) {
+      b.seat(seat)
+        .life(20)
+        .hand(...Array.from({ length: hands[seat] ?? 0 }, () => CARD))
+        .library(...FILLER, ...FILLER);
+    }
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.act(0).cast(SNORT.name, { pay: true });
+    g.passAll();
+    return g;
+  };
+  const handSize = (g: ReturnType<typeof start>, seat: number) =>
+    g.state.seats[seat]?.hand.length ?? -1;
+  const life = (g: ReturnType<typeof start>) => g.state.seats.map((s) => s.life);
+
+  test('each opponent who accepts takes 5, one who declines does not, and the caster who accepts takes nothing (three opponents)', () => {
+    const g = start(4, [2, 3, 3, 1]);
+    g.act(0).accept();
+    g.act(1).accept();
+    g.act(2).decline();
+    g.act(3).accept();
+    expect(life(g)).toEqual([20, 15, 20, 15]);
+    expect(handSize(g, 0)).toBe(5);
+    expect(handSize(g, 1)).toBe(5);
+    expect(handSize(g, 2)).toBe(3);
+    expect(handSize(g, 3)).toBe(5);
+  });
+
+  test('an opponent who discards an empty hand has still discarded their hand and takes 5 (CR 701.9a)', () => {
+    const g = start(3, [0, 0, 2]);
+    g.act(0).decline();
+    g.act(1).accept();
+    g.act(2).decline();
+    expect(life(g)).toEqual([20, 15, 20]);
+    expect(handSize(g, 1)).toBe(5);
+    expect(handSize(g, 0)).toBe(0);
+  });
+
+  test('when nobody accepts nobody is damaged', () => {
+    const g = start(3, [1, 1, 1]);
+    g.act(0).decline();
+    g.act(1).decline();
+    g.act(2).decline();
+    expect(life(g)).toEqual([20, 20, 20]);
+  });
+});
+
 describe('keepOrSacrifice validation (CR 608.2d)', () => {
   const FIEND = real('Archfiend of Depravity');
   const withKeep = (keep: Record<string, unknown>): CardDefinition => ({

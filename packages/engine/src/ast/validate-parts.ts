@@ -1663,6 +1663,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'combatDamagedByNamed':
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
+    case 'discardedThisWay':
     case 'opponentsAttackingTriggerPlayer':
     case 'all':
       return true;
@@ -1806,6 +1807,18 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           "'discardedThisWay' needs a discard effect before it in the same sequence",
         );
       }
+      // CR 101.4, 102.2 (Snort): `of` names the group the players are of.
+      if (
+        sel.of !== undefined &&
+        kindOf(sel.of) !== 'eachPlayer' &&
+        kindOf(sel.of) !== 'eachOpponent'
+      ) {
+        issue(
+          out,
+          `${path}.of`,
+          "'discardedThisWay' reads the group 'eachPlayer' or 'eachOpponent'",
+        );
+      }
       break;
     case 'couldntSacrificeThisWay':
       // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
@@ -1878,6 +1891,7 @@ export const PLAYER_ONLY = [
   'combatDamagedByNamed',
   'lostLifeThisTurn',
   'combatDamagedThisTurn',
+  'discardedThisWay',
 ];
 
 export function checkDamageRecipient(

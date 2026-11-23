@@ -1541,7 +1541,14 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
-      return blocked ?? ok({ kind: 'discardedThisWay' });
+      return (
+        blocked ??
+        ok({
+          kind: 'discardedThisWay',
+          ...(noun.discardedHand === true ? { hand: true as const } : {}),
+          ...(noun.whoGroup === undefined ? {} : { of: { kind: noun.whoGroup } }),
+        })
+      );
     }
     case 'couldntSacrificeThisWay': {
       // CR 701.21a: only after a sacrifice of the same text, whose players it names.
@@ -1708,6 +1715,8 @@ export function recipientOf(
     noun.det === 'eachOpponent' ||
     noun.det === 'triggerActor' ||
     noun.det === 'controllerOf' ||
+    // Snort: "deals 5 damage to each opponent who discarded their hand this way" (CR 701.9a).
+    (noun.det === 'discardedThisWay' && noun.discardedHand === true) ||
     (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);

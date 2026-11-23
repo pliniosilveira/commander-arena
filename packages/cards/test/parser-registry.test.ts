@@ -1190,6 +1190,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
   ),
+  // Snort (CR 701.9a): the players whose discard of their hand ran, as the recipient of the damage of the next sentence.
+  'noun.each-player-discarded-their-hand': permanent(
+    (e) =>
+      `At the beginning of your end step, each player may discard their hand. ~ deals 1 damage to ${e}.`,
+  ),
   // CR 701.21a: the players a sacrifice found nothing to sacrifice for, as the subject of the next sentence.
   'noun.each-player-cant-sacrifice': permanent(
     (e) =>

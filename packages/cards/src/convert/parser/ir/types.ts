@@ -218,6 +218,8 @@ export interface IrNoun extends IrNode {
   readonly of?: IrNoun;
   /** `det` `lostLifeThisTurn` and `combatDamagedThisTurn`: the group the players are of, every player or every opponent (CR 102.1, 102.2). */
   readonly whoGroup?: 'eachPlayer' | 'eachOpponent';
+  /** `det` `discardedThisWay`: "who discarded their hand this way" (CR 701.9a): the players whose discard of their hand ran, an empty hand included; `whoGroup` narrows them. */
+  readonly discardedHand?: true;
   /** `det` `combatDamagedThisTurn`: the damage was dealt by the permanent of the ability ("by ~ or a Dragon"). */
   readonly damagedByThis?: true;
   /** `det` `combatDamagedThisTurn`: the damage was dealt by a source of this kind ("by ~ or a Dragon": a noun of subtype Dragon), read as the engine's turn log keeps it. */
