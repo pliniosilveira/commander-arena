@@ -49,6 +49,19 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: event.pos,
     };
   }
+  // D-513 (Elminster, CR 701.22, 603.2): "where X is the number of cards looked at while scrying this way": the cards looked at by the scry that caused the trigger
+  // (`triggerDamage`, read only in the body of a trigger of a scry, which the lowering checks).
+  const scried = pattern(/the number of cards looked at while scrying this way(?![\p{L}\p{N}])/iu)(
+    ctx,
+    pos,
+  );
+  if (scried.ok) {
+    return {
+      ok: true,
+      value: { kind: 'triggerDamage', scry: true, span: { start: pos, end: scried.pos } },
+      pos: scried.pos,
+    };
+  }
   // D-638 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
   const spells = pattern(
     /the number of (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,

@@ -727,6 +727,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures they control',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
+    // Elminster (CR 701.22): the cards looked at by the scry that caused the trigger.
+    'where X is the number of cards looked at while scrying this way',
   ],
   rejects: [
     'where X is the total mana value of creatures destroyed this way',
@@ -755,6 +757,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is your life',
     'where X is the amount of life you gain',
     'where X is the amount of life you gained last turn',
+    'where X is the number of cards looked at while scrying',
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);
