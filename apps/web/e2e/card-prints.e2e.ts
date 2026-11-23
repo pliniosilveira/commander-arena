@@ -70,6 +70,23 @@ test('a player’s own deck lists the printings of a card, and a chosen one is s
       body: JSON.stringify({ object: 'list', data: PRINTS }),
     }),
   );
+  // The listed printings of the saved deck, by set and number: once the deck names `bbb` 2, that is the one drawn in the grid.
+  await page.route('https://api.scryfall.com/cards/collection', async (route) => {
+    const body = route.request().postDataJSON() as {
+      identifiers: { set?: string; collector_number?: string }[];
+    };
+    const wanted = body.identifiers.find((i) => i.set === 'bbb' && i.collector_number === '2');
+    if (wanted === undefined) return route.fallback();
+    return route.fulfill({
+      status: 200,
+      headers: CORS,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        object: 'list',
+        data: [{ ...PRINTS[1], name: 'SYNTHETIC Commander' }],
+      }),
+    });
+  });
   await images(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'My decks' }).click();
@@ -107,6 +124,12 @@ test('a player’s own deck lists the printings of a card, and a chosen one is s
   await page.getByRole('button', { name: 'My decks' }).click();
   const again = await open();
   await expect(again.getByRole('radio').nth(1)).toBeChecked();
+  // And the grid of the deck draws the card in it.
+  await again.getByRole('button', { name: 'Close' }).click();
+  await expect(page.locator('.deck-card img').first()).toHaveAttribute(
+    'src',
+    /normal\/front\/p2\.jpg/,
+  );
 });
 
 test.describe('a built-in deck', () => {

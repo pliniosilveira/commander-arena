@@ -49,7 +49,6 @@ export function ImportScreen() {
     readonly service: ImportService;
     /** Absent for a built-in deck: its printings are not offered. */
     readonly onSave?: (text: string) => Promise<void>;
-    readonly drawListed?: boolean;
   } | null>(null);
   const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
@@ -140,8 +139,6 @@ export function ImportScreen() {
       name: precon.name,
       text: mine?.text ?? defaultListOf(precon.id),
       service: precons.editorService(precon.id),
-      // A built-in deck is drawn in the printings its list names; a player's own deck keeps the default picture.
-      drawListed: true,
     });
   };
 
