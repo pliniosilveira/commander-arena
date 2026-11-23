@@ -8382,6 +8382,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'clash':
       // CR 701.30b: the controller clashes with an opponent; no parameters.
       break;
+    case 'coinFlip':
+      // CR 705.2: the call is heads or tails; the flip is a `chooseOne` option (the player calls as it resolves), so it is checked in the option (`chooseOne`).
+      if (e.call !== 'heads' && e.call !== 'tails') {
+        issue(out, `${path}.call`, 'a coin flip is called heads or tails');
+      }
+      break;
     case 'rollDie':
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
       if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {

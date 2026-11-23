@@ -45,6 +45,7 @@ import { runChooseNumber } from './choose-number';
 import { runChooseOne } from './choose-one';
 import { askBeforeEffect, opponentOf, runChooseOpponent } from './choose-opponent';
 import { newClash, runClash } from './clash';
+import { flipCoin } from './coin-flip';
 import { enterCombatAttacking } from './combat-enter';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
@@ -2872,6 +2873,12 @@ function runEffect(
     case 'clash':
       // CR 701.30b: the controller clashes with an opponent, in stages (rules/clash.ts); who won is what `clashWon` reads.
       return done(state, [], [newClash()]);
+
+    case 'coinFlip': {
+      // CR 705.2: the controller flips a coin with the call the option made (the `chooseOne` the player answered); they win the flip when it matches the result.
+      const flipped = flipCoin(next, res.controller, effect.call);
+      return done(flipped.state, flipped.events);
+    }
 
     case 'rollDie': {
       // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.

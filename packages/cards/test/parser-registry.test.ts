@@ -931,6 +931,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.scry-or-surveil': whenever,
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
   'trigger.roll-highest': whenever,
+  // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
+  'trigger.win-coin-flip': whenever,
+  'effect.flip-coin': spell((e) => `${cap(e)}.`),
   'keyword.buyback': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,

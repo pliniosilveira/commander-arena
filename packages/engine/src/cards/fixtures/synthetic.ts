@@ -36,6 +36,7 @@ import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
 import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
 import { SYNTHETIC_CHOSEN_WALKER_LIST } from './synthetic-chosen-walker';
+import { SYNTHETIC_COIN_LIST } from './synthetic-coin';
 import { SYNTHETIC_COLOR_AMONG_MANA_LIST } from './synthetic-color-among-mana';
 import { SYNTHETIC_COMBAT_LIST } from './synthetic-combat';
 import { SYNTHETIC_COMMANDER_TRIGGER_LIST } from './synthetic-commander-triggers';
@@ -461,6 +462,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LOSE_GAME_LIST,
   ...SYNTHETIC_DICE_LIST,
   ...SYNTHETIC_RANDOM_MODE_LIST,
+  ...SYNTHETIC_COIN_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,
   ...SYNTHETIC_DEVOTION_MANA_LIST,
   ...SYNTHETIC_COLOR_AMONG_MANA_LIST,

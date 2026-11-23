@@ -341,6 +341,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    // CR 705.2: "flip a coin" (`coinFlip`, one for each call under a `chooseOne`) and "whenever you win a coin flip" (`winsCoinFlip`).
+    'coinFlip',
     // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
     'clash',
     'scry',
@@ -619,6 +621,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveils',
     // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
     'rollsHighest',
+    // CR 705.2 (Setzer): "Whenever you win a coin flip".
+    'winsCoinFlip',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -3032,6 +3036,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  coinFlip: true,
   clash: true,
   scry: true,
   surveil: true,
@@ -3196,6 +3201,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   scries: true,
   surveils: true,
   rollsHighest: true,
+  winsCoinFlip: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
