@@ -30,7 +30,7 @@ import { Tile } from './Tile';
 const ROW_SHAPE: Readonly<Record<RowKind, { maxH: number; aspect: number }>> = {
   // D-240 (issue 137): the largest tiles are a quarter bigger than they were (108, 84 and 70 before).
   creature: { maxH: 136, aspect: CARD_TOP_ASPECT },
-  other: { maxH: 105, aspect: CARD_TOP_ASPECT },
+  other: { maxH: 88, aspect: CARD_TOP_ASPECT },
   land: { maxH: 88, aspect: CARD_TOP_ASPECT },
 };
 

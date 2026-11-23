@@ -19,7 +19,7 @@ type Props = Pick<RowProps, 'roles' | 'attachments'> & {
 /** At most this share of the line goes to the other permanents; past it they scroll. */
 const OTHER_SHARE = 0.6;
 /** The plain space between the lands and the other permanents (board.css), with no divider. */
-const DIVIDER_GAP = 8;
+const DIVIDER_GAP = 24;
 const DIVIDER_PAD = 0;
 
 export function BackRow({ lands, others, roles, attachments }: Props) {
