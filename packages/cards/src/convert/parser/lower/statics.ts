@@ -33,6 +33,7 @@ import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } fro
 import { isAngelStatic, lowerAngelStatic } from './angels';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
+import { lowerCost } from './costs';
 import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { isEquipmentKitStatic, lowerEquipmentKitStatic } from './equipment-kit';
@@ -278,6 +279,18 @@ function effectOf(
       const keyword = grantedKeyword(effect.keyword);
       if (keyword === undefined || (effect.params ?? []).length > 0) return failure(at);
       return ok({ kind: 'grantKeyword', subject, keyword });
+    }
+    case 'grantEquip': {
+      // CR 702.6a (Puresteel Paladin): an Equip ability given to a group of Equipment, with its mana cost; the engine expands the keyword where it derives the abilities.
+      const cost = lowerCost(effect.cost);
+      if (!cost.ok) return cost;
+      return ok({ kind: 'grantKeyword', subject, keyword: { kind: 'equip', cost: [cost.value] } });
+    }
+    case 'loseKeyword': {
+      // CR 613.1f (Colossus Hammer): a keyword without parameters; the engine takes it away in layer 6.
+      const keyword = grantedKeyword(effect.keyword);
+      if (keyword === undefined || Object.keys(keyword).length !== 1) return failure(at);
+      return ok({ kind: 'loseKeyword', subject, keyword });
     }
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
@@ -589,6 +602,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
         return ['static:grantKeyword', 'keyword:landwalk'];
       }
       return ['static:grantKeyword'];
+    case 'loseKeyword':
+      return ['static:loseKeyword'];
+    case 'grantEquip':
+      return ['static:grantKeyword', 'keyword:equip'];
     case 'grantProtection':
       return ['static:grantKeyword', 'keyword:protection'];
     case 'grantQuoted':
@@ -833,6 +850,8 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'ptTimesAttacked':
     case 'ptCountersOnSource':
     case 'grantKeyword':
+    case 'grantEquip':
+    case 'loseKeyword':
     case 'grantProtection':
     case 'grantAbility':
     case 'attackTax':
@@ -1649,6 +1668,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',
+  'static:loseKeyword',
   'static:grantAbility',
   'static:restriction',
   'static:costReduction',

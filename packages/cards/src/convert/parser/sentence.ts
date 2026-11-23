@@ -79,6 +79,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
   'condition.that-object-power',
+  // Conformer Shuriken: "If that creature has greater power than ~, put a number of +1/+1 counters on ~ equal to the difference."
+  'condition.that-object-greater-power-than-self',
   // Meren of Clan Nel Toth: "If that card's mana value is less than or equal to the number of experience counters you have, return it to the battlefield."
   'condition.that-mana-value-at-most',
 ] as const;

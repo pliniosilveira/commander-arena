@@ -6,6 +6,7 @@ import type {
   Effect,
   ModeChoice,
   ObjectFilter,
+  ObjectRef,
   ObjectSelector,
   PlayerSelector,
   SpellMode,
@@ -363,6 +364,11 @@ export interface LowerContext {
   /** The stat "that player has more cards in hand than you" compared (Slithermuse), which "equal to the difference" after it is of. Null before one. */
   comparedStat: 'life' | 'cardsInHand' | null;
   /**
+   * The object whose power "that creature has greater power than ~" compared with the source's (Conformer Shuriken), which "equal to the difference" after it is of: the gap between the
+   * two powers. Null before one.
+   */
+  comparedPowerOf: ObjectRef | null;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -458,6 +464,7 @@ export function newContext(
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,
+    comparedPowerOf: null,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

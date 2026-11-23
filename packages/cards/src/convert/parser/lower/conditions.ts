@@ -584,6 +584,8 @@ export function lowerCondition(
       if (!filter.ok) return filter;
       const of =
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
+      // Conformer Shuriken (CR 208.1, 608.2c): "If that creature has greater power than ~, ... equal to the difference": the instruction after it counts the gap between the two powers.
+      if (filter.value.powerGreaterThanSource === true) at.comparedPowerOf = of;
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
     case 'manaValueAtMostAmount': {

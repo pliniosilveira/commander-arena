@@ -805,6 +805,18 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.subject`, 'riot is given to a group of permanents, as they enter');
       }
       break;
+    case 'loseKeyword':
+      // Colossus Hammer (CR 613.1f): a keyword without parameters taken from the subject.
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
+      checkGrantedKeyword(s.keyword, `${path}.keyword`, out);
+      if (
+        typeof s.keyword === 'object' &&
+        s.keyword !== null &&
+        Object.keys(s.keyword).length > 1
+      ) {
+        issue(out, `${path}.keyword`, 'only a keyword without parameters is taken away');
+      }
+      break;
     case 'restriction':
       checkStaticSubject(s.subject, `${path}.subject`, out);
       if (!isOneOf(s.restriction, RESTRICTIONS)) {

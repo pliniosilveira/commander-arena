@@ -18,6 +18,7 @@ import {
 const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
   'modifyPt',
   'grantKeyword',
+  'loseKeyword',
   'grantAbility',
   'restriction',
   // D-133: read where the attackers are declared, with `evaluateCondition` (`rules/attack-tax.ts`).

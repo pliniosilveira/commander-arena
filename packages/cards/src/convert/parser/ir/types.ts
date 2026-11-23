@@ -500,6 +500,8 @@ export interface IrFilter {
   readonly sameNameAsNoun?: IrNoun;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
+  /** "that creature has greater power than ~" (Conformer Shuriken, CR 208.1): the engine's `powerGreaterThanSource`. */
+  readonly powerGreaterThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /**
@@ -1780,6 +1782,10 @@ export type IrStaticEffect =
       readonly count: IrAmount;
     }
   | { readonly kind: 'grantKeyword'; readonly keyword: string; readonly params?: readonly IrArg[] }
+  // Colossus Hammer (CR 613.1f): "loses flying": a keyword without parameters the subject no longer has (the engine's `loseKeyword`).
+  | { readonly kind: 'loseKeyword'; readonly keyword: string }
+  // Puresteel Paladin (CR 702.6a): "have equip {0}": the Equip ability a group of Equipment is given, with a plain mana cost (the engine's `grantKeyword` of `equip`).
+  | { readonly kind: 'grantEquip'; readonly cost: IrCost }
   /**
    * `has protection from red and from blue` (stage P70, D-259, CR 702.16): protection from the colors the statement names (`colors`, color words as
    * written, lowercase) or, when `commanderIdentity` is set, "each color that's not in your commander's color identity" (CR 903.4, 903.4f). One of the two.
@@ -1832,7 +1838,8 @@ export type IrStaticEffect =
   /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
   | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
-  | { readonly kind: 'abilityCostReduction'; readonly amount: number }
+  // Helitrooper: "that target ~" (`targetsSelf`): the creature with the ability, not the permanent an Aura enchants.
+  | { readonly kind: 'abilityCostReduction'; readonly amount: number; readonly targetsSelf?: true }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
   | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off

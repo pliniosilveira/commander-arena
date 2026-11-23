@@ -1139,6 +1139,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notAttacking',
     'blocking',
     'powerLessThanSource',
+    // Conformer Shuriken: `ObjectFilter.powerGreaterThanSource`, "that creature has greater power than this creature".
+    'powerGreaterThanSource',
     // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
     'monarchController',
     'restrictBlockers',
@@ -1442,6 +1444,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modifyPt',
     'characteristicPt',
     'grantKeyword',
+    // Colossus Hammer (CR 613.1f): "Equipped creature gets +10/+10 and loses flying".
+    'loseKeyword',
     'grantAbility',
     'restriction',
     'costReduction',
@@ -2188,6 +2192,8 @@ export const SELECTOR_KINDS = [
   'blocking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "That creature has greater power than this creature" (Conformer Shuriken, CR 208.1): the engine's `ObjectFilter.powerGreaterThanSource`. */
+  'powerGreaterThanSource',
   /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
   'monarchController',
   /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
@@ -2495,6 +2501,8 @@ export const STATIC_KINDS = [
   /** "Equipped creature gets +N/+N", "Creatures you control get +1/+1" (CR 613.4c). */
   'modifyPt',
   'grantKeyword',
+  /** "Equipped creature loses flying" (CR 613.1f, Colossus Hammer): the engine's static `loseKeyword`. */
+  'loseKeyword',
   'grantAbility',
   'cantBeBlocked',
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */

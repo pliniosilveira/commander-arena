@@ -65,3 +65,55 @@ export const CONDITION_THAT_OBJECT_POWER = defineRule<IrCondition>({
     };
   },
 });
+
+/**
+ * `condition.that-object-greater-power-than-self`: "that creature has greater power than ~" (Conformer Shuriken, CR 208.1, 608.2c): the power of the permanent an earlier instruction of the
+ * text named, as it is now, against the power of the permanent with the ability ("~"; for a granted ability that is the creature that has it). The engine's `objectMatches` with
+ * `powerGreaterThanSource`, in a `conditional` effect; the lowering remembers the object, for "equal to the difference" after it. Not read: another comparison ("less", "at least",
+ * "equal"), "its power", a player or a card, a stat other than power, the past tense, a plural.
+ */
+export const CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF = defineRule<IrCondition>({
+  id: 'condition.that-object-greater-power-than-self',
+  family: 'condition',
+  leading: ['that'],
+  cites: ['CR 208.1 (Power and Toughness)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['that creature has greater power than ~', 'that permanent has greater power than ~'],
+  rejects: [
+    'that creature has greater power than',
+    'that creature has lesser power than ~',
+    'that creature has greater toughness than ~',
+    'that creature has greater power than its controller',
+    'that creature had greater power than ~',
+    'that card has greater power than ~',
+    'those creatures have greater power than ~',
+    "that creature has greater power than ~'s toughness",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/that (creature|permanent) has greater power than ~(?![\p{L}\p{N}'’])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const that: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: `that ${(r.value[1] ?? '').toLowerCase()}` },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 5 + (r.value[1] ?? '').length },
+      rule: 'condition.that-object-greater-power-than-self',
+    };
+    const filter: IrFilter = { powerGreaterThanSource: true, raw: r.value[0] };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'objectMatches', who: that, filter },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.that-object-greater-power-than-self',
+      },
+      pos: r.pos,
+    };
+  },
+});

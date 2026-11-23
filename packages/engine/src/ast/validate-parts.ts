@@ -396,6 +396,7 @@ export function checkFilter(
     'attackingOrBlocking',
     'blocking',
     'powerLessThanSource',
+    'powerGreaterThanSource',
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'discardedOrFromLibraryThisTurn',
@@ -874,6 +875,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attackingOrBlocking !== undefined ||
   f.blocking !== undefined ||
   f.powerLessThanSource === true ||
+  f.powerGreaterThanSource === true ||
   f.powerAboveBase === true ||
   f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
@@ -5127,6 +5129,8 @@ export const MAY_EFFECT_KINDS = [
   'addMana',
   // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, put three +1/+1 counters on ~": life was lost when the amount was above 0.
   'loseLife',
+  // Sephiroth, Fallen Hero (CR 608.2d, 122.6): "you may put a cell counter on target creature. Until end of turn, ...": the counters are the one instruction the question is about.
+  'addCounters',
 ];
 
 /**

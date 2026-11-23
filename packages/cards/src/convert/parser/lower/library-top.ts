@@ -99,8 +99,37 @@ const LOOK_TOP_ELSE_HAND: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped." (Explorer's Scope, CR 608.2c, 701.20a): one card looked at, put onto the
+ * battlefield tapped when it is of the kind and the player chooses; otherwise it stays on top (`rest: 'top'`).
+ */
+const LOOK_TOP_MAY_BATTLEFIELD: Lowering<IrClause, Effects> = {
+  head: 'lookTopMayBattlefield',
+  id: 'lower.look-top-may-battlefield',
+  needs: ['effect:lookAtTop'],
+  lower(clause) {
+    const take = arg(clause, 'take');
+    if (take?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter(take);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: 1,
+          take: { filter: filter.value, max: 1, to: 'battlefield', tapped: true },
+          rest: 'top',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const LIBRARY_TOP_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REVEAL_PUT_ONE_BATTLEFIELD,
   LOOK_TOP_X_ONE_ON_TOP,
   LOOK_TOP_ELSE_HAND,
+  LOOK_TOP_MAY_BATTLEFIELD,
 ];

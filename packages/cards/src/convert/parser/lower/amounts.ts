@@ -729,6 +729,23 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'playerCount', of: of.value }, rule };
     }
     case 'chosenPlayerLead': {
+      // CR 608.2c (Conformer Shuriken): "If that creature has greater power than ~, ... equal to the difference": the gap between the two powers the condition before it compared. The
+      // condition says the first is the greater, so the gap is never negative.
+      if (!ctx.choseAPlayer && ctx.comparedPowerOf !== null) {
+        const gap = needs('difference') ?? needs('powerOf');
+        if (gap !== null) return gap;
+        return {
+          ok: true,
+          value: {
+            kind: 'difference',
+            of: [
+              { kind: 'powerOf', of: ctx.comparedPowerOf },
+              { kind: 'powerOf', of: { kind: 'this' } },
+            ],
+          },
+          rule,
+        };
+      }
       // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
       const blocked = needs('chosenPlayerLead');
       if (blocked !== null) return blocked;

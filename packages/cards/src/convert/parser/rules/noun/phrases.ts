@@ -1041,6 +1041,24 @@ const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice
   ),
 );
 
+/** The artifact and enchantment types (CR 205.3g, 205.3h) a graveyard phrase may name in a choice without a card type ("Equipment or Vehicle card"): none is a creature type. */
+const NONCREATURE_PERMANENT_SUBTYPES: ReadonlySet<string> = new Set([
+  'Aura',
+  'Equipment',
+  'Vehicle',
+  'Saga',
+  'Food',
+  'Clue',
+  'Treasure',
+  'Blood',
+  'Map',
+  'Fortification',
+  'Shrine',
+  'Curse',
+  'Class',
+  'Room',
+]);
+
 /** What stands before "card" in a graveyard phrase: types, a choice of types, subtypes (stage P15). */
 interface CardWords {
   readonly types: readonly string[];
@@ -1056,6 +1074,8 @@ interface CardWords {
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
   readonly subtypeAnyOf?: readonly string[];
+  /** "historic card" (Elena, Turk Recruit, CR 700.6): an artifact, a legendary card or a Saga. */
+  readonly historic?: true;
 }
 
 /**
@@ -1249,14 +1269,43 @@ export function graveyardPhrase(
     subtypes: [],
     subtypeAnyOf: ['Aura', 'Equipment'],
   }));
+  // "Equipment or Vehicle card" (Cid, Freeflier Pilot, CR 205.3g, 205.3h): a card that has either of two or more artifact or enchantment types, one card only; no card type is said,
+  // so the words are the subtypes alone (a creature type after "or" is another reading, `subtypeChoiceWords`).
+  const permanentSubtypeChoice: Parser<CardWords> = (ctx, pos) => {
+    const r = sequence(
+      satisfy(typeChoice(SUBTYPE_WORD, true), (list) =>
+        list.every((w) => NONCREATURE_PERMANENT_SUBTYPES.has(w)),
+      ),
+      literal(' '),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { types: [], anyOf: [], subtypes: [], subtypeAnyOf: r.value[0] },
+      pos: r.pos,
+    };
+  };
+  // "historic card", "non-Assassin historic card" (Elena, Turk Recruit, CR 700.6, 205.3d): an artifact card, a legendary card or a Saga card, less the creature types it must not have.
+  const historicWords: Parser<CardWords> = map(
+    sequence(nonSubtypes, literal('historic ')),
+    ([notSubtypes]): CardWords => ({
+      types: [],
+      anyOf: [],
+      subtypes: [],
+      historic: true,
+      ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
+    }),
+  );
   const words: Parser<CardWords> = plural
-    ? choice(permanentCards, choiceOfTypes, typed)
+    ? choice(permanentCards, choiceOfTypes, quiet(historicWords), typed)
     : choice(
         permanentCards,
         withNonAura,
         choiceOfTypes,
         quiet(subtypeChoiceWords),
         auraOrEquipment,
+        quiet(permanentSubtypeChoice),
+        quiet(historicWords),
         typed,
       );
   // "Dragon creature card or Ugin planeswalker card from your graveyard" (stage P34, D-152, CR 205.2a, 205.3j): one card that is either kind,
@@ -1359,7 +1408,17 @@ export function graveyardPhrase(
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, notSupertypes, notTypes, extra, subtypeAnyOf },
+      {
+        types,
+        anyOf,
+        subtypes,
+        notSubtypes,
+        notSupertypes,
+        notTypes,
+        extra,
+        subtypeAnyOf,
+        historic,
+      },
       ,
       chosen,
       compared,
@@ -1393,6 +1452,7 @@ export function graveyardPhrase(
             : subtypeAnyOf === undefined
               ? {}
               : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
+          ...(historic === true ? { historic: true as const } : {}),
           ...(chosen === undefined ? {} : { chosen }),
           ...(putThere === 'battlefield' ? { putFromBattlefieldThisTurn: true as const } : {}),
           ...(putThere === 'discardedOrLibrary'

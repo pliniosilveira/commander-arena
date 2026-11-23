@@ -27,6 +27,8 @@ export const STATIC_EQUIP_COST_REDUCTION = defineRule<IrStatic>({
   examples: [
     'Equip abilities you activate that target enchanted creature cost {3} less to activate.',
     'Equip abilities you activate that target enchanted creature cost {1} less to activate.',
+    // Helitrooper (CR 702.6a, 601.2f): the creature with the ability is the one the Equip abilities must target.
+    'Equip abilities you activate that target ~ cost {2} less to activate.',
   ],
   rejects: [
     'Equip abilities you activate that target enchanted creature cost {3} less to activate',
@@ -41,10 +43,15 @@ export const STATIC_EQUIP_COST_REDUCTION = defineRule<IrStatic>({
     'Equip abilities you activate that target enchanted creature cost {3} less to cast.',
     'Equip abilities you activate that target enchanted creature cost {3} less to activate for each Aura you control.',
     'Equip abilities you activate that target enchanted creature cost {1}{W} less to activate.',
+    'Equip abilities you activate that target ~ cost {X} less to activate.',
+    'Equip abilities your opponents activate that target ~ cost {2} less to activate.',
+    'Equip abilities you activate that target ~ cost {2} more to activate.',
   ],
   parse: (ctx, pos) => {
     const r = sequence(
-      literal('equip abilities you activate that target enchanted creature cost '),
+      literal('equip abilities you activate that target '),
+      pattern(/enchanted creature|~/),
+      literal(' cost '),
       pattern(/\{([1-9]\d*)\}/),
       literal(' less to activate'),
       literal('.'),
@@ -65,7 +72,13 @@ export const STATIC_EQUIP_COST_REDUCTION = defineRule<IrStatic>({
       value: {
         kind: 'static',
         subject,
-        effects: [{ kind: 'abilityCostReduction', amount: Number(r.value[1][1]) }],
+        effects: [
+          {
+            kind: 'abilityCostReduction',
+            amount: Number(r.value[3][1]),
+            ...(r.value[1][0] === '~' ? { targetsSelf: true as const } : {}),
+          },
+        ],
         span: { start: pos, end: r.pos },
         rule: 'static.equip-cost-reduction',
       },

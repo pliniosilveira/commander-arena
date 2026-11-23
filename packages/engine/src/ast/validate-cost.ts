@@ -496,7 +496,8 @@ export function checkAbilityCostReduction(
   if (s.targeting === undefined || s.targeting === null || typeof s.targeting !== 'object') {
     issue(out, `${path}.targeting`, 'an ability cost reduction needs a filter of what it targets');
   } else {
-    checkFilter(s.targeting, `${path}.targeting`, out);
+    // Helitrooper: "that target this creature" is `isSource`, the permanent with the ability, read here as in the filter of what a spell targets.
+    checkFilter(s.targeting, `${path}.targeting`, out, undefined, undefined, { sourceOk: true });
     if (
       filterSome(
         s.targeting,

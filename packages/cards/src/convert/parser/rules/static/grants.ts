@@ -154,6 +154,21 @@ const PROTECTION: Parser<Effects> = choice(
   ),
 );
 
+/**
+ * "equip {0}", "equip {2}" (Puresteel Paladin, CR 702.6a): the Equip ability a group of Equipment has, with a cost of plain mana (generic or colored symbols, {0} included); one ability
+ * only. Not read: "equip Pirate {1}", an equip cost that is not mana, {X}.
+ */
+const EQUIP_GRANT: Parser<Effects> = (ctx, pos) => {
+  const head = pattern(/equip (?=\{)/iu)(ctx, pos);
+  if (!head.ok) return head;
+  const cost = family<IrCost>('cost', { only: ['cost.mana'] })(ctx, head.pos);
+  if (!cost.ok) return cost;
+  if (cost.value.kind !== 'mana' || cost.value.symbols.some((s) => !/^(\d+|[WUBRGC])$/u.test(s))) {
+    return fail(ctx, pos);
+  }
+  return { ok: true, value: [{ kind: 'grantEquip', cost: cost.value }], pos: cost.pos };
+};
+
 /** What a subject has: keywords it can be granted, one ability in quotes, a protection (stage P70) or (stage P31) a base power and toughness. */
 const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
@@ -259,16 +274,29 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
             ([, what]) => what,
           ),
         );
+  // CR 613.1f (Colossus Hammer): "gets +10/+10 and loses flying", "has haste and loses flying": the keywords the subject no longer has.
+  const loses = plural ? 'lose ' : 'loses ';
+  const loseWhat = map(
+    sequence(pattern(new RegExp(`${loses}`, 'i')), KEYWORD_WORDS),
+    ([, words]): Effects =>
+      words.map((keyword): IrStaticEffect => ({ kind: 'loseKeyword', keyword })),
+  );
+  const andLoses =
+    mode === 'self' || mode === 'selfGrant'
+      ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
+      : quiet(map(sequence(pattern(/(?: and |, and |, )/iu), loseWhat), ([, what]) => what));
   const more = map(
-    many(choice(andHas, andRestriction, andAre, andGoaded, andQuoted)),
+    many(choice(andHas, andRestriction, andAre, andGoaded, andQuoted, andLoses)),
     (groups): Effects => groups.flat(),
   );
   const getsPt = map(
     sequence(pattern(new RegExp(gets, 'i')), PT, more),
     ([, pt, rest]): Effects => [pt, ...rest],
   );
+  // Puresteel Paladin (CR 702.6a): a group of Equipment "have equip {0}".
+  const hasChoices = plural ? choice(EQUIP_GRANT, HAS_WHAT) : HAS_WHAT;
   const hasWhat = map(
-    sequence(pattern(new RegExp(has, 'i')), HAS_WHAT, more),
+    sequence(pattern(new RegExp(has, 'i')), hasChoices, more),
     ([, what, rest]): Effects => [...what, ...rest],
   );
   const restricted = map(
@@ -284,12 +312,13 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
   // Stage P33: for a permanent an Aura or Equipment is attached to the same words are tried quietly, so a line about what it "is" that
   // `static.attached-becomes` reads keeps the diagnostics it had.
   const areTypesFirst = plural ? areTypesRead : quiet(areTypesRead);
+  const losesOnly = map(sequence(loseWhat, more), ([first, rest]): Effects => [...first, ...rest]);
   const body =
     mode === 'self'
       ? restricted
       : mode === 'selfGrant'
         ? choice(getsPt, hasWhat, restricted)
-        : choice(getsPt, hasWhat, areTypesFirst, restricted);
+        : choice(getsPt, hasWhat, areTypesFirst, losesOnly, restricted);
   return map(sequence(pattern(/ /), body), ([, effects]) => effects);
 }
 
@@ -359,7 +388,7 @@ export function statement(
  * "Enchanted creature gets +1/+1 and has vigilance.", "Equipped creature has "{T}: Add {G}."" (a
  * granted mana ability, stage P14; any other quoted ability is read as text and dropped whole by the
  * lowering), "Equipped creature can't be blocked." and, since the Danitha deck (D-407), "Enchanted creature can't attack or block." (CR 508.1a, 509.1a: two restrictions,
- * each its own static ability). Not read: "can't attack or block alone", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
+ * each its own static ability). Not read: "can't attack or block alone", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
  * (stage P70, D-259), is read after "has".
  */
 export const STATIC_ATTACHED = defineRule<IrStatic>({
@@ -396,6 +425,11 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
     'Enchanted creature gets +4/+4, has flying and first strike, and is an Angel in addition to its other types.',
     'Enchanted creature gets +2/+2, has flying, and is a Zombie in addition to its other types.',
+    // Colossus Hammer (CR 613.1f): a keyword the permanent loses.
+    'Equipped creature gets +10/+10 and loses flying.',
+    'Enchanted creature loses flying.',
+    'Enchanted creature gets +1/+1 and loses flying.',
+    'Equipped creature has haste and loses flying and trample.',
     // Issue 89 (D-639, CR 701.15b): the creature is goaded by the controller of the Aura.
     'Enchanted creature gets +1/+1 and is goaded.',
     'Enchanted creature has indestructible and is goaded.',
@@ -433,11 +467,11 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature is an Angels in addition to its other types.',
     'Enchanted creature is an Angel in addition to its other types and gets +1/+1.',
     'Enchanted creature has flying, first strike and vigilance.',
-    'Enchanted creature loses flying.',
     "Enchanted creature can't attack or block alone.",
     "Enchanted creature can't attack you or planeswalkers.",
     "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
-    'Enchanted creature gets +1/+1 and loses flying.',
+    'Enchanted creature loses flying and flying.',
+    'Enchanted creature loses.',
     "Enchanted creature can attack as though it didn't have defender.",
     'Equipped land has hexproof.',
     'Equipped creature has "{T}: Add {G}.".',

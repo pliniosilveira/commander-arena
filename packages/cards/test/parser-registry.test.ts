@@ -1126,6 +1126,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.that-object-power': spell(
     (e) => `Put a +1/+1 counter on target creature you control. Then if ${e}, draw a card.`,
   ),
+  // Conformer Shuriken.
+  'condition.that-object-greater-power-than-self': spell(
+    (e) => `Tap target creature. If ${e}, draw a card.`,
+  ),
   // Issue 233 (Martial Coup).
   'condition.x-at-least': spell(
     (e) => `Create X 1/1 white Soldier creature tokens. If ${e}, draw a card.`,

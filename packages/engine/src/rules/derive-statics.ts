@@ -49,6 +49,7 @@ type Modifier = Extract<
     kind:
       | 'modifyPt'
       | 'grantKeyword'
+      | 'loseKeyword'
       | 'grantAbility'
       | 'restriction'
       | 'goaded'
@@ -331,6 +332,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
     a.kind === 'static' &&
     (a.static.kind === 'modifyPt' ||
       a.static.kind === 'grantKeyword' ||
+      a.static.kind === 'loseKeyword' ||
       a.static.kind === 'grantAbility' ||
       a.static.kind === 'restriction' ||
       a.static.kind === 'goaded' ||
@@ -1145,6 +1147,13 @@ export function staticEffectsOn(
       }
       grants.push({
         ability: { kind: 'keyword', keyword },
+        timestamp: source.object.timestamp,
+      });
+    } else if (mod.kind === 'loseKeyword') {
+      // CR 613.1f (Colossus Hammer): "Equipped creature loses flying", layer 6, with the Equipment's timestamp.
+      grants.push({
+        ability: null,
+        loses: mod.keyword.kind,
         timestamp: source.object.timestamp,
       });
     } else if (mod.kind === 'loseAllAbilities') {
