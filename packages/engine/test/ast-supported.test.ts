@@ -103,6 +103,7 @@ const EXECUTABLE_KEYWORDS = [
   'jobSelect', // convert-grammar-engine-p49 (Job select, D-206)
   'readAhead', // scenario-xx-read-ahead
   'rebound', // convert-grammar-engine-scions-e
+  'reconfigure', // scenario-xx-reconfigure
   'dethrone', // scenario-xx-extra-combat
   'myriad', // scenario-xx-extra-combat
   'decayed', // scenario-xx-gisa-g5-decayed (D-478)
@@ -230,6 +231,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   dethrone: { kind: 'dethrone' },
   readAhead: { kind: 'readAhead' },
   rebound: { kind: 'rebound' },
+  reconfigure: { kind: 'reconfigure', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   myriad: { kind: 'myriad' },
   decayed: { kind: 'decayed' },
   protection: { kind: 'protection', from: 'color', colors: ['R'] },
@@ -303,9 +305,12 @@ describe('supported feature gate', () => {
                           ? syntheticCard('SYNTHETIC Rite // Toll')
                           : kind === 'readAhead'
                             ? syntheticCard('SYNTHETIC Reading Rite')
-                            : kind === 'rebound'
-                              ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
-                              : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                            : kind === 'reconfigure'
+                              ? // CR 702.151: an Equipment creature.
+                                syntheticCard('SYNTHETIC Reconfigure Blade')
+                              : kind === 'rebound'
+                                ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
+                                : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
