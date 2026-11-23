@@ -118,4 +118,19 @@ export const SYNTHETIC_ENERGY_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "You may pay two {E} rather than pay the mana cost for permanent spells you cast."
+  singleFace({
+    name: 'SYNTHETIC Energy Patron',
+    manaCost: ['2'],
+    types: ['enchantment'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'You may pay two {E} rather than pay the mana cost for permanent spells you cast.',
+    abilities: [
+      {
+        kind: 'static',
+        static: { kind: 'grantEnergyAlternative', what: { controller: 'you' }, energy: 2 },
+      },
+    ],
+  }),
 ];

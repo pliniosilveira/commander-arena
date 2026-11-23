@@ -26,16 +26,25 @@ const CONDUIT = real('Aetherflux Conduit');
 const MARVEL = real('Aetherworks Marvel');
 const PANHARMONICON = real('Panharmonicon');
 const AMPLIFIER = real('Aetheric Amplifier');
+const NISSA = real('Nissa, Worldsoul Speaker');
 
 describe('the cards read', () => {
-  test.each([COUP, DISALLOW, TITAN, PIA, SAHEELI, CONDUIT, MARVEL, PANHARMONICON, AMPLIFIER])(
-    '$golden.name: supported, nothing left unparsed, validateCard is clean',
-    ({ card }) => {
-      expect(card.support.status).toBe('supported');
-      expect(card.support.unparsed).toEqual([]);
-      expect(validateCard(card.definition)).toEqual([]);
-    },
-  );
+  test.each([
+    COUP,
+    DISALLOW,
+    TITAN,
+    PIA,
+    SAHEELI,
+    CONDUIT,
+    MARVEL,
+    PANHARMONICON,
+    AMPLIFIER,
+    NISSA,
+  ])('$golden.name: supported, nothing left unparsed, validateCard is clean', ({ card }) => {
+    expect(card.support.status).toBe('supported');
+    expect(card.support.unparsed).toEqual([]);
+    expect(validateCard(card.definition)).toEqual([]);
+  });
 
   test('Triplicate Titan makes three Golems, one with each keyword', () => {
     const dies = TITAN.card.definition.faces[0]?.abilities.find((a) => a.kind === 'triggered');
@@ -74,6 +83,39 @@ describe('the cards read', () => {
         ],
       },
     });
+  });
+});
+
+describe('Nissa, Worldsoul Speaker', () => {
+  test('lets a permanent spell be cast for eight energy and no mana', () => {
+    const def = NISSA.card.definition;
+    const g = scenario()
+      .define(def)
+      .seat(0)
+      .energy(9)
+      .battlefield(def.name)
+      .hand('SYNTHETIC Quiet Bear')
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast('SYNTHETIC Quiet Bear', { alternative: 'energyGrant' });
+    g.passAll();
+    g.expect.zone('SYNTHETIC Quiet Bear', 'battlefield', { seat: 0 });
+    g.expect.energy(0, 1);
+  });
+
+  test('with seven energy it is not offered', () => {
+    const def = NISSA.card.definition;
+    const g = scenario()
+      .define(def)
+      .seat(0)
+      .energy(7)
+      .battlefield(def.name)
+      .hand('SYNTHETIC Quiet Bear')
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.expect.illegal(0, { cast: 'SYNTHETIC Quiet Bear', alternative: 'energyGrant' });
   });
 });
 

@@ -7330,6 +7330,17 @@ export type StaticEffect =
       readonly alt: { readonly kind: 'evoke'; readonly cost: readonly Cost[] };
     }
   /**
+   * "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (Nissa, Worldsoul Speaker, issue 105; CR 118.9, 601.2b, 107.14, 613.1f): a static ability of a
+   * permanent on the battlefield that gives the permanent spells its controller casts from their hand an alternative cost of `energy` energy counters and no mana (`CastAlternative`
+   * `energyGrant`), read as the spell is cast. A player with fewer counters can not cast that way. `what` is a filter of the spell as it is on the stack, `controller: 'you'`, no zone,
+   * owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantEnergyAlternative';
+      readonly what: ObjectFilter;
+      readonly energy: number;
+    }
+  /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
    * a characteristic-defining ability of the card it is printed on, working in every zone but the battlefield (a hand, a library, a graveyard, the stack, exile): the object is also a
    * creature of the creature types `subtypes` (layer 4, applied first like Changeling) and its power and toughness are `power` and `toughness` (layer 7a). The ability is of the

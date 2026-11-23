@@ -144,3 +144,59 @@ describe('"You may cast any number of spells from your hand without paying their
     g.expect.zone(BEAR, 'battlefield', { seat: 0, count: 1 });
   });
 });
+
+describe('"You may pay {E}{E} rather than pay the mana cost for permanent spells you cast" (grantEnergyAlternative)', () => {
+  const PATRON = 'SYNTHETIC Energy Patron';
+  const BEAR = 'SYNTHETIC Quiet Bear';
+
+  test('a permanent spell may be cast for the energy, paying no mana', () => {
+    const g = scenario()
+      .seat(0)
+      .energy(3)
+      .battlefield(PATRON)
+      .hand(BEAR)
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.expect.legal(0, { cast: BEAR, alternative: 'energyGrant' });
+    g.act(0).cast(BEAR, { alternative: 'energyGrant' });
+    g.passAll();
+    g.expect.zone(BEAR, 'battlefield', { seat: 0 });
+    g.expect.energy(0, 1);
+  });
+
+  test('with fewer counters than the cost it is not offered', () => {
+    const g = scenario()
+      .seat(0)
+      .energy(1)
+      .battlefield(PATRON)
+      .hand(BEAR)
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.expect.illegal(0, { cast: BEAR, alternative: 'energyGrant' });
+  });
+
+  test('an instant is not a permanent spell: not offered', () => {
+    const g = scenario()
+      .seat(0)
+      .energy(3)
+      .battlefield(PATRON)
+      .hand('Lightning Bolt')
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.expect.illegal(0, { cast: 'Lightning Bolt', alternative: 'energyGrant' });
+  });
+
+  test('without the permanent it is not offered', () => {
+    const g = scenario()
+      .seat(0)
+      .energy(3)
+      .hand(BEAR)
+      .seat(1)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.expect.illegal(0, { cast: BEAR, alternative: 'energyGrant' });
+  });
+});

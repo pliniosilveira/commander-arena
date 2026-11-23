@@ -10,7 +10,7 @@ import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { grantedEvokeOf } from './alt-cost-grant';
+import { grantedEnergyOf, grantedEvokeOf } from './alt-cost-grant';
 import {
   alternativeOf,
   flashbackCostOf,
@@ -798,6 +798,13 @@ export function canCast(
   }
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
   if (alternative === 'lifeForMana' && !mayPayLifeForMana(state, seat)) return false;
+  // CR 118.9, 107.14 (issue 105, Nissa): only while a permanent of the caster gives it for this spell.
+  if (
+    alternative === 'energyGrant' &&
+    grantedEnergyOf(state, seat, castAs(obj, seat, face, alternative), obj.zone) === null
+  ) {
+    return false;
+  }
   const spell = castAs(obj, seat, face, alternative);
   const types = derive(state, spell).types;
   if (types.includes('land')) return false;

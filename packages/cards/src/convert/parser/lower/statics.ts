@@ -654,6 +654,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantFlashbackToGraveyardCards'];
     case 'spellEvoke':
       return ['static:grantAlternativeCostToSpells'];
+    case 'energyAlternative':
+      return ['static:grantEnergyAlternative'];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
     case 'legendRuleDoesntApply':
@@ -1048,7 +1050,40 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
+  // Issue 105 (Nissa, Worldsoul Speaker, CR 118.9, 107.14): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+  if (first.kind === 'energyAlternative') {
+    if (
+      more.length > 0 ||
+      ability.statement.condition !== undefined ||
+      ability.statement.also !== undefined ||
+      ability.statement.functionsIn !== undefined ||
+      first.count < 1
+    ) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures([
+      'ability:static',
+      'static:grantEnergyAlternative',
+      'castAlternative:energyGrant',
+    ]);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'grantEnergyAlternative',
+            what: { controller: 'you' },
+            energy: first.count,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them."
+
   if (isSpellEvokeStatic(first)) return lowerSpellEvokeStatic(ability);
   // Issue 133 (CR 704.5j, 613.1d, 702.141a): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);

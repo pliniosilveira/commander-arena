@@ -1396,6 +1396,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantFlashbackToGraveyardCards',
     // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
     'grantAlternativeCostToSpells',
+    // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (CR 118.9, 107.14).
+    'grantEnergyAlternative',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1642,6 +1644,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
   // D-121, D-124: the named alternative costs (Overload, Evoke, Dash, Spectacle, Escape).
   castAlternatives: [
+    // Issue 105: energy rather than the mana cost, granted by a static ability of a permanent (`grantEnergyAlternative`).
+    'energyGrant',
     'flashback',
     'free',
     'overload',
@@ -2476,6 +2480,8 @@ export const STATIC_KINDS = [
   'grantFlashbackToGraveyardCards',
   /** "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9). */
   'grantAlternativeCostToSpells',
+  /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14). */
+  'grantEnergyAlternative',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
@@ -2796,6 +2802,8 @@ export const CAST_ALTERNATIVE_KINDS = [
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
+  // Issue 105 (Nissa, Worldsoul Speaker): energy rather than the mana cost, granted by a static ability of a permanent.
+  'energyGrant',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 

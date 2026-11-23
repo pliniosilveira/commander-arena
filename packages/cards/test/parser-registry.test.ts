@@ -220,6 +220,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-spell-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'static.triggers-additional-time-entering-types': asIs,
+  'static.pay-energy-alt-cost-permanents': asIs,
   'token.copy-except-additive-types': spell((e) => `Create ${e}.`),
   'modal.choose-bare': permanent(
     (e) => `{4}, {T}: ${e}. Activate only as a sorcery.\n• Draw a card.\n• You gain 1 life.`,

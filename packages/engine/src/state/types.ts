@@ -424,6 +424,8 @@ export interface StackData {
   readonly boughtBack?: true;
   /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
   readonly lifeForMana?: true;
+  /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */
+  readonly energyGrant?: number;
   /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no

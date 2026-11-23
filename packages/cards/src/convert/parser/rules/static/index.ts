@@ -26,6 +26,7 @@ import { DRAGON_STATIC_RULES } from './dragons';
 import { EACH_SPELL_COST_STATIC_RULES } from './each-spell-cost';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { EMINENCE_STATIC_RULES } from './eminence';
+import { STATIC_PAY_ENERGY_ALT_COST } from './energy-alt';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
 import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
@@ -144,6 +145,8 @@ export const STATIC_RULES = [
   ...ADAMANTOISE_STATIC_RULES,
   // Stage P67 (D-220): "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time."
   ...EDHREC_STATIC_RULES,
+  // Aetherdrift energy deck (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+  STATIC_PAY_ENERGY_ALT_COST,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."

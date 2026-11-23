@@ -590,6 +590,32 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'grantEnergyAlternative':
+      // CR 118.9, 107.14 (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast": a whole number of one or more, for the spells of the controller.
+      if (!isCount(s.energy) || s.energy < 1) {
+        issue(out, `${path}.energy`, 'the energy paid is a whole number of one or more');
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (s.what?.controller !== 'you') {
+        issue(out, `${path}.what`, "the spells are the ones you cast: controller is 'you'");
+      }
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the spells are named by what they are: no zone, owner, stackKind or combat',
+        );
+      }
+      break;
     case 'legendRuleDoesntApply':
       // CR 704.5j: "The "legend rule" doesn't apply to Slivers you control": the permanents on the battlefield a filter names, as the permanents they are (`controller` is "you").
       if (s.what === undefined || s.what === null || typeof s.what !== 'object') {

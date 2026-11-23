@@ -230,6 +230,8 @@ describe('the dimensions', () => {
       'grantFlashbackToGraveyardCards',
       // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
       'grantAlternativeCostToSpells',
+      // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
+      'grantEnergyAlternative',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',

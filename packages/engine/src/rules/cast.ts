@@ -52,7 +52,7 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
-import { evokeGrantData } from './alt-cost-grant';
+import { evokeGrantData, grantedEnergyOf } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
@@ -289,6 +289,13 @@ export function beginCast(
         : {}),
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
+      // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
+      ...(alternative === 'energyGrant'
+        ? {
+            energyGrant:
+              grantedEnergyOf(state, seat, castAs(obj, seat, face, alternative), zone) ?? 0,
+          }
+        : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
       ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
@@ -1101,6 +1108,12 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       },
     },
   };
+  if (cost.energy > 0) {
+    // CR 107.14, 118.3: the energy counters are removed as the cost is paid.
+    const had = getSeat(next, casting.seat).energy ?? 0;
+    next = patchSeat(next, casting.seat, { energy: had - cost.energy });
+    events.push({ kind: 'energyChanged', seat: casting.seat, from: had, to: had - cost.energy });
+  }
   if (cost.life > 0) {
     const life = getSeat(next, casting.seat).life;
     next = loseLifeBy(next, casting.seat, cost.life);
