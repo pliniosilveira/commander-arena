@@ -7848,7 +7848,14 @@ export type StaticEffect =
         // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
         | { readonly kind: 'creatureAttacks' }
         // Yarok, the Desecrated (CR 603.2d, 603.6a): "If a permanent entering causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a permanent entering the battlefield, under any player's control (`entersBattlefield`, `entersBatch`, `landfall`) counts.
-        | { readonly kind: 'permanentEnters' };
+        | {
+            readonly kind: 'permanentEnters';
+            /**
+             * Issue 105 (Panharmonicon, CR 603.2d): "If an artifact or creature entering causes a triggered ability of a permanent you control to trigger": only a permanent that has
+             * one of these card types as it enters counts (the object whose entering caused the trigger). A batch trigger names no one object, so it is not doubled with this.
+             */
+            readonly entering?: readonly CardType[];
+          };
     }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (CR 101.2, 601.2, 113.6, D-149): the ability of a card that works

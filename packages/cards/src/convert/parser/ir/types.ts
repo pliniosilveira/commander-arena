@@ -2017,6 +2017,8 @@ export type IrStaticEffect =
       readonly causeAttacks?: true;
       /** Yarok, the Desecrated: "If a permanent entering causes a triggered ability ... to trigger". */
       readonly causeEnters?: true;
+      /** Issue 105 (Panharmonicon): with `causeEnters`, only a permanent that is one of these card types as it enters. */
+      readonly causeEntersTypes?: readonly string[];
     }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }

@@ -1033,6 +1033,7 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target activated or triggered ability',
     // Ahoy Mateys deck, group 10 (Siren Stormtamer): a spell or an ability that targets you or a creature you control.
     'counter target spell or ability that targets you or a creature you control',
+    'counter target spell, activated ability, or triggered ability',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -1050,6 +1051,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
           'noun.target-activated-or-triggered-ability',
+          // Issue 105 (Disallow).
+          'noun.target-spell-activated-or-triggered-ability',
           // Ahoy Mateys deck, group 10 (Siren Stormtamer).
           'noun.target-spell-or-ability-targeting-you',
         ],

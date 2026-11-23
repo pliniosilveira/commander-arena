@@ -110,7 +110,16 @@ function causedBy(
   if (cause.kind === 'permanentEnters') {
     // CR 603.2d, 603.6a: the event is a permanent entering, whoever controls it (a token too).
     const kind = trigger.ability.kind === 'triggered' ? trigger.ability.trigger.kind : null;
-    return kind === 'entersBattlefield' || kind === 'entersBatch' || kind === 'landfall';
+    if (cause.entering === undefined) {
+      return kind === 'entersBattlefield' || kind === 'entersBatch' || kind === 'landfall';
+    }
+    // Issue 105 (Panharmonicon): only the entering of a permanent of one of the card types, which the trigger's subject is (a land that is also an artifact causes a landfall one too).
+    if (kind !== 'entersBattlefield' && kind !== 'landfall') return false;
+    if (trigger.subject === null) return false;
+    const entering = objectOrLki(state, trigger.subject);
+    if (entering === null) return false;
+    const types = derive(state, entering).types;
+    return cause.entering.some((t) => types.includes(t));
   }
   if (trigger.ability.kind !== 'triggered' || trigger.ability.trigger.kind !== 'castSpell') {
     return false;

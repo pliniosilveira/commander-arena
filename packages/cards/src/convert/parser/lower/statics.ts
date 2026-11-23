@@ -1108,7 +1108,12 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
             static: {
               kind: 'doubleTriggers',
               subject: subject.value,
-              cause: { kind: 'permanentEnters' },
+              cause: {
+                kind: 'permanentEnters',
+                ...(first.causeEntersTypes === undefined
+                  ? {}
+                  : { entering: first.causeEntersTypes as CardType[] }),
+              },
             },
             ...linked,
           },
