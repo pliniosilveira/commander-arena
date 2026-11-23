@@ -66,11 +66,11 @@ export function PreconDecksView({
                     </>
                   ) : (
                     <>
-                      <button type="button" className="scr-btn" onClick={() => onEdit(deck)}>
-                        Edit<span className="imp-sr"> {deck.name}</span>
-                      </button>
                       <button type="button" className="scr-btn" onClick={() => onView(deck)}>
                         View<span className="imp-sr"> {deck.name}</span>
+                      </button>
+                      <button type="button" className="scr-btn" onClick={() => onEdit(deck)}>
+                        Edit<span className="imp-sr"> {deck.name}</span>
                       </button>
                       {deck.edited && (
                         <button
