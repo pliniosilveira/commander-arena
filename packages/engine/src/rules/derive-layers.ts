@@ -20,7 +20,7 @@
  * `derive` recomputes every object from its base characteristics each time (CR 613.1, 613.5), so an
  * effect that ends simply stops being in the list and nothing needs undoing.
  */
-import type { Ability } from '../ast/types';
+import type { Ability, Keyword } from '../ast/types';
 import {
   type CardType,
   type Color,
@@ -154,6 +154,8 @@ export interface StaticGrant {
   /** The ability given, or null for "loses all abilities" (D-145): it removes what the object has at that timestamp. */
   readonly ability: Ability | null;
   readonly timestamp: number;
+  /** "Equipped creature loses flying" (CR 613.1f): the keyword taken away at this timestamp (`ability` is null); the object keeps its other abilities. */
+  readonly loses?: Keyword['kind'];
 }
 
 /**
@@ -248,8 +250,14 @@ export function applyAbilityLayer(
     readonly grant: Ability | null;
     /** CR 613.1f (`replaceEnchant`): the enchant ability taken away at this timestamp, as `grant` is given. */
     readonly loses?: Ability;
+    /** CR 613.1f (`loseKeyword`): the keyword taken away at this timestamp, whatever gave it. */
+    readonly losesKeyword?: Keyword['kind'];
   };
-  const steps: Step[] = grants.map((g) => ({ timestamp: g.timestamp, grant: g.ability }));
+  const steps: Step[] = grants.map((g) => ({
+    timestamp: g.timestamp,
+    grant: g.ability,
+    ...(g.loses === undefined ? {} : { losesKeyword: g.loses }),
+  }));
   for (const e of effects) {
     if (e.change.kind === 'grantKeyword') {
       steps.push({
@@ -276,6 +284,12 @@ export function applyAbilityLayer(
   steps.sort((a, b) => a.timestamp - b.timestamp);
   let abilities = printed;
   for (const step of steps) {
+    if (step.losesKeyword !== undefined) {
+      // CR 613.1f (Colossus Hammer): "loses flying" takes the keyword away at its timestamp; one granted later still applies (CR 613.7).
+      const gone = step.losesKeyword;
+      abilities = abilities.filter((a) => !(a.kind === 'keyword' && a.keyword.kind === gone));
+      continue;
+    }
     if (step.loses !== undefined && step.grant !== null) {
       // The ability that goes is replaced where it stands, so the abilities after it keep the index they had (triggers and activations refer to indexes).
       const gone = JSON.stringify(step.loses);

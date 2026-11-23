@@ -7640,6 +7640,15 @@ export type StaticEffect =
       readonly keyword: Keyword;
     }
   /**
+   * "Equipped creature gets +10/+10 and loses flying." (Colossus Hammer, CR 613.1f, 604.1): the subject loses the keyword `keyword` (one without parameters: flying, trample, ...) in
+   * layer 6, in timestamp order with the effects that give keywords, so a keyword given later still applies (CR 613.7). Every instance of the keyword goes; the other abilities stay.
+   */
+  | {
+      readonly kind: 'loseKeyword';
+      readonly subject: StaticSubject;
+      readonly keyword: Keyword;
+    }
+  /**
    * "~ can't block", "Equipped creature can't be blocked", "~ attacks each combat if able", "~
    * doesn't untap during your untap step", "This spell can't be countered" (D-094): the subject has
    * the restriction while this ability applies. It is read where the rule acts (blocks, the untap

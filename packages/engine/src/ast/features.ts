@@ -1440,6 +1440,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modifyPt',
     'characteristicPt',
     'grantKeyword',
+    // Colossus Hammer (CR 613.1f): "Equipped creature gets +10/+10 and loses flying".
+    'loseKeyword',
     'grantAbility',
     'restriction',
     'costReduction',
@@ -2491,6 +2493,8 @@ export const STATIC_KINDS = [
   /** "Equipped creature gets +N/+N", "Creatures you control get +1/+1" (CR 613.4c). */
   'modifyPt',
   'grantKeyword',
+  /** "Equipped creature loses flying" (CR 613.1f, Colossus Hammer): the engine's static `loseKeyword`. */
+  'loseKeyword',
   'grantAbility',
   'cantBeBlocked',
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
