@@ -6332,6 +6332,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
       break;
+    case 'loseLifeManaValue':
+      // Issue 97 (Kefka): the spells an earlier `castFree` with `remember` cast.
+      if (kindOf(e.spells) !== 'moved') {
+        issue(out, `${path}.spells`, "the spells are those an effect before moved ('moved')");
+      }
+      break;
     case 'extraTurn':
       // CR 500.7: each player the selector names takes an extra turn.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6681,6 +6687,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             "an exile at random picks one of an 'each' selector's objects",
           );
         }
+      }
+      // Issue 97 (Kefka): one pick for each owner of the objects.
+      if (e.perOwner !== undefined && (e.perOwner !== true || e.atRandom !== true)) {
+        issue(out, `${path}.perOwner`, 'perOwner is true, only with atRandom');
       }
       // D-149, CR 610.3: "until this enchantment leaves the battlefield": only an ability of a permanent can leave it.
       if (e.until !== undefined) {
@@ -7228,8 +7238,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // Cmdr. Troi (CR 608.2g, 707.10): the spell cast is what `moved` names afterwards; one spell only.
       if (e.remember !== undefined) {
-        if (e.remember !== true || e.max !== undefined || e.perOwner !== undefined) {
-          issue(out, `${path}.remember`, 'remember is true, for one spell (no max, no perOwner)');
+        if (e.remember !== true || e.perOwner !== undefined) {
+          issue(out, `${path}.remember`, 'remember is true, with no perOwner');
+        }
+        // Issue 97 (Kefka): several spells are remembered only from the cards an earlier effect moved.
+        if (e.max !== undefined && kindOf(e.objects) !== 'moved') {
+          issue(
+            out,
+            `${path}.remember`,
+            "remember with max reads the cards an effect before moved ('moved')",
+          );
         }
       }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.

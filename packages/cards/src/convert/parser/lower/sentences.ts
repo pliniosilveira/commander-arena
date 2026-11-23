@@ -223,6 +223,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
           : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
+    ctx.lastCastRemembered = lastEffect?.kind === 'castFree' && lastEffect.remember === true;
     ctx.lastPlayer =
       lastEffect !== undefined && 'player' in lastEffect && typeof lastEffect.player === 'object'
         ? (lastEffect.player as PlayerSelector)

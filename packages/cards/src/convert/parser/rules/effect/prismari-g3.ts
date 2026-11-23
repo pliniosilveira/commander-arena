@@ -102,6 +102,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast instant and sorcery spells from among them without paying their mana costs',
     'you may cast up to two spells from among the other cards exiled this way without paying their mana costs',
     'you may cast any number of spells from among those cards without paying their mana costs',
+    'you may cast any number of spells from among cards exiled this way without paying their mana costs',
     'You may cast a spell from among them without paying its mana cost',
     'cast up to two spells from among the other cards exiled this way without paying their mana costs',
   ],
@@ -125,7 +126,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const id = 'effect.cast-from-among';
     const head = pattern(
-      /(you may )?cast (a spell|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
+      /(you may )?cast (a spell|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~|cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!head.ok) return head;
     const [, may = '', count = '', from = '', cost = ''] = head.value;
@@ -139,6 +140,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
       linked: flag(id, from.toLowerCase() === 'cards exiled with ~', span),
       // "you may" said inside the rule, or by the sentence before the rule (a trigger's "you may ..." is read as the sentence's own).
       may: flag(id, may !== '', span),
+      // Kefka, Dancing Mad (issue 97): "from among cards exiled this way": the spells cast are remembered for "a spell you cast this way".
+      remember: flag(id, from.toLowerCase() === 'cards exiled this way', span),
     };
     const lower = count.toLowerCase();
     if (lower === 'up to two spells') args.max = number(2, span);

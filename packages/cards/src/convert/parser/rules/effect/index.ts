@@ -130,6 +130,7 @@ import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
+import { KEFKA_EFFECT_RULES } from './kefka';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
@@ -1303,6 +1304,7 @@ export const EFFECT_RULES = [
   ...PUT_MILLED_EFFECT_RULES,
   // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
   ...QUICK_DRAW_EFFECT_RULES,
+  ...KEFKA_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
