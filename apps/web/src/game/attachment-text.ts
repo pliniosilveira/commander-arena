@@ -43,6 +43,8 @@ export function attachedToWords(filter: ObjectFilter): string | null {
   if (to === undefined) return '';
   // The host of the sentence's subject: "gets +2/+2 for each Aura attached to it" is said of the permanent itself or of the one it is attached to.
   if (to.kind === 'source' || to.kind === 'host') return ' attached to it';
+  // A permanent sacrificed as a cost (Zack Fair): its attachments are read from last-known information, which no phrase of this text says.
+  if (to.kind === 'sacrificedCost') return null;
   const { types, ...rest } = to.filter;
   if (Object.keys(rest).length > 0 || types === undefined || types.length === 0) return null;
   const kind = types.join(' or ');
