@@ -688,6 +688,13 @@ class Binder {
       // D-406: "Whenever a creature enters, you may attach ~ to that creature": the Aura or Equipment an attach moves is no antecedent of the pronoun after
       // it, which names the other permanent (the trigger's).
       if (clause.verb === 'attach' && name === 'object') this.antecedents.length = seen;
+      // Limit Break deck, group 1 (Zack Fair): "Put ~'s counters on that creature": the permanent whose counters are put is no antecedent of "that creature", the target before it.
+      if (
+        (clause.verb === 'putCountersOf' || clause.verb === 'attachWasAttached') &&
+        name === 'from'
+      ) {
+        this.antecedents.length = seen;
+      }
       // Issue 103: "Whenever a Dragon you control enters, you may have ~ become a copy of it": the permanent that becomes the copy is no antecedent of "it", which is the trigger's.
       if (
         clause.verb === 'becomeCopy' &&

@@ -1110,6 +1110,12 @@ export interface ObjectFilter {
 export type AttachedTo =
   | { readonly kind: 'source' }
   | { readonly kind: 'host' }
+  /**
+   * "An Equipment that was attached to ~" in an activated ability whose cost sacrificed ~ (Zack Fair, CR 113.7a, 701.21, 301.5): the object was attached to a permanent sacrificed to pay the cost
+   * of the ability that is resolving, as that permanent left the battlefield (its last-known information; the Equipment itself is not attached to anything by then, CR 704.5n). Valid
+   * only in an activated ability whose cost sacrifices something (`validateCard`).
+   */
+  | { readonly kind: 'sacrificedCost' }
   | { readonly kind: 'matching'; readonly filter: ObjectFilter };
 
 /**
@@ -3715,6 +3721,13 @@ export type Effect =
    * second permanent can't have (CR 122.6) stays where it is. Nothing is moved when either is no longer on the battlefield as the effect runs, or when they are the same permanent.
    */
   | { readonly kind: 'moveAllCounters'; readonly from: ObjectRef; readonly to: ObjectRef }
+  /**
+   * "Put ~'s counters on that creature" (Zack Fair, CR 122.1, 122.6, 113.7a, 608.2h): every counter, of every kind, that the permanent `from` named had on the battlefield (as it is,
+   * or as it last was when it has left: the sacrificed permanent of the cost) is put onto the permanent `to` names, one `counterAdded` event for each kind, as any counters put on a
+   * permanent are (a replacement effect or a prevention of counters applies). They are not taken off `from`. Nothing when `to` is gone. `from` is `this` or `sacrificedCost`, the latter
+   * only in an activated ability whose cost sacrifices something (`validateCard`).
+   */
+  | { readonly kind: 'putCountersOf'; readonly from: ObjectRef; readonly to: ObjectRef }
   /**
    * "Move a counter from target permanent you control onto a second target permanent" (CR 122.5, 122.1, 608.2d; Nesting Grounds): exactly one counter comes off the permanent `from`
    * names and is put on the one `to` names; the controller chooses its kind (a `chooseOption` decision of purpose `counterPick`, not asked when only one kind can go). A kind the second

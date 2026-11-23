@@ -119,6 +119,7 @@ import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
+import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -2804,6 +2805,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
+  ...LIMIT_BREAK_G1_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.

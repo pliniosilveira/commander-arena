@@ -134,6 +134,7 @@ import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
+import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -1347,6 +1348,8 @@ export const EFFECT_RULES = [
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
+  // Limit Break deck, group 1 (Zack Fair): "Put ~'s counters on that creature", "attach an Equipment that was attached to ~ to that creature".
+  ...LIMIT_BREAK_G1_EFFECT_RULES,
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,

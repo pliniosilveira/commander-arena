@@ -17,6 +17,7 @@ const barretLeader = real('Barret, Avalanche Leader');
 const cloud = real('Cloud, Ex-SOLDIER');
 const barretWallace = real('Barret Wallace');
 const business = real('Unfinished Business');
+const zack = real('Zack Fair');
 
 function withDefs(defs: readonly CardDefinition[]) {
   let b = scenario({ seats: 3 })
@@ -28,7 +29,7 @@ function withDefs(defs: readonly CardDefinition[]) {
 }
 
 describe('the cards are valid', () => {
-  test.each([armory, barretLeader, cloud, barretWallace, business])('$name', (card) => {
+  test.each([armory, barretLeader, cloud, barretWallace, business, zack])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 });
@@ -336,5 +337,69 @@ describe('Unfinished Business: "... then return up to two target Aura and/or Equ
     expect(() =>
       g.act(0).cast(business.name, { targets: [BEARS, BLADE, CLOAK, MIGHT], pay: true }),
     ).toThrow();
+  });
+});
+
+describe('Zack Fair: "Put ~\'s counters on that creature and attach an Equipment that was attached to ~ to that creature" (CR 113.7a, 122.1, 701.3)', () => {
+  const MIGHT = 'SYNTHETIC Might Aura';
+  const board = (equipment: readonly string[], opponentEquipment: readonly string[] = []) => {
+    let b = withDefs([zack]).define(syntheticCard(MIGHT)).seat(0);
+    b = b
+      .battlefield(zack.name, { counters: { '+1/+1': 1, charge: 2 } })
+      .battlefield(BEARS, 'Plains', 'Plains');
+    for (const e of equipment) b = b.battlefield(e, { attachedTo: zack.name });
+    b = b.battlefield(MIGHT, { attachedTo: zack.name }).library('Plains', { count: 6 });
+    let o = b.seat(1);
+    for (const e of opponentEquipment) o = o.battlefield(e, { attachedTo: zack.name });
+    return o
+      .library('Plains', { count: 6 })
+      .seat(2)
+      .library('Plains', { count: 6 })
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+
+  test('is sacrificed: its counters and its Equipment go to the target', () => {
+    const g = board([BLADE]);
+    g.expect.counters(zack.name, { '+1/+1': 1, charge: 2 });
+    g.act(0).activate(zack.name, { ability: 1, targets: [BEARS], pay: true });
+    g.expect.zone(zack.name, 'graveyard', { seat: 0 });
+    g.passAll();
+    g.act(0).choosePermanents(BLADE);
+    g.expect.counters(BEARS, { '+1/+1': 1, charge: 2 });
+    g.expect.attached(BLADE, BEARS);
+    g.expect.derived(BEARS, { keywords: ['indestructible'] });
+    g.expect.pt(BEARS, 5, 3);
+    // An Aura attached to the sacrificed creature goes to the graveyard as the state-based action says (CR 704.5m): it is no Equipment.
+    g.expect.zone(MIGHT, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with two Equipment attached the controller picks one; the other stays unattached', () => {
+    const g = board([BLADE, CLOAK]);
+    g.act(0).activate(zack.name, { ability: 1, targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.pending('choosePermanent', 0);
+    g.act(0).choosePermanents(CLOAK);
+    g.passAll();
+    g.expect.attached(CLOAK, BEARS);
+    g.expect.attached(BLADE, null);
+  });
+
+  test('an Equipment an opponent controls that was attached to it can be chosen too; control does not change (CR 701.3)', () => {
+    const g = board([], [CLOAK]);
+    g.act(0).activate(zack.name, { ability: 1, targets: [BEARS], pay: true });
+    g.passAll();
+    g.act(0).choosePermanents({ name: CLOAK, seat: 1 });
+    g.expect.attached(CLOAK, BEARS);
+    g.expect.zone(CLOAK, 'battlefield', { seat: 1 });
+  });
+
+  test('with no Equipment attached only the counters move', () => {
+    const g = board([]);
+    g.act(0).activate(zack.name, { ability: 1, targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.counters(BEARS, { '+1/+1': 1, charge: 2 });
+    g.expect.invariants();
   });
 });

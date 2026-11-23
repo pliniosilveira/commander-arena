@@ -1256,10 +1256,10 @@ export function graveyardPhrase(
   const auraOrEquipment: Parser<CardWords> = map(
     choice(literal('Aura or Equipment '), literal('Aura and/or Equipment ')),
     () => ({
-    types: [],
-    anyOf: [],
-    subtypes: [],
-    subtypeAnyOf: ['Aura', 'Equipment'],
+      types: [],
+      anyOf: [],
+      subtypes: [],
+      subtypeAnyOf: ['Aura', 'Equipment'],
     }),
   );
   const words: Parser<CardWords> = plural
