@@ -68,8 +68,8 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
  * paragraph. It is read as a triggered ability whose trigger is the first sentence (`trigger.exerted`) and whose body follows "When you do,".
  */
 const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you do, /i;
-/** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
-const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
+/** "When you next cast an instant or sorcery spell this turn, " (D-336) and "When you cast your next instant or sorcery spell this turn, " (Twinferno): the lead of a sentence that creates a delayed triggered ability. */
+const DELAYED_CAST_LEAD = /^when you (?:next cast an? |cast your next )[^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER =

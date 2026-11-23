@@ -351,12 +351,14 @@ interface SentenceOptions {
   readonly delayed?: boolean;
 }
 
-/** "When you next cast an instant or sorcery spell this turn, " (D-336): the spell is the subject of what the sentence does. */
+/** "When you next cast an instant or sorcery spell this turn, " (D-336), and "When you cast your next instant or sorcery spell this turn, " (Twinferno): the spell is the subject of what the sentence does. */
 const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
   spanned(
     sequence(
-      literal('when you next cast '),
-      pattern(/an? /iu),
+      choice(
+        map(sequence(literal('when you next cast '), pattern(/an? /iu)), () => null),
+        map(literal('when you cast your next '), () => null),
+      ),
       map(spellPhrase(), withoutZone),
       // Quandrix Unlimited group E (Brass Infiniscope, CR 107.3): "a spell with {X} in its mana cost".
       optional(
@@ -375,7 +377,7 @@ const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
       'sentence.delayed-cast',
       span,
       'a',
-      value[3] === null ? value[2] : { ...value[2], xInManaCost: true },
+      value[2] === null ? value[1] : { ...value[1], xInManaCost: true },
     ),
   }),
 );

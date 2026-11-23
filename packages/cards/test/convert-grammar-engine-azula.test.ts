@@ -302,3 +302,51 @@ describe('Fire Lord Azula: "Whenever you cast a spell while ~ is attacking, copy
     g.expect.stack([BOLT]);
   });
 });
+
+describe('Twinferno: a delayed copy of the next instant or sorcery, or double strike (CR 603.7, 707.10, 702.4)', () => {
+  const TWIN = 'Twinferno';
+  const BOLT = 'Lightning Bolt';
+  const twinferno = real(TWIN);
+
+  const board = () =>
+    scenario()
+      .define(twinferno)
+      .seat(0)
+      .hand(TWIN, BOLT, BOLT)
+      .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain', 'Grizzly Bears')
+      .library('Island', 'Island')
+      .seat(1)
+      .battlefield('Llanowar Elves', 'Serra Angel')
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('is valid', () => {
+    expect(validateCard(twinferno)).toEqual([]);
+  });
+
+  test('mode one: my next instant is copied, with new targets for the copy, and only once', () => {
+    const g = board();
+    g.act(0).cast(TWIN, { modes: [0], pay: true });
+    g.passAll();
+    g.act(0).cast(`${BOLT}[0]`, { targets: ['Serra Angel'], pay: true });
+    g.pass();
+    g.pass();
+    g.expect.pending('targets', 0);
+    g.act(0).chooseTargets({ name: 'Llanowar Elves' });
+    g.passAll();
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 1 });
+    g.expect.damage('Serra Angel', 3);
+    // CR 603.7c: the delayed ability was used up by the first spell, so the next one is not copied.
+    g.act(0).cast(BOLT, { targets: ['Serra Angel'], pay: true });
+    g.expect.stack([BOLT]);
+    g.expect.invariants();
+  });
+
+  test('mode two: the target creature gains double strike until end of turn', () => {
+    const g = board();
+    g.act(0).cast(TWIN, { modes: [1], targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.derived('Grizzly Bears', { keywords: ['doubleStrike'] });
+  });
+});
