@@ -20,17 +20,45 @@ const FIELDS: readonly (readonly string[])[] = [
   ['Island', 'Forest', 'Giant Spider'],
 ];
 
-export function mount(opponents: number, lost: readonly number[] = []): void {
+const COMBAT_FIELDS: readonly (readonly string[])[] = [
+  ['Giant Spider'],
+  ['Grizzly Bears', 'Serra Angel'],
+  ['Forest'],
+  ['Island'],
+];
+
+/**
+ * `combat`: seat 1 attacks with Grizzly Bears (at you) and Serra Angel (at seat 2), and you block the
+ * Bears with Giant Spider, so the view is of a declared four-player combat. `'stack'`: you have
+ * cast Lightning Bolt at seat 2 and it waits on the stack.
+ */
+export function mount(
+  opponents: number,
+  lost: readonly number[] = [],
+  mode: boolean | 'stack' = false,
+): void {
+  const combat = mode === true;
   const b = scenario({ seats: opponents + 1 });
   for (let seat = 0; seat <= opponents; seat++) {
     b.seat(seat)
       .life(lost.includes(seat) ? 0 : 40)
       .library(...FILLER)
       .commander(COMMANDERS[seat] ?? 'Grizzly Bears', seat === 0 ? { casts: 2 } : {})
-      .battlefield(...(FIELDS[seat] ?? []));
+      .battlefield(...((combat ? COMBAT_FIELDS[seat] : FIELDS[seat]) ?? []));
+    if (seat === 0 && mode === 'stack') b.battlefield('Mountain');
     if (seat === 0) b.hand('Lightning Bolt', 'Grizzly Bears', 'Island', 'Sol Ring');
   }
-  const g = b.at('precombatMain', { active: 0 }).build();
+  const g = b.at('precombatMain', { active: combat ? 1 : 0 }).build();
+  if (combat) {
+    g.advanceTo('declareAttackers');
+    g.act(1).declareAttackers([
+      { attacker: 'Grizzly Bears', target: { player: 0 } },
+      { attacker: 'Serra Angel', target: { player: 2 } },
+    ]);
+    g.advanceTo('declareBlockers', { block: false });
+    g.act(0).declareBlockers([{ blocker: 'Giant Spider', attacker: 'Grizzly Bears' }]);
+  }
+  if (mode === 'stack') g.act(0).cast('Lightning Bolt', { targets: [{ player: 2 }], pay: true });
   if (lost.length > 0) {
     // A seat at 0 life loses the game at the next check of state-based actions (CR 704.5a): pass once.
     g.act(0).pass();

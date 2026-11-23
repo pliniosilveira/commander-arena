@@ -50,7 +50,8 @@ test('the prompt names the trigger and what it does; there is no Cancel; the sta
   );
   // The stack says what set the ability off and what it does.
   expect(html).toContain(`Whenever ${REAPER} enters, destroy target creature an opponent controls`);
-  expect(html).toContain('aria-label="Legal targets"');
+  // The targets are chosen on the board: no chip panel.
+  expect(html).not.toContain('aria-label="Legal targets"');
   expect(html).toMatch(/<button[^>]*data-dec-primary[^>]*>Confirm<\/button>/);
   expect(html).not.toContain('>Cancel<');
   // The ability is on the stack already, as a triggered ability of its source, with no target yet.

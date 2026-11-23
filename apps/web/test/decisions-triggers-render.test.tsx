@@ -82,6 +82,10 @@ test('orderTriggers: rows say when they resolve and have move buttons; the bar s
   expect(html.match(/disabled=""/g)?.length).toBeGreaterThanOrEqual(2);
   expect(html).toContain('Order your triggered abilities.');
   expect(html).toContain('>Confirm order<');
+  // A dialog the player can close to look at the board; Confirm lives inside it, not in a dock.
+  expect(html).toContain('role="dialog"');
+  expect(html).toContain('aria-label="Close to look at the board"');
+  expect(html).not.toContain('class="dec-bar');
   // The default list is the engine's default order reversed: the last put on the stack resolves first.
   const names = [...html.matchAll(/class="dec-order-name">([^<]*)</g)].map((m) => m[1]);
   expect(names).toEqual([...pending.triggers].reverse().map((t) => htmlEscape(t.sourceName)));

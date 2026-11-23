@@ -240,8 +240,9 @@ test('targets: the legal target list reaches players and objects, Cancel is offe
     };
   });
   const html = render(store);
+  // A player is chosen on the board, so only the card in hand (off the board) gets a chip.
   expect(html).toContain('Legal targets');
-  expect(html).toContain('>Opponent<');
+  expect(html).not.toContain('>Opponent<');
   expect(html).toContain('>Cancel<');
   expect(html).toContain('0 of 1 chosen');
   expect(html).toContain('data-seats="1"');

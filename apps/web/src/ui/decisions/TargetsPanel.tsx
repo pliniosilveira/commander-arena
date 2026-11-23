@@ -5,6 +5,7 @@ import type {
   TargetChoiceSpec,
   TargetsDecision,
 } from '@commander-arena/engine';
+import { targetZoneToOpen } from '../board/target-zone';
 import { keptDivisionText, keptTargets, shareLabel } from './copy-division';
 import { bumpShare, divisionLine, shareOf, sharesLeft, withEvenShares } from './divide';
 import { useHoverProps } from './hover';
@@ -20,6 +21,7 @@ import {
   toggleTarget,
 } from './targeting';
 import type { UiState } from './ui-state';
+import { useZoneGate } from './zone-decision';
 
 type Update = (change: (ui: UiState) => UiState) => void;
 
@@ -27,6 +29,17 @@ const targetLabel = (t: ChosenTarget, index: Index, viewer: SeatId): string =>
   t.kind === 'object' ? nameOf(index, t.id) : viewer === t.seat ? 'You' : 'Opponent';
 
 const targetKey = (t: ChosenTarget): string => (t.kind === 'object' ? t.id : `p${t.seat}`);
+
+/**
+ * A permanent or a player is already a target on the board (highlighted, clickable there), so it gets no chip:
+ * only objects elsewhere (graveyard, hand, exile, the stack) are listed.
+ */
+const offBoard =
+  (view: GameView) =>
+  (t: ChosenTarget): boolean => {
+    if (t.kind !== 'object') return false;
+    return !view.battlefield.some((o) => o.id === t.id);
+  };
 
 type HoverOf = ReturnType<typeof useHoverProps>;
 
@@ -56,11 +69,27 @@ export function TargetsPanel({
   const index = objectIndex(view);
   const hoverProps = useHoverProps();
   const groups = modeGroups(d.specs);
-  if (groups !== null) {
+  const gate = useZoneGate();
+  const zoneToOpen = targetZoneToOpen(view);
+  if (zoneToOpen !== null) {
+    // Every legal target is in one graveyard: a button opens it, and the cards are chosen there.
     return (
       <section className="dec-panel dec-targets" aria-label="Legal targets">
         <h3 className="dec-panel-title">Legal targets</h3>
-        {groups.map((group) => (
+        <button type="button" className="dec-chip" onClick={gate.ask}>
+          Open graveyard
+        </button>
+      </section>
+    );
+  }
+  const listed = offBoard(view);
+  if (groups !== null) {
+    const shownGroups = groups.filter((g) => g.specs.some((sp) => sp.legal.some(listed)));
+    if (shownGroups.length === 0) return null;
+    return (
+      <section className="dec-panel dec-targets" aria-label="Legal targets">
+        <h3 className="dec-panel-title">Legal targets</h3>
+        {shownGroups.map((group) => (
           <div
             key={`${group.mode}/${group.time}`}
             className="dec-target-group"
@@ -71,7 +100,7 @@ export function TargetsPanel({
             </h4>
             {group.specs.map((spec) => (
               <ul key={spec.specId} className="dec-target-list">
-                {spec.legal.map((t) => (
+                {spec.legal.filter(listed).map((t) => (
                   <li key={targetKey(t)}>
                     <button
                       type="button"
@@ -96,10 +125,16 @@ export function TargetsPanel({
       </section>
     );
   }
+  const hasChips = d.specs.some((sp) => sp.legal.some(listed));
+  const hasDivision =
+    d.specs.some((sp) => sp.divide !== undefined) ||
+    keptDivisionText(d, index, view.viewer, view.seats.length) !== null;
+  if (!hasChips && !hasDivision) return null;
   return (
     <section className="dec-panel dec-targets" aria-label="Legal targets">
-      <h3 className="dec-panel-title">Legal targets</h3>
+      {hasChips ? <h3 className="dec-panel-title">Legal targets</h3> : null}
       <PlainList
+        listed={listed}
         specs={d.specs}
         index={index}
         viewer={view.viewer}
@@ -124,6 +159,7 @@ export function TargetsPanel({
 }
 
 function PlainList({
+  listed,
   specs,
   index,
   viewer,
@@ -131,6 +167,7 @@ function PlainList({
   update,
   hoverProps,
 }: {
+  listed: (t: ChosenTarget) => boolean;
   specs: readonly TargetChoiceSpec[];
   index: Index;
   viewer: SeatId;
@@ -143,7 +180,9 @@ function PlainList({
   // D-149 (TargetSpec.onePerOpponent): a slot with one target for each opponent lists each opponent's permanents under their own heading.
   const grouped = specs.find((s) => s.onePerGroup === true);
   if (grouped !== undefined) {
-    const groups = [...new Set(grouped.legal.flatMap((t) => groupOf(grouped, t) ?? []))];
+    const groups = [
+      ...new Set(grouped.legal.filter(listed).flatMap((t) => groupOf(grouped, t) ?? [])),
+    ];
     return (
       <>
         {groups.map((seat) => (
@@ -153,6 +192,7 @@ function PlainList({
             </h4>
             <ul className="dec-target-list">
               {grouped.legal
+                .filter(listed)
                 .filter((t) => groupOf(grouped, t) === seat)
                 .map((t) => (
                   <li key={targetKey(t)}>
@@ -182,37 +222,41 @@ function PlainList({
   if (specs.length > 1 && specs.every((s) => s.target !== undefined)) {
     return (
       <>
-        {specs.map((spec, at) => (
-          <div key={spec.specId} className="dec-target-group" data-slot={spec.specId}>
-            <h4 className="dec-target-group-title">{slotLabel(specs, at)}</h4>
-            <ul className="dec-target-list">
-              {spec.legal.map((t) => (
-                <li key={targetKey(t)}>
-                  <button
-                    type="button"
-                    className="dec-chip"
-                    {...hoverOf(hoverProps, t)}
-                    aria-pressed={pickedFor(ui.targets, t, spec.specId)}
-                    onClick={() =>
-                      update((u) => ({
-                        ...u,
-                        targets: toggleTarget(specs, u.targets, t, spec.specId),
-                      }))
-                    }
-                  >
-                    {targetLabel(t, index, viewer)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {specs.map((spec, at) =>
+          !spec.legal.some(listed) ? null : (
+            <div key={spec.specId} className="dec-target-group" data-slot={spec.specId}>
+              <h4 className="dec-target-group-title">{slotLabel(specs, at)}</h4>
+              <ul className="dec-target-list">
+                {spec.legal.filter(listed).map((t) => (
+                  <li key={targetKey(t)}>
+                    <button
+                      type="button"
+                      className="dec-chip"
+                      {...hoverOf(hoverProps, t)}
+                      aria-pressed={pickedFor(ui.targets, t, spec.specId)}
+                      onClick={() =>
+                        update((u) => ({
+                          ...u,
+                          targets: toggleTarget(specs, u.targets, t, spec.specId),
+                        }))
+                      }
+                    >
+                      {targetLabel(t, index, viewer)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ),
+        )}
       </>
     );
   }
+  const plain = allLegalTargets(specs).filter(listed);
+  if (plain.length === 0) return null;
   return (
     <ul className="dec-target-list">
-      {allLegalTargets(specs).map((t) => (
+      {plain.map((t) => (
         <li key={targetKey(t)}>
           <button
             type="button"
