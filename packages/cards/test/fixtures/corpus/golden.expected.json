@@ -1,5 +1,5 @@
 {
-  "parserVersion": 200,
+  "parserVersion": 201,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -438,6 +438,14 @@
       "reasons": [],
       "ast": "24a8fee4"
     },
+    "06f7ec6d-d70e-44d8-bf43-ae667d244ab4": {
+      "name": "Espers to Magicite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "16bac5aa"
+    },
     "07617648-6490-4719-acec-7705671f7e01": {
       "name": "Protege's Awakening",
       "group": "acceptance",
@@ -873,6 +881,14 @@
       "reasons": [],
       "ast": "1d774bab"
     },
+    "0f4350ad-dc44-4942-b097-e4033e29d659": {
+      "name": "Umaro, Raging Yeti",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "77238bdf"
+    },
     "0f93d88c-9d2e-416d-a10b-99483360b1fb": {
       "name": "Zurgo Stormrender",
       "group": "acceptance",
@@ -1057,6 +1073,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7264dd2d"
+    },
+    "13ca49a2-8a78-4be4-976a-b684086864bb": {
+      "name": "Shadow, Mysterious Assassin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d64a73f0"
     },
     "14493624-fdc7-4630-9b1e-f35668651108": {
       "name": "Baldin, Century Herdmaster",
@@ -1402,6 +1426,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "aaf6a05c"
+    },
+    "1b62e88f-d544-4c01-a5a2-1c185a3c9c1e": {
+      "name": "Banon, the Returners' Leader",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3662b5d"
     },
     "1b704798-0c69-4c18-ac7e-42933ce90028": {
       "name": "Pest Infestation",
@@ -2478,6 +2510,14 @@
       "reasons": [],
       "ast": "25724a77"
     },
+    "316e7c28-2b7a-40ae-961b-909644109fe4": {
+      "name": "Strago and Relm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5c986cf9"
+    },
     "31851cb6-0caf-4575-aa5e-41aeadccafc1": {
       "name": "Cait Sith, Fortune Teller",
       "group": "acceptance",
@@ -3552,6 +3592,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c3b5cdff"
+    },
+    "480454a0-fb10-432b-a963-8b0c0ffc6680": {
+      "name": "Sepulchral Primordial",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd288408"
     },
     "488ff0d9-a74c-4ba9-9c10-3aa88230c2bd": {
       "name": "Captain Janeway, Endgame",
@@ -5681,6 +5729,14 @@
       "reasons": [],
       "ast": "cea57716"
     },
+    "7234bbf8-b962-4515-bedf-68d111c6137e": {
+      "name": "Sabin, Master Monk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b6ce405d"
+    },
     "72aef1d8-11df-4bc2-af83-907b05df73a8": {
       "name": "Grim Haruspex",
       "group": "training",
@@ -6229,7 +6285,7 @@
           "text": "0: ~ deals 3 damage to target creature. That creature deals damage equal to its power to him.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.doesnt-untap-while-controlling"
+          "closestRule": "effect.damage-by-it"
         }
       ],
       "reasons": [
@@ -6631,6 +6687,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dbb7c7b6"
+    },
+    "8571bd94-66c0-4cca-b10f-2c34062d008e": {
+      "name": "Interceptor, Shadow's Hound",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "85172053"
     },
     "857db7e0-254a-4920-a71d-9bab6555342f": {
       "name": "Phalanx Leader",
@@ -8324,6 +8388,14 @@
       "reasons": [],
       "ast": "cafe2ebe"
     },
+    "a800bec4-bacc-43f9-a773-dd795959935b": {
+      "name": "Locke, Treasure Hunter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fbad6523"
+    },
     "a8052556-8962-4130-86a8-6fb7b6a324f7": {
       "name": "Thriving Grove",
       "group": "acceptance",
@@ -8532,6 +8604,14 @@
       "reasons": [],
       "ast": "feb99224"
     },
+    "ab94985c-5a3e-42c7-be10-29c5b638346b": {
+      "name": "Snort",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "00a36809"
+    },
     "abc37d6c-6300-47b5-a679-9db5b83eb54f": {
       "name": "Syphon Mind",
       "group": "acceptance",
@@ -8627,6 +8707,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "145ba4cd"
+    },
+    "acdd5082-7b3c-4fd3-941b-d19dd72698ec": {
+      "name": "Setzer, Wandering Gambler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "95e8d790"
     },
     "ace8e88e-ca6a-4bdf-8c6d-1b914fc00259": {
       "name": "Monologue Tax",
@@ -8757,6 +8845,14 @@
       "reasons": [],
       "ast": "e5a367f6"
     },
+    "aea8345a-191d-4c62-8d15-a716a9934b66": {
+      "name": "Celes, Rune Knight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2660e610"
+    },
     "aebfdcc0-c5b9-4737-8498-764a5021b087": {
       "name": "Graaz, Unstoppable Juggernaut",
       "group": "training",
@@ -8780,6 +8876,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "adbf9c44"
+    },
+    "af247e2f-b271-4f5b-ab98-4579d2c17c21": {
+      "name": "Archfiend of Depravity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b37ca0c3"
     },
     "afaef788-34d1-460b-b884-9d7ae6ddeb18": {
       "name": "Toxic Deluge",
@@ -9215,6 +9319,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0d33da74"
+    },
+    "ba9f3c5d-556f-48d1-8d87-723f7893cfcd": {
+      "name": "Flayer of the Hatebound",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b7b19d71"
     },
     "bab0ab8d-74d2-49a3-b258-b93d19925d99": {
       "name": "Goblin Dark-Dwellers",
@@ -10147,6 +10259,14 @@
       "reasons": [],
       "ast": "6875583f"
     },
+    "cecd2f49-8ccb-472d-9cf1-fd0f4d93546d": {
+      "name": "Summon: Esper Valigarmanda",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d101b11a"
+    },
     "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
       "name": "Fertile Ground",
       "group": "acceptance",
@@ -10274,6 +10394,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0089b6"
+    },
+    "d22ea32b-2128-4dcc-8b1c-c4c52f0b2f45": {
+      "name": "Rejoin the Fight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3b4c201c"
     },
     "d2664f28-49e1-46f8-a863-b217e961a57c": {
       "name": "Black Market Connections",
@@ -10779,6 +10907,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9fee82e9"
+    },
+    "dc29cb25-57f5-4cac-9764-efa644b41296": {
+      "name": "Legions to Ashes",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b22c918d"
     },
     "dc36f81e-d1b0-44a4-bf82-4cd276bc0812": {
       "name": "Thancred Waters",
@@ -12417,6 +12553,14 @@
       "reasons": [],
       "ast": "d6b21f8c"
     },
+    "fe5690d3-547b-4ce9-8e94-77fdc0e9c5c6": {
+      "name": "Kefka, Dancing Mad",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "748dea2b"
+    },
     "ff3de07d-86c3-49e1-9de0-97c85301ff93": {
       "name": "Parasitic Impetus",
       "group": "acceptance",
@@ -12476,8 +12620,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1248,
-      "total": 1267
+      "supported": 1266,
+      "total": 1285
     }
   }
 }
