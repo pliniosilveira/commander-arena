@@ -208,7 +208,8 @@ describe('texts that are not Silverquill Lecturer are dropped, never half run (S
     'Creature cards in your hand have demonstrate.',
     'Creature spells you cast have flash.',
     'Creature spells you cast have convoke and demonstrate.',
-    'Creature spells you cast have improvise.',
+    // 'Creature spells you cast have improvise.' is read since the Limit Break deck (Inspiring Statuary).
+    'Creature spells you cast have improvise until end of turn.',
     'Spells you cast from your graveyard have demonstrate.',
     'Creature spells you cast with flying have demonstrate.',
     'Creature spells you cast have demonstrate until end of turn.',
