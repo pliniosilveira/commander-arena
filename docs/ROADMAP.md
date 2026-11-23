@@ -218,7 +218,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Rolling a die: not built are a result used as a number ("draw cards equal to the result"), ignored rolls, triggers on a roll ("Whenever you roll a die"), the planar die and stored results.
 - `thisInYourGraveyard` is read only for a trigger that works from the graveyard and returns its own card; "Whenever a creature dies, if ~ is in your graveyard, ..." that does not move the card is not read.
 - A die roll is not shown to the AI as a special decision; the AI plays on.
-- "For each opponent, destroy up to one target ...": tested with two seats; several opponents are covered only through the answer check.
 - "For each opponent, destroy up to one target ...": only "up to one" is read; "for each opponent, destroy target ... that player controls" and "up to two" are refused.
 - Miracle: the reveal question is asked only for a card that has miracle, so an observer learns that the first card drawn has miracle; harmless against the AI, a leak between two humans.
 - "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards ...": the empty cases follow CR 608.2d, unverified against rulings.
@@ -497,7 +496,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The casual agent never activates an ability whose cost is "sacrifice one or more artifacts".
 - Goad is built only as a static ability of an Aura or an Equipment (CR 701.15): "goad target creature" (until your next turn) needs a duration of its own.
 - Forgotten Ancient: the AI never moves counters (it keeps them), and the question is asked after the trigger's own "you may".
-- Goad with three or more players is not tested (the test DSL has two seats).
 - Extra turns: only "takes an extra turn after this one"; no counts or riders.
 - `spellsCastThisTurn` counts the spells of the effect's controller only; "each player", "an opponent" and "other than the first" counts are not built.
 - Strive supports mana costs only, on an instant or sorcery face; the question "may this be cast at all?" assumes no target.
