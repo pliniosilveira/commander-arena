@@ -3553,8 +3553,14 @@ export type Effect =
        * permanent with the ability leaves the battlefield; does nothing when it is not there as the effect would begin. Only in an ability of a permanent.
        * `forAsLongAsYouControlThis` (D-229, CR 611.2b): "gains indestructible for as long as you control this creature": ends, for good, when the
        * permanent with the ability leaves the battlefield or is no longer controlled by the controller of the effect; does nothing when that is already so.
+       * `untilYourNextTurn` (CR 611.2a, 500.1, Emeria's Call): "Non-Angel creatures you control gain indestructible until your next turn": the permanents `objects` names as the effect
+       * resolves (CR 611.2c) have the keyword until the next turn of the controller of the effect begins (the turn it resolves in not counted). Only a keyword without parameters.
        */
-      readonly duration: Duration | 'forAsLongAsThisRemains' | 'forAsLongAsYouControlThis';
+      readonly duration:
+        | Duration
+        | 'forAsLongAsThisRemains'
+        | 'forAsLongAsYouControlThis'
+        | 'untilYourNextTurn';
     }
   /**
    * "Target creature can't be blocked this turn", "target creature attacks this turn if able": a

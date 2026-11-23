@@ -26,6 +26,7 @@ const END = 'untilEndOfTurn' as const;
 const TRIGGER_SUBJECT = { triggerSubject: true } as const;
 
 const endsWithTurn = (clause: IrClause) => clause.duration?.scope === 'untilEndOfTurn';
+const endsWithYourNextTurn = (clause: IrClause) => clause.duration?.scope === 'untilYourNextTurn';
 
 /**
  * "Target creature gains flying until end of turn" (CR 613.1f): a keyword without parameters the
@@ -43,11 +44,19 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
     const whileRemains = clause.duration?.scope === 'whileSelfRemains';
     // "... for as long as you control ~" (stage P68, D-229, CR 611.2b): ends as the permanent leaves or another player controls it.
     const whileControlling = clause.duration?.scope === 'whileYouControlSelf';
+    const nextTurn = endsWithYourNextTurn(clause);
     if (
       word?.kind !== 'keywordName' ||
-      (!endsWithTurn(clause) && !whileRemains && !whileControlling)
+      (!endsWithTurn(clause) && !nextTurn && !whileRemains && !whileControlling)
     ) {
       return failure(clause);
+    }
+    // CR 611.2a, 500.1: "gain indestructible until your next turn", a keyword without parameters; it ends as the next turn of the controller begins.
+    if (nextTurn) {
+      if (word.protection !== undefined) return failure(clause);
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     if (whileRemains || whileControlling) {
       const blocked = missingFeatures([
@@ -103,7 +112,9 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
           ? ('forAsLongAsThisRemains' as const)
           : whileControlling
             ? ('forAsLongAsYouControlThis' as const)
-            : END,
+            : nextTurn
+              ? ('untilYourNextTurn' as const)
+              : END,
       }),
       'objects',
       { ...TRIGGER_SUBJECT, token: true, eachMention: true, moved: true },
