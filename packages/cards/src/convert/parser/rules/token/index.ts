@@ -30,7 +30,7 @@ import {
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
 import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
-import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES } from './copy-except-types';
+import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
 import { SEEK_OUT_TOKEN_RULES } from './seek-out';
@@ -531,6 +531,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
     'Hero, a legendary 2/2 white Soldier creature token',
     'Primo, the Indivisible, a legendary 0/0 green and blue Fractal creature token',
     'Hero, a legendary 2/2 white Soldier creature token with flying',
+    'The Blackjack, a legendary 3/3 colorless Vehicle artifact token with flying and crew 2',
     'Dead Knight of Doom, a legendary 3/3 black Zombie Knight creature token with menace',
     'Hero, a legendary 2/2 white Soldier creature token with "When Hero dies, you gain 1 life."',
     'Hero, a legendary 2/2 white Soldier creature token with flying and "When Hero dies, you gain 1 life."',
@@ -540,6 +541,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   rejects: [
     'Smaug, a 6/6 red Dragon creature token',
     'Smaug, a legendary 6/6 red Dragon creature token with',
+    'The Blackjack, a legendary 3/3 colorless Vehicle artifact tokens with flying and crew 2',
     'Smaug, a legendary 6/6 red Dragon creature token with flash',
     'Smaug, a legendary 6/6 Dragon creature token',
     'Smaug, a legendary red Dragon creature token',
@@ -580,6 +582,8 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
             choice(
               map(literal(' artifact creature'), () => ['artifact', 'creature']),
               map(literal(' creature'), () => ['creature']),
+              // "The Blackjack, a legendary 3/3 colorless Vehicle artifact token with flying and crew 2" (CR 301.7, 111.4): a Vehicle is an artifact that is a creature only while crewed.
+              map(literal(' artifact'), () => ['artifact']),
             ),
             satisfy(TOKEN_WORD, (plural) => !plural),
             optional(
@@ -944,6 +948,8 @@ export const TOKEN_RULES = [
   TOKEN_COPY_EXCEPT_ADDITIVE,
   // Aetherdrift energy deck (issue 105): "a 5/5 artifact creature in addition to its other types and has haste".
   TOKEN_COPY_EXCEPT_ADDITIVE_TYPES,
+  // Espers to Magicite: "..., except it's an artifact and it loses all other card types".
+  TOKEN_COPY_EXCEPT_SET_TYPES,
   // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.

@@ -423,6 +423,15 @@ export function describeEvent(
         'CR 614.11',
       );
     }
+    case 'coinFlipped':
+      // CR 705.2: the call, the side that came up and whether the player won the flip.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'flip', 'flips')} a coin, calling ${event.call}: it comes up ${event.result}, ${event.won ? 'won' : 'lost'}.`,
+        event.seat,
+        [],
+        'CR 705.2',
+      );
     case 'dieRolled':
       // CR 706.1, 706.2 (D-271): the natural result of a die, which an ability may read.
       return line(

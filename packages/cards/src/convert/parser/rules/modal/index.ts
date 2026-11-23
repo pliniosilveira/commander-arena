@@ -528,6 +528,37 @@ export const MODAL_CHOOSE_MAY_DIFFERENT = defineRule<IrModeHeader>({
   },
 });
 
+/**
+ * `modal.choose-random`: "Choose one at random —" (CR 700.2: the modes of a triggered ability are chosen as it goes on the stack; the engine's `ModeChoice.random`
+ * draws the one mode from the seeded generator among those that can be chosen, no player chooses). One mode only; the lowering reads it for a triggered ability.
+ */
+export const MODAL_CHOOSE_RANDOM = defineRule<IrModeHeader>({
+  id: 'modal.choose-random',
+  family: 'modal',
+  leading: ['choose'],
+  cites: ['CR 700.2 (General)', 'CR 700.2b (General)', 'CR 603.3c (Handling Triggered Abilities)'],
+  examples: ['Choose one at random —', 'choose one at random —'],
+  rejects: [
+    'Choose one at random',
+    'Choose one at random -',
+    'Choose two at random —',
+    'Choose one —',
+    'Choose one at random. —',
+    'Choose one at random — ',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/choose one at random —$/i)(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 1, random: true },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-random',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
 export const MODAL_RULES = [
   MODAL_CHOOSE,
   MODAL_CHOOSE_BARE,
@@ -537,6 +568,7 @@ export const MODAL_RULES = [
   MODAL_CHOOSE_KICKED,
   MODAL_CHOOSE_NOT_REPEATED,
   MODAL_CHOOSE_NOT_REPEATED_SOURCE,
+  MODAL_CHOOSE_RANDOM,
   MODAL_CHOOSE_REPEATABLE,
   MODAL_TIERED,
   MODAL_SPREE,

@@ -83,8 +83,10 @@ import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
+import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
+import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -131,12 +133,15 @@ import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
+import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
+import { KEFKA_EFFECT_RULES } from './kefka';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
+import { LOCKE_EFFECT_RULES } from './locke';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -221,6 +226,7 @@ import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
 import { REVEAL_UNTIL_OTHER_EFFECT_RULES } from './reveal-until-other';
 import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
+import { REVIVAL_TRANCE_EFFECT_RULES } from './revival-trance';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -236,6 +242,7 @@ import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
+import { VALIGARMANDA_EFFECT_RULES } from './valigarmanda';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 import { WIN_GAME_EFFECT_RULES } from './win-game';
@@ -419,7 +426,7 @@ export const EFFECT_DAMAGE_IT = defineRule<Clauses>({
 export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
   id: 'effect.damage-by-it',
   family: 'effect',
-  leading: ['it'],
+  leading: ['it', 'that'],
   cites: ['CR 120.2 (Damage)', 'CR 113.7a (Abilities)', 'CR 115.4 (Targets)'],
   examples: [
     'it deals 1 damage to you',
@@ -433,8 +440,13 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     // Grave Danger (issue 159, Lotleth Giant): the count after "for each" multiplies the quantity (CR 608.2c).
     'it deals 1 damage to target opponent for each creature card in your graveyard',
     'it deals 2 damage to each opponent for each creature you control',
+    // The creature the trigger is about, said by name (Flayer of the Hatebound).
+    'that creature deals damage equal to its power to any target',
+    'that permanent deals 2 damage to each opponent',
   ],
   rejects: [
+    'that creatures deals 1 damage to you',
+    'that player deals 1 damage to you',
     'it deals X damage to target opponent for each creature you control',
     'it deals 1 damage to target opponent for each',
     'it deals damage equal to its power',
@@ -449,7 +461,7 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     'effect.damage-by-it',
     satisfy(
       sequence(
-        family<IrNoun>('noun', { only: ['noun.it'] }),
+        family<IrNoun>('noun', { only: ['noun.it', 'noun.that-object'] }),
         literal(' deals '),
         DAMAGE_AMOUNT,
         literal(' to '),
@@ -545,6 +557,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile target noncreature, nonland card from your graveyard',
     // Soul Snare (CR 508.1b, 506.3): an attacker of the controller or of a planeswalker the controller controls.
     "exile target creature that's attacking you or a planeswalker you control",
+    // Legions to Ashes (CR 201.2, 608.2c): the target and the tokens with its name that its controller controls.
+    'exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent',
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -584,6 +598,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
+            // Legions to Ashes (CR 201.2, 608.2c): "exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent".
+            'noun.target-permanent-and-same-name-tokens',
             ...SELF_OR_PERMANENT_OPERANDS,
             // Stage P30 (D-135): "you may exile it" (the card a permanent became when it died, or a target of the text).
             'noun.it',
@@ -1209,6 +1225,8 @@ export const EFFECT_RULES = [
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
   ...AHOY_G2_EFFECT_RULES,
+  // Summon: Esper Valigarmanda (issue 97): "exile an instant or sorcery card from each graveyard" and "you may cast an instant or sorcery card exiled with ~, and mana of any type ...".
+  ...VALIGARMANDA_EFFECT_RULES,
   // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
   ...AHOY_G1B_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
@@ -1231,6 +1249,8 @@ export const EFFECT_RULES = [
   // Ahoy Mateys deck, group 7: "Until end of turn, it gains haste and becomes a Pirate in addition to its other types." and "That creature doesn't untap during its controller's untap step for as long as you control ~." start like the plain lead-gain and doesn't-untap rules, and are tried first.
   ...AHOY_G7_EFFECT_RULES,
   ...AHOY_G8_EFFECT_RULES,
+  // Espers to Magicite (issue 97): "Choose up to one target creature card exiled this way." starts like the plain choose rules and is tried first.
+  ...ESPERS_EFFECT_RULES,
   ...BLACK_GATE_EFFECT_RULES,
   // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
@@ -1283,6 +1303,7 @@ export const EFFECT_RULES = [
   ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
+  ...KEEPS_UP_TO_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
@@ -1301,6 +1322,7 @@ export const EFFECT_RULES = [
   ...PUT_MILLED_EFFECT_RULES,
   // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
   ...QUICK_DRAW_EFFECT_RULES,
+  ...KEFKA_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
@@ -1310,6 +1332,8 @@ export const EFFECT_RULES = [
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
+  // Strago and Relm (issue 97): "Target opponent exiles cards from the top of their library until they exile ... You may cast that card without paying its mana cost."
+  ...EXILE_UNTIL_CAST_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   ...LAND_CREATURE_ABILITY_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
@@ -1374,6 +1398,8 @@ export const EFFECT_RULES = [
   ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
+  // Revival Trance deck (issue 97): "starting with the next opponent in turn order, each opponent chooses a creature card in your graveyard that hasn't been chosen".
+  ...REVIVAL_TRANCE_EFFECT_RULES,
   // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
   ...F144_EFFECT_RULES,
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
@@ -1454,6 +1480,8 @@ export const EFFECT_RULES = [
   ...CROSS_ZONE_EFFECT_RULES,
   // Stage P69 (D-271): rolling a die, "roll a four-sided die".
   ...ARDEN_EFFECT_RULES,
+  // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards".
+  ...LOCKE_EFFECT_RULES,
   // Stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
   ...GRANTED_STATIC_EFFECT_RULES,
   // Stage P69 (D-272): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".

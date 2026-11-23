@@ -28,7 +28,8 @@ export function permanentAlternative(
     alt === 'dash' ||
     alt === 'escape' ||
     alt === 'bestow' ||
-    alt === 'impending'
+    alt === 'impending' ||
+    alt === 'blitz'
     ? alt
     : undefined;
 }
@@ -122,6 +123,26 @@ export const DASH_RETURN_ABILITY: TriggeredAbility = {
 };
 
 /**
+ * CR 702.152a (Blitz; the rules text was not available to check the number): "When this creature dies, draw a card": an ability of the permanent while `GameObject.alt` says
+ * `blitz`, so a copy of the permanent (which has no `alt`, CR 707.2) and a permanent that lost its abilities (CR 613.1f) do not have it.
+ */
+export const BLITZ_DIES_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'dies', what: { kind: 'this' } },
+  effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+};
+
+/**
+ * CR 702.152a: "Sacrifice it at the beginning of the next end step": the delayed triggered ability a resolving blitz spell creates, for the permanent it became. Like Dash's return it is
+ * not an ability of the permanent (CR 603.7e): it happens even when the permanent has lost its abilities.
+ */
+export const BLITZ_SACRIFICE_ABILITY: TriggeredAbility = {
+  kind: 'triggered',
+  trigger: { kind: 'endStep', whose: 'each' },
+  effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+};
+
+/**
  * CR 702.84a: "Exile it at the beginning of the next end step": the delayed triggered ability a resolving unearth
  * ability creates, for the permanent it returned (D-124). Like Dash's return it is not an ability of the
  * permanent (CR 603.7e).
@@ -139,6 +160,8 @@ export const UNEARTH_EXILE_ABILITY: TriggeredAbility = {
 export function alternativeAbilitiesOf(state: GameState, obj: GameObject): readonly Ability[] {
   if (isBestowedAura(obj)) return [BESTOW_ENCHANT_ABILITY];
   if (obj.alt === 'impending') return [IMPENDING_ABILITY];
+  // CR 702.152a: a blitzed permanent has haste and "When this creature dies, draw a card".
+  if (obj.alt === 'blitz') return [DASH_HASTE_ABILITY, BLITZ_DIES_ABILITY];
   if (obj.alt === 'evoke')
     return obj.riotHaste === true ? [EVOKE_ABILITY, DASH_HASTE_ABILITY] : [EVOKE_ABILITY];
   // CR 702.62a (D-128, D-224): a creature cast by its suspend ability has haste "until you lose control of the spell or the permanent it becomes": while

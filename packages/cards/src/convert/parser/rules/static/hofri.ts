@@ -167,8 +167,13 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an Aura, Equipment, or Vehicle spell from your graveyard.',
     // Issue 102 (Kotis, Sibsig Champion): the spell cast exiles other cards of the graveyard as an additional cost.
     'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs.',
+    // Issue 97 (Banon, the Returners' Leader): only the cards put there this turn from anywhere but the battlefield.
+    'Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn.',
   ],
   rejects: [
+    'Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from the battlefield this turn.',
+    'Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn',
+    'Once during each of your turns, you may play a land from among cards in your graveyard that were put there from anywhere other than the battlefield this turn.',
     'Once during each of your turns, you may cast an artifact spell from your graveyard',
     'Once during each of your turns, you may cast an artifact spell from your hand.',
     'Once during each of your turns, you may cast an artifact spell from an opponent’s graveyard.',
@@ -205,6 +210,7 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     let hasLand = false;
     let cast: IrFilter | undefined;
     let exileOthers: number | undefined;
+    let putElsewhere = false;
     if (land.ok) {
       hasLand = true;
       at = land.pos;
@@ -224,8 +230,13 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
       const spell = GRAVEYARD_SPELL(ctx, verb.pos);
       if (!spell.ok) return spell;
       cast = spell.value;
-      const yard = literal(' from your graveyard')(ctx, spell.pos);
+      // CR 404.1 (Banon): "from among cards in your graveyard that were put there from anywhere other than the battlefield this turn".
+      const among = literal(
+        ' from among cards in your graveyard that were put there from anywhere other than the battlefield this turn',
+      )(ctx, spell.pos);
+      const yard = among.ok ? among : literal(' from your graveyard')(ctx, spell.pos);
       if (!yard.ok) return yard;
+      putElsewhere = among.ok;
       at = yard.pos;
       // Issue 102 (Kotis, CR 601.2f): "by exiling three other cards from your graveyard in addition to paying its other costs".
       const extra = pattern(
@@ -286,6 +297,7 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
             entersTapped,
             ...(gains === undefined ? {} : { gains }),
             ...(exileOthers === undefined ? {} : { exileOthers }),
+            ...(putElsewhere ? { putElsewhereThisTurn: true as const } : {}),
           },
         ],
         span: { start: pos, end: at },

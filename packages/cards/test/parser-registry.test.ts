@@ -154,6 +154,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.reconfigure': asIs,
   'keyword.escape': asIs,
   'keyword.impending': asIs,
+  'keyword.blitz': asIs,
+  'keyword.blitz-discard': asIs,
   'static.eminence-cost-reduction': asIs,
   'static.each-spell-cost-reduction': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
@@ -810,6 +812,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated-source': permanent(
     (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
   ),
+  'modal.choose-random': permanent(
+    (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
+  ),
   // Scriv, the Obligator (CR 303.4f): an Aura token created attached to a target, and the "it's attacking one of your opponents" condition.
   'token.aura': permanent(
     (e) =>
@@ -941,6 +946,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.scry-or-surveil': whenever,
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
   'trigger.roll-highest': whenever,
+  // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
+  'trigger.win-coin-flip': whenever,
+  'effect.flip-coin': spell((e) => `${cap(e)}.`),
+  // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
+  'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
   'keyword.buyback': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
@@ -1205,6 +1215,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
+  'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,
@@ -1212,6 +1223,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-player-discarded': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
+  ),
+  // Snort (CR 701.9a): the players whose discard of their hand ran, as the recipient of the damage of the next sentence.
+  'noun.each-player-discarded-their-hand': permanent(
+    (e) =>
+      `At the beginning of your end step, each player may discard their hand. ~ deals 1 damage to ${e}.`,
   ),
   // CR 701.21a: the players a sacrifice found nothing to sacrifice for, as the subject of the next sentence.
   'noun.each-player-cant-sacrifice': permanent(
@@ -1491,6 +1507,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
   'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
+  // The examples end with a sentence, or with the quote of the ability a creature spell gains.
+  'effect.player-exiles-until-cast': permanent(
+    (e) => `When ~ enters, ${e}${e.endsWith('"') ? '' : '.'}`,
+  ),
   'effect.controller-reveals-until-puts': spell(
     (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
   ),
@@ -1508,6 +1528,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Ahoy Mateys deck, group 8: the condition of the card's own permission to be cast from the graveyard, and the noun of the targets the choice names.
   'condition.control-at-least-subtypes': permanent(
     (e) => `You may cast this card from your graveyard as long as ${e}.`,
+  ),
+  // Espers to Magicite (issue 97): the noun and the token of "Exile each opponent's graveyard. When you do, choose up to one target creature card exiled this way. Create a token that's a copy of that card, except ...".
+  'noun.target-card-exiled-this-way': spell(
+    (e) =>
+      `Exile each opponent's graveyard. When you do, choose ${e}. Create a token that's a copy of that card, except it's an artifact and it loses all other card types.`,
+  ),
+  'token.copy-except-set-types': spell(
+    (e) =>
+      `Exile each opponent's graveyard. When you do, choose up to one target creature card exiled this way. Create ${e}.`,
   ),
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,

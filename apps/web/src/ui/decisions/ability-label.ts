@@ -459,6 +459,7 @@ const FALLBACK_SAYS: ReadonlySet<string> = new Set([
   'keywords',
   'notKeywords',
   'powerLessThanSource',
+  'powerGreaterThanSource',
   // D-431: "creatures with power greater than its base power".
   'powerAboveBase',
   'controllerDealtDamageBySource',
@@ -560,8 +561,12 @@ function recipientText(
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the caster promised the gift to.
       return 'the chosen player';
-    case 'discardedThisWay':
-      return 'each player who discarded a card this way';
+    case 'discardedThisWay': {
+      const group = to.of?.kind === 'eachOpponent' ? 'opponent' : 'player';
+      return to.hand === true
+        ? `each ${group} who discarded their hand this way`
+        : `each ${group} who discarded a card this way`;
+    }
     case 'couldntSacrificeThisWay':
       return "each player who can't";
     case 'attackedPlayers':
@@ -1121,6 +1126,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'extraTurn':
       // CR 500.7: "take an extra turn after this one", "target player takes an extra turn after this one".
       return `${playerVerb(effect.player, ability, 'take')} an extra turn after this one`;
+    case 'loseLifeManaValue':
+      // Issue 97 (Kefka): "each player who owns a spell you cast this way loses life equal to its mana value".
+      return 'Each player who owns a spell cast this way loses life equal to its mana value';
     case 'becomeMonarch':
       // CR 725.1 (D-127): "you become the monarch", "its controller becomes the monarch".
       return `${playerVerb(effect.player, ability, 'become')} the monarch`;
@@ -1382,6 +1390,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
           ? ''
           : '. When you cast it this turn, this creature gains all activated abilities of that card until end of turn'
       }`;
+    case 'mayCastOneMilled':
+      // CR 601.2, 611.2a (Locke, Treasure Hunter): "Until end of turn, you may cast a spell from among those cards".
+      return 'Until end of turn, you may cast a spell from among those cards';
     case 'mayCastSpells':
       // Issue 159 (CR 601.2, 611.2a): "You may cast Zombie spells from your graveyard this turn".
       // The one word of the filter: a creature type ("Zombie spells") or a card type ("creature spells").
@@ -1805,6 +1816,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'clash':
       // CR 701.30b: "Clash with an opponent".
       return 'Clash with an opponent';
+    case 'coinFlip':
+      // CR 705.2: the flip after the call.
+      return `Flip a coin, calling ${effect.call}`;
     case 'rollDie':
       // CR 706.1 (D-271): "Roll a four-sided die".
       return `Roll a ${effect.sides}-sided die`;

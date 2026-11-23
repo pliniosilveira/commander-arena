@@ -397,6 +397,7 @@ function effectOf(
             ...(effect.cost === undefined
               ? {}
               : { cost: [{ kind: 'mana' as const, symbols: [...effect.cost] }] }),
+            ...(effect.using === undefined ? {} : { using: effect.using }),
           })
         : failure(at);
     case 'chosenType':

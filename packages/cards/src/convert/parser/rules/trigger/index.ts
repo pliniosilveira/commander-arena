@@ -34,6 +34,7 @@ import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CAST_WHILE_TRIGGER_RULES } from './cast-while';
 import { CLASS_TRIGGER_RULES } from './class';
+import { COIN_FLIP_TRIGGER_RULES } from './coin-flip';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
@@ -666,9 +667,10 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
 });
 
 /**
- * `trigger.enters-from-graveyard`: "~ or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 603.2c, 400.7): one ability that triggers for the permanent itself
- * and for any other permanent that came onto the battlefield from a graveyard (the zone it moved from; a token or a spell cast from a graveyard is not that). As for `trigger.or-subjects`,
- * each subject is an engine ability of its own. Not read: another kind than "permanent", "cast from", "your graveyard", a battlefield-only entry ("enters").
+ * `trigger.enters-from-graveyard`: "~ or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 603.2c, 400.7), "~ or another creature enters from your graveyard"
+ * (Flayer of the Hatebound; CR 404.1: a graveyard is its owner's): one ability that triggers for the permanent itself and for any other permanent (or creature) that came onto the
+ * battlefield from a graveyard (the zone it moved from; a token or a spell cast from a graveyard is not that). As for `trigger.or-subjects`, each subject is an engine ability of its
+ * own. Not read: another kind than "permanent" or "creature", "cast from", a battlefield-only entry ("enters"), "or exile".
  */
 export const TRIGGER_ENTERS_FROM_GRAVEYARD = defineRule<IrTrigger>({
   id: 'trigger.enters-from-graveyard',
@@ -678,32 +680,46 @@ export const TRIGGER_ENTERS_FROM_GRAVEYARD = defineRule<IrTrigger>({
     'CR 603.6a (Handling Triggered Abilities)',
     'CR 603.2c (Handling Triggered Abilities)',
     'CR 400.7 (General)',
+    'CR 404.1 (Graveyard)',
   ],
-  examples: ['~ or another permanent enters from a graveyard'],
-  rejects: [
-    '~ or another permanent enters',
+  examples: [
+    '~ or another permanent enters from a graveyard',
     '~ or another permanent enters from your graveyard',
     '~ or another creature enters from a graveyard',
+    '~ or another creature enters from your graveyard',
+  ],
+  rejects: [
+    '~ or another permanent enters',
+    '~ or another land enters from a graveyard',
     '~ or a permanent enters from a graveyard',
     '~ or another permanent is cast from a graveyard',
     '~ enters from a graveyard',
     '~ or another permanent enters from a graveyard or exile',
+    '~ or another creature enters from an opponent’s graveyard',
   ],
   parse: (ctx, pos) => {
     const r = sequence(
       spanned(literal('~')),
-      literal(' or another permanent'),
-      pattern(/ enters(?: the battlefield)? from a graveyard(?![\p{L}\p{N}])(?! or\b)/iu),
+      pattern(/ or another (permanent|creature)/iu),
+      pattern(/ enters(?: the battlefield)? from (a|your) graveyard(?![\p{L}\p{N}])(?! or\b)/iu),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [self] = r.value;
+    const [self, kind, from] = r.value;
     const id = 'trigger.enters-from-graveyard';
     const span = { start: pos, end: r.pos };
+    const yours = from[1]?.toLowerCase() === 'your';
     const whole = (subject: IrNoun): IrTrigger => ({
       ...trigger(id, span, 'enters', { subject }),
       fromGraveyard: true,
+      ...(yours ? { yourGraveyard: true as const } : {}),
     });
-    const other = makeNoun(id, span, 'a', { raw: 'another permanent' });
+    const creature = kind[1]?.toLowerCase() === 'creature';
+    const other = makeNoun(
+      id,
+      span,
+      'a',
+      creature ? { types: ['creature'], raw: 'another creature' } : { raw: 'another permanent' },
+    );
     return {
       ok: true,
       value: {
@@ -1421,6 +1437,7 @@ export const TRIGGER_RULES = [
   ...GALADRIEL_G1_TRIGGER_RULES,
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
+  ...COIN_FLIP_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".

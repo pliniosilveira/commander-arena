@@ -502,6 +502,7 @@ export function lowerGraveyardPlayStatic(
           ...(effect.entersTapped ? { entersTapped: true as const } : {}),
           ...(gains === undefined ? {} : { gains }),
           ...(effect.exileOthers === undefined ? {} : { exileOthers: effect.exileOthers }),
+          ...(effect.putElsewhereThisTurn === true ? { putElsewhereThisTurn: true as const } : {}),
         },
       },
     ],

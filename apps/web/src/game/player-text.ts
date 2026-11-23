@@ -73,9 +73,17 @@ export function playerSubject(
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the gift was promised to.
       return { text: 'the chosen player', base: false };
-    case 'discardedThisWay':
-      // D-210 (CR 701.9): "each player who discarded a card this way draws a card".
-      return { text: 'each player who discarded a card this way', base: false };
+    case 'discardedThisWay': {
+      // D-210 (CR 701.9): "each player who discarded a card this way draws a card"; Snort: "each opponent who discarded their hand this way".
+      const group = player.of?.kind === 'eachOpponent' ? 'opponent' : 'player';
+      return {
+        text:
+          player.hand === true
+            ? `each ${group} who discarded their hand this way`
+            : `each ${group} who discarded a card this way`,
+        base: false,
+      };
+    }
     case 'couldntSacrificeThisWay':
       // CR 701.21a: "each player who can't discards a card" after a sacrifice.
       return { text: "each player who can't", base: false };

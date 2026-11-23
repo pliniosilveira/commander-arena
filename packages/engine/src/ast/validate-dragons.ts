@@ -815,6 +815,21 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
           );
         }
       }
+      if (s.putElsewhereThisTurn !== undefined) {
+        if (s.putElsewhereThisTurn !== true) {
+          issue(
+            out,
+            `${path}.putElsewhereThisTurn`,
+            'putElsewhereThisTurn must be true when present',
+          );
+        } else if (s.cast === undefined || s.land === true) {
+          issue(
+            out,
+            `${path}.putElsewhereThisTurn`,
+            'putElsewhereThisTurn is only for a permission to cast',
+          );
+        }
+      }
       if (s.land !== undefined && s.land !== true)
         issue(out, `${path}.land`, 'land must be true when present');
       if (s.entersTapped !== undefined && s.entersTapped !== true) {

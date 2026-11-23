@@ -356,6 +356,8 @@ export function matchesFilter(
     ...(filter.exiledWithSource === true
       ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
       : {}),
+    // CR 603.12, 400.7j (Espers to Magicite): the cards the resolution that created the reflexive ability exiled.
+    ...(filter.exiledThisWay === true ? { exiledThisWay: ctx.moved ?? [] } : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     // CR 205.2a, 701.21a (Braids): "shares a card type with it" after a sacrifice reads the permanent sacrificed first in this resolution, as it last was.
     // CR 205.3m, 113.7a (Titan of Littjara): "shares a creature type with it" of an ability about its own source reads the source, as it is or as it last was.
@@ -394,6 +396,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.discardedOrFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
     f.exiledWithSource === true ||
+    f.exiledThisWay === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
     f.notTriggerCard === true ||
@@ -973,10 +976,17 @@ export function resolveObjects(
       // D-151: "each other creature" besides the one the effect names (`except`), read now, with the targets.
       const left =
         selector.except === undefined ? [] : resolveObjects(state, selector.except, ctx, targets);
-      return objectsInZone(state, zone).filter(
+      const matched = objectsInZone(state, zone).filter(
         (id) =>
           !left.includes(id) && matchesFilter(state, getObject(state, id), selector.filter, named),
       );
+      if (selector.plus === undefined) return matched;
+      // CR 608.2c (Legions to Ashes): "the target and all tokens ... with the same name": the referenced object joins the set, once.
+      const inZone = new Set(objectsInZone(state, zone));
+      const extra = resolveObjects(state, selector.plus, ctx, targets).filter(
+        (id) => inZone.has(id) && !matched.includes(id) && !left.includes(id),
+      );
+      return [...matched, ...extra];
     }
     default: {
       const unreachable: never = selector;
@@ -1111,12 +1121,21 @@ export function resolvePlayers(
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []
         : [ctx.declinedPlayer];
-    case 'discardedThisWay':
+    case 'discardedThisWay': {
       // D-210: "each player who discarded a card this way": the players of the `discard` effects of this resolution that discarded, in the order of CR 101.4.
+      // CR 701.9a (Snort): with `hand`, the players whose discard of their hand ran, an empty hand included; `of` narrows them to every player or every opponent.
+      const named =
+        selector.of === undefined ? undefined : resolvePlayers(state, selector.of, ctx, targets);
       return apnapOrder(
         state,
-        (ctx.thisWay?.discardedBy ?? []).filter((seat) => !getSeat(state, seat).hasLost),
+        (selector.hand === true
+          ? (ctx.thisWay?.discardedHandBy ?? [])
+          : (ctx.thisWay?.discardedBy ?? [])
+        ).filter(
+          (seat) => !getSeat(state, seat).hasLost && (named === undefined || named.includes(seat)),
+        ),
       );
+    }
     case 'couldntSacrificeThisWay':
       // CR 701.21a, 101.4 (Plaguecrafter): "each player who can't": the players the `sacrifice` effects of this resolution found nothing to sacrifice for, in the order of CR 101.4.
       return apnapOrder(

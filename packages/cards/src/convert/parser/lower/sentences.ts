@@ -223,6 +223,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
           : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
+    ctx.lastCastRemembered = lastEffect?.kind === 'castFree' && lastEffect.remember === true;
     ctx.lastPlayer =
       lastEffect !== undefined && 'player' in lastEffect && typeof lastEffect.player === 'object'
         ? (lastEffect.player as PlayerSelector)
@@ -247,6 +248,11 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'mill' &&
       lowered.value[0].player.kind === 'you';
+    // Locke, Treasure Hunter: "If a land card was milled this way" after "each player mills a card".
+    ctx.milledEach =
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'mill' &&
+      lowered.value[0].player.kind === 'eachPlayer';
     // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
     const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
     ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
@@ -1260,7 +1266,10 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
   // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
   if (
-    (clause?.verb === 'castFree' || clause?.verb === 'castChosenGraveyardSpell') &&
+    (clause?.verb === 'castFree' ||
+      clause?.verb === 'castChosenGraveyardSpell' ||
+      // Summon: Esper Valigarmanda (CR 608.2g): "You may cast an instant or sorcery card exiled with ~, and mana of any type can be spent to cast that spell."
+      clause?.verb === 'castExiledWithPaying') &&
     clause.optional &&
     more.length === 0
   ) {
@@ -1840,7 +1849,7 @@ function lowerDoneReflexive(
   sentences: readonly IrSentence[],
   i: number,
   ctx: LowerContext,
-): LowerResult<Effects> | null {
+): (LowerResult<Effects> & { readonly last?: number }) | null {
   const next = sentences[i + 1];
   if (next?.reflexive !== true || i !== 0) return null;
   const [clause, ...more] = sentence.clauses;
@@ -1858,8 +1867,14 @@ function lowerDoneReflexive(
   if (next.instead === true || next.clauses.some((c) => c.optional)) {
     return refuse(next);
   }
-  // A reflexive ability is the last effect of its sequence (`validateCard`).
-  if (i + 2 < sentences.length) return refuse(next);
+  // A reflexive ability is the last effect of its sequence (`validateCard`); the sentences after the one of "When you do" are its own body, which only the exile of a graveyard before it reads
+  // (`lowerExiledReflexive`).
+  const body = sentences.slice(i + 2);
+  if (body.length > 0) {
+    if (sentence.clauses[0]?.verb !== 'exile') return refuse(next);
+    const lowered = lowerExiledReflexive(sentence, next, body, ctx);
+    return lowered.ok ? { ...lowered, last: i + 1 + body.length } : lowered;
+  }
   const blocked = missingFeatures(['effect:reflexive']);
   if (blocked.length > 0) return { ...refuse(next), needs: blocked };
   const done = lowerClauses(sentence.clauses, ctx);
@@ -1915,6 +1930,54 @@ function lowerDoneReflexive(
   // A reflexive ability that does not read the token knows nothing of it: only an effect that reads it follows a token.
   if (madeToken) return refuse(next);
   return { ok: true, value: [only, effect.value], rule: clause.rule };
+}
+
+/**
+ * "Exile each opponent's graveyard. When you do, choose up to one target creature card exiled this way. Create a token that's a copy of that card, except ..." (Espers to Magicite, CR 603.12,
+ * 400.7j): the engine's `exile` of the cards the first sentence names, and a `reflexive` ability created when that exile moved a card (`ifMoved`), carrying the cards it exiled (`carriesMoved`):
+ * the sentence of "When you do" and the sentences after it are the ability's own body, its target the "card exiled this way". Any other shape is refused, never guessed: the body must choose
+ * its target by `exiledThisWay` (a reflexive ability that carries the cards cannot read them otherwise).
+ */
+function lowerExiledReflexive(
+  sentence: IrSentence,
+  next: IrSentence,
+  body: readonly IrSentence[],
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  if (
+    sentence.clauses.length !== 1 ||
+    sentence.clauses.some((c) => c.condition !== undefined || c.duration !== undefined) ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.condition !== undefined ||
+    [next, ...body].some((s) => s.clauses.some((c) => c.optional) || s.delayed !== undefined)
+  ) {
+    return refuse(next);
+  }
+  const blocked = missingFeatures(['effect:reflexive', 'ability:reflexiveIfMoved']);
+  if (blocked.length > 0) return { ...refuse(next), needs: blocked };
+  const done = lowerClauses(sentence.clauses, ctx);
+  if (!done.ok) return done;
+  const [only, ...rest] = done.value;
+  if (only?.kind !== 'exile' || rest.length > 0 || only.objects.kind !== 'each') {
+    return refuse(sentence);
+  }
+  const effect = lowerReflexiveBody(next, body, ctx);
+  if (!effect.ok) return effect;
+  if (
+    effect.value.kind !== 'reflexive' ||
+    !JSON.stringify(effect.value.targets ?? null).includes('"exiledThisWay":true')
+  ) {
+    return refuse(next);
+  }
+  return {
+    ok: true,
+    value: [only, { ...effect.value, carriesMoved: true, ifMoved: true }],
+    rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
 }
 
 /** The effects whose doing the engine can tell without a "may" (`didPrevious` reads them, D-139): those of `may`, and a tap. */
@@ -2759,7 +2822,7 @@ function lowerStep(
     if (!reflexed.ok) return stop(reflexed);
     steps.push({ effects: reflexed.value, replaceable: false });
     return {
-      last: i + 1,
+      last: reflexed.last ?? i + 1,
       ...(sentences[i + 1]?.where === undefined ? {} : { whereRead: true as const }),
     };
   }

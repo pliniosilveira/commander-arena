@@ -218,6 +218,8 @@ export interface IrNoun extends IrNode {
   readonly of?: IrNoun;
   /** `det` `lostLifeThisTurn` and `combatDamagedThisTurn`: the group the players are of, every player or every opponent (CR 102.1, 102.2). */
   readonly whoGroup?: 'eachPlayer' | 'eachOpponent';
+  /** `det` `discardedThisWay`: "who discarded their hand this way" (CR 701.9a): the players whose discard of their hand ran, an empty hand included; `whoGroup` narrows them. */
+  readonly discardedHand?: true;
   /** `det` `combatDamagedThisTurn`: the damage was dealt by the permanent of the ability ("by ~ or a Dragon"). */
   readonly damagedByThis?: true;
   /** `det` `combatDamagedThisTurn`: the damage was dealt by a source of this kind ("by ~ or a Dragon": a noun of subtype Dragon), read as the engine's turn log keeps it. */
@@ -450,6 +452,8 @@ export interface IrFilter {
   readonly controllerDealtCombatDamageBy?: { readonly atLeast: number; readonly subtype: string };
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
   readonly exiledWithSelf?: true;
+  /** "target creature card exiled this way" (Espers to Magicite, CR 603.12): a card in exile that the resolution before the reflexive ability exiled (the engine's `exiledThisWay`). */
+  readonly exiledThisWay?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
   readonly putWithSelf?: true;
   /**
@@ -500,6 +504,12 @@ export interface IrFilter {
    * other targets of the text; the binding pass walks it as it walks `powerGreaterThanNoun`.
    */
   readonly sameNameAsNoun?: IrNoun;
+  /**
+   * "target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent" (Legions to Ashes, CR 608.2c): with `sameNameAsNoun`, the
+   * target it is is selected too (the engine's `each.plus`), and `controllerOfNamed`: the objects are controlled by the controller of that target (the engine's `controlledBy`).
+   */
+  readonly withNamedTarget?: true;
+  readonly controllerOfNamed?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
   /** "that creature has greater power than ~" (Conformer Shuriken, CR 208.1): the engine's `powerGreaterThanSource`. */
@@ -1407,6 +1417,11 @@ export interface IrToken extends IrNode {
     readonly keywords: readonly string[];
   };
   readonly copyStartingLoyalty?: number;
+  /**
+   * "..., except it's an artifact and it loses all other card types" (Espers to Magicite, CR 707.9b): with `copyOf`, the copy has exactly these card types (as written, lowercase),
+   * instead of the ones it copies (the engine's `copyOf.setTypes`).
+   */
+  readonly copySetTypes?: readonly string[];
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   /** "create a tapped and attacking X/X ... creature token" (CR 508.4): the tokens enter tapped and attacking, never declared as attackers; with `tapped`. */
@@ -1605,6 +1620,8 @@ export interface IrTrigger extends IrNode {
   readonly duringTurn?: 'you' | 'opponent';
   /** 'enters' (issue 102, River Kelpie, CR 603.6a): "enters from a graveyard", the permanent came from a graveyard. */
   readonly fromGraveyard?: true;
+  /** 'enters' with `fromGraveyard`: "enters from your graveyard", the graveyard is the controller's (CR 404.1). */
+  readonly yourGraveyard?: true;
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
@@ -1952,7 +1969,12 @@ export type IrStaticEffect =
       readonly permanents?: true;
     }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
-  | { readonly kind: 'castFromGraveyard'; readonly cost?: readonly string[] }
+  | {
+      readonly kind: 'castFromGraveyard';
+      readonly cost?: readonly string[];
+      /** "... using its blitz ability" (CR 702.152a): the permission is for the blitz cost only. */
+      readonly using?: 'blitz';
+    }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */
   | { readonly kind: 'cantBeBlockedBy'; readonly blockers: IrFilter }
   /** "have base power and toughness 5/3" (stage P31, CR 613.4b): the subject's power and toughness are set in layer 7b. */
@@ -2203,6 +2225,8 @@ export type IrStaticEffect =
       readonly gains?: IrQuotedAbility;
       /** "by exiling three other cards from your graveyard in addition to paying its other costs" (issue 102, Kotis, CR 601.2f): the other cards of the graveyard exiled as the cost. */
       readonly exileOthers?: number;
+      /** "from among cards in your graveyard that were put there from anywhere other than the battlefield this turn" (Banon, CR 404.1): the engine's `putElsewhereThisTurn`. */
+      readonly putElsewhereThisTurn?: true;
     }
   /**
    * "Lands you control enter untapped." (stage P37, D-180, CR 614.1c, 614.12): the permanents that enter under the controller's control and that
@@ -2317,6 +2341,8 @@ export interface IrModeChoice {
   readonly allOrNone?: true;
   /** "Each mode must target a different player." (CR 700.2d): the engine's `ModeChoice.differentTargets`. */
   readonly differentTargets?: true;
+  /** "Choose one at random —" (CR 700.2): the engine's `ModeChoice.random`, the mode is drawn from the seeded generator as the triggered ability goes on the stack. */
+  readonly random?: true;
 }
 
 /** The header line of a modal spell or ability ("Choose one —"), read by the `modal` rules. */

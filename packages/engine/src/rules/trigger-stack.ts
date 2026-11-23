@@ -28,6 +28,7 @@
  * first) is not needed until such an ability exists.
  */
 import type { ObjectId, SeatId } from '../ids';
+import { nextInt } from '../rng';
 import type { ChosenTarget } from '../state/chosen';
 import type { NewDecision, TargetChoiceSpec, TriggerChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
@@ -248,6 +249,8 @@ function runQueue(input: GameState): PutResult {
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
       ...(trigger.damaged === undefined ? {} : { triggerDamaged: trigger.damaged }),
       ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
+      // CR 603.12, 400.7j: "target creature card exiled this way" of a reflexive ability reads what the resolution that created it exiled.
+      ...(trigger.movedBefore === undefined ? {} : { moved: trigger.movedBefore }),
       // CR 603.3d: a target filter that reads the object that caused the trigger ("mana value ... that spell's mana value").
       ...(trigger.subject === null || !readsTriggerSubject(trigger.ability)
         ? {}
@@ -270,7 +273,13 @@ function runQueue(input: GameState): PutResult {
         });
         continue;
       }
-      if (sets.length > 1) {
+      if (sets.length > 1 && modal.choose.random === true) {
+        // CR 700.2 ("choose one at random"): the engine draws one of the modes that can be chosen from the seeded generator as the ability goes on the stack, so
+        // players can respond knowing it (SPEC 4.2: all randomness comes from the state's generator). Targets are then chosen for that mode as for any trigger.
+        const [index, rng] = nextInt(state.rng, sets.length);
+        state = { ...state, rng };
+        modes = sets[index] ?? only;
+      } else if (sets.length > 1) {
         // The ability goes on the stack first, as with targets; the answer chooses its modes.
         const pushed = pushTrigger(state, trigger);
         events.push(pushed.event);
@@ -296,8 +305,9 @@ function runQueue(input: GameState): PutResult {
             select,
           ),
         };
+      } else {
+        modes = only;
       }
-      modes = only;
     }
     const entries =
       modal === null

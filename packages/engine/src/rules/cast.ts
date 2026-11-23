@@ -33,7 +33,7 @@
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
 
-import type { Cost } from '../ast/types';
+import type { Ability, Cost } from '../ast/types';
 import { type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
@@ -183,6 +183,8 @@ export function beginCast(
     readonly exileInstead?: boolean;
     /** CR 118.9 (Blue Mage's Cane): with the `free` alternative, the mana paid rather than the mana cost. */
     readonly payInstead?: readonly Cost[];
+    /** Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...", kept for the permanent the spell becomes. */
+    readonly creatureGains?: readonly Ability[];
   } = {},
   /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
   permanentType?: CardType,
@@ -321,6 +323,8 @@ export function beginCast(
       (zone === 'exile' && !resolving && playPermissionAnyType(state, seat, obj.id))
         ? { anyManaType: true as const }
         : {}),
+      // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the spell carries it to the permanent it becomes.
+      ...(riders.creatureGains === undefined ? {} : { creatureGains: riders.creatureGains }),
       // D-359: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj)) ||
@@ -361,6 +365,33 @@ export function beginCast(
       ...next,
       continuousEffects: next.continuousEffects.filter((e) => e.id !== freeUse.id),
     };
+  }
+  // CR 601.2 (`mayCastOneMilled`): "you may cast a spell from among those cards" is one spell for all the cards, so casting one of them from the graveyard uses up the permissions
+  // the effect made for the others.
+  if (zone === 'graveyard' && !resolving && alternative === undefined) {
+    const keys = new Set(
+      next.continuousEffects.flatMap((e) =>
+        e.change.kind === 'castPermission' &&
+        e.change.seat === seat &&
+        e.change.oneOf !== undefined &&
+        e.objects.includes(objectId)
+          ? [e.change.oneOf]
+          : [],
+      ),
+    );
+    if (keys.size > 0) {
+      next = {
+        ...next,
+        continuousEffects: next.continuousEffects.filter(
+          (e) =>
+            !(
+              e.change.kind === 'castPermission' &&
+              e.change.oneOf !== undefined &&
+              keys.has(e.change.oneOf)
+            ),
+        ),
+      };
+    }
   }
   // D-408 (CR 601.3b, 601.3d): a spell cast now only because of its own conditional flash ("if it targets a commander") chooses its targets from what meets it.
   // Read before the spell moves: the timing is that of the state it is cast in.

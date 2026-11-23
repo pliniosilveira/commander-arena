@@ -11,6 +11,7 @@ import { activatableAbilities } from './activate-legality';
 import { turnableObjects } from './face-down-legality';
 import {
   alternativeCastObjects,
+  blitzGraveyardObjects,
   castableObjects,
   escapeObjects,
   flashbackObjects,
@@ -47,6 +48,8 @@ const ALTERNATIVES = [
   'sacrificePermanents',
   'payLife',
   'impending',
+  // CR 702.152a: Blitz, from the hand (and from the graveyard, below).
+  'blitz',
   // `nextSpellPayLife`: not listed on a face, but granted by an effect (the list of cards is the one of the ordinary cast).
   'lifeForMana',
   // Issue 105: `grantEnergyAlternative`, listed beside the ordinary cast when a permanent gives it.
@@ -84,6 +87,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
   for (const object of sacrificeFromGraveyardObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'sacrificeFromGraveyard' });
+  }
+  // CR 702.152a (Blitz): a card in the graveyard that says it may be cast using its blitz ability is cast for its blitz cost, one option for each.
+  for (const object of blitzGraveyardObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'blitz' });
   }
   // CR 702.180a (Harmonize): a card in the graveyard is cast for its harmonize cost, one option for each.
   for (const object of harmonizeObjects(state, seat)) {

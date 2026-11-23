@@ -41,7 +41,7 @@ export function runReflexive(
   if (effect.ifThisWay !== undefined) {
     if ((res.thisWay?.[effect.ifThisWay] ?? 0) <= 0) return done(state);
   } else if (effect.ifMoved === true) {
-    // CR 603.12 (Cait Sith): "When you exile a card this way": created when the instruction before it moved a card.
+    // CR 603.12 (Cait Sith, Espers to Magicite): "When you exile a card this way", "When you do" after an exile: created when the instruction before it moved a card.
     if ((res.lastMoved ?? []).length === 0) return done(state);
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
   // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, fixed now.
@@ -260,4 +260,37 @@ export function runGainActivatedAbilitiesOf(
     ctx,
     targets,
   );
+}
+
+/**
+ * "Until end of turn, you may cast a spell from among those cards" (Locke, Treasure Hunter; CR 601.2, 611.2a, 400.7j): a `castPermission` for each card of the latest mill of this
+ * resolution (`res.milledCards`) that is still in a graveyard, whoever owns it (`anyGraveyard`), until the end of the turn. The permissions share a key (`oneOf`), because the
+ * effect allows one spell for all the cards: casting one uses up the rest (`rules/cast.ts`). A land card is no spell, so it is left out.
+ */
+export function runMayCastOneMilled(state: GameState, res: ResolutionContext): StepOutcome {
+  const cards = (res.milledCards ?? []).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      card.zone === 'graveyard' &&
+      card.card !== null &&
+      !derive(state, card).types.includes('land')
+    );
+  });
+  let next = state;
+  const created: ContinuousEffect[] = [];
+  let key: string | undefined;
+  for (const id of cards) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    key ??= `ce${timestamp}`;
+    created.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: [id],
+      until: 'endOfTurn',
+      change: { kind: 'castPermission', seat: res.controller, anyGraveyard: true, oneOf: key },
+    });
+  }
+  return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });
 }

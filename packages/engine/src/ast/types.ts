@@ -802,6 +802,12 @@ export interface ObjectFilter {
    */
   readonly exiledWithSource?: true;
   /**
+   * "Target creature card exiled this way" (Espers to Magicite, CR 603.12, 400.7j): the object is one of the cards the effect before the `reflexive` ability that has this slot exiled in the
+   * resolution that created it (`reflexive.carriesMoved`: the cards it moved). A card that left exile since is a new object (CR 400.7) and does not match. Read only in a target slot of
+   * such a reflexive ability; the filter's zone is `exile`.
+   */
+  readonly exiledThisWay?: true;
+  /**
    * "Creature put onto the battlefield with this Aura" (CR 303.4, 400.7, 702.5a; Animate Dead): the object is a permanent that an effect of the source of the filter (an Aura) put
    * onto the battlefield with `moveToZone.putWithSource`, and it is still that same object (one that left and came back is a new object, CR 400.7). Read where the filter is matched
    * against the game with the source: an enchant ability's filter (the Aura it belongs to is the source), a target slot, an `each` selector. The filter's zone is the battlefield.
@@ -1278,6 +1284,12 @@ export type ObjectSelector =
        * instead.
        */
       readonly except?: ObjectRef;
+      /**
+       * "Exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent" (Legions to Ashes, CR 608.2c): the object this
+       * reference names is selected too, besides the objects the filter matches, when it is in the zone the filter names (once if the filter matches it as well). Read as the effect
+       * resolves, with the targets: a reference that names nothing adds nothing.
+       */
+      readonly plus?: ObjectRef;
     };
 
 export type PlayerSelector =
@@ -1369,7 +1381,16 @@ export type PlayerSelector =
    * "Each player who discarded a card this way" (D-210, CR 701.9): the players who discarded at least one card to the `discard` effects of this same resolution
    * so far, in the order CR 101.4 gives. Valid after a `discard` effect (or a `playersMay` of one) in the same sequence.
    */
-  | { readonly kind: 'discardedThisWay' }
+  | {
+      readonly kind: 'discardedThisWay';
+      /**
+       * "Each opponent who discarded their hand this way" (Snort; CR 701.9a, 101.4): with `hand`, the players whose `discard` of `hand` of this resolution ran, whatever their hand held (a player
+       * who discards an empty hand has discarded their hand), instead of those who discarded at least one card.
+       */
+      readonly hand?: true;
+      /** Only the players this selector (`eachPlayer` or `eachOpponent`) names, as the effect resolves; every player when left out. */
+      readonly of?: PlayerSelector;
+    }
   /**
    * "Each player who can't" after "each player sacrifices a creature or planeswalker of their choice" (CR 701.21a, 101.4, Plaguecrafter): the players for whom a `sacrifice` effect of
    * this same resolution had nothing to sacrifice (no permanent they control matched, so they sacrificed nothing), in the order CR 101.4 gives. A player who chose to sacrifice nothing
@@ -1844,7 +1865,8 @@ export type NamedAlternativeKind =
   | 'sacrificeFromGraveyard'
   | 'sacrificePermanents'
   | 'payLife'
-  | 'impending';
+  | 'impending'
+  | 'blitz';
 
 /**
  * What a permanent remembers about how it got onto the battlefield (D-121, D-124): that its evoke, dash or
@@ -1852,7 +1874,7 @@ export type NamedAlternativeKind =
  * cast). Each is the new object's own: any zone change makes a new object without it (CR 400.7).
  */
 export type PermanentAlternativeKind =
-  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow' | 'impending'>
+  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow' | 'impending' | 'blitz'>
   | 'unearth'
   | 'suspend';
 
@@ -1928,6 +1950,11 @@ export type PermanentAlternativeKind =
  * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
  *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
  *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
+ * - `blitz` (CR 702.152a, not checked against the rules text): the `cost` (mana only, no X) is paid instead of the mana cost of a creature spell, and the caster also discards `discard` cards
+ *   from their hand as part of it ("Blitz—{2}{R}{R}, Discard a card."; none when left out). The permanent it becomes has haste and "When this creature dies, draw a card" as long as its blitz cost
+ *   was paid, and a delayed triggered ability created as the spell resolves sacrifices it at the beginning of the next end step (the engine adds all three: `GameObject.alt`,
+ *   `GameState.delayedTriggers`, `rules/derive-alt.ts`). A copy of the permanent (not of the spell) has none of it. It is cast from the hand, and from the graveyard when the card
+ *   has the `castFromGraveyard` static ability with `using: 'blitz'`.
  * The `castSpell` action chooses one with `alternative`; the card is cast from the zones it could be
  * cast from anyway. Additional costs, commander tax and cost reductions still apply to it (CR
  * 118.9d, 601.2f, 903.8). `condition` is read for the player casting, with the card as the source;
@@ -1947,6 +1974,7 @@ export type AlternativeCost =
         | 'sacrificePermanents'
         | 'payLife'
         | 'impending'
+        | 'blitz'
       >;
       readonly cost: readonly Cost[];
       /**
@@ -1955,6 +1983,13 @@ export type AlternativeCost =
        * card cast is never that card (it is on the stack by then, CR 601.2a).
        */
       readonly exileFromHand?: ObjectFilter;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'blitz';
+      readonly cost: readonly Cost[];
+      /** The cards of the caster's hand discarded as part of the cost (CR 118.3, 701.9a): at least 1; absent for none. */
+      readonly discard?: number;
       readonly condition?: Condition;
     }
   | {
@@ -2074,6 +2109,11 @@ export type TokenSpec =
        * copies, part of its copiable values. Never empty.
        */
       readonly addTypes?: readonly CardType[];
+      /**
+       * "..., except it's an artifact and it loses all other card types" (Espers to Magicite, CR 707.9b): the copy has exactly these card types, instead of the ones it copies; its creature
+       * types go with the creature type it loses (the subtypes of the types it keeps stay). Part of the copiable values. Never empty, and not with `addTypes`.
+       */
+      readonly setTypes?: readonly CardType[];
       /**
        * "..., except it's a 4/4 black Zombie" (D-382, CR 707.9b, 707.9d): the copy is exactly these creature types, instead of the ones it copies (the other subtypes of the
        * original stay: they belong to card types the copy keeps). A characteristic-defining ability that defines creature types (changeling) is not copied. Not with `addSubtypes`.
@@ -2686,6 +2726,13 @@ export type Effect =
       readonly duration: 'untilEndOfTurn';
     }
   /**
+   * "Until end of turn, you may cast a spell from among those cards" after a mill (Locke, Treasure Hunter; CR 701.17a, 601.2, 611.2a, 400.7j): until end of turn the controller of
+   * this effect may cast one spell from among the cards the latest `mill` of the resolution milled (`ResolutionContext.milledCards`), whoever owns them, from the graveyard they are
+   * in now (a card that left it is a new object and not covered). It is one spell for all the cards together: casting one uses up the permission for the others. The spell is cast
+   * at the timing of its type, paying its ordinary cost; a land card is no spell and is not covered. `duration` is `untilEndOfTurn`.
+   */
+  | { readonly kind: 'mayCastOneMilled'; readonly duration: 'untilEndOfTurn' }
+  /**
    * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 613.1f, 611.2a, 611.2c): the instant
    * and sorcery cards that `what` describes in the controller's graveyard as the effect resolves have flashback until the end of the turn, with the cost equal to their own mana cost
    * (CR 118.9). The cards are fixed as the effect resolves (CR 611.2c: an effect that changes characteristics affects the objects there then), so a card that enters the graveyard
@@ -2750,6 +2797,14 @@ export type Effect =
    * commander the owner puts into the command zone instead was not exiled).
    */
   | { readonly kind: 'exileOwnGraveyardCard'; readonly players: PlayerSelector }
+  /**
+   * "Starting with the next opponent in turn order, each opponent chooses a creature card in your graveyard that hasn't been chosen. Return each card chosen this way to the
+   * battlefield under your control." (Rejoin the Fight; CR 101.4, 608.2d, 404.1, 110.2a): each opponent of the controller still in the game, in turn order beginning with the one
+   * after the controller, chooses one card of the controller's graveyard that `filter` matches and no opponent chose before (a `chooseCards` decision of purpose `move`, nothing
+   * asked when exactly one card is left, nothing chosen when none is). Once the last has chosen, all the cards chosen enter the battlefield together under the controller's control.
+   * `filter` has `zone` `graveyard`, no controller or owner.
+   */
+  | { readonly kind: 'eachOpponentChoosesGraveyardCard'; readonly filter: ObjectFilter }
   /**
    * "You may exile one of them from your graveyard" (CR 603.2c, 608.2d, 400.7, Lorehold group 1): of the cards that triggered this ability (`triggerCards`: the cards a batch
    * `discarded` trigger saw discarded, as the objects they became) the ones still in the graveyard of the controller, the controller chooses none or one and the card is exiled
@@ -3442,6 +3497,15 @@ export type Effect =
    */
   | { readonly kind: 'extraTurn'; readonly player: PlayerSelector }
   /**
+   * "Each player who owns a spell you cast this way loses life equal to its mana value" (Kefka, Dancing Mad, issue 97; CR 202.3, 119.3, 101.4): of the objects `spells` names (`moved`) only those that are
+   * spells on the stack count (the ones a `castFree` with `remember` cast: they are still there while the ability resolves, CR 608.2g); for each, in APNAP order of their owners, its owner loses life equal to
+   * its mana value (an {X} counts as the X announced, CR 202.3e).
+   */
+  | {
+      readonly kind: 'loseLifeManaValue';
+      readonly spells: Extract<ObjectRef, { readonly kind: 'moved' }>;
+    }
+  /**
    * CR 406.1 (Exile). With `linked` (D-139, CR 607.2a: "Imprint", "exiled with this creature"): the cards exiled are remembered by the
    * permanent the ability belongs to, in the order they were exiled, for the static `takeFromLinkedExile` that reads them. The link is
    * the permanent's own: it is lost when the permanent leaves the battlefield (CR 400.7), and a card that leaves exile is not
@@ -3456,6 +3520,11 @@ export type Effect =
        * generator (nobody chooses); with one or none there is nothing to pick. With `each` of a filter of cards in a zone outside the battlefield.
        */
       readonly atRandom?: true;
+      /**
+       * "Exile a card at random from each opponent's graveyard" (Kefka, Dancing Mad, issue 97; CR 701.13, 101.4): with `atRandom`, one card is picked for each owner of the objects `objects` names
+       * (one seeded pick per graveyard, owners in APNAP order), not one overall. An owner with no card has none exiled.
+       */
+      readonly perOwner?: true;
       /**
        * "Exile target nonland permanent ... until this enchantment leaves the battlefield" (CR 610.3, D-149): the cards are returned to the battlefield
        * under their owners' control (CR 610.3c) when the permanent the ability belongs to leaves the battlefield. If it has left already as the
@@ -3495,7 +3564,13 @@ export type Effect =
       readonly kind: 'keepOrSacrifice';
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
-      readonly totalPowerAtMost: number;
+      /** The limit on the total power of what is kept; exactly one of this and `keepAtMost`. */
+      readonly totalPowerAtMost?: number;
+      /**
+       * "That player chooses up to two creatures they control, then sacrifices the rest" (CR 608.2d, 701.21a, 101.4; Archfiend of Depravity): the limit is on how many are kept, 0 or more,
+       * instead of on their total power. The player may keep fewer; one who controls no more than that many sacrifices nothing.
+       */
+      readonly keepAtMost?: number;
     }
   | {
       readonly kind: 'moveToZone';
@@ -4438,6 +4513,13 @@ export type Effect =
    */
   | { readonly kind: 'rollDie'; readonly sides: number }
   /**
+   * One coin flip with a call made (CR 705.2: "flip a coin" for an effect that does not only care about heads or tails): the controller's coin is flipped with a draw of the seeded
+   * generator of the game (SPEC 4.2), the event `coinFlipped` says the call, the result and whether they match, and the controller wins the flip when they do (CR 705.2), which "whenever you win a
+   * coin flip" (`winsCoinFlip`) reads. The call is the player's: "flip a coin" is lowered to a `chooseOne` of one `coinFlip` for each call, so the player is asked as it resolves. Only
+   * there (`validateCard`): the flip of another player is not run.
+   */
+  | { readonly kind: 'coinFlip'; readonly call: 'heads' | 'tails' }
+  /**
    * "Clash with an opponent" (CR 701.30a-d, 701.30b): the controller chooses an opponent (nothing is asked with one opponent in the game; with none the effect does nothing), then the two
    * each reveal the top card of their library at the same time (a player with no card reveals none), then the two decide in turn order (CR 101.4) whether to put the card they revealed on the
    * bottom of their library, and the cards move at the same time. The controller wins the clash if the card they revealed has a higher mana value than every other card revealed (CR 701.30d):
@@ -4617,8 +4699,23 @@ export type Effect =
       /**
        * "Target opponent may cast a spell from their hand without paying its mana cost. If they do, you copy that spell." (CR 608.2g, 707.10, Cmdr. Troi): the spell cast is what `moved`
        * names afterwards (a `copySpell` of it). With `player` and a `choose` selector of the hand of that player: they choose among the spells in their own hand that they could cast.
+       * With `max` (Kefka, Dancing Mad, issue 97) the spells cast are all added to `moved`, and the cards offered stay those `moved` named as the effect began.
        */
       readonly remember?: true;
+      /**
+       * "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f, 400.7): the
+       * abilities the permanent a creature spell cast by this effect becomes has for as long as it stays on the battlefield (one `grantAbility` effect each, permanent, as the spell
+       * resolves; a spell that is not a creature, or does not resolve, gives nothing). Only with `objects` a `moved` reference, and not with `max`, `perOwner` or `play`.
+       */
+      readonly creatureGains?: readonly Ability[];
+      /**
+       * "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (Summon: Esper Valigarmanda, issue 97; CR 608.2g, 601.2, 609.4b):
+       * the spell is cast as this resolves paying its mana cost (not for free), with the mana the effects before it added to the pool or any other the controller can pay. Only with `objects`
+       * `linkedExile`, and with no `play`, `max`, `perOwner`, `player`, `remember` or `exileInstead`.
+       */
+      readonly paying?: true;
+      /** "... and mana of any type can be spent to cast that spell" (CR 609.4b): the spell cast with `paying` can be paid with any mana for any symbol of its cost. Needs `paying`. */
+      readonly anyManaType?: true;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -5096,6 +5193,11 @@ export type Trigger =
        * graveyard (the zone it moved from, read as the event happens), never a token and not a spell that was merely cast from there.
        */
       readonly fromGraveyard?: true;
+      /**
+       * "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 400.7, 404.1: a graveyard is its owner's): the graveyard it came from is one of the controller of
+       * this ability, that is, the permanent is owned by that player. Only with `fromGraveyard`.
+       */
+      readonly graveyardOwner?: 'you';
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**
@@ -5424,6 +5526,11 @@ export type Trigger =
    * Every die of a roll counts apart. The roll that triggers it is the roll of `rollDie` (the event `dieRolled`).
    */
   | { readonly kind: 'rollsHighest'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
+   * "Whenever you win a coin flip" (CR 705.2, 705.3, 603.2; Setzer, Wandering Gambler): once each time the player `who` names (relative to the controller of this ability) wins a coin
+   * flip, which is the flip of a `coinFlip` whose call matched the result. A flip that nobody wins or loses (CR 705.2: an effect that only cares about heads or tails) is not run.
+   */
+  | { readonly kind: 'winsCoinFlip'; readonly who: 'you' | 'opponent' | 'any' }
   /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
@@ -7699,6 +7806,11 @@ export type StaticEffect =
        * an effect gave it, flashback) is not changed by it.
        */
       readonly cost?: readonly Cost[];
+      /**
+       * "You may cast this card from your graveyard using its blitz ability." (CR 702.152a, 601.2a): the card may be cast from its owner's graveyard only for the alternative cost of that
+       * kind, which the face must list; the permission is not one to cast it for its mana cost (it is not "cast from your graveyard" for `mayCastFromGraveyard`). Not with `cost`.
+       */
+      readonly using?: 'blitz';
     }
   /**
    * "+N/+N" to the subject, in layer 7c (CR 613.4c). Negative numbers are allowed. The amounts may
@@ -8183,6 +8295,12 @@ export type StaticEffect =
        * as the cost is paid (the spell cannot be cast that way with fewer). Only with `cast`.
        */
       readonly exileOthers?: number;
+      /**
+       * "Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn." (Banon,
+       * the Returners' Leader; CR 601.2a, 404.1, 400.7): only a card that was put into the graveyard this turn from a zone other than the battlefield (a hand, a library, the stack; read from
+       * `TurnLog.graveyardedElsewhere`, so a card that moved on and came back is a new object and does not count). Only with `cast`, and not with `land`.
+       */
+      readonly putElsewhereThisTurn?: true;
     }
   /**
    * "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1, 113.6): while the permanent has the
@@ -8645,6 +8763,12 @@ export interface ModeChoice {
    * is 0. Only a triggered ability (no mode chosen removes it from the stack), not with `repeatable` or `maxIf`, and `max` is at least 2.
    */
   readonly allOrNone?: true;
+  /**
+   * "At the beginning of combat on your turn, choose one at random —" (CR 700.2): the engine, not the controller, chooses the mode, as the triggered ability goes on the stack,
+   * with a draw of the seeded generator of the game among the modes that can be chosen (a mode with no legal target cannot, CR 603.3c); no `chooseModes` decision is asked. Only a
+   * triggered ability that chooses exactly one mode (`min` 1, `max` 1), without `repeatable`, `maxIf`, `allOrNone` or `differentTargets`.
+   */
+  readonly random?: true;
   /**
    * "Each mode must target a different player." (CR 700.2d): no target is chosen for two of the chosen modes (the targets of one mode may still be several). A set of modes
    * for which each target slot cannot get a target of its own is not offered. Not with `repeatable`.

@@ -79,13 +79,18 @@ describe('the lead line: how many modes are chosen (CR 700.2)', () => {
     'Choose up to two —\n• Draw a card.\n• You gain 3 life.',
     'Choose any number —\n• Draw a card.\n• You gain 3 life.',
     'Choose X —\n• Draw a card.\n• You gain 3 life.',
-    'Choose one at random —\n• Draw a card.\n• You gain 3 life.',
     'Choose one\n• Draw a card.\n• You gain 3 life.',
     'Choose one -\n• Draw a card.\n• You gain 3 life.',
     'Choose up to five {P} worth of modes. You may choose the same mode more than once.\n• {P} — Draw a card.\n• {P}{P} — You gain 3 life.',
   ])('a lead line no rule reads leaves the whole text: %s', (text) => {
     const u = dropped(text, 'instant');
     expect(u).toMatchObject({ reason: 'unrecognised', stoppedAt: text });
+  });
+
+  // Umaro, Raging Yeti (CR 700.2): the lead line is read now, but only a triggered ability runs a random mode; a spell stays dropped and says why.
+  test('a spell that chooses one at random is read and not runnable', () => {
+    const text = 'Choose one at random —\n• Draw a card.\n• You gain 3 life.';
+    expect(dropped(text, 'instant')).toMatchObject({ reason: 'notRunnable', stoppedAt: text });
   });
 
   test('"Choose two target creature cards" is not a modal text: no bullet follows', () => {

@@ -101,6 +101,13 @@ export function graveyardPlayPermission(
       continue;
     }
     if (source.cast === undefined || typesOf().includes('land')) continue;
+    // CR 404.1, 400.7 (Banon): "put there from anywhere other than the battlefield this turn".
+    if (
+      source.putElsewhereThisTurn === true &&
+      !(state.turnLog.graveyardedElsewhere ?? []).includes(obj.id)
+    ) {
+      continue;
+    }
     if (
       matchesFilter(
         state,

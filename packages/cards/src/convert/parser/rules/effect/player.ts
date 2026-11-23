@@ -76,7 +76,29 @@ const cardsAmount = (verb: Parser<unknown>, cards: Parser<unknown> = CARDS): Par
     ),
     map(sequence(verb, family<IrAmount>('amount'), cards), ([, amount]) => amount),
   );
-const drawAmount = (verb: Parser<unknown>): Parser<IrAmount> => cardsAmount(verb, DRAW_CARDS);
+/**
+ * "draw that many cards plus one" (CR 608.2c, 121.1): what the instruction before it did, and a whole number more. The two are summed, so "that many" stays the
+ * `thisWay` count `lowerSentences` checks against the instruction before it.
+ */
+const thatManyPlus = (verb: Parser<unknown>): Parser<IrAmount> =>
+  map(
+    spanned(
+      sequence(
+        verb,
+        family<IrAmount>('amount', { only: ['amount.that-many'] }),
+        DRAW_CARDS,
+        literal(' plus '),
+        family<IrAmount>('amount', { only: ['amount.number'] }),
+      ),
+    ),
+    ({ value: [, many, , , more], span }): IrAmount => ({
+      kind: 'sum',
+      of: [many, more],
+      span,
+    }),
+  );
+const drawAmount = (verb: Parser<unknown>): Parser<IrAmount> =>
+  choice(thatManyPlus(verb), cardsAmount(verb, DRAW_CARDS));
 
 /** A player verb phrase, given the subject it is said of. Returns one clause. */
 export type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
@@ -933,8 +955,12 @@ export const EFFECT_DRAW = defineRule<Clauses>({
     'draw a card for each opponent who has more cards in hand than you',
     // Stage P32 (D-147): a creature with a counter on it.
     'draw a card for each creature you control with a +1/+1 counter on it',
+    // "that many" and a number more (Celes, Rune Knight).
+    'draw that many cards plus one',
   ],
   rejects: [
+    'draw that many cards plus',
+    'draw that many cards plus a creature',
     'draw a card, then discard a card',
     'draw a card for each time that creature was kicked',
     'draws a card',

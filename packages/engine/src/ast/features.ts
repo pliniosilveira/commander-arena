@@ -164,6 +164,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealUntilEachPlayer',
     // Issue 102 (Diviner of Mist): "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead" (`castFree` of a `choose` from the graveyard, with `exileInstead`).
     'castFreeFromGraveyard',
+    // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
+    'castFreeCreatureGains',
+    // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
+    'castPayingFromLinkedExile',
     // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
     'chosenByOpponent',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
@@ -183,6 +187,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
     'modeAllOrNone',
     'modeDifferentTargets',
+    // CR 700.2: "choose one at random" (`ModeChoice.random`): a mode drawn from the seeded generator as the triggered ability goes on the stack.
+    'modeRandom',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
@@ -202,6 +208,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'reflexivePaid',
     // Issue 89: "Create a token. When you do, return ... attached to that token", "Return this card to the battlefield attached to that creature at the beginning of the next end step".
     'reflexiveMoved',
+    // Espers to Magicite: "Exile each opponent's graveyard. When you do, ..." (a `reflexive` effect with `ifMoved`).
+    'reflexiveIfMoved',
     'attachedToMoved',
     'delayedReturnAttached',
     // CR 400.7, 303.4: "Return enchanted creature card to the battlefield ..., attach this Aura to it" (Animate Dead): `moveToZone.putWithSource`, the permanent remembers the Aura.
@@ -227,6 +235,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discard',
     // D-231: "Each player exiles a card from their graveyard" (Augusta).
     'exileOwnGraveyardCard',
+    // Rejoin the Fight: "each opponent chooses a creature card in your graveyard that hasn't been chosen".
+    'eachOpponentChoosesGraveyardCard',
     // D-231: Tragic Arrogance's choices of the permanents to keep and the sacrifice of the rest.
     'sparePermanents',
     // D-232: Coin of Fate's "An opponent chooses one of the exiled cards ...".
@@ -341,6 +351,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    // CR 705.2: "flip a coin" (`coinFlip`, one for each call under a `chooseOne`) and "whenever you win a coin flip" (`winsCoinFlip`).
+    'coinFlip',
     // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
     'clash',
     'scry',
@@ -400,6 +412,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
+    // Issue 97 (Kefka): "each player who owns a spell you cast this way loses life equal to its mana value".
+    'loseLifeManaValue',
     // D-131: "mill N cards" (CR 701.17).
     'mill',
     // D-309: "manifest the top card of your library" (CR 701.40), and the face-down permanent it makes.
@@ -433,6 +447,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCast',
     // Issue 159: "You may cast Zombie spells from your graveyard this turn".
     'mayCastSpells',
+    // Locke, Treasure Hunter: "Until end of turn, you may cast a spell from among those cards" after a mill (one spell, whoever owns the cards).
+    'mayCastOneMilled',
     // Issue 159: "this creature gains all activated abilities of that card until end of turn".
     'gainActivatedAbilitiesOf',
     // "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a).
@@ -621,6 +637,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveils',
     // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
     'rollsHighest',
+    // CR 705.2 (Setzer): "Whenever you win a coin flip".
+    'winsCoinFlip',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -646,6 +664,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castDuringYourTurn',
     // Issue 102 (River Kelpie): "enters from a graveyard" (`entersBattlefield` with `fromGraveyard`).
     'entersBattlefieldFromGraveyard',
+    // Revival Trance (Flayer of the Hatebound): "enters from your graveyard" (`entersBattlefield` with `fromGraveyard` and `graveyardOwner`).
+    'entersBattlefieldFromYourGraveyard',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -1049,6 +1069,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
     'exiledWithSource',
+    // Espers to Magicite: "target creature card exiled this way" (`ObjectFilter.exiledThisWay`).
+    'exiledThisWay',
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
@@ -1169,6 +1191,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerAtLeastChosenNumber',
     // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
     'sameNameAs',
+    // CR 608.2c (Legions to Ashes): `each.plus`, the target besides the tokens with its name.
+    'eachPlus',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -1701,6 +1725,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'harmonize',
     // Issue 81 (CR 702.176): Impending.
     'impending',
+    // CR 702.152: Blitz.
+    'blitz',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -1928,6 +1954,10 @@ export const ABILITY_FEATURES = [
   'revealUntilEachPlayer',
   /** "Cast an instant or sorcery spell from your graveyard without paying its mana cost, then exile it instead" (issue 102, CR 608.2g, 614.1a): the engine's `castFree` of a `choose` from the graveyard. */
   'castFreeFromGraveyard',
+  /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
+  'castFreeCreatureGains',
+  /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
+  'castPayingFromLinkedExile',
   /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
   'chosenByOpponent',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
@@ -1948,6 +1978,8 @@ export const ABILITY_FEATURES = [
   'modeAllOrNone',
   /** "Each mode must target a different player." (CR 700.2d): `ModeChoice.differentTargets`, no target is chosen for two of the chosen modes. */
   'modeDifferentTargets',
+  /** "At the beginning of combat on your turn, choose one at random —" (CR 700.2): `ModeChoice.random`, the engine chooses the mode with the seeded generator as the ability goes on the stack. */
+  'modeRandom',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
@@ -1968,6 +2000,8 @@ export const ABILITY_FEATURES = [
   'reflexivePaid',
   /** "Create a 2/1 token. When you do, ... attached to that token" (CR 603.12, 400.7j, issue 89): a `reflexive` effect with `carriesMoved` after a `createToken`. */
   'reflexiveMoved',
+  /** "Exile each opponent's graveyard. When you do, ..." (CR 603.12, 400.7j, Espers to Magicite): a `reflexive` effect with `ifMoved` and `carriesMoved` after an effect that moves objects. */
+  'reflexiveIfMoved',
   /** "Return target Aura or Equipment card from your graveyard to the battlefield attached to that token" (CR 303.4f, 303.4g, issue 89): a `moveToZone` with `attachTo` `moved`. */
   'attachedToMoved',
   /** "Return this card to the battlefield attached to that creature at the beginning of the next end step" (CR 603.7c, 303.4f, issue 89): a delayed `moveToZone` of `thisCard` with `attachTo` `moved`. */
@@ -2002,6 +2036,8 @@ export const TRIGGER_FEATURES = [
   'leftGraveyardDuringYourTurn',
   /** "Whenever this creature or another permanent enters from a graveyard" (issue 102, CR 603.6a): `entersBattlefield` with `fromGraveyard`. */
   'entersBattlefieldFromGraveyard',
+  /** "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 404.1): `entersBattlefield` with `fromGraveyard` and `graveyardOwner: 'you'`. */
+  'entersBattlefieldFromYourGraveyard',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -2086,6 +2122,8 @@ export const SELECTOR_KINDS = [
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
   'exiledWithSource',
+  /** "Target creature card exiled this way" (CR 603.12, 400.7j, Espers to Magicite): the engine's `ObjectFilter.exiledThisWay`. */
+  'exiledThisWay',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
@@ -2234,6 +2272,8 @@ export const SELECTOR_KINDS = [
   'powerAtLeastChosenNumber',
   /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
   'sameNameAs',
+  /** "Target permanent and all tokens ... with the same name as that permanent" (CR 608.2c): the engine's `each.plus`. */
+  'eachPlus',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -2687,7 +2727,7 @@ export const TOKEN_KINDS = [
   'copyOf',
   /** "Create two tapped Treasure tokens" (CR 110.5b, D-131): the engine's `createToken.tapped`. */
   'tapped',
-  /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `noManaCost`. */
+  /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `setTypes`, `noManaCost`. */
   'copyExceptions',
   /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-648): the engine's `createToken.attacking`. */
   'attacking',
@@ -2870,6 +2910,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'sacrificePermanents',
   'payLife',
   'impending',
+  'blitz',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
   // Issue 105 (Nissa, Worldsoul Speaker): energy rather than the mana cost, granted by a static ability of a permanent.
@@ -2950,6 +2991,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
+  castFreeCreatureGains: true,
+  castPayingFromLinkedExile: true,
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,
@@ -2960,6 +3003,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeCost: true,
   modeAllOrNone: true,
   modeDifferentTargets: true,
+  modeRandom: true,
   sacrificeX: true,
   exileFromGraveyardX: true,
   discardCostX: true,
@@ -2970,6 +3014,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   reflexiveModal: true,
   reflexivePaid: true,
   reflexiveMoved: true,
+  reflexiveIfMoved: true,
   attachedToMoved: true,
   delayedReturnAttached: true,
   putWithSource: true,
@@ -3004,6 +3049,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   draw: true,
   discard: true,
   exileOwnGraveyardCard: true,
+  eachOpponentChoosesGraveyardCard: true,
   sparePermanents: true,
   splitCostExiled: true,
   returnGraveyardPair: true,
@@ -3066,6 +3112,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  coinFlip: true,
   clash: true,
   scry: true,
   surveil: true,
@@ -3104,6 +3151,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   extraTurn: true,
+  loseLifeManaValue: true,
   delayedTrigger: true,
   prepare: true,
   copyCardAndCast: true,
@@ -3122,6 +3170,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   reflexive: true,
   mayCast: true,
   mayCastSpells: true,
+  mayCastOneMilled: true,
   gainActivatedAbilitiesOf: true,
   gainFlashbackFromManaCost: true,
   gainEscape: true,
@@ -3231,6 +3280,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   scries: true,
   surveils: true,
   rollsHighest: true,
+  winsCoinFlip: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -3245,6 +3295,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castDuringYourTurn: true,
   leftGraveyardDuringYourTurn: true,
   entersBattlefieldFromGraveyard: true,
+  entersBattlefieldFromYourGraveyard: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,

@@ -37,12 +37,38 @@ export const CLASH: Lowering<IrClause, Effects> = {
   },
 };
 
-export const ARDEN_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [ROLL, CLASH];
+/**
+ * `flipCoin`: "flip a coin" (CR 705.2): the controller calls heads or tails as it resolves, then the coin is flipped, and they win the flip when the call matches. The engine's
+ * `chooseOne` of one `coinFlip` for each call, so the player is asked with the ordinary choice of an instruction.
+ */
+export const FLIP_COIN: Lowering<IrClause, Effects> = {
+  head: 'flipCoin',
+  id: 'lower.flip-coin',
+  needs: ['effect:chooseOne', 'effect:coinFlip'],
+  lower: (clause) => ({
+    ok: true,
+    value: [
+      {
+        kind: 'chooseOne',
+        options: [
+          { label: 'Heads', effect: { kind: 'coinFlip', call: 'heads' } },
+          { label: 'Tails', effect: { kind: 'coinFlip', call: 'tails' } },
+        ],
+      },
+    ],
+    rule: clause.rule,
+  }),
+};
+
+export const ARDEN_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [ROLL, CLASH, FLIP_COIN];
 
 /** The features the lowerings of this file and its conditions name, for the dimension test. */
 export const ARDEN_NEEDS = [
   'effect:rollDie',
   'effect:clash',
+  'effect:coinFlip',
+  'effect:chooseOne',
+  'trigger:winsCoinFlip',
   'condition:clashWon',
   'condition:dieResult',
   'condition:thisInYourGraveyard',

@@ -52,10 +52,22 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
   if (a === null || res === null) return fail('Nothing is asking');
   // "... then they may cast that card": the player the effect names casts it (and controls the spell).
   const caster = a.head.seat ?? res.controller;
-  const begun = beginCast(state, caster, card, 'free', 0, true, false, {
-    ...(a.head.exileInstead === true ? { exileInstead: true } : {}),
-    ...(a.head.payInstead === undefined ? {} : { payInstead: a.head.payInstead }),
-  });
+  // Summon: Esper Valigarmanda (CR 608.2g, 609.4b): `paying` pays the mana cost of the card, `anyManaType` lets any mana pay it.
+  const begun = beginCast(
+    state,
+    caster,
+    card,
+    a.head.paying === true ? undefined : 'free',
+    0,
+    true,
+    false,
+    {
+      ...(a.head.exileInstead === true ? { exileInstead: true } : {}),
+      ...(a.head.anyManaType === true ? { anyManaType: true } : {}),
+      ...(a.head.payInstead === undefined ? {} : { payInstead: a.head.payInstead }),
+      ...(a.head.creatureGains === undefined ? {} : { creatureGains: a.head.creatureGains }),
+    },
+  );
   if (!begun.ok) return begun;
   const resolving = begun.state.resolution;
   if (resolving === null) return fail('The resolution is gone');

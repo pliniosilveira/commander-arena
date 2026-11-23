@@ -31,4 +31,26 @@ export const SYNTHETIC_BLOCK_POWER_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "~ can't be blocked by creatures with greater power."
+  singleFace({
+    name: 'SYNTHETIC Power Shy',
+    manaCost: ['1', 'R'],
+    types: ['creature'],
+    subtypes: ['Human', 'Rogue'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 2,
+    toughness: 2,
+    oracleText: "~ can't be blocked by creatures with greater power.",
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'cantBeBlockedBy',
+          subject: { kind: 'this' },
+          blockers: { types: ['creature'], powerGreaterThanSource: true },
+        },
+      },
+    ],
+  }),
 ];

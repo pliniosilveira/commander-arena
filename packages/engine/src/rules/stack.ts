@@ -29,7 +29,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
-import { DASH_RETURN_ABILITY } from './derive-alt';
+import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
@@ -115,6 +115,8 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
+    // CR 603.12, 608.2b: "target creature card exiled this way" of a reflexive ability is read again as it resolves.
+    ...(obj.stack?.movedBefore === undefined ? {} : { moved: obj.stack.movedBefore }),
     // CR 608.2b: "mana value less than or equal to that spell's mana value" is read again as the ability resolves.
     ...(obj.stack?.triggerSubject === undefined
       ? {}
@@ -260,6 +262,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...res,
         queue: [...out.front, ...res.queue.slice(1)],
         ...(out.lastMoved === undefined ? {} : { lastMoved: out.lastMoved }),
+        ...(out.milledCards === undefined ? {} : { milledCards: out.milledCards }),
         // D-177: the permanents sacrificed, for "that creature's power" in the same resolution and in a reflexive ability.
         ...(out.sacrificed === undefined
           ? {}
@@ -350,6 +353,12 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),
                     ...(out.thisWay.discardedBy ?? []),
+                  ]),
+                ],
+                discardedHandBy: [
+                  ...new Set([
+                    ...(res.thisWay?.discardedHandBy ?? []),
+                    ...(out.thisWay.discardedHandBy ?? []),
                   ]),
                 ],
                 couldntSacrifice: [
@@ -605,6 +614,20 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
           ],
         };
       }
+      // CR 702.152a, 603.7: a blitz spell creates, as it resolves, the delayed triggered ability that sacrifices the permanent it became at the beginning of the next end step.
+      if (obj.stack?.alt === 'blitz' && moved.newObject !== null) {
+        next = {
+          ...next,
+          delayedTriggers: [
+            ...next.delayedTriggers,
+            {
+              source: moved.newObject,
+              controller: controllerOf(state, obj),
+              ability: BLITZ_SACRIFICE_ABILITY,
+            },
+          ],
+        };
+      }
       // Issue 121 (Forger's Foundry, CR 607.2a): "exiled with this artifact": the permanent that gave the replacement remembers the card.
       const mark = obj.stack?.exileOnResolve;
       if (exiled && moved.newObject !== null && mark?.linked === true) {
@@ -712,7 +735,10 @@ export function answerResolutionChoice(
   }
   // CR 608.2d, 701.21a (Slaughter the Strong): the answer names the permanents kept; the rest of the ones the player controls that match are sacrificed (the ones that can't be, stay).
   const asked = state.pending;
-  if (head.kind === 'chooseSacrifice' && head.keepPowerAtMost !== undefined) {
+  if (
+    head.kind === 'chooseSacrifice' &&
+    (head.keepPowerAtMost !== undefined || head.keepCountAtMost !== undefined)
+  ) {
     if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
     const sacrificed = asked.legal.filter(
       (id) => !chosen.includes(id) && !cantBeSacrificed(state, id),

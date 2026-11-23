@@ -100,6 +100,49 @@ export const NOUN_EACH_PLAYER_DISCARDED = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.each-player-discarded-their-hand`: "each opponent who discarded their hand this way", "each player who discarded their hand this way" (Snort, CR 701.9a, 101.4, 102.2): the
+ * players of the group whose discard of their hand in the instruction before it ran, in turn order; one who discarded an empty hand has discarded their hand. The engine's
+ * `PlayerSelector` `discardedThisWay` with `hand` and `of`. Not read: "each opponent who discarded a card" (another rule), another verb, "this way" missing, a single player.
+ */
+export const NOUN_EACH_PLAYER_DISCARDED_HAND = defineRule<IrNoun>({
+  id: 'noun.each-player-discarded-their-hand',
+  family: 'noun',
+  leading: ['each'],
+  cites: ['CR 701.9 (Discard)', 'CR 101.4 (Handling Simultaneous Decisions)', 'CR 102.2 (Players)'],
+  examples: [
+    'each opponent who discarded their hand this way',
+    'each player who discarded their hand this way',
+    'Each opponent who discarded their hand this way',
+  ],
+  rejects: [
+    'each opponent who discarded their hand',
+    'each opponent who discarded a card this way',
+    'each opponent who discarded your hand this way',
+    'each opponent who drew their hand this way',
+    'each opponents who discarded their hand this way',
+    'target opponent who discarded their hand this way',
+    'an opponent who discarded their hand this way',
+  ],
+  parse: node<string[], IrNoun>(
+    'noun.each-player-discarded-their-hand',
+    map(
+      pattern(/each (opponent|player) who discarded their hand this way(?![\p{L}\p{N}'’])/iu),
+      (m) => [...m].map((part) => part ?? ''),
+    ),
+    (m) => ({
+      kind: 'noun',
+      det: 'discardedThisWay',
+      filter: { raw: m[0] ?? '' },
+      upTo: false,
+      plural: true,
+      other: false,
+      discardedHand: true,
+      whoGroup: (m[1] ?? '').toLowerCase() === 'opponent' ? 'eachOpponent' : 'eachPlayer',
+    }),
+  ),
+});
+
+/**
  * `noun.each-player-cant-sacrifice`: "each player who can't" (CR 701.21a, 101.4, Plaguecrafter: "each player sacrifices a creature or planeswalker of their choice. Each
  * player who can't discards a card"): the players for whom the sacrifice before it found nothing to sacrifice, in turn order. The engine's `PlayerSelector`
  * `couldntSacrificeThisWay`; only after a sacrifice of the same text (the lowering checks it). Not read: "each opponent who can't", "each player who can", another verb
@@ -138,5 +181,6 @@ export const VRASKA_NOUN_RULES = [NOUN_TARGET_TRIGGERED_ABILITY_OR_SPELL];
 /** Before `noun.player`, which would read "each player" and stop there. */
 export const VRASKA_EARLY_NOUN_RULES = [
   NOUN_EACH_PLAYER_DISCARDED,
+  NOUN_EACH_PLAYER_DISCARDED_HAND,
   NOUN_EACH_PLAYER_CANT_SACRIFICE,
 ];

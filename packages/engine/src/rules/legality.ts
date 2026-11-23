@@ -18,6 +18,7 @@ import {
   hasGift,
   hasModeCosts,
   manaCostAsFlashbackCost,
+  mayCastBlitzFromGraveyard,
 } from './alt-costs';
 import { auraTargetSpec, BESTOW_TARGET_SPEC } from './attach';
 import {
@@ -365,6 +366,7 @@ export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameOb
       (a) =>
         a.kind === 'static' &&
         a.static.kind === 'castFromGraveyard' &&
+        a.static.using === undefined &&
         (a.condition === undefined ||
           evaluateCondition(state, a.condition, { controller: seat, source: obj.id })),
     ) ?? false
@@ -414,6 +416,8 @@ export function mayCastFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
     (a) =>
       a.kind === 'static' &&
       a.static.kind === 'castFromGraveyard' &&
+      // CR 702.152a: "using its blitz ability" is a permission for the blitz cost only (`castZone`), not to cast the card for its mana cost.
+      a.static.using === undefined &&
       (a.condition === undefined ||
         evaluateCondition(state, a.condition, { controller: seat, source: obj.id })),
   );
@@ -538,6 +542,23 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     // CR 702.138a: a printed escape cost, or the one an effect gave the card until end of turn (rules/escape-grant.ts).
     return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+  }
+  // CR 702.152a, 601.2a: "You may cast this card from your graveyard using its blitz ability": a blitz cast from a graveyard, when the card says so and its condition holds (it is cast
+  // from the hand otherwise, below).
+  if (alternative === 'blitz' && obj.zone === 'graveyard') {
+    if (obj.card === null || faceIndex !== 0 || obj.owner !== seat) return null;
+    const face = faceOf(state, obj);
+    return mayCastBlitzFromGraveyard(face) &&
+      face?.abilities.some(
+        (a) =>
+          a.kind === 'static' &&
+          a.static.kind === 'castFromGraveyard' &&
+          a.static.using === 'blitz' &&
+          (a.condition === undefined ||
+            evaluateCondition(state, a.condition, { controller: seat, source: obj.id })),
+      ) === true
+      ? 'graveyard'
+      : null;
   }
   // Issue 159: a card with a `sacrificeFromGraveyard` cost is cast from its owner's graveyard only.
   if (alternative === 'sacrificeFromGraveyard') {
@@ -921,8 +942,10 @@ export function canCastDuringResolution(
   if (obj.card === null && obj.cardCopy !== true) return false;
   if (alternative === 'normal' || alternative === 'freeGraveyard') {
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
-    // effect names it); the spell is cast from there and its owner stays the card's owner.
-    if (obj.zone !== 'graveyard') return false;
+    // effect names it); the spell is cast from there and its owner stays the card's owner. Summon: Esper Valigarmanda (`castFree.paying`): or a card in exile, as the effect names it.
+    if (obj.zone !== 'graveyard' && !(alternative === 'normal' && obj.zone === 'exile')) {
+      return false;
+    }
   } else if (obj.zone !== 'exile' && obj.zone !== 'hand' && obj.zone !== 'library') {
     // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
     // its mana cost"); Cascade, Suspend and Madness cast cards from exile; "reveal the top card of your library. You may cast it" (`revealTopCast`)
@@ -1136,6 +1159,13 @@ export function jumpStartObjects(state: GameState, seat: SeatId): ObjectId[] {
 export function sacrificeFromGraveyardObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'sacrificeFromGraveyard'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now for their blitz cost (CR 702.152a): "You may cast this card from your graveyard using its blitz ability". */
+export function blitzGraveyardObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'blitz'),
   );
 }
 

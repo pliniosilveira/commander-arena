@@ -189,7 +189,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (!what.ok) return what;
       // "enters from a graveyard" (issue 102, River Kelpie, CR 603.6a): the zone it came from, as the event is noticed.
       if (t.fromGraveyard === true) {
-        const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
+        const blocked = missingFeatures([
+          'trigger:entersBattlefieldFromGraveyard',
+          ...(t.yourGraveyard === true
+            ? (['trigger:entersBattlefieldFromYourGraveyard'] as const)
+            : []),
+        ]);
         if (blocked.length > 0) return failure(t, blocked);
       }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
@@ -198,6 +203,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
         ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
+        ...(t.fromGraveyard === true && t.yourGraveyard === true
+          ? { graveyardOwner: 'you' as const }
+          : {}),
       });
     }
     case 'attacks': {
@@ -276,6 +284,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (who === null) return failure(t);
       const blocked = missingFeatures(['trigger:rollsHighest']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'rollsHighest', who });
+    }
+    case 'winsCoinFlip': {
+      // "Whenever you win a coin flip" (Setzer, CR 705.2): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:winsCoinFlip']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsCoinFlip', who });
     }
     case 'dies':
     case 'blocks':
@@ -872,6 +887,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'scries',
       'surveils',
       'rollsHighest',
+      'winsCoinFlip',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -1600,6 +1616,8 @@ function lowerTriggeredAbility(
         (t.what === undefined ||
           JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
     );
+  ctx.youAttackBatchTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'attackBatch' && t.who === 'you');
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
@@ -1718,6 +1736,8 @@ function lowerTriggeredAbility(
       c.verb === 'castFree' ||
       // Issue 102 (Diviner of Mist): the engine's `castFree` of a card of the graveyard asks, and may be declined.
       c.verb === 'castChosenGraveyardSpell' ||
+      // Summon: Esper Valigarmanda (issue 97): the engine's `castFree` with `paying` asks (and may be declined).
+      c.verb === 'castExiledWithPaying' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
@@ -2016,9 +2036,11 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:lifeLostBatch',
   'trigger:notAsAttacker',
   'trigger:entersBattlefieldFromGraveyard',
+  'trigger:entersBattlefieldFromYourGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',
+  'trigger:winsCoinFlip',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

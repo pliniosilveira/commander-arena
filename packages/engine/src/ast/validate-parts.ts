@@ -409,6 +409,7 @@ export function checkFilter(
     'firstXSpellThisTurn',
     'enteredThisTurn',
     'exiledWithSource',
+    'exiledThisWay',
     'putWithSource',
     'singleTarget',
     'modified',
@@ -592,6 +593,14 @@ export function checkFilter(
       out,
       `${path}.exiledWithSource`,
       "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
+    );
+  }
+  // CR 603.12 (Espers to Magicite): "card exiled this way" is a card in exile.
+  if (f.exiledThisWay === true && f.zone !== 'exile') {
+    issue(
+      out,
+      `${path}.exiledThisWay`,
+      "only a card in exile was exiled this way: the filter's zone is 'exile'",
     );
   }
   // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura" is a permanent.
@@ -910,6 +919,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
+  f.exiledThisWay !== undefined ||
   f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
@@ -1625,6 +1635,8 @@ export function checkObjectSelector(
     } else if (each.except !== undefined) {
       checkRef(each.except, 'object', `${path}.except`, scope, out);
     }
+    // CR 608.2c: "the target and all tokens ... with the same name": the object the effect names besides the filter's.
+    if (each.plus !== undefined) checkRef(each.plus, 'object', `${path}.plus`, scope, out);
     return;
   }
   checkRef(sel as ObjectRef, expect, path, scope, out);
@@ -1688,6 +1700,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'combatDamagedByNamed':
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
+    case 'discardedThisWay':
     case 'opponentsAttackingTriggerPlayer':
     case 'all':
       return true;
@@ -1831,6 +1844,18 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           "'discardedThisWay' needs a discard effect before it in the same sequence",
         );
       }
+      // CR 101.4, 102.2 (Snort): `of` names the group the players are of.
+      if (
+        sel.of !== undefined &&
+        kindOf(sel.of) !== 'eachPlayer' &&
+        kindOf(sel.of) !== 'eachOpponent'
+      ) {
+        issue(
+          out,
+          `${path}.of`,
+          "'discardedThisWay' reads the group 'eachPlayer' or 'eachOpponent'",
+        );
+      }
       break;
     case 'couldntSacrificeThisWay':
       // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
@@ -1903,6 +1928,7 @@ export const PLAYER_ONLY = [
   'combatDamagedByNamed',
   'lostLifeThisTurn',
   'combatDamagedThisTurn',
+  'discardedThisWay',
 ];
 
 export function checkDamageRecipient(
@@ -4759,6 +4785,21 @@ function checkCopyExceptions(
       checkEnumList(out, `${path}.addTypes`, spec.addTypes, CARD_TYPES, 'card type');
     }
   }
+  // CR 707.9b (Espers to Magicite): "except it's an artifact and it loses all other card types".
+  if (spec.setTypes !== undefined) {
+    if (!Array.isArray(spec.setTypes) || spec.setTypes.length === 0) {
+      issue(out, `${path}.setTypes`, 'setTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.setTypes`, spec.setTypes, CARD_TYPES, 'card type');
+    }
+    if (spec.addTypes !== undefined) {
+      issue(
+        out,
+        path,
+        'a copy is given card types instead of its own (setTypes) or in addition to them (addTypes), not both',
+      );
+    }
+  }
   if (spec.setColors !== undefined) {
     if (!Array.isArray(spec.setColors) || spec.setColors.some((c) => !isOneOf(c, COLORS))) {
       issue(out, `${path}.setColors`, 'setColors is a list of colors');
@@ -5750,12 +5791,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be sacrificed');
       }
-      if (!Number.isInteger(e.totalPowerAtMost) || e.totalPowerAtMost < 0) {
-        issue(
-          out,
-          `${path}.totalPowerAtMost`,
-          'totalPowerAtMost must be a whole number, 0 or more',
-        );
+      if ((e.totalPowerAtMost === undefined) === (e.keepAtMost === undefined)) {
+        issue(out, path, 'name exactly one of totalPowerAtMost and keepAtMost');
+      }
+      for (const key of ['totalPowerAtMost', 'keepAtMost'] as const) {
+        const limit = e[key];
+        if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
+          issue(out, `${path}.${key}`, `${key} must be a whole number, 0 or more`);
+        }
       }
       break;
     case 'sacrifice':
@@ -6361,6 +6404,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
       break;
+    case 'loseLifeManaValue':
+      // Issue 97 (Kefka): the spells an earlier `castFree` with `remember` cast.
+      if (kindOf(e.spells) !== 'moved') {
+        issue(out, `${path}.spells`, "the spells are those an effect before moved ('moved')");
+      }
+      break;
     case 'extraTurn':
       // CR 500.7: each player the selector names takes an extra turn.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6711,6 +6760,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // Issue 97 (Kefka): one pick for each owner of the objects.
+      if (e.perOwner !== undefined && (e.perOwner !== true || e.atRandom !== true)) {
+        issue(out, `${path}.perOwner`, 'perOwner is true, only with atRandom');
+      }
       // D-149, CR 610.3: "until this enchantment leaves the battlefield": only an ability of a permanent can leave it.
       if (e.until !== undefined) {
         if (e.until !== 'sourceLeaves' && e.until !== 'opponentBecomesMonarch') {
@@ -6853,7 +6906,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             eachGy.eachGraveyard !== true ||
             e.to !== 'exile' ||
             zone !== 'graveyard' ||
-            eachGy.optional !== true ||
+            (eachGy.optional !== undefined && eachGy.optional !== true) ||
             (eachGy.count !== undefined && eachGy.count !== 1) ||
             eachGy.fromMoved !== undefined ||
             eachGy.alsoGraveyard !== undefined ||
@@ -6862,7 +6915,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             issue(
               out,
               `${path}.objects.eachGraveyard`,
-              "eachGraveyard is true, with an optional choice of one card from the graveyard, to 'exile'",
+              "eachGraveyard is true, with a choice (optional or not) of one card from the graveyard, to 'exile'",
             );
           }
         }
@@ -7269,8 +7322,58 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // Cmdr. Troi (CR 608.2g, 707.10): the spell cast is what `moved` names afterwards; one spell only.
       if (e.remember !== undefined) {
-        if (e.remember !== true || e.max !== undefined || e.perOwner !== undefined) {
-          issue(out, `${path}.remember`, 'remember is true, for one spell (no max, no perOwner)');
+        if (e.remember !== true || e.perOwner !== undefined) {
+          issue(out, `${path}.remember`, 'remember is true, with no perOwner');
+        }
+        // Issue 97 (Kefka): several spells are remembered only from the cards an earlier effect moved.
+        if (e.max !== undefined && kindOf(e.objects) !== 'moved') {
+          issue(
+            out,
+            `${path}.remember`,
+            "remember with max reads the cards an effect before moved ('moved')",
+          );
+        }
+      }
+      // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...": the abilities of the permanent, for one spell cast from the cards an effect before moved.
+      if (e.creatureGains !== undefined) {
+        if (
+          !Array.isArray(e.creatureGains) ||
+          e.creatureGains.length === 0 ||
+          kindOf(e.objects) !== 'moved' ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.play !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.creatureGains`,
+            "creatureGains is a list of abilities, on the cards an effect before moved ('moved'), with no max, perOwner or play",
+          );
+        } else {
+          e.creatureGains.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.creatureGains[${i}]`, out);
+          });
+        }
+      }
+      // Summon: Esper Valigarmanda (CR 608.2g, 609.4b): the card exiled with this permanent is cast paying its mana cost, with any mana when the effect says so.
+      if (e.paying !== undefined || e.anyManaType !== undefined) {
+        if (
+          (e.paying !== undefined && e.paying !== true) ||
+          (e.anyManaType !== undefined && (e.anyManaType !== true || e.paying !== true)) ||
+          e.paying !== true ||
+          kindOf(e.objects) !== 'linkedExile' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.player !== undefined ||
+          e.remember !== undefined ||
+          e.exileInstead !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.paying`,
+            "paying is true, on the cards exiled with this permanent ('linkedExile'), with no play, max, perOwner, player, remember or exileInstead; anyManaType needs paying",
+          );
         }
       }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
@@ -7653,6 +7756,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
         }
+      }
+      break;
+    case 'eachOpponentChoosesGraveyardCard':
+      // CR 404.1: the cards are in the controller's graveyard: a filter of that zone with no owner or controller of its own.
+      checkFilter(e.filter, `${path}.filter`, out, scope);
+      if (
+        e.filter.zone !== 'graveyard' ||
+        e.filter.controller !== undefined ||
+        e.filter.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the cards each opponent chooses are in the graveyard of the controller: zone "graveyard", no controller or owner',
+        );
       }
       break;
     case 'exileOwnGraveyardCard':
@@ -8188,6 +8306,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'a reflexive trigger ("when you do") needs a "may" effect before it in the sequence',
         );
       }
+      // CR 603.12, 400.7j: a slot for "card exiled this way" reads the objects the reflexive ability carries.
+      if (
+        e.carriesMoved !== true &&
+        JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true')
+      ) {
+        issue(
+          out,
+          `${path}.targets`,
+          'a card exiled this way is named by a reflexive ability that carries what the effect before it moved (carriesMoved)',
+        );
+      }
       if (e.ifThisWay !== undefined) {
         if (
           e.ifThisWay !== 'exiledNonland' &&
@@ -8435,6 +8564,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.duration`, 'the flashback is gained until end of turn');
       }
       break;
+    case 'mayCastOneMilled':
+      // Locke, Treasure Hunter: "you may cast a spell from among those cards": the cards a mill of the resolution milled, for the rest of the turn.
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
+      }
+      break;
     case 'mayCastSpells':
       // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.
       checkFilter(e.spells, `${path}.spells`, out);
@@ -8461,6 +8596,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'clash':
       // CR 701.30b: the controller clashes with an opponent; no parameters.
+      break;
+    case 'coinFlip':
+      // CR 705.2: the call is heads or tails; the flip is a `chooseOne` option (the player calls as it resolves), so it is checked in the option (`chooseOne`).
+      if (e.call !== 'heads' && e.call !== 'tails') {
+        issue(out, `${path}.call`, 'a coin flip is called heads or tails');
+      }
       break;
     case 'rollDie':
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.

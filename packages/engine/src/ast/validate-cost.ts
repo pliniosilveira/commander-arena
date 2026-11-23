@@ -218,6 +218,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'sacrificeFromGraveyard',
   'sacrificePermanents',
   'payLife',
+  'blitz',
 ];
 
 /**
@@ -321,6 +322,19 @@ export function checkAlternativeCosts(
         out,
         `${p}.exileFromHand`,
         `only evoke exiles a card from the hand (${alt.kind} has none)`,
+      );
+    }
+    // CR 702.152a, 118.3 ("Blitz—{2}{R}{R}, Discard a card."): a blitz cost may discard cards of the hand, a positive whole number; no other kind has the field.
+    const discard = (alt as { readonly discard?: unknown }).discard;
+    if (alt.kind === 'blitz') {
+      if (discard !== undefined && (!Number.isSafeInteger(discard) || (discard as number) < 1)) {
+        issue(out, `${p}.discard`, 'a blitz cost discards a positive whole number of cards');
+      }
+    } else if (discard !== undefined) {
+      issue(
+        out,
+        `${p}.discard`,
+        `only blitz discards cards as part of its cost (${alt.kind} has none)`,
       );
     }
     if (alt.condition !== undefined) checkCondition(alt.condition, `${p}.condition`, out);

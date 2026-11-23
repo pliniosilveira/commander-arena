@@ -227,6 +227,11 @@ const CAST_FROM_GRAVEYARD_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   const symbols = paying.ok
     ? [...(paying.value[1] ?? '').matchAll(/\{([^{}\s]+)\}/gu)].map((m) => m[1] ?? '')
     : undefined;
+  // CR 702.152a (Sabin, Master Monk): "... from your graveyard using its blitz ability": the permission is to cast the card for its blitz cost only.
+  const blitz = paying.ok
+    ? paying
+    : pattern(/\s+using its blitz ability(?![\p{L}\p{N}])/iu)(ctx, r.pos);
+  const using = !paying.ok && blitz.ok ? ('blitz' as const) : undefined;
   const span = { start: pos, end: pos + 'you may cast this card'.length };
   return {
     ok: true,
@@ -241,9 +246,15 @@ const CAST_FROM_GRAVEYARD_UNIT: Parser<StaticUnit> = (ctx, pos) => {
         span,
         rule: 'static.cast-from-graveyard',
       },
-      effects: [{ kind: 'castFromGraveyard', ...(symbols === undefined ? {} : { cost: symbols }) }],
+      effects: [
+        {
+          kind: 'castFromGraveyard',
+          ...(symbols === undefined ? {} : { cost: symbols }),
+          ...(using === undefined ? {} : { using }),
+        },
+      ],
     },
-    pos: paying.ok ? paying.pos : r.pos,
+    pos: paying.ok ? paying.pos : using === 'blitz' && blitz.ok ? blitz.pos : r.pos,
   };
 };
 
@@ -517,9 +528,15 @@ export const STATIC_CAST_FROM_GRAVEYARD = defineRule<IrStatic>({
     'CR 113.6b (Abilities That Function in Zones Other Than the Battlefield)',
     'CR 601.2a (Casting Spells)',
   ],
-  examples: ['You may cast this card from your graveyard.'],
+  examples: [
+    'You may cast this card from your graveyard.',
+    'You may cast this card from your graveyard using its blitz ability.',
+  ],
   rejects: [
     'You may cast this card from your graveyard',
+    'You may cast this card from your graveyard using its blitz ability',
+    'You may cast this card from your graveyard using its flashback ability.',
+    'You may cast this card from your graveyard using its blitz ability by paying {1}.',
     'You may cast this card from your hand.',
     'You may cast this card from your graveyard once each turn.',
     'You may cast ~ from your graveyard.',

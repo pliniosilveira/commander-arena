@@ -487,6 +487,7 @@ export function runDiscard(
       // Issue 279: this player's own number; the resolution keeps the greatest of them (`stack.ts`).
       discardedMost: discardedCards,
       ...(discardedCards > 0 ? { discardedBy: [seat] } : {}),
+      ...(instruction.hand === true ? { discardedHandBy: [seat] } : {}),
     },
   };
 }

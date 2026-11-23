@@ -131,12 +131,25 @@ export function runChooseMove(
             ...instruction,
             seat: next,
             chosen: null,
-            together: { later: group.later.slice(1), held },
+            together: {
+              ...(group.distinct === true ? { distinct: true as const } : {}),
+              later: group.later.slice(1),
+              held,
+            },
           },
         ],
       );
     }
     const { together: _held, ...single } = instruction;
+    // CR 603.6a (`distinct`): the cards every opponent chose enter the battlefield at the same moment, as one move.
+    if (group.distinct === true) {
+      const all = held.flatMap((h) => h.cards);
+      if (all.length === 0) return { ...done(state), lastMoved: [] };
+      return {
+        ...done(state, [], [{ ...single, seat: held[0]?.seat ?? chooser, chosen: all }]),
+        lastMoved: [],
+      };
+    }
     return {
       ...done(
         state,
@@ -217,7 +230,10 @@ export function runChooseMove(
   };
   if (instruction.chosen !== null) return run(instruction.chosen, instruction.automatic === true);
   const fromCards = isCardZoneChoice(instruction.filter);
-  const legal =
+  // CR 608.2d (`distinct`): "a creature card that hasn't been chosen": the cards the players before chose are not offered again.
+  const chosenBefore =
+    group?.distinct === true ? group.held.flatMap((h) => h.cards) : ([] as ObjectId[]);
+  const legalAll =
     fromCards && instruction.graveyardOf !== undefined
       ? // King Narfi's Betrayal (CR 404.1): the cards in one player's graveyard that match the filter, whoever chooses.
         zoneList(state, 'graveyard', instruction.graveyardOf).filter((id) => {
@@ -268,6 +284,7 @@ export function runChooseMove(
               (id) => instruction.among === undefined || instruction.among.includes(id),
             )
           : controlledCandidates(state, chooser, res.source, instruction.filter);
+  const legal = legalAll.filter((id) => !chosenBefore.includes(id));
   // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
   // shown it even when none can be chosen; an empty hand shows nothing.
   const looked =

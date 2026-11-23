@@ -328,7 +328,9 @@ export function castAction(
     alternative === 'jumpStart' ||
     alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
-      : ['hand', 'command', 'exile'];
+      : alternative === 'blitz'
+        ? ['hand', 'command', 'graveyard']
+        : ['hand', 'command', 'exile'];
   let obj: GameObject;
   try {
     obj = resolveObject(ctx, card, { zones, seat });

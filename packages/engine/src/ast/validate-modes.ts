@@ -135,7 +135,7 @@ function checkChoice(
   if (choose.repeatable !== undefined && choose.repeatable !== true) {
     issue(out, `${p}.repeatable`, 'repeatable is true when present');
   }
-  for (const flag of ['allOrNone', 'differentTargets'] as const) {
+  for (const flag of ['allOrNone', 'differentTargets', 'random'] as const) {
     if (choose[flag] !== undefined && choose[flag] !== true) {
       issue(out, `${p}.${flag}`, `${flag} is true when present`);
     }
@@ -153,6 +153,24 @@ function checkChoice(
         out,
         `${p}.allOrNone`,
         'allOrNone is for a triggered ability with min 0 and max of at least 2, without repeatable or maxIf',
+      );
+    }
+  }
+  if (choose.random === true) {
+    // CR 700.2 ("choose one at random"): the engine draws one legal mode as the triggered ability goes on the stack, so only a triggered ability that chooses exactly one mode.
+    if (
+      !triggered ||
+      repeatable ||
+      choose.maxIf !== undefined ||
+      choose.allOrNone === true ||
+      choose.differentTargets === true ||
+      choose.min !== 1 ||
+      choose.max !== 1
+    ) {
+      issue(
+        out,
+        `${p}.random`,
+        'random is for a triggered ability that chooses exactly one mode (min 1, max 1), without repeatable, maxIf, allOrNone or differentTargets',
       );
     }
   }

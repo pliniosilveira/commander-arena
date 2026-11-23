@@ -311,6 +311,15 @@ const CHOOSE_PER_PLAYER_GRAVEYARD =
 const CHOOSE_EXILED_VOID_CARD =
   /(?:^|: )choose an exiled card an opponent owns with a void counter on it\.$/i;
 const MAY_PLAY_IT_FREE = /^you may play it this turn without paying its mana cost\.$/i;
+/**
+ * "Starting with the next opponent in turn order, each opponent chooses a creature card in your graveyard that hasn't been chosen. Return each card chosen this way to the battlefield
+ * under your control." (Rejoin the Fight, CR 101.4, 608.2d): the second sentence says what is done with the cards the first one has the opponents choose, so the two are one instruction
+ * (`effect.opponents-choose-graveyard-card`).
+ */
+const OPPONENTS_CHOOSE_GRAVEYARD_CARD =
+  /^(?:then )?starting with the next opponent in turn order, each opponent chooses an? [a-z]+ card in your graveyard that hasn['’]t been chosen\.$/i;
+const RETURN_EACH_CARD_CHOSEN =
+  /^return each card chosen this way to the battlefield under your control\.$/i;
 const PUT_THOSE_CARDS_ONTO = /^put those cards onto the battlefield under your control\.$/i;
 /** "You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand." (For the Ancestors): the middle sentence of the same instruction. */
 const TAKE_ANY_OF_CHOSEN_TYPE =
@@ -910,6 +919,15 @@ const PLAYER_REVEALS_UNTIL =
   /^target opponent reveals cards from the top of their library until they reveal [^.]*\.$/i;
 const YOU_PUT_AND_LOSE_LIFE =
   /^you put that card onto the battlefield under your control and lose life equal to that permanent['’]s mana value\.$/i;
+/**
+ * "Target opponent exiles cards from the top of their library until they exile an instant, sorcery, or creature card. You may cast that card without paying its mana cost. If you cast a
+ * creature spell this way, it gains haste and "At the beginning of the end step, sacrifice this creature."" (Strago and Relm, issue 97, CR 701.13, 608.2g): "that card" is the card the
+ * first sentence exiles and "this way" the cast of the second, so the two or three sentences are one instruction (`effect.player-exiles-until-cast`).
+ */
+const PLAYER_EXILES_UNTIL_CAST =
+  /^target (?:opponent|player) exiles cards from the top of their library until they exile [^.]*\.$/i;
+const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
+const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
 const THAT_PLAYER_PUTS_REST_RANDOM =
   /^that player puts the rest of the revealed cards on the bottom of their library in a random order\.$/i;
 const CONTROLLER_REVEALS_UNTIL =
@@ -945,6 +963,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+      continue;
+    }
+    // Strago and Relm (issue 97): the exile until a card is found, the free cast of it and, when there is one, what a creature spell gains.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, PLAYER_EXILES_UNTIL_CAST) &&
+      said(b, MAY_CAST_THAT_CARD_FREE)
+    ) {
+      const last = c !== undefined && said(c, CREATURE_THIS_WAY_GAINS) ? c : b;
+      out.push({ start: a.start, end: last.end });
+      i += last === b ? 1 : 2;
       continue;
     }
     // Issue 81 (Proteus Staff): "That creature's controller reveals cards from the top of their library until they reveal a creature card. The player puts that card onto the battlefield and
@@ -1218,6 +1248,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, CHOOSE_PER_PLAYER_GRAVEYARD) && said(b, PUT_THOSE_CARDS_ONTO)) ||
+        (said(a, OPPONENTS_CHOOSE_GRAVEYARD_CARD) && said(b, RETURN_EACH_CARD_CHOSEN)) ||
         (said(a, CHOOSE_EXILED_VOID_CARD) && said(b, MAY_PLAY_IT_FREE)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||

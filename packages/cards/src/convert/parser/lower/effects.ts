@@ -83,6 +83,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
+import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
@@ -118,9 +119,12 @@ import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
+import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
+import { KEFKA_LOWERINGS } from './kefka';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
+import { LOCKE_LOWERINGS } from './locke';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -147,6 +151,7 @@ import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
+import { PRIMORDIAL_LOWERINGS } from './primordial';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
@@ -163,6 +168,7 @@ import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
+import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -559,6 +565,10 @@ function lowerReturnSelf(
     if (ref.value.kind !== 'target') return failure(clause);
     attachTo = { kind: 'target', id: ref.value.id };
   }
+  // "... to the battlefield tapped and attacking" (CR 508.4): joins the combat of the attack the trigger is about, never declared (the engine's `enterAttacking` of what moved).
+  if (to.attacking === true && (to.zone !== 'battlefield' || !ctx.youAttackBatchTrigger)) {
+    return failure(clause);
+  }
   const effect: Effect =
     to.zone === 'battlefield'
       ? {
@@ -571,6 +581,15 @@ function lowerReturnSelf(
           ...(attachTo === undefined ? {} : { attachTo }),
         }
       : { kind: 'moveToZone', objects: { kind: 'this' }, to: 'hand' };
+  if (to.attacking === true) {
+    const attacking = missingFeatures(['effect:enterAttacking']);
+    if (attacking.length > 0) return failure(clause, attacking);
+    return {
+      ok: true,
+      value: [effect, { kind: 'enterAttacking', objects: { kind: 'moved' } }],
+      rule: clause.rule,
+    };
+  }
   return { ok: true, value: [effect], rule: clause.rule };
 }
 
@@ -1433,6 +1452,9 @@ function playerVerb(
       }
       // D-327: "Mill a card. You may play that card this turn.": the cards the controller milled are what "that card" of the sentence after it names.
       if (verb === 'mill' && player.value.kind === 'you') ctx.exiled = 'milled';
+      // Locke, Treasure Hunter: "a spell from among those cards" after a mill by the controller or by each player.
+      if (verb === 'mill' && (player.value.kind === 'you' || player.value.kind === 'eachPlayer'))
+        ctx.milledBefore = true;
       const effect: Effect =
         verb === 'draw' || verb === 'discard' || verb === 'mill'
           ? { kind: verb, player: player.value, count: amount.value }
@@ -2741,6 +2763,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
+  // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards" after a mill.
+  ...LOCKE_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
   ...AURA_GRAVEYARD_LOWERINGS,
   ...VRASKA_LOWERINGS,
@@ -2817,12 +2841,15 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
+  ...EXILE_UNTIL_CAST_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
+  ...KEEPS_UP_TO_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
+  ...KEFKA_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
@@ -2844,6 +2871,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Urianger Augurelt: "Look at the top card of your library. You may exile it face down." and "... you may play cards exiled with ~. Spells you cast this way cost {2} less to cast."
   ...ARCANUM_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
+  ...PRIMORDIAL_LOWERINGS,
+  ...REVIVAL_TRANCE_LOWERINGS,
   ...GRAVECAST_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,

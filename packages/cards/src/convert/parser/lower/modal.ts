@@ -93,6 +93,12 @@ export function lowerModes(
     );
     if (unrunnable.length > 0) return refuse(modal, unrunnable);
   }
+  // CR 700.2 "choose one at random": the engine draws the mode as a triggered ability goes on the stack, so only a triggered ability may say it.
+  if (choose.random === true) {
+    if (!triggered || choose.min !== 1 || max !== 1 || repeatable) return refuse(modal);
+    const unrunnable = missingFeatures(['ability:modeRandom']);
+    if (unrunnable.length > 0) return refuse(modal, unrunnable);
+  }
   // "You may choose two instead" (D-297): the widened maximum is more than the usual one and no more than the number of modes.
   const widened = choose.widenTo ?? count;
   if (choose.widenTo !== undefined && (widened <= max || widened > count)) return refuse(modal);
@@ -153,6 +159,7 @@ export function lowerModes(
     // "You may choose the same mode more than once" (D-344, CR 700.2d): the modes chosen are a multiset.
     ...(repeatable ? { repeatable: true as const } : {}),
     ...(choose.allOrNone === true ? { allOrNone: true as const } : {}),
+    ...(choose.random === true ? { random: true as const } : {}),
     ...(choose.differentTargets === true ? { differentTargets: true as const } : {}),
   };
   return { ok: true, value: { modes, chooseModes, usesX }, rule: modal.rule };

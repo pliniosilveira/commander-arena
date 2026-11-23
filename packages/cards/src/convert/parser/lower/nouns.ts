@@ -88,6 +88,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:controllerRef',
   'selector:powerGreaterThan',
   'selector:sameNameAs',
+  'selector:eachPlus',
   'selector:bound',
   'selector:ownerRef',
   'selector:power',
@@ -383,6 +384,11 @@ function lowerFilterAt(
     if (inner || filter.zone !== 'exile') return bad([]);
     parts.push('selector:exiledWithSource');
   }
+  // Espers to Magicite: "target creature card exiled this way" (CR 603.12), read where the filter is matched against the game with what the reflexive ability carries (a target slot); never a member of a choice, and a card in exile.
+  if (filter.exiledThisWay === true) {
+    if (inner || filter.zone !== 'exile') return bad([]);
+    parts.push('selector:exiledThisWay');
+  }
   // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
   if (filter.putWithSelf === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -637,6 +643,7 @@ function lowerFilterAt(
           },
         }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
+    ...(filter.exiledThisWay === true ? { exiledThisWay: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
@@ -1383,12 +1390,27 @@ function selectorOf(
       const named = selectorOf(nameNoun, ctx);
       if (!named.ok) return named;
       if (named.value.kind !== 'target') return failure(nameNoun, []);
-      const { sameNameAsNoun: _bound, ...rest } = noun.filter;
+      const { sameNameAsNoun: _bound, withNamedTarget, controllerOfNamed, ...rest } = noun.filter;
       const plain = lowerFilterAt(rest, noun, false);
       if (!plain.ok) return plain;
+      // "... and all tokens that player controls with the same name as that permanent" (Legions to Ashes, CR 608.2c): the tokens its controller controls, and the target too.
+      if (withNamedTarget === true || controllerOfNamed === true) {
+        const refusedPlus = gate(noun, ['selector:eachPlus']);
+        if (refusedPlus !== null) return refusedPlus;
+      }
       return {
         ok: true,
-        value: { kind: 'each', filter: { ...plain.value, sameNameAs: named.value } },
+        value: {
+          kind: 'each',
+          filter: {
+            ...plain.value,
+            sameNameAs: named.value,
+            ...(controllerOfNamed === true
+              ? { controlledBy: { kind: 'controllerOf', of: named.value } as const }
+              : {}),
+          },
+          ...(withNamedTarget === true ? { plus: named.value } : {}),
+        },
         rule: noun.rule,
       };
     }
@@ -1550,7 +1572,14 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
-      return blocked ?? ok({ kind: 'discardedThisWay' });
+      return (
+        blocked ??
+        ok({
+          kind: 'discardedThisWay',
+          ...(noun.discardedHand === true ? { hand: true as const } : {}),
+          ...(noun.whoGroup === undefined ? {} : { of: { kind: noun.whoGroup } }),
+        })
+      );
     }
     case 'couldntSacrificeThisWay': {
       // CR 701.21a: only after a sacrifice of the same text, whose players it names.
@@ -1717,6 +1746,8 @@ export function recipientOf(
     noun.det === 'eachOpponent' ||
     noun.det === 'triggerActor' ||
     noun.det === 'controllerOf' ||
+    // Snort: "deals 5 damage to each opponent who discarded their hand this way" (CR 701.9a).
+    (noun.det === 'discardedThisWay' && noun.discardedHand === true) ||
     // Barret Wallace (CR 508.5): "it deals damage equal to ... to defending player".
     noun.det === 'defendingPlayer' ||
     (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||

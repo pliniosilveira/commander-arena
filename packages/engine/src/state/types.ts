@@ -559,6 +559,12 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (`castFree.creatureGains`, Strago and Relm, CR 608.2g,
+   * 613.1f): the abilities the permanent this creature spell becomes has, as a layer 6 effect that lasts while it stays on the battlefield (`rules/zones.ts`). It belongs to the spell and
+   * ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly creatureGains?: readonly Ability[];
+  /**
    * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
    * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
    * when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
@@ -1233,6 +1239,8 @@ export type Instruction =
        * (a `choosePermanent` decision of purpose 'keep'), and the others (not the ones that can't be sacrificed) are sacrificed; `chosen` is then the ones to sacrifice. `count` is 0.
        */
       readonly keepPowerAtMost?: number;
+      /** `keepOrSacrifice` with `keepAtMost` (Archfiend of Depravity): the player keeps at most this many of the permanents that match, instead of a total power. */
+      readonly keepCountAtMost?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1478,6 +1486,8 @@ export type Instruction =
        * the first player; `later` are the players who choose after, `held` the cards chosen so far (`automatic`: the engine chose them, there being no more candidates than needed).
        */
       readonly together?: {
+        /** "Each opponent chooses a creature card in your graveyard that hasn't been chosen" (`eachOpponentChoosesGraveyardCard`): the cards held so far are not offered again, and all the cards held move as one batch. */
+        readonly distinct?: true;
         readonly later: readonly SeatId[];
         readonly held: readonly {
           readonly seat: SeatId;
@@ -2147,13 +2157,18 @@ export type Instruction =
       /** The cards the question is about, when the effect names them itself: the cards of a library looked at ("cast a spell from among them"). Overrides `objects`. */
       readonly cards?: readonly ObjectId[];
       /** `perOwner` (The Ur-Sphinx): `cards` are in a graveyard, not a library. */
-      readonly cardsZone?: 'graveyard';
+      readonly cardsZone?: 'graveyard' | 'exile';
       /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
       readonly seat?: SeatId;
       /** `remember` (Cmdr. Troi): the spell cast is what `moved` names afterwards. */
       readonly remember?: true;
       /** `copyCardAndCast.cost` (Blue Mage's Cane, CR 118.9): the mana paid rather than the mana cost. */
       readonly payInstead?: readonly Cost[];
+      /** `castFree.creatureGains` (Strago and Relm): what a creature spell cast by this effect gives the permanent it becomes. */
+      readonly creatureGains?: readonly Ability[];
+      /** `castFree.paying` (Summon: Esper Valigarmanda): the spell is cast paying its mana cost, with `anyManaType` as a rider of that spell. */
+      readonly paying?: true;
+      readonly anyManaType?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -2216,6 +2231,12 @@ export interface ResolutionContext {
    * effect starts; absent until one has run.
    */
   readonly lastMoved?: readonly ObjectId[];
+  /**
+   * The cards the latest `mill` instruction of this resolution milled, from every library it took from (CR 701.17a, 400.7j): what "those cards" names in a sentence after other
+   * instructions have moved things (Locke, Treasure Hunter: "each player mills a card. If a land card was milled this way, create a Treasure token. ... you may cast a spell from
+   * among those cards"), read by `mayCastOneMilled`. Absent until a mill ran.
+   */
+  readonly milledCards?: readonly ObjectId[];
   /**
    * What `triggerSubject` means for a triggered ability that reads it: the object whose event
    * caused the trigger (`StackData.triggerSubject`). Absent for everything else.
@@ -2336,6 +2357,8 @@ export interface ThisWayCounts {
   readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
+  /** The players whose `discard` of their `hand` ran, an empty hand included (Snort: "each opponent who discarded their hand this way"), in the order they did. */
+  readonly discardedHandBy?: readonly SeatId[];
   /** The players who had nothing to sacrifice to a `sacrifice` effect that names a choice (Plaguecrafter: "each player who can't"), in the order they were asked. */
   readonly couldntSacrifice?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
@@ -2405,6 +2428,11 @@ export type ContinuousChange =
       readonly spells?: ObjectFilter;
       /** "You may cast target creature card in a graveyard this turn" (`mayCast.anyGraveyard`, issue 159): the named card may be in any player's graveyard. */
       readonly anyGraveyard?: true;
+      /**
+       * "you may cast a spell from among those cards" (`mayCastOneMilled`, CR 601.2): the permissions an effect made for the cards it names share this key, and casting a spell with
+       * one of them uses up all of them, because the effect allows one spell, not one for each card (`rules/cast.ts`).
+       */
+      readonly oneOf?: string;
       /**
        * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
@@ -2892,6 +2920,11 @@ export interface TurnLog {
    * graveyard (Ahoy Mateys deck, Ghost of Ramirez DePietro). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
    */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /**
+   * Each card put into a graveyard this turn from a zone other than the battlefield (a hand, a library, the stack, exile, the command zone), by the id it has in the graveyard (CR 404.1,
+   * 400.7; Banon, the Returners' Leader: "put there from anywhere other than the battlefield this turn"). A token is not a card. Absent until one was recorded.
+   */
+  readonly graveyardedElsewhere?: readonly ObjectId[];
   /**
    * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
    * whether it is a token. Absent until one left, so the state of a game where none did is as it was.

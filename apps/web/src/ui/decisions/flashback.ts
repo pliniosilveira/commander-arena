@@ -131,7 +131,12 @@ export function graveyardLabels(
   for (const o of decision.options) {
     if (o.kind === 'castSpell' && o.object === card.id) {
       if (o.alternative === 'flashback') labels.push(flashbackLabel(card));
-      else if (o.alternative === 'escape' || o.alternative === 'harmonize')
+      else if (
+        o.alternative === 'escape' ||
+        o.alternative === 'harmonize' ||
+        // CR 702.152a: "You may cast this card from your graveyard using its blitz ability".
+        o.alternative === 'blitz'
+      )
         labels.push(alternativeLabel(o.alternative, card));
       // D-667 (CR 702.81a): the cost is the mana cost and a land card of the hand.
       else if (o.alternative === 'retrace') labels.push('Retrace: discard a land card');

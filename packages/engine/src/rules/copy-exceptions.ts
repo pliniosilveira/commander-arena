@@ -15,6 +15,7 @@ export type CopyExceptions = Pick<
   CopyToken,
   | 'addSubtypes'
   | 'addTypes'
+  | 'setTypes'
   | 'setCreatureTypes'
   | 'setColors'
   | 'setPt'
@@ -60,6 +61,10 @@ export function withCopyExceptions(
   exceptions: CopyExceptions,
 ): CopiableValues {
   const original = values.characteristics;
+  // CR 707.9b (Espers to Magicite): "except it's an artifact and it loses all other card types": the copy has exactly the types the exception gives. A card that is no creature has no creature
+  // types, so those go; the subtypes of the other types stay (as `setCreatureTypes` keeps them).
+  const losesCreatureTypes =
+    exceptions.setTypes !== undefined && !exceptions.setTypes.includes('creature');
   const subtypes =
     exceptions.setCreatureTypes !== undefined
       ? [
@@ -68,14 +73,23 @@ export function withCopyExceptions(
             ...exceptions.setCreatureTypes,
           ]),
         ]
-      : [...new Set([...original.subtypes, ...(exceptions.addSubtypes ?? [])])];
+      : [
+          ...new Set([
+            ...original.subtypes.filter((s) => !losesCreatureTypes || isNonCreatureSubtype(s)),
+            ...(exceptions.addSubtypes ?? []),
+          ]),
+        ];
   // CR 707.9b (issue 103): "except it's a 4/4 Dragon creature ... in addition to its other types": the card types the exception adds.
   const addedTypes = (exceptions.addTypes ?? []).filter((t) => !original.types.includes(t));
   return {
     characteristics: {
       ...original,
       subtypes,
-      ...(addedTypes.length === 0 ? {} : { types: [...original.types, ...addedTypes] }),
+      ...(exceptions.setTypes !== undefined
+        ? { types: [...exceptions.setTypes] }
+        : addedTypes.length === 0
+          ? {}
+          : { types: [...original.types, ...addedTypes] }),
       ...(exceptions.setColors === undefined ? {} : { colors: [...exceptions.setColors] }),
       ...(exceptions.setPt === undefined
         ? {}

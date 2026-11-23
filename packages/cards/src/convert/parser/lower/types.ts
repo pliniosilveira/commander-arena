@@ -229,6 +229,8 @@ export interface LowerContext {
   attackBatchThose: boolean;
   /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
   selfAttackTrigger: boolean;
+  /** True in the body of "Whenever you attack ..." (every event is an attack batch of the controller's creatures; CR 508.1, 508.4): a permanent may enter "tapped and attacking" (`enterAttacking`). */
+  youAttackBatchTrigger: boolean;
   /**
    * True in the body of a triggered ability whose every event is the card itself entering the battlefield or attacking (Titan of Littjara): "it" in "shares a creature type with it" is
    * the source of the ability, the one case the engine's `sharesCreatureTypeWith: 'source'` is read from the words.
@@ -314,6 +316,16 @@ export interface LowerContext {
    */
   milled: boolean;
   /**
+   * True right after a clause that was one mill by each player (Locke, Treasure Hunter, CR 701.17a, 608.2c): "If a land card was milled this way" reads the cards every player
+   * milled. Any other clause lowered after it makes it false again.
+   */
+  milledEach: boolean;
+  /**
+   * True once a mill by the controller or by each player was lowered (Locke, Treasure Hunter): "a spell from among those cards" names the cards the latest mill of the
+   * resolution milled (`mayCastOneMilled`), whatever was done in between. Never reset.
+   */
+  milledBefore: boolean;
+  /**
    * True right after a clause that was a `destroy` (issue 159, Necromantic Selection): "a creature card put into a graveyard this way" names the cards that destroy
    * put into graveyards, which the engine's `moved` holds until another instruction moves something.
    */
@@ -348,6 +360,11 @@ export interface LowerContext {
    * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
    */
   lastEffectKind: string | null;
+  /**
+   * True when the last instruction lowered was a `castFree` that remembers the spells it cast (Kefka, Dancing Mad, issue 97): "each player who owns a spell you cast this way" reads them. Set after
+   * every instruction, so it holds only right after that cast.
+   */
+  lastCastRemembered: boolean;
   /**
    * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
    * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
@@ -456,6 +473,8 @@ export function newContext(
     madeToken: null,
     chosenExiled: false,
     milled: false,
+    milledEach: false,
+    milledBefore: false,
     destroyed: false,
     createdToken: null,
     movedToHand: false,
@@ -463,6 +482,7 @@ export function newContext(
     exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
+    lastCastRemembered: false,
     lastCounteredGroup: null,
     randomYardCard: false,
     choseAPlayer: false,
@@ -495,6 +515,7 @@ export function newContext(
     damageBatchTrigger: false,
     attackBatchThose: false,
     selfAttackTrigger: false,
+    youAttackBatchTrigger: false,
     selfEntersOrAttacksTrigger: false,
     cardName,
     selfName: '',

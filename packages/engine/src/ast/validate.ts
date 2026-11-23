@@ -851,6 +851,14 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'castFromGraveyard':
       // D-133: the face-level checks say where it may stand. D-656: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
+      // CR 702.152a: `using` names the alternative cost the permission is for: blitz only, and then the ability has no cost of its own.
+      if (s.using !== undefined && (s.using !== 'blitz' || s.cost !== undefined)) {
+        issue(
+          out,
+          `${path}.using`,
+          'castFromGraveyard using is "blitz" and has no cost of its own',
+        );
+      }
       if (s.cost !== undefined) {
         if (!Array.isArray(s.cost) || s.cost.length === 0) {
           issue(
@@ -1060,6 +1068,13 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       issue(out, `${path}.at`, `unknown attack target ${JSON.stringify(at)}`);
     }
   }
+  // CR 603.6a, 404.1: "enters from your graveyard" is an enters trigger from a graveyard.
+  if (t?.kind === 'entersBattlefield' && t.graveyardOwner !== undefined) {
+    if (t.graveyardOwner !== 'you') issue(out, `${path}.graveyardOwner`, "graveyardOwner is 'you'");
+    if (t.fromGraveyard !== true) {
+      issue(out, `${path}.graveyardOwner`, 'graveyardOwner needs fromGraveyard');
+    }
+  }
   switch (t?.kind) {
     case 'entersBattlefield':
     case 'dies':
@@ -1208,6 +1223,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
+    case 'winsCoinFlip':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -2780,8 +2796,26 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   }
   // D-133: "You may cast this card from your graveyard": a card that is cast, once.
   const permissions = face.abilities.filter(
-    (a) => a?.kind === 'static' && a.static?.kind === 'castFromGraveyard',
+    (a) =>
+      a?.kind === 'static' &&
+      a.static?.kind === 'castFromGraveyard' &&
+      a.static.using === undefined,
   ).length;
+  // CR 702.152a: "You may cast this card from your graveyard using its blitz ability": once, and only on a face that lists a blitz cost to use.
+  const blitzPermissions = face.abilities.filter(
+    (a) =>
+      a?.kind === 'static' && a.static?.kind === 'castFromGraveyard' && a.static.using === 'blitz',
+  ).length;
+  if (blitzPermissions > 1) {
+    issue(out, `${path}.abilities`, 'castFromGraveyard using blitz once is enough');
+  }
+  if (blitzPermissions > 0 && !face.alternativeCosts?.some((a) => a?.kind === 'blitz')) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'castFromGraveyard using blitz needs a blitz alternative cost on the face (CR 702.152a)',
+    );
+  }
   if (permissions > 1) {
     issue(
       out,
@@ -2789,7 +2823,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       'castFromGraveyard once is enough: a card has one permission to be cast from its graveyard',
     );
   }
-  if (permissions > 0 && face.types.includes('land')) {
+  if ((permissions > 0 || blitzPermissions > 0) && face.types.includes('land')) {
     issue(
       out,
       `${path}.abilities`,

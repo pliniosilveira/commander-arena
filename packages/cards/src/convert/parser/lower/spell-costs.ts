@@ -381,6 +381,7 @@ const NAMED_ALTERNATIVES = [
   'foretell',
   'morph',
   'impending',
+  'blitz',
 ] as const;
 type NamedAlternative = (typeof NAMED_ALTERNATIVES)[number];
 
@@ -426,6 +427,12 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
       return failure(ability);
     }
     exile = count.value;
+  } else if (kind === 'blitz') {
+    // CR 702.152a, 118.3: "Blitz—{2}{R}{R}, Discard a card." has the number of cards discarded as its one parameter; "Blitz {2}{B}" has none.
+    if (count !== undefined) {
+      if (count.kind !== 'number' || rest.length > 0 || count.value !== 1) return failure(ability);
+      exile = count.value;
+    }
   } else if (count !== undefined) {
     return failure(ability);
   }
@@ -439,7 +446,9 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
       ? { kind, cost: [cost.value], exile }
       : kind === 'impending'
         ? { kind, cost: [cost.value], counters: exile }
-        : { kind, cost: [cost.value] };
+        : kind === 'blitz'
+          ? { kind, cost: [cost.value], ...(exile > 0 ? { discard: exile } : {}) }
+          : { kind, cost: [cost.value] };
   return {
     ok: true,
     value: { ...NONE, alternativeCosts: [entry] },
@@ -461,6 +470,7 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:foretell',
   'castAlternative:morph',
   'castAlternative:impending',
+  'castAlternative:blitz',
   // Snuff Out: "you may pay 4 life rather than pay ~'s mana cost".
   'castAlternative:payLife',
   'cost:mana',

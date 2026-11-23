@@ -50,8 +50,16 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
     // Forger's Foundry (issue 121): "from among cards exiled with ~": the cards the permanent exiled, named by the permanent, not by an instruction before it.
     const linked = arg(clause, 'linked');
     const fromLinked = linked?.kind === 'flag' && linked.value;
+    // Kefka, Dancing Mad (issue 97): "from among cards exiled this way" after an `exile`, any number of spells, each remembered.
+    const remembered = arg(clause, 'remember');
+    const remember = remembered?.kind === 'flag' && remembered.value;
+    const anyFlag = arg(clause, 'any');
+    if (remember && (before !== 'exile' || anyFlag?.kind !== 'flag' || !anyFlag.value)) {
+      return failure(clause);
+    }
     if (
       !fromLinked &&
+      !remember &&
       (other.value
         ? before !== 'opponentChoosesCard'
         : before === null || !EXILES_CARDS.includes(before))
@@ -85,6 +93,7 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
       objects: fromLinked ? { kind: 'linkedExile' } : { kind: 'moved' },
       ...(max === undefined ? {} : { max }),
       ...(filter === undefined ? {} : { filter }),
+      ...(remember ? { remember: true as const } : {}),
     };
     return { ok: true, value: [effect], rule: clause.rule };
   },

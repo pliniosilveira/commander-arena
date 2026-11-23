@@ -493,6 +493,11 @@ function occurrences(
       return event.kind === 'dieRolled' && event.result === event.sides
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
+    case 'winsCoinFlip':
+      // CR 705.2 (Setzer): the player who flipped the coin and whose call matched the result.
+      return event.kind === 'coinFlipped' && event.won
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'becomesMonstrous':
       // CR 701.37a, 701.37b: the permanent that became monstrous.
       return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
@@ -906,6 +911,8 @@ function matches(
       // D-135: "enters untapped" / "enters tapped": how it entered, as it is the moment the event is noticed (the state its
       // enters replacements, CR 614.1c, left it in).
       if (trigger.tapped !== undefined && subject?.tapped !== trigger.tapped) return false;
+      // CR 400.7, 404.1 (Flayer of the Hatebound): "from your graveyard": a graveyard is its owner's, so the permanent is owned by the controller of this ability.
+      if (trigger.graveyardOwner === 'you' && subject?.owner !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'diesBatch':
     case 'entersBatch':
@@ -963,6 +970,7 @@ function matches(
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
+    case 'winsCoinFlip':
       // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability. CR 706.1a: the player who rolled the die.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -1248,6 +1256,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'scried':
     case 'surveiled':
     case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
+    case 'coinFlipped': // CR 705.2 (Setzer): "whenever you win a coin flip"
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':

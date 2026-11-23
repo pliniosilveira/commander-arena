@@ -13,6 +13,8 @@
  * - Spectacle is chosen whenever the engine offers it: it is offered only while an opponent has lost life this
  *   turn, it only replaces the mana cost and has no drawback.
  * - Tapping permanents (D-149) is chosen when the ordinary cast cannot be paid.
+ * - Blitz (CR 702.152a) is chosen like a dash that only pays off when it can attack: in the first main phase, with no untapped opposing creature to block and
+ *   power to spend (the creature is sacrificed at the end step, drawing a card); never merely because the ordinary cast cannot be paid (it costs a card too).
  * - Dash is chosen when the ordinary cast cannot be paid, or in the first main phase when the opponent has
  *   no untapped creature to block and the creature has power to spend: it attacks at once and is back in
  *   the hand at the end of the turn, out of the way of sorcery-speed removal.
@@ -74,6 +76,15 @@ function wantsDash(view: GameView, card: ObjectView, ordinary: boolean): boolean
 }
 
 /**
+ * Blitz (CR 702.152a): the creature has haste, is sacrificed at the next end step and draws a card when it dies, so it is cast that way to attack at once: in the agent's first main
+ * phase, with no untapped opposing creature that could block it and some power. Not because the ordinary cast cannot be paid: the cost may also be a card of the hand.
+ */
+export function wantsBlitz(view: GameView, card: ObjectView): boolean {
+  if (view.step !== 'precombatMain' || view.activeSeat !== view.viewer) return false;
+  return opposingCreatures(view).every((o) => o.tapped) && powerOf(card) >= 1;
+}
+
+/**
  * Bestow (CR 702.103): an Aura on the agent's own creature when the ordinary cast cannot be paid; with the ordinary cast on offer the card is
  * cast as the creature it is. It needs a creature of its own to enchant (the host is chosen as for any Aura, `chooseAuraHost`): an Aura on an
  * opponent's creature is never what it wants.
@@ -98,6 +109,7 @@ export function chooseNamedAlternative(
   if (offered.has('spectacle')) return 'spectacle';
   if (offered.has('overload') && wantsOverload(view, card, ordinary)) return 'overload';
   if (offered.has('dash') && wantsDash(view, card, ordinary)) return 'dash';
+  if (offered.has('blitz') && wantsBlitz(view, card)) return 'blitz';
   if (offered.has('evoke') && wantsEvoke(view, card, ordinary)) return 'evoke';
   if (offered.has('bestow') && wantsBestow(view, ordinary)) return 'bestow';
   // D-149: "pay {W} and tap four untapped creatures with flying": chosen when the ordinary cast cannot be paid; the creatures it
