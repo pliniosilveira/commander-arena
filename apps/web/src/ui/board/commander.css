@@ -125,9 +125,9 @@
 }
 .cmdr-list li {
   display: grid;
-  grid-template-columns: 7.5rem 1fr auto;
-  gap: 8px;
-  align-items: baseline;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
   padding: 6px 8px;
   background: var(--bg-sunken);
   border: 1px solid var(--line);
@@ -136,4 +136,40 @@
 .cmdr-list em {
   font-size: 0.8em;
   font-style: normal;
+}
+/* A cell of the damage list: the commander's art on the left, three lines on the right. */
+.cmdr-art {
+  position: relative;
+  width: 76px;
+  height: 56px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.cmdr-art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.cmdr-art-img.is-loaded {
+  opacity: 1;
+}
+.cmdr-info-lines {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cmdr-info-lines > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cmdr-dmg {
+  font-variant-numeric: tabular-nums;
 }

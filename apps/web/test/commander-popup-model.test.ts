@@ -68,4 +68,13 @@ describe('commanderPopup', () => {
     const popup = commanderPopup(view(hidden), hidden[0] as SeatView);
     expect(popup.others.map((o) => o.commanders)).toEqual([[], []]);
   });
+
+  test('each other player carries the commander damage their commanders dealt to this seat', () => {
+    const v = {
+      ...view(seats, { '0:c2': 7, '0:c3': 3 }),
+      commanderDamageSources: { '0:c2': 1, '0:c3': 2 },
+    } as unknown as GameView;
+    const popup = commanderPopup(v, seats[0] as SeatView);
+    expect(popup.others.map((o) => o.damage)).toEqual([7, 3, 0]);
+  });
 });

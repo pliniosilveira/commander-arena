@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import './commander.css';
 import { Dialog } from '../decisions/Dialog';
 import { useInteraction } from '../interaction';
+import { Art, artOf } from './art';
 import { CardFace } from './CardFace';
 import { commanderPopup } from './commander-popup-model';
 
@@ -64,11 +65,27 @@ export function CommanderPopup({
           <ul className="cmdr-list" aria-label="The other players and their commanders">
             {popup.others.map((o) => (
               <li key={o.seat} className={o.lost ? 'board-dim' : ''} data-popup-seat={o.seat}>
-                <b>{o.label}</b>
-                <span>
-                  {o.commanders.length === 0 ? 'commander not shown' : o.commanders.join(' / ')}
+                <span className="cmdr-art" aria-hidden="true">
+                  {o.objects[0] !== undefined && (
+                    <Art
+                      {...artOf(o.objects[0])}
+                      isToken={false}
+                      version="art_crop"
+                      className="cmdr-art-img"
+                      commander
+                    />
+                  )}
                 </span>
-                {o.lost && <em>out</em>}
+                <span className="cmdr-info-lines">
+                  <b>{o.label}</b>
+                  <span>
+                    {o.commanders.length === 0 ? 'commander not shown' : o.commanders.join(' / ')}
+                  </span>
+                  <span className="cmdr-dmg" data-cmdr-damage={o.damage}>
+                    Commander damage: {o.damage}
+                    {o.lost && <em> · out</em>}
+                  </span>
+                </span>
               </li>
             ))}
           </ul>

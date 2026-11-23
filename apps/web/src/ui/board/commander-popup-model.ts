@@ -5,7 +5,7 @@
  * owner, so it cannot be told per dealing commander yet (#535).
  */
 import type { GameView, ObjectView, SeatId, SeatView } from '@commander-arena/engine';
-import { commandersOf, commanderTaxes } from './resolve';
+import { commanderDamageTaken, commandersOf, commanderTaxes } from './resolve';
 import { opponentLabel } from './table-label';
 
 export interface PopupOther {
@@ -15,6 +15,10 @@ export interface PopupOther {
   /** The names of their commanders that are visible; empty when they are in a hidden zone. */
   readonly commanders: readonly string[];
   readonly lost: boolean;
+  /** Their visible commanders as objects, for the art of the cell. */
+  readonly objects: readonly ObjectView[];
+  /** Commander damage this player's commanders have dealt to the popup's seat. */
+  readonly damage: number;
 }
 
 export interface CommanderPopup {
@@ -28,6 +32,7 @@ export interface CommanderPopup {
 }
 
 export function commanderPopup(view: GameView, seat: SeatView): CommanderPopup {
+  const taken = commanderDamageTaken(view, seat.id);
   return {
     seat: seat.id,
     label: opponentLabel(view, seat.id),
@@ -40,6 +45,8 @@ export function commanderPopup(view: GameView, seat: SeatView): CommanderPopup {
         label: opponentLabel(view, s.id),
         commanders: commandersOf(view, s.id).map((o) => o.name),
         lost: s.hasLost,
+        objects: commandersOf(view, s.id),
+        damage: taken.filter((d) => d.from === s.id).reduce((sum, d) => sum + d.amount, 0),
       })),
   };
 }
