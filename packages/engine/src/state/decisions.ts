@@ -1053,7 +1053,7 @@ export interface TokenReplacementChoice extends ReplacementChoiceBase {
  * is the only one used up.
  */
 export interface DestroyReplacementChoice extends ReplacementChoiceBase {
-  readonly kind: 'regenerate' | 'umbra';
+  readonly kind: 'regenerate' | 'umbra' | 'shieldCounter';
   /** What happens if this effect is applied: the Aura that is destroyed instead (none for a regeneration shield) and whether the permanent is tapped and taken out of combat. */
   readonly outcome: {
     /** The name of the Aura destroyed in its place; null for a regeneration shield. */
