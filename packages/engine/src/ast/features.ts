@@ -951,8 +951,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileFromGraveyard',
     // D-200: the loyalty symbol of a loyalty ability (CR 606).
     'loyalty',
-    // D-209: "{E}{E}", paid by the player an `unlessPays` asks (`activationCostIssues` refuses it anywhere else).
+    // D-209: "{E}{E}", paid by the player an `unlessPays` asks; issue 105: and the cost of an activated or a mana ability (`activationCostIssues` refuses it in a spell).
     'energy',
+    // Issue 105: "an amount of {E} equal to ...", the cost of a `mayPay` only.
+    'energyAmount',
   ],
   // `choose` is run by `sacrifice` and by `moveToZone` to hand, graveyard or library; `anyOf` is
   // ObjectFilter.anyOf (a disjunction of filters); `ownerRef` is ObjectFilter.owner, read in the
@@ -3325,6 +3327,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   putCounters: true,
   mill: true,
   energy: true,
+  energyAmount: true,
   returnToHand: true,
 };
 

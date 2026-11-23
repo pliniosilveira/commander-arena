@@ -2273,7 +2273,7 @@ function runEffect(
     case 'mayPay': {
       // CR 702.101a (D-120): the controller may pay; the effect runs only if they do (rules/pay-unless.ts).
       // D-364 (CR 119.4, 608.2c): a payment of life by an amount ("pay that much life") is worked out now; one of 0 life is no offer.
-      const cost = resolveMayPayCost(state, effect.cost, ctx);
+      const cost = resolveMayPayCost(state, effect.cost, ctx, targets);
       if (cost === null) return done(state);
       // Issue 101 (Gix): "its controller may pay 1 life": the player named is asked and pays, nobody when the selector names none.
       const payer =

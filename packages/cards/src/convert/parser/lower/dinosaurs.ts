@@ -270,6 +270,22 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
     const written = arg(clause, 'mayWritten');
     if (written?.kind === 'flag' && !written.value && !clause.optional) return failure(clause);
     const playing = play.value ? { play: true as const } : {};
+    // Issue 105 (Aetherflux Conduit): "any number of spells from your hand": asked again after each spell cast.
+    const anyNumber = arg(clause, 'anyNumber')?.kind === 'flag';
+    if (anyNumber) {
+      if (objects.det !== 'a' || objects.filter.zone !== 'hand' || play.value) {
+        return failure(clause);
+      }
+      const filter = lowerFilter(objects);
+      if (!filter.ok) return filter;
+      return {
+        ok: true,
+        value: [
+          { kind: 'castFree', objects: { kind: 'choose', filter: filter.value }, max: 'any' },
+        ],
+        rule: clause.rule,
+      };
+    }
     if (objects.det === 'linkedExile') {
       // D-664 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
       // ability to belong to: "Reveal cards from the top of your library until you reveal a nonland card. Exile that card ... You may cast the exiled card without paying its mana cost."

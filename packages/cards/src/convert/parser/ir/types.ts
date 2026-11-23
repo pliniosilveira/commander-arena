@@ -1104,6 +1104,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'mill'; readonly amount: IrAmount }
     // "{E}{E}" (stage P51, D-209, CR 107.14): energy counters paid by the player that an "unless you pay" asks
     | { readonly kind: 'energy'; readonly count: number }
+    // Issue 105 (Confiscation Coup): "an amount of {E} equal to that permanent's mana value".
+    | { readonly kind: 'energyAmount'; readonly amount: IrAmount }
     | { readonly kind: 'removeCounters'; readonly counter: string; readonly amount: IrAmount }
     // "Exert ~" (issue 144, CR 701.43a): the permanent itself, as a cost
     | { readonly kind: 'exert' }

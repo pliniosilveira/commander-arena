@@ -97,4 +97,25 @@ export const SYNTHETIC_ENERGY_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "{T}: You may cast any number of spells from your hand without paying their mana costs."
+  singleFace({
+    name: 'SYNTHETIC Free Caster',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      '{T}: You may cast any number of spells from your hand without paying their mana costs.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'castFree',
+          objects: { kind: 'choose', filter: { zone: 'hand', notTypes: ['land'] } },
+          max: 'any',
+        },
+      },
+    ],
+  }),
 ];

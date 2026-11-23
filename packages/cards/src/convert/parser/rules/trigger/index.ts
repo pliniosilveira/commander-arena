@@ -100,7 +100,8 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
   ),
   // CR 700.4: "dies" means "is put into a graveyard from the battlefield", in either wording.
   dies: map(
-    pattern(/ (?:dies|is put into a graveyard from the battlefield)(?![\p{L}\p{N}])/iu),
+    // Issue 105 (Aetherworks Marvel): "a permanent you control is put into a graveyard": a permanent is on the battlefield, so it is the same event.
+    pattern(/ (?:dies|is put into a graveyard(?: from the battlefield)?)(?![\p{L}\p{N}])/iu),
     (): EventName => 'dies',
   ),
   attacks: map(pattern(/ attacks(?![\p{L}\p{N}])/iu), (): EventName => 'attacks'),
@@ -245,6 +246,7 @@ export const TRIGGER_DIES = singleEvent('trigger.dies', 'dies', {
     'another creature you control dies',
     'a creature dies',
     '~ is put into a graveyard from the battlefield',
+    'a permanent you control is put into a graveyard',
     'another creature or artifact you control is put into a graveyard from the battlefield',
     'equipped creature dies',
     'enchanted creature dies',

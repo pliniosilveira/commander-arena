@@ -104,3 +104,43 @@ describe('a Vehicle token (an artifact with power and toughness, crew 2)', () =>
     g.expect.derived('Hull', { types: ['artifact'], subtypes: ['Vehicle'], keywords: ['crew'] });
   });
 });
+
+describe('"You may cast any number of spells from your hand without paying their mana costs" (castFree with max "any" from the hand)', () => {
+  const CASTER = 'SYNTHETIC Free Caster';
+  const BEAR = 'SYNTHETIC Quiet Bear';
+
+  test('the player is asked again after each spell and may stop, and no mana is paid', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(CASTER)
+      .hand(BEAR, { label: 'a' })
+      .hand(BEAR, { label: 'b' })
+      .hand('Island', { label: 'land' })
+      .build();
+    g.act(0).activate(CASTER);
+    g.passAll();
+    // The land is no spell: only the two creature cards are offered.
+    expect(g.state.pending).toMatchObject({ kind: 'chooseCards', purpose: 'cast' });
+    g.act(0).chooseCards('a');
+    expect(g.state.pending).toMatchObject({ kind: 'chooseCards', purpose: 'cast' });
+    g.act(0).chooseCards('b');
+    g.passAll();
+    g.expect.zone(BEAR, 'battlefield', { seat: 0, count: 2 });
+    g.expect.pool(0, '');
+  });
+
+  test('the player may stop after the first', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(CASTER)
+      .hand(BEAR, { label: 'a' })
+      .hand(BEAR, { label: 'b' })
+      .build();
+    g.act(0).activate(CASTER);
+    g.passAll();
+    g.act(0).chooseCards('a');
+    g.act(0).chooseCards();
+    g.passAll();
+    g.expect.zone(BEAR, 'battlefield', { seat: 0, count: 1 });
+  });
+});

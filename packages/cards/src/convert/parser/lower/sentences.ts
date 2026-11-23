@@ -647,6 +647,13 @@ function lowerMayPay(
       cost.push({ kind: 'payLife', amount: definedLife.value });
       continue;
     }
+    // Issue 105 (Confiscation Coup, CR 107.14, 608.2c): "an amount of {E} equal to that permanent's mana value": worked out as the offer resolves.
+    if (item.kind === 'energyAmount') {
+      const energy = lowerAmount(item.amount, ctx, item.rule);
+      if (!energy.ok) return energy;
+      cost.push({ kind: 'energyAmount', amount: energy.value });
+      continue;
+    }
     // D-364 (CR 119.4): "you may pay that much life" is the life of a life gain trigger.
     // Issue 105 (CR 107.14): energy is paid for a `mayPay` as an `unlessPays` pays it.
     const lowered = lowerCost(item, {

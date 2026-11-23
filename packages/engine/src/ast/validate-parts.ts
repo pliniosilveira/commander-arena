@@ -3318,6 +3318,10 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         issue(out, `${path}.count`, 'mill count must be a positive integer');
       }
       break;
+    case 'energyAmount':
+      // Issue 105 (CR 107.14, 608.2c): the amount is read as the `mayPay` resolves (the checks of the effect hold it to what it may read).
+      if (cost.amount === undefined) issue(out, `${path}.amount`, 'energyAmount needs an amount');
+      break;
     case 'energy':
       // D-209 (CR 107.14): a whole number of one or more energy counters, paid by the player an `unlessPays` names.
       if (!isCount(cost.count) || cost.count < 1) {
@@ -7131,11 +7135,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");
         }
         // Issue 121 (Forger's Foundry): or the cards the permanent exiled with its linked ability ("from among cards exiled with this artifact").
-        if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
+        // Issue 105 (Aetherflux Conduit): or the spells in the controller's hand ("any number of spells from your hand").
+        const fromHand =
+          kindOf(e.objects) === 'choose' && (e.objects as ChooseSelector).filter?.zone === 'hand';
+        if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile' && !fromHand) {
           issue(
             out,
             `${path}.max`,
-            "several spells are cast from the cards an effect before moved ('moved') or the cards exiled with this permanent ('linkedExile')",
+            "several spells are cast from the cards an effect before moved ('moved'), the cards exiled with this permanent ('linkedExile') or the spells in the hand",
           );
         }
         if (e.play === true) {

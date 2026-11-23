@@ -32,6 +32,7 @@ export const EFFECT_PAY = defineRule<Clauses>({
     'pay {W/B}',
     'pay 2 life',
     'pay {E}{E}{E}',
+    "pay an amount of {E} equal to that permanent's mana value",
     'pay eight {E}',
     'pay three life',
     'pay that much life',
@@ -62,6 +63,8 @@ export const EFFECT_PAY = defineRule<Clauses>({
     'pay {T}',
     'pay a card',
     'pay {1}{E}',
+    'pay an amount of {E}',
+    'pay an amount of {1} equal to its mana value',
     'pay zero {E}',
   ],
   parse: map(
@@ -98,9 +101,10 @@ export const EFFECT_PAY = defineRule<Clauses>({
           ],
         ),
         // Issue 105 (CR 107.14): "pay {E}{E}{E}", "pay eight {E}": energy counters, the cost of an offer.
-        map(family<IrCost>('cost', { only: ['cost.pay-energy'] }), (cost): readonly IrCost[] => [
-          cost,
-        ]),
+        map(
+          family<IrCost>('cost', { only: ['cost.pay-energy', 'cost.pay-energy-amount'] }),
+          (cost): readonly IrCost[] => [cost],
+        ),
         // Issue 105 (CR 107.14): "pay {E}{E}{E}", "pay eight {E}": energy counters, the cost of an offer.
         map(family<IrCost>('cost', { only: ['cost.pay-energy'] }), (cost): readonly IrCost[] => [
           cost,

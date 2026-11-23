@@ -343,7 +343,10 @@ const energyOfferAction: Action = (subject, you, rule) =>
     : choice(
         map(
           spanned(
-            sequence(literal('you may '), family<IrCost>('cost', { only: ['cost.pay-energy'] })),
+            sequence(
+              literal('you may '),
+              family<IrCost>('cost', { only: ['cost.pay-energy', 'cost.pay-energy-amount'] }),
+            ),
           ),
           ({ value, span }): IrClause => ({
             ...actionClause(

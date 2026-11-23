@@ -235,6 +235,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         cost.count >= 1
         ? ok({ kind: 'energy', count: cost.count })
         : failure(cost);
+    case 'energyAmount':
+      // Issue 105: read where the offer is lowered (`lowerMayPay`), which has the context its amount names.
+      return failure(cost);
     case 'discard': {
       // CR 701.9, 118.3: N cards of the hand, the paying player's choice. The count is a whole
       // number of one or more; the engine pays no other discard cost (D-095).

@@ -1752,10 +1752,16 @@ export type Cost =
   | { readonly kind: 'mill'; readonly count: number }
   /**
    * "{E}{E}" as a cost (CR 107.14, 122.1, D-209): the payer removes `count` energy counters from themselves. A player with fewer cannot pay it (CR 118.3).
-   * Only the cost an `unlessPays` effect asks the player to pay ("discard a card at random unless you pay {E}{E}"); `validateCard` and the supported gate
-   * refuse it as the cost of an activated ability, a spell or a mana ability.
+   * The cost an `unlessPays` or a `mayPay` effect asks the player to pay ("discard a card at random unless you pay {E}{E}"), and (issue 105, "Pay {E}{E}: ...") the cost of an
+   * activated ability and of a mana ability; the supported gate refuses it as the cost of a spell.
    */
   | { readonly kind: 'energy'; readonly count: number }
+  /**
+   * "You may pay an amount of {E} equal to that permanent's mana value" (issue 105, Confiscation Coup; CR 107.14, 118.3, 608.2c): the energy the `mayPay` asks for is `amount`, worked out
+   * once as the instruction resolves into a plain `energy` cost the question and the payment read (`rules/life-amounts.ts`). Only in the cost of a `mayPay`; an amount of 0 or less is
+   * no question and nothing is bought.
+   */
+  | { readonly kind: 'energyAmount'; readonly amount: Amount }
   /**
    * "Return an artifact you control to its owner's hand" as a cost (D-139, CR 118.3, 701.21a analogue): `this` returns the permanent
    * the ability belongs to; a filter names the permanents the player may choose among (the ones they control, on the battlefield),

@@ -270,7 +270,7 @@ function walkEffect(
         effect.cost,
         `${path}.cost`,
         out,
-        ['mana', 'payLife', 'discard', 'energy'],
+        ['mana', 'payLife', 'discard', 'energy', 'energyAmount'],
         false,
         true,
       );
@@ -612,7 +612,9 @@ function activationCostIssues(
       !SUPPORTED_FEATURES.costKinds.includes(c.kind) ||
       allowed?.includes(c.kind) === false ||
       // D-386: "discard X cards" is an additional cost of a spell; an activated ability does not announce one.
-      c.kind === 'discardX'
+      c.kind === 'discardX' ||
+      // Issue 105: an amount of energy worked out as an offer is made belongs to a `mayPay` only.
+      (c.kind === 'energyAmount' && allowed?.includes('energyAmount') !== true)
     ) {
       out.push({
         path: `${path}[${i}]`,
