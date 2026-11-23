@@ -304,11 +304,11 @@ describe('disjunctions and combinators in the IR (D-063 amendment)', () => {
     const bad: IrFilter = {
       anyOf: [
         { types: ['creature'], raw: 'creature' },
-        { keywords: ['flash'], raw: 'flash' },
+        { keywords: ['persist'], raw: 'persist' },
       ],
       raw: 'x',
     };
-    const t = noun('target', 'target creature or flash', { zone: 'battlefield', ...bad });
+    const t = noun('target', 'target creature or persist', { zone: 'battlefield', ...bad });
     expect(lowerSpell(spell([clause('destroy', { objects: t })]))).toMatchObject({
       ok: false,
       needs: [],

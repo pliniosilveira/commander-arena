@@ -212,7 +212,7 @@ export const CONDITION_THIS_ATTACKING = defineRule<IrCondition>({
     '~ attacking',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/~ is attacking(?![\p{L}\p{N}])/iu))(ctx, pos);
+    const r = spanned(pattern(/~ is attacking(?![\p{L}\p{N}])(?!\s+\p{L})/iu))(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,
