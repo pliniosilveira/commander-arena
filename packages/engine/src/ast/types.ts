@@ -1819,7 +1819,8 @@ export type NamedAlternativeKind =
   | 'sacrificeFromGraveyard'
   | 'sacrificePermanents'
   | 'payLife'
-  | 'impending';
+  | 'impending'
+  | 'blitz';
 
 /**
  * What a permanent remembers about how it got onto the battlefield (D-121, D-124): that its evoke, dash or
@@ -1827,7 +1828,7 @@ export type NamedAlternativeKind =
  * cast). Each is the new object's own: any zone change makes a new object without it (CR 400.7).
  */
 export type PermanentAlternativeKind =
-  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow' | 'impending'>
+  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow' | 'impending' | 'blitz'>
   | 'unearth'
   | 'suspend';
 
@@ -1903,6 +1904,11 @@ export type PermanentAlternativeKind =
  * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
  *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
  *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
+ * - `blitz` (CR 702.152a, not checked against the rules text): the `cost` (mana only, no X) is paid instead of the mana cost of a creature spell, and the caster also discards `discard` cards
+ *   from their hand as part of it ("Blitz—{2}{R}{R}, Discard a card."; none when left out). The permanent it becomes has haste and "When this creature dies, draw a card" as long as its blitz cost
+ *   was paid, and a delayed triggered ability created as the spell resolves sacrifices it at the beginning of the next end step (the engine adds all three: `GameObject.alt`,
+ *   `GameState.delayedTriggers`, `rules/derive-alt.ts`). A copy of the permanent (not of the spell) has none of it. It is cast from the hand, and from the graveyard when the card
+ *   has the `castFromGraveyard` static ability with `using: 'blitz'`.
  * The `castSpell` action chooses one with `alternative`; the card is cast from the zones it could be
  * cast from anyway. Additional costs, commander tax and cost reductions still apply to it (CR
  * 118.9d, 601.2f, 903.8). `condition` is read for the player casting, with the card as the source;
@@ -1922,6 +1928,7 @@ export type AlternativeCost =
         | 'sacrificePermanents'
         | 'payLife'
         | 'impending'
+        | 'blitz'
       >;
       readonly cost: readonly Cost[];
       /**
@@ -1930,6 +1937,13 @@ export type AlternativeCost =
        * card cast is never that card (it is on the stack by then, CR 601.2a).
        */
       readonly exileFromHand?: ObjectFilter;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'blitz';
+      readonly cost: readonly Cost[];
+      /** The cards of the caster's hand discarded as part of the cost (CR 118.3, 701.9a): at least 1; absent for none. */
+      readonly discard?: number;
       readonly condition?: Condition;
     }
   | {
@@ -7633,6 +7647,11 @@ export type StaticEffect =
        * an effect gave it, flashback) is not changed by it.
        */
       readonly cost?: readonly Cost[];
+      /**
+       * "You may cast this card from your graveyard using its blitz ability." (CR 702.152a, 601.2a): the card may be cast from its owner's graveyard only for the alternative cost of that
+       * kind, which the face must list; the permission is not one to cast it for its mana cost (it is not "cast from your graveyard" for `mayCastFromGraveyard`). Not with `cost`.
+       */
+      readonly using?: 'blitz';
     }
   /**
    * "+N/+N" to the subject, in layer 7c (CR 613.4c). Negative numbers are allowed. The amounts may

@@ -309,6 +309,8 @@ describe('unmatched abilities', () => {
       'keyword.embalm',
       'keyword.escape',
       'keyword.impending',
+      'keyword.blitz',
+      'keyword.blitz-discard',
       'keyword.echo',
       'keyword.cumulative-upkeep',
       'keyword.suspend',

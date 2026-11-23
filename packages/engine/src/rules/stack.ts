@@ -29,7 +29,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
-import { DASH_RETURN_ABILITY } from './derive-alt';
+import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
@@ -596,6 +596,20 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
               source: moved.newObject,
               controller: controllerOf(state, obj),
               ability: DASH_RETURN_ABILITY,
+            },
+          ],
+        };
+      }
+      // CR 702.152a, 603.7: a blitz spell creates, as it resolves, the delayed triggered ability that sacrifices the permanent it became at the beginning of the next end step.
+      if (obj.stack?.alt === 'blitz' && moved.newObject !== null) {
+        next = {
+          ...next,
+          delayedTriggers: [
+            ...next.delayedTriggers,
+            {
+              source: moved.newObject,
+              controller: controllerOf(state, obj),
+              ability: BLITZ_SACRIFICE_ABILITY,
             },
           ],
         };

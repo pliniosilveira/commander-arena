@@ -30,7 +30,7 @@ import type {
   PriorityDecision,
 } from '@commander-arena/engine';
 import { chooseActivation, chooseRegenerateActivation } from './casual-activations';
-import { alternativeSpend, chooseNamedAlternative } from './casual-alt-costs';
+import { alternativeSpend, chooseNamedAlternative, wantsBlitz } from './casual-alt-costs';
 import {
   auraHasHost,
   commanderAuraWorthCasting,
@@ -64,6 +64,7 @@ import {
   opposingCreatures,
   ownCreatureCount,
   ownLife,
+  powerOf,
   withoutReminder,
 } from './casual-view';
 import { multikickerHasRoom, needsPaidX, xSpellHasRoom } from './casual-x';
@@ -237,6 +238,15 @@ function pickFace(faces: readonly Play[]): Play | undefined {
   return first;
 }
 
+/** CR 702.152a: a `castSpell` option that blitzes a card from the graveyard ("You may cast this card from your graveyard using its blitz ability"). */
+export function isGraveyardBlitz(view: GameView, o: PriorityDecision['options'][number]): boolean {
+  return (
+    o.kind === 'castSpell' &&
+    o.alternative === 'blitz' &&
+    findObject(view, o.object)?.zone === 'graveyard'
+  );
+}
+
 /**
  * The casts from hand, command zone or exile (an Adventure) worth making: one play per card. A card
  * with a free option (`alternative: 'free'`, D-095) is cast that way: the same additional costs, no
@@ -249,9 +259,10 @@ export function spellPlays(
 ): Play[] {
   const byCard = new Map<string, Play[]>();
   for (const o of d.options) {
-    // A card in the graveyard (flashback, escape) is a play of its own, considered after the hand (below).
+    // A card in the graveyard (flashback, escape, blitz) is a play of its own, considered after the hand (below).
     if (
       o.kind !== 'castSpell' ||
+      isGraveyardBlitz(view, o) ||
       o.alternative === 'flashback' ||
       o.alternative === 'escape' ||
       o.alternative === 'retrace' ||
@@ -466,6 +477,22 @@ export function choosePriorityAction(
       if (isPreventionSpell(chosen)) activations.add(preventionKey(view));
       return { kind: 'castSpell', object: chosen.id, alternative: 'harmonize' };
     }
+  }
+
+  // 2c''. Blitz from the graveyard (CR 702.152a): once no worthwhile spell is left to cast from the hand, a creature that can attack at once (`wantsBlitz`) is cast for its
+  // blitz cost; the strongest by power, ties by PRNG. The discard it costs is answered as any discard cost is.
+  const blitzed = d.options.flatMap((o) => {
+    const obj =
+      isGraveyardBlitz(view, o) && o.kind === 'castSpell' ? findObject(view, o.object) : undefined;
+    return obj !== undefined && allowed(view, obj, activations) && wantsBlitz(view, obj)
+      ? [obj]
+      : [];
+  });
+  if (blitzed.length > 0) {
+    const best = Math.max(...blitzed.map(powerOf));
+    const top = blitzed.filter((s) => powerOf(s) === best);
+    const chosen = top[draw(top.length)];
+    if (chosen !== undefined) return { kind: 'castSpell', object: chosen.id, alternative: 'blitz' };
   }
 
   // 2d. The special actions of Suspend and Foretell (D-128, `casual-later.ts`): once nothing worth casting is left.

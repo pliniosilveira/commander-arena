@@ -1683,6 +1683,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'harmonize',
     // Issue 81 (CR 702.176): Impending.
     'impending',
+    // CR 702.152: Blitz.
+    'blitz',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -2838,6 +2840,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'sacrificePermanents',
   'payLife',
   'impending',
+  'blitz',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',
   // Issue 105 (Nissa, Worldsoul Speaker): energy rather than the mana cost, granted by a static ability of a permanent.

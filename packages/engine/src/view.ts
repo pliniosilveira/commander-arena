@@ -443,6 +443,8 @@ export interface AlternativeCostView {
   readonly life?: number;
   /** For `sacrificeFromGraveyard` (issue 159): how many permanents of this filter are sacrificed as part of the cost. */
   readonly sacrifice?: { readonly filter: ObjectFilter; readonly count: number };
+  /** For a blitz cost with a discard (CR 702.152a, "Blitz—{2}{R}{R}, Discard a card."): how many cards of the hand are discarded as part of the cost. */
+  readonly discard?: number;
 }
 
 /** One face of a multi-faced card, as printed: its name, cost, type line, rules text and values. */

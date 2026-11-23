@@ -43,6 +43,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   payLife: 'Pay life',
   // Issue 81 (CR 702.176a): enters with time counters and is not a creature until the last is removed.
   impending: 'Impending',
+  // CR 702.152a: haste, "When this creature dies, draw a card", sacrificed at the beginning of the next end step.
+  blitz: 'Blitz',
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (Marshland Bloodcaster).
   lifeForMana: 'Pay life',
   // Issue 105 (CR 118.9, 107.14, Nissa, Worldsoul Speaker): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
@@ -136,6 +138,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
     title: 'Cast from exile for its foretell cost, after it was foretold in an earlier turn.',
     fact: 'Cast for its foretell cost',
   },
+  blitz: {
+    text: 'blitzed',
+    title:
+      'Cast for its blitz cost. It has haste and "When this creature dies, draw a card", and is sacrificed at the beginning of the next end step.',
+    fact: 'Cast for its blitz cost: haste, draws a card when it dies, sacrificed at the next end step',
+  },
 };
 
 /** A spell cast as the effect of its suspend ability (CR 702.62a, D-128); `alternative` is not set for it. */
@@ -162,6 +170,12 @@ const PERMANENT_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBa
     text: 'bestowed',
     title: 'Bestowed: an Aura while it is attached to a creature; a creature again once it is not.',
     fact: 'Bestowed: an Aura while attached, a creature once unattached',
+  },
+  blitz: {
+    text: 'blitzed',
+    title:
+      'Blitzed: it has haste and "When this creature dies, draw a card", and is sacrificed at the beginning of the next end step.',
+    fact: 'Blitzed: haste, draws a card when it dies, sacrificed at the next end step',
   },
   escape: {
     text: 'escaped',

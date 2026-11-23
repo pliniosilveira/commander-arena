@@ -403,6 +403,87 @@ export const KEYWORD_IMPENDING = defineRule<readonly IrKeyword[]>({
 });
 
 /**
+ * `keyword.blitz`: "Blitz {2}{B}" (CR 702.152a, rules text not available to check: "You may cast this card by paying [cost] rather than its mana cost. If its blitz cost was paid, it gains haste
+ * and 'When this creature dies, draw a card.' Sacrifice it at the beginning of the next end step"). The engine owns the haste, the dies trigger and the delayed sacrifice
+ * (`rules/derive-alt.ts`); the line is a plain mana cost, on a creature card (`validateCard`). The form with a discard is `keyword.blitz-discard`.
+ */
+export const KEYWORD_BLITZ = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.blitz',
+  family: 'keyword',
+  leading: ['blitz'],
+  cites: ['CR 702.152a (Blitz)', 'CR 118.9 (Alternative Costs)', 'CR 601.2b (Casting Spells)'],
+  examples: ['Blitz {2}{B}', 'Blitz {3}{R}{R}', 'Blitz {B}', 'blitz {1}{R}'],
+  rejects: [
+    'Blitz',
+    'Blitz {X}{B}',
+    'Blitz {B/R}',
+    'Blitz {2}{B}.',
+    'Blitz—Pay 2 life.',
+    'Blitz {2}{B}, blitz {3}',
+    'Blitz {2}{B}, haste',
+    'Blitzed {2}{B}',
+    'Dash {2}{B}',
+  ],
+  parse: altCostKeyword('keyword.blitz', 'blitz'),
+});
+
+/**
+ * `keyword.blitz-discard`: "Blitz—{2}{R}{R}, Discard a card." (CR 702.152a, 118.9, 701.9a, rules text not available to check: the real line of Sabin, Master Monk): the blitz cost is mana and
+ * the discard of one card of the hand, the line ends with a period. The count (1) is the one parameter, so the lowering lists `AlternativeCost.discard`. Not read: another number of cards, a
+ * discard of a kind of card, any other component of the cost (life, a sacrifice).
+ */
+export const KEYWORD_BLITZ_DISCARD = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.blitz-discard',
+  family: 'keyword',
+  leading: [],
+  cites: [
+    'CR 702.152a (Blitz)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 701.9a (Discard)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: [
+    'Blitz—{2}{R}{R}, Discard a card.',
+    'Blitz—{3}{B}, Discard a card.',
+    'blitz—{1}{R}, discard a card.',
+  ],
+  rejects: [
+    'Blitz—{2}{R}{R}',
+    'Blitz—{2}{R}{R}, Discard a card',
+    'Blitz—{2}{R}{R}, Discard two cards.',
+    'Blitz—{2}{R}{R}, Discard a land card.',
+    'Blitz—{X}{R}, Discard a card.',
+    'Blitz—{R/G}, Discard a card.',
+    'Blitz—{2}{R}{R}, Pay 2 life.',
+    'Blitz—{2}{R}{R}, Pay 2 life, Discard a card.',
+    'Blitz—Discard a card.',
+    'Blitz {2}{R}{R}, Discard a card.',
+    'Blitzed—{2}{R}{R}, Discard a card.',
+  ],
+  parse: map(
+    node<{ cost: IrCost; count: { value: number; span: Span } }, IrKeyword>(
+      'keyword.blitz-discard',
+      map(
+        sequence(
+          literal('blitz—'),
+          MANA_COST,
+          literal(', discard '),
+          spanned(map(literal('a card.'), (): number => 1)),
+        ),
+        ([, cost, , count]) => ({ cost, count }),
+      ),
+      ({ cost, count }) => ({
+        kind: 'keyword',
+        name: 'blitz',
+        params: [{ kind: 'number', value: count.value, span: count.span }],
+        cost: [cost],
+      }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
+/**
  * `keyword.evoke-exile`: "Evoke—Exile a red card from your hand." (CR 702.74a: "You may cast this card by paying [cost] rather than its mana cost. If you do, ... its controller
  * sacrifices it", CR 118.9: the cost here is the exile of a card of one color from the hand, the real line of the Elemental Incarnation cycle). The cost is the exile of exactly one
  * card of one named color from the hand; the line ends with a period. Not read: another number of cards, no color or a color that is not one of the five, a card that is not
@@ -484,4 +565,6 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_EMBALM,
   KEYWORD_ESCAPE,
   KEYWORD_IMPENDING,
+  KEYWORD_BLITZ,
+  KEYWORD_BLITZ_DISCARD,
 ];
