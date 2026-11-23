@@ -105,3 +105,39 @@ describe('Bulk Up: "Double target creature\'s power until end of turn" (CR 701.1
     g.expect.pt('Llanowar Elves', 2, 1);
   });
 });
+
+describe('Frostcliff Siege: abilities linked to the option chosen as it entered (CR 607.2d, 614.12)', () => {
+  const SIEGE = 'Frostcliff Siege';
+  const siege = real(SIEGE);
+
+  const board = (option: 'Jeskai' | 'Temur') =>
+    scenario()
+      .define(siege)
+      .seat(0)
+      .battlefield(SIEGE, { chosen: { option } })
+      .battlefield('Grizzly Bears')
+      .library('Swamp', 'Swamp')
+      .seat(1)
+      .battlefield('Llanowar Elves')
+      .library('Swamp', 'Swamp')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('is valid', () => {
+    expect(validateCard(siege)).toEqual([]);
+  });
+
+  test('Temur: my creatures get +1/+0 and have trample and haste, theirs do not', () => {
+    const g = board('Temur');
+    g.expect.pt('Grizzly Bears', 3, 2);
+    g.expect.derived('Grizzly Bears', { keywords: ['trample', 'haste'] });
+    g.expect.pt('Llanowar Elves', 1, 1);
+    g.expect.derived('Llanowar Elves', { keywords: [] });
+  });
+
+  test('Jeskai: the creatures are not changed', () => {
+    const g = board('Jeskai');
+    g.expect.pt('Grizzly Bears', 2, 2);
+    g.expect.derived('Grizzly Bears', { keywords: [] });
+  });
+});
