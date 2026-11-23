@@ -1,5 +1,5 @@
 {
-  "parserVersion": 199,
+  "parserVersion": 200,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -518,6 +518,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e60884ce"
+    },
+    "0836c8d1-c453-4a3a-a52a-eb66839b8542": {
+      "name": "Tifa, Martial Artist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5a8f9b3c"
     },
     "0895c9b7-ae7d-4bb3-af17-3b75deb50a25": {
       "name": "Command Tower",
@@ -1555,6 +1563,14 @@
       "reasons": [],
       "ast": "297ef1fc"
     },
+    "1eae48aa-f01d-4398-a68e-3b5af0542ab1": {
+      "name": "Ultimate Magic: Holy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "129fb08a"
+    },
     "1f1ad44c-1811-40e3-976b-03f19866abd5": {
       "name": "Assemble the Entmoot",
       "group": "acceptance",
@@ -1682,6 +1698,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ddcf4de3"
+    },
+    "215024ba-811e-4011-bbc8-8dd14a34f973": {
+      "name": "Heidegger, Shinra Executive",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a5c99eda"
     },
     "2207fb3f-45a1-401b-99e9-f75723495c3f": {
       "name": "Rendmaw, Creaking Nest",
@@ -2196,6 +2220,14 @@
       "reasons": [],
       "ast": "15f24ab3"
     },
+    "2ca9e6e5-5eec-4593-8816-5c4317c79eb0": {
+      "name": "Summoning Materia",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7122c83e"
+    },
     "2d4976d4-649c-4d42-ac5a-ada4b46a480c": {
       "name": "Angrath's Marauders",
       "group": "acceptance",
@@ -2446,6 +2478,14 @@
       "reasons": [],
       "ast": "25724a77"
     },
+    "31851cb6-0caf-4575-aa5e-41aeadccafc1": {
+      "name": "Cait Sith, Fortune Teller",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e58e0ad2"
+    },
     "31cb87bf-1020-4fd5-95f7-8ecb197d823b": {
       "name": "Pia Nalaar, Chief Mechanic",
       "group": "acceptance",
@@ -2453,6 +2493,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e94e0f72"
+    },
+    "31cc5d9d-9384-4a9b-ba7f-6a4edbcb7a35": {
+      "name": "Ultimate Magic: Meteor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "34f74fe9"
     },
     "31f15274-301b-47c5-ba19-0ced04520878": {
       "name": "Wayfarer's Bauble",
@@ -3137,6 +3185,14 @@
       "reasons": [],
       "ast": "75c6ffcd"
     },
+    "3e2034ee-adc5-4a24-9605-c9722bf813c1": {
+      "name": "SOLDIER Military Program",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c2490a5c"
+    },
     "3e2ae59a-40a1-46ca-8f24-3231ebd4e4eb": {
       "name": "Flickering Ward",
       "group": "acceptance",
@@ -3730,6 +3786,14 @@
       "reasons": [],
       "ast": "45eadb9f"
     },
+    "4ca66b33-28c2-4d0d-8a44-9d891ab13e18": {
+      "name": "Professor Hojo",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2da7fe5c"
+    },
     "4caa3c55-41b3-48a3-b6a8-4d23aff7d00d": {
       "name": "For the Ancestors",
       "group": "acceptance",
@@ -3841,6 +3905,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dc997d74"
+    },
+    "4eb1414c-ba12-4bae-b410-79d51925d6fa": {
+      "name": "Avalanche of Sector 7",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aa3ed9d5"
     },
     "4ef583ab-e0a0-4e4b-bd65-af766038b1fd": {
       "name": "Ghost Vacuum",
@@ -3978,6 +4050,14 @@
       ],
       "reasons": [],
       "ast": "bc857b26"
+    },
+    "52b3a979-3b93-4441-9237-0c8a754e5523": {
+      "name": "Furious Rise",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1de205fb"
     },
     "52bd4331-67b6-4eb8-9566-e00359889fc6": {
       "name": "Soul Snare",
@@ -4945,6 +5025,14 @@
       "reasons": [],
       "ast": "fa8b59da"
     },
+    "653f0452-5802-4639-86c2-1500c3964fcb": {
+      "name": "Cloud, Ex-SOLDIER",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bdf38e59"
+    },
     "65424bea-fd53-4f85-9757-0b91a6d40ba4": {
       "name": "Cabaretti Courtyard",
       "group": "acceptance",
@@ -5665,6 +5753,14 @@
       "reasons": [],
       "ast": "52c23e37"
     },
+    "74a62c7b-4753-4af2-b7a1-9a4ae8988801": {
+      "name": "Puresteel Paladin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4cf60b6a"
+    },
     "74d3277a-38e5-4732-afed-084a56148f20": {
       "name": "Mana Drain",
       "group": "training",
@@ -5882,6 +5978,14 @@
       "reasons": [],
       "ast": "78742b32"
     },
+    "78b2b68d-6e27-49f3-8373-6e19faf6f679": {
+      "name": "Inspiring Statuary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "89b55696"
+    },
     "79085dea-8daa-41c0-a975-61e3e6da2e26": {
       "name": "Shielded by Faith",
       "group": "acceptance",
@@ -6090,6 +6194,14 @@
       "reasons": [],
       "ast": "22db2399"
     },
+    "7cbdba72-ed33-40c6-a9c0-4d65c280a4d0": {
+      "name": "Lifestream's Blessing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d22a9b26"
+    },
     "7cc81fb3-495c-47cd-8c56-96197d87e9e0": {
       "name": "Witherbloom Command",
       "group": "acceptance",
@@ -6295,6 +6407,14 @@
       "reasons": [],
       "ast": "077cdd35"
     },
+    "800cfd70-6a97-40eb-8dc0-40b762e4db76": {
+      "name": "Unfinished Business",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f294fcfb"
+    },
     "800fb917-8898-4eba-9f94-aec6e9d75236": {
       "name": "Mazemind Tome",
       "group": "training",
@@ -6447,6 +6567,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0a13d3ed"
+    },
+    "83f776d9-f3b6-40c2-8008-1ace4d110825": {
+      "name": "Barret, Avalanche Leader",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "89efa1c8"
     },
     "83f87884-f0f9-482e-887e-35a8a5c20eb0": {
       "name": "Smoldering Stagecoach",
@@ -6955,6 +7083,14 @@
       "reasons": [],
       "ast": "fa12f890"
     },
+    "8e7681ba-6412-4165-b374-5636feec216d": {
+      "name": "Conformer Shuriken",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "db0042ec"
+    },
     "8ea414c1-88cf-46d4-9a54-6dee9847c537": {
       "name": "Surge to Victory",
       "group": "acceptance",
@@ -6962,6 +7098,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bbcfccea"
+    },
+    "8ec03b88-8d3a-4a32-8b7c-7da59b0c03d0": {
+      "name": "Colossus Hammer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "02a4f7d2"
     },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
@@ -7010,6 +7154,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "568550ce"
+    },
+    "913672bc-cc88-4964-a331-7dbce40f2bda": {
+      "name": "Barret Wallace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fd47ec4c"
     },
     "913ec957-5f4e-46b4-a819-9448837f72a3": {
       "name": "Revival Experiment",
@@ -7603,6 +7755,14 @@
       "reasons": [],
       "ast": "a7e1b70a"
     },
+    "9d302e2a-d852-4878-ac9d-d51d9924144b": {
+      "name": "Red XIII, Proud Warrior",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c9084557"
+    },
     "9d3c7c96-056f-408e-a834-fa45a430d3d4": {
       "name": "Daxos, Blessed by the Sun",
       "group": "acceptance",
@@ -7707,6 +7867,14 @@
       "reasons": [],
       "ast": "e305ff62"
     },
+    "9f48cb32-46be-4c47-b558-2ea359efdd9b": {
+      "name": "Wrecking Ball Arm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7aa6af5f"
+    },
     "9f7d5e1c-bf5b-4ab9-bd6e-2627b4d22b36": {
       "name": "Zada, Hedron Grinder",
       "group": "acceptance",
@@ -7754,6 +7922,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cf121b27"
+    },
+    "9fe77f70-85cf-4a18-9451-2fad4c341f07": {
+      "name": "Summon: Kujata",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "523d3684"
     },
     "a07483b4-c04f-42a4-b979-8b77c11fa8f5": {
       "name": "Slate of Ancestry",
@@ -7866,6 +8042,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "61b37ae3"
+    },
+    "a2900c79-8e55-49f9-b548-5890a753932e": {
+      "name": "Helitrooper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ab1b206f"
     },
     "a2a380d8-4df7-4357-862c-ed3fb795db6c": {
       "name": "Sundering Growth",
@@ -8003,6 +8187,14 @@
       ],
       "reasons": [],
       "ast": "006aa8cc"
+    },
+    "a563ede9-b92f-4285-88f8-abcbdd017742": {
+      "name": "Explorer's Scope",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7b51717d"
     },
     "a58adf82-d9e2-4b47-933e-68180f280ba2": {
       "name": "Mystic Speculation",
@@ -8427,6 +8619,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a760db47"
+    },
+    "acdcbb49-9d71-4c36-8ccb-650fb11c3a58": {
+      "name": "Yuffie, Materia Hunter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "145ba4cd"
     },
     "ace8e88e-ca6a-4bdf-8c6d-1b914fc00259": {
       "name": "Monologue Tax",
@@ -8919,6 +9119,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d2b05f47"
+    },
+    "b8961205-87fa-4cce-aba9-84fa2f91a67f": {
+      "name": "Vincent, Vengeful Atoner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4c6cf8c6"
     },
     "b8f566ea-8283-4afa-9ac8-737e26419283": {
       "name": "Explore",
@@ -9714,6 +9922,14 @@
       "reasons": [],
       "ast": "075b3463"
     },
+    "ca9ab230-51e2-4ef2-a7b9-4e325d9f9657": {
+      "name": "Sephiroth, Fallen Hero",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "38ee7d8c"
+    },
     "cad63b31-667b-4518-bc49-be4ffb82bc63": {
       "name": "Vraska, Soul of Stone",
       "group": "acceptance",
@@ -10115,6 +10331,14 @@
       "reasons": [],
       "ast": "d1def719"
     },
+    "d3bdfb25-dfb2-4df4-b502-ef0909a39f86": {
+      "name": "Cid, Freeflier Pilot",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7dfa3246"
+    },
     "d3c56fc4-3611-41b1-952e-4c5311b1510b": {
       "name": "Lathiel, the Bounteous Dawn",
       "group": "acceptance",
@@ -10394,6 +10618,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5454867a"
+    },
+    "d9b066ff-9519-415c-ae17-bfea703c9889": {
+      "name": "Hellkite Tyrant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4f79ffda"
     },
     "d9bc0f83-c522-44c9-baa6-fffdeb02a0f5": {
       "name": "Ensign Harry Kim, Operations",
@@ -11011,6 +11243,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "23fcdc63"
+    },
+    "e84d146a-1c67-49df-b062-622794e45c42": {
+      "name": "Zack Fair",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c62c5659"
     },
     "e88027a6-24cc-4a8b-86db-734f26149ea8": {
       "name": "Oran-Rief, the Vastwood",
@@ -11736,6 +11976,14 @@
       "reasons": [],
       "ast": "9bce244c"
     },
+    "f5b6835b-7ebe-4855-8b3e-bffb74fd50ee": {
+      "name": "Elena, Turk Recruit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "621f96b2"
+    },
     "f5d1bd3c-0e65-4999-a810-881b2389b40e": {
       "name": "Conspicuous Snoop",
       "group": "acceptance",
@@ -11799,6 +12047,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "88916de4"
+    },
+    "f707dfb5-dfa9-471b-ac29-5435c30069cc": {
+      "name": "Hero's Heirloom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "13010475"
     },
     "f70d65bf-5f1c-4aee-9bd1-f5ee6974b058": {
       "name": "Flaring Cinder",
@@ -11943,6 +12199,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "392ac6b9"
+    },
+    "fa3335be-80b1-49d7-9809-5bef13be79f4": {
+      "name": "Armory Automaton",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75e6a51c"
     },
     "fa4dffda-6f04-4d0b-829d-28a1a5794dee": {
       "name": "Millikin",
@@ -12212,8 +12476,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1215,
-      "total": 1234
+      "supported": 1248,
+      "total": 1267
     }
   }
 }
