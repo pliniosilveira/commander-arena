@@ -53,6 +53,7 @@ import {
   checkCostIncrease,
   checkCostPerExtraTarget,
   checkCostReduction,
+  checkNamedAlternativeCost,
 } from './validate-cost';
 import { checkCrossZoneSlots } from './validate-cross-zone';
 import { checkDinosaursFace, checkDinosaursStatic } from './validate-dinosaurs';
@@ -86,6 +87,7 @@ import {
   loyaltyOffPlaneswalkerIssues,
   readsCombatOrSource,
   readsCombatOrSourceBesidesCommander,
+  readsKeywords,
   type Scope,
 } from './validate-parts';
 import {
@@ -335,6 +337,9 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'aggregate') {
+        // Towering Titan: the total of a stat over a group, read as the permanent enters.
+        checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
       } else if (kindOf(r.count) === 'diedThisTurn') {
         // Issue 101: the creatures that died this turn, read from the history as the permanent enters; no state of the game is read, so nothing more to check.
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
@@ -382,6 +387,12 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
       if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType', 'lifePaid'])) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
+      }
+      break;
+    case 'exileInsteadOfOpponentGraveyard':
+      // Issue 102 (Dauthi Voidwalker): the counter the exiled card gets.
+      if (typeof r.counter !== 'string' || r.counter === '') {
+        issue(out, `${path}.counter`, 'counter names a kind of counter');
       }
       break;
     case 'wouldDie':
@@ -537,6 +548,45 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           out,
           `${path}.what`,
           'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'grantAlternativeCostToSpells':
+      // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4}": only evoke with a mana cost, for the spells of the permanent's controller a filter names,
+      // as the spells they are on the stack, cast from the hand.
+      if (s.from !== 'hand') issue(out, `${path}.from`, 'the spells are cast from the hand');
+      if (s.alt?.kind !== 'evoke') {
+        issue(out, `${path}.alt`, 'only evoke can be given to spells as an alternative cost');
+      } else {
+        checkNamedAlternativeCost(s.alt.cost, `${path}.alt.cost`, out);
+        if (Array.isArray(s.alt.cost) && s.alt.cost.length === 0) {
+          issue(out, `${path}.alt.cost`, 'the granted evoke cost is a mana cost');
+        }
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        s.what?.controller !== 'you' ||
+        filterSome(s.what, (f) => f.controller !== undefined && f.controller !== 'you')
+      ) {
+        issue(out, `${path}.what`, "the spells are the ones you cast: controller is 'you'");
+      }
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            f.keywords !== undefined ||
+            f.notKeywords !== undefined ||
+            f.targetsObject !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the spells are named by what they are: no zone, owner, stackKind, keywords, targets, combat or source',
         );
       }
       break;
@@ -809,11 +859,72 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
             'a granted cost increase has no condition and works on the battlefield',
           );
         }
+      } else if (
+        s.ability?.kind === 'static' &&
+        (s.ability.static?.kind === 'modifyPt' || s.ability.static?.kind === 'grantKeyword')
+      ) {
+        // Dancer's Chakrams (CR 604.1, 613.1f, 613.8): the one "+N/+N" or keyword a static ability gives, to a group. `derive` applies it after layer 6 in a second pass, reading
+        // the group against the permanent that has the ability (`rules/granted-statics.ts`), so the group is named by what no layer changes, the amount is a number, and the
+        // ability has no condition (the engine would not check it) and works on the battlefield.
+        checkAbility(s.ability, `${path}.ability`, out);
+        const inner = s.ability.static;
+        if (inner.subject?.kind !== 'filter') {
+          issue(
+            out,
+            `${path}.ability.static.subject`,
+            'a granted "+N/+N" or keyword ability gives to a group of permanents (a filter subject)',
+          );
+        } else if (
+          filterSome(
+            inner.subject.filter,
+            (f) =>
+              readsKeywords(f) ||
+              f.power !== undefined ||
+              f.toughness !== undefined ||
+              readsCombatOrSourceBesidesCommander(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.ability.static.subject`,
+            'the group a granted static ability gives to is not named by a keyword, power, toughness or combat: they are read after the layer it applies in (CR 613.8)',
+          );
+        }
+        if (
+          inner.kind === 'modifyPt' &&
+          (typeof inner.power !== 'number' || typeof inner.toughness !== 'number')
+        ) {
+          issue(
+            out,
+            `${path}.ability.static`,
+            'a granted "+N/+N" is a fixed number, not an amount counted on the board',
+          );
+        }
+        if (
+          inner.kind === 'grantKeyword' &&
+          (inner.keyword?.kind === 'riot' ||
+            (inner.keyword?.kind === 'protection' &&
+              inner.keyword.from !== 'color' &&
+              inner.keyword.from !== 'cardType'))
+        ) {
+          issue(
+            out,
+            `${path}.ability.static.keyword`,
+            'a granted keyword is one with no choice and no source to read: not riot, and a protection only from colors or card types',
+          );
+        }
+        if (s.ability.condition !== undefined || s.ability.functionsIn !== undefined) {
+          issue(
+            out,
+            `${path}.ability`,
+            'a granted static ability has no condition and works on the battlefield',
+          );
+        }
       } else {
         issue(
           out,
           `${path}.ability`,
-          `a static ability can grant a mana, an activated, a triggered ability or a cost increase, not ${kindOf(s.ability)}`,
+          `a static ability can grant a mana, an activated, a triggered ability, a cost increase, a "+N/+N" or a keyword to a group, not ${kindOf(s.ability)}`,
         );
       }
       break;
@@ -821,6 +932,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'cantBeBlockedBy':
     case 'takeFromLinkedExile':
     case 'grantActivatedAbilitiesOfTopCard':
+    case 'grantActivatedAbilitiesOfLinkedExile':
     case 'castAsThoughFlash':
     case 'spellsCantBeCountered':
     case 'opponentsCantCastSpells':
@@ -894,7 +1006,28 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesBlockedBy':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
+      // CR 509.3d (Flanking): the filter the blocking creature must match, on the battlefield, no zone, owner or combat.
+      if (t.kind === 'becomesBlockedBy') {
+        checkFilter(t.by, `${path}.by`, out);
+        if (
+          filterSome(
+            t.by,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.by`,
+            'the creature that blocks is on the battlefield: no zone, owner, stackKind or combat',
+          );
+        }
+      }
       if (t.kind === 'becomesTapped') checkBecomesTapped(t, path, out);
       // D-135: "enters untapped" / "enters tapped" belongs to the enters trigger.
       if (
@@ -903,6 +1036,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         typeof t.tapped !== 'boolean'
       ) {
         issue(out, `${path}.tapped`, 'tapped must be a boolean when present');
+      }
+      // Issue 102 (River Kelpie): "enters from a graveyard" belongs to the enters trigger.
+      if (
+        t.kind === 'entersBattlefield' &&
+        t.fromGraveyard !== undefined &&
+        t.fromGraveyard !== true
+      ) {
+        issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
       }
       // D-110: "attacks alone" (CR 506.5) is a flag of the attacks trigger.
       if (t.kind === 'attacks' && t.alone !== undefined && t.alone !== true) {
@@ -984,6 +1125,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.minCardTypes !== undefined && (!isCount(t.minCardTypes) || t.minCardTypes < 1)) {
         issue(out, `${path}.minCardTypes`, 'minCardTypes must be a positive integer when present');
       }
+      if (t.fromExile !== undefined && t.fromExile !== true) {
+        issue(out, `${path}.fromExile`, 'fromExile must be true when present');
+      }
       break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
@@ -1062,7 +1206,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the source of the damage is on the battlefield: no zone, owner or stackKind',
         );
       }
-      if (!isOneOf(t.to, ['player', 'opponent', 'you'])) {
+      if (!isOneOf(t.to, ['player', 'opponent', 'opponents', 'you'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       if (t.whileMonarch !== undefined && t.whileMonarch !== true) {
@@ -1180,6 +1324,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.kind === 'leftGraveyard') {
         if (t.each !== undefined && t.each !== true) {
           issue(out, `${path}.each`, 'each must be true when present');
+        }
+        if (t.duringTurn !== undefined && t.duringTurn !== 'you') {
+          issue(out, `${path}.duringTurn`, "duringTurn must be 'you' when present");
         }
         // The card is read where it was (its owner's graveyard): no zone, controller or owner.
         if (t.filter !== undefined) {
@@ -1523,6 +1670,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesBlockedBy':
     case 'landfall':
     case 'diesBatch':
     case 'entersBatch':
@@ -1928,7 +2076,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.trigger.kind === 'entersBatch'
           ? { triggerCards: true }
           : {}),
-        ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
+        // CR 509.3d (Flanking): "the blocking creature" is the creature that blocked, `triggerSources`.
+        ...(a.trigger.kind === 'combatDamageBatch' || a.trigger.kind === 'becomesBlockedBy'
+          ? { triggerSources: true }
+          : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
@@ -1939,6 +2090,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
           ? { triggerAttacked: true }
+          : {}),
+        ...(a.trigger?.kind === 'playerAttacksOpponent' ||
+        (a.trigger?.kind === 'attackBatch' && a.trigger.eachAttackedPlayer === true)
+          ? { triggerAttackedSingle: true }
           : {}),
         triggeredAbility: true,
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
@@ -2062,7 +2217,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
-        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
               out,
@@ -2098,6 +2253,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
+        if (conditionHas(a.interveningIf, 'triggerPlayerTurn') && !triggerHasPlayer(a.trigger)) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'triggerPlayerTurn reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
         if (
@@ -2161,7 +2323,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
-        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
           }

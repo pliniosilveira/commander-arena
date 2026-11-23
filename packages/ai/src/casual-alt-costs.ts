@@ -31,6 +31,7 @@ import {
   type NamedAlternativeKind,
   type ObjectView,
 } from '@commander-arena/engine';
+import { PAY_LIFE_ABOVE } from './casual-permanents';
 import {
   findObject,
   isCreature,
@@ -38,6 +39,7 @@ import {
   manaValueOf,
   opponentLife,
   opposingCreatures,
+  ownLife,
   powerOf,
   toughnessOf,
 } from './casual-view';
@@ -101,6 +103,11 @@ export function chooseNamedAlternative(
   // D-149: "pay {W} and tap four untapped creatures with flying": chosen when the ordinary cast cannot be paid; the creatures it
   // taps are chosen like any permanents tapped for a cost (`choosePermanentToTap`).
   if (offered.has('tapPermanents') && !ordinary) return 'tapPermanents';
+  // CR 118.9, 118.4 (Snuff Out): paying life rather than the mana cost, chosen when the ordinary cast cannot be paid and the life stays above `PAY_LIFE_ABOVE` (as for any life paid).
+  if (offered.has('payLife') && !ordinary) {
+    const life = card.alternativeCosts?.find((a) => a.kind === 'payLife')?.life ?? 0;
+    if (ownLife(view) - life > PAY_LIFE_ABOVE) return 'payLife';
+  }
   // CR 702.37c (Morph): a face-down 2/2 for {3} when the ordinary cast cannot be paid; it is turned face up later for its morph cost (`casual-face-down.ts`).
   if (offered.has('morph') && !ordinary) return 'morph';
   return undefined;

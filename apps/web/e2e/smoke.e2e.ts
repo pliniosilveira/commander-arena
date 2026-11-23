@@ -114,13 +114,15 @@ test('conceding from the Settings menu ends the game with a game-over dialog', a
   await expect(primary(page)).toBeVisible({ timeout: 15_000 });
   // Concede is not in the action bar (issue 43): it is in the Settings menu, behind a confirm step.
   await expect(page.getByRole('button', { name: /^Concede/ })).toHaveCount(0);
-  await page.getByRole('button', { name: /Settings/ }).click();
+  // The Settings dialog is a dialog too: the game-over and the confirm dialogs are the others.
+  const other = page.locator('[role="dialog"]:not(#game-settings-dialog)');
+  await page.locator('.settings-toggle').click();
   await page.getByRole('button', { name: 'Concede game', exact: true }).click();
   // Keeping playing closes the question and nothing is sent.
   await page.getByRole('button', { name: 'Keep playing', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(other).toHaveCount(0);
   await page.getByRole('button', { name: 'Concede game', exact: true }).click();
   await page.getByRole('button', { name: 'Yes, concede', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText(/you lose/i);
+  await expect(other).toContainText(/you lose/i);
   await expect(page.getByRole('button', { name: 'Back to menu' })).toBeVisible();
 });

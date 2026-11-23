@@ -18,8 +18,10 @@ const articleOf = (word: string): string => (/^[aeiou]/iu.test(word) ? 'an' : 'a
  * `condition.spells-cast-this-turn`: "you've cast three or more spells this turn", "you have cast two or more spells this turn" (CR 602.5b, 601.2i: the spells
  * the controller has cast this turn, from every zone, a copy never counted, CR 707.10) and, since the Feather deck (D-444), "you've cast an instant or sorcery spell this
  * turn", "you've cast a creature spell this turn": one spell of one of the card types named (`ofTypes`), read from the types the spell was cast with. The engine's
- * `spellsCastThisTurn`, read as the ability is activated. Not read: "or fewer", "an opponent has cast", a kind of spell with a count ("two or more creature spells"), a color or
- * a subtype ("a red spell", "a Dragon spell"), a noncreature spell, zero, a variable count, "a spell" with no kind.
+ * `spellsCastThisTurn`, read as the ability is activated. Since Lyse Hext (Scions of Spellcraft deck) "you've cast two or more noncreature spells this turn" (CR 205.2a, 601.2i):
+ * the spells with no creature type (`notOfTypes`), which a static ability may read as an "as long as" (the turn log, no layer changes it). Not read: "or fewer", "an opponent has
+ * cast", a kind of spell with a count ("two or more creature spells"), a color or a subtype ("a red spell", "a Dragon spell"), one noncreature spell, zero, a variable count, "a spell"
+ * with no kind.
  */
 export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
   id: 'condition.spells-cast-this-turn',
@@ -40,6 +42,9 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
     "you've cast one or more spells this turn",
     // D-444: one spell of a kind.
     "you've cast an instant or sorcery spell this turn",
+    // Lyse Hext: "noncreature" spells with a count.
+    "you've cast two or more noncreature spells this turn",
+    'you have cast three or more noncreature spells this turn',
     'you’ve cast an instant or sorcery spell this turn',
     'you have cast an instant or sorcery spell this turn',
     "you've cast a creature spell this turn",
@@ -68,6 +73,13 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
     "you've cast an instant or sorcery spell this turn and",
     "you've cast an instant or instant spell this turn",
     "you've cast a noncreature spell this turn",
+    "you've cast two or more noncreature spell this turn",
+    "you've cast two noncreature spells this turn",
+    "you've cast two or fewer noncreature spells this turn",
+    "you've cast 0 or more noncreature spells this turn",
+    "you've cast two or more noncreature spells this game",
+    "you've cast two or more noncreature spells this turn.",
+    "you've cast two or more noninstant spells this turn",
     "you've cast a red spell this turn",
     "you've cast a Dragon spell this turn",
     "you've cast an instant, sorcery spell this turn",
@@ -107,15 +119,20 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
     }
     const r = sequence(
       spanned(satisfy(quantity, (n) => n >= 1)),
-      pattern(new RegExp(` or more spells this turn${BOUNDARY}`, 'iu')),
+      pattern(new RegExp(` or more (noncreature )?spells this turn${BOUNDARY}`, 'iu')),
     )(ctx, head.pos);
     if (!r.ok) return r;
-    const [count] = r.value;
+    const [count, tail] = r.value;
+    const noncreature = tail[1] !== undefined;
     return {
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'spellsCastThisTurn', atLeast: count.value },
+        test: {
+          kind: 'spellsCastThisTurn',
+          atLeast: count.value,
+          ...(noncreature ? { notOfTypes: ['creature'] } : {}),
+        },
         span: span(r.pos),
         rule: 'condition.spells-cast-this-turn',
       },

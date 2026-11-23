@@ -30,6 +30,7 @@ import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
+import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
@@ -152,7 +153,8 @@ const ANY_EVENT = choice(
 const OR_SUBJECTS_EVENT = choice(ANY_EVENT, EVENT_WORDS.leavesBattlefield);
 
 /** The events of `trigger.or`: those of any trigger of one subject, and (stage P36, D-178) "becomes the target of a spell". */
-const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell);
+// CR 701.37a (Protector of the Wastes): "enters or becomes monstrous".
+const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell, EVENT_WORDS.becomesMonstrous);
 
 function trigger(
   rule: string,
@@ -514,8 +516,11 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     '~ attacks, blocks, or becomes the target of a spell',
     '~ enters, attacks, or dies',
     'another creature you control attacks, blocks, or dies',
+    // CR 701.37a (Monstrosity), 603.2: the monstrosity action is an event like any other of the subject.
+    '~ enters or becomes monstrous',
   ],
   rejects: [
+    '~ becomes monstrous or becomes monstrous',
     '~ attacks or becomes the target of a spell or ability',
     '~ becomes the target of a spell or becomes the target of a spell',
     '~ enters',
@@ -611,6 +616,56 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
     return {
       ok: true,
       value: trigger('trigger.or-subjects', span, event, { subject, alternatives: [alternative] }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `trigger.enters-from-graveyard`: "~ or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 603.2c, 400.7): one ability that triggers for the permanent itself
+ * and for any other permanent that came onto the battlefield from a graveyard (the zone it moved from; a token or a spell cast from a graveyard is not that). As for `trigger.or-subjects`,
+ * each subject is an engine ability of its own. Not read: another kind than "permanent", "cast from", "your graveyard", a battlefield-only entry ("enters").
+ */
+export const TRIGGER_ENTERS_FROM_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.enters-from-graveyard',
+  family: 'trigger',
+  leading: ['~'],
+  cites: [
+    'CR 603.6a (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 400.7 (General)',
+  ],
+  examples: ['~ or another permanent enters from a graveyard'],
+  rejects: [
+    '~ or another permanent enters',
+    '~ or another permanent enters from your graveyard',
+    '~ or another creature enters from a graveyard',
+    '~ or a permanent enters from a graveyard',
+    '~ or another permanent is cast from a graveyard',
+    '~ enters from a graveyard',
+    '~ or another permanent enters from a graveyard or exile',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(literal('~')),
+      literal(' or another permanent'),
+      pattern(/ enters(?: the battlefield)? from a graveyard(?![\p{L}\p{N}])(?! or\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [self] = r.value;
+    const id = 'trigger.enters-from-graveyard';
+    const span = { start: pos, end: r.pos };
+    const whole = (subject: IrNoun): IrTrigger => ({
+      ...trigger(id, span, 'enters', { subject }),
+      fromGraveyard: true,
+    });
+    const other = makeNoun(id, span, 'a', { raw: 'another permanent' });
+    return {
+      ok: true,
+      value: {
+        ...whole(makeNoun(id, self.span, 'self', { raw: '~' })),
+        alternatives: [{ ...whole({ ...other, other: true }) }],
+      },
       pos: r.pos,
     };
   },
@@ -1223,6 +1278,8 @@ export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
   ...CAST_DURING_TURN_TRIGGER_RULES,
+  // Astrologian's Planisphere: "you cast a noncreature spell and whenever you draw your third card each turn" starts like `trigger.cast`, which stops before the rest.
+  ...CAST_AND_DRAW_TRIGGER_RULES,
   // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,
@@ -1231,6 +1288,7 @@ export const TRIGGER_RULES = [
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
   ...UNBOUND_I_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
+  TRIGGER_ENTERS_FROM_GRAVEYARD,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,
   TRIGGER_BECOMES_TARGET,

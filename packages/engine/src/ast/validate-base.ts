@@ -41,7 +41,6 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'permanentSacrificed':
     case 'becomesTarget':
     case 'dealtDamage':
-    case 'combatDamageBatch':
     case 'noncombatDamageDealt':
     case 'dealtDamageToPlayer':
     case 'dealsDamage':
@@ -72,6 +71,9 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'damageBatch':
       // CR 603.2c: each player damaged is "that player"; one trigger for several opponents has none.
       return t.to === 'player';
+    case 'combatDamageBatch':
+      // Issue 508: the same for `opponents`, one trigger for the whole event.
+      return t.to !== 'opponents';
     case 'dealsCombatDamage':
       // D-373: a planeswalker that is damaged is not a player, so "that player" would have no meaning.
       return t.to !== 'creature' && t.to !== 'playerOrPlaneswalker';

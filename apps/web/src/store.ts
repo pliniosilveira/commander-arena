@@ -24,7 +24,17 @@ import {
   shouldStop,
 } from './policy/should-stop';
 
-export type Screen = 'menu' | 'import' | 'loading' | 'playing';
+export type Screen = 'menu' | 'import' | 'loading' | 'playing' | 'table';
+
+/**
+ * The decks of a game with more than one opponent (the "more opponents" project), for the versus
+ * screen before the opening hand. Set when such a game starts, cleared by `backToMenu`.
+ */
+export interface TableSetup {
+  readonly humanDeck: string;
+  /** One deck per opponent, in seat order. */
+  readonly opponentDecks: readonly string[];
+}
 
 /** The sections of the import screen (M4): the importer and saved decks. */
 export type ImportTab = 'import' | 'decks';
@@ -34,6 +44,8 @@ export interface PreviewState {
   readonly hovered: ObjectId | null;
   /** A pinned object stays until Esc (A19). */
   readonly pinned: ObjectId | null;
+  /** The top of the stack the player tapped away: its preview stays closed, a new top shows again. */
+  readonly dismissedStack?: ObjectId | null;
   /**
    * The cards a reveal showed (CR 701.20), read in the preview panel when nothing is pinned or hovered. The
    * latest reveal replaces them; Esc (unpin), a new turn or a new game clears them.
@@ -65,6 +77,8 @@ export function untappableSources(
 
 export interface AppState {
   readonly screen: Screen;
+  /** The decks of a game with several opponents, while that game is on screen. */
+  readonly table: TableSetup | null;
   /** Which section the import screen opens on. */
   readonly importTab: ImportTab;
   readonly options: NewGameOptions | null;
@@ -113,6 +127,7 @@ export interface AppState {
 
 export interface AppActions {
   startGame(options: NewGameOptions): Promise<void>;
+  /** Opens the empty board of a game with several opponents (no game is played yet). */
   /** An explicit player action (a click). */
   act(action: Action): Promise<void>;
   /** Takes back the last small action when the Worker allows it (D-050). */
@@ -141,6 +156,8 @@ export interface AppActions {
   setManualPay(on: boolean): void;
   hover(id: ObjectId | null): void;
   pin(id: ObjectId | null): void;
+  /** Closes the preview of the object on top of the stack until another one is on top. */
+  dismissStackPreview(id: ObjectId): void;
   clearError(): void;
   /** Shows a message from the page itself (not from the engine), like a refused action's error. */
   fail(message: string): void;
@@ -357,6 +374,7 @@ export function createAppStore(options: StoreOptions): AppStore {
 
     return {
       screen: 'menu',
+      table: null,
       importTab: 'import',
       options: null,
       snapshot: null,
@@ -378,8 +396,13 @@ export function createAppStore(options: StoreOptions): AppStore {
         gate?.release();
         const gen = generation;
         seized = false;
+        const opponents = opts.opponents ?? [];
         set({
           screen: 'loading',
+          table:
+            opponents.length > 1
+              ? { humanDeck: opts.humanDeck, opponentDecks: opponents.map((o) => o.deck) }
+              : null,
           options: opts,
           snapshot: null,
           log: [],
@@ -391,7 +414,11 @@ export function createAppStore(options: StoreOptions): AppStore {
         });
         const started: GameStarted = await client.newGame(opts);
         if (gen !== generation) return;
-        set({ screen: 'playing', summary: started.summary });
+        // A game of three or more seats has a screen of its own, with the board for several opponents.
+        set({
+          screen: started.snapshot.view.seats.length > 2 ? 'table' : 'playing',
+          summary: started.summary,
+        });
         apply(started.snapshot);
         setBusy(true);
         try {
@@ -477,7 +504,14 @@ export function createAppStore(options: StoreOptions): AppStore {
       backToMenu() {
         generation += 1;
         gate?.release();
-        set({ screen: 'menu', snapshot: null, log: [], passing: false, error: null });
+        set({
+          screen: 'menu',
+          table: null,
+          snapshot: null,
+          log: [],
+          passing: false,
+          error: null,
+        });
       },
 
       openImport(tab = 'import') {
@@ -531,6 +565,10 @@ export function createAppStore(options: StoreOptions): AppStore {
         set((s) => ({
           preview: { ...s.preview, pinned: id, ...(id === null ? { revealed: [] } : {}) },
         }));
+      },
+
+      dismissStackPreview(id) {
+        set((s) => ({ preview: { ...s.preview, dismissedStack: id } }));
       },
 
       clearError() {

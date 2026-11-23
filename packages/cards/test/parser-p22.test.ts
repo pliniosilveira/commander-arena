@@ -152,12 +152,8 @@ describe('the three kinds together (CR 118.9a: one applies to a spell, a card ma
 
 describe('what stays unread (never half-executed)', () => {
   test.each([
-    [
-      'Evoke—Exile a white card from your hand.',
-      'the real line of Solitude, Fury, Grief: not a mana cost',
-    ],
-    ['Evoke—Exile a white card from your hand', 'the same without the period'],
     ['Evoke—Pay 2 life.', 'a cost that is not mana'],
+    ['Evoke—Exile a white card from your hand', 'the exile cost without the period'],
     ['Evoke—{1}{U}, Pay 2 life.', 'mana and life'],
     ['Dash—Pay 3 life.', 'a cost that is not mana'],
     ['Overload—Discard a card.', 'a cost that is not mana'],
@@ -185,16 +181,16 @@ describe('what stays unread (never half-executed)', () => {
 
   test('the dash and evoke words alone on a spell are not spell text either', () => {
     expect(dropped('Dash {1}{R}.', 'instant')).toMatchObject({ reason: 'unrecognised' });
-    expect(dropped('Evoke—Exile a white card from your hand.', 'sorcery')).toMatchObject({
+    expect(dropped('Evoke—Pay 2 life.', 'sorcery')).toMatchObject({
       reason: 'unrecognised',
     });
   });
 
   test('a line that is not read leaves the face with no entry (never half-executed)', () => {
-    const parsed = read('Evoke—Exile a white card from your hand.', 'creature');
+    const parsed = read('Evoke—Pay 2 life.', 'creature');
     expect(parsed.alternativeCosts).toEqual([]);
     expect(parsed.unparsed).toHaveLength(1);
-    expect(parsed.unparsed[0]?.stoppedAt).toBe('Evoke—Exile a white card from your hand.');
+    expect(parsed.unparsed[0]?.stoppedAt).toBe('Evoke—Pay 2 life.');
   });
 
   test('SYNTHETIC: a line the grammar does not read is reported and the dash line is still read (a card is whole only when every line is)', () => {
@@ -234,7 +230,7 @@ describe('the reason a card with an alternative cost is unsupported (validateCar
   });
 
   test('Evoke with a cost that is not mana leaves the card unsupported and the line unread', () => {
-    const imported = card('Creature — Test', 'Evoke—Exile a white card from your hand.', {
+    const imported = card('Creature — Test', 'Evoke—Pay 2 life.', {
       power: '1',
       toughness: '1',
     });

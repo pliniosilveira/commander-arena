@@ -8,6 +8,7 @@ import type {
   SeatId,
 } from '@commander-arena/engine';
 import { chapterWord } from '../../game/saga';
+import { seatNameOf } from '../../game/seat-name';
 
 /** Every object the viewer can see, by id: battlefield, stack, exile, graveyards, hand, command, the top of their library. */
 export function objectIndex(view: GameView): ReadonlyMap<ObjectId, ObjectView> {
@@ -31,8 +32,9 @@ export function objectIndex(view: GameView): ReadonlyMap<ObjectId, ObjectView> {
 
 export type Index = ReadonlyMap<ObjectId, ObjectView>;
 
-export function seatLabel(seat: SeatId, viewer: SeatId): string {
-  return seat === viewer ? 'You' : 'Opponent';
+/** "You", "Opponent", or "Opponent N" with more than two seats (`seatCount`, default 2). */
+export function seatLabel(seat: SeatId, viewer: SeatId, seatCount = 2): string {
+  return seatNameOf(seat, viewer, seatCount);
 }
 
 export function nameOf(index: Index, id: ObjectId): string {
@@ -51,12 +53,24 @@ export function stackName(index: Index, id: ObjectId): string {
   return chapter === null ? `${obj.name}'s ability` : `${obj.name}'s ${chapter} ability`;
 }
 
-export function attackTargetLabel(target: AttackTarget, index: Index, viewer: SeatId): string {
-  return target.kind === 'player' ? seatLabel(target.seat, viewer) : nameOf(index, target.object);
+export function attackTargetLabel(
+  target: AttackTarget,
+  index: Index,
+  viewer: SeatId,
+  seatCount = 2,
+): string {
+  return target.kind === 'player'
+    ? seatLabel(target.seat, viewer, seatCount)
+    : nameOf(index, target.object);
 }
 
-export function recipientLabel(to: DamageRecipient, index: Index, viewer: SeatId): string {
-  return to.kind === 'player' ? seatLabel(to.seat, viewer) : nameOf(index, to.id);
+export function recipientLabel(
+  to: DamageRecipient,
+  index: Index,
+  viewer: SeatId,
+  seatCount = 2,
+): string {
+  return to.kind === 'player' ? seatLabel(to.seat, viewer, seatCount) : nameOf(index, to.id);
 }
 
 export function sameAttackTarget(a: AttackTarget, b: AttackTarget): boolean {

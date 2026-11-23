@@ -121,6 +121,11 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'triggerDamagedPlayers',
   // "each opponent dealt combat damage this game by a creature named ~": several players, as above.
   'combatDamagedByNamed',
+  // "each opponent who lost life this turn", "each opponent who was dealt combat damage by ~ this turn": several players, as above.
+  'lostLifeThisTurn',
+  'combatDamagedThisTurn',
+  // "each player who controls a creature with power 4 or greater": several players, as above.
+  'eachPlayerControlling',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {
@@ -242,7 +247,13 @@ class Binder {
    */
   seedSelfCondition(trigger: IrTrigger, condition: IrCondition | undefined): void {
     const test = condition?.test;
-    if (trigger.subject !== undefined || test?.kind !== 'amountIs') return;
+    if (trigger.subject !== undefined) return;
+    // "At the beginning of the end step, if three or more cards have been exiled with ~, sacrifice it." (Colfenor's Urn, CR 603.4, 607.2a): the permanent whose linked exile the "if" counts.
+    if (condition !== undefined && test?.kind === 'cardsExiledWithSelf') {
+      this.seed(selfNoun(condition), 'triggerSubject', true);
+      return;
+    }
+    if (test?.kind !== 'amountIs') return;
     if (test.amount.kind !== 'countersOn' || test.amount.of.det !== 'self') return;
     this.seed(test.amount.of, 'triggerSubject', true);
   }
@@ -367,6 +378,9 @@ class Binder {
     if (antecedent.det === 'enchanted' || antecedent.det === 'equipped') {
       return { ...noun, det: antecedent.det, filter: antecedent.filter };
     }
+    // "Draw cards equal to the sacrificed creature's toughness, then discard cards equal to its power" (CR 608.2h, 602.2c): "its" is the permanent the cost sacrificed, which the
+    // engine names `sacrificedCost`, so the pronoun takes the determiner of its antecedent.
+    if (antecedent.det === 'sacrificed') return { ...noun, det: 'sacrificed' };
     if (antecedent.ref === 'trig') return { ...noun, det: 'triggerSubject', ref: 'trig' };
     if (antecedent.ref === 'trigActor') return { ...noun, det: 'triggerActor', ref: 'trigActor' };
     const ref = pronoun?.kind === 'other' ? `${antecedent.ref ?? ''}.2` : antecedent.ref;
@@ -490,6 +504,7 @@ class Binder {
       case 'multiple':
       case 'minus':
         return { ...amount, of: this.amount(amount.of) };
+      case 'difference':
       case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map((part) => this.amount(part)) };
@@ -588,6 +603,16 @@ class Binder {
           ...(copyOf === undefined ? {} : { copyOf }),
         };
       }
+      case 'costList':
+        // "you may pay X life, where X is that spell's mana value" (G'raha Tia, CR 107.3c): the amount that defines X is bound like the one of a "where" of a sentence.
+        return {
+          ...arg,
+          costs: arg.costs.map((cost) =>
+            cost.kind === 'payLife' && cost.definesX === true
+              ? { ...cost, amount: this.amount(cost.amount) }
+              : cost,
+          ),
+        };
       default:
         return arg;
     }

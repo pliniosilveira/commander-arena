@@ -122,6 +122,8 @@ export interface FilterContext {
    * Absent fails the comparison closed.
    */
   readonly powerLimit?: number | null;
+  /** The number a `chooseNumber` effect of the resolving spell or ability had its controller choose (CR 608.2d), for `powerAtLeastChosenNumber`; absent fails the comparison closed. */
+  readonly chosenNumber?: number;
   /** The name of the object `sameNameAs` names, read by the caller as the effect resolves (CR 201.2); null when it names nothing. Absent fails the filter closed. */
   readonly nameLimit?: string | null;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
@@ -339,6 +341,8 @@ export function matchesFilterWith(
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 108.3 ("you don't own"): the owner of the object is not the player reading the filter.
   if (filter.notOwnedByYou === true && obj.owner === ctx.controller) return false;
+  // CR 108.3 ("you own"): the owner of the object is the player reading the filter, whoever controls it.
+  if (filter.ownedByYou === true && obj.owner !== ctx.controller) return false;
   // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.
@@ -363,6 +367,8 @@ export function matchesFilterWith(
       return false;
     }
     if (d.manaValue > ctx.manaValueLimit) return false;
+    // CR 202.3: "with mana value equal to that spell's mana value": the limit is the exact value (`manaValueExact`).
+    if (filter.manaValueExact === true && d.manaValue !== ctx.manaValueLimit) return false;
   }
   // CR 107.3a, 202.3 (D-139): "with mana value X", the X of the ability that is resolving.
   if (filter.manaValueX === true) {
@@ -414,6 +420,20 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'hand') return false;
   }
+  // CR 601.2a (issue 102, River Kelpie): "a spell cast from a graveyard": a spell on the stack that was cast from a graveyard.
+  if (filter.castFromGraveyard === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'graveyard') return false;
+  }
+  // CR 601.2a, 404.1 (Emet-Selch of the Third Seat): "spells you cast from your graveyard": cast from a graveyard, the card owned by the caster (a graveyard is its owner's, CR 404.1).
+  if (filter.castFromOwnGraveyard === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'graveyard' || obj.owner !== controllerOf(state, obj)) return false;
+  }
   // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
   if (
     filter.xInManaCost === true &&
@@ -426,6 +446,16 @@ export function matchesFilterWith(
     state.turnLog.castSpells.some(
       (e) => e.hasX === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
     )
+  ) {
+    return false;
+  }
+  // CR 601.2i (Alisaie Leveilleur): "the second spell you cast each turn": exactly one other spell cast by the caster this turn so far (a copy is not cast, CR 707.10).
+  if (
+    filter.nthSpellThisTurn !== undefined &&
+    state.turnLog.castSpells.filter(
+      (e) => e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    ).length !==
+      filter.nthSpellThisTurn - 1
   ) {
     return false;
   }
@@ -452,6 +482,12 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power > limit)) return false;
+  }
+  // CR 208.1, 608.2c (Expel the Interlopers): "with power greater than or equal to the chosen number".
+  if (filter.powerAtLeastChosenNumber === true) {
+    const chosen = ctx.chosenNumber;
+    if (chosen === undefined || d.power === null || d.power === undefined) return false;
+    if (!(d.power >= chosen)) return false;
   }
   // CR 201.2, 608.2c (Echoing Return): "with the same name as that card": the name of the object the effect names.
   if (filter.sameNameAs !== undefined) {

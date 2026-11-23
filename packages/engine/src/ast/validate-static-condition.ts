@@ -202,6 +202,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
+    case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the spells cast this turn, from the turn log, which no layer changes
     case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
     case 'castFromGraveyardThisTurn': // Issue 159: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes

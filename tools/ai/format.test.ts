@@ -1,6 +1,6 @@
-import type { MatchResult } from '@commander-arena/ai';
+import type { MatchResult, TableResult } from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { formatMatch, formatTimes } from './format.ts';
+import { formatMatch, formatRound, formatTable, formatTimes, percentile } from './format.ts';
 
 const result: MatchResult = {
   a: 'casual',
@@ -62,5 +62,74 @@ describe('formatTimes', () => {
       1000,
     );
     expect(text).toContain('(budget 1000 ms, 1 over it)');
+  });
+});
+
+describe('formatTable', () => {
+  const table: TableResult = {
+    labels: ['casual', 'greedy', 'heuristic'],
+    seats: 3,
+    games: 6,
+    wins: [1, 2, 3],
+    winsByAgentSeat: [
+      [1, 0, 0],
+      [0, 1, 1],
+      [1, 1, 1],
+    ],
+    winsBySeat: [2, 2, 2],
+    draws: 0,
+    unfinished: 0,
+    averageTurns: 20.5,
+    fallbacks: 0,
+    rejectedActions: 0,
+    reasons: [{}, { land: 3 }, {}],
+    log: [],
+  };
+  const text = formatTable(table, { seed: 4, command: 'node tools/ai/arena.ts --seats 3' });
+
+  test('shows wins for each agent and seat, and the seats of the table', () => {
+    expect(text).toContain(
+      '6 games at 3 seats, 2 seeds from 4, each played once for each rotation',
+    );
+    expect(text).toMatch(/0 casual\s+1 \(16\.7%\)\s+1\s+0\s+0/);
+    expect(text).toMatch(/2 heuristic\s+3 \(50\.0%\)\s+1\s+1\s+1/);
+    expect(text).toContain('wins by seat: seat 0 2, seat 1 2, seat 2 2');
+  });
+
+  test('lists the reasons of each agent', () => {
+    expect(text).toContain('reasons 1 greedy: land 3');
+    expect(text).toContain('reasons 0 casual: (none: the agent does not explain itself)');
+  });
+});
+
+describe('percentile and formatRound', () => {
+  test('the percentile is taken by rank and an empty list is 0', () => {
+    expect(percentile([], 0.95)).toBe(0);
+    expect(percentile([5, 1, 3, 2, 4], 0.5)).toBe(3);
+    expect(
+      percentile(
+        Array.from({ length: 100 }, (_, i) => i + 1),
+        0.95,
+      ),
+    ).toBe(96);
+    expect(percentile([7], 0.99)).toBe(7);
+  });
+
+  test('a round is one turn of every seat: the decisions and the time are per turn and per round', () => {
+    const text = formatRound({ decisions: 600, ms: 3000, turns: 60, seats: 3 });
+    expect(text).toBe(
+      'per turn: 10.0 decisions, 50.0 ms; per round of 3 turns: 30.0 decisions, 150.0 ms',
+    );
+    expect(formatRound({ decisions: 0, ms: 0, turns: 0, seats: 3 })).toBe(
+      'per turn: no turns played',
+    );
+  });
+
+  test('the times line shows the 95th percentile when it is given', () => {
+    const line = formatTimes(
+      [{ label: 'casual', decisions: 10, totalMs: 20, slowestMs: 9, p95Ms: 5.5 }],
+      5000,
+    );
+    expect(line).toContain('95th percentile 5.5 ms');
   });
 });

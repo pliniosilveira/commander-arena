@@ -52,8 +52,8 @@ test("issue 59: the opponent's face-down card sits inside its place in the exile
     await strip.evaluate((el) => getComputedStyle(el.firstElementChild ?? el).listStyleType),
   ).toBe('none');
 
-  await page.getByRole('button', { name: /^Open exile/ }).click();
-  const viewer = page.getByRole('dialog', { name: /^Exile/ });
+  await page.getByRole('button', { name: /^Open Opponent exile/ }).click();
+  const viewer = page.getByRole('dialog', { name: /exile$/ });
   const body = viewer.locator('.board-modal-body');
   const cardButton = viewer.locator('.board-zone-card', { has: page.locator('[data-face-down]') });
   await expect(cardButton).toHaveCount(1);

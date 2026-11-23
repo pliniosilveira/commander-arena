@@ -41,7 +41,9 @@ import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
+import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 
 const COLOR_WORD = pattern(/(white|blue|black|red|green)(?![\p{L}\p{N}])/iu);
@@ -389,17 +391,43 @@ const COUNTERS_REMOVED_THIS_WAY: Parser<IrAmount> = (ctx, pos) => {
   };
 };
 
+/**
+ * "the difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the positive gap between two numbers read from objects (`STAT_OF`), the engine's
+ * `difference`. Only two stats of objects, joined by " and ".
+ */
+const DIFFERENCE = (rule: string): Parser<IrAmount> => {
+  const stat = STAT_OF(rule);
+  return (ctx, pos) => {
+    const r = spanned(sequence(literal('the difference between '), stat, literal(' and '), stat))(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const [, first, , second] = r.value.value;
+    return {
+      ok: true,
+      value: { kind: 'difference', of: [first, second], span: r.value.span },
+      pos: r.pos,
+    };
+  };
+};
+
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
+    DIFFERENCE(rule),
     HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
     VOTES_AMOUNT,
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
     CARD_TYPES_AMONG_THOSE_VALUE,
+    // CR 105.2 (Vivid): "the number of colors among permanents you control", before the count of objects, which reads no "colors among".
+    COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
     NUMBER_OF_COUNTERS(rule),
+    // Scions & Spellcraft deck, group A: "the number of your opponents who were dealt combat damage by ~ this turn", before the count of objects.
+    NUMBER_OF_PLAYERS_WHO,
     COUNTERS_REMOVED_THIS_WAY,
     COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
@@ -594,9 +622,13 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of nontoken creatures you had enter the battlefield under your control this turn',
     'equal to the greatest power among creatures you control',
     'equal to the total power of creatures you control',
+    // CR 105.2 (Vivid): the colors the permanents you control have between them, each once.
+    'equal to the number of colors among permanents you control',
     'equal to the greatest mana value among artifacts you control',
     "equal to that creature's toughness",
     'equal to its toughness',
+    // CR 608.2c: the positive gap between two numbers.
+    "equal to the difference between that creature's power and its toughness",
     "equal to the sacrificed creature's power",
     'equal to your devotion to black',
     'equal to your devotion to black and red',
@@ -626,6 +658,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of opponents',
     'equal to the number of opponents you control',
     'equal to its power',
+    "equal to the difference between that creature's power",
+    "equal to the difference between that creature's power and its",
+    "equal to the difference between that creature's power and its toughness and",
     "equal to that creature's power",
     'equal to its mana value',
     'equal to the total life lost this way',
@@ -724,18 +759,24 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the result',
     // CR 205.2a: the card types of the cards of a graveyard.
     'where X is the number of card types among cards in your graveyard',
+    // CR 105.2 (Vivid): the colors the permanents you control have between them, each once.
+    'where X is the number of colors among permanents you control',
     // Death Toll deck, group D (CR 202.3, 608.2h): what a destroy before it in the text destroyed.
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
     'where X is the greatest power among creatures they control',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
+    // CR 120.2a: the opponents a source dealt combat damage to this turn.
+    'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon this turn',
   ],
   rejects: [
     'where X is the total mana value of creatures destroyed this way',
     'where X is the total mana value of permanents destroyed',
     'where X is the greatest mana value of permanents destroyed this way',
     'where X is the results',
+    'where X is the number of colors among permanents',
+    'where X is the number of colors among permanents your opponents control',
     'where X is the result of',
     'where X is',
     'where X is 3',
@@ -757,6 +798,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the mana spent to cast it',
     'where X is your life',
     'where X is the amount of life you gain',
+    'where X is the number of your opponents who was dealt combat damage by ~ this turn',
+    'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon',
+    'where X is the number of creatures who lost life this turn',
     'where X is the amount of life you gained last turn',
   ],
   parse: (ctx, pos) => {

@@ -563,7 +563,10 @@ function linkExile(abilities: readonly Ability[]): {
   // The reader is a static ability that takes from the exile (Imprint) or, since stage P50 (D-207), an ability that chooses a card among those the permanent
   // exiled ("Put a card exiled with ~ into its owner's graveyard").
   const readers = abilities.flatMap((a, i) =>
-    (a.kind === 'static' && a.static.kind === 'takeFromLinkedExile') ||
+    (a.kind === 'static' &&
+      // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~" reads the cards too.
+      (a.static.kind === 'takeFromLinkedExile' ||
+        a.static.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||
         // Lorehold group 2 (CR 607.2a): "Choose target card exiled with ~": a target slot of the cards the permanent exiled.

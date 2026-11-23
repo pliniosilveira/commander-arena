@@ -646,6 +646,7 @@ describe('reselecting what a creature attacks', () => {
   };
   const game = {
     viewer: 0,
+    seats: [{ id: 0 }, { id: 1 }],
     combat: {
       attackers: [
         { object: bears.id, target: { kind: 'player', seat: 0 }, blocked: false, blockedBy: [] },

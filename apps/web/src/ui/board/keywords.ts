@@ -42,6 +42,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   annihilator: ['Ann', 'Annihilator'],
   // Gisa deck group 1 (D-472): Afflict N (CR 702.130a).
   afflict: ['Afl', 'Afflict'],
+  // Issue 102: Dredge N (CR 702.52a).
+  dredge: ['Dre', 'Dredge'],
   mobilize: ['Mob', 'Mobilize'],
   fabricate: ['Fab', 'Fabricate'],
   backup: ['Bkp', 'Backup'],
@@ -62,6 +64,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   mentor: ['Mnt', 'Mentor'],
   evolve: ['Evo', 'Evolve'],
   bushido: ['Bus', 'Bushido'],
+  // CR 702.25a (Flanking).
+  flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
   affinity: ['Aff', 'Affinity'],
   convoke: ['Cvk', 'Convoke'],
@@ -88,6 +92,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
     'Gravestorm (When you cast this spell, copy it for each permanent put into a graveyard from the battlefield this turn.)',
   ],
   replicate: ['Rep', 'Replicate'],
+  // Rebound (CR 702.88a): on an instant or a sorcery.
+  rebound: ['Rbd', 'Rebound'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
   // Gift a card (D-135).
@@ -127,6 +133,7 @@ const PARAMETERIZED: Readonly<
   annihilator: (text) => numbered(text, 'Annihilator', 'Ann'),
   // "Afflict 3": one chip per instance (CR 702.130b: each triggers separately).
   afflict: (text) => numbered(text, 'Afflict', 'Afl'),
+  dredge: (text) => numbered(text, 'Dredge', 'Dre'),
   // "Mobilize 1": one chip per instance (CR 702.181a).
   mobilize: (text) => numbered(text, 'Mobilize', 'Mob'),
   // "Fabricate 2": one chip per instance (CR 702.123b).
@@ -250,6 +257,13 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   cantBeCountered: ['NoCtr', "Can't be countered"],
   // Prismari group 2: "This creature can block only creatures with flying" (CR 509.1b).
   canBlockOnlyFlying: ['BlkFly', 'Can block only creatures with flying'],
+  // Abzan Armor group A (CR 609.4, 702.3b, 510.1a).
+  canAttackAsThoughNoDefender: ['AtkDef', "Can attack as though it didn't have defender"],
+  canAttackAsThoughNoDefenderVsLastTurnAttackers: [
+    'AtkDef',
+    "Can attack players who attacked you during their last turn as though it didn't have defender",
+  ],
+  assignsDamageByToughness: ['DmgTgh', 'Assigns combat damage equal to its toughness'],
   // Galadriel group 3: "Its activated abilities can't be activated this turn" (CR 602.5).
   cantActivateAbilities: ['NoAct', "Its activated abilities can't be activated"],
 };

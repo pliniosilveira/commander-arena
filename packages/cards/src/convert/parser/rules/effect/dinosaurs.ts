@@ -345,6 +345,42 @@ export const EFFECT_REVEAL_UNTIL = defineRule<Clauses>({
 });
 
 /**
+ * `effect.each-opponent-reveals-until`: "each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (issue 102,
+ * Consuming Aberration; CR 701.20, 101.4, 404.1): every opponent reveals from their own library until a card of the kind shows up, and all the cards revealed, the one found included, go
+ * into their graveyard. The engine's `revealUntil` of each opponent. Not read: "target opponent", "you", "the rest", another place, a count of cards, "until you reveal".
+ */
+export const EFFECT_EACH_OPPONENT_REVEALS_UNTIL = defineRule<Clauses>({
+  id: 'effect.each-opponent-reveals-until',
+  family: 'effect',
+  leading: ['each'],
+  cites: ['CR 701.20 (Reveal)', 'CR 101.4 (Handling Simultaneous Choices)', 'CR 404.1 (Graveyard)'],
+  examples: [
+    'each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard',
+    'each opponent reveals cards from the top of their library until they reveal a creature card, then puts those cards into their graveyard',
+  ],
+  rejects: [
+    'each opponent reveals cards from the top of their library until they reveal a land card',
+    'each opponent reveals cards from the top of their library until they reveal a land card, then puts the rest into their graveyard',
+    'each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their hand',
+    'target opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard',
+    'each opponent reveals cards from the top of their library until you reveal a land card, then puts those cards into their graveyard',
+    'each player reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard',
+  ],
+  parse: single(
+    'effect.each-opponent-reveals-until',
+    sequence(
+      literal('each opponent reveals cards from the top of their library until they reveal '),
+      family<IrNoun>('noun', { only: ['noun.library-card'] }),
+      literal(', then puts those cards into their graveyard'),
+    ),
+    ([, card]) => ({
+      verb: 'revealUntilEachOpponent',
+      args: { card: { ...card, upTo: false, plural: false } },
+    }),
+  ),
+});
+
+/**
  * `effect.reveal-until-may-put`: "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your
  * hand. Put the rest on the bottom of your library in a random order" (D-659, CR 701.20, 401.4, 303.4f, 608.2c: Songbirds' Blessing). Four sentences that `splitSentences` keeps
  * together: the card found is offered for the battlefield, goes into the hand when the player does not put it there, and the rest go to the bottom in a random order. Not read:
@@ -660,6 +696,7 @@ export const DINOSAUR_EFFECT_RULES = [
   EFFECT_FIGHT_EACH,
   EFFECT_EXCESS_DAMAGE,
   EFFECT_REVEAL_UNTIL,
+  EFFECT_EACH_OPPONENT_REVEALS_UNTIL,
   EFFECT_REVEAL_UNTIL_MAY_PUT,
   EFFECT_CAST_FREE,
   EFFECT_FOR_EACH_CREATE,

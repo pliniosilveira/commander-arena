@@ -182,6 +182,18 @@ const DECAYED_ABILITY: Ability = {
 };
 
 /**
+ * CR 702.116a (Myriad): "Whenever this creature attacks, ..." (the effect is `rules/myriad.ts`); each instance triggers separately (CR 702.116b). With one opponent there is no
+ * opponent other than the defending player, so the ability could do nothing and could not be told from not having triggered; it is not put on the stack then (the condition is read
+ * as the creature attacks), which keeps a two-player game as it was: no extra trigger to order or respond to.
+ */
+const MYRIAD_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  triggerCondition: { kind: 'opponentsAtLeast', count: 2 },
+  effect: { kind: 'myriad' },
+};
+
+/**
  * CR 702.86a: "Annihilator N" means "Whenever this creature attacks, defending player sacrifices N
  * permanents." The defending player (CR 508.5) chooses which, among the permanents they control.
  */
@@ -435,6 +447,26 @@ function bushidoAbilities(count: number): Ability[] {
     { kind: 'triggered', trigger: { kind: 'becomesBlocked', what: { kind: 'this' } }, effect },
   ];
 }
+
+/**
+ * CR 702.25a, 702.25b (Flanking): "Whenever this creature becomes blocked by a creature without flanking, the blocking creature gets -1/-1 until end of turn." It triggers once for
+ * each creature that blocks it (CR 509.3d), and each instance of the keyword triggers separately (the expansion is one ability for each instance of the keyword).
+ */
+export const FLANKING_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: {
+    kind: 'becomesBlockedBy',
+    what: { kind: 'this' },
+    by: { types: ['creature'], notKeywords: ['flanking'] },
+  },
+  effect: {
+    kind: 'modifyPt',
+    objects: { kind: 'triggerSources' },
+    power: -1,
+    toughness: -1,
+    duration: 'untilEndOfTurn',
+  },
+};
 
 /**
  * CR 702.101a: "Extort" means "Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1
@@ -794,6 +826,9 @@ export function expansionOf(ability: Ability): Ability[] {
       return [annihilatorAbility(ability.keyword.count)];
     case 'afflict':
       return [afflictAbility(ability.keyword.count)];
+    // CR 702.52a (issue 102): a replacement of the draw read from the graveyard (`rules/dredge.ts`), not an ability the permanent has.
+    case 'dredge':
+      return [];
     case 'mobilize':
       return [mobilizeAbility(ability.keyword.count)];
     case 'fabricate':
@@ -815,6 +850,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [EVOLVE_ABILITY];
     case 'bushido':
       return bushidoAbilities(ability.keyword.count);
+    case 'flanking':
+      return [FLANKING_ABILITY];
     case 'extort':
       return [EXTORT_ABILITY];
     case 'cascade':
@@ -853,6 +890,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [DETHRONE_ABILITY];
     case 'decayed':
       return [DECAYED_ABILITY];
+    case 'myriad':
+      return [MYRIAD_ABILITY];
     default:
       return [];
   }

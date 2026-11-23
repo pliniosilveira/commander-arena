@@ -52,6 +52,8 @@ export function describeAction(state: GameState, action: Action): string {
       return `${action.kind} ${named(action.object)}${action.face ? ` (face ${action.face})` : ''}`;
     case 'castSpell':
       return `castSpell ${named(action.object)}${action.alternative ? ` (${action.alternative})` : ''}${action.face ? ` (face ${action.face})` : ''}`;
+    case 'bringCompanion':
+      return 'bringCompanion';
     case 'suspend':
     case 'foretell':
     case 'turnFaceUp':

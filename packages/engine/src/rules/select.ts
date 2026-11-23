@@ -56,12 +56,16 @@ export interface SelectContext {
   readonly moved?: readonly ObjectId[];
   /** What the `triggerSubject` reference means: the object whose event caused this trigger. */
   readonly triggerSubject?: ObjectId;
+  /** What `eachObject` means: the object an `addCounters` with `perObject` is working out its count for. */
+  readonly eachObject?: ObjectId;
   /** What `sacrificedCost` means (D-133): the permanents sacrificed to pay the cost of the ability that is resolving. */
   readonly costSacrificed?: readonly ObjectId[];
   /** What `tappedAsCostPower` means (CR 702.184a): the power of the creatures tapped to pay the cost of the ability that is resolving. */
   readonly costTappedPower?: number;
   /** What `sacrificed` means (D-177): the permanents the earlier `sacrifice` instructions of this resolution sacrificed. */
   readonly sacrificed?: readonly ObjectId[];
+  /** The number a `chooseNumber` effect of this resolution had its controller choose (`powerAtLeastChosenNumber`, see `FilterContext.chosenNumber`). */
+  readonly chosenNumber?: number;
   /** What `chosenPlayer` ("that player" after "choose a player ...") means in this resolution (The Black Gate). */
   readonly chosenPlayer?: SeatId;
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
@@ -476,6 +480,9 @@ function manaValueLimitOf(
   // CR 119.3, 202.3: "mana value X or less, where X is the amount of life you gained this turn" (Moseo), read from the turn log of the ability's controller.
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  // CR 119.3, 202.3 (Betor): "mana value less than or equal to the amount of life you lost this turn", the ability's controller's own.
+  if (amount.kind === 'controllerLifeLostThisTurn')
+    return getSeat(state, ctx.controller).lifeLostThisTurn;
   // CR 107.3m: the X of the spell the permanent that has the ability came from, which the permanent remembers (`castX`), or its last-known information.
   if (amount.kind === 'enteredX') {
     const source =
@@ -620,6 +627,15 @@ export function legalTargets(
   spec: TargetSpec,
   ctx: SelectContext,
 ): ChosenTarget[] {
+  const targets = legalTargetsOf(state, spec, ctx);
+  if (spec.totalPowerAtMost === undefined) return targets;
+  // CR 208.1 (Reunion of the House): the power each object has now, for the total of the targets chosen.
+  return targets.map((t) =>
+    t.kind === 'object' ? { ...t, power: powerOfObject(state, t.id) ?? 0 } : t,
+  );
+}
+
+function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext): ChosenTarget[] {
   const out: ChosenTarget[] = [];
   const specId = spec.id;
   const playersFor = (filter: 'any' | 'opponent' | 'opponentWhoseTurn'): ChosenTarget[] =>
@@ -734,7 +750,13 @@ export function legalTargets(
       }
       out.push(
         spec.onePerOpponent === true || spec.differentControllers === true
-          ? { kind: 'object', id, specId, group: controllerOf(state, obj) }
+          ? {
+              kind: 'object',
+              id,
+              specId,
+              // A card in a graveyard is its owner's (CR 404.1, 108.3): one target for each owner.
+              group: obj.zone === 'graveyard' ? obj.owner : controllerOf(state, obj),
+            }
           : { kind: 'object', id, specId },
       );
     }
@@ -777,7 +799,18 @@ export function stillLegalTargets(
   for (const spec of specs) {
     legalBySpec.set(spec.id, legalTargets(state, spec, { ...ctx, targets: chosen }));
   }
-  return chosen.filter((t) => (legalBySpec.get(t.specId) ?? []).some((l) => sameTarget(l, t)));
+  const legal = chosen.filter((t) =>
+    (legalBySpec.get(t.specId) ?? []).some((l) => sameTarget(l, t)),
+  );
+  // CR 608.2b, 208.1 (Reunion of the House): the total power of the targets of a slot is read again now; if it is more than the limit the whole selection is illegal.
+  return legal.filter((t) => {
+    const limit = specs.find((s) => s.id === t.specId)?.totalPowerAtMost;
+    if (limit === undefined) return true;
+    const total = legal
+      .filter((o) => o.specId === t.specId)
+      .reduce((sum, o) => sum + (o.kind === 'object' ? (powerOfObject(state, o.id) ?? 0) : 0), 0);
+    return total <= limit;
+  });
 }
 
 function targetObjects(refId: string, targets: readonly ChosenTarget[]): ObjectId[] {
@@ -814,6 +847,8 @@ export function resolveObjects(
     case 'sacrificed':
       // D-177, CR 608.2h: the permanents sacrificed earlier in this resolution, gone now: read through their old ids.
       return [...(ctx.sacrificed ?? [])];
+    case 'eachObject':
+      return ctx.eachObject === undefined ? [] : [ctx.eachObject];
     case 'sacrificedCost':
       // D-133, CR 602.2c: the permanents sacrificed as the cost of the ability that is resolving (gone now: last-known
       // information is read through their old ids).
@@ -862,6 +897,9 @@ export function resolveObjects(
     case 'triggerSources':
       // CR 400.7, 603.2c: the creatures that dealt the damage, only while each is still the permanent that did.
       return (ctx.triggerCards ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+    case 'triggerAttackers':
+      // CR 508.1, 400.7: the creatures the attack event declared, only while each is still the permanent that was declared.
+      return (ctx.triggerAttackers ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
       // CR 712.21c (D-277): for a melded permanent that died, both cards.
@@ -978,6 +1016,23 @@ export function resolvePlayers(
         seatsInOrder(state, ctx.controller).filter((seat) => !left.includes(seat)),
       );
     }
+    case 'eachPlayerControlling': {
+      // CR 102.1, 109.4, 101.4 (Shatter the Sky): the players who control a battlefield permanent matching the filter, each read as "you" in turn.
+      const filter = {
+        ...selector.filter,
+        zone: 'battlefield' as const,
+        controller: 'you' as const,
+      };
+      const battlefield = objectsInZone(state, 'battlefield');
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter((seat) =>
+          battlefield.some((id) =>
+            matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+          ),
+        ),
+      );
+    }
     case 'all':
       // D-131: "you and target opponent": the players the members name, each once, in APNAP order (CR 101.4).
       return apnapOrder(
@@ -1074,6 +1129,40 @@ export function resolvePlayers(
             (state.combatDamagedByNames?.[seat] ?? []).includes(selector.name),
         ),
       );
+    case 'lostLifeThisTurn':
+      // CR 119.3, 101.4: the players of the group who have lost life this turn, still in the game, in the order of CR 101.4.
+      return apnapOrder(
+        state,
+        resolvePlayers(state, selector.of, ctx, targets).filter(
+          (seat) => !getSeat(state, seat).hasLost && getSeat(state, seat).lifeLostThisTurn > 0,
+        ),
+      );
+    case 'combatDamagedThisTurn': {
+      // CR 120.2a, 510.2: the players of the group dealt combat damage this turn by the permanent of the ability or by a source of the kind, as it was when it dealt it.
+      const by = selector.by;
+      const damaged = new Set(
+        state.turnLog.combatDamaged
+          .filter(
+            (d) =>
+              (selector.byThis === true && ctx.source !== null && d.source === ctx.source) ||
+              (by !== undefined &&
+                (by.types === undefined || by.types.every((t) => d.types.includes(t))) &&
+                (by.subtypes === undefined || by.subtypes.every((t) => d.subtypes.includes(t))) &&
+                (by.controller === undefined ||
+                  by.controller === 'any' ||
+                  (by.controller === 'you'
+                    ? d.controller === ctx.controller
+                    : d.controller !== ctx.controller))),
+          )
+          .map((d) => d.player),
+      );
+      return apnapOrder(
+        state,
+        resolvePlayers(state, selector.of, ctx, targets).filter(
+          (seat) => !getSeat(state, seat).hasLost && damaged.has(seat),
+        ),
+      );
+    }
     case 'giftRecipient': {
       // CR 702.174a (D-135): "the chosen player": the opponent the gift was promised to, read from the spell, from the
       // permanent that came from it, or from last-known information once either has left (CR 113.7a).
@@ -1102,6 +1191,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'eachOpponent' ||
     sel.kind === 'eachOtherOpponent' ||
     sel.kind === 'eachPlayerExcept' ||
+    sel.kind === 'eachPlayerControlling' ||
     sel.kind === 'all' ||
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||
@@ -1113,6 +1203,8 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'couldntSacrificeThisWay' ||
     sel.kind === 'attackedPlayers' ||
     sel.kind === 'combatDamagedByNamed' ||
+    sel.kind === 'lostLifeThisTurn' ||
+    sel.kind === 'combatDamagedThisTurn' ||
     sel.kind === 'giftRecipient'
   );
 }

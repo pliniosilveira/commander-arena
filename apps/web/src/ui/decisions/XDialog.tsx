@@ -7,6 +7,7 @@ import type { UiState } from './ui-state';
 import {
   clampX,
   initialX,
+  isChooseNumber,
   isDrawUpTo,
   isMultikicker,
   isPayAnyAmount,
@@ -44,7 +45,8 @@ export function XDialog({
   const kicks = isMultikicker(d);
   const replicates = isReplicate(d);
   // D-151 (CR 118.1): "pay any amount of {R}": a stepper from 0, no Cancel.
-  const pays = isPayAnyAmount(d) || isDrawUpTo(d);
+  const numbers = isChooseNumber(d);
+  const pays = isPayAnyAmount(d) || isDrawUpTo(d) || numbers;
   const draws = isDrawUpTo(d);
   // The text in the field: empty while the player is retyping it, else the number.
   const [text, setText] = useState(String(initialX(d)));
@@ -72,9 +74,11 @@ export function XDialog({
             ? 'Replicate'
             : draws
               ? 'Draw cards'
-              : pays
-                ? 'Pay any amount'
-                : 'Choose X'
+              : numbers
+                ? 'Choose a number'
+                : pays
+                  ? 'Pay any amount'
+                  : 'Choose X'
       }
       className="dec-small"
     >
@@ -94,9 +98,11 @@ export function XDialog({
                 ? 'Fewer copies'
                 : draws
                   ? 'Draw fewer'
-                  : pays
-                    ? 'Pay less'
-                    : 'Less X'
+                  : numbers
+                    ? 'Lower number'
+                    : pays
+                      ? 'Pay less'
+                      : 'Less X'
           }
           disabled={ui.x <= d.min}
           onClick={() => set(ui.x - 1)}
@@ -116,9 +122,11 @@ export function XDialog({
                 ? 'Times replicated'
                 : draws
                   ? 'Cards drawn'
-                  : pays
-                    ? 'Times paid'
-                    : 'X'
+                  : numbers
+                    ? 'Number chosen'
+                    : pays
+                      ? 'Times paid'
+                      : 'X'
           }
           aria-describedby="dec-x-cost"
           value={text}
@@ -147,9 +155,11 @@ export function XDialog({
                 ? 'More copies'
                 : draws
                   ? 'Draw more'
-                  : pays
-                    ? 'Pay more'
-                    : 'More X'
+                  : numbers
+                    ? 'Higher number'
+                    : pays
+                      ? 'Pay more'
+                      : 'More X'
           }
           disabled={ui.x >= d.max}
           onClick={() => set(ui.x + 1)}
@@ -166,25 +176,27 @@ export function XDialog({
         </button>
       </div>
       <p className="dec-sub" id="dec-x-cost" data-x-cost>
-        {draws
-          ? ui.x === 0
-            ? 'Not drawing.'
-            : `Drawing ${ui.x} ${ui.x === 1 ? 'card' : 'cards'}.`
-          : pays
+        {numbers
+          ? `The number ${ui.x}.`
+          : draws
             ? ui.x === 0
-              ? 'Not paying.'
-              : `Paying ${payAmountCostAt(d, ui.x)}.`
-            : replicates
+              ? 'Not drawing.'
+              : `Drawing ${ui.x} ${ui.x === 1 ? 'card' : 'cards'}.`
+            : pays
               ? ui.x === 0
-                ? 'Not replicated.'
-                : `Replicated ${ui.x === 1 ? 'once' : `${ui.x} times`}: ${kickCostAt(d, ui.x)} added to the cost.`
-              : kicks
+                ? 'Not paying.'
+                : `Paying ${payAmountCostAt(d, ui.x)}.`
+              : replicates
                 ? ui.x === 0
-                  ? 'Not kicked.'
-                  : `Kicked ${ui.x === 1 ? 'once' : `${ui.x} times`}: ${kickCostAt(d, ui.x)} added to the cost.`
-                : cost === ''
-                  ? `X = ${ui.x}`
-                  : `X = ${ui.x} pays ${cost} of the cost.`}
+                  ? 'Not replicated.'
+                  : `Replicated ${ui.x === 1 ? 'once' : `${ui.x} times`}: ${kickCostAt(d, ui.x)} added to the cost.`
+                : kicks
+                  ? ui.x === 0
+                    ? 'Not kicked.'
+                    : `Kicked ${ui.x === 1 ? 'once' : `${ui.x} times`}: ${kickCostAt(d, ui.x)} added to the cost.`
+                  : cost === ''
+                    ? `X = ${ui.x}`
+                    : `X = ${ui.x} pays ${cost} of the cost.`}
       </p>
       <BarButtons
         buttons={

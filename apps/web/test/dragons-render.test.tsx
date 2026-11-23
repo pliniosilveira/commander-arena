@@ -174,7 +174,7 @@ describe('cast from exile and from the top of the library', () => {
       store,
       <>
         <ExilePlayStrip view={view} />
-        <PlayerStrip view={view} seat={seat} onOpenZone={none} />
+        <PlayerStrip view={view} seat={seat} onOpenZone={none} onOpenCommander={none} />
       </>,
     );
     expect(html).toContain('aria-label="Cast from the top of your library: ' + top.name + '"');

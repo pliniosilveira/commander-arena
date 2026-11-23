@@ -85,6 +85,8 @@ describe('amounts that read an object', () => {
       // CR 402.1: the cards in that player's hand, read for each player a dealDamage hurts.
       'cardsInHandOfAffected',
       'lifeGainedThisTurn',
+      // CR 119.3 (Betor): the controller's own life lost this turn.
+      'controllerLifeLostThisTurn',
       'lifeGainedOrLostThisTurn',
       'enteredThisTurn',
       'diedThisTurn',
@@ -99,6 +101,7 @@ describe('amounts that read an object', () => {
       'commanderManaValue',
       'commanderCasts',
       'lifeTotalOf',
+      'playerCount',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
       // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
@@ -118,9 +121,13 @@ describe('amounts that read an object', () => {
       'minus',
       'sum',
       'extreme',
+      // CR 608.2c (Jaws of Defeat): the positive gap between two amounts.
+      'difference',
       'opponentCount',
       'movedCount',
       'opponentsWithMore',
+      // Slithermuse: "the difference" between the chosen player's hand and yours.
+      'chosenPlayerLead',
       'thisWay',
       // D-133.
       'triggerDamage',
@@ -144,6 +151,8 @@ describe('amounts that read an object', () => {
       'spellsCastThisTurn',
       // D-646 (CR 202.3, 601.2i): the greatest mana value among the spells cast this turn.
       'greatestManaValueCast',
+      // Issue 102: the cards put into your graveyard from your hand or library this turn.
+      'cardsToGraveyardThisTurn',
       'sacrificedAsCost',
       // D-575: the cards selected for a spell's optional hand-exile cost.
       'exiledAsCost',

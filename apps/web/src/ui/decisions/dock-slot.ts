@@ -1,9 +1,8 @@
 /**
- * Where the action dock is drawn (issue 47). The dock is the prompt, the buttons and the panels of
- * the pending decision; it lives in the column of the stack, at its foot just above Settings
- * (D-146), so the player has the button where the hand expects it whatever the stack holds, and the
- * stack above it grows downward. The decision layer builds the dock (it owns the decision), the
- * game screen owns the column, so the layer portals the dock into this slot element.
+ * Where the action dock is drawn. The dock is the panels of the pending decision and then the
+ * prompt and the buttons; it lives in the turn panel at the right edge, between the current phase
+ * and the stack. The decision layer builds the dock (it owns the decision), the game screen owns the
+ * slot element, so the layer portals the dock into it.
  *
  * `undefined` (no provider: a test that renders the layer alone) draws the dock inside the layer;
  * `null` is a provider whose slot has not mounted yet, and nothing is drawn until it has.

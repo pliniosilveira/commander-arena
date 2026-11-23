@@ -54,8 +54,10 @@ function revealedEvent(
 }
 
 /** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-396), "You may put a card that matches into your hand". */
-function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown'): string {
+function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown' | 'top'): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
+  // `min`: a card that must be taken (Cavalier of Thorns: "Put a land card from among them onto the battlefield"), not a "you may".
+  const must = (ins.min ?? 0) > 0;
   const them = ins.max === 1 ? 'it' : 'them';
   const where =
     to === 'hand'
@@ -63,6 +65,7 @@ function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown
       : ins.tapped === true
         ? 'onto the battlefield tapped'
         : 'onto the battlefield';
+  if (must) return `Put ${cards} from among them ${where}`;
   return ins.revealAll === true || ins.hidden === true
     ? `You may put ${cards} from among them ${where}`
     : `You may reveal ${cards} and put ${them} ${where}`;
@@ -162,9 +165,11 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
           ? 'Exile one of them face down'
           : ins.totalManaValue !== undefined
             ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
-            : ins.hidden === true && to === 'hand'
-              ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
-              : mayTakeWords(ins, to)
+            : ins.hidden === true && to === 'top'
+              ? 'Put one of them on top of your library'
+              : ins.hidden === true && to === 'hand'
+                ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
+                : mayTakeWords(ins, to)
       }; the rest ${
         ins.rest === 'graveyard'
           ? 'go into your graveyard'
@@ -204,18 +209,21 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   }
   const left = looked.filter((id) => !chosen.includes(id));
   return done(state, events, [
-    ...(to === 'hand'
-      ? moveInstructions(chosen, 'hand')
-      : to === 'battlefield'
-        ? // CR 303.4f (D-230): an Aura among the cards chooses what it enchants as it enters (`rules/aura-entry.ts`).
-          withAuraEntries(
-            state,
-            moveInstructions(chosen, 'battlefield', 'top', ins.tapped === true, 'you'),
-          )
-        : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
-          moveInstructions(chosen, 'exile').map((i) =>
-            i.kind === 'move' ? { ...i, linkTo: res.source, faceDown: true as const } : i,
-          )),
+    ...(to === 'top'
+      ? // CR 401.2: the card stays where it is, in the library; the rest leaves the top, so it is the top card (stage `rest`).
+        []
+      : to === 'hand'
+        ? moveInstructions(chosen, 'hand')
+        : to === 'battlefield'
+          ? // CR 303.4f (D-230): an Aura among the cards chooses what it enchants as it enters (`rules/aura-entry.ts`).
+            withAuraEntries(
+              state,
+              moveInstructions(chosen, 'battlefield', 'top', ins.tapped === true, 'you'),
+            )
+          : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
+            moveInstructions(chosen, 'exile').map((i) =>
+              i.kind === 'move' ? { ...i, linkTo: res.source, faceDown: true as const } : i,
+            )),
     { ...ins, stage: 'rest', chosen, left },
   ]);
 }

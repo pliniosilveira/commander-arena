@@ -2,10 +2,11 @@
  * Builds the `Interaction` for the pending decision, provides it to its children (the board) and
  * draws the action bar plus every decision overlay (SPEC 10 "Action bar", "Decisions").
  */
-import type { Action } from '@commander-arena/engine';
+import type { Action, DecisionId } from '@commander-arena/engine';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { untappableSources } from '../../store';
+import { questionZoneToOpen } from '../board/target-zone';
 import { attachDeps, startAndTarget } from '../dnd/attach-flow';
 import { type DndPlan, DragProvider, NO_DND } from '../dnd/DragProvider';
 import { dragSpec, resolveDrop } from '../dnd/model';
@@ -23,6 +24,7 @@ import { DockPanel, ModalOverlay } from './Overlays';
 import { useOpponentThinking } from './thinking';
 import { initialUi, type UiState, uiFor } from './ui-state';
 import { withManaUntap } from './untap-mana';
+import { barWhileClosed, ZoneDecisionProvider, ZoneGateProvider } from './zone-decision';
 
 /** Decisions whose overlay shows the engine's refusal itself; the toast would repeat it. */
 const INLINE_ERROR = new Set(['payMana', 'assignDamage']);
@@ -42,7 +44,6 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const passTurn = useApp((s) => s.yieldTurn !== null);
   const error = useApp((s) => s.error);
   const fullControl = useApp((s) => s.settings.fullControl);
-  const manualPay = useApp((s) => s.manualPay);
   const pinned = useApp((s) => s.preview.pinned);
   const undoDepth = useApp((s) => s.snapshot?.undoDepth ?? 0);
   const manaTaps = useApp((s) => s.manaTaps);
@@ -63,6 +64,11 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
     };
   }, [dockSlot]);
   const [stored, setStored] = useState<UiState>(() => initialUi(null));
+  // The Zone Picker of a question about one graveyard: open or closed, and "open it again" requests.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRequest, setPickerRequest] = useState(0);
+  // The decision whose trigger order dialog the player closed to look at the board.
+  const [orderClosedFor, setOrderClosedFor] = useState<DecisionId | null>(null);
 
   const pending = view?.pending ?? null;
   const ui = uiFor(stored, pending);
@@ -99,8 +105,30 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
     },
   };
 
-  const model =
+  const builtModel =
     view !== null && pending !== null ? buildModel(view, pending, ui, controller) : null;
+  // Confirm waits while the picker is closed: the choice is made with the cards in view.
+  const questionZone = view === null ? null : questionZoneToOpen(view);
+  const waitsForPicker = builtModel !== null && questionZone !== null && !pickerOpen;
+  // The trigger order is a dialog: closed it shows the board, and Confirm waits in the dock until
+  // the dialog is open again. Closing belongs to one decision.
+  const orderClosed = pending?.kind === 'orderTriggers' && orderClosedFor === pending.id;
+  const model =
+    builtModel !== null && waitsForPicker
+      ? {
+          ...builtModel,
+          bar: barWhileClosed(builtModel.bar, questionZone.name, () =>
+            setPickerRequest((n) => n + 1),
+          ),
+        }
+      : builtModel !== null && pending?.kind === 'orderTriggers'
+        ? {
+            ...builtModel,
+            bar: orderClosed
+              ? barWhileClosed(builtModel.bar, 'trigger order', () => setOrderClosedFor(null))
+              : { ...builtModel.bar, inOverlay: true },
+          }
+        : builtModel;
   const interactive = model !== null && !passing;
   // A land tapped for mana whose mana is unspent can be clicked to take the tap back (issue 19).
   const interaction = interactive
@@ -114,7 +142,8 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const dnd: DndPlan =
     interactive && view !== null && pending !== null
       ? {
-          spec: (id, source) => dragSpec(pending, ui, objectIndex(view), view.viewer, id, source),
+          spec: (id, source) =>
+            dragSpec(pending, ui, objectIndex(view), view.viewer, id, source, view.seats.length),
           drop: (id, source, target) => {
             const result = resolveDrop(
               pending,
@@ -124,6 +153,7 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
               id,
               source,
               target,
+              view.seats.length,
             );
             if (result.kind === 'click') model.interaction.onObject(id);
             else if (result.kind === 'act') act(result.action);
@@ -155,7 +185,17 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
 
   const overlayProps =
     interactive && view !== null && pending !== null
-      ? { view, pending, ui, model, update, act, error, intro }
+      ? {
+          view,
+          pending,
+          ui,
+          model,
+          update,
+          act,
+          error,
+          intro,
+          orderDialog: { closed: orderClosed, close: () => setOrderClosedFor(pending.id) },
+        }
       : null;
   const showToast = error !== null && !(pending !== null && INLINE_ERROR.has(pending.kind));
 
@@ -170,21 +210,36 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
           thinking={thinking}
           passTurn={passTurn}
           onCancelPassTurn={() => actions.cancelPassTurn()}
-          fullControl={fullControl}
-          manualPay={manualPay}
           onSeize={() => actions.seize()}
-          onFullControl={(on) => actions.setSettings({ fullControl: on })}
-          onManualPay={(on) => actions.setManualPay(on)}
-          undoDepth={undoDepth}
-          onUndo={() => void actions.undo()}
         />
       </div>
     );
 
+  // The Zone Picker (a graveyard or a library opened for a choice) shows the prompt, the count and
+  // the buttons of the bar itself, with the card that asks.
+  const zoneDecision =
+    interactive &&
+    builtModel !== null &&
+    !builtModel.bar.inOverlay &&
+    (pending?.kind === 'targets' || pending?.kind === 'chooseCards')
+      ? { bar: builtModel.bar, source: pending.source }
+      : null;
+
   return (
     <div className="decision-layer" ref={layer}>
       <InteractionProvider value={interaction}>
-        <DragProvider plan={dnd}>{children}</DragProvider>
+        <ZoneDecisionProvider value={zoneDecision}>
+          <ZoneGateProvider
+            value={{
+              open: pickerOpen,
+              setOpen: setPickerOpen,
+              request: pickerRequest,
+              ask: () => setPickerRequest((n) => n + 1),
+            }}
+          >
+            <DragProvider plan={dnd}>{children}</DragProvider>
+          </ZoneGateProvider>
+        </ZoneDecisionProvider>
       </InteractionProvider>
       {overlayProps === null ? null : <ModalOverlay {...overlayProps} />}
       {showToast ? (

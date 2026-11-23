@@ -369,6 +369,7 @@ describe('priority', () => {
   const view = (patch: Partial<GameView>): GameView =>
     ({
       viewer: 0,
+      seats: [{ id: 0 }, { id: 1 }],
       activeSeat: 0,
       step: 'precombatMain',
       stack: [],

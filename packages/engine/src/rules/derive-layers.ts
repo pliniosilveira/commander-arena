@@ -183,7 +183,7 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
 }
 
 /**
- * The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-638: ward, CR 702.86b: annihilator, CR 702.144a: demonstrate, CR 702.40b: storm, CR 702.85c: cascade)
+ * The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-638: ward, CR 702.86b: annihilator, CR 702.116b: myriad, CR 702.144a: demonstrate, CR 702.40b: storm, CR 702.85c: cascade)
  * and so are not added once only (a spell that is given demonstrate, storm or cascade has the trigger of the grant besides the ones it has printed).
  */
 const INSTANCE_KEYWORDS: readonly (string | null)[] = [
@@ -194,6 +194,7 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'fabricate',
   'ward',
   'annihilator',
+  'myriad',
   'demonstrate',
   'storm',
   'cascade',
@@ -294,6 +295,29 @@ export function applyAbilityLayer(
 // ---- Layer 7 (CR 613.4)
 
 /**
+ * The power and toughness the counters of an object add (CR 122.1a, 613.4c): a +X/+Y counter adds X to the power and Y to the toughness and a -X/-Y counter subtracts them
+ * ("+1/+1", "-1/-1", "-0/-1": the counter is named as the engine writes it, `[+-]X/[+-]Y`). A counter of any other name (a loyalty, a keyword or a "page" counter) adds nothing.
+ */
+export function counterPtBonus(counters: Readonly<Record<string, number>>): {
+  readonly power: number;
+  readonly toughness: number;
+} {
+  let power = 0;
+  let toughness = 0;
+  for (const name of Object.keys(counters)) {
+    const n = counters[name] ?? 0;
+    if (n === 0) continue;
+    const m = PT_COUNTER.exec(name);
+    if (m === null) continue;
+    power += n * Number(m[1]);
+    toughness += n * Number(m[2]);
+  }
+  return { power, toughness };
+}
+
+const PT_COUNTER = /^([+-]\d+)\/([+-]\d+)$/;
+
+/**
  * The base power and toughness of a creature (CR 208.4b, 613.4b): what its printed or characteristic-defining values are after the effects that set
  * them (layer 7b, the last by timestamp wins), before any counter or "+N/+N" effect (layer 7c). "A creature with power greater than its base power"
  * compares the power `applyPtLayers` gives with this.
@@ -313,8 +337,8 @@ export function basePtOf(
 
 /**
  * Layers 7b and 7c (CR 613.4b, 613.4c). Effects that set power and toughness apply first, in
- * timestamp order, and the last one wins; they apply even to an object with no power and toughness
- * yet (CR 208.3a). Then everything that modifies them is added: counters (CR 122.1b),
+ * timestamp order, and the last one wins; the caller does not call this for a noncreature, which
+ * has no power or toughness whatever is set on it (CR 208.3, 208.3a). Then everything that modifies them is added: counters (CR 122.1b),
  * `modifyPt` effects and the static "+N/+N" of permanents (`staticPower`, `staticToughness`).
  * Addition commutes, so the timestamp order inside layer 7c does not change the sum. An object
  * with no power or toughness after layer 7b has none (CR 208.3).
@@ -322,14 +346,14 @@ export function basePtOf(
 export function applyPtLayers(
   base: { readonly power: number | null; readonly toughness: number | null },
   effects: readonly ContinuousEffect[],
-  counterBonus: number,
+  counterBonus: { readonly power: number; readonly toughness: number },
   staticPower: number,
   staticToughness: number,
 ): { readonly power: number | null; readonly toughness: number | null } {
   const { power, toughness } = basePtOf(base, effects);
   if (power === null || toughness === null) return { power, toughness };
-  let addPower = counterBonus + staticPower;
-  let addToughness = counterBonus + staticToughness;
+  let addPower = counterBonus.power + staticPower;
+  let addToughness = counterBonus.toughness + staticToughness;
   for (const e of ofKind(effects, 'modifyPt')) {
     addPower += e.change.power;
     addToughness += e.change.toughness;

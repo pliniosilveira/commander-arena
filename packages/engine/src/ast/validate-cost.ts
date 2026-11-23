@@ -217,6 +217,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'tapPermanents',
   'sacrificeFromGraveyard',
   'sacrificePermanents',
+  'payLife',
 ];
 
 /**
@@ -269,6 +270,15 @@ export function checkAlternativeCosts(
     } else if (counters !== undefined) {
       issue(out, `${p}.counters`, `only impending names counters (${alt.kind} has none)`);
     }
+    // CR 118.9, 118.4 (Snuff Out): a payLife cost says how much life, a positive whole number; no other kind has the field.
+    const life = (alt as { readonly life?: unknown }).life;
+    if (alt.kind === 'payLife') {
+      if (!Number.isSafeInteger(life) || (life as number) < 1) {
+        issue(out, `${p}.life`, 'payLife pays a positive whole number of life');
+      }
+    } else if (life !== undefined) {
+      issue(out, `${p}.life`, `only payLife names life (${alt.kind} has none)`);
+    }
     // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
     const exile = (alt as { readonly exile?: unknown }).exile;
     if (alt.kind === 'escape') {
@@ -297,6 +307,22 @@ export function checkAlternativeCosts(
         `only tapPermanents, sacrificeFromGraveyard and sacrificePermanents name permanents (${alt.kind} has no filter or count)`,
       );
     }
+    // CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): an evoke cost may exile a card of the hand that matches a filter; no other kind has the field.
+    const exileFromHand = (alt as { readonly exileFromHand?: ObjectFilter }).exileFromHand;
+    if (alt.kind === 'evoke') {
+      if (exileFromHand !== undefined) {
+        checkFilter(exileFromHand, `${p}.exileFromHand`, out);
+        if (exileFromHand.zone !== 'hand') {
+          issue(out, `${p}.exileFromHand.zone`, 'an evoke exile cost selects cards from the hand');
+        }
+      }
+    } else if (exileFromHand !== undefined) {
+      issue(
+        out,
+        `${p}.exileFromHand`,
+        `only evoke exiles a card from the hand (${alt.kind} has none)`,
+      );
+    }
     if (alt.condition !== undefined) checkCondition(alt.condition, `${p}.condition`, out);
   });
 }
@@ -305,7 +331,7 @@ export function checkAlternativeCosts(
  * The cost of a named alternative cost: a mana cost, with no {X} (the engine pays no other kind, D-121). Miracle may have an {X}
  * (D-274, CR 107.3a: it is announced as the spell is cast): the one named alternative that is cast with a choice of its own.
  */
-function checkNamedAlternativeCost(
+export function checkNamedAlternativeCost(
   cost: readonly Cost[],
   path: string,
   out: Out,

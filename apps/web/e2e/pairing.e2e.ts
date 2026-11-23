@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { reachBlocks as reach } from './harness/blocks';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -35,7 +36,7 @@ test('pairing badges: a blocked attacker and each blocker share a number, an unb
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(game(SEED));
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
-  await page.getByRole('button', { name: 'Full Control' }).click();
+  await toggleSetting(page, 'Full Control');
   await reachBlocks(page, 4, 3);
 
   // While choosing, every attacker has a number; picking a block pairs the blocker with it.
@@ -47,14 +48,6 @@ test('pairing badges: a blocked attacker and each blocker share a number, an unb
     await page.locator(`[data-field-seat="1"] .board-tile[data-pairs="${n}"]`).click();
   }
   await shot(page, 'choosing-blocks');
-  // The declare blockers dock is in the column of the stack: it overlaps nothing on the board.
-  expect(
-    await page.evaluate(() => {
-      const dock = document.querySelector('.dec-dock')?.getBoundingClientRect();
-      const board = document.querySelector('.board')?.getBoundingClientRect();
-      return dock !== undefined && board !== undefined && dock.left >= board.right - 0.5;
-    }),
-  ).toBe(true);
   // The tall declare blockers dock leaves the commander tile reachable.
   expect(
     await page.evaluate(() => {

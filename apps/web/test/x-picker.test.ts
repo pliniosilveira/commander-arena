@@ -100,3 +100,16 @@ test('the X of a "[-X]" loyalty ability costs loyalty counters (CR 606.5, D-200)
     "Choose X for Ugin's ability. Each X costs 1 loyalty; you can afford up to X = 3.",
   );
 });
+
+test('"Choose a number between 0 and 10" (CR 608.2d, Expel the Interlopers) starts at the least and is worded as the card does', () => {
+  const d = {
+    purpose: 'chooseNumber' as const,
+    sourceName: 'Expel the Interlopers',
+    min: 0,
+    max: 10,
+    ...perX(0),
+  };
+  // Not X: no cost, the number starts at the minimum as a count does.
+  expect(initialX(d)).toBe(0);
+  expect(xPrompt(d)).toBe('Expel the Interlopers: choose a number between 0 and 10.');
+});

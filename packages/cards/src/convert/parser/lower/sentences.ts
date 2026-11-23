@@ -101,7 +101,10 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     const fromCommandZone =
       effect.kind === 'moveToZone' &&
       effect.objects.kind === 'choose' &&
-      effect.objects.filter.zone === 'command';
+      (effect.objects.filter.zone === 'command' ||
+        // "You may put a creature card from your hand onto the battlefield. That creature gains haste": the card put is what "that creature" names (`lower.put-from-zone`).
+        (effect.to === 'battlefield' &&
+          (effect.objects.filter.zone === 'hand' || effect.objects.filter.zone === 'graveyard')));
     if (!fromCommandZone) ctx.searched = null;
     // Lorehold group 1: "that card" of "you may play that card this turn" after "exile that card from your graveyard": the card the exile moved.
     if (effect.kind === 'exile') ctx.exiled = 'cards';
@@ -209,6 +212,15 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     effects.push(...lowered.value);
     ctx.lowered += 1;
     ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    // CR 608.2c: "Put a +1/+1 counter on each legendary creature you control. They gain ...": "they" is that group, only right after the counters.
+    const lastLowered = lowered.value[lowered.value.length - 1];
+    ctx.lastCounteredGroup =
+      lastLowered?.kind === 'addCounters' && lastLowered.objects.kind === 'each'
+        ? lastLowered.objects
+        : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
+          lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
+          ? ctx.lastCounteredGroup
+          : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastPlayer =
@@ -813,7 +825,42 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'becomeCopy',
   // Quandrix Unlimited deck, group G (CR 122.1, 608.2c): "you may remove a +1/+1 counter from ~. If you do, ...".
   'removeCounters',
+  // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, ...": done when some life was lost.
+  'loseLife',
 ]);
+
+/** "Those creatures get +4/+4 until end of turn." as the first instruction of an attack batch trigger: the engine's `modifyPt` of the `triggerAttackers`. */
+function lowerThoseAttackers(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> {
+  const rule = sentence.clauses[0]?.rule ?? sentence.rule;
+  if (sentence.condition !== undefined || sentence.clauses.some((c) => c.verb !== 'pumpThose')) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures([
+    'effect:modifyPt',
+    'duration:untilEndOfTurn',
+    'selector:triggerAttackers',
+  ]);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const effects: Effect[] = [];
+  for (const clause of sentence.clauses) {
+    const pt = arg(clause, 'pt');
+    if (pt?.kind !== 'ptChange' || clause.duration?.scope !== 'untilEndOfTurn') {
+      return refuse(sentence);
+    }
+    const power = lowerPtTerm(pt.power, pt.span, ctx, pt.rule);
+    if (!power.ok) return power;
+    const toughness = lowerPtTerm(pt.toughness, pt.span, ctx, pt.rule);
+    if (!toughness.ok) return toughness;
+    effects.push({
+      kind: 'modifyPt',
+      objects: { kind: 'triggerAttackers' },
+      power: power.value,
+      toughness: toughness.value,
+      duration: 'untilEndOfTurn',
+    });
+  }
+  return { ok: true, value: effects, rule };
+}
 
 /**
  * "Untap those creatures." (stage P64, D-217, CR 701.26a, 611.2c), "..., untap those creatures and they get an additional +2/+2 until end of turn." (Food and Fellowship deck, group B,
@@ -849,6 +896,10 @@ function lowerThoseGroup(
         ? e.objects
         : null,
   );
+  // Champions from Beyond (CR 508.1): with no instruction before it, "those creatures" of an attack batch trigger are the creatures the attack declared.
+  if (before === undefined && ctx.attackBatchThose) {
+    return lowerThoseAttackers(sentence, ctx);
+  }
   const [first] = group ?? [];
   if (
     before === undefined ||
@@ -915,7 +966,13 @@ function lowerOfferedSearch(
 ): LowerResult<Effects> | null {
   const [clause, ...more] = sentence.clauses;
   if (clause?.verb !== 'search' || !clause.optional) return null;
-  if (!sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'))) return null;
+  // An activated ability has no "you may" of its own (Demolition Field), so there the lone offer is the search's.
+  if (
+    !ctx.activatedBody &&
+    !sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'))
+  ) {
+    return null;
+  }
   if (
     more.length > 0 ||
     sentence.condition !== undefined ||
@@ -1060,7 +1117,11 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   const [clause, ...more] = sentence.clauses;
   // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
   // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
-  if (clause?.verb === 'castFree' && clause.optional && more.length === 0) {
+  if (
+    (clause?.verb === 'castFree' || clause?.verb === 'castChosenGraveyardSpell') &&
+    clause.optional &&
+    more.length === 0
+  ) {
     // Death Toll deck, group D (CR 608.2c): "Then if there are twenty or more cards in your graveyard, you may play the exiled card without paying its mana cost.": a test of the
     // game the sentence starts with, which the engine's `conditional` runs the free cast under (the cast is the controller's to decline, as with no test). Any other test (what an
     // offer before it did, a kicker) is still refused here, never guessed.
@@ -1099,6 +1160,19 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
       value: [{ kind: 'conditional', condition: guard, effect: oneEffect(cast.value) }],
       rule: cast.rule,
     };
+  }
+  // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped.": a card chosen from the graveyard, the choice of none or one is
+  // the offer itself (the engine's `moveToZone` of a `choose` with `optional`), so it is not wrapped in a `may`.
+  if (clause?.verb === 'putFromZone' && clause.optional && more.length === 0) {
+    if (
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined
+    ) {
+      return refuse(sentence);
+    }
+    const may = { kind: 'flag' as const, value: true, span: clause.span, rule: clause.rule };
+    return lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
   }
   if (
     clause === undefined ||
@@ -1551,7 +1625,7 @@ function lowerDoneReflexive(
   ) {
     return refuse(sentence);
   }
-  if (next.where !== undefined || next.instead === true || next.clauses.some((c) => c.optional)) {
+  if (next.instead === true || next.clauses.some((c) => c.optional)) {
     return refuse(next);
   }
   // A reflexive ability is the last effect of its sequence (`validateCard`).
@@ -1566,8 +1640,34 @@ function lowerDoneReflexive(
   if (only === undefined || rest.length > 0 || !(MAY_KINDS.has(only.kind) || madeToken)) {
     return refuse(sentence);
   }
+  // Tip the Scales (CR 107.3c, 603.12): "When you do, all creatures get -X/-X until end of turn, where X is the sacrificed creature's toughness.": the "where X is" of the
+  // reflexive sentence defines the X its clauses read, as the main loop does for a sentence of its own.
+  const whereAmount = next.where;
+  const defined =
+    whereAmount === undefined
+      ? null
+      : {
+          amount: whereAmount,
+          used: false,
+          lower: () => {
+            const outer = ctx.xIs;
+            ctx.xIs = null;
+            try {
+              return lowerAmount(whereAmount, ctx, 'body.sentence');
+            } finally {
+              ctx.xIs = outer;
+            }
+          },
+        };
+  const outerX = ctx.xIs;
+  if (defined !== null) ctx.xIs = defined;
   const effect = lowerReflexive(next, ctx);
+  ctx.xIs = outerX;
   if (!effect.ok) return effect;
+  if (defined !== null) {
+    if (!defined.used) return refuse(next);
+    ctx.xDefined = true;
+  }
   // "... attached to that token" in the reflexive ability is the token made before it: the ability carries what that resolution made (`moved`).
   if (
     madeToken &&
@@ -1779,6 +1879,7 @@ function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] 
       case 'minus':
         visit(amount.of);
         break;
+      case 'difference':
       case 'extreme':
       case 'sum':
         amount.of.forEach(visit);
@@ -2109,10 +2210,24 @@ export function lowerDelayedCast(
   const effect = oneEffect(inner.value);
   const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
   const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
-  if (!(onlyCopy || onlyOwn)) return refuse(sentence);
+  // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
+  const [choice, copy, ...rest] = inner.value;
+  const copiesChosen =
+    choice?.kind === 'chooseObjects' &&
+    copy?.kind === 'createToken' &&
+    copy.token.kind === 'copyOf' &&
+    copy.token.object.kind === 'chosen' &&
+    copy.token.object.id === choice.id &&
+    rest.length === 0;
+  if (!(onlyCopy || onlyOwn || copiesChosen)) return refuse(sentence);
   return {
     ok: true,
-    value: { kind: 'delayedCast', filter: filter.value, effect },
+    value: {
+      kind: 'delayedCast',
+      filter: filter.value,
+      effect,
+      ...(sentence.delayed?.repeat === true ? { repeat: true as const } : {}),
+    },
     rule: sentence.rule,
   };
 }
@@ -2153,7 +2268,13 @@ function lowerAtThatCombat(
 }
 
 /** How lowering one sentence went: it stopped, or the index of the last sentence it consumed. */
-type StepResult = { readonly stopped: LowerFailure } | { readonly last: number };
+type StepResult =
+  | { readonly stopped: LowerFailure }
+  | {
+      readonly last: number;
+      /** The "where X is ..." of the last sentence a step took was read by the step itself (a reflexive ability, CR 603.12). */
+      readonly whereRead?: true;
+    };
 
 /**
  * One sentence of a body (and the one after it, when an offer to pay takes both): pushes what it lowers onto `steps`.
@@ -2373,7 +2494,10 @@ function lowerStep(
   if (reflexed !== null) {
     if (!reflexed.ok) return stop(reflexed);
     steps.push({ effects: reflexed.value, replaceable: false });
-    return { last: i + 1 };
+    return {
+      last: i + 1,
+      ...(sentences[i + 1]?.where === undefined ? {} : { whereRead: true as const }),
+    };
   }
   // "creatures you control get +1/+1 until end of turn. Untap those creatures." (stage P64, D-217, CR 611.2c): the group the instruction before it named.
   if (first.verb === 'untapThose' || first.verb === 'pumpThose') {
@@ -2553,10 +2677,19 @@ function lowerPlayersMay(
   const refused = (result: LowerResult<Effects>) => ({ result, last: i });
   const blocked = missingFeatures(['effect:playersMay']);
   if (blocked.length > 0) return refused({ ...refuse(sentence), needs: blocked });
+  // CR 608.2c (Selvala, Heart of the Wilds): "Its controller may draw a card if its power is greater than each other creature's power": a test at the end of the sentence is read as the
+  // instruction comes up, before the player is asked, so the offer is the `then` of a `conditional`. A test that reads what was declined or done before it is not one of these.
+  const trailing =
+    !afterOffer &&
+    sentence.condition !== undefined &&
+    sentence.condition.test.kind !== 'declined' &&
+    sentence.condition.test.kind !== 'didPrevious'
+      ? sentence.condition
+      : undefined;
   if (
     (afterOffer
       ? sentence.condition?.test.kind !== 'didPrevious'
-      : sentence.condition !== undefined) ||
+      : sentence.condition !== undefined && trailing === undefined) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -2632,13 +2765,21 @@ function lowerPlayersMay(
     if (!other.ok) return refused(other);
     otherwise = oneEffect(other.value);
   }
-  const effect: Effect = {
+  const asked: Effect = {
     kind: 'playersMay',
     players: players.value,
     effect: oneEffect(body.value),
     ...(by.haveYou ? {} : { runsAs: 'chooser' as const }),
     ...(otherwise === undefined ? {} : { otherwise }),
   };
+  let effect: Effect = asked;
+  if (trailing !== undefined) {
+    const missing = missingFeatures(['effect:conditional']);
+    if (missing.length > 0) return refused({ ...refuse(sentence), needs: missing });
+    const test = lowerCondition(trailing, false, ctx);
+    if (!test.ok) return refused(test);
+    effect = { kind: 'conditional', condition: test.value, effect: asked };
+  }
   return {
     result: { ok: true, value: [effect], rule: sentence.clauses[0]?.rule ?? sentence.rule },
     last: declines ? i + 1 : i,
@@ -2887,7 +3028,13 @@ export function lowerSentences(
     if ('stopped' in result) return result.stopped;
     if (defined !== null && !defined.used) return refuse(sentence);
     if (defined !== null) ctx.xDefined = true;
-    if (result.last > i && sentences[result.last]?.where !== undefined) return refuse(sentence);
+    if (
+      result.last > i &&
+      sentences[result.last]?.where !== undefined &&
+      !('whereRead' in result && result.whereRead === true)
+    ) {
+      return refuse(sentence);
+    }
     i = result.last;
   }
   const flat = steps.flatMap((s) => s.effects);

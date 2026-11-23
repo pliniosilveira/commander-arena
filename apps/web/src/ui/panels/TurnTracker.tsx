@@ -1,4 +1,7 @@
-/** The top bar of the game screen: turn, whose turn, the step row with stops, and priority. */
+/**
+ * The turn box at the left edge of the game screen: turn, whose turn, priority and three steps: the
+ * previous, the current and the next (a click on one adds or removes its stop).
+ */
 import type { GameView, PhaseId, StepId } from '@commander-arena/engine';
 import { roundOf, turnLabel } from '../../game/turn-label';
 import { STOP_STEPS, type StopSettings } from '../../policy/should-stop';
@@ -29,6 +32,12 @@ export function addedPhaseLabel(phase: PhaseId): string {
   return `Extra ${phase === 'precombatMain' || phase === 'postcombatMain' ? 'main' : phase} phase`;
 }
 
+/** The step before, the step and the step after it, in turn order (fewer at the ends of the turn). */
+export function neighbours(step: StepId): readonly StepId[] {
+  const at = STEP_ORDER.indexOf(step);
+  return at < 0 ? [] : STEP_ORDER.slice(Math.max(0, at - 1), at + 2);
+}
+
 /** Which settings row a click on a step edits: the active player's side (A18). */
 export function stopSide(view: GameView): 'mine' | 'opponent' {
   return view.activeSeat === view.viewer ? 'mine' : 'opponent';
@@ -48,7 +57,8 @@ export function TurnTracker() {
   const side = stopSide(view);
   const stops = stopSteps(view, settings);
   const mine = side === 'mine';
-  const priority = view.prioritySeat === null ? null : seatName(view.prioritySeat, view.viewer);
+  const priority =
+    view.prioritySeat === null ? null : seatName(view.prioritySeat, view.viewer, view.seats.length);
 
   return (
     <header className="pnl-tracker">
@@ -104,7 +114,9 @@ export function TurnTracker() {
             data-monarch-hud={view.monarch}
           >
             <span aria-hidden="true">{'♛ '}</span>
-            {view.monarch === view.viewer ? 'You are the monarch' : 'Opponent is the monarch'}
+            {view.monarch === view.viewer
+              ? 'You are the monarch'
+              : `${seatName(view.monarch, view.viewer, view.seats.length)} is the monarch`}
           </span>
         )}
         {view.dayNight !== null && (
@@ -124,14 +136,14 @@ export function TurnTracker() {
         {fallbacks > 0 && (
           <span
             className="pnl-chip pnl-chip-warn"
-            title="The opponent AI ran out of time and a safe default move was used instead."
+            title={`${view.seats.length > 2 ? 'An opponent' : 'The opponent'} AI ran out of time and a safe default move was used instead.`}
           >
             AI fallback ×{fallbacks}
           </span>
         )}
       </div>
       <ol className="pnl-steps">
-        {STEP_ORDER.map((step) => {
+        {neighbours(view.step).map((step) => {
           const current = view.step === step;
           const toggleable = STOP_STEPS.includes(step);
           const stopped = toggleable && stops.includes(step);
@@ -144,7 +156,7 @@ export function TurnTracker() {
                   type="button"
                   className={cls}
                   aria-pressed={stopped}
-                  title={`${stopped ? 'Remove the stop at' : 'Stop at'} ${label} on ${mine ? 'your' : "the opponent's"} turns`}
+                  title={`${stopped ? 'Remove the stop at' : 'Stop at'} ${label} on ${mine ? 'your' : view.seats.length > 2 ? "an opponent's" : "the opponent's"} turns`}
                   onClick={() => toggleStop(side, step)}
                 >
                   {label}

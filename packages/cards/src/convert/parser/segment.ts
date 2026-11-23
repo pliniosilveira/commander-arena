@@ -298,6 +298,20 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/**
+ * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
+ * CR 115.1, 608.2c): the second sentence says what is done with the cards the first one targets, so the two are one instruction (`effect.put-one-per-graveyard`).
+ */
+const CHOOSE_PER_PLAYER_GRAVEYARD =
+  /^for each player, choose up to one target creature card in that player['’]s graveyard\.$/i;
+/**
+ * "Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost." (issue 102, Dauthi Voidwalker, CR 608.2d, 601.2, 122.1):
+ * the second sentence is what is done with the card the first one chooses, so the two are one instruction (`effect.play-chosen-void-card`).
+ */
+const CHOOSE_EXILED_VOID_CARD =
+  /(?:^|: )choose an exiled card an opponent owns with a void counter on it\.$/i;
+const MAY_PLAY_IT_FREE = /^you may play it this turn without paying its mana cost\.$/i;
+const PUT_THOSE_CARDS_ONTO = /^put those cards onto the battlefield under your control\.$/i;
 /** "You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand." (For the Ancestors): the middle sentence of the same instruction. */
 const TAKE_ANY_OF_CHOSEN_TYPE =
   /^you may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand\.$/i;
@@ -319,6 +333,30 @@ const PUT_REST_OF_THOSE = /^put the rest of those cards [^.]*\.$/i;
 /** "Put any number of nonland permanent cards with total mana value 4 or less from among them onto the battlefield." (stage P68, D-230): the middle sentence of the same instruction. */
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
+
+/**
+ * "Reveal the top five cards of your library. Put a land card from among them onto the battlefield and the rest into your graveyard." (Cavalier of Thorns, CR 701.20a, 608.2c): the
+ * second sentence says what is done with the cards the first one reveals, so the two are read as one instruction (`effect.reveal-put-one-battlefield`).
+ */
+const PUT_ONE_AMONG_REST_GRAVEYARD =
+  /^put an? [^.]* card from among them onto the battlefield and the rest into your graveyard\.$/i;
+/**
+ * "Whenever a creature you control enters, you may look at the top X cards of your library, where X is that creature's power. If you do, put one of those cards on top of your
+ * library and the rest on the bottom of your library in any order." (Cream of the Crop, CR 401.2, 401.4): the second sentence says what the first one's look leads to, so the two
+ * are read as one instruction (`effect.look-top-x-one-on-top`; the first may follow the comma of a trigger).
+ */
+const LOOK_TOP_X_WHERE =
+  /(?:^|, )(?:you may )?look at the top X cards of your library, where X is [^.]*\.$/i;
+const IF_YOU_DO_ONE_ON_TOP_REST_BOTTOM =
+  /^if you do, put one of those cards on top of your library and the rest on the bottom of your library in any order\.$/i;
+/**
+ * "Look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped. If you don't put the card onto the battlefield, put it into your hand." (Risen
+ * Reef, CR 608.2c): three sentences that are one instruction (the first may follow the comma of a trigger), kept together for `effect.look-top-land-else-hand`.
+ */
+const IF_ITS_CARD_MAY_PUT_TAPPED =
+  /^if it['’]s an? [^.,]* card, you may put it onto the battlefield tapped\.$/i;
+const IF_NOT_ONTO_BATTLEFIELD_HAND =
+  /^if you don['’]t put the card onto the battlefield, put it into your hand\.$/i;
 
 /**
  * "Choose an opponent at random that ~ didn't attack during your last combat. ~ attacks that player this combat if able. If you can't choose an opponent this way, tap ~." (Territorial
@@ -403,6 +441,14 @@ const IF_THEY_DO_THEY_DRAW = /^if they do, they draw [^.]*\.$/i;
 const FOR_EACH_OPPONENT_WHO_DOES_CREATE = /^for each opponent who does, create [^.]*\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
 /**
+ * "Exile up to one target instant or sorcery card from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost." (Blue Mage's
+ * Cane, CR 707.12, 118.9): the second and third sentences are what is done with the copy of the card the first exiles, read as one instruction (`effect.exile-copy-cast-paying`).
+ */
+const EXILE_CARD_THEN_COPY = /^exile [^.]* graveyard\.$/i;
+const IF_YOU_DO_COPY_IT = /^if you do, copy it\.$/i;
+const MAY_CAST_THE_COPY_PAYING =
+  /^you may cast the copy by paying (?:\{[^}]+\})+ rather than paying its mana cost\.$/i;
+/**
  * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
  * issue 121, CR 707.12): the second sentence is what is done with the copy of each card the first exiles, read as one instruction (`effect.exile-copy-cast`).
  */
@@ -457,6 +503,15 @@ const PUT_ALL_REVEALED_SHUFFLE_REST =
  * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
  */
 const MAY_PUT_THAT_CARD_ONTO = /^you may put that card onto the battlefield\.$/i;
+/**
+ * "Reveal cards from the top of your library until you reveal X creature cards of the chosen type, where X is the number of creatures you control of that type. Put those cards onto
+ * the battlefield, then shuffle the rest of the revealed cards into your library." (Kindred Summons): two sentences that are one instruction, kept together for
+ * `effect.reveal-until-chosen-type`.
+ */
+const REVEAL_UNTIL_CHOSEN_TYPE_FIRST =
+  /^reveal cards from the top of your library until you reveal X creature cards of the chosen type, where X is [^.]*\.$/i;
+const PUT_THOSE_CARDS_SHUFFLE_REST =
+  /^put those cards onto the battlefield, then shuffle the rest of the revealed cards into your library\.$/i;
 const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
 
 /**
@@ -486,6 +541,17 @@ const IF_ITS_CARD_PUT_ONTO = /^if it['’]s an? [^.,]* card, they put it onto th
 const LOOK_AT_TOP_CARD = /^look at the top card of your library\.$/i;
 const IF_ITS_CARD_MAY_TAKE =
   /^if it['’]s an? [^.,]* card(?: of the chosen type)?, you may reveal it and put it into your hand\.$/i;
+/**
+ * "Look at the top card of your library. You may exile it face down." (Urianger Augurelt, CR 701.20, 406.3): the second sentence says what is done with the card the first one looked at, so
+ * the two are one instruction, kept together for `effect.look-top-may-exile-face-down`.
+ */
+const YOU_MAY_EXILE_IT_FACE_DOWN = /^you may exile it face down\.$/i;
+/**
+ * "Until end of turn, you may play cards exiled with ~. Spells you cast this way cost {2} less to cast." (Urianger Augurelt, CR 601.2f): "this way" is the permission the first sentence gives,
+ * so the two are one instruction, kept together for `effect.may-play-exiled-with-self-less`.
+ */
+const UNTIL_EOT_PLAY_CARDS_EXILED_WITH = /^until end of turn, you may play cards exiled with ~\.$/i;
+const SPELLS_CAST_THIS_WAY_COST_LESS = /^spells you cast this way cost \{\d+\} less to cast\.$/i;
 /** "If you don't put the card into your hand, put it on the bottom of your library." (Vivien's Grizzly, issue 345): the third sentence of the instruction of `LOOK_AT_TOP_CARD`. */
 const ELSE_BOTTOM_OF_LIBRARY =
   /^if you don['’]t put the card into your hand, put it on the bottom of your library\.$/i;
@@ -599,7 +665,7 @@ const PLAY_THE_EXILED_CARD = /^you may play the exiled card this turn\.$/i;
  * (`effect.cast-graveyard-card`; the first may follow the comma of a trigger).
  */
 const CAST_TARGET_FROM_GRAVEYARD =
-  /(?:^|, )you may cast target [^.,]* cards? from a graveyard(?:, and mana of any type can be spent to cast that spell)?\.$/i;
+  /(?:^|, )you may cast target [^.,]* cards? from a graveyard(?:, and mana of any type can be spent to cast that spell| without paying its mana cost)?\.$/i;
 const EXILE_THAT_SPELL_INSTEAD =
   /^if that spell would be put into a graveyard, exile it instead\.$/i;
 
@@ -625,6 +691,14 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
  * "When this creature enters, you may cast target instant or sorcery card with mana value 3 or less from your graveyard without paying its mana cost. If that spell would be put into your
  * graveyard, exile it instead." (issue 144, Goblin Dark-Dwellers, CR 118.9, 614.1a): the second sentence is a rider of the cast the first one allows (`effect.cast-own-graveyard-card-free`).
  */
+const CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE =
+  /(?:^|, )you may cast an instant or sorcery spell from your graveyard with mana value [1-9] or less without paying its mana cost\.$/i;
+/**
+ * "Whenever one or more opponents lose life, you may cast target instant or sorcery card from your graveyard. If that spell would be put into your graveyard, exile it instead." (Scions &
+ * Spellcraft deck, group G, CR 601.2, 614.1a): the rider of a cast that pays the mana cost (`effect.cast-own-graveyard-card`), so the two sentences are one instruction.
+ */
+const CAST_FROM_YOUR_GRAVEYARD_PAID =
+  /(?:^|, )you may cast target [^.,]* cards? from your graveyard\.$/i;
 const CAST_FROM_YOUR_GRAVEYARD_FREE =
   /(?:^|, )you may cast target [^.,]* cards? [^.,]*from your graveyard without paying its mana cost\.$/i;
 
@@ -686,7 +760,8 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
-const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
+const PUT_FROM_AMONG_REVEALED =
+  /^you may put [^.]* from among them (?:into your hand|onto the battlefield tapped)\.$/i;
 /**
  * "You and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you
  * revealed into your hand." (CR 701.20a, 119.3): three sentences that are one instruction, kept together for `effect.reveal-top-duel`.
@@ -1001,6 +1076,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, LOOK_AT_TOP_CARD_COST) &&
+      said(b, IF_ITS_CARD_MAY_PUT_TAPPED) &&
+      said(c, IF_NOT_ONTO_BATTLEFIELD_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, LOOK_AT_TOP_CARD) &&
       said(b, IF_ITS_CARD_MAY_TAKE) &&
       said(c, ELSE_BOTTOM_OF_LIBRARY)
@@ -1037,6 +1121,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, EXILE_CARD_THEN_COPY) &&
+      said(b, IF_YOU_DO_COPY_IT) &&
+      said(c, MAY_CAST_THE_COPY_PAYING)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
       said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
       said(c, CANT_CHOOSE_TAP_IT)
@@ -1046,13 +1139,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       b !== undefined &&
-      ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
+      ((said(a, REVEAL_THE_TOP) && said(b, PUT_ONE_AMONG_REST_GRAVEYARD)) ||
+        (said(a, LOOK_TOP_X_WHERE) && said(b, IF_YOU_DO_ONE_ON_TOP_REST_BOTTOM)) ||
+        (said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_NAMED_TOKEN) && said(b, NAMED_TOKEN_ENTERS_TAPPED_ATTACKING)) ||
         (said(a, LOOK_AT_DEFENDERS_HAND) && said(b, PUT_CREATURE_FROM_IT_ATTACKING)) ||
         (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
+        (said(a, LOOK_AT_TOP_CARD) && said(b, YOU_MAY_EXILE_IT_FACE_DOWN)) ||
+        (said(a, UNTIL_EOT_PLAY_CARDS_EXILED_WITH) && said(b, SPELLS_CAST_THIS_WAY_COST_LESS)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
@@ -1079,6 +1176,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_FROM_YOUR_GRAVEYARD_PAID) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_SPELL_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, CHOOSE_ANY_OPPONENT_AT_RANDOM) && said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT)) ||
@@ -1092,6 +1191,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PAY_REFLEXIVE_AND_COPY_THEM) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
+        (said(a, CHOOSE_PER_PLAYER_GRAVEYARD) && said(b, PUT_THOSE_CARDS_ONTO)) ||
+        (said(a, CHOOSE_EXILED_VOID_CARD) && said(b, MAY_PLAY_IT_FREE)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
@@ -1127,6 +1228,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, REVEAL_UNTIL) &&
       said(b, PUT_THAT_CARD)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, REVEAL_UNTIL_CHOSEN_TYPE_FIRST) &&
+      said(b, PUT_THOSE_CARDS_SHUFFLE_REST)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

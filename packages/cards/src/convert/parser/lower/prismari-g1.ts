@@ -28,7 +28,11 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
     }
     const word = arg(clause, 'keyword');
     if (word?.kind !== 'keywordName' || word.protection !== undefined) return failure(clause);
-    if (!aboutMadeTokens(ctx)) return failure(clause);
+    // CR 608.2c, 611.2c (Ardbert, Warrior of Darkness): "Put a +1/+1 counter on each legendary creature you control. They gain vigilance until end of turn.": "they" is the group
+    // the counters went to, read again as the keyword is granted (a group of "each" is fixed as the effect resolves); only for a keyword of one turn.
+    const group =
+      !aboutMadeTokens(ctx) && clause.duration !== undefined ? ctx.lastCounteredGroup : null;
+    if (!aboutMadeTokens(ctx) && group === null) return failure(clause);
     const kind = keywordKind(word.name);
     if (kind === undefined || !isGrantable(kind)) return failure(clause);
     return {
@@ -36,7 +40,7 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
       value: [
         {
           kind: 'grantKeyword',
-          objects: MOVED,
+          objects: group ?? MOVED,
           keyword: plainKeyword(kind),
           duration: clause.duration === undefined ? 'permanent' : 'untilEndOfTurn',
         },
@@ -53,7 +57,11 @@ function atEndStep(action: 'sacrifice' | 'exile'): Lowering<IrClause, Effects> {
     id: `lower.${action}-at-end-step-made`,
     needs: ['effect:delayedTrigger', `effect:${action}`, 'selector:moved'],
     lower(clause, ctx) {
-      if (!aboutMadeTokens(ctx)) return failure(clause);
+      // CR 603.7c: also the one card an instruction before put onto the battlefield from a hand or graveyard ("You may put a creature card from your hand onto the battlefield.
+      // ... Sacrifice it at the beginning of the next end step."): the delayed ability is about that object only, and about none when the player put none.
+      if (!aboutMadeTokens(ctx) && !(action === 'sacrifice' && ctx.searched !== null)) {
+        return failure(clause);
+      }
       return {
         ok: true,
         value: [

@@ -41,12 +41,17 @@ function cardCandidates(
   triggerDamage?: number,
   among?: readonly ObjectId[],
   handOf?: SeatId,
+  /** CR 608.2d, 205.3m: the creature type chosen as the spell resolves, for a filter of "the chosen type" ("cards of that type from your graveyard"). */
+  chosenCreatureType?: string,
 ): ObjectId[] {
   // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
   const ctx = {
     controller: seat,
     source,
     ...(triggerDamage === undefined ? {} : { triggerDamage }),
+    ...(chosenCreatureType === undefined
+      ? {}
+      : { sourceChosen: { creatureType: chosenCreatureType } }),
   };
   // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
   if (filter.zone === 'exile') {
@@ -102,6 +107,8 @@ export function runChooseMove(
 ): StepOutcome {
   // D-231: "each player exiles a card from their graveyard": the player the instruction names chooses among their own cards.
   const chooser = instruction.seat ?? res.controller;
+  // Issue 102 (Tasigur): "of an opponent's choice": the cards are the chooser's, an opponent is the one asked.
+  const decider = instruction.decider ?? chooser;
   // D-411 (CR 608.2c): "You may put a land card from among them into your hand" is the offer itself, so what "if you do" and "if you don't" read starts again
   // at 0 as it is made, as a `may` effect does (D-135); the card moved, if one is, is what it counts.
   // CR 608.2c: an offer ("you may exile a creature card from your graveyard. If you do, ...") starts what "if you do" reads again, as a `may` does.
@@ -109,15 +116,75 @@ export function runChooseMove(
     instruction.among === undefined && instruction.optional !== true
       ? {}
       : { resetPerformed: true as const };
+  // CR 101.4, 701.13 (`together`): the cards a player chose are held until the last player has chosen; then each player's cards move, in the order they chose.
+  const group = instruction.together;
+  const hold = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
+    if (group === undefined) throw new Error('A choice with no group cannot be held');
+    const held = [...group.held, { seat: chooser, cards: objects, automatic }];
+    const next = group.later[0];
+    if (next !== undefined) {
+      return done(
+        state,
+        [],
+        [
+          {
+            ...instruction,
+            seat: next,
+            chosen: null,
+            together: { later: group.later.slice(1), held },
+          },
+        ],
+      );
+    }
+    const { together: _held, ...single } = instruction;
+    return {
+      ...done(
+        state,
+        [],
+        held
+          .filter((h) => h.cards.length > 0)
+          .map((h) => ({
+            ...single,
+            seat: h.seat,
+            chosen: h.cards,
+            ...(h.automatic ? { automatic: true as const } : {}),
+          })),
+      ),
+      lastMoved: [],
+    };
+  };
   const run = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
+    if (group !== undefined) return hold(objects, automatic);
     const event: GameEvent = {
       kind: 'permanentsChosen',
-      seat: chooser,
+      seat: decider,
       source: res.object,
       objects,
       purpose: 'effect',
       automatic,
     };
+    // Issue 102 (Dauthi Voidwalker): the card chosen stays where it is, and the controller may play it this turn (`mayPlay` of what was chosen).
+    if (instruction.permit !== undefined) {
+      return {
+        ...done(
+          state,
+          [event],
+          [
+            {
+              kind: 'effect' as const,
+              effect: {
+                kind: 'mayPlay' as const,
+                objects: { kind: 'moved' as const },
+                lasts: 'endOfTurn' as const,
+                ...(instruction.permit.free === true ? { free: true as const } : {}),
+              },
+            },
+          ],
+        ),
+        lastMoved: objects,
+        ...restart,
+      };
+    }
     // D-283 (CR 603.10a): permanents put into a graveyard (or elsewhere) together keep the last-known information recorded before the first leaves.
     // CR 303.4f (issue 103): an Aura card put onto the battlefield this way chooses what it enchants as it enters.
     const together = recordTogether(
@@ -148,7 +215,7 @@ export function runChooseMove(
         : together.instructions;
     return { ...done(together.state, [event], entries), lastMoved: [], ...restart };
   };
-  if (instruction.chosen !== null) return run(instruction.chosen, false);
+  if (instruction.chosen !== null) return run(instruction.chosen, instruction.automatic === true);
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal =
     fromCards && instruction.graveyardOf !== undefined
@@ -195,6 +262,7 @@ export function runChooseMove(
               res.triggerDamage,
               instruction.among,
               instruction.handOf,
+              res.chosenCreatureType,
             ).filter(
               // D-411: only the cards the effect before it moved.
               (id) => instruction.among === undefined || instruction.among.includes(id),
@@ -205,6 +273,8 @@ export function runChooseMove(
   const looked =
     instruction.handOf === undefined ? [] : zoneList(state, 'hand', instruction.handOf);
   if (legal.length === 0 && looked.length === 0) {
+    // CR 101.4: a player with nothing to choose still lets the next player choose.
+    if (group !== undefined) return hold([], true);
     return { ...done(state), lastMoved: [], ...restart };
   }
   const optional = instruction.optional === true;
@@ -242,7 +312,7 @@ export function runChooseMove(
       front: [],
       needs: {
         kind: 'chooseCards',
-        seat: chooser,
+        seat: decider,
         source: res.object,
         purpose: 'move',
         zone,
@@ -257,37 +327,44 @@ export function runChooseMove(
           ? {}
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
         prompt:
-          legal.length === 0
-            ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
-              `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
-            : `Choose ${
-                instruction.minCardTypes !== undefined
-                  ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-                  : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-              } ${
-                instruction.among !== undefined && zone === 'exile'
-                  ? 'from among the cards exiled this way'
-                  : instruction.among !== undefined
-                    ? 'from among the cards put into your graveyard'
-                    : zone === 'exile'
-                      ? 'exiled with this permanent'
-                      : instruction.graveyardOf !== undefined
-                        ? instruction.graveyardOf === chooser
-                          ? 'from your graveyard'
-                          : "from an opponent's graveyard"
-                        : instruction.alsoGraveyard === true
-                          ? 'from your hand or graveyard'
-                          : zone === 'command'
-                            ? 'from your command zone'
-                            : instruction.handOf !== undefined
-                              ? 'from their hand'
-                              : `from your ${zone}`
-              } to put ${WHERE[instruction.to]}`.replace(
-                'from among the cards put into your graveyard',
-                instruction.anyOwner === true
-                  ? 'from among the cards put into a graveyard'
-                  : 'from among the cards put into your graveyard',
-              ),
+          instruction.permit !== undefined
+            ? 'Choose an exiled card to play this turn'
+            : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
+              decider !== chooser
+              ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
+                  instruction.to
+                ].replace('your', 'their')}`
+              : legal.length === 0
+                ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
+                  `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
+                : `Choose ${
+                    instruction.minCardTypes !== undefined
+                      ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                      : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+                  } ${
+                    instruction.among !== undefined && zone === 'exile'
+                      ? 'from among the cards exiled this way'
+                      : instruction.among !== undefined
+                        ? 'from among the cards put into your graveyard'
+                        : zone === 'exile'
+                          ? 'exiled with this permanent'
+                          : instruction.graveyardOf !== undefined
+                            ? instruction.graveyardOf === chooser
+                              ? 'from your graveyard'
+                              : "from an opponent's graveyard"
+                            : instruction.alsoGraveyard === true
+                              ? 'from your hand or graveyard'
+                              : zone === 'command'
+                                ? 'from your command zone'
+                                : instruction.handOf !== undefined
+                                  ? 'from their hand'
+                                  : `from your ${zone}`
+                  } to put ${WHERE[instruction.to]}`.replace(
+                    'from among the cards put into your graveyard',
+                    instruction.anyOwner === true
+                      ? 'from among the cards put into a graveyard'
+                      : 'from among the cards put into your graveyard',
+                  ),
       },
     };
   }
@@ -297,7 +374,7 @@ export function runChooseMove(
     front: [],
     needs: {
       kind: 'choosePermanent',
-      seat: chooser,
+      seat: decider,
       source: res.object,
       purpose: 'effect',
       min,

@@ -45,6 +45,11 @@ export type PriorityOption =
       readonly object: ObjectId;
       readonly alternative?: CastAlternativeKind;
       readonly face?: number;
+      /**
+       * A card cast from the graveyard by `playFromGraveyardEachType` that has more than one permanent type still free (an artifact creature) has one option for each: the type the
+       * spell is cast as, whose slot it uses. Absent for every other cast. An action that leaves it out lets the engine choose.
+       */
+      readonly permanentType?: CardType;
     }
   /**
    * Activate an activated ability (CR 602) that is not a mana ability: of a permanent on the
@@ -83,6 +88,8 @@ export type PriorityOption =
   | { readonly kind: 'suspend'; readonly object: ObjectId }
   /** Foretell a card from the hand (CR 702.143a, D-128): a special action, see the `foretell` action. */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
+  /** Bring your companion into your hand (CR 116.2g, 702.139a): a special action, see the `bringCompanion` action. */
+  | { readonly kind: 'bringCompanion' }
   /** Plot a card from the hand (CR 702.170a): a special action, see the `plot` action. */
   | { readonly kind: 'plot'; readonly object: ObjectId }
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): a special action, see the `turnFaceUp` action. */
@@ -173,6 +180,8 @@ export interface TargetChoiceSpec {
    * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
    */
   readonly eachController?: true;
+  /** "Any number of target creature cards with total power 10 or less" (`TargetSpec.totalPowerAtMost`, CR 208.1): the targets of this slot have total power of at most this; each `legal` target says its `power`. */
+  readonly totalPowerAtMost?: number;
   /** "Up to three target cards from their graveyard" (`TargetSpec.ownedByTarget`): every target of this slot is a card of the graveyard of the player chosen for the slot with this id (its `group`). */
   readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
@@ -457,7 +466,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'soulbond'
     | 'blight'
     | 'untapCost'
-    | 'removeCountersCost';
+    | 'removeCountersCost'
+    | 'keep';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):
@@ -530,6 +540,13 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * needed is allowed. Left out for every other purpose.
    */
   readonly minTotalPower?: number;
+  /**
+   * For `'keep'` (Slaughter the Strong, CR 608.2d, 701.21a: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures
+   * they control"): `seat` chooses which of the permanents in `legal` (all they control that match) to keep; `min` is 0 and `max` is `legal.length`, and the answer must have
+   * total power of at most `maxTotalPower` (`powers` gives each one's power). The permanents of `legal` not chosen are sacrificed, together with the other players' once the
+   * last has chosen. `source` is the spell or ability.
+   */
+  readonly maxTotalPower?: number;
   /**
    * For a `forCost` sacrifice of several different permanents ("Sacrifice a Swamp and a Forest", CR 701.21a): one list for each part of the cost, the permanents that can pay it
    * (`legal` is all of them, `min` and `max` the number of parts). The answer gives each part a different permanent of its own list, so a permanent in two lists pays one of them.
@@ -757,6 +774,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
    * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
+   * `'dredge'` (CR 702.52a, issue 102): "you may instead mill N cards and return this card from your graveyard to your hand": asked of the player about to draw (`seat`), once for each card with dredge in their graveyard that could be used; `subject` is the card (in the graveyard, public), `source` the same card. Accepting mills the cards and returns it instead of drawing; declining asks about the next card, and when none is left the card is drawn. `cancel` is refused.
    * `'castCard'` (D-350, CR 608.2g): "you may cast target instant or sorcery card from a graveyard": `subject` is the card (in a graveyard, public), `source` the ability on
    * the stack; declining leaves the card in its graveyard. `'buyback'` (CR 702.27a, 601.2b; Galadriel group 3): the spell being cast has buyback and the total with the buyback
    * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
@@ -775,6 +793,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'suspend'
     | 'madness'
     | 'miracleReveal'
+    | 'dredge'
     | 'miracle'
     | 'gift'
     | 'costChoice'
@@ -873,7 +892,11 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'counterPick'
     | 'clashOpponent'
     // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life": the options are `seat:<n>`.
-    | 'playerChoice';
+    | 'playerChoice'
+    // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller of the effect chooses which opponent (`source` is the spell or ability): the options are `seat:<n>`.
+    | 'chooseOpponent'
+    // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
+    | 'protector';
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second
@@ -1172,7 +1195,15 @@ export interface ChooseXDecision extends DecisionBase {
    * 'replicate' for the number of times its replicate cost is paid (CR 702.56a, D-129: the same, asked after the kicker
    * and before X and the targets).
    */
-  readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
+  readonly purpose:
+    | 'spell'
+    | 'ability'
+    | 'multikicker'
+    | 'replicate'
+    | 'payAnyAmount'
+    | 'drawUpTo'
+    // "Choose a number between 0 and 10" (CR 608.2d): asked while a spell or ability resolves, from `min` to `max`, with no way back.
+    | 'chooseNumber';
   readonly min: number;
   readonly max: number;
   /**

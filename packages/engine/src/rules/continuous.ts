@@ -381,6 +381,32 @@ export function runCreaturesCantAttackYou(
 }
 
 /**
+ * "Creatures you control with defender can attack this turn as though they didn't have defender" (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2): one continuous effect with no set of objects,
+ * read by `hasRestriction` for the creatures its filter matches when the rule asks (it changes the rules and no characteristic, so a creature that matches later this turn is affected too:
+ * Wakestone Gargoyle's rulings). It ends with the turn.
+ */
+export function runRestrictGroup(
+  state: GameState,
+  node: Extract<Effect, { kind: 'restrictGroup' }>,
+  ctx: SelectContext,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: 'endOfTurn',
+    change: {
+      kind: 'groupRestriction',
+      filter: node.creatures,
+      controller: ctx.controller,
+      restriction: node.restriction,
+    },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, issue 81): one continuous effect over the creatures the effect names as it begins, which
  * bars them from the planeswalkers of the subtype the controller controls (`rules/attack-bans.ts`) until end of turn.
  */
@@ -538,6 +564,24 @@ export function expireTurnStartEffects(
       e.until.kind === 'turnStart' &&
       e.until.seat === seat &&
       e.until.turnsTaken <= taken,
+  );
+}
+
+/**
+ * CR 800.4m (issue 507): when a player leaves the game, an effect that lasts until that player's next turn "will last until that turn would have begun": it neither ends at once nor
+ * lasts for ever. `seats` are the players who have left the game and whose turn has just been passed over, so each of their `turnStart` effects ends now. A seat that has left takes
+ * no turn, so it never reaches the turn count the effect waits for, which is why `expireTurnStartEffects` cannot end them. The effects that last until a point in that turn
+ * (`turnEnd`, `endStep`) are left as they are: see ROADMAP.
+ */
+export function expireLeftSeatTurnStartEffects(
+  state: GameState,
+  seats: readonly SeatId[],
+): { state: GameState; events: GameEvent[] } {
+  if (seats.length === 0) return { state, events: [] };
+  return dropEffects(
+    state,
+    (e) =>
+      typeof e.until === 'object' && e.until.kind === 'turnStart' && seats.includes(e.until.seat),
   );
 }
 

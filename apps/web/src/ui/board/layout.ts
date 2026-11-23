@@ -13,6 +13,8 @@ export interface RowSpec {
   /** Narrowest tile worth drawing before the row scrolls. */
   readonly minW: number;
   readonly gap: number;
+  /** Width the row spends on attachment strips beside its tiles (`attach.ts`), whatever the tile size. */
+  readonly extraW?: number;
 }
 
 export interface RowLayout {
@@ -31,9 +33,10 @@ export function fitTiles(
   spec: RowSpec,
 ): { tileW: number; overflow: boolean } {
   if (count === 0) return { tileW: spec.preferredW, overflow: false };
-  const ideal = Math.floor((width - (count - 1) * spec.gap) / count);
+  const extra = spec.extraW ?? 0;
+  const ideal = Math.floor((width - (count - 1) * spec.gap - extra) / count);
   const tileW = Math.max(spec.minW, Math.min(spec.preferredW, ideal));
-  return { tileW, overflow: count * tileW + (count - 1) * spec.gap > width + 0.5 };
+  return { tileW, overflow: count * tileW + (count - 1) * spec.gap + extra > width + 0.5 };
 }
 
 /**
@@ -85,18 +88,4 @@ export function handStep(
   if (count <= 1) return cardW + gap;
   const room = (width - cardW) / (count - 1);
   return Math.max(minStep, Math.min(cardW + gap, Math.floor(room)));
-}
-
-/**
- * How much of the text size factor the hand cards take. A hand that would fan so tightly that the
- * middle of a card is covered by its neighbour, even when the neighbour is lifted by the pointer
- * (step under 0.65 of the card width), keeps cards smaller, down to their normal size; a short hand
- * takes the whole factor. A gain under 5 percent is not worth a different card, so it snaps to the
- * normal size. `baseW` is the normal card width, `width` the room the fan has.
- */
-export function handScale(count: number, baseW: number, width: number, scale: number): number {
-  if (count <= 1) return scale;
-  const widest = width / (1 + 0.65 * (count - 1));
-  const fit = Math.min(scale, Math.floor((widest / baseW) * 100) / 100);
-  return fit < 1.05 ? 1 : fit;
 }

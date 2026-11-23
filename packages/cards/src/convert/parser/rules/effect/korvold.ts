@@ -84,6 +84,11 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     // Ahoy Mateys deck, Port of Karfell (CR 110.5b, tapped): the same, entering tapped.
     'return a creature card from your graveyard to the battlefield tapped',
     'you may return a creature card from your graveyard to the battlefield tapped',
+    // Issue 102 (Tasigur, the Golden Fang): a card that is not a land card, and the one an opponent chooses.
+    'return a nonland card from your graveyard to your hand',
+    "return a nonland card of an opponent's choice from your graveyard to your hand",
+    // Issue 102 (Teval, the Balanced Scale): the same choice of a land card.
+    'you may return a land card from your graveyard to the battlefield tapped',
   ],
   rejects: [
     'you may return target creature card from your graveyard to your hand',
@@ -108,7 +113,10 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
           spanned(
             sequence(
               pattern(/an? /iu),
-              satisfy(graveyardPhrase(false), (filter) => filter.controller === 'you'),
+              satisfy(
+                graveyardPhrase(false, 'from', undefined, true),
+                (filter) => filter.controller === 'you',
+              ),
             ),
           ),
           spanned(

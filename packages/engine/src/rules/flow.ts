@@ -27,12 +27,14 @@ import {
   expireEndOfCombatEffects,
   expireEndOfTurnEffects,
   expireEndStepEffects,
+  expireLeftSeatTurnStartEffects,
   expireTurnStartEffects,
   expireUntapStepEffects,
 } from './continuous';
 import { controllerOf } from './control';
 import { settleDayNight, untapStepDayNight } from './day-night';
 import { derive } from './derive';
+import { dredgeCandidate, dredgeQuestion, performDredge } from './dredge';
 import { drawCard } from './effect-support';
 import { discardOne } from './madness';
 import { emptyManaPools } from './mana-engine';
@@ -101,6 +103,20 @@ function join(a: Outcome, b: Outcome): Outcome {
 }
 
 /**
+ * CR 508.6: the players the seat whose turn has just ended attacked, kept for "players who attacked you during their last turn". A seat that attacked nobody and has no earlier entry adds
+ * nothing, so the state of a game where nobody ever attacked is as it was.
+ */
+function rolledAttackedLastTurn(state: GameState): Pick<GameState, 'attackedLastTurn'> {
+  const seat = state.turn.activeSeat;
+  const attacked = [...new Set(state.turnLog.attackedPlayers.map((a) => a.player))];
+  const before = state.attackedLastTurn;
+  if (attacked.length === 0 && before?.[seat] === undefined) {
+    return before === undefined ? {} : { attackedLastTurn: before };
+  }
+  return { attackedLastTurn: { ...(before ?? {}), [seat]: attacked } };
+}
+
+/**
  * Begins a new turn for `seat` (CR 500.1). `extra`: the turn is an extra turn (CR 500.7) added after the turn of the player `resumeAfter`, whom the turn order goes on from
  * once the extra turns are taken.
  */
@@ -126,6 +142,8 @@ export function startTurn(
     lastTurnSpellsCast: next.seats.map((s) => s.spellsCastThisTurn),
     // CR 502.2, 731.2: whose turn it was, for the day and night check of the untap step.
     lastTurnActiveSeat: state.turn.activeSeat,
+    // CR 508.6: the players the seat whose turn has just ended attacked, kept for "players who attacked you during their last turn".
+    ...rolledAttackedLastTurn(state),
   };
   for (const s of next.seats) {
     next = patchSeat(next, s.id, {
@@ -253,6 +271,17 @@ export function beginStep(input: GameState, step: StepId): Outcome {
       const skip =
         state.seats.length === 2 && state.turn.number === 1 && state.turn.addedAfter === undefined;
       if (!skip) {
+        // CR 702.52a (Dredge, issue 102): a card with dredge in the graveyard may replace the draw; the step waits for the answer (`answerDredgeDraw`).
+        const dredge = dredgeCandidate(state, active);
+        if (dredge !== null) {
+          return {
+            state: setPending(
+              collectTriggers(state, events),
+              dredgeQuestion(state, active, dredge.card),
+            ),
+            events,
+          };
+        }
         const r = drawCard(state, active);
         // CR 903.9b: a commander on top of the library asks its owner first. The turn-based action
         // waits for the answer (`resumeDrawStep`); no priority is given in the meantime.
@@ -314,7 +343,7 @@ export function beginStep(input: GameState, step: StepId): Outcome {
  * top of the library is a commander): `moveToCommandZone` puts it into the command zone instead of
  * the hand, `declineCommandZone` draws it. Then the step goes on: triggers, then priority.
  */
-export function resumeDrawStep(input: GameState, toCommandZone: boolean): Outcome {
+export function resumeDrawStep(input: GameState, toCommandZone: boolean | null): Outcome {
   const state: GameState = { ...input, pending: null };
   const active = state.turn.activeSeat;
   const r = drawCard(state, active, toCommandZone);
@@ -332,6 +361,29 @@ export function resumeDrawStep(input: GameState, toCommandZone: boolean): Outcom
     };
   }
   return join({ state: r.state, events: r.events }, grantPriority(r.state, active, r.events));
+}
+
+/**
+ * The draw of the draw step (CR 504.1) was waiting for its owner's answer to the dredge question (CR 702.52a, issue 102) about `card`: accepting mills the cards and returns it
+ * instead of drawing, declining asks about the next card with dredge and, with none left, draws. Then the step goes on: triggers, then priority.
+ */
+export function answerDredgeDraw(input: GameState, card: ObjectId, accept: boolean): Outcome {
+  const state: GameState = { ...input, pending: null };
+  const active = state.turn.activeSeat;
+  if (accept) {
+    const dredged = performDredge(state, active, card);
+    if (dredged !== null) {
+      return join(
+        { state: dredged.state, events: dredged.events },
+        grantPriority(dredged.state, active, dredged.events),
+      );
+    }
+  }
+  const next = dredgeCandidate(state, active, card);
+  if (next !== null) {
+    return { state: setPending(state, dredgeQuestion(state, active, next.card)), events: [] };
+  }
+  return resumeDrawStep(state, null);
 }
 
 /**
@@ -515,10 +567,16 @@ function startNextTurn(input: GameState): Outcome {
       return startTurn(state, seat, { resumeAfter });
     }
   }
-  const order = seatsInOrder(state, (resumeAfter + 1) % state.seats.length);
-  const next = order[0];
+  const count = state.seats.length;
+  const first = (resumeAfter + 1) % count;
+  const next = seatsInOrder(state, first)[0];
   if (next === undefined) return { state, events: [] };
-  return startTurn(state, next);
+  // CR 800.4m (issue 507): the seats passed over on the way to `next` have left the game, and the turn each would have had begins now, so what lasted until it ends.
+  const passedOver: SeatId[] = [];
+  for (let i = 0; i < count && (first + i) % count !== next; i += 1)
+    passedOver.push((first + i) % count);
+  const expired = expireLeftSeatTurnStartEffects(state, passedOver);
+  return join({ state: expired.state, events: expired.events }, startTurn(expired.state, next));
 }
 
 /** The seat holding priority passes (CR 117.3d, 117.4). */

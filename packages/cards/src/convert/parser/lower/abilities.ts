@@ -439,6 +439,7 @@ function lowerNumbered(
     | 'toxic'
     | 'annihilator'
     | 'afflict'
+    | 'dredge'
     | 'mobilize'
     | 'fabricate'
     | 'bushido'
@@ -595,6 +596,7 @@ export function lowerKeyword(
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
     ability.name === 'afflict' ||
+    ability.name === 'dredge' ||
     ability.name === 'mobilize' ||
     ability.name === 'fabricate' ||
     ability.name === 'bushido' ||
@@ -628,6 +630,24 @@ export function lowerKeyword(
       ok: true,
       value: [{ kind: 'keyword', keyword: { kind: 'deckLimit', limit: limit.value } }],
       rule: 'keyword.deck-limit',
+    };
+  }
+  // CR 702.139a: "Companion — [condition]": a deck-construction line, no effect in a game; the condition is one of the closed set.
+  if (ability.name === 'companion') {
+    const [named] = ability.params;
+    if (ability.params.length !== 1 || named?.kind !== 'name') return failure(ability);
+    if (named.name !== 'noRepeatedManaSymbol') return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:companion']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: { kind: 'companion', condition: { kind: 'noRepeatedManaSymbol' } },
+        },
+      ],
+      rule: 'keyword.companion',
     };
   }
   if (ability.name === 'protection') return lowerProtection(ability);
@@ -984,6 +1004,15 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       token: only.token,
     });
   }
+  // Issue 102 (Dauthi Voidwalker, CR 614.1a, 122.1): "instead exile it with a void counter on it".
+  if (event.verb === 'wouldExileInsteadOfOpponentGraveyard') {
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:exileInsteadOfOpponentGraveyard',
+    ]);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'exileInsteadOfOpponentGraveyard', counter: 'void' });
+  }
   if (event.verb === 'wouldDie') {
     // CR 614.1a, 700.4 (stage P29, D-133): a creature that would die is exiled instead; the controller of the permanent
     // creates the token. The creature phrase is relative to that controller.
@@ -1103,6 +1132,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
     }
+    // "where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the total or greatest of a stat over a group, read as it enters.
+    if (count?.kind === 'aggregate') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:aggregate',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'aggregate') {
+        return failure(ability);
+      }
+      return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
     // "equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as it enters.
     if (count?.kind === 'diedThisTurn') {
       const blocked = gate(ability, [
@@ -1209,10 +1253,12 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:dredge',
   'keyword:mobilize',
   'keyword:fabricate',
   'keyword:partnerWith',
   'keyword:deckLimit',
+  'keyword:companion',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',
@@ -1246,6 +1292,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTapped',
   'replacement:entersWithCounters',
   'replacement:wouldDie',
+  'replacement:exileInsteadOfOpponentGraveyard',
   'replacement:entersTappedUnlessPays',
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',

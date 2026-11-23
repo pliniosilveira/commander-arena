@@ -32,6 +32,7 @@ import {
 } from '../keyword/protection';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
+import { QUOTED_GROUP_STATIC } from './granted-group-static';
 import { QUOTED_ABILITY } from './quoted';
 import { AND_RESTRICTION, type RestrictionSubject, restrictionEffects } from './restriction-words';
 import { QUOTED_COST_INCREASE } from './skybonder';
@@ -158,6 +159,7 @@ const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
   QUOTED_ABILITY,
   QUOTED_COST_INCREASE,
+  QUOTED_GROUP_STATIC,
   QUOTED,
   BASE_PT,
   PROTECTION,
@@ -169,7 +171,7 @@ const HAS_WHAT: Parser<Effects> = choice(
  * the plural, that a group has as well as its own. Stage P33 (D-150): "is an Angel in addition to its other types", the singular of the
  * same, said of a permanent an Aura or an Equipment is attached to.
  */
-function areTypes(plural: boolean): Parser<Effects> {
+export function areTypes(plural: boolean): Parser<Effects> {
   const typeEffect = (word: { subtype: string }): Effects => [
     { kind: 'addTypes', subtypes: [word.subtype] },
   ];
@@ -246,7 +248,13 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
           map(
             sequence(
               pattern(/(?: and |, and |, )/iu),
-              choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED_COST_INCREASE, QUOTED),
+              choice(
+                QUOTED_MANA,
+                QUOTED_ABILITY,
+                QUOTED_COST_INCREASE,
+                QUOTED_GROUP_STATIC,
+                QUOTED,
+              ),
             ),
             ([, what]) => what,
           ),
@@ -398,6 +406,9 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     // CR 508.1a, 506.3 (Vow of Duty): the creature may not attack the Aura's controller or the planeswalkers they control.
     "Enchanted creature can't attack you or planeswalkers you control.",
     "Enchanted creature gets +2/+2, has vigilance, and can't attack you or planeswalkers you control.",
+    // Dancer's Chakrams (CR 604.1, 613.1f): a static ability the creature is given, that gives "+N/+N" and a keyword to a group.
+    'Equipped creature has "Other commanders you control get +2/+2 and have lifelink."',
+    'Equipped creature gets +2/+2, has lifelink and "Other commanders you control get +2/+2 and have lifelink," and is a Performer in addition to its other types.',
   ],
   rejects: [
     'Enchanted creature gets +2/+2',
@@ -427,6 +438,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Enchanted creature can't attack you or planeswalkers.",
     "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
     'Enchanted creature gets +1/+1 and loses flying.',
+    "Enchanted creature can attack as though it didn't have defender.",
     'Equipped land has hexproof.',
     'Equipped creature has "{T}: Add {G}.".',
     'Equipped creature has "{T}: Add {G}." and flying.',
@@ -473,12 +485,21 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
+    'Other commanders you control get +2/+2 and have lifelink.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
     'Zombie tokens you control get +1/+1.',
     'Creatures you control that are Zombies and/or tokens get +1/+1 and have flying.',
+    // CR 609.4, 702.3b (Felothar the Steadfast): a permission of the group.
+    "Creatures you control can attack as though they didn't have defender.",
+    "Creatures you control with defender can attack as though they didn't have defender.",
+    'Creatures you control assign combat damage equal to their toughness rather than their power.',
   ],
   rejects: [
+    "Creatures you control can attack as though it didn't have defender.",
+    "Creatures you control can attack as though they didn't have flying.",
+    'Creatures you control assigns combat damage equal to their toughness rather than their power.',
+    'Creatures you control assign combat damage equal to their power rather than their toughness.',
     "Slivers can't be blocked except by creatures with flying.",
     "Slivers can't be blocked except by Slivers you control.",
     'Zombie tokens you control have flash.',
@@ -526,6 +547,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.token-permanents',
       // D-369: "Zombie tokens you control have hexproof and menace."
       'noun.subtype-token-permanents',
+      // Dancer's Chakrams (CR 903.3): "Other commanders you control get +2/+2 and have lifelink." (the ability that card gives, read as its own).
+      'noun.other-commanders-you-control',
     ],
     'plural',
   ),
@@ -553,8 +576,14 @@ export const STATIC_EACH = defineRule<IrStatic>({
     'Each creature you control gets +1/+1 and has trample.',
     "Each other creature you control that's a Skeleton or Pirate gets +1/+1.",
     "Each creature you control but don't own gets +2/+2, has menace and deathtouch, and is a Pirate in addition to its other types.",
+    // CR 510.1a, 609.4 (Felothar the Steadfast, Assault Formation): what each creature assigns.
+    'Each creature you control assigns combat damage equal to its toughness rather than its power.',
+    "Each creature you control can attack as though it didn't have defender.",
   ],
   rejects: [
+    'Each creature you control assign combat damage equal to its toughness rather than its power.',
+    'Each creature you control assigns combat damage equal to its toughness rather than its power',
+    'Each creature you control assigns combat damage equal to its power rather than its toughness.',
     "Each creature you control with power 4 or greater can't be blocked by more than one creature",
     "Each creature you control can't be blocked by more than two creatures.",
     'Each creature you control get +1/+1.',

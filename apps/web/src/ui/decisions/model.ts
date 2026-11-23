@@ -10,8 +10,10 @@ import {
   handleDecision,
   type ObjectId,
   type PendingDecision,
+  type PriorityDecision,
   type SeatId,
 } from '@commander-arena/engine';
+import { BRING_COMPANION_HINT, BRING_COMPANION_LABEL } from '../../game/companion';
 import { canPassTurn } from '../../policy/should-stop';
 import type { Interaction } from '../interaction';
 import { arrangeAction, arrangeDetail, arrangementComplete, arrangePrompt } from './arrange';
@@ -132,6 +134,7 @@ import type { UiState } from './ui-state';
 import { isUntapChoice, UNTAP_PROMPT, untapButtonLabel, untapDetail } from './untap';
 import {
   drawUpToButtonText,
+  isChooseNumber,
   isDrawUpTo,
   isMultikicker,
   isPayAnyAmount,
@@ -227,7 +230,11 @@ function interaction(parts: Partial<Interaction>): Interaction {
  * viewer's turn with an empty stack a separate "Pass Turn" button sits next to it, also when
  * creatures could attack (it skips combat and the later steps).
  */
-function priorityButtons(view: GameView, ctl: Controller): readonly ButtonSpec[] {
+function priorityButtons(
+  view: GameView,
+  ctl: Controller,
+  decision: PriorityDecision,
+): readonly ButtonSpec[] {
   const passTurn = () => (ctl.passTurn === undefined ? ctl.act({ kind: 'pass' }) : ctl.passTurn());
   const passTurnSpec = (primary: boolean): ButtonSpec =>
     button('passTurn', PASS_TURN_LABEL, passTurn, {
@@ -235,9 +242,17 @@ function priorityButtons(view: GameView, ctl: Controller): readonly ButtonSpec[]
       ariaLabel: PASS_TURN_NAME,
       hint: passTurnHint(ctl.fullControl === true),
     });
-  if (passTurnIsPrimary(view)) return [passTurnSpec(true)];
+  // CR 116.2g, 702.139a: the special action of the companion, only when the engine offers it (it checks the phase, the stack, the {3} and the once per game).
+  const companion = decision.options.some((o) => o.kind === 'bringCompanion')
+    ? [
+        button('bringCompanion', BRING_COMPANION_LABEL, () => ctl.act({ kind: 'bringCompanion' }), {
+          hint: BRING_COMPANION_HINT,
+        }),
+      ]
+    : [];
+  if (passTurnIsPrimary(view)) return [passTurnSpec(true), ...companion];
   const one = button('pass', passLabel(view), () => ctl.act({ kind: 'pass' }), { primary: true });
-  return canPassTurn(view) ? [one, passTurnSpec(false)] : [one];
+  return canPassTurn(view) ? [one, passTurnSpec(false), ...companion] : [one, ...companion];
 }
 
 const bar = (
@@ -284,7 +299,7 @@ function handlers(
             else if (outcome.kind === 'choose' || outcome.kind === 'menu') ctl.openChooser(id);
           },
         }),
-        bar: bar(priorityPrompt(view, index), priorityButtons(view, ctl), {
+        bar: bar(priorityPrompt(view, index), priorityButtons(view, ctl, d), {
           detail: priorityDetail(view),
         }),
       };
@@ -318,7 +333,7 @@ function handlers(
       const slots = slotStatuses(d.specs, ui.targets);
       const need = slots.reduce((n, s) => n + Math.max(0, s.spec.min - s.count), 0);
       const prompt = targetsPrompt(d, index, slot);
-      const kept = keptDivisionText(d, index, view.viewer);
+      const kept = keptDivisionText(d, index, view.viewer, view.seats.length);
       const detail = [
         ...slots.map((s, i) =>
           d.specs.length > 1
@@ -653,7 +668,9 @@ function handlers(
                   ? payAmountButtonText(d, ui.x)
                   : isDrawUpTo(d)
                     ? drawUpToButtonText(ui.x)
-                    : `Choose X = ${ui.x}`,
+                    : isChooseNumber(d)
+                      ? `Choose ${ui.x}`
+                      : `Choose X = ${ui.x}`,
             () => act({ kind: 'chooseX', value: ui.x }),
             { primary: true },
           ),
@@ -662,7 +679,7 @@ function handlers(
           inOverlay: true,
           // D-151: paying any amount has no way back, 0 is the way out (the engine lists no `cancel`).
           cancel:
-            isPayAnyAmount(d) || isDrawUpTo(d)
+            isPayAnyAmount(d) || isDrawUpTo(d) || isChooseNumber(d)
               ? null
               : button('cancel', 'Cancel', () => act({ kind: 'cancel' })),
         },
@@ -746,7 +763,7 @@ function handlers(
       const label = (id: ObjectId) => ui.attacks.find((a) => a.attacker === id);
       const seats = attackableSeats(d.candidates);
       // The cost of attacking (CR 508.1h, D-125): what the chosen attack would cost to pay.
-      const taxLine = taxDetail(taxRows(d, ui.attacks, index, view.viewer));
+      const taxLine = taxDetail(taxRows(d, ui.attacks, index, view.viewer, view.seats.length));
       return {
         interaction: interaction({
           clickable: new Set(d.candidates.map((c) => c.attacker)),

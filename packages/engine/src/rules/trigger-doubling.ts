@@ -10,6 +10,9 @@
  * triggers an additional time", CR 603.2d) only the triggers the event named causes count: the ability is a `castSpell` ability (it triggered on the cast of a
  * spell, or on the copy of one when it says "or copy"), the player who cast or copied is the controller of the doubler, and the spell is one the cause's filter
  * names. A trigger the spell brings about another way (a permanent becoming its target, a creature spell entering) has another event and is not doubled.
+ *
+ * With the cause `permanentEnters` (CR 603.2d, 603.6a) only the triggers a permanent entering causes count: `entersBattlefield`, `entersBatch` and `landfall`
+ * abilities, whoever controls the permanent that enters (it may be the source itself).
  */
 import { LOOK_BACK_TRIGGER_KINDS } from '../ast/features';
 import type { Ability, StaticEffect, StaticSubject } from '../ast/types';
@@ -103,6 +106,11 @@ function causedBy(
       trigger.ability.kind === 'triggered' &&
       (trigger.ability.trigger.kind === 'attacks' || trigger.ability.trigger.kind === 'attackBatch')
     );
+  }
+  if (cause.kind === 'permanentEnters') {
+    // CR 603.2d, 603.6a: the event is a permanent entering, whoever controls it (a token too).
+    const kind = trigger.ability.kind === 'triggered' ? trigger.ability.trigger.kind : null;
+    return kind === 'entersBattlefield' || kind === 'entersBatch' || kind === 'landfall';
   }
   if (trigger.ability.kind !== 'triggered' || trigger.ability.trigger.kind !== 'castSpell') {
     return false;

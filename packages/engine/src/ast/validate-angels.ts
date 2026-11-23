@@ -29,6 +29,14 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (t.firstEachTurn !== undefined && t.firstEachTurn !== true) {
         issue(out, `${path}.firstEachTurn`, 'firstEachTurn must be true when present');
       }
+      if (t.kind === 'lifeLost' && t.batch !== undefined) {
+        if (t.batch !== true) issue(out, `${path}.batch`, 'batch must be true when present');
+        if (t.who === 'you')
+          issue(out, `${path}.batch`, 'a batch of life loss is of other players');
+        if (t.firstEachTurn === true) {
+          issue(out, `${path}.batch`, 'batch does not go with firstEachTurn');
+        }
+      }
       return true;
     case 'countersAdded':
       checkCountersAddedSubject(t, path, out);
@@ -324,13 +332,13 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) === 'creatureAttacks') {
+        if (kindOf(s.cause) === 'creatureAttacks' || kindOf(s.cause) === 'permanentEnters') {
           // Issue 81 (CR 603.2d): a creature attacking, no parameter.
         } else if (kindOf(s.cause) !== 'castOrCopySpell') {
           issue(
             out,
             `${path}.cause`,
-            'the cause of an additional trigger is castOrCopySpell or creatureAttacks',
+            'the cause of an additional trigger is castOrCopySpell, creatureAttacks or permanentEnters',
           );
         } else {
           const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;

@@ -26,11 +26,14 @@ export function LogDock() {
       >
         Log
       </button>
-      {open && (
-        <div className="log-dialog" id="game-log-dialog" role="dialog" aria-label="Game log">
-          <LogPanel />
-        </div>
-      )}
+      {/* Closed, the log stays in the page for screen readers (a live region), out of sight. */}
+      <div
+        className={open ? 'log-dialog' : 'pnl-visually-hidden'}
+        id="game-log-dialog"
+        {...(open ? { role: 'dialog', 'aria-label': 'Game log' } : {})}
+      >
+        <LogPanel />
+      </div>
     </>
   );
 }

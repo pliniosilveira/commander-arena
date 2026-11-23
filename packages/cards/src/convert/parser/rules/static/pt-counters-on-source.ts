@@ -1,12 +1,13 @@
 /**
  * Static rule of Call for Unity (Food and Fellowship deck): "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c, 611.3a).
  */
-import { choice, fail, pattern, quiet, sequence } from '../../combinators';
+import { choice, fail, optional, pattern, quiet, sequence } from '../../combinators';
 import type { IrNoun, IrStatic } from '../../ir/types';
 import { defineRule, family } from '../registry';
 import { staticOf } from './angels-words';
+import { areTypes } from './grants';
 
-const SINGULAR_SUBJECTS = ['noun.self'];
+const SINGULAR_SUBJECTS = ['noun.self', 'noun.attached-permanent'];
 const PLURAL_SUBJECTS = ['noun.plain-permanents', 'noun.other-permanents'];
 
 /**
@@ -29,6 +30,9 @@ export const STATIC_PT_COUNTERS_ON_SOURCE = defineRule<IrStatic>({
     'Creatures you control get +1/+1 for each unity counter on ~.',
     'Other creatures you control get +1/+0 for each quest counter on ~.',
     '~ gets +0/+1 for each charge counter on ~.',
+    // Reaper's Scythe: what an Equipment gives, worked out from its own counters (CR 301.5a, 613.4c), and a type added (CR 205.1b).
+    'Equipped creature gets +1/+1 for each soul counter on ~ and is an Assassin in addition to its other types.',
+    'Enchanted creature gets +1/+1 for each unity counter on ~.',
   ],
   rejects: [
     'Creatures you control get +1/+1 for each unity counter on ~',
@@ -41,7 +45,7 @@ export const STATIC_PT_COUNTERS_ON_SOURCE = defineRule<IrStatic>({
     'Creatures you control get +1/+1 for each counter on ~.',
     'Creatures you control get +1/+1 for each unity counter on ~ until end of turn.',
     'Creatures you control get +1/+1 for each unity counter on ~ and have flying.',
-    'Enchanted creature gets +1/+1 for each unity counter on ~.',
+    'Equipped creature gets +1/+1 for each soul counter on ~ and has flying.',
   ],
   parse: (ctx, pos) => {
     const verb = (only: readonly string[], gets: string) =>
@@ -51,10 +55,11 @@ export const STATIC_PT_COUNTERS_ON_SOURCE = defineRule<IrStatic>({
     const r = sequence(
       pattern(/\+([01])\/\+([01])(?![\p{L}\p{N}/])/u),
       pattern(/ for each ([+-]\d+\/[+-]\d+|[a-z]+) counter on ~(?![\p{L}\p{N}])/u),
+      optional(sequence(pattern(/(?: and |, and |, )/iu), quiet(areTypes(false))), null),
       pattern(/\./u),
     )(ctx, subject.pos);
     if (!r.ok) return r;
-    const [step, counted] = r.value;
+    const [step, counted, tail] = r.value;
     const power = Number(step[1]);
     const toughness = Number(step[2]);
     const counter = counted[1] ?? '';
@@ -69,7 +74,10 @@ export const STATIC_PT_COUNTERS_ON_SOURCE = defineRule<IrStatic>({
       value: staticOf(
         'static.pt-counters-on-source',
         subject.value[0],
-        [{ kind: 'ptCountersOnSource', power: power === 1, toughness: toughness === 1, counter }],
+        [
+          { kind: 'ptCountersOnSource', power: power === 1, toughness: toughness === 1, counter },
+          ...(tail ? tail[1] : []),
+        ],
         pos,
         r.pos,
       ),

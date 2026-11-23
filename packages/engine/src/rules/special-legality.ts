@@ -128,3 +128,17 @@ export function canPlot(state: GameState, seat: SeatId, obj: GameObject): boolea
 export function plottableObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'hand', seat).filter((id) => canPlot(state, seat, getObject(state, id)));
 }
+
+/** The mana of the special action (CR 702.139a). */
+export const COMPANION_ACTION_COST: readonly string[] = ['3'];
+
+/**
+ * CR 116.2g, 702.139a: whether `seat` may bring its companion into its hand now. Sorcery timing is exactly "during a main phase of
+ * their turn with an empty stack" (CR 117.1a), and the seat must have priority and be able to pay {3} now.
+ */
+export function canBringCompanion(state: GameState, seat: SeatId): boolean {
+  const companion = state.seats[seat]?.companion;
+  if (companion === undefined || companion.brought) return false;
+  if (state.turn.prioritySeat !== seat || !hasSorceryTiming(state, seat)) return false;
+  return planFor(state, seat, COMPANION_ACTION_COST, { ability: true }) !== null;
+}

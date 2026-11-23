@@ -84,6 +84,16 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   if (mono?.kind === 'flag' && mono.value) {
     return plainClause(clause) ? { monocoloredChosen: true } : null;
   }
+  // "This mana can't be spent to pay generic mana costs." (Jegantha, the Wellspring, CR 106.6).
+  const notGeneric = clause.args.notGeneric;
+  if (notGeneric?.kind === 'flag' && notGeneric.value) {
+    return plainClause(clause) ? { notGeneric: true } : null;
+  }
+  // "Spend this mana only to cast a spell from your graveyard." (issue 102, Lord of the Forsaken, CR 106.6, 601.2a).
+  const fromGraveyard = clause.args.fromGraveyard;
+  if (fromGraveyard?.kind === 'flag' && fromGraveyard.value) {
+    return plainClause(clause) ? { fromGraveyard: true } : null;
+  }
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
@@ -287,7 +297,9 @@ function lowerManaAbility(
   // A definition of X after the mana would be dropped by this reading, so it is not read (stage P28). Neither is a test on a
   // sentence (stage P32): "If you control a Dragon, add {R}" is not "Add {G}", and only `lowerManaInstead` reads the one that says "instead".
   // "Add X mana of any one color, where X is this creature's power." (CR 107.3c): the one definition of X a mana ability of one sentence may have, read by that production.
-  const defines = spec?.kind === 'manaSpec' && spec.what.kind === 'anyOneColorX';
+  const defines =
+    spec?.kind === 'manaSpec' &&
+    (spec.what.kind === 'anyOneColorX' || spec.what.kind === 'anyCombinationX');
   // Issue 345 (Redshift): the sentence of the mana is the first, and later sentences ("Spend this mana only to activate abilities.") define nothing.
   const whereOf = ability.body.sentences[0]?.where;
   const laterWhere = ability.body.sentences.slice(1).some((s) => s.where !== undefined);
@@ -325,16 +337,27 @@ function lowerManaAbility(
   if (!restrictions.ok) return restrictions;
   // CR 106.1b, 605.3b: the count of mana of the one color chosen as the ability resolves, from the "for each" of the sentence or from the X its ", where X is" defines.
   let production: ManaProduction;
-  if (spec.what.kind === 'thatColor' || spec.what.kind === 'anyOneColorX') {
+  if (
+    spec.what.kind === 'thatColor' ||
+    spec.what.kind === 'anyOneColorX' ||
+    spec.what.kind === 'anyCombinationX'
+  ) {
     const counted = spec.what.kind === 'thatColor' ? add.args.times : whereOf;
     if (counted === undefined || counted.kind === 'flag') return failure(ability);
     const amount = lowerAmount(counted as IrAmount, trial, spec.rule);
     if (!amount.ok) return amount;
     // The amount is counted before the costs are paid, so no cost may change what it reads (CR 605.3a, 605.3b).
-    if (costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')) {
+    if (
+      costs.value.some(
+        (c) => c.kind === 'sacrifice' || c.kind === 'removeCounters' || c.kind === 'putCounters',
+      )
+    ) {
       return failure(ability);
     }
-    production = { kind: 'anyColorAmount', amount: amount.value };
+    production =
+      spec.what.kind === 'anyCombinationX'
+        ? { kind: 'anyCombinationAmount', amount: amount.value }
+        : { kind: 'anyColorAmount', amount: amount.value };
   } else {
     const plain = lowerMana(spec);
     if (plain === null) return failure(ability);
@@ -349,7 +372,9 @@ function lowerManaAbility(
     if (!times.ok) return times;
     if (
       trial.usesX ||
-      costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')
+      costs.value.some(
+        (c) => c.kind === 'sacrifice' || c.kind === 'removeCounters' || c.kind === 'putCounters',
+      )
     ) {
       return failure(ability);
     }
@@ -372,6 +397,7 @@ function lowerManaAbility(
     ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
     ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
     ...(spendOnly?.abilitiesOnly === true ? (['ability:manaSpendOnlyAbilities'] as const) : []),
+    ...(spendOnly?.notGeneric === true ? (['ability:manaSpendOnlyNotGeneric'] as const) : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
@@ -382,6 +408,7 @@ function lowerManaAbility(
     ...(spendOnly?.monocoloredChosen === true
       ? (['ability:manaSpendOnlyMonocolored'] as const)
       : []),
+    ...(spendOnly?.fromGraveyard === true ? (['ability:manaSpendOnlyFromGraveyard'] as const) : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -414,6 +441,8 @@ function lowerManaAbility(
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
   // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
   const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
+  // CR 118.3, 122.1 (Wall of Roots): "Put a -0/-1 counter on ~", one such cost, the permanent itself; it pays for the ability like a counter taken off it.
+  const additions = costs.value.filter((c) => c.kind === 'putCounters').length;
   // Issue 144 (Arena of Glory, CR 701.43a): "Exert ~", the permanent itself, once.
   const exerts = costs.value.filter((c) => c.kind === 'exert').length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
@@ -425,18 +454,33 @@ function lowerManaAbility(
   // `{T}`, the sacrifice of itself or a counter taken off it pays for it (a Treasure, a Gold token with no `{T}`, or "Remove a charge counter from ~": Mana Bloom).
   const shaped =
     taps <= 1 &&
-    (taps === 1 || sacrifices.length === 1 || removals === 1) &&
+    (taps === 1 ||
+      sacrifices.length === 1 ||
+      removals === 1 ||
+      additions === 1 ||
+      lives === 1 ||
+      // Relic of Legends (CR 605.3b): "Tap an untapped legendary creature you control: Add one mana of any color." needs no {T} of its own.
+      tapsOther.length === 1) &&
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
     removals <= 1 &&
+    additions <= 1 &&
     exerts <= 1 &&
     sacrifices.length <= 1 &&
     tapsOther.length <= 1 &&
     (tapsOther.length === 0 ||
       (sacrifices.length === 0 && tapsOther.every((c) => c.count === 1))) &&
     selfOnly &&
-    taps + manas + lives + mills + removals + exerts + sacrifices.length + tapsOther.length ===
+    taps +
+      manas +
+      lives +
+      mills +
+      removals +
+      additions +
+      exerts +
+      sacrifices.length +
+      tapsOther.length ===
       costs.value.length &&
     effects.every(isAlso) &&
     rest.every(plainClause);
@@ -761,6 +805,10 @@ function prepare(
     ...(costs.value.some((c) => c.kind === 'discard' && c.countX === true)
       ? (['ability:discardCostX'] as const)
       : []),
+    // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard".
+    ...(costs.value.some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
+      ? (['ability:exileFromGraveyardX'] as const)
+      : []),
     // D-583: "Sacrifice one or more artifacts".
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
       ? (['ability:sacrificeOneOrMore'] as const)
@@ -856,7 +904,9 @@ function lowerOrdinary(written: Activated, ctx: LowerContext): LowerResult<reado
   ctx.graveyardSource = true;
   // The sentences are lowered as the body of any other ability is, so an X that a sentence defines ("..., where X is
   // the number of creatures you control", stage P28) and what "this way" counts are read as they are everywhere.
+  ctx.activatedBody = true;
   const sentenced = lowerSentences(ability.body.sentences, ctx);
+  ctx.activatedBody = false;
   ctx.graveyardSource = false;
   const functionsInGraveyard = ctx.usedGraveyardSource;
   ctx.usedGraveyardSource = previousGraveyardSource;
@@ -1009,6 +1059,8 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:mana',
   'manaCost:exert',
   'ability:manaSpendOnlyMonocolored',
+  'ability:manaSpendOnlyNotGeneric',
+  'ability:manaSpendOnlyFromGraveyard',
   'ability:spendOnlyChosenColor',
   'manaCost:tap',
   'manaCost:mana',
@@ -1035,6 +1087,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'manaProduction:anyColorAmount',
+  'manaProduction:anyCombinationAmount',
   'ability:activateOnlyIf',
   'ability:costReducedIf',
   'ability:costReducedBy',
@@ -1049,6 +1102,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:xCost',
   'ability:sacrificeX',
   'ability:discardCostX',
+  'ability:exileFromGraveyardX',
   'ability:sacrificeOneOrMore',
   'ability:sacrificeEach',
 ];

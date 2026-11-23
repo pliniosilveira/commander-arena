@@ -142,6 +142,11 @@ export interface LowerContext {
    * ordinary activated ability sets it, and "Return this card from your graveyard to the battlefield" is lowered only then.
    */
   graveyardSource: boolean;
+  /**
+   * True while the body of an ordinary activated ability is lowered (Demolition Field, CR 608.2d): an activated ability has no "you may" of its own, so a lone optional
+   * search is the engine's `search` with `optional`, asked where it comes up.
+   */
+  activatedBody: boolean;
   /** Set when a lowering used `graveyardSource`: the ability functions from the graveyard. */
   usedGraveyardSource: boolean;
   /**
@@ -216,6 +221,11 @@ export interface LowerContext {
   diesTrigger: boolean;
   /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
   damageBatchTrigger: boolean;
+  /**
+   * True in the body of "Whenever you attack with eight or more creatures" (Champions from Beyond, CR 508.1, 603.2): the trigger has no filter on the creatures but "creature", so
+   * "those creatures" are every creature of the declaration (the engine's `triggerAttackers`).
+   */
+  attackBatchThose: boolean;
   /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
   selfAttackTrigger: boolean;
   /**
@@ -274,6 +284,8 @@ export interface LowerContext {
   putCounters: { counter: string; creatures: boolean }[];
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
   discardBatchTrigger: boolean;
+  /** Issue 102: the trigger is about a batch of cards put into a graveyard, whose cards "one of them" names (`triggerCards`). */
+  graveyardBatchTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a batch of permanents entering (Twilight Diviner, CR 603.2c): "one of them" names the permanents that triggered it. */
   entersBatchTrigger: boolean;
   /**
@@ -332,6 +344,11 @@ export interface LowerContext {
    */
   lastEffectKind: string | null;
   /**
+   * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
+   * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  lastCounteredGroup: ObjectSelector | null;
+  /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
@@ -341,11 +358,18 @@ export interface LowerContext {
    * Set by the lowering of `choosePlayer`, never cleared inside one ability.
    */
   choseAPlayer: boolean;
+  /** The stat "that player has more cards in hand than you" compared (Slithermuse), which "equal to the difference" after it is of. Null before one. */
+  comparedStat: 'life' | 'cardsInHand' | null;
   /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
   sacrificedRef: string | null;
+  /**
+   * What "that creature" means in the count of "put a number of +1/+1 counters on each other creature you control equal to that creature's toughness" (Canopy Gargantuan, CR 608.2c): the
+   * reference of the "each" noun the counters go on, which the engine's `eachObject` names. Null outside the count of such an instruction.
+   */
+  eachRef: string | null;
   /**
    * True when the text of the card puts its own name inside a quotation (stage P36, D-178): there `~` may be the card and not the permanent that
    * has the quoted ability, so an ability granted to a group is not read from it.
@@ -410,11 +434,13 @@ export function newContext(
     payReflexive: false,
     triggeredBody: false,
     discardBatchTrigger: false,
+    graveyardBatchTrigger: false,
     entersBatchTrigger: false,
     didSearch: false,
     putCounters: [],
     searched: null,
     sacrificedRef: null,
+    eachRef: null,
     madeToken: null,
     chosenExiled: false,
     milled: false,
@@ -425,13 +451,16 @@ export function newContext(
     exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
+    lastCounteredGroup: null,
     randomYardCard: false,
     choseAPlayer: false,
+    comparedStat: null,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,
     movedOnto: null,
     graveyardSource: false,
+    activatedBody: false,
     usedGraveyardSource: false,
     dieSides: null,
     clashed: false,
@@ -451,6 +480,7 @@ export function newContext(
     itDied: false,
     diesTrigger: false,
     damageBatchTrigger: false,
+    attackBatchThose: false,
     selfAttackTrigger: false,
     selfEntersOrAttacksTrigger: false,
     cardName,

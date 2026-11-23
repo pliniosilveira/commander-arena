@@ -6,18 +6,22 @@ import { createWorkerClient } from './game/client';
 import { autostartAiDelay, withSlowOpponent } from './game/slow-opponent';
 import { createImportEnvironment } from './import';
 import { animationGate } from './policy/animation-gate';
-import { CHALLENGES, createPrecons, SHIPPED, startOptionsFor } from './precons';
+import {
+  CHALLENGES,
+  createPrecons,
+  SHIPPED,
+  startOptionsFor,
+  startTableOptionsFor,
+} from './precons';
 import { createAppStore } from './store';
 import { ImportProvider } from './ui/import/import-context';
 import { applyStoredCombatAnimations } from './ui/panels/animations';
-import { applyStoredSidePanel } from './ui/panels/side-panel';
 import { applyStoredTextSize } from './ui/panels/text-size';
 import { PreconsProvider } from './ui/precons-context';
 import { StoreProvider } from './ui/store-context';
 import './styles.css';
 
 applyStoredTextSize();
-applyStoredSidePanel();
 applyStoredCombatAnimations();
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -53,6 +57,24 @@ if (autostart?.length === 2) {
       seed,
       humanDeck,
       aiDeck,
+      freeMulligan: params.get('freeMulligan') !== '0',
+      ai: autostartAi(params),
+      allowHidden: true,
+    }).then((result) => {
+      if (result.ok) void store.getState().startGame(result.options);
+      else store.getState().fail(result.reason);
+    });
+  }
+}
+
+// With three or four ids (`?autostart=<human>,<ai1>,<ai2>[,<ai3>]`) the game has that many seats.
+if (autostart !== undefined && (autostart.length === 3 || autostart.length === 4)) {
+  const [humanDeck, ...opponentDecks] = autostart;
+  if (humanDeck !== undefined) {
+    void startTableOptionsFor(precons, {
+      seed: Number(params.get('seed') ?? 1),
+      humanDeck,
+      opponentDecks,
       freeMulligan: params.get('freeMulligan') !== '0',
       ai: autostartAi(params),
       allowHidden: true,

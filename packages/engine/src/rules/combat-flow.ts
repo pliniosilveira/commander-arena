@@ -13,7 +13,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageAssignment, DamageChoice } from '../state/combat-types';
 import type { DamageResume, NewDecision, PendingDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getObject, opponentsOf } from '../state/ops';
+import { getObject, seatsInOrder } from '../state/ops';
 import type { GameState, StepId } from '../state/types';
 import {
   attackCostsFor,
@@ -40,6 +40,7 @@ import {
   validateBlocks,
 } from './combat-legality';
 import { askingFlow } from './damage-order';
+import { attackerDefender } from './defending';
 import { applyExerts, canExert, type ExertAttack } from './exert';
 import { hasKeyword } from './keywords';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
@@ -50,9 +51,20 @@ import { fail, ok, type Result } from './result';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
 
-/** The player who declares blockers: the opponent being attacked (two seats today). */
-export function defendingSeat(state: GameState): SeatId | null {
-  return opponentsOf(state, state.turn.activeSeat)[0] ?? null;
+/**
+ * The players who declare blockers (CR 509.1, 508.5): the distinct defending players of the attackers still on the battlefield, in turn order from
+ * the active player (CR 101.4). A player who has left the game is skipped.
+ */
+export function defendingSeats(state: GameState): SeatId[] {
+  const live = (state.combat?.attackers ?? []).filter(
+    (a) => state.objects[a.object]?.zone === 'battlefield',
+  );
+  const defenders = new Set<SeatId>();
+  for (const a of live) {
+    const seat = attackerDefender(state, a);
+    if (seat !== null && state.seats[seat]?.hasLost !== true) defenders.add(seat);
+  }
+  return seatsInOrder(state, state.turn.activeSeat).filter((seat) => defenders.has(seat));
 }
 
 /** The step that follows `step` within the combat phase, or null to use the ordinary order. */
@@ -109,63 +121,8 @@ export function beginCombatStep(
       }
       return { state: setPending(state, decision), events: [] };
     }
-    case 'declareBlockers': {
-      const defender = defendingSeat(state);
-      const candidates =
-        defender === null
-          ? []
-          : blockCandidates(state, defender).map((c) => ({
-              ...c,
-              ...(hasRestriction(state, getObject(state, c.blocker), 'mustBlock')
-                ? { mustBlock: true as const }
-                : {}),
-            }));
-      if (defender === null || candidates.length === 0) {
-        // CR 509.1h: no one can block, so every attacker is unblocked; the declaration is an event with no blockers (`unblockedAttackBatch` reads it).
-        const none: GameEvent[] =
-          defender === null || state.combat === null
-            ? []
-            : [{ kind: 'blockersDeclared', seat: defender, blocks: [] }];
-        return grantPriority(state, active, [...stepEvents, ...none]);
-      }
-      // An attacker that left the battlefield (a trigger of the declare attackers step can remove
-      // one) is no longer in combat (CR 506.4) and cannot be blocked.
-      const attackers = (state.combat?.attackers ?? [])
-        .filter((a) => state.objects[a.object]?.zone === 'battlefield')
-        .map((a) => ({
-          attacker: a.object,
-          target: a.target,
-          minBlockers: hasKeyword(state, getObject(state, a.object), 'menace') ? 2 : 1,
-          // CR 509.1b (D-133): "can't be blocked by more than one creature".
-          ...(hasRestriction(state, getObject(state, a.object), 'cantBeBlockedByMoreThanOne')
-            ? { maxBlockers: 1 }
-            : {}),
-          // CR 509.1c (D-206): "must be blocked if able".
-          ...(hasRestriction(state, getObject(state, a.object), 'mustBeBlocked')
-            ? { mustBeBlocked: true as const }
-            : {}),
-        }));
-      // D-149, CR 509.1d: what blocking costs, when something taxes it.
-      const tax = blockTax(state);
-      return {
-        state: setPending(state, {
-          kind: 'declareBlockers',
-          seat: defender,
-          attackers,
-          candidates,
-          ...(tax.source === null
-            ? {}
-            : {
-                blockCost: {
-                  cost: tax.cost,
-                  affordable: affordableBlockers(state, defender, tax.cost, candidates.length),
-                  source: tax.source,
-                },
-              }),
-        }),
-        events: [],
-      };
-    }
+    case 'declareBlockers':
+      return askBlockers(state, stepEvents);
     case 'firstStrikeDamage':
       return runDamageStep(beginFirstStrikeStep(state), 'firstStrike');
     case 'combatDamage':
@@ -173,6 +130,139 @@ export function beginCombatStep(
     default:
       return null;
   }
+}
+
+/**
+ * The declare blockers question for the first defending player who has not declared yet (CR 509.1, in turn order from the active player). A defender with
+ * no creature that can block declares nothing (CR 509.1h: the declaration is an event with no blockers; `unblockedAttackBatch` reads it). Priority goes
+ * to the active player (CR 509.2) when every defender has declared. With one defender this is the whole step; with several, the declarations of all of
+ * them are reported together as the last one is made, because the blockers are declared simultaneously (CR 509.1g).
+ */
+function askBlockers(state: GameState, prior: readonly GameEvent[]): Outcome {
+  const active = state.turn.activeSeat;
+  const defenders = defendingSeats(state);
+  if (defenders.length <= 1) {
+    const defender = defenders[0];
+    const candidates = defender === undefined ? [] : blockCandidatesWithRules(state, defender);
+    if (defender === undefined || candidates.length === 0) {
+      const none: GameEvent[] =
+        defender === undefined || state.combat === null
+          ? []
+          : [{ kind: 'blockersDeclared', seat: defender, blocks: [] }];
+      return grantPriority(state, active, [...prior, ...none]);
+    }
+    return { state: setPending(state, blockDecision(state, defender, candidates)), events: [] };
+  }
+  let current = state;
+  for (const defender of defenders) {
+    if ((current.combat?.blockersDeclaredBy ?? []).includes(defender)) continue;
+    const candidates = blockCandidatesWithRules(current, defender);
+    if (candidates.length > 0) {
+      return {
+        state: setPending(current, blockDecision(current, defender, candidates)),
+        events: [],
+      };
+    }
+    current = withDeclaredBy(current, defender);
+  }
+  const declarations = blockersDeclaredEvents(current, defenders);
+  const granted = grantPriority(current, active, [...prior, ...declarations]);
+  return { state: granted.state, events: [...declarations, ...granted.events] };
+}
+
+function withDeclaredBy(state: GameState, seat: SeatId): GameState {
+  const combat = state.combat;
+  if (combat === null) return state;
+  const done = combat.blockersDeclaredBy ?? [];
+  return done.includes(seat)
+    ? state
+    : { ...state, combat: { ...combat, blockersDeclaredBy: [...done, seat] } };
+}
+
+/** One `blockersDeclared` for each defender, with the blocks of the creatures it attacks (CR 509.1g). */
+function blockersDeclaredEvents(state: GameState, defenders: readonly SeatId[]): GameEvent[] {
+  const combat = state.combat;
+  if (combat === null) return [];
+  return defenders.map((seat) => ({
+    kind: 'blockersDeclared' as const,
+    seat,
+    blocks: combat.blocks.filter((b) => {
+      const attacker = combat.attackers.find((a) => a.object === b.attacker);
+      return attacker !== undefined && attackerDefender(state, attacker) === seat;
+    }),
+  }));
+}
+
+/**
+ * What follows a declaration `declared` made by `seat` (CR 509.1, 509.2). With one defender priority goes to the active player. With several, the next
+ * defender is asked, or, when `seat` was the last, priority goes to the active player and the declarations of all defenders are reported (their events
+ * replace the one of `declared`). `lead` are the events of the answer that led here (a payment), which come first.
+ */
+function afterDeclaration(
+  declared: { state: GameState; events: GameEvent[] },
+  seat: SeatId,
+  lead: readonly GameEvent[],
+): Result {
+  const active = declared.state.turn.activeSeat;
+  if (defendingSeats(declared.state).length <= 1) {
+    const granted = grantPriority(declared.state, active, declared.events); // CR 509.2
+    return ok(granted.state, [...lead, ...declared.events, ...granted.events]);
+  }
+  const next = askBlockers(withDeclaredBy(declared.state, seat), []);
+  return ok(next.state, [...lead, ...next.events]);
+}
+
+function blockCandidatesWithRules(state: GameState, defender: SeatId) {
+  return blockCandidates(state, defender).map((c) => ({
+    ...c,
+    ...(hasRestriction(state, getObject(state, c.blocker), 'mustBlock')
+      ? { mustBlock: true as const }
+      : {}),
+  }));
+}
+
+/** The declare blockers decision of `defender`: the attackers aimed at them (CR 508.5) and who can block them. */
+function blockDecision(
+  state: GameState,
+  defender: SeatId,
+  candidates: ReturnType<typeof blockCandidatesWithRules>,
+): Extract<NewDecision, { kind: 'declareBlockers' }> {
+  // An attacker that left the battlefield (a trigger of the declare attackers step can remove one) is no longer in combat (CR 506.4) and cannot be blocked.
+  const attackers = (state.combat?.attackers ?? [])
+    .filter(
+      (a) =>
+        state.objects[a.object]?.zone === 'battlefield' && attackerDefender(state, a) === defender,
+    )
+    .map((a) => ({
+      attacker: a.object,
+      target: a.target,
+      minBlockers: hasKeyword(state, getObject(state, a.object), 'menace') ? 2 : 1,
+      // CR 509.1b (D-133): "can't be blocked by more than one creature".
+      ...(hasRestriction(state, getObject(state, a.object), 'cantBeBlockedByMoreThanOne')
+        ? { maxBlockers: 1 }
+        : {}),
+      // CR 509.1c (D-206): "must be blocked if able".
+      ...(hasRestriction(state, getObject(state, a.object), 'mustBeBlocked')
+        ? { mustBeBlocked: true as const }
+        : {}),
+    }));
+  // D-149, CR 509.1d: what blocking costs, when something taxes it.
+  const tax = blockTax(state);
+  return {
+    kind: 'declareBlockers',
+    seat: defender,
+    attackers,
+    candidates,
+    ...(tax.source === null
+      ? {}
+      : {
+          blockCost: {
+            cost: tax.cost,
+            affordable: affordableBlockers(state, defender, tax.cost, candidates.length),
+            source: tax.source,
+          },
+        }),
+  };
 }
 
 function runDamageStep(state: GameState, step: DamageStep): Outcome {
@@ -398,9 +488,7 @@ export function answerBlockers(
       [],
     );
   }
-  const declared = declareBlockers({ ...state, pending: null }, seat, blocks);
-  const granted = grantPriority(declared.state, state.turn.activeSeat, declared.events); // CR 509.2
-  return ok(granted.state, [...declared.events, ...granted.events]);
+  return afterDeclaration(declareBlockers({ ...state, pending: null }, seat, blocks), seat, []);
 }
 
 /**
@@ -433,10 +521,7 @@ export function answerBlockPayment(
     if (plan === null) return fail('You cannot pay that cost');
     paid = applyPaymentPlan(cleared, seat, plan, plan.lifePaid);
   }
-  const declared = declareBlockers(paid.state, seat, blocks);
-  const granted = grantPriority(declared.state, state.turn.activeSeat, declared.events); // CR 509.2
-  const events = [...paid.events, ...declared.events, ...granted.events];
-  return ok(granted.state, events);
+  return afterDeclaration(declareBlockers(paid.state, seat, blocks), seat, paid.events);
 }
 
 export function answerDamage(

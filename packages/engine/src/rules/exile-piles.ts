@@ -5,18 +5,18 @@
  *  1. The effect itself queues the exile of the first pile, face down (CR 406.3: nobody may look at a card exiled face down unless an instruction allows it), and the instruction.
  *  2. `second`: the cards exiled so far are the first pile (the new objects in exile: the moves add what they made to `moved`). The instruction exiles the top cards again, face up.
  *     A pile has `count` cards, or fewer when the library holds fewer; it may have none (CR 700.3d). The cards stay in exile while they are grouped (CR 700.3c).
- *  3. `choose`: the first opponent in turn order still in the game picks a pile (a `chooseOption` decision of purpose `pile`, the one the piles of Fact or Fiction use, asked even when
+ *  3. `choose`: the opponent the controller chose (`rules/choose-opponent.ts`: asked when more than one is left, else the only one) picks a pile (a `chooseOption` decision of purpose `pile`, the one the piles of Fact or Fiction use, asked even when
  *     one pile has no card: the choice is real, because one goes to the graveyard and the other is cast from). The face-down pile is shown to them as a number of cards only. With no
- *     card in either pile there is nothing to choose and the instruction ends. With more than two players the controller does not choose which opponent (the CR gives that choice to
- *     nobody; D-233 set the same limit for Coin of Fate).
+ *     card in either pile there is nothing to choose and the instruction ends.
  *  4. The chosen pile is put into the graveyard (each card from exile, as an ordinary move). The other pile is what `moved` names afterwards, and its controller may look at the cards of
  *     it that are face down for as long as they stay in exile (CR 406.3), which is what lets them cast one of them (CR 406.3b).
  */
 import type { Effect } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { getSeat, opponentsOf, patchObject } from '../state/ops';
+import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { opponentOf } from './choose-opponent';
 import { derive } from './derive';
 import { amountOf, moveInstructions, moving } from './effect-support';
 import type { SelectContext } from './select';
@@ -54,9 +54,18 @@ export function startExilePiles(
   ctx: SelectContext,
 ): StepOutcome {
   const count = Math.max(0, amountOf(state, effect.count, ctx, []));
+  // The opponent who chooses is fixed as the effect starts, whichever stage the instruction is in later (CR 608.2d, 801.5b).
+  const opponent = opponentOf(state, res);
   return moving(state, [
     ...exileTop(state, res.controller, count, true),
-    { kind: 'exilePiles', stage: 'second', count, first: [], second: [] },
+    {
+      kind: 'exilePiles',
+      stage: 'second',
+      count,
+      first: [],
+      second: [],
+      ...(opponent === undefined ? {} : { opponent }),
+    },
   ]);
 }
 
@@ -90,7 +99,7 @@ export function runExilePiles(
   const second = (res.lastMoved ?? []).filter(
     (id) => !ins.first.includes(id) && state.objects[id]?.zone === 'exile',
   );
-  const [opponent] = opponentsOf(state, res.controller);
+  const opponent = ins.opponent ?? opponentOf(state, res);
   if (opponent === undefined || first.length + second.length === 0) {
     return { ...done(state), lastMoved: [] };
   }

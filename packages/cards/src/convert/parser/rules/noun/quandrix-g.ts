@@ -41,6 +41,44 @@ export const NOUN_COMMANDERS_YOU_CONTROL = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.other-commanders-you-control`: "other commanders you control", the subject of the ability Dancer's Chakrams gives, "Other commanders you control get +2/+2 and have lifelink."
+ * (CR 903.3, 611.3a): every permanent its controller designated as a commander but the one that has the ability. Not read: "other commander you control", "other commanders",
+ * "other commanders your opponents control", "other commander creatures you control" (`noun.other-permanents`) and "another commander you control".
+ */
+export const NOUN_OTHER_COMMANDERS_YOU_CONTROL = defineRule<IrNoun>({
+  id: 'noun.other-commanders-you-control',
+  family: 'noun',
+  leading: ['other'],
+  cites: [
+    'CR 903.3 (Commander)',
+    'CR 611.3a (Continuous Effects)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: ['other commanders you control', 'Other commanders you control'],
+  rejects: [
+    'other commander you control',
+    'other commanders',
+    'other commanders your opponents control',
+    'other commander creatures you control',
+    'another commander you control',
+    'commanders you control',
+    'other commanders you controlling',
+  ],
+  parse: node<string, IrNoun>(
+    'noun.other-commanders-you-control',
+    map(pattern(new RegExp(`other commanders you control${BOUNDARY}`, 'iu')), (m) => m[0]),
+    (raw) => ({
+      kind: 'noun',
+      det: 'each',
+      filter: { zone: 'battlefield', commander: true, controller: 'you', raw },
+      upTo: false,
+      plural: true,
+      other: true,
+    }),
+  ),
+});
+
+/**
  * `noun.target-creature-token`: "target creature token" (CR 111.1, 115.1: a token that is a creature, on the battlefield; one target), read by `effect.restrict` only. Not
  * read: "target creature tokens", "target token", "target nontoken creature", "target creature token you control", "another target creature token".
  */
@@ -76,7 +114,10 @@ export const NOUN_TARGET_CREATURE_TOKEN = defineRule<IrNoun>({
   ),
 });
 
-export const QUANDRIX_G_NOUN_RULES = [NOUN_COMMANDERS_YOU_CONTROL];
+export const QUANDRIX_G_NOUN_RULES = [
+  NOUN_COMMANDERS_YOU_CONTROL,
+  NOUN_OTHER_COMMANDERS_YOU_CONTROL,
+];
 
 /** Before `noun.target-permanent`, whose phrase would stop at "target creature". */
 export const QUANDRIX_G_TARGET_NOUN_RULES = [NOUN_TARGET_CREATURE_TOKEN];

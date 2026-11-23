@@ -37,13 +37,14 @@ import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
+import { lowerGrantedGroupStatics } from './granted-group-static';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
 import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
-import { lowerQuotedGrantedAbility } from './quoted-ability';
+import { lowerQuotedGrantedAbilities } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
 import {
   isSliverLordStatic,
@@ -51,7 +52,12 @@ import {
   SLIVER_LORD_NEEDS,
   sliverLordNeeds,
 } from './sliver-lords';
-import { isSpellKeywordStatic, lowerSpellKeywordStatic } from './spell-keyword-grant';
+import {
+  isSpellEvokeStatic,
+  isSpellKeywordStatic,
+  lowerSpellEvokeStatic,
+  lowerSpellKeywordStatic,
+} from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
@@ -165,6 +171,24 @@ function lowerGrantedAbility(
   at: At,
   ctx: LowerContext,
 ): LowerResult<Extract<Ability, { kind: 'activated' | 'triggered' }>> {
+  const many = lowerGrantedAbilities(quoted, subject, at, ctx);
+  if (!many.ok) return many;
+  const [only, ...more] = many.value;
+  return only === undefined || more.length > 0
+    ? failure(at)
+    : { ok: true, value: only, rule: many.rule };
+}
+
+/**
+ * The abilities a quoted ability grants: one, or one for each event of a trigger that two events cause (CR 603.2c). The subjects it may be given to are those of
+ * `lowerGrantedAbility`.
+ */
+function lowerGrantedAbilities(
+  quoted: Extract<IrStaticEffect, { kind: 'grantAbility' }>['ability'],
+  subject: StaticSubject,
+  at: At,
+  ctx: LowerContext,
+): LowerResult<readonly Extract<Ability, { kind: 'activated' | 'triggered' }>[]> {
   const inner = quoted.ability;
   // A refusal points at the statement that grants, as it did when the quoted text was only text.
   if (inner.kind !== 'activated' && inner.kind !== 'triggered') return failure(at);
@@ -196,7 +220,7 @@ function lowerGrantedAbility(
   }
   const grantedToPlaneswalkers =
     subject.kind === 'filter' && subject.filter.types?.includes('planeswalker') === true;
-  return lowerQuotedGrantedAbility(
+  return lowerQuotedGrantedAbilities(
     quoted,
     at,
     {
@@ -324,6 +348,22 @@ function effectOf(
       }
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
+    }
+    case 'grantActivatedAbilitiesOfLinkedExile': {
+      // CR 613.1f, 607.2a (issue 102, Steward of the Harvest): the abilities of the cards the permanent exiled, given to the group; the cards are read as printed (no zone or controller).
+      if (subject.kind !== 'filter') return failure(at);
+      const from = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: effect.from,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: at.span,
+        rule: at.rule,
+      });
+      if (!from.ok) return from;
+      return ok({ kind: 'grantActivatedAbilitiesOfLinkedExile', subject, from: from.value });
     }
     case 'cantBeSacrificed':
       // CR 701.21a, 101.2: said of the permanent itself.
@@ -454,7 +494,8 @@ function effectOf(
       if (!types.every((t) => (CARD_TYPES as readonly string[]).includes(t))) return failure(at);
       // "~ is a Dragon" (stage P34, D-152, CR 205.1a, 205.3m): a creature type says the permanent is a creature, which the engine wants said as
       // the card type of the replacement; the permanent keeps its card types, so it is read only for a face that is a creature and nothing else.
-      if (types.length === 0 && effect.subtypes.length > 0) {
+      // Eye of Nidhogg (CR 205.3d): for the permanent an Aura is attached to, a creature type alone replaces its creature types and its card types stay.
+      if (types.length === 0 && effect.subtypes.length > 0 && subject.kind !== 'attached') {
         const onlyCreature = ctx.faceTypes.length === 1 && ctx.faceTypes[0] === 'creature';
         if (subject.kind !== 'this' || !onlyCreature) return failure(at);
         types = ['creature'];
@@ -574,6 +615,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:takeFromLinkedExile'];
     case 'grantActivatedAbilitiesOfTopCard':
       return ['static:grantActivatedAbilitiesOfTopCard'];
+    case 'grantActivatedAbilitiesOfLinkedExile':
+      return ['static:grantActivatedAbilitiesOfLinkedExile'];
     case 'costReduction':
       return ['static:costReduction'];
     case 'costIncrease':
@@ -609,6 +652,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantKeywordToHandCards'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
+    case 'spellEvoke':
+      return ['static:grantAlternativeCostToSpells'];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
     case 'legendRuleDoesntApply':
@@ -620,6 +665,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'revealTopOfLibrary':
     case 'playLandsFromTopOfLibrary':
     case 'playLandsFromGraveyard':
+    case 'graveyardPlayEachType':
     case 'activateAsThoughHaste':
     case 'attackTax':
     case 'optionalUntap':
@@ -629,6 +675,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'additionalCost':
     case 'optionalSacrificeCopies':
     case 'freeCast':
+    case 'lifeAlternative':
     case 'tapAlternative':
     case 'graveyardSacrificeAlternative':
     case 'sacrificeAlternative':
@@ -834,7 +881,14 @@ function lowerPart(
   if (
     subject.value.kind === 'filter' &&
     comparesPowerOrToughness(subject.value.filter) &&
-    part.effects.some((e) => e.kind !== 'pt' && e.kind !== 'ptCount' && e.kind !== 'restriction')
+    part.effects.some(
+      (e) =>
+        e.kind !== 'pt' &&
+        e.kind !== 'ptCount' &&
+        e.kind !== 'restriction' &&
+        // CR 509.1b, 613.11 (Sidar Kondo of Jamuraa): "can't block creatures with power 2 or less" is read where blockers are declared, after the layers.
+        e.kind !== 'cantBeBlockedBy',
+    )
   ) {
     return failure(part.subject);
   }
@@ -852,6 +906,41 @@ function lowerPart(
   const abilities: Ability[] = [];
   for (const effect of part.effects) {
     if (condition !== undefined && !takesCondition(effect)) return failure(ability);
+    // CR 603.2c (Astrologian's Planisphere): a granted trigger of two events ("Whenever you cast ... and whenever you draw ...") is one granted ability for each event.
+    if (
+      effect.kind === 'grantAbility' &&
+      effect.ability.ability.kind === 'triggered' &&
+      effect.ability.ability.trigger.alternatives !== undefined
+    ) {
+      const each = lowerGrantedAbilities(effect.ability, subject.value, ability, ctx);
+      if (!each.ok) return each;
+      for (const granted of each.value) {
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'grantAbility', subject: subject.value, ability: granted },
+          ...(condition === undefined ? {} : { condition }),
+        });
+      }
+      continue;
+    }
+    // Dancer's Chakrams (CR 604.1, 613.1f): "Equipped creature has \"Other commanders you control get +2/+2 and have lifelink,\"": the quoted static ability gives a group "+N/+N" and
+    // keywords; the permanent has it as its own, and each effect it has is one `grantAbility`.
+    if (
+      effect.kind === 'grantAbility' &&
+      effect.ability.ability.kind === 'static' &&
+      (subject.value.kind === 'attached' || subject.value.kind === 'this')
+    ) {
+      const each = lowerGrantedGroupStatics(effect.ability, ability, ctx, lowerStatic);
+      if (!each.ok) return each;
+      for (const granted of each.value) {
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'grantAbility', subject: subject.value, ability: granted },
+          ...(condition === undefined ? {} : { condition }),
+        });
+      }
+      continue;
+    }
     const lowered = effectOf(effect, subject.value, ability, ctx);
     if (!lowered.ok) return lowered;
     abilities.push({
@@ -959,6 +1048,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
+  // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them."
+  if (isSpellEvokeStatic(first)) return lowerSpellEvokeStatic(ability);
   // Issue 133 (CR 704.5j, 613.1d, 702.141a): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
@@ -1001,6 +1092,23 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
               kind: 'doubleTriggers',
               subject: subject.value,
               cause: { kind: 'castOrCopySpell', spell: spell.value },
+            },
+            ...linked,
+          },
+        ],
+        rule: ability.rule,
+      };
+    }
+    if (first.causeEnters === true) {
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'doubleTriggers',
+              subject: subject.value,
+              cause: { kind: 'permanentEnters' },
             },
             ...linked,
           },
@@ -1182,7 +1290,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
-  if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
+  if (
+    first.kind === 'additionalCost' ||
+    first.kind === 'freeCast' ||
+    first.kind === 'lifeAlternative'
+  ) {
+    return failure(ability);
+  }
   if (
     first.kind === 'castAsThoughFlash' ||
     first.kind === 'takeFromLinkedExile' ||
@@ -1359,6 +1473,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:allCreatureTypes',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
+  'static:grantAlternativeCostToSpells',
   ...SLIVER_LORD_NEEDS,
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
@@ -1367,6 +1482,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:opponentsCantCastSpells',
   'static:takeFromLinkedExile',
   'static:grantActivatedAbilitiesOfTopCard',
+  'static:grantActivatedAbilitiesOfLinkedExile',
   'static:restrictionUnless',
   'static:loseAllAbilities',
   'static:setColors',

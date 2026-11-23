@@ -19,6 +19,7 @@ import {
   type GameConfig,
   type GameEvent,
   type GameState,
+  type GameView,
   getView,
 } from '@commander-arena/engine';
 import { createAgent } from './agents';
@@ -27,7 +28,6 @@ import { describeEvents } from './describe';
 import { isUnlessPurpose } from './describe-ward';
 import { lookedCards } from './looked-cards';
 import {
-  AI_SEAT,
   type AiKind,
   type AppliedStep,
   type GameClient,
@@ -36,6 +36,7 @@ import {
   HUMAN,
   type LogEntry,
   type NewGameOptions,
+  type OpponentOptions,
   type Snapshot,
   type UnsupportedCard,
 } from './protocol';
@@ -189,6 +190,42 @@ async function hiddenDeck(id: string): Promise<DeckConfig> {
 export const DEFAULT_MARGIN_MS = 2500;
 const DEFAULT_MAX_AI_STEPS = 5000;
 
+/** The opponents of a game in seat order: `opponents`, or the one the singular `ai*` fields describe. */
+function opponentsOf(options: NewGameOptions): readonly OpponentOptions[] {
+  if (options.opponents !== undefined && options.opponents.length > 0) return options.opponents;
+  return [
+    {
+      deck: options.aiDeck,
+      ...(options.aiCards === undefined ? {} : { cards: options.aiCards }),
+      ...(options.aiPreconName === undefined ? {} : { preconName: options.aiPreconName }),
+      ...(options.aiEmblems === undefined ? {} : { emblems: options.aiEmblems }),
+    },
+  ];
+}
+
+/** True once the human has lost: the session ends then, even if two or more AIs are still alive. */
+function humanEliminated(state: GameState): boolean {
+  return state.seats[HUMAN]?.hasLost === true;
+}
+
+/**
+ * When the human has lost while the engine's game goes on, the page sees the game as over (the owner's
+ * decision, as in a two-player game): a loss for the human, with the first seat still alive as the
+ * winner the result type needs. The engine's own state is untouched.
+ */
+function endedForHuman(state: GameState, view: GameView): GameView {
+  if (state.result !== null || !humanEliminated(state)) return view;
+  const winner = state.seats.find((s) => s.id !== HUMAN && !s.hasLost)?.id;
+  if (winner === undefined) return view;
+  return { ...view, result: { kind: 'win', winner }, pending: null, decidingSeat: null };
+}
+
+/** Seat 1 plays from `seed ^ 0x5eed` as in v1; a later seat mixes its number in. */
+function agentSeed(seed: number, seat: number): number {
+  const base = seed ^ 0x5eed;
+  return seat === 1 ? base : (base ^ Math.imul(seat, 0x9e3779b1)) >>> 0;
+}
+
 function honestySummary(config: GameConfig): HonestySummary {
   const unsupported: UnsupportedCard[] = [];
   config.decks.forEach((deck, seat) => {
@@ -209,11 +246,11 @@ export class GameHost implements GameClient {
   private readonly maxAiSteps: number;
 
   private state: GameState | null = null;
-  private agent: Agent | null = null;
+  private agents = new Map<number, Agent>();
   private actions: { seat: number; action: Action }[] = [];
   private revision = 0;
   private logId = 0;
-  private aiFallbacks = 0;
+  private aiFallbacks = new Map<number, number>();
   private logAll: LogEntry[] = [];
   private undoStack: UndoPoint[] = [];
 
@@ -226,22 +263,30 @@ export class GameHost implements GameClient {
   }
 
   async newGame(options: NewGameOptions): Promise<GameStarted> {
+    const opponents = opponentsOf(options);
+    const decks: DeckConfig[] = [options.humanCards ?? (await hiddenDeck(options.humanDeck))];
+    for (const opponent of opponents) {
+      decks.push(opponent.cards ?? (await hiddenDeck(opponent.deck)));
+    }
+    const startingEmblems = opponents.flatMap((opponent, i) =>
+      (opponent.emblems ?? []).map((e) => ({ ...e, seat: i + 1 })),
+    );
     const config: GameConfig = {
       seed: options.seed,
-      decks: [
-        options.humanCards ?? (await hiddenDeck(options.humanDeck)),
-        options.aiCards ?? (await hiddenDeck(options.aiDeck)),
-      ],
+      decks,
       settings: { freeFirstMulligan: options.freeMulligan ?? true },
-      ...(options.aiEmblems === undefined || options.aiEmblems.length === 0
-        ? {}
-        : { startingEmblems: options.aiEmblems.map((e) => ({ ...e, seat: AI_SEAT })) }),
+      ...(startingEmblems.length === 0 ? {} : { startingEmblems }),
     };
     this.actions = [];
-    this.aiFallbacks = 0;
+    this.aiFallbacks = new Map();
     this.logAll = [];
     this.undoStack = [];
-    this.agent = this.makeAgent(options.seed ^ 0x5eed, options.ai ?? 'casual');
+    // Seat 1 keeps the seed of the two-player game, so a 1v1 game plays as it always did; the other
+    // seats derive theirs from the seat.
+    this.agents = new Map();
+    for (let seat = 1; seat <= opponents.length; seat++) {
+      this.agents.set(seat, this.makeAgent(agentSeed(options.seed, seat), options.ai ?? 'casual'));
+    }
     const created = createGame(config);
     this.state = created.state;
     const log = this.logFor(created.state, created.state, created.events);
@@ -256,7 +301,9 @@ export class GameHost implements GameClient {
 
   async act(action: Action): Promise<Snapshot> {
     const state = this.requireState();
-    if (state.result !== null) return this.snapshot([], [], 'The game is over.');
+    if (state.result !== null || humanEliminated(state)) {
+      return this.snapshot([], [], 'The game is over.');
+    }
     if (state.pending?.seat !== HUMAN) return this.snapshot([], [], 'It is not your decision.');
     const applied = applyAction(state, HUMAN, action);
     if (!applied.ok) return this.snapshot([], [], applied.error);
@@ -350,18 +397,21 @@ export class GameHost implements GameClient {
   private async runAi(): Promise<{ steps: AppliedStep[]; log: LogEntry[] }> {
     const steps: AppliedStep[] = [];
     const log: LogEntry[] = [];
-    const agent = this.agent;
     let guard = 0;
     while (
-      agent !== null &&
       this.state !== null &&
       this.state.result === null &&
-      this.state.pending?.seat === AI_SEAT &&
+      !humanEliminated(this.state) &&
+      this.state.pending !== null &&
+      this.state.pending.seat !== HUMAN &&
       guard < this.maxAiSteps
     ) {
+      const seat = this.state.pending.seat;
+      const agent = this.agents.get(seat);
+      if (agent === undefined) break;
       guard += 1;
       const before = this.state;
-      const view = getView(before, AI_SEAT);
+      const view = getView(before, seat);
       const decision = view.pending;
       if (decision === null) break;
       const started = this.clock();
@@ -371,23 +421,23 @@ export class GameHost implements GameClient {
           budgetMs: this.budgetMs,
           now: this.clock,
           // Built only when the agent asks (A31, D-161): the host holds the real state, the agent gets a sample.
-          sample: (seed) => determinize(before, AI_SEAT, createRng(seed)),
+          sample: (seed) => determinize(before, seat, createRng(seed)),
         });
       } catch {
-        this.aiFallbacks += 1;
+        this.countFallback(seat);
         action = firstSafeAction(decision);
       }
       // The watchdog (A28): an answer that arrives far past its budget is replaced and counted.
       if (this.clock() - started > this.budgetMs + this.marginMs) {
-        this.aiFallbacks += 1;
+        this.countFallback(seat);
         action = firstSafeAction(decision);
       }
-      let applied = applyAction(before, AI_SEAT, action);
+      let applied = applyAction(before, seat, action);
       if (!applied.ok) {
-        this.aiFallbacks += 1;
+        this.countFallback(seat);
         // Every legal action is tried until one is accepted (plays, then cancel, then concede).
         const fallback = firstAcceptedAction(decision, (a) => {
-          const tried = applyAction(before, AI_SEAT, a);
+          const tried = applyAction(before, seat, a);
           return tried.ok ? tried : null;
         });
         if (fallback === null) break;
@@ -395,11 +445,15 @@ export class GameHost implements GameClient {
         applied = fallback.value;
       }
       this.state = applied.state;
-      this.actions.push({ seat: AI_SEAT, action });
-      steps.push({ seat: AI_SEAT, action, events: applied.events });
+      this.actions.push({ seat, action });
+      steps.push({ seat, action, events: applied.events });
       log.push(...this.logFor(before, applied.state, applied.events, action));
     }
     return { steps, log };
+  }
+
+  private countFallback(seat: number): void {
+    this.aiFallbacks.set(seat, (this.aiFallbacks.get(seat) ?? 0) + 1);
   }
 
   private logFor(
@@ -430,7 +484,7 @@ export class GameHost implements GameClient {
   ): Snapshot {
     const state = this.requireState();
     this.revision += 1;
-    const view = getView(state, HUMAN);
+    const view = endedForHuman(state, getView(state, HUMAN));
     const definedPt = definedPtNotes(state, view);
     const statics = staticNotes(state, view);
     const looked = lookedCards(state, HUMAN);
@@ -448,7 +502,10 @@ export class GameHost implements GameClient {
       steps,
       log,
       actionCount: this.actions.length,
-      aiFallbacks: this.aiFallbacks,
+      aiFallbacks: [...this.aiFallbacks.values()].reduce((a, b) => a + b, 0),
+      ...(this.aiFallbacks.size === 0
+        ? {}
+        : { aiFallbacksBySeat: Object.fromEntries(this.aiFallbacks) }),
       error,
       undoDepth: this.undoStack.length,
       logReset,

@@ -261,7 +261,10 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     }
     case 'putCounters':
       // "Put a page counter on ~" (stage P31, D-140, CR 118.3): counters on the permanent itself, a cost of an ordinary activated ability.
-      if (options.ordinary !== true || cost.count < 1) return failure(cost);
+      // CR 118.3, 122.1: also the cost of a mana ability ("Put a -0/-1 counter on this creature: Add {G}.").
+      if ((options.ordinary !== true && options.mana !== true) || cost.count < 1) {
+        return failure(cost);
+      }
       return ok({ kind: 'putCounters', counter: cost.counter, count: cost.count });
     case 'returnToHand': {
       // "Return an artifact you control to its owner's hand" (stage P31, D-140, CR 118.3): the permanent itself, or `count` of the
@@ -290,11 +293,18 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (options.ordinary !== true) return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
       if (blocked.length > 0) return failure(cost, blocked);
+      // Issue 102 (Necropolis Fiend, CR 107.3a, 602.2b): "Exile X cards from your graveyard" is the X announced as the ability is activated.
+      const countX = cost.what.count?.kind === 'x';
       const many = cost.what.count?.kind === 'number' ? cost.what.count.value : 1;
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
       return filter.ok
-        ? ok({ kind: 'exileFromGraveyard', filter: filter.value, count: many })
+        ? ok({
+            kind: 'exileFromGraveyard',
+            filter: filter.value,
+            count: many,
+            ...(countX ? { countX: true as const } : {}),
+          })
         : filter;
     }
     case 'exileFromHand': {

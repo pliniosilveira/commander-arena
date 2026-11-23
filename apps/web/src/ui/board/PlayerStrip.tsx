@@ -1,6 +1,9 @@
 /** A player's strip: life, poison, zone counts and the command zone with tax and damage taken. */
-import type { GameView, ObjectView, SeatView } from '@commander-arena/engine';
+import './commander.css';
+import type { GameView, ObjectView, SeatId, SeatView } from '@commander-arena/engine';
 import { restrictionWords, riderWords } from '../../game/angels-text';
+import { companionId, companionState } from '../../game/companion';
+import { midPossessiveOf, startPossessiveOf } from '../../game/seat-name';
 import { useDraggable, useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { ManaSymbol } from '../mana';
@@ -8,13 +11,19 @@ import { areaClass } from './active-area';
 import { CostDisplay } from './CardFace';
 import { HandBacks } from './Hand';
 import { useHoverPreview } from './hover';
-import { bandBackground, commanderDamageTaken, commanderTaxes, seatLabel } from './resolve';
+import { bandBackground, commanderDamageTaken, commandersOf, seatLabel } from './resolve';
+import { opponentLabel } from './table-label';
+
+/** The public data of a revealed companion (the engine's `CompanionView` is not exported by name). */
+type CompanionView = NonNullable<SeatView['companion']>;
 
 export type ZoneRef =
   | { readonly kind: 'graveyard'; readonly seat: number }
   | { readonly kind: 'command'; readonly seat: number }
-  | { readonly kind: 'exile' }
-  | { readonly kind: 'phased' };
+  | { readonly kind: 'exile'; readonly seat: number }
+  | { readonly kind: 'phased' }
+  /** The cards a pending chooseCards question lists (a library search): not a zone of the board. */
+  | { readonly kind: 'cards' };
 
 /** Poison counters (CR 122.1) and the rule that ends the game on them (CR 704.5c). */
 export const POISON_TITLE =
@@ -66,9 +75,16 @@ export function ringTitle(tempted: number): string {
 export const COMMANDER_DAMAGE_LOSS = 21;
 
 /** The tooltip of a commander damage chip: whose commander, how much, and the rule. */
-export function commanderDamageTitle(who: string, source: string | null, amount: number): string {
-  const from = source === null ? 'a commander' : source;
-  return `${who} ${who === 'You' ? 'have' : 'has'} taken ${amount} combat damage from ${from}. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`;
+export function commanderDamageTitle(
+  who: string,
+  d: { from: SeatId | null; name: string | null; amount: number },
+  view: GameView,
+): string {
+  const named = view.seats.length > 2 && d.from !== null;
+  const from = named
+    ? `${opponentLabel(view, d.from as SeatId)}'s commander`
+    : (d.name ?? 'a commander');
+  return `${who} ${who === 'You' ? 'have' : 'has'} taken ${d.amount} combat damage from ${from}. ${COMMANDER_DAMAGE_LOSS} from one commander loses the game (CR 704.6c).`;
 }
 
 const POOL_ORDER = ['W', 'U', 'B', 'R', 'G', 'C'] as const;
@@ -128,7 +144,11 @@ export function ManaPool({ pool }: { pool: SeatView['manaPool'] }) {
   );
 }
 
-function CommanderChip({ object }: { object: ObjectView }) {
+/**
+ * A commander of a strip: the chip casts it when it can be cast (a click, or a drag onto the battlefield),
+ * and the info button at its right, where the cost used to be, opens the commander popup.
+ */
+function CommanderChip({ object, onInfo }: { object: ObjectView; onInfo: () => void }) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   const drag = useDraggable(object.id, 'card', object.name);
@@ -136,27 +156,76 @@ function CommanderChip({ object }: { object: ObjectView }) {
   const selected = ix.selected.has(object.id);
   const badge = ix.badge(object.id);
   return (
-    <button
-      type="button"
-      className={`board-cmdr${clickable ? ' is-clickable' : ''}${selected ? ' is-selected' : ''}${
+    <div
+      className={`board-cmdr cmdr-chip${clickable ? ' is-clickable' : ''}${selected ? ' is-selected' : ''}${
         drag.dragging ? ' is-dragging' : ''
       }`}
-      draggable={drag.draggable}
-      onDragStart={drag.onDragStart}
-      onDragEnd={drag.onDragEnd}
-      data-object-id={object.id}
-      aria-label={`Commander ${object.name}${clickable ? ', can be cast' : ''}`}
-      aria-pressed={selected}
-      title={object.name}
-      onClick={() => {
-        if (clickable) ix.onObject(object.id);
-      }}
+      data-commander-chip={object.owner}
+    >
+      <button
+        type="button"
+        className="cmdr-chip-main"
+        draggable={drag.draggable}
+        onDragStart={drag.onDragStart}
+        onDragEnd={drag.onDragEnd}
+        data-object-id={object.id}
+        aria-label={`Commander ${object.name}${clickable ? ', can be cast' : ''}`}
+        aria-pressed={selected}
+        title={object.name}
+        onClick={() => {
+          if (clickable) ix.onObject(object.id);
+        }}
+        {...hover}
+      >
+        <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
+        <span className="board-cmdr-name">{object.name}</span>
+        {badge !== null && <span className="board-ibadge">{badge}</span>}
+      </button>
+      <button
+        type="button"
+        className="cmdr-info"
+        data-commander-info={object.owner}
+        aria-label={`About ${object.name}: tax and commander damage`}
+        title="Commander: the card, its tax and the commander damage"
+        onClick={onInfo}
+      >
+        <span aria-hidden="true">i</span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * A seat's companion (SPEC 5.8, CR 702.139), public: a small chip with its name, the state it is in ("Companion" while it is outside the game, "Used" once it was
+ * brought) and the hover preview of any card. Bringing it into the hand is a button of the action bar, offered only when the engine offers it.
+ */
+function CompanionChip({
+  seat,
+  companion,
+  owner,
+}: {
+  seat: number;
+  companion: CompanionView;
+  /** Whose companion it is, to open a sentence ("Your", "The opponent's", "Opponent 2's"). */
+  owner: string;
+}) {
+  const hover = useHoverPreview(companionId(seat));
+  const state = companionState(companion.brought);
+  return (
+    <button
+      type="button"
+      className={`board-cmdr board-companion${companion.brought ? ' is-used' : ''}`}
+      data-companion={seat}
+      data-companion-brought={companion.brought}
+      aria-label={`${owner} companion ${companion.name}, ${state}`}
+      title={`${owner} companion: ${companion.name}. ${state}.`}
       {...hover}
     >
-      <span className="board-cmdr-band" style={{ background: bandBackground(object.colors) }} />
-      <span className="board-cmdr-name">{object.name}</span>
-      <CostDisplay object={object} />
-      {badge !== null && <span className="board-ibadge">{badge}</span>}
+      <span className="board-cmdr-band" style={{ background: bandBackground(companion.colors) }} />
+      <span className="board-companion-text">
+        <span className="board-cmdr-name">{companion.name}</span>
+        <span className="board-companion-state">{state}</span>
+      </span>
     </button>
   );
 }
@@ -168,8 +237,7 @@ function CommanderChip({ object }: { object: ObjectView }) {
  * view while it is revealed, so an opponent's strip gets one only then. Hover shows the card in the
  * preview panel like any other.
  */
-function LibraryTop({ object, mine }: { object: ObjectView; mine: boolean }) {
-  const owner = mine ? 'your' : "the opponent's";
+function LibraryTop({ object, owner }: { object: ObjectView; owner: string }) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   // D-151 (CR 601.3): a permission to cast the top card of the library makes it clickable, like a card of the hand.
@@ -196,64 +264,20 @@ function LibraryTop({ object, mine }: { object: ObjectView; mine: boolean }) {
   );
 }
 
-function CommandBox({
-  view,
-  seat,
-  onOpenZone,
-}: {
-  view: GameView;
-  seat: SeatView;
-  onOpenZone: (zone: ZoneRef) => void;
-}) {
-  const taxes = commanderTaxes(seat);
-  const damage = commanderDamageTaken(view, seat.id);
-  // The emblems of the command zone are small cards of their own beside the battlefield (D-243).
-  const commanders = seat.command.filter((o) => o.emblem !== true);
-  return (
-    <div className="board-command" data-zone="command" data-seat-zone={seat.id}>
-      <button
-        type="button"
-        className="board-zone-btn"
-        onClick={() => onOpenZone({ kind: 'command', seat: seat.id })}
-        aria-label={`Open ${seatLabel(view, seat.id)} command zone`}
-      >
-        <span className="board-stat-label">Command</span>
-      </button>
-      <span className="board-cmdr-list">
-        {commanders.length === 0 ? (
-          <span className="board-dim">empty</span>
-        ) : (
-          commanders.map((o) => <CommanderChip key={o.id} object={o} />)
-        )}
-      </span>
-      <span className="board-cmdr-facts">
-        <span className={taxes.some((t) => t > 0) ? '' : 'board-dim'} title="Commander tax">
-          Tax {taxes.length === 0 ? 0 : taxes.map((t) => `+${t}`).join(' ')}
-        </span>
-        <span
-          className={damage.some((d) => d.amount > 0) ? 'board-warn' : 'board-dim'}
-          title="Commander damage taken; 21 from one commander loses the game"
-        >
-          Cmdr dmg{' '}
-          {damage.length === 0
-            ? 0
-            : damage
-                .map((d) => (d.source === null ? `${d.amount}` : `${d.source} ${d.amount}`))
-                .join(', ')}
-        </span>
-      </span>
-    </div>
-  );
-}
-
 export function PlayerStrip({
   view,
   seat,
   onOpenZone,
+  label,
+  onOpenCommander,
 }: {
   view: GameView;
   seat: SeatView;
   onOpenZone: (zone: ZoneRef) => void;
+  /** The seat's name when the board numbers its opponents (`table-label.ts`); `seatLabel` when absent. */
+  label?: string;
+  /** Opens the commander popup of a seat (the info button of its commander chip). */
+  onOpenCommander: (seat: SeatId) => void;
 }) {
   const ix = useInteraction();
   const zone = useDropZone({ kind: 'seat', seat: seat.id });
@@ -263,7 +287,9 @@ export function PlayerStrip({
   const dimmed = ix.dimOthers && !clickable && !selected;
   const active = view.activeSeat === seat.id;
   const priority = view.prioritySeat === seat.id;
-  const who = seatLabel(view, seat.id);
+  const who = label ?? seatLabel(view, seat.id);
+  // Exile is shared in the engine, but each player's strip lists the cards they own.
+  const exileCount = view.exile.filter((o) => o.owner === seat.id).length;
   // Commander damage taken sits with the life total, where it cannot be missed (issue 34).
   const taken = commanderDamageTaken(view, seat.id).filter((d) => d.amount > 0);
   const classes = [
@@ -365,10 +391,13 @@ export function PlayerStrip({
               // biome-ignore lint/suspicious/noArrayIndexKey: positional list of chips
               key={i}
               className={`board-flag board-flag-cmdrdmg${d.amount >= COMMANDER_DAMAGE_LOSS - 5 ? ' is-near' : ''}`}
-              title={commanderDamageTitle(who, d.source, d.amount)}
+              title={commanderDamageTitle(who, d, view)}
               data-cmdr-damage={d.amount}
             >
               Cmdr {d.amount}/{COMMANDER_DAMAGE_LOSS}
+              {d.from !== null && view.seats.length > 2
+                ? ` from ${opponentLabel(view, d.from)}`
+                : ''}
             </span>
           ))}
           {active && <span className="board-flag board-flag-turn">Turn</span>}
@@ -385,7 +414,12 @@ export function PlayerStrip({
         <span className="board-count-item" title="Cards in library">
           <span className="board-stat-label">Library</span>
           <b>{seat.libraryCount}</b>
-          {seat.libraryTop !== undefined && <LibraryTop object={seat.libraryTop} mine={mine} />}
+          {seat.libraryTop !== undefined && (
+            <LibraryTop
+              object={seat.libraryTop}
+              owner={midPossessiveOf(seat.id, view.viewer, view.seats.length)}
+            />
+          )}
         </span>
         {mine && seat.hand?.some((o) => o.keywords.includes('storm')) === true && (
           <span
@@ -418,9 +452,29 @@ export function PlayerStrip({
           <span className="board-stat-label">Graveyard</span>
           <b>{seat.graveyard.length}</b>
         </button>
+        <button
+          type="button"
+          className="board-count-item board-zone-btn board-exile"
+          onClick={() => onOpenZone({ kind: 'exile', seat: seat.id })}
+          aria-label={`Open ${who} exile, ${exileCount} cards`}
+        >
+          <span className="board-stat-label">Exile</span>
+          <b>{exileCount}</b>
+        </button>
         <ManaPool pool={seat.manaPool} />
       </div>
-      <CommandBox view={view} seat={seat} onOpenZone={onOpenZone} />
+      <div className="board-command cmdr-strip" data-seat-zone={seat.id}>
+        {commandersOf(view, seat.id).map((o) => (
+          <CommanderChip key={o.id} object={o} onInfo={() => onOpenCommander(seat.id)} />
+        ))}
+        {seat.companion !== undefined && (
+          <CompanionChip
+            seat={seat.id}
+            companion={seat.companion}
+            owner={startPossessiveOf(seat.id, view.viewer, view.seats.length)}
+          />
+        )}
+      </div>
     </div>
   );
 }

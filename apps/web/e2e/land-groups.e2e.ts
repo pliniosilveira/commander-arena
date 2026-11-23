@@ -2,8 +2,8 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 import { settled } from './harness/settle';
 
 /**
- * Lands are grouped on the battlefield as at a table (D-215): equal lands stacked in columns of at
- * most five, similar columns side by side, basic lands first in the order of the colors. The game
+ * Lands are grouped on the battlefield as at a table (D-215): a single line of lands, equal basic lands
+ * overlapped sideways, basic lands first in the order of the colors. The game
  * uses the hidden SYNTHETIC deck `synthetic-lands` (game/precons.ts): basic lands of every type
  * and a nonbasic land, so the opening hand and the lands played over the first turns are mixed.
  */
@@ -58,7 +58,7 @@ const box = async (locator: Locator) => {
   return b;
 };
 
-test('equal lands share a column, the columns follow the order of the colors, and a column holds at most five', async ({
+test('the lands sit in one line, equal basic lands overlap, and the kinds follow the order of the colors', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -66,71 +66,61 @@ test('equal lands share a column, the columns follow the order of the colors, an
   await playLands(page, 6);
 
   const cols = await readColumns(page);
-  // Every land is in exactly one column, and each column holds one kind of land.
   expect(cols.reduce((n, c) => n + c.count, 0)).toBe(await tiles(page).count());
-  for (const column of cols) {
-    expect(column.count).toBeLessThanOrEqual(5);
-    expect(column.ids).toHaveLength(column.count);
-  }
-  // Basic lands in the order of the colors, then the nonbasic land; equal lands side by side.
   const ranks = cols.map((c) => ORDER.indexOf(c.name));
   expect(ranks.every((r) => r >= 0)).toBe(true);
   expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
-  // With six lands over six kinds some column is a stack unless every land differs.
-  const names = cols.map((c) => c.name);
-  const distinct = new Set(names);
-  if (distinct.size < 6) expect(cols.some((c) => c.count > 1)).toBe(true);
-  // Columns of one kind sit together: a short row makes columns shallower, so a kind may take two.
-  const firsts = names.filter((name, i) => i === 0 || names[i - 1] !== name);
-  expect(firsts).toHaveLength(distinct.size);
+  // One line: every tile shares (about) the same top.
+  const tops = await tiles(page).evaluateAll((els) =>
+    els.map((el) => el.getBoundingClientRect().top),
+  );
+  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(4);
   expect(errors).toEqual([]);
 });
 
-test('a stack overlaps like cards on a table: each card shows its edge, the last is in front, and a click taps the very card', async ({
+test('a cluster overlaps sideways: the first card is in front, each next one shows a strip, and a click taps the very card', async ({
   page,
 }) => {
   await playLands(page, 6);
-  const stack = columns(page).filter({ has: page.locator('[data-object-id]') });
+  const clusters = columns(page);
   const cols = await readColumns(page);
   const index = cols.findIndex((c) => c.count >= 2);
-  expect(index, 'the seed makes a stack of equal lands').toBeGreaterThanOrEqual(0);
-  const column = stack.nth(index);
-  // The front card is the first in the document (a click at the middle of the stack reaches it).
+  expect(index, 'the seed makes a cluster of equal lands').toBeGreaterThanOrEqual(0);
+  const column = clusters.nth(index);
   const front = column.locator('.board-tile').first();
   const back = column.locator('.board-tile').last();
 
   const backBox = await box(back);
   const frontBox = await box(front);
-  // The front card is lower and mostly covers the one behind: its top edge shows.
-  expect(frontBox.y).toBeGreaterThan(backBox.y + 8);
-  expect(frontBox.y).toBeLessThan(backBox.y + backBox.height - 8);
+  // The back card is to the right and mostly covered: its right edge shows.
+  expect(backBox.x).toBeGreaterThan(frontBox.x + 8);
+  expect(backBox.x).toBeLessThan(frontBox.x + frontBox.width - 8);
+  const px = backBox.x + backBox.width - 3;
+  const py = backBox.y + backBox.height / 2;
   const edge = await page.evaluate(
     ([x, y]) =>
       document
         .elementFromPoint(x as number, y as number)
         ?.closest('.board-tile')
         ?.getAttribute('data-object-id'),
-    [backBox.x + backBox.width / 2, backBox.y + 3],
+    [px, py],
   );
   expect(edge).toBe(await back.getAttribute('data-object-id'));
 
-  // The land the player can tap shows as tapped, wherever it sits in the stack.
   const target = await back.getAttribute('data-object-id');
-  await back.click({ position: { x: backBox.width / 2, y: 3 } });
+  await back.click({ position: { x: backBox.width - 3, y: backBox.height / 2 } });
   await settled(page);
   const tapped = page.locator(`${mine} .board-tile[data-object-id="${target}"]`);
   await expect(tapped).toHaveClass(/is-tapped/);
   await expect(tapped).toHaveAttribute('aria-label', /tapped/);
-  // Tapping did not move it: the column is as it was, in the same order.
   const after = await readColumns(page);
   expect(after[index]?.ids).toEqual(cols[index]?.ids);
-  // A second click untaps it, as on a flat row.
-  await back.click({ position: { x: backBox.width / 2, y: 3 } });
+  await back.click({ position: { x: backBox.width - 3, y: backBox.height / 2 } });
   await settled(page);
   await expect(tapped).not.toHaveClass(/is-tapped/);
 });
 
-test('hovering a land in a stack shows it in the preview panel', async ({ page }) => {
+test('hovering a land in a cluster shows it in the preview panel', async ({ page }) => {
   await playLands(page, 4);
   const cols = await readColumns(page);
   const index = Math.max(
@@ -138,6 +128,7 @@ test('hovering a land in a stack shows it in the preview panel', async ({ page }
     cols.findIndex((c) => c.count >= 2),
   );
   const tile = columns(page).nth(index).locator('.board-tile').last();
-  await tile.hover({ position: { x: 10, y: 3 } });
+  const b = await box(tile);
+  await tile.hover({ position: { x: b.width - 3, y: b.height / 2 } });
   await expect(page.getByLabel('Card preview')).toContainText(cols[index]?.name ?? '');
 });

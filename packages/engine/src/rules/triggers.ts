@@ -101,6 +101,8 @@ interface Occurrence {
   /** The damage the event dealt, for `triggerDamage` and `dealtDamage` (D-133). */
   readonly damage?: number;
   readonly targetCount?: number;
+  /** For `playsCard`: the zone the land was played from or the spell was cast from (CR 305.1, 601.2a), for "from exile". */
+  readonly fromZone?: Zone;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
   /** For `lifeLost`: whether this is the first time the player lost life this turn (CR 119.3, 603.2). */
@@ -116,6 +118,8 @@ interface Occurrence {
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
+  /** For `becomesBlockedBy` (CR 509.3d, 702.25a): the creature that was declared as a blocker of the subject, the one `triggerSources` names in the effect. */
+  readonly blocker?: ObjectId;
   /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
 }
@@ -214,6 +218,14 @@ function occurrences(
         event.toZone === 'battlefield' &&
         event.component !== true
       ) {
+        // Issue 102 (River Kelpie, CR 603.6a, 400.7): "enters from a graveyard": the zone the permanent moved from.
+        if (
+          trigger.kind === 'entersBattlefield' &&
+          trigger.fromGraveyard === true &&
+          event.fromZone !== 'graveyard'
+        ) {
+          return [];
+        }
         const entered = state.objects[event.to];
         return [
           {
@@ -223,7 +235,9 @@ function occurrences(
           },
         ];
       }
-      return event.kind === 'tokenCreated'
+      // A token was never in a graveyard (issue 102).
+      return event.kind === 'tokenCreated' &&
+        !(trigger.kind === 'entersBattlefield' && trigger.fromGraveyard === true)
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
     case 'entersBatch':
@@ -317,6 +331,11 @@ function occurrences(
             subject: attacker,
             seat: null,
           }))
+        : [];
+    case 'becomesBlockedBy':
+      // CR 509.3d, 702.25a: an attacking creature becomes blocked by each creature declared as its blocker, once for each of them.
+      return event.kind === 'blockersDeclared'
+        ? event.blocks.map((b) => ({ subject: b.attacker, seat: null, blocker: b.blocker }))
         : [];
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
@@ -540,8 +559,26 @@ function occurrences(
         : [];
     case 'playsCard':
       // CR 305.1, 601.2: a land played (the land is the subject, as it is on the battlefield) or a spell cast (as it is on the stack), by the player the event names.
-      return event.kind === 'landPlayed' || event.kind === 'spellCast'
-        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+      // Urianger Augurelt: "from exile": the zone a land was played from (only recorded when it is not the hand) or a spell was cast from.
+      if (event.kind === 'landPlayed') {
+        return [
+          {
+            subject: event.object,
+            seat: event.seat,
+            player: event.seat,
+            fromZone: event.fromZone ?? 'hand',
+          },
+        ];
+      }
+      return event.kind === 'spellCast'
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              player: event.seat,
+              fromZone: event.fromZone,
+            },
+          ]
         : [];
     case 'tokenCreated':
       // CR 111.2 (D-465): a token enters under the control of the player who creates it; one occurrence for each token.
@@ -857,6 +894,10 @@ function matches(
       return subject !== null && matchesFilter(state, subject, trigger.what, ctx);
     case 'leftGraveyard': {
       if (occ.seat !== candidate.controller) return false;
+      // CR 603.2 (issue 102, Kishla Skimmer): "during your turn": the active player is the controller of this ability.
+      if (trigger.duringTurn === 'you' && state.turn.activeSeat !== candidate.controller) {
+        return false;
+      }
       if (trigger.filter === undefined) return true;
       // CR 400.7: the card as it was in the graveyard (its last-known information).
       const card = occ.card === undefined ? null : objectOrLki(state, occ.card);
@@ -914,6 +955,15 @@ function matches(
     case 'blocks':
     case 'becomesBlocked':
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'becomesBlockedBy': {
+      // CR 702.25a: "a creature without flanking": the blocker as it is when it is declared.
+      const blocker = occ.blocker === undefined ? null : objectOrLki(state, occ.blocker);
+      return (
+        blocker !== null &&
+        matchesWhat(state, trigger.what, subject, candidate) &&
+        matchesFilter(state, blocker, trigger.by, ctx)
+      );
+    }
     case 'state':
     case 'tappedForMana':
     case 'combatDamageBatch':
@@ -1003,6 +1053,8 @@ function matches(
       return (
         subject !== null &&
         occ.seat === candidate.controller &&
+        // Urianger Augurelt (CR 305.1, 601.2a): "a land from exile or a spell from exile".
+        (trigger.fromExile !== true || occ.fromZone === 'exile') &&
         derive(state, subject).types.length >= (trigger.minCardTypes ?? 1)
       );
     case 'castSpell':
@@ -1480,6 +1532,8 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
+            // CR 603.2c: "Whenever one or more opponents lose life": one trigger for the losses of these events, however many players lost life.
+            (ability.trigger.kind === 'lifeLost' && ability.trigger.batch === true) ||
             (ability.trigger.kind === 'leftGraveyard' && ability.trigger.each !== true) ||
             ability.trigger.kind === 'exiledFromLibraryOrGraveyard' ||
             (ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true)
@@ -1548,6 +1602,8 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
                 }
               : {}),
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
+            // CR 702.25a: "the blocking creature" is the creature this occurrence is about.
+            ...(occ.blocker === undefined ? {} : { cards: [occ.blocker] }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
             ...(occ.attackers === undefined || ability.trigger.kind !== 'attackBatch'
@@ -1608,6 +1664,21 @@ function batchTriggers(
         continue;
       }
       if (trigger.kind !== 'combatDamageBatch' || damage.length === 0) continue;
+      if (trigger.to === 'opponents') {
+        found.push(
+          ...opponentsCombatBatchTriggers(
+            state,
+            events,
+            damage,
+            id,
+            index,
+            ability,
+            trigger,
+            candidate,
+          ),
+        );
+        continue;
+      }
       const seats = [...new Set(damage.map((d) => d.seat))];
       for (const seat of seats) {
         if (trigger.to === 'opponent' && seat === candidate.controller) continue;
@@ -1669,6 +1740,68 @@ function batchTriggers(
     }
   }
   return found;
+}
+
+/**
+ * Issue 508 (Mindblade Render, CR 510.2, 603.2c): "whenever your opponents are dealt combat damage, if any of that damage was dealt by a Warrior": once for the whole event, not once for
+ * each opponent. All combat damage is dealt at once (CR 510.2) and the official ruling of the card says the ability "triggers only once, regardless of how many opponents were dealt
+ * damage, how much damage they were dealt, or how many Warriors dealt damage". The sources are any player's: a Warrior of one opponent that damages another opponent counts. The
+ * damage the controller of the ability is dealt is not part of it (they are not their own opponent). `damage` is all the damage those sources dealt to the opponents.
+ */
+function opponentsCombatBatchTriggers(
+  state: GameState,
+  events: readonly GameEvent[],
+  damage: readonly { readonly source: ObjectId; readonly seat: SeatId; readonly amount: number }[],
+  id: ObjectId,
+  index: number,
+  ability: TriggeredAbility,
+  trigger: Extract<Trigger, { kind: 'combatDamageBatch' }>,
+  candidate: Candidate,
+): PendingTrigger[] {
+  // CR 725.2: "while you're the monarch" is true as the damage is dealt, before the monarch moves to the player who dealt it.
+  if (trigger.whileMonarch === true) {
+    const moved = events.find((e) => e.kind === 'monarchChanged');
+    const monarchThen = moved?.kind === 'monarchChanged' ? moved.from : state.monarch;
+    if (monarchThen !== candidate.controller) return [];
+  }
+  const toOpponents = damage.filter((d) => d.seat !== candidate.controller);
+  const sources = [...new Set(toOpponents.map((d) => d.source))].filter((source) => {
+    const obj = objectOrLki(state, source);
+    return (
+      obj !== null &&
+      matchesFilter(state, obj, trigger.what, {
+        controller: candidate.controller,
+        source: candidate.id,
+      })
+    );
+  });
+  if (sources.length < (trigger.atLeast ?? 1)) return [];
+  const [first] = toOpponents;
+  if (first === undefined) return [];
+  const context = { controller: candidate.controller, source: id };
+  if (
+    (ability.interveningIf !== undefined &&
+      !evaluateCondition(state, ability.interveningIf, context)) ||
+    (ability.triggerCondition !== undefined &&
+      !evaluateCondition(state, ability.triggerCondition, context))
+  ) {
+    return [];
+  }
+  const dealt = toOpponents
+    .filter((d) => sources.includes(d.source))
+    .reduce((sum, d) => sum + d.amount, 0);
+  return [
+    {
+      source: id,
+      controller: candidate.controller,
+      abilityIndex: index,
+      ability,
+      subject: null,
+      player: first.seat,
+      cards: sources,
+      ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
+    },
+  ];
 }
 
 /**

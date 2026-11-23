@@ -107,11 +107,15 @@ export const COST_EXILE_GRAVEYARD_CARDS = defineRule<IrCost>({
     'Exile two creature cards from your graveyard',
     'exile a creature card from your graveyard',
     'Exile three cards from your graveyard',
+    // Issue 102 (Necropolis Fiend): as many cards as the X announced for the ability.
+    'Exile X cards from your graveyard',
+    'exile x creature cards from your graveyard',
   ],
   rejects: [
     'Exile two creature cards from an opponent’s graveyard',
     'Exile two creature cards from your hand',
     'Exile cards from your graveyard',
+    'Exile Y cards from your graveyard',
     'Exile zero cards from your graveyard',
     'Exile ~ from your graveyard',
     'Exile two creature cards from your graveyard and',
@@ -121,7 +125,7 @@ export const COST_EXILE_GRAVEYARD_CARDS = defineRule<IrCost>({
     // One pattern, so that a line that is not this cost ("Exile a card from your hand") records nothing of it.
     const r = spanned(
       pattern(
-        /exile (an?|one|two|three|four|five|six|seven|eight|nine|[1-9]\d*) (artifact |creature |land |enchantment |planeswalker |instant |sorcery |battle )?cards? from your graveyard(?![\p{L}\p{N}'’])(?!\s+and)/iu,
+        /exile (an?|one|two|three|four|five|six|seven|eight|nine|x|[1-9]\d*) (artifact |creature |land |enchantment |planeswalker |instant |sorcery |battle )?cards? from your graveyard(?![\p{L}\p{N}'’])(?!\s+and)/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -139,17 +143,20 @@ export const COST_EXILE_GRAVEYARD_CARDS = defineRule<IrCost>({
       nine: 9,
     };
     const said = (r.value.value[1] ?? '').toLowerCase();
-    const value = words[said] ?? Number(said);
+    const isX = said === 'x';
+    const value = isX ? 1 : (words[said] ?? Number(said));
     if (!(value >= 1)) return fail(ctx, pos);
     const type = (r.value.value[2] ?? '').trim().toLowerCase();
-    const count: IrAmount = { kind: 'number', value, span: r.value.span };
+    const count: IrAmount = isX
+      ? { kind: 'x', span: r.value.span }
+      : { kind: 'number', value, span: r.value.span };
     const what: IrNoun = {
       kind: 'noun',
       det: 'a',
       filter: { ...(type === '' ? {} : { types: [type] }), raw: ctx.text.slice(pos, r.pos) },
       count,
       upTo: false,
-      plural: value > 1,
+      plural: isX || value > 1,
       other: false,
       span: r.value.span,
       rule: 'cost.exile-graveyard-cards',

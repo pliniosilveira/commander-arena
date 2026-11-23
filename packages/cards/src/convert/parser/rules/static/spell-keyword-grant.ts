@@ -1,9 +1,11 @@
 /**
  * Static rule of the Hatsune Miku deck (issue 145): "Creature spells you cast have demonstrate." (Silverquill Lecturer, CR 702.144a, 702.51a, 613.1f, 604.2).
  */
-import { choice, fail, literal, map, pattern, quiet, sequence } from '../../combinators';
-import type { IrNoun, IrStatic } from '../../ir/types';
-import { defineRule } from '../registry';
+import { choice, fail, literal, map, optional, pattern, quiet, sequence } from '../../combinators';
+import type { IrCost, IrFilter, IrNoun, IrStatic } from '../../ir/types';
+import { CREATURE_TYPES } from '../noun/creature-types';
+import { SUBTYPE_WORD } from '../noun/phrases';
+import { defineRule, family } from '../registry';
 import { SPELL, spellSubject } from './cost';
 
 /** The parts of a spell's filter this rule keeps: what the spell is (types, subtypes, colors) and the words it was read from. */
@@ -172,7 +174,110 @@ export const STATIC_EACH_SPELL_YOU_CAST_HAS_REPLICATE = defineRule<IrStatic>({
   },
 });
 
+/** The card types a permanent spell can have (CR 110.4: a land is played, never cast): the spell is one of these. */
+const PERMANENT_SPELL_TYPES = ['artifact', 'creature', 'enchantment', 'planeswalker', 'battle'];
+
+/**
+ * `static.permanent-spells-from-hand-gain-evoke`: "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (Ashling, the Limitless; CR 702.74a, 118.9, 601.2b,
+ * 613.1f): a static ability of a permanent that gives the permanent spells its controller casts from their hand, of the creature type the subject names (or of any, with no type), an evoke cost
+ * as they are cast. The engine's `grantAlternativeCostToSpells`, which keeps the grant on the spell. The cost is a plain mana cost. Not read: spells of other players or of every player,
+ * another zone, another alternative cost or keyword, a cost that is not mana or has an {X} or a hybrid symbol, a quality of the spell other than one creature type, no "as you cast them".
+ */
+export const STATIC_PERMANENT_SPELLS_FROM_HAND_GAIN_EVOKE = defineRule<IrStatic>({
+  id: 'static.permanent-spells-from-hand-gain-evoke',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 702.74a (Evoke)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 601.2b (Casting Spells)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'Elemental permanent spells you cast from your hand gain evoke {4} as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke {2}{R} as you cast them.',
+    'Permanent spells you cast from your hand gain evoke {1} as you cast them.',
+    'Goblin permanent spells you cast from your hand gain evoke {R} as you cast them.',
+  ],
+  rejects: [
+    'Elemental permanent spells you cast from your hand gain evoke {4} as you cast them',
+    'Elemental permanent spells you cast from your graveyard gain evoke {4} as you cast them.',
+    'Elemental permanent spells you cast gain evoke {4} as you cast them.',
+    'Elemental permanent spells your opponents cast from their hands gain evoke {4} as they cast them.',
+    'Elemental permanent spells you cast from your hand gain flashback {4} as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke {X} as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke {W/U} as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke—Exile a card from your hand as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke {4} until end of turn.',
+    'Elemental creature spells you cast from your hand gain evoke {4} as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke as you cast them.',
+    'Elemental permanent spells you cast from your hand gain evoke {4} and flying as you cast them.',
+    'Elemental permanent spells you cast from your hand with flying gain evoke {4} as you cast them.',
+    'Red permanent spells you cast from your hand gain evoke {4} as you cast them.',
+    'Elemental permanent spells you cast from your hand have evoke {4}.',
+    'Each Elemental permanent spell you cast from your hand gains evoke {4} as you cast it.',
+  ],
+  parse: (ctx, pos) => {
+    // The words up to the cost decide whether this is the statement at all: their failure is no trace in the diagnostics.
+    const lead = sequence(
+      quiet(
+        sequence(
+          optional(
+            map(
+              pattern(new RegExp(`(${SUBTYPE_WORD}) (?=permanent spells )`, 'u')),
+              (m) => m[1] ?? '',
+            ),
+            undefined,
+          ),
+          literal('permanent spells you cast from your hand gain evoke '),
+        ),
+      ),
+      family<IrCost>('cost', { only: ['cost.mana'] }),
+      pattern(/ as you cast them\./iu),
+    )(ctx, pos);
+    if (!lead.ok) return lead;
+    const [[creatureType], cost] = lead.value;
+    // A mana cost with numbers and colored symbols only (an {X} or a hybrid symbol is another cost), and a word that is a creature type.
+    if (cost.kind !== 'mana' || cost.symbols.some((symbol) => !/^(\d+|[WUBRGC])$/u.test(symbol))) {
+      return fail(ctx, pos);
+    }
+    if (creatureType !== undefined && !CREATURE_TYPES.has(creatureType)) return fail(ctx, pos);
+    const rule = 'static.permanent-spells-from-hand-gain-evoke';
+    const length =
+      (creatureType === undefined ? 0 : creatureType.length + 1) + 'permanent spells'.length;
+    const raw = ctx.text.slice(pos, pos + length);
+    const filter: IrFilter = {
+      ...(creatureType === undefined ? {} : { subtypes: [creatureType] }),
+      anyOf: PERMANENT_SPELL_TYPES.map((t): IrFilter => ({ types: [t], raw: t })),
+      controller: 'you',
+      raw,
+    };
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter,
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: pos + raw.length },
+      rule,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [{ kind: 'spellEvoke', cost }],
+        span: { start: pos, end: lead.pos },
+        rule,
+      },
+      pos: lead.pos,
+    };
+  },
+});
+
 export const SPELL_KEYWORD_GRANT_STATIC_RULES = [
   STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD,
   STATIC_EACH_SPELL_YOU_CAST_HAS_REPLICATE,
+  STATIC_PERMANENT_SPELLS_FROM_HAND_GAIN_EVOKE,
 ];

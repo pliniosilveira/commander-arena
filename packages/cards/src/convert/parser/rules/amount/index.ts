@@ -3,6 +3,7 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
 import { CARD_TYPES_AMOUNT_RULES } from './card-types';
+import { CHOSEN_PLAYER_LEAD_AMOUNT_RULES } from './chosen-player-lead';
 import { COUNT_AMOUNT_RULES } from './count';
 import { DAMAGED_PLAYERS_AMOUNT_RULES } from './damaged-players';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
@@ -20,6 +21,7 @@ import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
@@ -50,8 +52,10 @@ const NUMBER_WORDS = [
 
 const WORD_RE = new RegExp(`(${NUMBER_WORDS.join('|')})(?![\\p{L}\\p{N}])`, 'iu');
 
-/** A whole number written as digits or as a number word from one to twenty. */
+/** A whole number written as digits, as a number word from one to twenty, or "one hundred". */
 export const quantity: Parser<number> = choice(
+  // "up to one hundred target creatures" (Baldin, Century Herdmaster): the one number word above twenty the text uses.
+  map(pattern(/one hundred(?![\p{L}\p{N}])/iu), () => 100),
   map(pattern(/(\d+)(?![\p{L}\p{N}])/u), (m) => Number(m[1])),
   map(
     pattern(WORD_RE),
@@ -78,7 +82,7 @@ export const AMOUNT_NUMBER = defineRule<IrAmount>({
   family: 'amount',
   leading: [],
   cites: ['CR 107.1 (Numbers and Symbols)'],
-  examples: ['3', 'three', '12', 'ten', 'thirteen', 'twenty'],
+  examples: ['3', 'three', '12', 'ten', 'thirteen', 'twenty', 'one hundred'],
   rejects: ['X', 'a', 'zero', 'twenty-one', 'twentyone'],
   parse: amountNode(map(quantity, (value) => ({ kind: 'number' as const, value }))),
 });
@@ -513,6 +517,9 @@ export const AMOUNT_RULES = [
   ...SPELLS_CAST_EACH_AMOUNT_RULES,
   // Ahoy Mateys deck, group 1 (Malcolm): "for each opponent dealt damage".
   ...DAMAGED_PLAYERS_AMOUNT_RULES,
+  // Scions & Spellcraft deck, group A: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
+  ...PLAYERS_WHO_AMOUNT_RULES,
+  ...CHOSEN_PLAYER_LEAD_AMOUNT_RULES,
   // Lock and Load (issue 121): "for each other instant and sorcery spell you've cast this turn".
   AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
   // Meren of Clan Nel Toth: "the number of experience counters you have".

@@ -15,6 +15,7 @@ import type {
 } from '../state/types';
 import { runContinuous } from './continuous';
 import { derive } from './derive';
+import { playEnd } from './impulse';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -149,6 +150,11 @@ export function runMayCast(
   let next = state;
   const created: ContinuousEffect[] = [];
   const delayed: DelayedTrigger[] = [];
+  // CR 611.2a, 500.1 (Hildibrand Manderville): "until the end of your next turn" is the end of the controller's next turn, as `mayPlay` reads it.
+  const until =
+    effect.duration === 'untilEndOfNextTurn'
+      ? playEnd(state, res.controller, 'endOfYourNextTurn')
+      : 'endOfTurn';
   for (const id of cards) {
     const [timestamp, stamped] = allocateTimestamp(next);
     next = stamped;
@@ -172,10 +178,12 @@ export function runMayCast(
       id: `ce${timestamp}`,
       timestamp,
       objects: [id],
-      until: 'endOfTurn',
+      until,
       change: {
         kind: 'castPermission',
         seat: res.controller,
+        // CR 715.3 (Hildibrand Manderville): "cast it from your graveyard as an Adventure": the Adventure half only.
+        ...(effect.adventure === true ? { adventureOnly: true as const } : {}),
         // D-359 (CR 614.1a): the rider of "If that spell would be put into your graveyard, exile it instead" goes with the permission.
         ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
         ...(effect.anyGraveyard === true ? { anyGraveyard: true as const } : {}),

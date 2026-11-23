@@ -40,6 +40,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'skulk',
   'battleCry',
   'mentor',
+  'flanking',
   'evolve',
   'extort',
   'convoke',
@@ -53,6 +54,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'aftermath',
   'storm',
   'gravestorm',
+  'rebound',
   'livingWeapon',
   'jobSelect',
 ];
@@ -101,6 +103,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'afflict':
+    case 'dredge':
     case 'annihilator':
     case 'backup':
     case 'bushido':
@@ -114,6 +117,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       // CR 100.2a: how many copies a deck may hold: a whole number above the one a Commander deck holds.
       if (!isCount(k.limit) || k.limit < 2) {
         issue(out, `${path}.limit`, 'deckLimit needs a whole number of at least 2');
+      }
+      return true;
+    case 'companion':
+      // CR 702.139a: the condition is one of the closed set of companion conditions.
+      if (k.condition?.kind !== 'noRepeatedManaSymbol') {
+        issue(out, `${path}.condition`, 'companion needs a known companion condition');
       }
       return true;
     case 'partnerWith':

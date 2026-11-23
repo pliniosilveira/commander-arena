@@ -88,8 +88,13 @@ describe('log group heading', () => {
   });
 });
 
-const view = (activeSeat: number, prioritySeat: number | null = null): GameView =>
-  ({ viewer: 0, activeSeat, prioritySeat }) as unknown as GameView;
+const view = (activeSeat: number, prioritySeat: number | null = null, seatCount = 2): GameView =>
+  ({
+    viewer: 0,
+    activeSeat,
+    prioritySeat,
+    seats: Array.from({ length: seatCount }, (_, id) => ({ id })),
+  }) as unknown as GameView;
 
 describe('active area', () => {
   test('the class follows the active seat, never priority', () => {
@@ -104,5 +109,12 @@ describe('active area', () => {
     expect(battlefieldLabel(view(0), 1)).toBe("Opponent's battlefield");
     expect(battlefieldLabel(view(1), 1)).toBe("Opponent's battlefield, opponent's turn");
     expect(battlefieldLabel(view(1), 0)).toBe('Your battlefield');
+  });
+
+  test('with more seats the battlefield names the numbered opponent', () => {
+    expect(battlefieldLabel(view(2, null, 3), 2)).toBe(
+      "Opponent 2's battlefield, opponent 2's turn",
+    );
+    expect(battlefieldLabel(view(0, null, 3), 1)).toBe("Opponent 1's battlefield");
   });
 });

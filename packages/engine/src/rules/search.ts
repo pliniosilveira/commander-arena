@@ -136,6 +136,39 @@ export function runSearch(
 ): StepOutcome {
   const { search, seat } = instruction;
   const shuffle: Instruction[] = search.shuffle ? [{ kind: 'shuffle', seat }] : [];
+  // CR 701.23i, 101.4 (`together`): what this player decided is held until the last player has; then the cards of every player who searched move and their libraries are shuffled, in
+  // the order the players decided.
+  const group = instruction.together;
+  const hold = (accepted: boolean, cards: readonly ObjectId[]): StepOutcome => {
+    if (group === undefined) throw new Error('A search with no group cannot be held');
+    const held = [...group.held, { seat, accepted, chosen: cards }];
+    const next = group.later[0];
+    if (next !== undefined) {
+      return done(
+        state,
+        [],
+        [
+          {
+            ...instruction,
+            seat: next,
+            accepted: search.optional === true ? null : true,
+            chosen: null,
+            together: { later: group.later.slice(1), held },
+          },
+        ],
+      );
+    }
+    const { together: _held, ...single } = instruction;
+    return done(
+      state,
+      [],
+      held
+        .filter((h) => h.accepted)
+        .map((h) => ({ ...single, seat: h.seat, accepted: true, chosen: h.chosen })),
+    );
+  };
+  // A "may" search this player declined (only a player of a group stays at the head with `accepted` false).
+  if (group !== undefined && instruction.accepted === false) return hold(false, []);
   if (instruction.accepted === null) {
     const info = sourceInfo(state, res.source);
     return {
@@ -156,6 +189,8 @@ export function runSearch(
     const legal = searchCandidates(state, seat, res.source, search.filter, search.zones);
     // CR 701.23c: with nothing to find the player still searched (and shuffles if told to).
     if (legal.length === 0 || search.max <= 0) {
+      // CR 701.23c: in a group the player who searched and found nothing is held as one who found no card, and shuffles with the others.
+      if (group !== undefined) return hold(true, []);
       // Lorehold group 1: the player searched, which "if you search your library this way" reads.
       const library = search.zones === undefined || search.zones.includes('library');
       return {
@@ -210,6 +245,7 @@ export function runSearch(
     };
     return { state, events: [], front: [], needs: decision };
   }
+  if (group !== undefined) return hold(true, instruction.chosen);
   const found = instruction.chosen;
   // CR 701.23a: "found" counts the cards of the library alone for the event of a library search.
   const searched = searchedLibrary(state, search, found);
@@ -332,9 +368,11 @@ export function runDiscard(
   if (group !== undefined) {
     const held = [...group.held, { seat, cards: chosen }];
     const nextSeat = group.later[0];
+    // CR 701.9b: a card at random is drawn now, so the generator moves on for the next player; the discards themselves wait for the last.
+    const drawn = random === null ? state : { ...state, rng: random.rng };
     if (nextSeat !== undefined) {
       return done(
-        state,
+        drawn,
         [],
         [
           {
@@ -348,7 +386,7 @@ export function runDiscard(
     }
     const { together: _held, ...single } = instruction;
     return done(
-      state,
+      drawn,
       [],
       held.map((h) => ({ ...single, seat: h.seat, chosen: h.cards })),
     );

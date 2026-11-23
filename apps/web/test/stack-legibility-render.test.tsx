@@ -65,6 +65,17 @@ test('previewChoice: pinned, then hovered while visible, then the top of the sta
   expect(previewChoice(view, null, objectId(5))).toEqual({ id: objectId(5), source: 'hovered' });
   // The stack lists bottom first: its last item is the top.
   expect(previewChoice(view, null, null)).toEqual({ id: objectId(2), source: 'stack' });
+  // A top of the stack the player tapped away is not shown; another top shows again.
+  expect(previewChoice(view, null, null, objectId(2))).toEqual({ id: null, source: 'none' });
+  expect(previewChoice(view, null, null, objectId(1))).toEqual({
+    id: objectId(2),
+    source: 'stack',
+  });
+  // A hovered object still shows over a dismissed top.
+  expect(previewChoice(view, null, objectId(5), objectId(2))).toEqual({
+    id: objectId(5),
+    source: 'hovered',
+  });
   // A hovered object that is gone does not hide the stack.
   expect(previewChoice(view, null, objectId(99))).toEqual({ id: objectId(2), source: 'stack' });
   // With nothing on the stack: nothing, or the old "not visible" for a gone hover.

@@ -15,9 +15,12 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
+import { HISTORY_VALUE } from '../amount/history';
 import { quantity } from '../amount/index';
 import { NUMBER_OF_ANY_COUNTERS } from '../amount/value';
 import { defineRule, family, node, spanned } from '../registry';
+import { ABZAN_ARMOR_NOUN_RULES } from './abzan-armor';
+import { ABZAN_SPELLS_NOUN_RULES } from './abzan-spells';
 import { AHOY_G4_NOUN_RULES } from './ahoy-g4';
 import { AHOY_G7_NOUN_RULES } from './ahoy-g7';
 import { AHOY_G10_NOUN_RULES } from './ahoy-g10';
@@ -68,9 +71,11 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { PLAYERS_WHO_NOUN_RULES } from './players-who';
+import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
-import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
+import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN, NOUN_THE_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
@@ -353,6 +358,18 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * The limit a graveyard target's "with mana value less than or equal to ..." reads: the counters on the permanent the trigger is about (Puca's Covenant, CR 202.3, 122.1), or the amount of
+ * life the controller lost this turn (Betor, Ancestor's Voice, CR 119.3, 202.3).
+ */
+const graveyardLimit: Parser<IrAmount> = choice(
+  NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard),
+  (ctx, pos) => {
+    const r = HISTORY_VALUE(ctx, pos);
+    return r.ok && r.value.kind === 'controllerLifeLostThisTurn' ? r : fail(ctx, pos);
+  },
+);
+
 /** `noun.target-graveyard-card`: "target creature card from a graveyard" (CR 404.1). */
 export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   id: ID.targetGraveyard,
@@ -380,8 +397,20 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one, two, or three target creature cards from your graveyard',
     // Puca's Covenant (CR 202.3, 122.1): a limit of the counters on the permanent the trigger is about.
     'target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard',
+    // Krile Baldesion (CR 202.3, 603.3d): exactly the mana value of the spell that caused the trigger.
+    "target creature card with mana value equal to that spell's mana value from your graveyard",
+    // Blue Mage's Cane (CR 508.5): the graveyard of the player an attacking creature attacks.
+    "target instant or sorcery card from defending player's graveyard",
+    "up to one target instant or sorcery card from defending player's graveyard",
+    // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
+    'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
   ],
   rejects: [
+    "target creature card with mana value equal to that card's mana value from your graveyard",
+    "target creature card with mana value equal to that spell's mana value",
+    "target instant or sorcery card from the defending player's graveyard",
+    "target instant or sorcery card from defending players' graveyard",
+    'target creature card with mana value less than or equal to the amount of life you gained this turn from your graveyard',
     'one, two, or three target creature card from graveyards',
     'one, two, three target creature cards from graveyards',
     'one, two, or four target creature cards from graveyards',
@@ -403,7 +432,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   ],
   parse: targetOf(ID.targetGraveyard, (plural) =>
     // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
-    graveyardPhrase(plural, 'from', NUMBER_OF_ANY_COUNTERS(ID.targetGraveyard)),
+    graveyardPhrase(plural, 'from', graveyardLimit),
   ),
 });
 
@@ -947,6 +976,9 @@ export const NOUN_RULES = [
   ...VRASKA_EARLY_NOUN_RULES,
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
   ...DESTINY_EARLY_NOUN_RULES,
+  ...PLAYERS_WHO_CONTROL_NOUN_RULES,
+  // "each opponent who lost life this turn", "each opponent who was dealt combat damage by ~ this turn": first words of `noun.player` ("each opponent").
+  ...PLAYERS_WHO_NOUN_RULES,
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
@@ -1001,6 +1033,8 @@ export const NOUN_RULES = [
   ...QUANDRIX_G_TARGET_NOUN_RULES,
   // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
   ...AHOY_G7_NOUN_RULES,
+  // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.
+  ...ABZAN_ARMOR_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -1009,6 +1043,7 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...ABZAN_SPELLS_NOUN_RULES,
   ...SAME_NAME_NOUN_RULES,
   ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
@@ -1042,6 +1077,7 @@ export const NOUN_RULES = [
   NOUN_IT,
   NOUN_EACH_OF_THEM,
   NOUN_THAT_TOKEN,
+  NOUN_THE_TOKEN,
   // Stage P50 (D-207): "target triggered ability or colorless spell".
   ...VRASKA_NOUN_RULES,
   // Stage P33 (D-150): "that nonland permanent card", "this card".

@@ -3,7 +3,7 @@
  * Gods, Satyr Wayfinder, Vessel of Nascency, Malevolent Rumble; D-396, CR 701.20a): the engine's `lookAtTop` with `revealAll`. The three sentences are one instruction (the
  * second and third only make sense with the cards the first reveals), so `splitSentences` keeps them together (`segment.ts`) and one rule reads the whole.
  */
-import { literal, satisfy, sequence } from '../../combinators';
+import { choice, literal, map, satisfy, sequence } from '../../combinators';
 import type { IrArg } from '../../ir/types';
 import { defineRule, family } from '../registry';
 import { TAKEN_CARD } from './library';
@@ -36,12 +36,16 @@ export const EFFECT_REVEAL_TAKE = defineRule<Clauses>({
     'reveal the top four cards of your library. you may put an artifact, creature, enchantment, land, or planeswalker card from among them into your hand. put the rest into your graveyard',
     'reveal the top three cards of your library. you may put an instant or sorcery card from among them into your hand. put the rest into your graveyard',
     'reveal the top three cards of your library. you may put a card from among them into your hand. put the rest into your graveyard',
+    // Issue 102 (Shigeki, Jukai Visionary): the card taken enters the battlefield tapped.
+    'reveal the top four cards of your library. you may put a land card from among them onto the battlefield tapped. put the rest into your graveyard',
   ],
   rejects: [
     'reveal the top five cards of your library. you may put a creature card from among them into your hand',
     'reveal the top five cards of your library. put the rest into your graveyard',
     'reveal the top five cards of your library. you may put a creature card from among them into your hand. put the rest on the bottom of your library in a random order',
     'reveal the top five cards of your library. you may put a creature card from among them onto the battlefield. put the rest into your graveyard',
+    'reveal the top four cards of your library. you may put a land card from among them onto the battlefield. put the rest into your graveyard',
+    'reveal the top four cards of your library. you may put a land card from among them onto the battlefield tapped. put the rest into your hand',
     'reveal the top five cards of your library. you may reveal a creature card from among them and put it into your hand. put the rest into your graveyard',
     'reveal the top five cards of your library. you may put two creature cards from among them into your hand. put the rest into your graveyard',
     'reveal the top five cards of your library. you may put a creature card from among them into your hand. put the rest into your hand',
@@ -57,9 +61,29 @@ export const EFFECT_REVEAL_TAKE = defineRule<Clauses>({
       satisfy(NUMBER, (a) => a.kind === 'number' && a.value >= 2),
       literal(' cards of your library. you may put '),
       TAKEN_CARD,
-      literal(' from among them into your hand. put the rest into your graveyard'),
+      choice(
+        map(literal(' from among them into your hand'), () => false),
+        map(literal(' from among them onto the battlefield tapped'), () => true),
+      ),
+      literal('. put the rest into your graveyard'),
     ),
-    ([, count, , take]) => ({ verb: 'revealTake', args: { count, take } }),
+    ([, count, , take, tapped]) => ({
+      verb: 'revealTake',
+      args: {
+        count,
+        take,
+        ...(tapped
+          ? {
+              tapped: {
+                kind: 'flag' as const,
+                value: true,
+                span: take.span,
+                rule: 'effect.reveal-take',
+              },
+            }
+          : {}),
+      },
+    }),
   ),
 });
 

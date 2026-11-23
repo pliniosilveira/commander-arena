@@ -35,6 +35,7 @@ import { chooseOptionAnswer } from './casual-options';
 import { choosePayOptionsAnswer } from './casual-pay-options';
 import {
   chooseBlightCreature,
+  chooseCreaturesToKeep,
   chooseLegendToKeep,
   choosePermanentToReturn,
   choosePermanentToSacrifice,
@@ -152,9 +153,11 @@ export function createCasualHandlers(
                                             ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
                                             : d.purpose === 'soulbond'
                                               ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
-                                              : d.min === 0
-                                                ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
-                                                : choosePermanentToSacrifice(view, d),
+                                              : d.purpose === 'keep'
+                                                ? chooseCreaturesToKeep(view, d) // CR 608.2d, Slaughter the Strong: the creatures it keeps within the total power
+                                                : d.min === 0
+                                                  ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
+                                                  : choosePermanentToSacrifice(view, d),
     chooseCards: (d) => chooseCardsFromZone(view, d),
     arrangeCards: (d) => chooseArrangement(view, d),
     orderTriggers: (d) => orderTriggersAsListed(d),

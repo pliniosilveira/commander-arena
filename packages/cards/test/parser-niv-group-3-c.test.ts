@@ -102,7 +102,6 @@ describe('"When ~ enters, you may cast target instant or sorcery card from a gra
     'When this creature enters, cast target instant or sorcery card from a graveyard.',
     'When this creature enters, cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell.',
     // whose graveyard, how many cards, which riders
-    'When this creature enters, you may cast target instant or sorcery card from your graveyard.',
     "When this creature enters, you may cast target instant or sorcery card from an opponent's graveyard.",
     'When this creature enters, you may cast up to one target instant or sorcery card from a graveyard.',
     'When this creature enters, you may cast two target instant or sorcery cards from a graveyard.',
@@ -110,7 +109,9 @@ describe('"When ~ enters, you may cast target instant or sorcery card from a gra
     'When this creature enters, you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast it.',
     'When this creature enters, you may cast target instant or sorcery card from a graveyard. If that spell would be put into a graveyard, return it to your hand instead.',
     // another way of casting, another thing done with it
-    'When this creature enters, you may cast target instant or sorcery card from a graveyard without paying its mana cost.',
+    // (without paying its mana cost is read since the gravecast group: it is the free cast, with no any-type rider beside it)
+    'When this creature enters, you may cast target instant or sorcery card from a graveyard without paying its mana cost and draw a card.',
+    'When this creature enters, you may cast target instant or sorcery card from a graveyard without paying its mana cost, and mana of any type can be spent to cast that spell.',
     'When this creature enters, you may cast target instant or sorcery card from a graveyard this turn.',
     'When this creature enters, you may cast target instant or sorcery card from a graveyard and draw a card.',
     // not a card

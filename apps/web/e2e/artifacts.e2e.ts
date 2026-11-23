@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { showAllLogLines } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -113,27 +114,22 @@ test('Look at the top six: the artifact cards may be taken, the others are shown
   // Nothing chosen is an answer: the button says so.
   await expect(primary(page)).toHaveText('Take none');
   await expect(primary(page)).toBeEnabled();
-  // Every card looked at is listed: the ones that may be taken (equal names are one row, "×2"), then the others.
-  const takeable = panel.locator('button.dec-pick');
-  const others = panel.getByRole('list', { name: 'Other cards looked at' }).locator('li');
-  const names = await takeable.locator('.dec-pick-name').allInnerTexts();
-  const copies = names.reduce((sum, n) => sum + Number(/ ×(\d+)$/.exec(n)?.[1] ?? 1), 0);
-  expect(copies + (await others.count())).toBe(6);
+  // Every card looked at is in the Zone Picker (docs/BOARD_COMPONENTS.md): the ones that may be taken, then the others apart.
+  const dialog = page.getByRole('dialog', { name: 'Cards looked at' });
+  await expect(dialog).toBeVisible();
+  const confirm = dialog.locator('.board-modal-actions .dec-btn-primary');
+  const takeable = dialog.locator('.board-zone-card:not(.board-zone-other)');
+  const others = dialog.locator('.board-zone-other');
+  expect((await takeable.count()) + (await others.count())).toBe(6);
 
-  const picked = (await takeable.first().locator('.dec-pick-name').innerText()).replace(
-    / ×\d+$/,
-    '',
-  );
+  const picked = (await takeable.first().getAttribute('aria-label')) ?? '';
   await takeable.first().click();
   await expect(primary(page)).toHaveText('Put into hand');
-  await primary(page).click();
+  await confirm.click();
   await settled(page);
   // The card taken is revealed (CR 701.20); the look itself is a detail line that names no card.
   await expect(logText(page)).toContainText(`You reveal ${picked}.`);
-  await page
-    .getByRole('group', { name: 'Log detail' })
-    .getByRole('button', { name: 'All' })
-    .click();
+  await showAllLogLines(page);
   await expect(logText(page)).toContainText('You look at the top 6 cards of your library.');
   expect(await handSize(page)).toBe(hand + 1);
   expect(errors).toEqual([]);

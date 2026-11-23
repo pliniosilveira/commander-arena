@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard, mine } from './harness/locators';
+import { toggleSetting } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -69,7 +70,7 @@ test('paying for a spell by hand, the player chooses which creature the Altar sa
 
   const hawks = await mine(page, HAWK).count();
   // Auto-pay chooses the cheapest creature for the player (the planner's default); paying by hand lets the player choose, so turn Manual mana on.
-  await page.getByRole('button', { name: 'Manual mana' }).click();
+  await toggleSetting(page, 'Manual mana payment');
   await handCard(page, GOBLIN).first().click();
   await settled(page);
   // The payment: click the Altar. It sacrifices one of several creatures, so the popover asks which.

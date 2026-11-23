@@ -63,6 +63,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'its';
     case 'triggerSources':
+    case 'triggerAttackers':
     case 'convokers':
       return 'their';
     case 'sacrificedCost':
@@ -79,6 +80,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return "the exiled card's";
     case 'putWithThis':
       // Animate Dead: the creature this permanent put onto the battlefield.
+      return "that creature's";
+    case 'eachObject':
+      // Canopy Gargantuan: the creature the counters are being put on right now.
       return "that creature's";
   }
 }
@@ -101,6 +105,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerCard':
       return 'it';
     case 'triggerSources':
+    case 'triggerAttackers':
       return 'those creatures';
     case 'convokers':
       return 'each creature that convoked this spell';
@@ -112,6 +117,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'linkedExile':
       return 'the exiled card';
     case 'putWithThis':
+    case 'eachObject':
       return 'that creature';
   }
 }
@@ -142,6 +148,20 @@ function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
       return `the number of opponents who control ${more} creatures than you`;
     case 'lands':
       return `the number of opponents who control ${more} lands than you`;
+  }
+}
+
+/** The stat words of "has more ... than you". */
+function statWords(stat: PlayerStat): string {
+  switch (stat) {
+    case 'life':
+      return 'life';
+    case 'cardsInHand':
+      return 'cards in hand';
+    case 'creatures':
+      return 'creatures';
+    case 'lands':
+      return 'lands';
   }
 }
 
@@ -325,6 +345,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
         ? `the greatest ${stat} among ${things}`
         : `the total ${stat} of ${things}`;
     }
+    case 'colorsAmong': {
+      // CR 105.2 (Vivid): "the number of colors among permanents you control".
+      const things = thingsPhrase(amount.filter, true);
+      return things === null ? UNKNOWN_AMOUNT : `the number of colors among ${things}`;
+    }
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2).
       return 'the number of differently named permanents';
@@ -372,6 +397,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':
       return opponentsWithMore(amount.stat, amount.fewer === true);
+    case 'chosenPlayerLead':
+      // CR 608.2c: how much more of the stat the player chosen earlier has than you.
+      return `the difference by which the chosen player has more ${statWords(amount.stat)} than you`;
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';

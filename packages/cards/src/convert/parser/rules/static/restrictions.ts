@@ -47,8 +47,17 @@ export const STATIC_SELF = defineRule<IrStatic>({
     // Prismari deck, group 2 (D-648, CR 509.1b): the creatures it can block are those with flying.
     '~ can block only creatures with flying.',
     "~ can block only creatures with flying and can't be blocked.",
+    // CR 609.4, 702.3b (Weathered Sentinels): the players it may attack as though it didn't have defender are those who attacked its controller during their last turn.
+    "~ can attack players who attacked you during their last turn as though it didn't have defender.",
+    "~ can attack as though it didn't have defender.",
   ],
   rejects: [
+    "~ can attack players who attacked you during their last turn as though they didn't have defender.",
+    "~ can attack players who attacked you during their last turn as though it didn't have defender",
+    "~ can attack players who attacked you this turn as though it didn't have defender.",
+    "~ can attack players who attacked each opponent during their last turn as though it didn't have defender.",
+    "~ can attack as though it didn't have flying.",
+    '~ block only creatures with flying.',
     '~ can block only creatures with flying',
     '~ can block only creatures with reach.',
     '~ can block only creatures with flying or reach.',

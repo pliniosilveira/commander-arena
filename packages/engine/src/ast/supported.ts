@@ -162,6 +162,13 @@ function walkEffect(
         }
         return;
       }
+      // Hildibrand Manderville (CR 603.10a): the card the dying permanent became names itself; it is in the graveyard when the ability resolves or the permission is not given.
+      if (
+        effect.adventure === true &&
+        (effect.objects.kind === 'thisCard' || effect.objects.kind === 'triggerCard')
+      ) {
+        return;
+      }
       const zone = filter?.zone;
       if (zone !== 'graveyard') {
         out.push({
@@ -657,6 +664,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesBlockedBy':
     case 'dealsCombatDamage':
     case 'dealsDamage':
     case 'leavesBattlefield':
@@ -781,6 +789,9 @@ function walkAbility(
         a.static.kind !== 'modifyPt' &&
         // D-133: a restriction is read where the rule acts, after the layers, so its subject may compare power.
         a.static.kind !== 'restriction' &&
+        // CR 509.1b, 613.11 (Sidar Kondo of Jamuraa: "can't block creatures with power 2 or less"): a limit on who may block, read where blockers are declared; the subject is
+        // matched after the layers that change power, as a restriction's is (`derive-statics.ts`).
+        a.static.kind !== 'cantBeBlockedBy' &&
         'subject' in a.static &&
         a.static.subject.kind === 'filter' &&
         filterComparesPt(a.static.subject.filter)

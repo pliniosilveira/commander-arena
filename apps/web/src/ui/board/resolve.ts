@@ -1,4 +1,5 @@
 /** Pure lookups over a `GameView` for the board: objects by id, combat roles, commander facts. */
+
 import type {
   Color,
   GameView,
@@ -7,15 +8,20 @@ import type {
   SeatId,
   SeatView,
 } from '@commander-arena/engine';
+import { companionObject, companionSeatOf } from '../../game/companion';
 import { designationObject } from '../../game/designations';
 import { isInherentAbility } from '../../game/monarch-text';
 import type { DefinedPtNote } from '../../game/protocol';
+import { seatNameOf } from '../../game/seat-name';
 
 /** Every object the viewer may look at, for the preview panel and zone viewers. */
 export function findObject(view: GameView, id: ObjectId): ObjectView | null {
   // The monarch and the Ring are shown as small cards but are no objects of the view (D-243).
   const designation = designationObject(view, id);
   if (designation !== null) return designation;
+  // A revealed companion is outside the game: its card is built from the seat's public companion data.
+  const companionSeat = companionSeatOf(id);
+  if (companionSeat !== null) return companionObject(view, companionSeat);
   // `pendingCards` are the viewer's own library cards of a search they are making (engine view).
   const pools: (readonly ObjectView[])[] = [
     view.battlefield,
@@ -48,24 +54,28 @@ export interface PreviewChoice {
  * still see it; with neither, the object on top of the stack, so the card that waits for the player's
  * pass is read without moving the pointer to the stack and back (issue 82). A hovered object that has
  * gone, with an empty stack, is still named ("Not visible any more"). An ability with no source (the
- * monarch's) is not a card: it is not shown.
+ * monarch's) is not a card: it is not shown. A top of the stack the player dismissed is not shown
+ * either, until another object is on top.
  */
 export function previewChoice(
   view: GameView,
   pinned: ObjectId | null,
   hovered: ObjectId | null,
+  dismissedStack: ObjectId | null = null,
 ): PreviewChoice {
   if (pinned !== null) return { id: pinned, source: 'pinned' };
   if (hovered !== null && findObject(view, hovered) !== null)
     return { id: hovered, source: 'hovered' };
   const top = view.stack[view.stack.length - 1];
   // The monarch's and the Ring's abilities have no card to show (nothing to hover either).
-  if (top !== undefined && !isInherentAbility(top)) return { id: top.id, source: 'stack' };
+  // A top of the stack the player tapped away stays closed (a new one shows again).
+  if (top !== undefined && !isInherentAbility(top) && top.id !== dismissedStack)
+    return { id: top.id, source: 'stack' };
   return hovered === null ? { id: null, source: 'none' } : { id: hovered, source: 'hovered' };
 }
 
 export function seatLabel(view: GameView, seat: SeatId): string {
-  return seat === view.viewer ? 'You' : 'Opponent';
+  return seatNameOf(seat, view.viewer, view.seats.length);
 }
 
 /** One block a creature makes: the attacker it blocks, by its number (`pairing.ts`). */
@@ -205,23 +215,26 @@ export function commanderTaxes(seat: SeatView): number[] {
 }
 
 export interface CommanderDamage {
-  /** The dealing commander's name when it can be told apart, otherwise null. */
-  readonly source: string | null;
+  /** The seat whose commander dealt the damage, when the view says (it always does). */
+  readonly from: SeatId | null;
   readonly amount: number;
+  /** The dealing commander's name in a two-seat game with one commander, otherwise null. */
+  readonly name: string | null;
 }
 
 /**
- * Commander damage taken by `seat` (CR 903.10a), one row per dealing commander. Keys are
- * `${seat}:${cardId}`; a name is attached only when exactly one opposing commander is visible and
- * exactly one has dealt damage, since the card id cannot be resolved to a name otherwise.
+ * Commander damage taken by `seat` (CR 903.10a), one row per dealing commander, with the seat that
+ * owns it (`GameView.commanderDamageSources`), so several opponents can be told apart.
  */
 export function commanderDamageTaken(view: GameView, seat: SeatId): CommanderDamage[] {
-  const rows = Object.entries(view.commanderDamage)
-    .filter(([key]) => key.startsWith(`${seat}:`))
-    .map(([, amount]) => amount);
+  const rows = Object.entries(view.commanderDamage).filter(([key]) => key.startsWith(`${seat}:`));
   const sources = view.seats.filter((s) => s.id !== seat).flatMap((s) => commandersOf(view, s.id));
-  const only = rows.length === 1 && sources.length === 1 ? (sources[0]?.name ?? null) : null;
-  return rows.map((amount) => ({ source: only, amount }));
+  const only = view.seats.length === 2 && rows.length === 1 && sources.length === 1;
+  return rows.map(([key, amount]) => ({
+    from: view.commanderDamageSources[key] ?? null,
+    amount,
+    name: only ? (sources[0]?.name ?? null) : null,
+  }));
 }
 
 const BAND_VAR: Readonly<Record<Color, string>> = {

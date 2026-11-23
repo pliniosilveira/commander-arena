@@ -118,11 +118,11 @@ test('an Adventure card: cast the Adventure, see it go on an adventure, then cas
   await expect(logText(page)).toContainText('Wise Owl goes on an adventure.');
 
   // The card is in the shared exile, marked, and not castable yet (two lands are untapped).
-  await page.getByRole('button', { name: /^Open exile/ }).click();
-  const list = page.getByRole('dialog', { name: 'Exile (shared)' });
+  await page.getByRole('button', { name: /^Open You exile/ }).click();
+  const list = page.getByRole('dialog', { name: 'You exile' });
   await expect(list.getByLabel('Wise Owl')).toBeVisible();
   await expect(list.getByText('on an Adventure', { exact: true })).toBeVisible();
-  await list.getByRole('button', { name: 'Close Exile (shared)' }).click();
+  await list.getByRole('button', { name: 'Close You exile' }).click();
 
   // Play on until the owl is castable from exile: a chip row appears above the hand.
   await playUntil(page, async () => (await exileChip(page).count()) > 0);

@@ -90,6 +90,15 @@ function mentionsEscaped(node: unknown): boolean {
   return Object.values(record).some(mentionsEscaped);
 }
 
+/** True when `node` (any JSON) holds a condition node of kind `foretold`. */
+function mentionsForetold(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsForetold);
+  if (node === null || typeof node !== 'object') return false;
+  const record = node as Record<string, unknown>;
+  if (record.kind === 'foretold') return true;
+  return Object.values(record).some(mentionsForetold);
+}
+
 /** True when `node` (any JSON) holds a target slot that exists only if the spell was cast during its controller's main phase (issue 244). */
 function mentionsCastPhaseTarget(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(mentionsCastPhaseTarget);
@@ -188,6 +197,13 @@ export function checkCastFace(
     // CR 702.138b: without an escape cost nothing can have escaped; the condition would never hold.
     issue(out, path, 'the escaped condition and "escapes with" need an escape cost (CR 702.138b)');
   }
+  // CR 702.143a: without a foretell cost no spell can have been foretold; the condition would never hold.
+  if (
+    !alternatives.some((a) => a?.kind === 'foretell') &&
+    (mentionsForetold(abilities) || mentionsForetold(spell))
+  ) {
+    issue(out, path, 'the foretold condition needs a foretell cost (CR 702.143a)');
+  }
   // CR 702.180a: harmonize casts the card from the graveyard and exiles it as it leaves the stack, so it is on an instant or a sorcery (a permanent
   // spell would be exiled instead of entering); the engine does not combine it with the other ways of paying part of the cost.
   if (alternatives.some((a) => a?.kind === 'harmonize')) {
@@ -233,6 +249,27 @@ export function checkCastFace(
         out,
         `${path}.alternativeCosts`,
         'tapPermanents with convoke, improvise or delve is not supported (D-149)',
+      );
+    }
+  }
+  // CR 118.9 (Snuff Out): paying life rather than the mana cost is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'payLife')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'payLife is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'payLife with convoke, improvise or delve is not supported',
       );
     }
   }
@@ -328,7 +365,7 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
@@ -356,6 +393,10 @@ export function checkCastFace(
   // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
   if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'buyback is on an instant or a sorcery (CR 702.27a)');
+  }
+  // CR 702.88a: "Rebound appears on some instants and sorceries".
+  if (has('rebound') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
+    issue(out, `${path}.abilities`, 'rebound is on an instant or a sorcery (CR 702.88a)');
   }
   // D-129: "if a replicate cost was paid for it" needs a replicate ability to pay.
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');

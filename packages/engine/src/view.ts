@@ -437,6 +437,10 @@ export interface AlternativeCostView {
   readonly exile?: number;
   /** For `tapPermanents` (D-149): how many untapped permanents of this filter are tapped as part of the cost. */
   readonly tap?: { readonly filter: ObjectFilter; readonly count: number };
+  /** For an evoke cost that exiles a card of the hand (CR 702.74a, "Evoke—Exile a red card from your hand"): the kind of card exiled as part of the cost. */
+  readonly exileFromHand?: ObjectFilter;
+  /** For `payLife` (CR 118.9, Snuff Out): the life paid as part of the cost. */
+  readonly life?: number;
   /** For `sacrificeFromGraveyard` (issue 159): how many permanents of this filter are sacrificed as part of the cost. */
   readonly sacrifice?: { readonly filter: ObjectFilter; readonly count: number };
 }
@@ -452,6 +456,23 @@ export type FaceView = Characteristics;
 export interface MeldView {
   readonly components: readonly FaceView[];
   readonly manaValue: number;
+}
+
+/**
+ * A revealed companion (CR 103.2b, 702.139): public to every viewer, as the card it is in its printed values. While `brought` is false the card is outside the
+ * game (in no zone, in no count); once true it is an ordinary card of the game, in whichever zone it is in now.
+ */
+export interface CompanionView {
+  readonly name: string;
+  readonly manaCost: readonly string[] | null;
+  readonly supertypes: readonly Supertype[];
+  readonly types: readonly CardType[];
+  readonly subtypes: readonly Subtype[];
+  readonly colors: readonly Color[];
+  readonly power: number | null;
+  readonly toughness: number | null;
+  readonly oracleText: string;
+  readonly brought: boolean;
 }
 
 export interface SeatView {
@@ -480,6 +501,8 @@ export interface SeatView {
   readonly lifeLostThisTurn: number;
   /** How many spells this player has cast this turn (CR 601.2i; copies are not cast): what Storm counts (D-129). */
   readonly spellsCastThisTurn: number;
+  /** This player's companion (CR 103.2b, 702.139), public. Absent when they have none. */
+  readonly companion?: CompanionView;
   readonly commanderTax: Readonly<Record<string, number>>;
   /** The amount of life replacing each commander's mana tax at the current cast count. */
   readonly commanderTaxLife: Readonly<Record<string, number>>;
@@ -584,7 +607,24 @@ export interface GameView {
     readonly sourceName: string;
   };
   readonly commanderDamage: Readonly<Record<string, number>>;
+  /**
+   * The seat whose commander dealt each `commanderDamage` entry, by the same key (CR 903.10a,
+   * 704.6c): "who is close to 21" in a game with several opponents.
+   */
+  readonly commanderDamageSources: Readonly<Record<string, SeatId>>;
   readonly result: GameResult | null;
+}
+
+/** The owner of the commander behind each commander damage key (`"<victim>:<cardId>"`). */
+function commanderDamageSources(state: GameState): Record<string, SeatId> {
+  const owners = new Map<string, SeatId>();
+  for (const s of state.seats) for (const c of s.commanders) owners.set(c, s.id);
+  const out: Record<string, SeatId> = {};
+  for (const key of Object.keys(state.commanderDamage)) {
+    const owner = owners.get(key.slice(key.indexOf(':') + 1));
+    if (owner !== undefined) out[key] = owner;
+  }
+  return out;
 }
 
 /** `castCost` and `additionalCosts` of a card that is not a permanent (see `ObjectView`). */
@@ -945,6 +985,30 @@ function combatView(state: GameState): CombatView | null {
   };
 }
 
+function companionViewOf(
+  state: GameState,
+  seat: SeatId,
+): { companion: CompanionView } | Record<string, never> {
+  const companion = state.seats[seat]?.companion;
+  const face =
+    companion === undefined ? undefined : state.definitions[companion.definition]?.faces[0];
+  if (companion === undefined || face === undefined) return {};
+  return {
+    companion: {
+      name: face.name,
+      manaCost: face.manaCost,
+      supertypes: face.supertypes,
+      types: face.types,
+      subtypes: face.subtypes,
+      colors: face.colors,
+      power: typeof face.power === 'number' ? face.power : null,
+      toughness: typeof face.toughness === 'number' ? face.toughness : null,
+      oracleText: face.oracleText,
+      brought: companion.brought,
+    },
+  };
+}
+
 export function getView(state: GameState, viewer: SeatId): GameView {
   const seats: SeatView[] = state.seats.map((s) => {
     // CR 401.5: only the player who may look sees it, or everyone while it is revealed.
@@ -980,6 +1044,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
             : [[c, face.commanderTaxLife * (state.commanderCasts[c] ?? 0)]];
         }),
       ),
+      ...companionViewOf(state, s.id),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
       ...(s.speed === undefined ? {} : { speed: s.speed }),
@@ -1074,6 +1139,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
         }
       : {}),
     commanderDamage: state.commanderDamage,
+    commanderDamageSources: commanderDamageSources(state),
     result: state.result,
   };
 }

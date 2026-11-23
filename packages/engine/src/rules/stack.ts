@@ -24,6 +24,7 @@ import { runCastFree } from './cast-free';
 import { giftEffectOf } from './cast-gift';
 import { runChangeTarget } from './change-target';
 import { DECLINE_OPTION } from './choose-one';
+import { asksWhichOpponent } from './choose-opponent';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
@@ -48,6 +49,8 @@ import {
   type UnlessAnswer,
 } from './pay-unless';
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
+import { rebounds, reboundTrigger } from './rebound';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { TIME_COUNTER } from './time-counter';
@@ -368,6 +371,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(head.kind === 'choosePlayer' && head.chosen !== null
           ? { chosenPlayer: head.chosen }
           : {}),
+        // CR 608.2d, 801.5b: the opponent the controller chose is what the effect queued right after reads as it starts.
+        ...(head.kind === 'chooseOpponent' && head.chosen !== null
+          ? { chosenOpponent: head.chosen }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -380,6 +387,20 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
       state.resolution?.entersCopy !== undefined
     ) {
       const { entersCopy: _answered, ...rest } = state.resolution;
+      state = { ...state, resolution: rest };
+    }
+    // The opponent chosen belongs to the one effect that asked for it (rules/choose-opponent.ts): once that effect has started, the next one asks again.
+    if (
+      head.kind === 'effect' &&
+      asksWhichOpponent(head.effect) &&
+      state.resolution?.chosenOpponent !== undefined
+    ) {
+      const { chosenOpponent: _used, ...rest } = state.resolution;
+      state = { ...state, resolution: rest };
+    }
+    // CR 310.9a: and the protector chosen for a battle that entered.
+    if (head.kind === 'move' && state.resolution?.entersProtector !== undefined) {
+      const { entersProtector: _protector, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // D-225: so does the card revealed for a land's "you may reveal a card".
@@ -499,12 +520,18 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       obj.stack?.flashback !== true &&
       obj.stack?.jumpStart !== true &&
       obj.stack?.exileInstead !== true;
+    // CR 702.88a (Rebound): a spell cast from its caster's hand is exiled instead of going to the graveyard; one that a buyback, an Adventure, an exile effect or time counters already
+    // place keeps that place.
+    const rebound = rebounds(faceOf(next, obj), obj, {
+      permanent,
+      elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen,
+    });
     const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled || timeCounters !== null
+        : adventure || exiled || timeCounters !== null || rebound
           ? 'exile'
           : boughtBack
             ? 'hand'
@@ -517,6 +544,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
+      ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
@@ -575,6 +603,16 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
             linkedExile: [...(owner.linkedExile ?? []), moved.newObject],
           });
         }
+      }
+      // CR 702.88a, 603.7, 603.7c: the card a rebounding spell became in exile is cast at the beginning of its caster's next upkeep (if they choose and it is still there).
+      if (rebound && moved.newObject !== null) {
+        next = {
+          ...next,
+          delayedTriggers: [
+            ...next.delayedTriggers,
+            reboundTrigger(moved.newObject, controllerOf(state, obj)),
+          ],
+        };
       }
       // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {
@@ -660,6 +698,22 @@ export function answerResolutionChoice(
   ) {
     return null;
   }
+  // CR 608.2d, 701.21a (Slaughter the Strong): the answer names the permanents kept; the rest of the ones the player controls that match are sacrificed (the ones that can't be, stay).
+  const asked = state.pending;
+  if (head.kind === 'chooseSacrifice' && head.keepPowerAtMost !== undefined) {
+    if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
+    const sacrificed = asked.legal.filter(
+      (id) => !chosen.includes(id) && !cantBeSacrificed(state, id),
+    );
+    return continueResolution(
+      {
+        ...state,
+        pending: null,
+        resolution: { ...res, queue: [{ ...head, chosen: sacrificed }, ...res.queue.slice(1)] },
+      },
+      [],
+    );
+  }
   // CR 701.34a (D-149): a proliferate also names the players chosen.
   const updated: Instruction =
     head.kind === 'proliferate' ? { ...head, chosen, players } : { ...head, chosen };
@@ -723,11 +777,36 @@ export function answerResolutionCards(
 export function answerResolutionPayAmount(state: GameState, amount: number): ResolveOutcome | null {
   const res = state.resolution;
   const head = res?.queue[0];
-  if (!res || (head?.kind !== 'payAmount' && head?.kind !== 'drawUpTo')) return null;
+  if (
+    !res ||
+    (head?.kind !== 'payAmount' && head?.kind !== 'drawUpTo' && head?.kind !== 'chooseNumber')
+  )
+    return null;
   const updated: Instruction = { ...head, amount };
+  const asked = state.pending;
   return continueResolution(
-    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
-    [],
+    {
+      ...state,
+      pending: null,
+      resolution: {
+        ...res,
+        // CR 608.2d (Expel the Interlopers): the number chosen is kept for the instructions after it.
+        ...(head.kind === 'chooseNumber' ? { chosenNumber: amount } : {}),
+        queue: [updated, ...res.queue.slice(1)],
+      },
+    },
+    // The choice of a number is public.
+    head.kind === 'chooseNumber' && asked?.kind === 'chooseX'
+      ? [
+          {
+            kind: 'optionChosen',
+            seat: asked.seat,
+            source: asked.source,
+            purpose: 'number',
+            option: String(amount),
+          },
+        ]
+      : [],
   );
 }
 
@@ -811,9 +890,12 @@ export function answerResolutionSearchMay(
   const events: GameEvent[] = [
     { kind: 'optionalAnswered', seat: d.seat, source: res.source, accepted: accept },
   ];
+  // CR 701.23i, 101.4: in a group the "no" of a player is held with the others' answers, so the next player is asked.
   const queue: readonly Instruction[] = accept
     ? [{ ...head, accepted: true }, ...res.queue.slice(1)]
-    : res.queue.slice(1);
+    : head.together !== undefined
+      ? [{ ...head, accepted: false }, ...res.queue.slice(1)]
+      : res.queue.slice(1);
   return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
 }
 
@@ -1080,6 +1162,73 @@ export function answerResolutionChoosePlayer(
   );
 }
 
+/**
+ * Records the protector the controller chose as a battle entered (CR 310.9a, 310.12a) for the move that asked: the head of the queue when it is a move, or the spell resolving when the
+ * queue is empty, then continues. Null when no such question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionProtector(state: GameState, option: string): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (
+    !res ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'protector' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const head = res.queue[0];
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source) return null;
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, entersProtector: Number(option.slice('seat:'.length)) },
+    },
+    [event],
+  );
+}
+
+/** Records the opponent the controller chose for the effect "an opponent ..." about to start (CR 608.2d, 801.5b) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionChooseOpponent(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'chooseOpponent' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'chooseOpponent' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const updated: Instruction = { ...head, chosen: Number(option.slice('seat:'.length)) };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
 /** Records the opponent the controller chose to clash with (CR 701.30b) on the instruction that asked, and continues. Null when no such question is waiting. */
 export function answerResolutionClashOpponent(
   state: GameState,
@@ -1247,6 +1396,22 @@ export function answerResolutionReplacement(
   return continueResolution({ ...state, pending: null, resolution: { ...res, damageAnswers } }, [
     chosen,
   ]);
+}
+
+/** Records the owner's answer to the dredge question (CR 702.52a, issue 102) on the `draw` instruction that asked, then continues (`rules/draw.ts` acts on it). */
+export function answerResolutionDredge(
+  state: GameState,
+  card: ObjectId,
+  accepted: boolean,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'draw') return null;
+  const updated: Instruction = { ...head, dredgeAnswer: { card, accepted } };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
 }
 
 /** Records the owner's answer to CR 903.9b on the instruction that asked, then continues. */

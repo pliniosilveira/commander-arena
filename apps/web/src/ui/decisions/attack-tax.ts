@@ -57,12 +57,13 @@ export function taxRows(
   picks: readonly AttackPick[],
   index: Index,
   viewer: SeatId,
+  seatCount = 2,
 ): readonly TaxRow[] {
   return (decision.attackCosts ?? []).map((entry) => {
     const attackers = picks.filter((p) => sameAttackTarget(p.target, entry.target)).length;
     return {
       target: entry.target,
-      label: attackTargetLabel(entry.target, index, viewer),
+      label: attackTargetLabel(entry.target, index, viewer, seatCount),
       cost: entry.cost,
       affordable: entry.affordable,
       attackers,

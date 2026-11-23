@@ -1,0 +1,88 @@
+Commander
+1x Felothar the Steadfast
+
+Mainboard
+1x Access Tunnel
+1x Anguished Unmaking
+1x Arasta of the Endless Web
+1x Arbor Adherent
+1x Arboreal Grazer
+1x Arcane Signet
+1x Assault Formation
+1x Axebane Guardian
+1x Baldin, Century Herdmaster
+1x Behind the Scenes
+1x Betor, Ancestor's Voice
+1x Blight Pile
+1x Bojuka Bog
+1x Canopy Gargantuan
+1x Canopy Vista
+1x Carven Caryatid
+1x Colfenor's Urn
+1x Command Tower
+1x Crashing Drawbridge
+1x Deceptive Landscape
+1x Despark
+1x Dragonlord Dromoka
+1x Evolving Wilds
+1x Exotic Orchard
+1x Expel the Interlopers
+1x Faeburrow Elder
+1x Feed the Swarm
+1x Fortified Village
+1x Hornet Nest
+1x Ikra Shidiqi, the Usurper
+1x Indomitable Ancients
+1x Indulging Patrician
+1x Infernal Grasp
+1x Isolated Chapel
+1x Jaddi Offshoot
+1x Jaws of Defeat
+1x Nyx-Fleece Ram
+1x Orzhov Signet
+1x Overgrown Battlement
+1x Overgrown Farmland
+1x Path of Ancestry
+1x Protector of the Wastes
+1x Radiant Grove
+1x Rampart Architect
+1x Reunion of the House
+1x Rhox Faithmender
+1x Sandsteppe Citadel
+1x Seedborn Muse
+1x Selesnya Signet
+1x Shadrix Silverquill
+1x Shalai, Voice of Plenty
+1x Sidar Kondo of Jamuraa
+1x Slaughter the Strong
+1x Sol Ring
+1x Staff of Compleation
+1x Sungrass Prairie
+1x Sunpetal Grove
+1x Swiftfoot Boots
+1x Swords to Plowshares
+1x Sylvan Caryatid
+1x Temple of Malady
+1x Temple of Plenty
+1x Temple of Silence
+1x Tip the Scales
+1x Tower Defense
+1x Towering Titan
+1x Tree of Redemption
+1x Twilight Mire
+1x Wakestone Gargoyle
+1x Walking Bulwark
+1x Wall of Blossoms
+1x Wall of Limbs
+1x Wall of Omens
+1x Wall of Reverence
+1x Wall of Roots
+1x Weathered Sentinels
+1x Welcoming Vampire
+1x Will of the Abzan
+1x Wingmantle Chaplain
+1x Woodland Cemetery
+1x Zetalpa, Primal Dawn
+5x Swamp
+6x Plains
+7x Forest

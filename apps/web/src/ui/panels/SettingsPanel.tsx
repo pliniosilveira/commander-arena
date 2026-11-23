@@ -11,7 +11,6 @@ import {
   useCombatAnimations,
 } from './animations';
 import { Segmented } from './Segmented';
-import { type SidePanelSide, setSidePanel, useSidePanel } from './side-panel';
 import { ThemeToggle } from './ThemeToggle';
 import { setTextSize, type TextSize, useTextSize } from './text-size';
 import './panels.css';
@@ -64,12 +63,13 @@ export function SettingsPanel({ startOpen = false }: { startOpen?: boolean }) {
   const settings = useApp((s) => s.settings);
   const manualPay = useApp((s) => s.manualPay);
   const textSize = useTextSize();
-  const sidePanel = useSidePanel();
   const combatAnimations = useCombatAnimations();
   const animationSpeed = useAnimationSpeed();
   const turn = useApp((s) => s.snapshot?.view.turn ?? 0);
+  const undoDepth = useApp((s) => s.snapshot?.undoDepth ?? 0);
   const over = useApp((s) => s.snapshot?.view.result != null);
-  const { setSettings, setManualPay, toggleStop, toggleThisTurn, backToMenu, act } = useActions();
+  const { setSettings, setManualPay, toggleStop, toggleThisTurn, backToMenu, act, undo } =
+    useActions();
   const once =
     settings.thisTurn !== null && settings.thisTurn.turn === turn ? settings.thisTurn : null;
 
@@ -98,6 +98,15 @@ export function SettingsPanel({ startOpen = false }: { startOpen?: boolean }) {
       </h2>
       {open && (
         <div className="pnl-settings-body" id="pnl-settings-body">
+          <button
+            type="button"
+            className="pnl-btn"
+            disabled={undoDepth === 0}
+            title="Take back your last small action: a land, a cast, a mana tap (Ctrl+Z)"
+            onClick={() => void undo()}
+          >
+            Undo{undoDepth > 0 ? ` (${undoDepth})` : ''}
+          </button>
           <label className="pnl-check">
             <input
               type="checkbox"
@@ -230,18 +239,6 @@ export function SettingsPanel({ startOpen = false }: { startOpen?: boolean }) {
               options={[
                 { value: 'normal', label: 'Normal' },
                 { value: 'large', label: 'Large' },
-              ]}
-            />
-          </div>
-          <div className="pnl-row">
-            <span className="pnl-row-label">Stack and controls</span>
-            <Segmented<SidePanelSide>
-              legend="Stack and controls side"
-              value={sidePanel}
-              onChange={(side) => setSidePanel(side, true)}
-              options={[
-                { value: 'left', label: 'Left' },
-                { value: 'right', label: 'Right' },
               ]}
             />
           </div>

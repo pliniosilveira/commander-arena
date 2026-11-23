@@ -4,11 +4,13 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import type { AlternativeCost, ObjectFilter, TargetSpec } from '../ast/types';
+import type { AlternativeCost, Cost, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
+import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { grantedEvokeOf } from './alt-cost-grant';
 import {
   alternativeOf,
   flashbackCostOf,
@@ -38,10 +40,10 @@ import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
-import { graveyardPlayPermission } from './graveyard-play';
+import { graveyardCastTypes, graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
-import { asFace, castableFaces, choosesFace } from './layouts';
+import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
@@ -159,14 +161,20 @@ function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): bool
  */
 /**
  * CR 305.1, 305.2a, 305.3 (D-145): whether `seat` may play the land card `obj` as the effect of a resolving spell or ability allows ("You may play
- * the exiled card without paying its mana cost"): it is the seat's own turn and they have a land play left. The card is in their hand or in exile.
+ * the exiled card without paying its mana cost"): it is the seat's own turn and they have a land play left. The card is in their hand, in exile or (a target of the effect) in their graveyard.
  * The timing of a land play (a main phase, an empty stack) is not asked: the effect is what lets them play it now.
  */
 export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObject): boolean {
-  if (obj.card === null || (obj.zone !== 'hand' && obj.zone !== 'exile')) return false;
+  if (
+    obj.card === null ||
+    (obj.zone !== 'hand' && obj.zone !== 'exile' && obj.zone !== 'graveyard')
+  ) {
+    return false;
+  }
   // D-149 (CR 702.75a, 608.2g): a card in exile is the effect's to name, whoever owns it (a Hideaway permanent that changed controller lets its
   // new controller play the card its old one exiled); a card in a hand is the player's own.
-  if (obj.zone === 'hand' && obj.owner !== seat) return false;
+  // CR 404.1 (Horde of Notions: "play target Elemental card from your graveyard"): a card of a graveyard is the player's own to play.
+  if ((obj.zone === 'hand' || obj.zone === 'graveyard') && obj.owner !== seat) return false;
   if (state.turn.activeSeat !== seat) return false;
   return getSeat(state, seat).landsPlayedThisTurn < landPlaysAllowed(state, seat);
 }
@@ -333,6 +341,8 @@ function grantsCast(
   obj: GameObject,
 ): boolean {
   if (e.change.kind !== 'castPermission' || e.change.seat !== seat) return false;
+  // CR 715.3 (Hildibrand Manderville): a permission to cast "as an Adventure" is the Adventure half's alone (`mayCastAdventureFromGraveyard`), never the card's normal cast.
+  if (e.change.adventureOnly === true) return false;
   if (e.change.spells === undefined) return e.objects.includes(obj.id);
   return matchesFilter(
     state,
@@ -358,6 +368,27 @@ export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameOb
         (a.condition === undefined ||
           evaluateCondition(state, a.condition, { controller: seat, source: obj.id })),
     ) ?? false
+  );
+}
+
+/**
+ * CR 715.3, 601.2 (Hildibrand Manderville): whether an effect ("you may cast it from your graveyard as an Adventure until the end of your next turn") lets `seat` cast the Adventure half
+ * of `obj`, a card in their own graveyard: a `castPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
+ */
+export function mayCastAdventureFromGraveyard(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+): boolean {
+  if (obj.zone !== 'graveyard' || obj.owner !== seat || obj.card === null) return false;
+  const def = definitionOf(state, obj.card);
+  if (def.layout !== 'adventure' || isOmenFace(def)) return false;
+  return state.continuousEffects.some(
+    (e) =>
+      e.change.kind === 'castPermission' &&
+      e.change.seat === seat &&
+      e.change.adventureOnly === true &&
+      e.objects.includes(obj.id),
   );
 }
 
@@ -530,6 +561,14 @@ export function castZone(
   if (obj.zone === 'exile' && obj.onAdventure === true) return faceIndex === 0 ? 'exile' : null;
   // CR 113.6b (D-133): "You may cast this card from your graveyard [as long as ...]": the card's own static ability.
   if (obj.zone === 'graveyard') {
+    // CR 715.3 (Hildibrand Manderville): "cast it from your graveyard as an Adventure": the Adventure half (face 1) only, paying its mana cost.
+    if (
+      faceIndex === 1 &&
+      alternative === undefined &&
+      mayCastAdventureFromGraveyard(state, seat, obj)
+    ) {
+      return 'graveyard';
+    }
     // D-232: or a permanent's "Once during each of your turns, you may cast an artifact spell from your graveyard".
     return alternative === undefined &&
       faceIndex === 0 &&
@@ -694,7 +733,12 @@ export function alternativeCostAllowed(
     (a) => a.kind === kind,
   );
   // CR 702.138a: an escape cost the face lists, or the one an effect gave the card until end of turn (`gainEscape`, rules/escape-grant.ts).
-  if (alt === undefined) return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+  if (alt === undefined) {
+    // CR 702.74a, 118.9: an evoke cost a static ability gives a spell as it is cast from the hand (`grantAlternativeCostToSpells`, rules/alt-cost-grant.ts).
+    if (kind === 'evoke')
+      return grantedEvokeOf(state, seat, castAs(obj, seat, face), obj.zone) !== null;
+    return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+  }
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
     kind === 'overload' &&
@@ -857,6 +901,8 @@ export function canCastDuringResolution(
   alternative: 'free' | 'freeGraveyard' | 'normal' | 'madness' | 'miracle' = 'free',
   /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
   anyManaType = false,
+  /** CR 118.9 (Blue Mage's Cane): the mana paid rather than the mana cost of a `free` cast, which has to be payable. */
+  payInstead?: readonly Cost[],
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
@@ -911,6 +957,7 @@ export function canCastDuringResolution(
           // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-433).
           ...modes,
           ...(anyManaType ? { anyType: true as const } : {}),
+          ...(payInstead === undefined ? {} : { payInstead }),
         }),
       ),
   );
@@ -921,6 +968,18 @@ export interface FaceOption {
   readonly object: ObjectId;
   /** Present exactly when the card has more than one face to choose from. */
   readonly face?: number;
+  /** A card of the graveyard cast by `playFromGraveyardEachType` that can be cast as several permanent types: one option for each. */
+  readonly permanentType?: CardType;
+}
+
+/** A cast of a card of the graveyard that can be counted as several permanent types is one option for each (`playFromGraveyardEachType`: the player chooses one as it is cast). */
+function withTypeChoices(state: GameState, seat: SeatId, options: FaceOption[]): FaceOption[] {
+  return options.flatMap((o) => {
+    const obj = getObject(state, o.object);
+    if (obj.zone !== 'graveyard' || mayCastFromGraveyard(state, seat, obj)) return [o];
+    const types = graveyardCastTypes(state, seat, obj);
+    return types.length < 2 ? [o] : types.map((permanentType) => ({ ...o, permanentType }));
+  });
 }
 
 function faceOptions(
@@ -962,6 +1021,7 @@ export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
       (id) =>
         mayCastFromGraveyard(state, seat, getObject(state, id)) ||
         graveyardPlayPermission(state, seat, getObject(state, id), false) !== null ||
+        mayCastAdventureFromGraveyard(state, seat, getObject(state, id)) ||
         hasAftermathHalf(state, getObject(state, id)),
     ),
     // Issue 159: the cards of other players' graveyards that an effect lets the seat cast this turn.
@@ -980,7 +1040,11 @@ export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
     ...playable,
     ...(top === undefined ? [] : [top]),
   ];
-  return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, undefined, face));
+  return withTypeChoices(
+    state,
+    seat,
+    faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, undefined, face)),
+  );
 }
 
 /**

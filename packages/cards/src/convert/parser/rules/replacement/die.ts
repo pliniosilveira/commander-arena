@@ -144,4 +144,51 @@ export const REPLACEMENT_WOULD_DIE = defineRule<IrAbility>({
   },
 });
 
-export const DIE_REPLACEMENT_RULES = [REPLACEMENT_WOULD_DIE];
+/**
+ * `replacement.exile-instead-of-opponent-graveyard`: "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it." (issue 102, Dauthi
+ * Voidwalker; CR 614.1a, 400.3, 122.1): a replacement effect of the permanent on the battlefield for every card that would go to the graveyard of an opponent of its controller. The
+ * engine's `exileInsteadOfOpponentGraveyard`. Not read: another counter word, your own graveyard, "a creature card", a zone other than anywhere, another result than exile.
+ */
+export const REPLACEMENT_EXILE_INSTEAD_OF_OPPONENT_GRAVEYARD = defineRule<IrAbility>({
+  id: 'replacement.exile-instead-of-opponent-graveyard',
+  family: 'replacement',
+  leading: ['if'],
+  cites: ['CR 614.1a (Replacement Effects)', 'CR 400.3 (General)', 'CR 122.1 (Counters)'],
+  examples: [
+    "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it.",
+    'If a card would be put into an opponent’s graveyard from anywhere, instead exile it with a void counter on it.',
+  ],
+  rejects: [
+    "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it",
+    "If a card would be put into an opponent's graveyard from anywhere, instead exile it.",
+    'If a card would be put into your graveyard from anywhere, instead exile it with a void counter on it.',
+    "If a creature card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it.",
+    "If a card would be put into an opponent's graveyard from the battlefield, instead exile it with a void counter on it.",
+    "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a time counter on it.",
+    "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it and draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.exile-instead-of-opponent-graveyard';
+    const r = spanned(
+      pattern(
+        /if a card would be put into an opponent['’]s graveyard from anywhere, instead exile it with a void counter on it\./iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'wouldExileInsteadOfOpponentGraveyard',
+      args: {},
+      optional: false,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: r.pos };
+  },
+});
+
+export const DIE_REPLACEMENT_RULES = [
+  REPLACEMENT_WOULD_DIE,
+  REPLACEMENT_EXILE_INSTEAD_OF_OPPONENT_GRAVEYARD,
+];

@@ -22,6 +22,7 @@ import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget, defenderRecord } from './defending';
 import { derive } from './derive';
 import { hasKeyword } from './keywords';
+import { hasRestriction } from './restrictions';
 
 export type DamageStep = 'firstStrike' | 'regular';
 
@@ -176,6 +177,17 @@ function recipientOf(state: GameState, target: AttackTarget): DamageRecipient | 
   return obj && obj.zone === 'battlefield' ? { kind: 'object', id: target.object } : null;
 }
 
+/**
+ * CR 510.1a, 609.4: the combat damage a creature assigns: its power, or its toughness when an effect says it assigns combat damage equal to its toughness rather than its power ("Each creature
+ * you control assigns combat damage equal to its toughness rather than its power"). It is the amount assigned only: power and toughness themselves are unchanged. Zero or less assigns none.
+ */
+function combatDamageOf(state: GameState, obj: GameObject): number {
+  const derived = derive(state, obj);
+  return hasRestriction(state, obj, 'assignsDamageByToughness')
+    ? (derived.toughness ?? 0)
+    : (derived.power ?? 0);
+}
+
 /** CR 510.1: what each creature assigns now, and which assignments need a decision. */
 export function buildDamagePlan(state: GameState, step: DamageStep): DamagePlan {
   const auto: DamageAssignment[] = [];
@@ -185,7 +197,7 @@ export function buildDamagePlan(state: GameState, step: DamageStep): DamagePlan 
   for (const attacker of attackersInCombat(state)) {
     const obj = getObject(state, attacker.object);
     if (!eligible(state, obj, step)) continue;
-    const power = derive(state, obj).power ?? 0;
+    const power = combatDamageOf(state, obj);
     if (power <= 0) continue; // CR 510.1a
     // CR 506.4, 506.4c (D-200): an attacker whose planeswalker or battle was removed from combat attacks nothing and deals no damage to it.
     const attacked = attackedTarget(state, attacker);
@@ -232,7 +244,7 @@ export function buildDamagePlan(state: GameState, step: DamageStep): DamagePlan 
   for (const b of blocks) {
     const obj = getObject(state, b.blocker);
     if (!eligible(state, obj, step)) continue;
-    const power = derive(state, obj).power ?? 0;
+    const power = combatDamageOf(state, obj);
     if (power > 0)
       auto.push({ source: b.blocker, to: { kind: 'object', id: b.attacker }, amount: power });
   }

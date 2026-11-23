@@ -43,7 +43,9 @@ test('look at the top cards: the cards that may be taken, the others shown apart
   expect(html).toContain('Only you see these cards.');
   expect(html).toContain('Also looked at (cannot be taken):');
   expect(html).toContain('aria-label="Other cards looked at"');
-  expect(html).toMatch(/<button(?![^>]*disabled)[^>]*data-dec-primary[^>]*>Take none<\/button>/);
+  // Without the Zone Picker open (no board here) the dock holds the answer back and offers to open the cards.
+  expect(html).toMatch(/<button[^>]*disabled[^>]*data-dec-primary[^>]*>Take none<\/button>/);
+  expect(html).toContain('>Open cards</button>');
   const others = store.getState().snapshot?.lookedCards ?? [];
   expect(others.length).toBeGreaterThan(0);
   for (const card of others) expect(html).toContain(card.name);

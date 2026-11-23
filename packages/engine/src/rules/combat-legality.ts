@@ -39,10 +39,40 @@ function isLiveCreature(state: GameState, obj: GameObject | undefined): obj is G
 export function canAttack(state: GameState, obj: GameObject, seat: SeatId): boolean {
   if (!isLiveCreature(state, obj) || controllerOf(state, obj) !== seat || obj.tapped) return false;
   if (derive(state, obj).types.includes('battle')) return false;
-  if (hasKeyword(state, obj, 'defender')) return false;
+  // CR 702.3b, 609.4: a creature with defender can't attack, unless an effect lets it attack as though it didn't have it (against every player, or only some: `attackCandidates` narrows the targets).
+  if (hasKeyword(state, obj, 'defender') && !mayAttackDespiteDefender(state, obj)) return false;
   // D-145: "can't attack" (a static ability, a `restrict` effect, "unless you control ...").
   if (hasRestriction(state, obj, 'cantAttack')) return false;
   return !isSummoningSick(state, obj);
+}
+
+/** CR 609.4, 702.3b: does an effect let this creature attack as though it didn't have defender, against at least some players? */
+function mayAttackDespiteDefender(state: GameState, obj: GameObject): boolean {
+  return (
+    hasRestriction(state, obj, 'canAttackAsThoughNoDefender') ||
+    hasRestriction(state, obj, 'canAttackAsThoughNoDefenderVsLastTurnAttackers')
+  );
+}
+
+/**
+ * CR 609.4, 702.3b (Weathered Sentinels): "can attack players who attacked you during their last turn as though it didn't have defender": a creature with defender that has no permission
+ * for every player may be declared attacking only those players (not their planeswalkers or battles, which the permission does not name). "You" is the controller of the creature.
+ */
+function withoutDefenderTargets(
+  state: GameState,
+  obj: GameObject,
+  seat: SeatId,
+  targets: AttackTarget[],
+): AttackTarget[] {
+  if (
+    !hasKeyword(state, obj, 'defender') ||
+    hasRestriction(state, obj, 'canAttackAsThoughNoDefender')
+  ) {
+    return targets;
+  }
+  return targets.filter(
+    (t) => t.kind === 'player' && (state.attackedLastTurn?.[t.seat] ?? []).includes(seat),
+  );
 }
 
 export function attackCandidates(
@@ -56,7 +86,15 @@ export function attackCandidates(
     .map((attacker) => ({
       attacker,
       // CR 508.1a (D-647): "can't attack you or planeswalkers you control": the targets it may not attack are left out, and a creature with none left is not able to attack (CR 508.1c).
-      targets: narrowedTargets(state, attacker, withoutBannedTargets(state, attacker, targets)),
+      targets: narrowedTargets(
+        state,
+        attacker,
+        withoutBannedTargets(
+          state,
+          attacker,
+          withoutDefenderTargets(state, getObject(state, attacker), seat, targets),
+        ),
+      ),
     }))
     .filter((candidate) => candidate.targets.length > 0);
 }

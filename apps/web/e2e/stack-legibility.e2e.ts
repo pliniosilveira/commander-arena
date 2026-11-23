@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { showAllLogLines } from './harness/settings';
 import { settled } from './harness/settle';
 
 /**
@@ -10,7 +11,7 @@ import { settled } from './harness/settle';
  * creature spells are enough to show the stop; the seed is fixed.
  */
 const primary = (page: Page) => page.locator('[data-dec-primary]');
-const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
+const stack = (page: Page) => page.getByRole('region', { name: 'Stack', exact: true });
 const preview = (page: Page) => page.getByRole('complementary', { name: 'Card preview' });
 
 /** Presses on, a click at a time on a settled page, until the opponent's spell waits on the stack. */
@@ -55,18 +56,16 @@ test("the opponent's spell waits for the player, with its card in the preview, a
   await primary(page).click();
   await settled(page);
   // Issue 105: it resolves when the player passes, and the log says so (detail lines included).
-  await page
-    .getByRole('group', { name: 'Log detail' })
-    .getByRole('button', { name: 'All' })
-    .click();
+  await showAllLogLines(page);
   await expect(page.getByRole('log')).toContainText(`${name} resolves.`);
   expect(errors).toEqual([]);
 });
 
 test('Settings has a switch for it, on by default', async ({ page }) => {
   await page.goto('/?autostart=white-knights,swamp-forest&seed=7');
+  await page.getByRole('button', { name: 'Keep', exact: true }).click();
   await settled(page);
-  await page.getByRole('button', { name: /Settings/ }).click();
+  await page.locator('.settings-toggle').click();
   const box = page.getByLabel('Stop for opponent spells');
   await expect(box).toBeChecked();
   await box.uncheck();

@@ -18,9 +18,11 @@ const CARD_NOUN = `(an?) (?:(non)?(${CARD_KINDS}) )?card`;
 
 /** "a creature card leaves your graveyard": once for each card that leaves (CR 603.2, 400.7). */
 const leavesYourGraveyard: Parser<IrTrigger> = (ctx, pos) => {
-  const r = pattern(new RegExp(`${CARD_NOUN} leaves your graveyard${NOT_IN_WORD}`, 'iu'))(ctx, pos);
+  const r = pattern(
+    new RegExp(`${CARD_NOUN} leaves your graveyard( during your turn)?${NOT_IN_WORD}`, 'iu'),
+  )(ctx, pos);
   if (!r.ok) return r;
-  const [, article, non, kind] = r.value;
+  const [, article, non, kind, during] = r.value;
   const filter = cardFilter(article, non, kind);
   if (filter === null) return fail(ctx, pos);
   const span = { start: pos, end: r.pos };
@@ -31,6 +33,7 @@ const leavesYourGraveyard: Parser<IrTrigger> = (ctx, pos) => {
       event: 'leftGraveyard',
       subject: makeNoun(ID, span, 'a', filter),
       each: true,
+      ...(during === undefined ? {} : { duringTurn: 'you' as const }),
       args: {},
       span,
       rule: ID,
@@ -118,6 +121,8 @@ export const TRIGGER_GRAVEYARD_EVENTS = defineRule<IrTrigger>({
     'a creature card leaves your graveyard',
     'a nonland card leaves your graveyard',
     'a card leaves your graveyard',
+    // Issue 102 (Kishla Skimmer): only while it is the controller's turn.
+    'a card leaves your graveyard during your turn',
     'a creature card is put into a graveyard from anywhere other than the battlefield',
   ],
   rejects: [

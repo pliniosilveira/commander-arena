@@ -104,3 +104,19 @@ export function crossPairs(decks: readonly PreconDeckEntry[]): [DeckConfig, Deck
   for (const x of decks) for (const y of decks) if (x !== y) pairs.push([x.deck, y.deck]);
   return pairs;
 }
+
+/**
+ * The decks of a table of `seats` seats, one precon for each seat (issue 527): entry `i` gives seat `k` the precon `(i + k) mod n`, so every precon starts a set once and the
+ * seats of a set differ. With n decks that is n sets, in the order of the ids; at least `seats` decks are needed.
+ */
+export function tableSets(decks: readonly PreconDeckEntry[], seats: number): DeckConfig[][] {
+  if (decks.length < seats) {
+    throw new Error(`a table of ${seats} seats needs ${seats} precons, ${decks.length} given`);
+  }
+  return decks.map((_, i) =>
+    Array.from(
+      { length: seats },
+      (_, k) => (decks[(i + k) % decks.length] as PreconDeckEntry).deck,
+    ),
+  );
+}

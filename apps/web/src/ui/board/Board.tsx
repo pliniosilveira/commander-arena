@@ -1,32 +1,39 @@
 /** The battlefield, both players' strips, the command zones and the human's hand (SPEC 10, A19). */
 import type { GameView, ObjectView } from '@commander-arena/engine';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { LookedCard } from '../../game/looked-cards';
 import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
-import { useApp } from '../store-context';
+import { useApp, useLookedCards } from '../store-context';
 import './board.css';
+import { lookTakeRevealed, pickerCards } from '../decisions/cards-picker';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
+import { BackRow } from './BackRow';
 import { BlockArrows } from './BlockArrows';
+import { CommanderPopup } from './CommanderPopup';
 import { combatOrder, keptOrder } from './combat-order';
 import { EmblemStrip } from './EmblemStrip';
 import { ExilePlayStrip } from './ExilePlayStrip';
 import { type ExilePlayable, exilePlayable } from './exile-play';
+import { FieldRows } from './FieldRows';
 import { Hand } from './Hand';
 import { OtherZonesStrip } from './OtherZonesStrip';
 import { PlayerStrip, type ZoneRef } from './PlayerStrip';
 import { PairFocusProvider } from './pair-focus';
 import { BattlefieldRow } from './Row';
 import { combatRoles, type RowKind, rowKindOf, seatLabel } from './resolve';
-import { targetZoneToOpen } from './target-zone';
-import { useCloseOnDecision } from './useCloseOnDecision';
+import { questionTitle } from './target-zone';
+import { useQuestionZone } from './useQuestionZone';
 import { ZoneViewer } from './ZoneViewer';
 
-const ROW_ORDER_ME: readonly RowKind[] = ['creature', 'other', 'land'];
+/** The two lines of a battlefield: the creatures, and the back line (lands, then other permanents). */
+export type FieldLine = 'creature' | 'back';
+export const ROW_ORDER_ME: readonly FieldLine[] = ['creature', 'back'];
 // Mirrored: the creatures of both players meet in the middle.
-const ROW_ORDER_OPP: readonly RowKind[] = ['land', 'other', 'creature'];
+export const ROW_ORDER_OPP: readonly FieldLine[] = ['back', 'creature'];
 
-function Field({
+export function Field({
   view,
   seat,
   order,
@@ -36,7 +43,7 @@ function Field({
 }: {
   view: GameView;
   seat: number;
-  order: readonly RowKind[];
+  order: readonly FieldLine[];
   roles: ReturnType<typeof combatRoles>;
   attachments: Attachments;
   exile?: ExilePlayable | null;
@@ -71,17 +78,27 @@ function Field({
     >
       {/* The monarch, the Ring and the emblems of this player: a strip of small cards of their own (D-243). */}
       <EmblemStrip view={view} seat={seat} />
-      <div className="board-field-rows">
-        {order.map((kind) => (
-          <BattlefieldRow
-            key={kind}
-            kind={kind}
-            objects={byKind(kind)}
-            roles={roles}
-            attachments={attachments.byHost}
-          />
-        ))}
-      </div>
+      <FieldRows>
+        {order.map((line) =>
+          line === 'creature' ? (
+            <BattlefieldRow
+              key={line}
+              kind="creature"
+              objects={byKind('creature')}
+              roles={roles}
+              attachments={attachments.byHost}
+            />
+          ) : (
+            <BackRow
+              key={line}
+              lands={byKind('land')}
+              others={byKind('other')}
+              roles={roles}
+              attachments={attachments.byHost}
+            />
+          ),
+        )}
+      </FieldRows>
       {/* The cards the viewer may play from exile, over the right side of their own battlefield, apart from the emblems at the left (issue 49). */}
       {seat === view.viewer && (
         <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
@@ -90,8 +107,37 @@ function Field({
   );
 }
 
-function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: ObjectView[] } {
-  if (zone.kind === 'exile') return { title: 'Exile (shared)', objects: [...view.exile] };
+export interface ZoneContents {
+  readonly title: string;
+  readonly objects: ObjectView[];
+  /** Cards looked at that cannot be taken (shown beside the ones that can). */
+  readonly others?: readonly LookedCard[];
+}
+
+export function zoneContents(
+  view: GameView,
+  zone: ZoneRef,
+  looked: readonly LookedCard[],
+): ZoneContents {
+  // The cards of a question: a library search (the matching cards the engine shows the searcher, the library itself is hidden) or the cards looked at or revealed from the top.
+  if (zone.kind === 'cards') {
+    const pending = view.pending;
+    if (pending?.kind !== 'chooseCards') return { title: 'Cards', objects: [] };
+    const objects = [...pickerCards(view, pending)];
+    if (pending.purpose !== 'lookTake') return { title: questionTitle(pending), objects };
+    return {
+      title: lookTakeRevealed(pending) ? 'Cards revealed' : 'Cards looked at',
+      objects,
+      others: looked,
+    };
+  }
+  if (zone.kind === 'exile') {
+    // Exile is one shared zone in the engine; the board lists it per owner.
+    return {
+      title: `${seatLabel(view, zone.seat)} exile`,
+      objects: view.exile.filter((o) => o.owner === zone.seat),
+    };
+  }
   // D-234 (CR 702.26): the permanents that are phased out: treated as though they do not exist, but listed here.
   if (zone.kind === 'phased') return { title: 'Phased out', objects: [...(view.phasedOut ?? [])] };
   const seat = view.seats.find((s) => s.id === zone.seat);
@@ -104,21 +150,10 @@ function zoneContents(view: GameView, zone: ZoneRef): { title: string; objects: 
 export function Board() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
-  useCloseOnDecision(view, () => setZone(null));
-  // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
-  // when the question is answered is the board's doing too, not the player's chore.
-  const toOpen = view === null ? null : targetZoneToOpen(view);
-  const seatToOpen = toOpen?.kind === 'graveyard' ? toOpen.seat : null;
-  const autoOpened = useRef(false);
-  useEffect(() => {
-    if (seatToOpen !== null) {
-      setZone({ kind: 'graveyard', seat: seatToOpen });
-      autoOpened.current = true;
-    } else if (autoOpened.current) {
-      setZone(null);
-      autoOpened.current = false;
-    }
-  }, [seatToOpen]);
+  // The seat whose commander popup is open.
+  const [commanderSeat, setCommanderSeat] = useState<number | null>(null);
+  const looked = useLookedCards();
+  useQuestionZone(view, zone, setZone);
   const ix = useInteraction();
   const pendingBlocks = ix.pendingBlocks;
   const roles = useMemo(
@@ -137,12 +172,17 @@ export function Board() {
   const me = view.seats.find((s) => s.id === view.viewer);
   const opponent = view.seats.find((s) => s.id !== view.viewer);
   if (me === undefined || opponent === undefined) return null;
-  const open = zone === null ? null : zoneContents(view, zone);
+  const open = zone === null ? null : zoneContents(view, zone, looked);
 
   return (
     <PairFocusProvider>
       <section className="board" aria-label="Battlefield">
-        <PlayerStrip view={view} seat={opponent} onOpenZone={setZone} />
+        <PlayerStrip
+          view={view}
+          seat={opponent}
+          onOpenZone={setZone}
+          onOpenCommander={setCommanderSeat}
+        />
         <Field
           view={view}
           seat={opponent.id}
@@ -150,16 +190,8 @@ export function Board() {
           roles={roles}
           attachments={attachments}
         />
-        <div className="board-mid">
-          <button
-            type="button"
-            className="board-zone-btn board-exile"
-            onClick={() => setZone({ kind: 'exile' })}
-            aria-label={`Open exile, ${view.exile.length} cards`}
-          >
-            <span className="board-stat-label">Exile (shared)</span> <b>{view.exile.length}</b>
-          </button>
-          {(view.phasedOut ?? []).length > 0 && (
+        {(view.phasedOut ?? []).length > 0 && (
+          <div className="board-mid">
             <button
               type="button"
               className="board-zone-btn board-exile"
@@ -169,8 +201,8 @@ export function Board() {
               <span className="board-stat-label">Phased out</span>{' '}
               <b>{(view.phasedOut ?? []).length}</b>
             </button>
-          )}
-        </div>
+          </div>
+        )}
         <Field
           view={view}
           seat={me.id}
@@ -179,12 +211,29 @@ export function Board() {
           attachments={attachments}
           exile={exile}
         />
-        <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
+        <PlayerStrip
+          view={view}
+          seat={me}
+          onOpenZone={setZone}
+          onOpenCommander={setCommanderSeat}
+        />
         <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
         <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
+        {commanderSeat !== null && (
+          <CommanderPopup
+            view={view}
+            seatId={commanderSeat}
+            onClose={() => setCommanderSeat(null)}
+          />
+        )}
         <BlockArrows roles={roles} />
         {open !== null && (
-          <ZoneViewer title={open.title} objects={open.objects} onClose={() => setZone(null)} />
+          <ZoneViewer
+            title={open.title}
+            objects={open.objects}
+            {...(open.others === undefined ? {} : { others: open.others })}
+            onClose={() => setZone(null)}
+          />
         )}
       </section>
     </PairFocusProvider>

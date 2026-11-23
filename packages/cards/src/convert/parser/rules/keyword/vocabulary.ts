@@ -39,6 +39,7 @@ export type SimpleKeyword = Extract<
   | 'skulk'
   | 'battleCry'
   | 'mentor'
+  | 'flanking'
   | 'evolve'
   | 'extort'
   | 'convoke'
@@ -50,6 +51,7 @@ export type SimpleKeyword = Extract<
   | 'retrace'
   | 'jumpStart'
   | 'aftermath'
+  | 'rebound'
   | 'readAhead'
   | 'dethrone'
   | 'myriad'
@@ -117,6 +119,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['skulk', 'skulk'],
   ['battle cry', 'battleCry'],
   ['mentor', 'mentor'],
+  // CR 702.25a (Flanking): a printed ability with no parameter (Sidar Kondo of Jamuraa), never granted.
+  ['flanking', 'flanking'],
   ['evolve', 'evolve'],
   ['extort', 'extort'],
   ['convoke', 'convoke'],
@@ -132,6 +136,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['jump-start', 'jumpStart'],
   // CR 702.127a (Aftermath): printed on the second half of a split card, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['aftermath', 'aftermath'],
+  // CR 702.88a (Rebound): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
+  ['rebound', 'rebound'],
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],

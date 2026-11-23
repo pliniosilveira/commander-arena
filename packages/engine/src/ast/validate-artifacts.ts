@@ -95,6 +95,9 @@ function hasLinkedExile(e: unknown): boolean {
       // CR 607.2a: "exile the top card of your library" whose card another ability of the face reads as "exiled with this enchantment".
       JSON.stringify(e ?? null).includes('"kind":"exileTop"')) &&
       JSON.stringify(e).includes('"linked":true')) ||
+    // Urianger Augurelt (CR 607.2a, 406.3): "Look at the top card of your library. You may exile it face down.": a `lookAtTop` taking the card into exile face down remembers it, as Hideaway does.
+    (JSON.stringify(e ?? null).includes('"kind":"lookAtTop"') &&
+      JSON.stringify(e).includes('"to":"exileFaceDown"')) ||
     // King Narfi's Betrayal (CR 607.2a): "you may exile a creature or planeswalker card from each graveyard": a `moveToZone` to exile that says linked.
     (JSON.stringify(e ?? null).includes('"kind":"moveToZone"') &&
       JSON.stringify(e).includes('"to":"exile"') &&
@@ -111,7 +114,10 @@ function hasLinkedExile(e: unknown): boolean {
 function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
   const reads = face.abilities.some(
     (a) =>
-      (a?.kind === 'static' && a.static?.kind === 'takeFromLinkedExile') ||
+      (a?.kind === 'static' &&
+        (a.static?.kind === 'takeFromLinkedExile' ||
+          // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~".
+          a.static?.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.
@@ -215,6 +221,26 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
         }
       }
       return true;
+    case 'grantActivatedAbilitiesOfLinkedExile':
+      // Issue 102 (Steward of the Harvest): the cards the permanent exiled with its linked ability, named by a filter of the card as printed.
+      if (s.from === undefined || s.from === null || typeof s.from !== 'object') {
+        issue(
+          out,
+          `${path}.from`,
+          'grantActivatedAbilitiesOfLinkedExile names the cards: a filter',
+        );
+      } else {
+        checkDescribing(s.from, `${path}.from`, out);
+        if (
+          filterSome(
+            s.from,
+            (f) => f.zone !== undefined || f.owner !== undefined || f.controller !== undefined,
+          )
+        ) {
+          issue(out, `${path}.from`, 'the cards are read as printed: no zone, owner or controller');
+        }
+      }
+      return true;
     case 'grantActivatedAbilitiesOfTopCard':
       // Issue 144 (CR 613.1f, 401.5): the permanent's own ability, naming the card on top of the library by a filter of the card as printed.
       if (kindOf(s.subject) !== 'this') {
@@ -279,8 +305,10 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
       if (s.additive !== undefined && s.additive !== true) {
         issue(out, `${path}.additive`, 'additive must be true when present (CR 205.1b)');
       }
+      // CR 205.3d (Eye of Nidhogg): for the permanent an Aura or Equipment is attached to, creature subtypes alone replace its creature types and its card types stay, whatever they are.
       if (
         s.additive !== true &&
+        (s.subject as { kind?: unknown } | undefined)?.kind !== 'attached' &&
         Array.isArray(s.subtypes) &&
         s.subtypes.length > 0 &&
         !(Array.isArray(s.types) && (s.types.includes('creature') || s.types.includes('kindred')))

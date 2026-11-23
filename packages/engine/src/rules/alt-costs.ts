@@ -4,7 +4,13 @@
  * printed keyword; `validateCard` allows one of each and only `mana` (and, for kicker, `payLife`)
  * costs, so the helpers here can add the two kinds up without any other case.
  */
-import type { AlternativeCost, Cost, Keyword, NamedAlternativeKind } from '../ast/types';
+import type {
+  AlternativeCost,
+  Cost,
+  Keyword,
+  NamedAlternativeKind,
+  ObjectFilter,
+} from '../ast/types';
 import type { CardFace } from '../cards/definition';
 
 function keywordCost(
@@ -127,6 +133,15 @@ export function alternativeOf<K extends AlternativeCost['kind']>(
 ): Extract<AlternativeCost, { kind: K }> | null {
   const found = face?.alternativeCosts?.find((a) => a.kind === kind);
   return (found as Extract<AlternativeCost, { kind: K }> | undefined) ?? null;
+}
+
+/**
+ * The filter of the card of the hand an evoke cost exiles ("Evoke—Exile a red card from your hand", CR 702.74a, 118.9), or undefined when the face's evoke cost is mana only
+ * (or it has none).
+ */
+export function evokeExileOf(face: CardFace | null): ObjectFilter | undefined {
+  const alt = face?.alternativeCosts?.find((a) => a.kind === 'evoke');
+  return alt !== undefined && 'exileFromHand' in alt ? alt.exileFromHand : undefined;
 }
 
 /** The cost of the named alternative cost (overload, ...) the face lists, or null (D-121). */
