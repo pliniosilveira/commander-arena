@@ -355,6 +355,7 @@ describe('unmatched abilities', () => {
       'replacement.tokens-double',
       'replacement.umbra-armor',
       'replacement.escapes-with-counters',
+      'replacement.keep-one-loyalty',
       'replacement.as-enters-pay-life',
       'cost.behold',
       'cost.tap',
