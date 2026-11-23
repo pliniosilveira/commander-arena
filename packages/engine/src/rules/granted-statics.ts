@@ -2,6 +2,8 @@
  * The "+N/+N" and the keywords a static ability that another permanent gives a permanent gives to a group (CR 604.1, 613.1f, 613.8): Dancer's Chakrams gives the equipped creature
  * `"Other commanders you control get +2/+2 and have lifelink,"`. The creature has that static ability as its own, so its controller is "you" and it is the permanent "other" leaves out.
  *
+ * The same for the permanent the one with the ability is attached to (CR 301.5): "Treasures you control are Equipment ... and have 'Equipped creature gets +2/+0'".
+ *
  * `derive` makes this a second pass: the first pass settles layer 6 for every permanent (`derive-statics.ts`, which gives the creature the static ability), and this pass reads the
  * abilities each permanent has then, so a creature that loses all abilities in layer 6 gives nothing. A granted static ability applies with the timestamp of the permanent that has
  * it (CR 613.7a). The group is named by what no layer after 4 and 5 changes (`validateCard`), the amount is a number and the ability has no condition, so no effect here depends
