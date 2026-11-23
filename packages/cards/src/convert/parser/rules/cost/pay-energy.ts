@@ -2,7 +2,7 @@
  * Costs of the Aetherdrift energy deck (issue 105): "Pay {E}{E}", "Pay six {E}", "Pay fifty {E}" (CR 107.14: the energy symbol is one energy counter, and paying it
  * removes one from the player; CR 118.3: a player can't pay what they don't have). A cost of an ordinary activated ability or of a mana ability.
  */
-import { choice, literal, map, pattern, sequence } from '../../combinators';
+import { choice, literal, map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrCost } from '../../ir/types';
 import { quantity } from '../amount';
 import { defineRule, node } from '../registry';
@@ -42,7 +42,14 @@ export const COST_PAY_ENERGY = defineRule<IrCost>({
     choice(
       map(pattern(/pay ((?:\{E\})+)(?![\p{L}\p{N}{])/iu), (m) => (m[1] ?? '').length / 3),
       map(
-        sequence(literal('pay '), choice(fifty, quantity), pattern(/ \{E\}(?![\p{L}\p{N}{])/u)),
+        sequence(
+          literal('pay '),
+          choice(
+            fifty,
+            satisfy(quantity, (n) => n >= 1),
+          ),
+          pattern(/ \{E\}(?![\p{L}\p{N}{])/u),
+        ),
         ([, count]) => count,
       ),
     ),

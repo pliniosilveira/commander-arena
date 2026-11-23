@@ -213,6 +213,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
   // Stage P51 (D-209): the energy cost is the payment of an "unless you pay" of a spell.
+  'cost.pay-energy': permanent((e) => `${e}: Draw a card.`),
   'cost.energy': spell((e) => `Draw a card. Then discard a card at random unless you pay ${e}.`),
   'condition.control-commander': permanent(
     (e) => `If ${e}, you may cast ~ without paying its mana cost.`,

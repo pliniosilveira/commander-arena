@@ -287,18 +287,51 @@ export const lifeAction: Action = (subject, you, rule) => {
   return choice(life('gain', 'gainLife'), life('lose', 'loseLife'));
 };
 
-/** "get {E}{E}", "gets {E}" (CR 107.14, 122.1: the player puts that many energy counters on themselves; stage P51, D-209). */
-const energyAction: Action = (subject, you, rule) =>
-  map(
-    spanned(sequence(verbWord('get', you), pattern(/(?:\{E\}){1,8}(?![\p{L}\p{N}{])/u))),
-    ({ value, span }) =>
-      actionClause(
-        rule,
-        'gainEnergy',
-        { player: subject, amount: { kind: 'number', value: value[1][0].length / 3, span } },
+/**
+ * "get {E}{E}", "gets {E}", "get six {E}", "get {E} for each creature you control", "get an amount of {E} equal to the greatest power among creatures you control" and
+ * "get that many {E}" (CR 107.14, 122.1: the player puts that many energy counters on themselves; stage P51, D-209; issue 105). "That many" after combat damage is the
+ * damage of the trigger, as "that much" is.
+ */
+const energyAction: Action = (subject, you, rule) => {
+  const symbols = pattern(/(?:\{E\}){1,8}(?![\p{L}\p{N}{])/u);
+  const amount: Parser<IrAmount> = choice(
+    map(
+      sequence(verbWord('get', you), pattern(/\{E\}(?![\p{L}\p{N}{])/u), FOR_EACH),
+      ([, , each]) => each,
+    ),
+    map(
+      spanned(sequence(verbWord('get', you), symbols)),
+      ({ value, span }): IrAmount => ({
+        kind: 'number',
+        value: value[1][0].length / 3,
         span,
+      }),
+    ),
+    map(
+      sequence(
+        verbWord('get', you),
+        satisfy(QUANTITY, (a) => a.kind === 'number' && a.value >= 2),
+        pattern(/ \{E\}(?![\p{L}\p{N}{])/u),
       ),
+      ([, quantity]) => quantity,
+    ),
+    map(
+      sequence(
+        verbWord('get', you),
+        pattern(/an amount of \{E\} /iu),
+        family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
+      ),
+      ([, , equal]) => equal,
+    ),
+    map(
+      spanned(sequence(verbWord('get', you), pattern(/that many \{E\}(?![\p{L}\p{N}{])/iu))),
+      ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+    ),
   );
+  return map(spanned(amount), ({ value, span }) =>
+    actionClause(rule, 'gainEnergy', { player: subject, amount: value }, span),
+  );
+};
 
 /** "get an experience counter", "gets two experience counters" (CR 122.1: the player puts that many experience counters on themselves; Meren of Clan Nel Toth). */
 const experienceAction: Action = (subject, you, rule) =>
@@ -641,6 +674,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw cards equal to the greatest power among creatures you control',
     // Stage P51 (D-209, CR 107.14): energy counters.
     'you get {E}{E}',
+    'you get six {E}',
+    'you get {E} for each creature you control',
+    'you get an amount of {E} equal to the greatest power among creatures you control',
+    'you get that many {E}',
     'target player gets {E}',
     // CR 122.1: experience counters.
     'you get an experience counter',
@@ -688,6 +725,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you get an energy counter',
     'you get {E}{R}',
     'you get {E} {E}',
+    'you get one {E}',
+    'you get an amount of {E}',
+    'you get that much {E}',
     'you get E',
     'you gets {E}',
     'target player get {E}',
