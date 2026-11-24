@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- A permanent that a group's "lose all abilities" strikes still applies its own static control effect ("The monarch controls enchanted creature"); that file cannot read groups without an import cycle.
 - A group's "lose all abilities" reads types and colors from the copiable values (layer 1): a layer 4 or 5 effect that changes them is not seen. "Choose a nonland card name" accepts any name, land or not, typed.
 - The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.
 - "Whenever one or more creatures you control deal combat damage to one or more players this turn" (`delayedCombatDamageBatchTurn`) triggers once for each player damaged, not once for the event; harmless for "you become the monarch".
