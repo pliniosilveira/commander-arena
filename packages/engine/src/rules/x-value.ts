@@ -25,6 +25,8 @@ export interface XCost {
   readonly discard?: number;
   /** Permanents sacrificed for each point of X ("Sacrifice X creatures", CR 118.3, D-488); absent for none. */
   readonly sacrifice?: number;
+  /** Cards of the graveyard exiled for each point of X ("Flashback—{3}{U}{R}, Exile X cards from your graveyard", CR 702.34a, 107.3a); absent for none. */
+  readonly exile?: number;
 }
 
 export const NO_X: XCost = { mana: 0, life: 0 };
@@ -109,6 +111,13 @@ export function spellXCost(
     };
   }
   const printed = xSymbolCount(face.manaCost ?? []);
+  // CR 702.34a, 107.3a: "Flashback—{3}{U}{R}, Exile X cards from your graveyard": the cost has an X of its own, the X announced as the spell is cast (the {X} of the mana cost is not paid).
+  if (
+    alternative === 'flashback' &&
+    (flashbackCostOf(face) ?? []).some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
+  ) {
+    return { mana: 0, life, ...extra, exile: 1 };
+  }
   // CR 702.34a, 107.3a: a flashback cost equal to the mana cost (a card given flashback, not one that prints it) has the {X} of the mana cost, which is announced as for any cast.
   const flashbackOfManaCost = alternative === 'flashback' && flashbackCostOf(face) === null;
   if (flashbackOfManaCost) return { mana: printed, life, ...extra };
@@ -128,7 +137,13 @@ export function spellXCost(
 /** Whether announcing X means anything: the cost has an {X} or a "pay X life". */
 export function hasX(cost: XCost): boolean {
   return (
-    cost.mana + cost.life + (cost.loyalty ?? 0) + (cost.discard ?? 0) + (cost.sacrifice ?? 0) > 0
+    cost.mana +
+      cost.life +
+      (cost.loyalty ?? 0) +
+      (cost.discard ?? 0) +
+      (cost.sacrifice ?? 0) +
+      (cost.exile ?? 0) >
+    0
   );
 }
 

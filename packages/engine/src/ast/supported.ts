@@ -931,11 +931,12 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana, life and the sacrifice of N permanents ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures"; rules/cast-cost.ts, rules/cast.ts).
+        // CR 702.34a: an alternative cost; mana, life, the sacrifice of N permanents and the exile of X cards of the graveyard ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures", "Flashback—{3}{U}{R}, Exile X cards from your graveyard"; rules/cast-cost.ts, rules/cast.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
           'mana',
           'payLife',
           'sacrifice',
+          'exileFromGraveyard',
         ]);
       } else if (a.keyword.kind === 'ninjutsu') {
         // CR 702.49a (unverified): paid like any activation cost; only mana is run (rules/derive-keywords.ts adds the return of an unblocked attacker).
