@@ -67,6 +67,7 @@ import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
+import { PLAYED_LAND_CONDITION_RULES } from './played-land';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
@@ -599,6 +600,7 @@ export const CONDITION_RULES = [
   ...KORVOLD_CONDITION_RULES,
   // Stage P49 (D-206): "at least four mana was spent to cast it", "a card left your graveyard this turn", "~ was cast from a graveyard".
   ...VRASKA_CONDITION_RULES,
+  ...PLAYED_LAND_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".

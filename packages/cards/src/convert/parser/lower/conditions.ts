@@ -810,6 +810,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:descendedThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'descendedThisTurn' });
     }
+    case 'playedLandThisTurn': {
+      // CR 305.1, 305.2 (River of Tears): the land plays of the controller this turn.
+      const blocked = missingFeatures(['condition:playedLandThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'playedLandThisTurn' });
+    }
     case 'spellTargets': {
       // CR 601.2c, 601.2f (stage P50, D-207): a target the spell chose, read as the cost is determined.
       const blocked = missingFeatures(['condition:spellTargets']);
@@ -1039,6 +1044,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:manaSpentAtLeast',
   'condition:cardLeftYourGraveyard',
   'condition:descendedThisTurn',
+  'condition:playedLandThisTurn',
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',
