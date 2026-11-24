@@ -8,11 +8,7 @@
 
 import type { Subtype } from '../characteristics';
 import { PARTY_TYPES, type PartyType } from '../characteristics';
-import type { ObjectId, SeatId } from '../ids';
-import { objectsInZone } from '../state/ops';
-import type { GameState } from '../state/types';
-import { controllerOf } from './control';
-import { derive } from './derive';
+import type { ObjectId } from '../ids';
 
 export { PARTY_TYPES };
 
@@ -81,29 +77,6 @@ export interface PartySlot {
 export interface PartyMember {
   readonly type: PartyType;
   readonly object: ObjectId;
-}
-
-/** CR 700.8d: the creatures `seat` controls (as `derive` gives them now), in object order. */
-export function creaturesControlledBy(state: GameState, seat: SeatId): ObjectId[] {
-  return objectsInZone(state, 'battlefield').filter((id) => {
-    const obj = state.objects[id];
-    return (
-      obj !== undefined &&
-      controllerOf(state, obj) === seat &&
-      derive(state, obj).types.includes('creature')
-    );
-  });
-}
-
-/** CR 700.8d: for each party type, the creatures among `creatures` that have it (Changeling and the like are in `derive`'s subtypes). */
-export function partySlots(state: GameState, creatures: readonly ObjectId[]): PartySlot[] {
-  return PARTY_TYPES.map((type) => ({
-    type,
-    legal: creatures.filter((id) => {
-      const obj = state.objects[id];
-      return obj !== undefined && derive(state, obj).subtypes.includes(type);
-    }),
-  }));
 }
 
 /** CR 700.8d: true when the choice fills each type at most once, with a creature the slot lists, and uses no creature twice. */

@@ -5,7 +5,7 @@
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
-import { creaturesControlledBy, partySlots } from './party';
+import { creaturesControlledBy, partySlots } from './party-slots';
 import { sacrificeInstructions } from './sacrifice-choice';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { recordTogether } from './simultaneous';
