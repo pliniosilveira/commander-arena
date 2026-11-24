@@ -167,6 +167,8 @@ describe('amounts that read an object', () => {
       'tappedAsCostPower',
       // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
       'enteredX',
+      // CR 701.37c (Death Kiss): the X of the monstrosity a becomes monstrous trigger reads.
+      'monstrousX',
       'lifePaidAsEntered',
       // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a).
       'aurasAttachedToTriggerSubject',

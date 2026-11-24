@@ -520,6 +520,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P29 (D-133): the subjects of triggers and statics, "that player", "that much", the costs that tap permanents, the
   // conditions of a static ability, the death replacement and the permission to cast from the graveyard.
   'trigger.attacks-you': whenever,
+  'trigger.attacks-one-of-your-opponents': whenever,
   'trigger.dealt-damage': whenever,
   'noun.that-player': permanent((e) => `Whenever an opponent draws a card, ${e} loses 1 life.`),
   'noun.that-attacking-player': permanent(

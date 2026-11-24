@@ -1703,6 +1703,10 @@ function lowerTriggeredAbility(
   ctx.entersX = triggers.every(
     (t) => t.kind === 'entersBattlefield' && 'kind' in t.what && t.what.kind === 'this',
   );
+  // CR 701.37c (Death Kiss): "When ~ becomes monstrous, goad up to X target creatures": the X is the one of the monstrosity.
+  ctx.monstrousX = triggers.every(
+    (t) => t.kind === 'becomesMonstrous' && 'kind' in t.what && t.what.kind === 'this',
+  );
   // A "dies" trigger of `~` itself: by the time the effect runs it is a card in a graveyard.
   // The same for "~ leaves the battlefield" (stage P18): it has left when the effect runs.
   ctx.selfGone = triggers.some(

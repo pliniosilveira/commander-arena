@@ -1134,7 +1134,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
   if (at !== undefined) {
     if (t?.kind !== 'attacks') {
       issue(out, `${path}.at`, 'at (whom it attacks) belongs to an attacks trigger');
-    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers', 'defendingYou'])) {
+    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers', 'defendingYou', 'yourOpponents'])) {
       issue(out, `${path}.at`, `unknown attack target ${JSON.stringify(at)}`);
     }
   }
@@ -2221,6 +2221,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         // CR 107.3m: the enters trigger of the permanent itself may take up to as many targets as the X of the spell it came from.
         a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
+        // CR 701.37c: the becomes monstrous trigger of the permanent itself may take up to as many targets as the X of its monstrosity.
+        a.trigger?.kind === 'becomesMonstrous' && kindOf(a.trigger.what) === 'this',
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -2313,6 +2315,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
         ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
           ? { entersX: true }
+          : {}),
+        // CR 701.37c (Death Kiss): the becomes monstrous trigger of the permanent itself may refer to the X of its monstrosity.
+        ...(a.trigger?.kind === 'becomesMonstrous' && kindOf(a.trigger.what) === 'this'
+          ? { monstrousX: true }
           : {}),
         ...HOOKS,
       });
@@ -3160,6 +3166,26 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.abilities[${i}].effect`,
         'enteredX is the X of the spell the permanent came from, but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 701.37c: "goad up to X target creatures" in the becomes monstrous trigger reads the X of a "Monstrosity X" of the permanent: without a monstrosity there is nothing to read.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      (JSON.stringify(a.effect ?? null).includes('"monstrousX"') ||
+        JSON.stringify(a.targets ?? null).includes('"monstrousX"')) &&
+      !face.abilities.some(
+        (other) =>
+          other?.kind === 'activated' &&
+          JSON.stringify(other.effect ?? null).includes('"kind":"monstrosity"'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].effect`,
+        'monstrousX is the X of a monstrosity of the permanent, but no ability of the face has one',
       );
     }
   });

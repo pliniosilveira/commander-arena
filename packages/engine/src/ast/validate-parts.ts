@@ -155,6 +155,8 @@ export interface Scope {
   readonly chosenNumber?: boolean;
   /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
   readonly entersX?: boolean;
+  /** True in the effect (and the target counts) of the triggered ability "When this permanent becomes monstrous": `monstrousX` reads the X of its monstrosity (CR 701.37c). */
+  readonly monstrousX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
@@ -974,6 +976,7 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'x',
   'enteredX',
+  'monstrousX',
   'lifePaidAsEntered',
   'powerOf',
   'manaValueOf',
@@ -1017,6 +1020,8 @@ export function declareTargets(
   xFilterAllowed = false,
   /** CR 107.3m (Blitzball Stadium: "When this artifact enters, support X"): the enters trigger of the permanent itself can take up to as many targets as the X of the spell it came from. */
   upToEntersX = false,
+  /** CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures"): the becomes monstrous trigger of the permanent itself can take up to as many targets as the X of its monstrosity. */
+  upToMonstrousX = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -1289,13 +1294,18 @@ export function declareTargets(
         checkAmount(
           spec.upToAmount,
           `${p}.upToAmount`,
-          upToEntersX ? { ...NO_SCOPE, entersX: true } : NO_SCOPE,
+          upToEntersX
+            ? { ...NO_SCOPE, entersX: true }
+            : upToMonstrousX
+              ? { ...NO_SCOPE, monstrousX: true }
+              : NO_SCOPE,
           out,
         );
         if (
           typeof spec.upToAmount === 'object' &&
           READS_NO_OBJECT.has(spec.upToAmount.kind) &&
-          !(upToEntersX && spec.upToAmount.kind === 'enteredX')
+          !(upToEntersX && spec.upToAmount.kind === 'enteredX') &&
+          !(upToMonstrousX && spec.upToAmount.kind === 'monstrousX')
         ) {
           issue(out, `${p}.upToAmount`, 'the number of targets reads the game, not an object');
         }
@@ -2368,6 +2378,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           "'enteredX' needs a triggered ability whose trigger is this permanent entering the battlefield",
+        );
+      }
+      break;
+    case 'monstrousX':
+      // CR 701.37c: only the becomes monstrous trigger of the permanent itself reads the X of its monstrosity (the face must have a `monstrosity` effect: checked with the face).
+      if (scope.monstrousX !== true) {
+        issue(
+          out,
+          path,
+          "'monstrousX' needs a triggered ability whose trigger is this permanent becoming monstrous",
         );
       }
       break;

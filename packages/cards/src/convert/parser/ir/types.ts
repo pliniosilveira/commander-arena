@@ -1740,9 +1740,9 @@ export interface IrTrigger extends IrNode {
   readonly recipient?: IrNoun;
   /**
    * 'attacks' at someone (stage P29, D-133, CR 508.1b): "attacks you" (`you`) or "attacks you or a planeswalker you control"
-   * (`youOrPlaneswalkers`); left out, an attack at anyone. `defendingYou`: "..., if you're the defending player" (CR 508.5).
+   * (`youOrPlaneswalkers`); left out, an attack at anyone. `defendingYou`: "..., if you're the defending player" (CR 508.5). `yourOpponents`: "attacks one of your opponents" (CR 508.5).
    */
-  readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou';
+  readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents';
   /** 'dealtDamage': "is dealt combat damage" rather than "is dealt damage" (stage P29, D-133). */
   readonly combat?: true;
   /** 'enters': "enters untapped" (`false`) or "enters tapped" (`true`), how the permanent entered (stage P30, CR 603.6a). */

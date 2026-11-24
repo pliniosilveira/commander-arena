@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "When this creature becomes monstrous, goad up to X target creatures" (CR 701.37c, 107.3c): the X of the monstrosity that made the permanent monstrous ("Monstrosity X" of one of its
+   * activated abilities), which the permanent remembers (`GameObject.monstrousX`), read as the trigger is put on the stack and as it resolves (last-known information when the permanent
+   * has left). Valid only in a triggered ability whose trigger is `becomesMonstrous` of `this`, on a face with a `monstrosity` effect.
+   */
+  | { readonly kind: 'monstrousX' }
+  /**
    * "Create an X/X token, where X is the life paid as this artifact entered" (CR 119.4, 614.12, 400.7): the life the permanent paid as it entered (`asEntersChoose` of
    * `lifePaid` on the same face), which the permanent remembers (`GameObject.chosen.lifePaid`), read from last-known information once it has left (CR 113.7a). Needs
    * that choice on the face; nothing was paid (0) for a permanent that made no choice.
@@ -5647,8 +5653,9 @@ export type Trigger =
        * planeswalker that controller controls). Left out, an attack on anyone triggers it.
        * `defendingYou` ("..., if you're the defending player", CR 508.5): the controller of this ability is the defending player of the creature as it was declared:
        * the player it attacks, the controller of the planeswalker or the protector of the battle it attacks.
+       * `yourOpponents` ("attacks one of your opponents", CR 508.5): the defending player of the creature as it was declared (read as for `defendingYou`) is an opponent of the controller of this ability.
        */
-      readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou';
+      readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents';
     }
   /**
    * "Whenever you cast a spell", "whenever an opponent casts a spell" (CR 601.2i, 603.2): `by` is the

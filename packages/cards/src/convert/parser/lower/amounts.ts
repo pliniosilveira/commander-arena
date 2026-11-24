@@ -127,6 +127,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 701.37c (Death Kiss): in the becomes monstrous trigger of the permanent itself X is the X of the monstrosity that made it monstrous.
+      if (ctx.monstrousX) {
+        const blockedMonstrous = needs('monstrousX');
+        return blockedMonstrous ?? { ok: true, value: { kind: 'monstrousX' }, rule };
+      }
       // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
       if (ctx.castTriggerX) {
         const blockedCast = needs('triggerSpellX');
@@ -1136,6 +1141,7 @@ export function lowerDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:monstrousX',
   'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
   'amount:lifePaidAsEntered',
