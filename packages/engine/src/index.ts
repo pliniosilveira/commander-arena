@@ -45,6 +45,7 @@ export type * from './rng/types';
 export { coversCardTypes } from './rules/card-types-choice';
 export { defaultDivision } from './rules/combat-flow';
 export type { ControlEnd } from './rules/control';
+export { DUNGEONS } from './rules/dungeon-data';
 export { faceDownLabel } from './rules/face-down';
 export { KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
@@ -71,6 +72,7 @@ export { ENGINE_VERSION } from './version';
 export type {
   AlternativeCostView,
   CombatView,
+  DungeonView,
   FaceView,
   GameView,
   MeldView,

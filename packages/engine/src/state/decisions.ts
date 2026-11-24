@@ -905,7 +905,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller of the effect chooses which opponent (`source` is the spell or ability): the options are `seat:<n>`.
     | 'chooseOpponent'
     // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
-    | 'protector';
+    | 'protector'
+    // CR 309.5a, 701.49b: a player venturing from a room with two arrows leaving it chooses the room to move their venture marker into: the options are the names of the rooms.
+    | 'dungeonRoom';
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second

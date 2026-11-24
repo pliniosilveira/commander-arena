@@ -239,7 +239,14 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
           ? // CR 303.4f (D-230): an Aura among the cards chooses what it enchants as it enters (`rules/aura-entry.ts`).
             withAuraEntries(
               state,
-              moveInstructions(chosen, 'battlefield', 'top', ins.tapped === true, 'you'),
+              moveInstructions(
+                chosen,
+                'battlefield',
+                'top',
+                ins.tapped === true,
+                'you',
+                ins.withCounters,
+              ),
             )
           : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
             moveInstructions(chosen, 'exile').map((i) =>

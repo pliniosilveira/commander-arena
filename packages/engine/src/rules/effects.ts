@@ -83,6 +83,7 @@ import { UNEARTH_EXILE_ABILITY } from './derive-alt';
 import { settleDestruction } from './destroy-replacement';
 import { runDraw } from './draw';
 import { runDrawUpTo } from './draw-up-to';
+import { runVenture } from './dungeon';
 import {
   amountOf,
   gainLifeOf,
@@ -112,6 +113,7 @@ import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
+import { takeInitiative } from './initiative';
 import { costWithHandSizeX, lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
@@ -224,6 +226,8 @@ export function runInstruction(
   const flow = askingFlow(res.damageAnswers);
   // CR 608.2d, 801.5b: "an opponent separates ...": with more than one opponent left, the controller is asked which one before the effect starts.
   if (instruction.kind === 'chooseOpponent') return runChooseOpponent(state, res, instruction);
+  // CR 701.49, 309.5: a player ventures into a dungeon (rules/dungeon.ts).
+  if (instruction.kind === 'venture') return runVenture(state, res, instruction);
   if (instruction.kind === 'effect') {
     const asked = askBeforeEffect(state, res, instruction);
     if (asked !== null) return asked;
@@ -2467,6 +2471,29 @@ function runEffect(
       return done(r.state, r.events);
     }
 
+    case 'takeInitiative': {
+      // CR 726.1, 726.3, 726.5: the one player the selector names takes the initiative; a player who has it takes it again (nothing changes but the venture it triggers).
+      const [seat] = resolvePlayers(state, effect.player, ctx, targets);
+      if (seat === undefined) return done(state);
+      const r = takeInitiative(state, seat);
+      return done(r.state, r.events);
+    }
+
+    case 'venture': {
+      // CR 701.49, 701.49d: each player the selector names ventures, in APNAP order (CR 101.4); each moves the marker as one instruction, which asks for the room when it must.
+      const named = resolvePlayers(state, effect.player, ctx, targets);
+      return done(
+        state,
+        [],
+        apnapOrder(state, named).map((seat) => ({
+          kind: 'venture' as const,
+          seat,
+          dungeon: effect.dungeon,
+          chosen: null,
+        })),
+      );
+    }
+
     case 'loseLifeManaValue':
       // Issue 97 (Kefka, CR 202.3, 119.3): the owner of each spell cast this way loses life equal to its mana value.
       return runLoseLifeManaValue(state, resolveObjects(state, effect.spells, ctx, targets));
@@ -3719,6 +3746,10 @@ function runEffect(
             max: effect.take.any === true ? count : effect.take.max,
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
+            // CR 122.6, 614.1c: "onto the battlefield with three +1/+1 counters on it".
+            ...(effect.take.withCounters === undefined
+              ? {}
+              : { withCounters: effect.take.withCounters }),
             // CR 202.3 (D-145): "with mana value less than or equal to the number of lands you control", worked out as the effect runs.
             ...(effect.take.manaValueAtMost === undefined
               ? {}

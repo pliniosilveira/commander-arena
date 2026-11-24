@@ -13,7 +13,7 @@ import type {
   SeatId,
   StepId,
 } from '@commander-arena/engine';
-import { faceDownLabel } from '@commander-arena/engine';
+import { DUNGEONS, faceDownLabel } from '@commander-arena/engine';
 import { alternativeLogWords, isNamedAlternative } from './alt-cost';
 import { findEffect } from './artifacts-text';
 import { castCardAnswerLine } from './cast-card-text';
@@ -1573,6 +1573,38 @@ export function describeEvent(
         event.to,
         [],
         'CR 725.3',
+      );
+    case 'initiativeTaken':
+      // CR 726.1, 726.3, 726.5: a player takes the initiative (again, when they already had it: `from` is themselves).
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'take', 'takes')} the initiative.`,
+        event.seat,
+        [],
+        'CR 726.3',
+      );
+    case 'ventured': {
+      // CR 701.49, 309.4a, 309.5a: the venture marker moved into a room of the dungeon (the dungeon came into the command zone when `from` is null).
+      const dungeon = DUNGEONS[event.dungeon];
+      const room = dungeon.rooms[event.room].name;
+      return line(
+        'major',
+        event.from === null
+          ? `${who(event.seat)} ${verb(event.seat, 'enter', 'enters')} ${dungeon.name}: ${verb(event.seat, 'move', 'moves')} the venture marker to ${room}.`
+          : `${who(event.seat)} ${verb(event.seat, 'move', 'moves')} the venture marker to ${room} (${dungeon.name}).`,
+        event.seat,
+        [],
+        'CR 701.49',
+      );
+    }
+    case 'dungeonCompleted':
+      // CR 309.7, 704.5t: the dungeon card was removed from the game.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'complete', 'completes')} ${DUNGEONS[event.dungeon].name}.`,
+        event.seat,
+        [],
+        'CR 309.7',
       );
     case 'topCardsLooked':
       // D-139: only the count is public; the cards are seen by `seat` alone.

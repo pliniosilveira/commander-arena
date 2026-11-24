@@ -75,7 +75,14 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
       const protection = word.protection;
       let keyword: Keyword;
-      if ('choice' in protection) {
+      if ('cardTypes' in protection) {
+        // Seasoned Dungeoneer (CR 702.16a, 205.2a): "gains protection from creatures", the engine's protection from card types.
+        keyword = {
+          kind: 'protection',
+          from: 'cardType',
+          types: protection.cardTypes as CardType[],
+        };
+      } else if ('choice' in protection) {
         // D-514 (CR 702.16a, 608.2d): the card type of the controller's choice, asked as the effect resolves, as the color is.
         keyword = {
           kind: 'protection',

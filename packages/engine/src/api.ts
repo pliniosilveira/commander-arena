@@ -85,6 +85,7 @@ import {
   riderOf,
   slotOf,
 } from './rules/graveyard-play';
+import { initiativeAfterLoss } from './rules/initiative';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
@@ -118,6 +119,7 @@ import {
   answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionDredge,
+  answerResolutionDungeonRoom,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
@@ -332,7 +334,10 @@ function concede(state: GameState, seat: SeatId): Result {
   // CR 725.4 (D-127): a monarch who concedes hands the designation on at once.
   const left = leaveGame(next, [seat]);
   events.push(...left.events);
-  const handed = monarchAfterLoss(left.state);
+  const monarchHanded = monarchAfterLoss(left.state);
+  events.push(...monarchHanded.events);
+  // CR 726.4: a player with the initiative who concedes hands it on at once (and the player who takes it ventures, CR 726.2).
+  const handed = initiativeAfterLoss(monarchHanded.state);
   events.push(...handed.events);
   const end = evaluateGameEnd(handed.state);
   events.push(...end.events);
@@ -556,6 +561,11 @@ function answerChooseOption(
     // CR 608.2d, 801.5b: the opponent the controller chose for "an opponent separates / chooses / copies ...".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
+  }
+  if (d.purpose === 'dungeonRoom') {
+    // CR 701.49b, 309.5a: the room a player venturing chose among the arrows leaving their room.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionDungeonRoom(state, option));
   }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.

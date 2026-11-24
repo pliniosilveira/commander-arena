@@ -1157,6 +1157,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'becomeMonarch':
       // CR 725.1 (D-127): "you become the monarch", "its controller becomes the monarch".
       return `${playerVerb(effect.player, ability, 'become')} the monarch`;
+    case 'takeInitiative':
+      // CR 726.1: "you take the initiative", "target player takes the initiative".
+      return `${playerVerb(effect.player, ability, 'take')} the initiative`;
+    case 'venture':
+      // CR 701.49d: "you venture into Undercity".
+      return `${playerVerb(effect.player, ability, 'venture')} into Undercity`;
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;

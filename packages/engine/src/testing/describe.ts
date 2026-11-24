@@ -180,6 +180,7 @@ export function dumpState(state: GameState): string {
     }
   }
   if (state.monarch !== null) lines.push(`monarch: seat ${state.monarch}`);
+  if (state.initiative !== undefined) lines.push(`initiative: seat ${state.initiative}`);
   if (state.dayNight !== undefined) lines.push(`it is ${state.dayNight}`);
   for (const s of state.seats) {
     const pool = s.manaPool.map((m) => m.color).join('');

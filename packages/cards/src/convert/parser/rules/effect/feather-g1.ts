@@ -15,7 +15,7 @@ import {
 } from '../../combinators';
 import type { IrClause, IrDuration, IrFlag, IrKeywordArg, IrNoun, Span } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
-import { PROTECTION_COLORS } from '../keyword/protection';
+import { PROTECTION_CARD_TYPES, PROTECTION_COLORS } from '../keyword/protection';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 import { GAIN_SUBJECTS } from './pump';
@@ -34,14 +34,19 @@ const PROTECTION_QUALITY: Parser<NonNullable<IrKeywordArg['protection']>> = choi
     (): NonNullable<IrKeywordArg['protection']> => ({ choice: 'cardType' }),
   ),
   map(PROTECTION_COLORS, (colors): NonNullable<IrKeywordArg['protection']> => ({ colors })),
+  // Seasoned Dungeoneer (CR 702.16a, 205.2a): "protection from creatures", "protection from artifacts and from enchantments": card types named in the plural.
+  map(
+    PROTECTION_CARD_TYPES,
+    (cardTypes): NonNullable<IrKeywordArg['protection']> => ({ cardTypes }),
+  ),
 );
 
 /**
  * `effect.gain-protection`: "target creature you control gains protection from the color of your choice until end of turn", "target creature gains protection from red
  * until end of turn" (CR 702.16 Protection, 611.2a: a continuous effect of a resolving spell or ability, 613.1f: a layer 6 ability; CR 608.2d: the color of the controller's
  * choice is chosen as the effect resolves, not as the spell is cast). One object, one protection: "gains protection from red and from blue" is a protection of two colors
- * (CR 702.16g reads it as two). Not read: a group ("creatures you control gain ..."), a quality that is not a color ("from artifacts", "from the player of your choice",
- * "from everything"), another duration, and protection together with other keywords ("gains flying and protection from red").
+ * (CR 702.16g reads it as two), or from card types named in the plural ("gains protection from creatures"). Not read: a group ("creatures you control gain ..."), another
+ * quality ("from the player of your choice", "from everything", "from nonblack creatures", a card type in the singular), another duration, and protection together with other keywords ("gains flying and protection from red").
  */
 export const EFFECT_GAIN_PROTECTION = defineRule<Clauses>({
   id: GAIN_PROTECTION,
@@ -63,6 +68,9 @@ export const EFFECT_GAIN_PROTECTION = defineRule<Clauses>({
     '~ gains protection from the color of your choice until end of turn',
     'it gains protection from the color of your choice until end of turn',
     'that creature also gains protection from green until end of turn',
+    'target creature gains protection from creatures until end of turn',
+    'target attacking Cleric, Rogue, Warrior, or Wizard gains protection from creatures until end of turn',
+    'target creature gains protection from artifacts and from enchantments until end of turn',
   ],
   rejects: [
     'target creature you control gains protection from the color of your choice',
@@ -74,7 +82,10 @@ export const EFFECT_GAIN_PROTECTION = defineRule<Clauses>({
     'target creature you control gains protection from the card type of your choice until your next turn',
     'target creature you control gains protection from a color of your choice until end of turn',
     'target creature you control gains protection from the color of your choice until end of turn and draw a card',
-    'target creature gains protection from artifacts until end of turn',
+    'target creature gains protection from artifact until end of turn',
+    'target creature gains protection from nonblack creatures until end of turn',
+    'target creature gains protection from creatures and artifacts until end of turn',
+    'target creature gains protection from creatures until your next turn',
     'target creature gains protection from the player of your choice until end of turn',
     'target creature gains protection from everything until end of turn',
     'target creature gains protection from until end of turn',

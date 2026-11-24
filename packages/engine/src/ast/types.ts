@@ -619,9 +619,24 @@ export type ThisWayKind =
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
- * any number of players, `SeatState.citysBlessing`); the initiative can join.
+ * any number of players, `SeatState.citysBlessing`) and the initiative (CR 726.1, one player at most, `GameState.initiative`).
  */
-export type Designation = 'monarch' | 'citysBlessing';
+export type Designation = 'monarch' | 'citysBlessing' | 'initiative';
+
+/** A dungeon a player can venture into (CR 309, 701.49): only Undercity, which "venture into Undercity" and the initiative name (CR 726.2). */
+export type DungeonId = 'undercity';
+
+/** The rooms of Undercity (CR 309.4), by name: Secret Entrance is the topmost, Throne of the Dead Three the bottommost (`rules/dungeon-data.ts`). */
+export type UndercityRoom =
+  | 'secretEntrance'
+  | 'forge'
+  | 'lostWell'
+  | 'trap'
+  | 'arena'
+  | 'stash'
+  | 'archives'
+  | 'catacombs'
+  | 'throneOfTheDeadThree';
 
 /** What two players are compared by in "has more [life | cards in hand | creatures] than you" (D-131). */
 export type PlayerStat = 'life' | 'cardsInHand' | 'creatures' | 'lands';
@@ -3761,6 +3776,18 @@ export type Effect =
    */
   | { readonly kind: 'becomeMonarch'; readonly player: PlayerSelector }
   /**
+   * "[Player] takes the initiative" (CR 726.1, 726.3, 726.5): the player the selector names (one player) has the initiative and the player who had it ceases to. A player who
+   * already has it takes it again: nothing changes but the "whenever a player takes the initiative" ability (CR 726.2) triggers and they venture into Undercity again. Nothing
+   * happens for a player who has left the game. The designation belongs to the player: it stays when the source leaves the battlefield. See `rules/initiative.ts`.
+   */
+  | { readonly kind: 'takeInitiative'; readonly player: PlayerSelector }
+  /**
+   * "[Player] ventures into Undercity" (CR 701.49, 701.49d, 309): each player the selector names (in APNAP order) enters the dungeon if they are in none, else moves their venture marker
+   * to the next room, choosing which when two arrows leave the room (a `chooseOption` decision of purpose `dungeonRoom`), else (on the bottommost room) completes the dungeon and enters
+   * it again. Moving into a room triggers its room ability (CR 309.4c). Undercity is the only dungeon; see `rules/dungeon.ts`.
+   */
+  | { readonly kind: 'venture'; readonly player: PlayerSelector; readonly dungeon: DungeonId }
+  /**
    * "Take an extra turn after this one", "target player takes an extra turn after this one" (CR 500.7): each player the selector names (in APNAP order when several)
    * is given a turn that is added directly after the current one; the most recently created extra turn is taken first, and afterwards the turn order goes on from the
    * player whose turn they followed. A player who has left the game takes none.
@@ -4953,6 +4980,11 @@ export type Effect =
          * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
          */
         readonly hidden?: true;
+        /**
+         * "Put a creature card from among them onto the battlefield with three +1/+1 counters on it" (Throne of the Dead Three, CR 122.6, 614.1c): the cards taken enter the battlefield with
+         * these counters on them, put on as they enter (a creature with toughness 0 does not die first). Only with `to: 'battlefield'`.
+         */
+        readonly withCounters?: EnteringCounters;
         /**
          * "You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand" (Planar Genesis, CR 608.2c, 608.2d): when
          * no card was taken above (the player declined, or no card matched), the player must put one card of any kind from among the cards looked at into their hand,

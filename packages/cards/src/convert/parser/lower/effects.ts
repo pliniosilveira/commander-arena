@@ -1667,6 +1667,26 @@ const BECOME_MONARCH: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "You take the initiative" (CR 726.1, 726.3): the engine's effect names the one player the grammar read, "you" or a target.
+ */
+const TAKE_INITIATIVE: Lowering<IrClause, Effects> = {
+  head: 'takeInitiative',
+  id: 'lower.takeInitiative',
+  needs: ['effect:takeInitiative'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [{ kind: 'takeInitiative', player: player.value }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Scry 2", "Surveil 1", "look at the top three cards of your library, then put them back in any
  * order" and "put two cards from your hand on top of your library" (CR 701.22a, 701.25a, 401.2,
  * 401.4): the engine's own nodes, always about the controller's library, so no player is named.
@@ -2860,6 +2880,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   MANIFEST,
   playerVerb('shuffle'),
   BECOME_MONARCH,
+  TAKE_INITIATIVE,
   EXTRA_TURN,
   DELAYED_DRAW,
   COPY_SPELL,
