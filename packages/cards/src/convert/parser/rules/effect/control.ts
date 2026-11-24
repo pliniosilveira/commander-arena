@@ -4,6 +4,7 @@
  */
 import { choice, literal, map, optional, pattern, refuseAt, sequence } from '../../combinators';
 import type { IrArg, IrClause, IrDuration, IrNoun } from '../../ir/types';
+import { BOUNDARY, permanentPhrase } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause, single } from './operands';
 
@@ -19,6 +20,11 @@ const DURATION = optional(
       map(literal(' until end of turn'), () => 'untilEndOfTurn' as const),
       map(literal(' until the end of your next turn'), () => 'untilEndOfNextTurn' as const),
       map(literal(' for as long as you control ~'), () => 'whileYouControlSelf' as const),
+      // CR 611.2b: "for as long as ~ remains on the battlefield", the duration of an ability of a permanent (issue 103).
+      map(
+        literal(' for as long as ~ remains on the battlefield'),
+        () => 'whileSelfRemains' as const,
+      ),
     ),
   ),
   null,
@@ -51,6 +57,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of that creature until end of turn',
     'gain control of it until end of turn',
     'gain control of target creature for as long as you control ~',
+    'gain control of target creature for as long as ~ remains on the battlefield',
     'gain control of target permanent until end of turn',
     'gain control of target creature an opponent controls until end of turn',
     'gain control of ~',
@@ -273,8 +280,79 @@ export const EFFECT_CONTROL_WHILE_REMAINS = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.exchange-control-of-all`: "You and that opponent each gain control of all creatures the other controls until end of turn." (CR 701.12a, 613.1b, 611.2a, 611.2c): the group of
+ * a kind of permanent that the controller of the effect controls and the group the other player controls change hands together, the other player being the one an earlier
+ * word of the text named ("that opponent", "that player"); the engine's `exchangeControlOfAll`. "Those creatures" after it are the permanents exchanged (`moved`). Not read: a target
+ * as the other player (it would need a slot of its own), "each" or "all" of every player's, a controller stated for the group, another duration.
+ */
+export const EFFECT_EXCHANGE_CONTROL_OF_ALL = defineRule<Clauses>({
+  id: 'effect.exchange-control-of-all',
+  family: 'effect',
+  leading: ['you'],
+  cites: [
+    'CR 701.12a (Exchange)',
+    'CR 613.1b (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+  ],
+  examples: [
+    'you and that opponent each gain control of all creatures the other controls until end of turn',
+    'you and that player each gain control of all creatures the other controls until end of turn',
+    'you and that opponent each gain control of all artifacts the other controls until end of turn',
+    'you and that opponent each gain control of all creatures the other controls',
+  ],
+  rejects: [
+    'you and target opponent each gain control of all creatures the other controls until end of turn',
+    'you and that opponent gain control of all creatures the other controls until end of turn',
+    'you and that opponent each gain control of all creatures you control until end of turn',
+    'you and that opponent each gain control of all creatures the other controls until your next turn',
+    'you and that opponent each gain control of each creature the other controls until end of turn',
+    'you and that opponent each gain control of all creatures the other controls until end of turn and draw a card',
+    'you and that opponent each gain control of creatures the other controls until end of turn',
+  ],
+  parse: single(
+    'effect.exchange-control-of-all',
+    sequence(
+      literal('you and '),
+      family<IrNoun>('noun', { only: ['noun.that-player'] }),
+      literal(' each gain control of all '),
+      spanned(permanentPhrase(true, 'all')),
+      pattern(new RegExp(` the other controls${BOUNDARY}`, 'iu')),
+      optional(spanned(map(literal(' until end of turn'), () => 'untilEndOfTurn' as const)), null),
+    ),
+    ([, player, , group, , ended]) => {
+      const objects: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter: { ...group.value, raw: `all ${group.value.raw}` },
+        upTo: false,
+        plural: true,
+        other: false,
+        span: group.span,
+        rule: 'effect.exchange-control-of-all',
+      };
+      const duration: IrDuration | undefined =
+        ended === null
+          ? undefined
+          : {
+              kind: 'duration',
+              scope: ended.value,
+              span: ended.span,
+              rule: 'effect.exchange-control-of-all',
+            };
+      return {
+        verb: 'exchangeControlOfAll',
+        args: { player, objects },
+        ...(duration === undefined ? {} : { duration }),
+      };
+    },
+  ),
+});
+
 export const CONTROL_EFFECT_RULES = [
   EFFECT_GAIN_CONTROL,
   EFFECT_GAIN_CONTROL_FOR_PLAYER,
   EFFECT_CONTROL_WHILE_REMAINS,
+  EFFECT_EXCHANGE_CONTROL_OF_ALL,
 ];

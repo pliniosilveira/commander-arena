@@ -356,6 +356,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
     'exchangeControl',
+    // "You and that opponent each gain control of all creatures the other controls until end of turn" (CR 701.12a, 613.1b).
+    'exchangeControlOfAll',
     // D-628: "each player gains control of all creatures they own" (CR 613.1b).
     'returnControlToOwners',
     'shuffle',
@@ -3175,6 +3177,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   doubleTokens: true,
   gainControl: true,
   exchangeControl: true,
+  exchangeControlOfAll: true,
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,

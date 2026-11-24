@@ -1607,6 +1607,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'exchangeControl':
       // Galadriel group 3 (CR 701.12): "Exchange control of this enchantment and target nonland permanent".
       return `Exchange control of ${object(effect.first)} and ${object(effect.second)}`;
+    case 'exchangeControlOfAll':
+      // CR 701.12a: "You and that player each gain control of all creatures the other controls until end of turn".
+      return `Exchange control of ${object(effect.objects)} with ${playerOwner(effect.player, ability).replace(/'s$/u, '')}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'removeCounters':
       // Galadriel group 3 (CR 122.1): "Remove a number of loyalty counters equal to that card's mana value from this planeswalker".
       if (

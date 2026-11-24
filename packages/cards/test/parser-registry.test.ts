@@ -684,6 +684,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, exile the top two cards of your library. ${cap(e)}.`,
   ),
   'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
+  // Draconic Dissent deck, group control (Reins of Power): "that opponent" is the player a sentence before it chose as a target.
+  'effect.exchange-control-of-all': spell((e) => `Target opponent loses 1 life. ${cap(e)}.`),
   'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
   'trigger.opponents-dealt-combat-damage': whenever,
   'condition.damage-dealt-by-type': permanent(

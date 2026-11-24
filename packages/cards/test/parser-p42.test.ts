@@ -65,6 +65,19 @@ describe('"gain control of ..." (CR 613.1b, 611.2)', () => {
     });
   });
 
+  test('"for as long as ~ remains on the battlefield" ends as the permanent with the ability leaves (CR 611.2b)', () => {
+    expect(
+      triggered(
+        'When ~ enters, gain control of target creature for as long as ~ remains on the battlefield.',
+      ),
+    ).toEqual({
+      kind: 'triggered',
+      trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+      ...TARGET_CREATURE,
+      effect: { kind: 'gainControl', objects: T1, duration: 'forAsLongAsThisRemains' },
+    });
+  });
+
   test('another kind of permanent, and a quality of the target', () => {
     expect(spell('Gain control of target artifact until end of turn.')?.targets).toEqual([
       { id: 't1', what: { kind: 'object', filter: { zone: 'battlefield', types: ['artifact'] } } },
