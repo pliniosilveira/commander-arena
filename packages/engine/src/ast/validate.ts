@@ -3004,6 +3004,24 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       issue(out, `${path}.abilities[${i}].effect`, 'X is read but the mana cost has no {X}');
     }
   });
+  // CR 707.9b (Mocking Doppelganger): "except it has \"<static ability>\"": a non-empty list of static abilities, each checked as an ability of its own.
+  face.abilities.forEach((a, i) => {
+    if (a?.kind !== 'replacement' || a.replacement?.kind !== 'entersAsCopy') return;
+    const statics = a.replacement.addStatics;
+    if (statics === undefined) return;
+    const at = `${path}.abilities[${i}].replacement.addStatics`;
+    if (!Array.isArray(statics) || statics.length === 0) {
+      issue(out, at, 'addStatics is a non-empty list when present');
+      return;
+    }
+    statics.forEach((inner, j) => {
+      if (inner?.kind !== 'static') {
+        issue(out, `${at}[${j}]`, 'addStatics holds static abilities only');
+      } else {
+        checkAbility(inner, `${at}[${j}]`, out);
+      }
+    });
+  });
   // CR 107.3m: the X of a copy's "enters with X additional counters" is the spell's X, so the cost needs an {X}.
   face.abilities.forEach((a, i) => {
     if (

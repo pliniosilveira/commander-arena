@@ -355,6 +355,8 @@ export interface IrFilter {
   readonly modified?: true;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds (the engine's `goaded`). */
   readonly goaded?: true;
+  /** "with the same name as ~" (Mocking Doppelganger, CR 201.2): the creature has the name of the permanent with the static ability (the engine's `sameNameAsSource`), read in the subject of a static ability only. */
+  readonly sameNameAsSource?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.

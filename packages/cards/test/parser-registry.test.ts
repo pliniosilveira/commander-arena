@@ -193,6 +193,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),
+  'token.copies-except-additive': permanent(
+    (e) => `Whenever you discard a creature card, create ${e}.`,
+  ),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
@@ -738,6 +741,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
+  'replacement.enters-as-copy-except-quoted': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
@@ -1108,6 +1112,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
+  'static.same-name-goaded': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,

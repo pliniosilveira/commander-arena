@@ -26,6 +26,7 @@ import {
 import { lowerAmount } from './amounts';
 import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
+import { lowerQuotedCopyStatic } from './copy-statics';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
@@ -964,6 +965,7 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         ? []
         : (['ability:copyEntersFromGraveyard'] as const)),
       ...(event.args.addTypes === undefined ? [] : (['ability:copyEntersAddsTypes'] as const)),
+      ...(event.args.addStatic === undefined ? [] : (['ability:copyEntersAddsStatics'] as const)),
     ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
@@ -1007,11 +1009,20 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     ) {
       return failure(ability);
     }
+    // CR 707.9b (Mocking Doppelganger): "except it has \"<static ability>\"": the quoted static ability, lowered like the static ability of a card.
+    const addStatics: Ability[] = [];
+    const quotedStatic = event.args.addStatic;
+    if (quotedStatic !== undefined) {
+      const lowered = lowerQuotedCopyStatic(quotedStatic, ability, newContext('ability', [], []));
+      if (!lowered.ok) return lowered;
+      addStatics.push(...lowered.value);
+    }
     return built({
       kind: 'entersAsCopy',
       what: kind,
       optional: true,
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
+      ...(addStatics.length === 0 ? {} : { addStatics }),
       ...(addedTypes?.kind === 'typeList' && addedTypes.cardTypes !== undefined
         ? { addTypes: addedTypes.cardTypes as CardType[] }
         : {}),

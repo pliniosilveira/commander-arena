@@ -29,7 +29,12 @@ import {
   TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
-import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
+import {
+  TOKEN_COPIES_EXCEPT_ADDITIVE,
+  TOKEN_COPIES_HALF_PT,
+  TOKEN_COPY_EXCEPT,
+  TOKEN_COPY_EXCEPT_ADDITIVE,
+} from './copy-except';
 import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
@@ -979,6 +984,7 @@ export const TOKEN_RULES = [
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,
   TOKEN_COPY_EXCEPT_ADDITIVE,
+  TOKEN_COPIES_EXCEPT_ADDITIVE,
   // Aetherdrift energy deck (issue 105): "a 5/5 artifact creature in addition to its other types and has haste".
   TOKEN_COPY_EXCEPT_ADDITIVE_TYPES,
   // Espers to Magicite: "..., except it's an artifact and it loses all other card types".
