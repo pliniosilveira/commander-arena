@@ -376,6 +376,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromHandOnBottom',
     // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
     'cantAttackPlaneswalkers',
+    // Riders of Rohan deck, group B (Call for Aid): "You can't attack that player this turn", "You can't sacrifice those creatures this turn".
+    'youCantAttackPlayers',
+    'youCantSacrifice',
     // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
     'choosePlayer',
     'cantBeBlockedByPlayer',
@@ -440,6 +443,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedCombatDamageTurn',
     // Issue 144: "whenever a creature you control deals combat damage to that player this turn, ..." (CR 603.7c).
     'delayedCombatDamageToPlayer',
+    // Forth Eorlingas!: "whenever one or more creatures you control deal combat damage to one or more players this turn, ..." (CR 603.7, 603.2c).
+    'delayedCombatDamageBatchTurn',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -598,6 +603,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'noncombatDamageDealt',
     // CR 120.2: "Whenever you're dealt damage" (Sun Droplet).
     'dealtDamageToPlayer',
+    // CR 615.6: "Whenever damage that would be dealt to you is prevented" (Selfless Squire).
+    'damageToPlayerPrevented',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -691,6 +698,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
     'lifeLostBatch',
+    // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
+    'stepMonarch',
   ],
   keywordKinds: [
     'flying',
@@ -1475,6 +1484,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
+    // Fealty to the Realm: "The monarch controls enchanted creature." (CR 613.1b, 725.1).
+    'controlAttached',
     // D-125: "You may play an additional land on each of your turns."
     'additionalLandDrops',
     // D-125: "You may look at the top card of your library any time."
@@ -2076,6 +2087,8 @@ export const TRIGGER_FEATURES = [
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
   'lifeLostBatch',
+  /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
+  'stepMonarch',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -2612,6 +2625,8 @@ export const STATIC_KINDS = [
   'grantEnergyAlternative',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
+  /** "The monarch controls enchanted creature." (CR 613.1b, 725.1): the engine's `controlAttached`. */
+  'controlAttached',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */
@@ -3151,6 +3166,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   putFromHandOnTop: true,
   putFromHandOnBottom: true,
   cantAttackPlaneswalkers: true,
+  youCantAttackPlayers: true,
+  youCantSacrifice: true,
   choosePlayer: true,
   cantBeBlockedByPlayer: true,
   createToken: true,
@@ -3188,6 +3205,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileTopAnyNumber: true,
   delayedCombatDamageTurn: true,
   delayedCombatDamageToPlayer: true,
+  delayedCombatDamageBatchTurn: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
@@ -3281,6 +3299,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   dealsDamage: true,
   noncombatDamageDealt: true,
   dealtDamageToPlayer: true,
+  damageToPlayerPrevented: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,
@@ -3332,6 +3351,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  stepMonarch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

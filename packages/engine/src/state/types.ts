@@ -10,6 +10,7 @@ import type {
   Cost,
   DoorValues,
   Effect,
+  EnteringCounters,
   InlineChoice,
   Keyword,
   NamedAlternativeKind,
@@ -98,6 +99,11 @@ export interface GameObject {
    * that is later than the start of their turn (`rules/control.ts`, `controlledSince`). Absent for a permanent whose control never went back.
    */
   readonly controlChangedAt?: number;
+  /**
+   * The controller this permanent had when a static control effect on it ("The monarch controls enchanted creature.", `rules/static-control.ts`) was last looked at, set only
+   * while one applies to it: the state-based actions compare it with the controller it has now to see the effect begin, change hands or end (`rules/static-control-sync.ts`).
+   */
+  readonly staticControlSeen?: SeatId;
   /** Tokens carry their own characteristics and abilities. */
   readonly token: TokenData | null;
   /**
@@ -1524,7 +1530,7 @@ export type Instruction =
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
@@ -1757,7 +1763,7 @@ export type Instruction =
       readonly object: ObjectId;
       readonly tapped: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2105,7 +2111,7 @@ export type Instruction =
       /** Enter the battlefield under the owner's control or the resolving ability's controller's. */
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
@@ -2116,6 +2122,8 @@ export type Instruction =
       readonly countsReturned?: true;
       /** A creature that really goes to exile adds `power` to the total of `seat` in `thisWay` `exiledPowerBy` (Oversimplify; both read before the creatures left, CR 608.2h). */
       readonly exiledPower?: { readonly seat: SeatId; readonly power: number };
+      /** A creature card that really goes to exile is counted as `thisWay` `exiledCreatureCards` (Grey Host Reinforcements, CR 608.2c). */
+      readonly countsCreatureCard?: true;
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
       readonly replacers?: readonly ObjectId[];
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
@@ -2344,6 +2352,8 @@ export interface ThisWayCounts {
   readonly milledCreature?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
+  /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */
+  readonly exiledCreatureCards?: number;
   /** The card types of the cards `discard` effects discarded, each once, and how many they are (Occult Epiphany: "for each card type among cards discarded this way", CR 205.2a). */
   readonly discardedTypes?: readonly string[];
   readonly discardedTypeCount?: number;
@@ -2622,6 +2632,8 @@ export type ContinuousChange =
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
+      /** "That opponent can't attack you this combat": only the creatures this player controls (fixed as the effect was made). */
+      readonly of?: SeatId;
     }
   /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each
@@ -2660,6 +2672,19 @@ export type ContinuousChange =
    * `seat` controls. A restriction of the rules, read where the legality of a block is worked out (`rules/combat-legality.ts`), not in a layer.
    */
   | { readonly kind: 'cantBeBlockedByPlayer'; readonly seat: SeatId }
+  /**
+   * "You can't attack that player this turn" (`youCantAttackPlayers`, Call for Aid, CR 508.1a): no creature `seat` controls can be declared attacking a player of `players`; no fixed set of objects (`objects`
+   * is empty), a restriction of the rules read in `rules/attack-bans.ts`.
+   */
+  | {
+      readonly kind: 'controllerCantAttackPlayers';
+      readonly seat: SeatId;
+      readonly players: readonly SeatId[];
+    }
+  /**
+   * "You can't sacrifice those creatures this turn" (`youCantSacrifice`, Call for Aid, CR 701.21a, 101.2): `seat` can't sacrifice the objects of the effect while it controls them; read in `rules/sacrifice-prevention.ts`.
+   */
+  | { readonly kind: 'controllerCantSacrifice'; readonly seat: SeatId }
   | {
       readonly kind: 'cantAttackPlayer';
       readonly seat: SeatId;
@@ -2975,6 +3000,8 @@ export interface TurnLog {
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-646 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
    * announced, as it does for a spell on the stack), for "the greatest mana value among instant and sorcery spells you've cast this turn".
    */
+  /** The permanents exerted this turn (CR 701.43a), as exerted as an attacker or as a cost; "if ~ hasn't been exerted this turn" reads it. */
+  readonly exerted: readonly ObjectId[];
   readonly castSpells: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
@@ -3005,6 +3032,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   leftGraveyard: [],
   graveyardEntries: [],
   modesChosen: [],
+  exerted: [],
   castSpells: [],
 };
 

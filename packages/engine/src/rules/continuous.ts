@@ -364,18 +364,30 @@ export function runCreaturesCantAttackYou(
   state: GameState,
   node: Extract<Effect, { kind: 'creaturesCantAttackYou' }>,
   ctx: SelectContext,
+  targets: readonly ChosenTarget[] = [],
 ): StepOutcome {
+  // CR 603.7c: the one player whose creatures are barred is found as the effect runs; with none (the player has left the game) nothing is barred.
+  let of: SeatId | undefined;
+  if (node.player !== undefined) {
+    [of] = resolvePlayers(state, node.player, ctx, targets);
+    if (of === undefined) return done(state);
+  }
   const [timestamp, stamped] = allocateTimestamp(state);
   const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
   const created: ContinuousEffect = {
     id: `ce${timestamp}`,
     timestamp,
     objects: [],
-    until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    // CR 511.3 (End of Combat Step): "this combat" lasts until the end of combat step ends.
+    until:
+      node.duration === 'thisCombat'
+        ? 'endOfCombat'
+        : { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
     change: {
       kind: 'creaturesCantAttackPlayer',
       filter: node.creatures,
       controller: ctx.controller,
+      ...(of === undefined ? {} : { of }),
     },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });

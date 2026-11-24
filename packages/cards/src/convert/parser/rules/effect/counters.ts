@@ -63,6 +63,25 @@ const ADD_COUNTERS_OPERANDS = [
   'noun.each-of-up-to-permanents',
 ] as const;
 
+/**
+ * "each of those creatures" after "put a +1/+1 counter on" (Unbreakable Formation, CR 608.2c): the group the sentence before named, bound like "each of them" to the most recent plural
+ * group of the text. Read here, with the one verb that needs it, and not as a noun of its own: the same words say the creature a soulbond pair is with (`noun.paired-creatures`).
+ */
+const EACH_OF_THOSE_CREATURES: Parser<IrNoun> = map(
+  spanned(pattern(/each of those creatures(?![\p{L}\p{N}'’])/iu)),
+  ({ span }): IrNoun => ({
+    kind: 'noun',
+    det: 'anaphor',
+    // The binding pass reads these words: the plural antecedent, as it reads "each of them".
+    filter: { raw: 'each of them' },
+    upTo: false,
+    plural: true,
+    other: false,
+    span,
+    rule: 'effect.add-counters',
+  }),
+);
+
 export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   id: 'effect.add-counters',
   family: 'effect',
@@ -92,6 +111,8 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'you put two +1/+1 counters on a creature you control',
     'put two +1/+1 counters on a creature you control',
     'put a +1/+1 counter on each of up to two Soldiers you control',
+    // Unbreakable Formation (CR 608.2c): the group the sentence before named.
+    'put a +1/+1 counter on each of those creatures',
   ],
   rejects: [
     'you put two +1/+1 counters on target creature and draw a card',
@@ -100,6 +121,8 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put a +1/+1 counter on it for each creature',
     'put a +1/+1 counter on that creature',
     'put a +1/+1 counter on each of those',
+    'put a +1/+1 counter on each of those creature',
+    'put a +1/+1 counter on each of those permanents',
     'put a +1/+1 counter on each of it',
     'put a card from your hand onto the battlefield',
     'put Y +1/+1 counters on ~',
@@ -133,7 +156,10 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
           }),
         ),
         pattern(/ counters? on /i),
-        operands(ADD_COUNTERS_OPERANDS, 'effect.add-counters'),
+        choice<IrNoun | IrNounList>(
+          operands(ADD_COUNTERS_OPERANDS, 'effect.add-counters'),
+          EACH_OF_THOSE_CREATURES,
+        ),
         optional(FOR_EACH_TAIL, null),
       ),
       ([, count, , , , , each]) => each === null || scaled(count, each) !== null,

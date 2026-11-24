@@ -258,6 +258,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },
   attackBatch: { kind: 'attackBatch', who: 'you', atLeast: 2 },
   playerAttacksOpponent: { kind: 'playerAttacksOpponent' },
+  damageToPlayerPrevented: { kind: 'damageToPlayerPrevented', who: 'you' },
   unblockedAttackBatch: { kind: 'unblockedAttackBatch', who: 'opponent' },
   tappedForMana: {
     kind: 'tappedForMana',

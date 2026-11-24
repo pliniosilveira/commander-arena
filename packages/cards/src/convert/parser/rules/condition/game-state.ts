@@ -49,7 +49,7 @@ function numberCompare(wide = false): Parser<IrComparison> {
 }
 
 const DESIGNATION =
-  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing)(?![\p{L}\p{N}])/iu;
+  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing|(there is no) monarch)(?![\p{L}\p{N}])/iu;
 
 /**
  * `condition.designation`: "you're the monarch", "you are the monarch", "an opponent is the monarch", "a player is
@@ -63,7 +63,7 @@ const DESIGNATION =
 export const CONDITION_DESIGNATION = defineRule<IrCondition>({
   id: 'condition.designation',
   family: 'condition',
-  leading: ['you', 'you’re', "you're", 'an', 'a'],
+  leading: ['you', 'you’re', "you're", 'an', 'a', 'there'],
   cites: [
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
@@ -86,8 +86,13 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     'you don’t have the city’s blessing',
     "an opponent has the city's blessing",
     "a player has the city's blessing",
+    // Archivist of Gondor, Crown of Gondor (CR 725.1, 603.4): nobody is the monarch, the negation of "a player is the monarch".
+    'there is no monarch',
   ],
   rejects: [
+    'there is no monarch of the realm',
+    "there's no monarch",
+    'there is no city’s blessing',
     'you become the monarch',
     "you're the monarch.",
     "you're monarch",
@@ -109,7 +114,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     const r = spanned(pattern(DESIGNATION))(ctx, pos);
     if (!r.ok) return r;
     const blessing = r.value.value[2] !== undefined;
-    const words = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
+    const words = (r.value.value[1] ?? r.value.value[2] ?? r.value.value[3] ?? '').toLowerCase();
     const det = words.startsWith('you')
       ? 'you'
       : words.startsWith('an opponent')
@@ -131,7 +136,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
       who,
       designation: blessing ? 'citysBlessing' : 'monarch',
     });
-    const negative = /(?: not|aren['’]t|don['’]t have)$/.test(words);
+    const negative = /(?: not|aren['’]t|don['’]t have|there is no)$/.test(words);
     return {
       ok: true,
       value: negative

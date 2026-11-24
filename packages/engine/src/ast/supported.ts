@@ -301,12 +301,14 @@ function walkEffect(
       return;
     case 'unlessPays':
       // CR 118.12a: paid as Ward's cost is (rules/pay-unless.ts), and, D-209, with energy; what happens when it is not is any effect.
-      activationCostIssues(effect.cost, `${path}.cost`, out, [
-        'mana',
-        'payLife',
-        'discard',
-        'energy',
-      ]);
+      // CR 107.3 (Champions of Minas Tirith): with `xIsHandSize` the {X} of the mana cost is a number of cards, worked out as the player is asked.
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard', 'energy'],
+        effect.xIsHandSize === true,
+      );
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'becomeCopy':

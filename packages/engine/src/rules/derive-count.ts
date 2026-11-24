@@ -29,6 +29,7 @@ import { devotionOf } from './devotion';
 import { effectsOn } from './effects-on';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
+import { cardsOf } from './melded';
 
 /**
  * How many objects in the filter's zone match it, for an ability whose source is `source`: "you" is
@@ -179,9 +180,25 @@ export function cardTypesAmongForSource(
  * (the front face of a double-faced card, CR 712.8a, 202.3b), the largest of them; 0 with no commander. It reads the card, not the
  * permanent: no layer can change it, which keeps layer 7 free of loops (CR 613.8).
  */
-export function commandersManaValue(state: GameState, seat: GameObject['controller']): number {
+export function commandersManaValue(
+  state: GameState,
+  seat: GameObject['controller'],
+  zones?: readonly ('battlefield' | 'command')[],
+): number {
   let best = 0;
   for (const card of getSeat(state, seat).commanders) {
+    // CR 903.3, 108.3 (Visions of Glory): only a commander of the player (a card they own) that is now in one of the zones counts.
+    if (
+      zones !== undefined &&
+      !Object.values(state.objects).some(
+        (o) =>
+          cardsOf(o).includes(card) &&
+          (o.zone === 'battlefield' || o.zone === 'command') &&
+          zones.includes(o.zone),
+      )
+    ) {
+      continue;
+    }
     const cost = definitionOf(state, card).faces[0]?.manaCost ?? null;
     if (cost !== null) best = Math.max(best, manaValue(cost));
   }

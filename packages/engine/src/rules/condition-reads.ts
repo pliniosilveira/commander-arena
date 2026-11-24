@@ -5,7 +5,7 @@
  * cannot disagree. It imports no `derive`.
  */
 import type { Condition } from '../ast/types';
-import type { SeatId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
@@ -141,10 +141,14 @@ export function enteredThisTurnHolds(
   state: GameState,
   seat: SeatId,
   condition: EnteredCondition,
+  source: ObjectId | null = null,
 ): boolean {
+  // CR 400.7 (Éowyn, Shieldmaiden): "another" leaves out the permanent with the ability; with no such permanent to leave out, the condition cannot be told and fails.
+  if (condition.other === true && source === null) return false;
   let n = 0;
   for (const e of state.turnLog.entered) {
     if (e.controller !== seat) continue;
+    if (condition.other === true && e.object === source) continue;
     if (condition.types?.some((t) => !e.types.includes(t))) continue;
     if (condition.notTypes?.some((t) => e.types.includes(t))) continue;
     if (condition.subtypes?.some((t) => !e.subtypes.includes(t))) continue;

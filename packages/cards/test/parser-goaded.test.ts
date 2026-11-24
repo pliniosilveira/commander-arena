@@ -103,7 +103,8 @@ describe('"Goad target creature." and "goad it" as effects (CR 701.15a, D-651)',
   });
 
   test.each([
-    ['Goad each creature.', 'each creature.'],
+    // A group of "each" is read since the Riders of Rohan deck (Taunt from the Rampart), and refused for naming no player's creatures: the diagnostic points past it.
+    ['Goad each creature.', '.'],
     ['Goad target player.', 'player.'],
     ['Goad target creature until end of turn.', 'until end of turn.'],
   ])('is dropped, never half read (SYNTHETIC): %s', (text, part) => {

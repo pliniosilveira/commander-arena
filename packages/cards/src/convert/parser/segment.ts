@@ -67,9 +67,13 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
  * "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h, 603.12; Glorybringer): the optional cost of attacking and the ability linked to it, in one
  * paragraph. It is read as a triggered ability whose trigger is the first sentence (`trigger.exerted`) and whose body follows "When you do,".
  */
-const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you do, /i;
+const EXERT_LEAD =
+  /^(?:if (?:~|this creature) hasn['’]t been exerted this turn, )?you may exert (?:~|this creature|it) as it attacks\. when you do, /i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336) and "When you cast your next instant or sorcery spell this turn, " (Twinferno): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you (?:next cast an? |cast your next )[^,.]+ spell this turn, /i;
+/** "Whenever one or more creatures you control deal combat damage to one or more players this turn, " (Forth Eorlingas!, CR 603.7): the lead of a spell's sentence that creates a delayed triggered ability for the turn. */
+const DELAYED_COMBAT_BATCH_LEAD =
+  /^whenever one or more creatures you control deal combat damage to one or more players this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER =
@@ -173,6 +177,30 @@ function insideSpellTypeList(text: string, at: number): boolean {
   );
 }
 
+const ABILITY_KIND = '(?:artifact|creature|land|enchantment|planeswalker)';
+
+/**
+ * Whether the comma at `at` belongs to the trigger condition "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability" (Harsh Mentor, CR 602.2,
+ * 603.4): a comma between the kinds of permanent, or the one before the intervening "if it isn't a mana ability". The comma after "mana ability" is the one that ends the trigger.
+ */
+function insideActivationKindList(text: string, at: number): boolean {
+  const before = text.slice(Math.max(0, at - 110), at);
+  const after = text.slice(at, at + 90);
+  const head = new RegExp(
+    `activates? an ability of an? ${ABILITY_KIND}(?:, ${ABILITY_KIND})*$`,
+    'iu',
+  );
+  const tail = new RegExp(
+    `^, (?:${ABILITY_KIND}, )*(?:or )?${ABILITY_KIND} on the battlefield, if it`,
+    'iu',
+  );
+  const ifClause = /activates? an ability of an? [a-z, ]+ on the battlefield$/iu;
+  return (
+    (head.test(before) && tail.test(after)) ||
+    (ifClause.test(before) && /^, if it (?:isn['’]t|is not) a mana ability,/iu.test(after))
+  );
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -197,6 +225,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       !insideGraveyardEventList(text, i) &&
       // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
       !insideSpellTypeList(text, i) &&
+      // Harsh Mentor (CR 602.2, 603.4): "an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability, ...": the commas of the condition are not its end.
+      !insideActivationKindList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {
@@ -611,6 +641,14 @@ const THOSE_CREATURES_CANT_ATTACK_YOU =
  * issue 81, CR 118.12a, 508.1a): the second sentence says what happens when the player does not pay the first one asks, so the two are read as one instruction.
  */
 const THEY_MAY_PAY = /(?:^|, )they may pay (?:\{[^}]+\})+\.$/i;
+/**
+ * "At the beginning of combat on each opponent's turn, if you're the monarch, that opponent may pay {X}, where X is the number of cards in their hand. If they don't, they can't attack you
+ * this combat." (Champions of Minas Tirith, CR 118.12a, 508.1a): the same pair of sentences, read as one instruction (`effect.pay-hand-or-cant-attack-you`).
+ */
+const THAT_OPPONENT_MAY_PAY_HAND =
+  /(?:^|, )that opponent may pay \{X\}, where X is the number of cards in their hand\.$/i;
+const IF_THEY_DONT_CANT_ATTACK_YOU_COMBAT =
+  /^if they don['’]t, they can['’]t attack you this combat\.$/i;
 const IF_THEY_DONT_CANT_ATTACK =
   /^if they don['’]t, creatures they control can['’]t attack [\p{L}]+ you control this turn\.$/iu;
 
@@ -1324,6 +1362,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       b !== undefined &&
+      said(a, THAT_OPPONENT_MAY_PAY_HAND) &&
+      said(b, IF_THEY_DONT_CANT_ATTACK_YOU_COMBAT)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
       said(a, REVEAL_UNTIL_OPPONENTS_FIRST) &&
       said(b, PUT_THOSE_CREATURES_SHUFFLE)
     ) {
@@ -1658,7 +1704,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
 
   // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7): a spell's sentence that creates a delayed triggered ability,
   // not a triggered ability of a permanent; it is read as the sentences of the body (`sentence.delayed`).
-  if (TRIGGER_WORD.test(text) && !DELAYED_CAST_LEAD.test(text)) {
+  if (
+    TRIGGER_WORD.test(text) &&
+    !DELAYED_CAST_LEAD.test(text) &&
+    !DELAYED_COMBAT_BATCH_LEAD.test(text)
+  ) {
     const word = /^\S+/.exec(text) ?? [''];
     const wordSpan = { start: 0, end: word[0].length };
     const bodyFrom = word[0].length + 1;
