@@ -417,6 +417,41 @@ describe('the dungeon card (CR 309.4)', () => {
   });
 });
 
+describe('what a view shows (hidden information)', () => {
+  test('the initiative and every dungeon are public; the cards found by Secret Entrance stay hidden in the hand', () => {
+    const g = table(2).at('precombatMain', { initiative: 0 }).build();
+    delve(g);
+    const seen = g.view(1);
+    // Public: who has the initiative and where the venture marker of each player is.
+    expect(seen.initiative).toBe(0);
+    expect(seen.seats[0]?.dungeon).toMatchObject({
+      dungeon: 'undercity',
+      name: 'Undercity',
+      room: 'secretEntrance',
+      roomName: 'Secret Entrance',
+      bottom: false,
+    });
+    expect(seen.seats[1]?.dungeon).toBeUndefined();
+    // Private: the opponent sees how many cards seat 0 holds, never which (the land was revealed as it was found, a log event, but it is in a hand).
+    expect(seen.seats[0]?.handCount).toBe(1);
+    expect(seen.seats[0]?.hand).toBeNull();
+    expect(JSON.stringify(seen)).not.toContain(`"id":"${g.state.seats[0]?.library[0]}"`);
+    // The owner sees their own hand.
+    expect(g.view(0).seats[0]?.hand).toHaveLength(1);
+    // The view is the same for the two seats on what is public.
+    expect(g.view(0).initiative).toBe(seen.initiative);
+    expect(g.view(0).seats[0]?.dungeon).toEqual(seen.seats[0]?.dungeon);
+  });
+
+  test('a view of a game with no initiative and no dungeon has neither field (the state shape is unchanged for other games)', () => {
+    const g = table(2).at('precombatMain').build();
+    const view = g.view(0);
+    expect('initiative' in view).toBe(false);
+    expect(view.seats.every((seat) => !('dungeon' in seat))).toBe(true);
+    expect('initiative' in g.state).toBe(false);
+  });
+});
+
 describe('every player ventures: APNAP order and one dungeon each (CR 101.4, 701.49)', () => {
   for (const seats of [2, 3, 4] as const) {
     test(`${seats} seats: each enters Undercity, each room ability is controlled and settled by its own player`, () => {

@@ -75,3 +75,56 @@ describe('the room chosen when two arrows leave the room', () => {
     expect(a).toEqual({ kind: 'chooseOption', option: 'Arena' });
   });
 });
+
+describe('the targets of the room abilities (abilities with no source)', () => {
+  /** Seat 0 (with a Grizzly Bears) ventures from `from` into `room`; seat 1 has a Giant Spider. The targets are asked of seat 0. */
+  function targeting(from: 'secretEntrance' | 'forge' | 'lostWell', room: string): ScenarioGame {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .hand(DELVE)
+      .battlefield('Swamp', { count: 3 })
+      .battlefield('Grizzly Bears')
+      .dungeon(from)
+      .library(...FILLER)
+      .seat(1)
+      .life(20)
+      .battlefield('Giant Spider')
+      .library(...FILLER)
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(DELVE, { pay: true });
+    g.passAll();
+    g.act(0).chooseOption(room);
+    g.passAll();
+    return g;
+  }
+
+  async function chosen(g: ScenarioGame) {
+    const a = await decide(g, new CasualAgent({ seed: 1 }));
+    if (a.kind !== 'chooseTargets') throw new Error(`expected chooseTargets, got ${a.kind}`);
+    expect(applyAction(g.state, 0, a).ok).toBe(true);
+    return a.targets[0];
+  }
+
+  test('Forge: the counters go on a creature the agent controls', async () => {
+    const g = targeting('secretEntrance', 'Forge');
+    g.expect.pending('targets', 0);
+    const t = await chosen(g);
+    expect(t?.kind === 'object' && g.object({ name: 'Grizzly Bears' }).id === t.id).toBe(true);
+  });
+
+  test('Trap!: the five life are lost by an opponent', async () => {
+    const g = targeting('forge', 'Trap!');
+    g.expect.pending('targets', 0);
+    const t = await chosen(g);
+    expect(t).toMatchObject({ kind: 'player', seat: 1 });
+  });
+
+  test('Arena: the creature goaded is an opponent’s', async () => {
+    const g = targeting('lostWell', 'Arena');
+    g.expect.pending('targets', 0);
+    const t = await chosen(g);
+    expect(t?.kind === 'object' && g.object({ name: 'Giant Spider' }).id === t.id).toBe(true);
+  });
+});
