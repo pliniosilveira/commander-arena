@@ -279,6 +279,7 @@ describe('the dimensions', () => {
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',
+      'preventDamageAround',
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',

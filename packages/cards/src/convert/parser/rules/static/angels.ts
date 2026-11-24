@@ -156,6 +156,12 @@ export const STATIC_CANT_LOSE_WIN = defineRule<IrStatic>({
 
 const SCOPE_WORDS = '(all|all combat|all noncombat) damage';
 
+/** The scope a `SCOPE_WORDS` match says. */
+function scopeOf(word: string | undefined): 'all' | 'combat' | 'noncombat' {
+  const w = (word ?? '').toLowerCase();
+  return w === 'all combat' ? 'combat' : w === 'all noncombat' ? 'noncombat' : 'all';
+}
+
 /**
  * `static.prevent-damage-to-self`: "Prevent all combat damage that would be dealt to ~.", "Prevent all damage that would be dealt to ~.",
  * "Prevent all noncombat damage that would be dealt to ~." (CR 615.1, 615.6: damage that would be dealt is not dealt; a static ability of
@@ -210,6 +216,98 @@ export const STATIC_PREVENT_DAMAGE_TO_SELF = defineRule<IrStatic>({
         r.pos,
       ),
       pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.prevent-damage-around`: "Prevent all combat damage that would be dealt by ~.", "Prevent all combat damage that would be dealt to and dealt by ~.", "Prevent all noncombat
+ * damage that would be dealt to you and other permanents you control." (CR 615.1, 615.6, 604.1; Planeswalker Party deck: Fog Bank, The Wanderer): static prevention of the
+ * damage a permanent deals, or of the damage dealt to its controller and their other permanents. "to and dealt by ~" is the two statics, the prevention to the permanent and
+ * the one by it. Only all of it, with no duration. Not read: "the next 3 damage", a recipient other than "you and other permanents you control", "dealt by creatures",
+ * a duration (that is `effect.prevent-all`), "to you and permanents you control" (this one included: a different statement) and a condition.
+ */
+export const STATIC_PREVENT_DAMAGE_AROUND = defineRule<IrStatic>({
+  id: 'static.prevent-damage-around',
+  family: 'static',
+  leading: ['prevent'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Prevent all combat damage that would be dealt by ~.',
+    'Prevent all damage that would be dealt by ~.',
+    'Prevent all combat damage that would be dealt to and dealt by ~.',
+    'Prevent all damage that would be dealt to and dealt by ~.',
+    'Prevent all noncombat damage that would be dealt to you and other permanents you control.',
+    'Prevent all damage that would be dealt to you and other permanents you control.',
+  ],
+  rejects: [
+    'Prevent all combat damage that would be dealt by ~',
+    'Prevent all combat damage that would be dealt by ~ this turn.',
+    'Prevent all combat damage that would be dealt by creatures.',
+    'Prevent the next 3 damage that would be dealt by ~.',
+    'Prevent all noncombat damage that would be dealt to you and other permanents you control this turn.',
+    'Prevent all noncombat damage that would be dealt to you and permanents you control.',
+    'Prevent all noncombat damage that would be dealt to you and other creatures you control.',
+    'Prevent all combat damage that would be dealt to and dealt by ~ and draw a card.',
+    'Prevent all combat damage that would be dealt to ~.',
+  ],
+  parse: (ctx, pos) => {
+    const byThis = sequence(
+      pattern(new RegExp(`prevent ${SCOPE_WORDS} that would be dealt (to and dealt )?by `, 'iu')),
+      spanned(literal('~')),
+      PERIOD,
+    )(ctx, pos);
+    if (byThis.ok) {
+      const [head, self] = byThis.value;
+      const scope = scopeOf(head[1]);
+      const around = {
+        kind: 'preventDamageAround' as const,
+        scope,
+        events: 'dealtByThis' as const,
+      };
+      return {
+        ok: true,
+        value: staticOf(
+          'static.prevent-damage-around',
+          subjectNoun('self', '~', self.span, 'static.prevent-damage-around'),
+          head[2] === undefined ? [around] : [{ kind: 'preventDamageToThis', scope }, around],
+          pos,
+          byThis.pos,
+        ),
+        pos: byThis.pos,
+      };
+    }
+    const toYou = sequence(
+      pattern(
+        new RegExp(
+          `prevent ${SCOPE_WORDS} that would be dealt to you and other permanents you control`,
+          'iu',
+        ),
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!toYou.ok) return byThis;
+    const [head] = toYou.value;
+    return {
+      ok: true,
+      value: staticOf(
+        'static.prevent-damage-around',
+        subjectNoun('self', '~', { start: pos, end: toYou.pos }, 'static.prevent-damage-around'),
+        [
+          {
+            kind: 'preventDamageAround',
+            scope: scopeOf(head[1]),
+            events: 'dealtToYouAndYourOtherPermanents',
+          },
+        ],
+        pos,
+        toYou.pos,
+      ),
+      pos: toYou.pos,
     };
   },
 });
@@ -364,6 +462,7 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_PLAYER_HEXPROOF,
   STATIC_CANT_LOSE_WIN,
   STATIC_PREVENT_DAMAGE_TO_SELF,
+  STATIC_PREVENT_DAMAGE_AROUND,
   STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
 ].map(quietly);

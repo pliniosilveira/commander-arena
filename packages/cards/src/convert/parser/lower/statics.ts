@@ -730,6 +730,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':
       return ['static:cantBeSacrificed'];
+    case 'preventDamageAround':
+      return ['static:preventDamageAround'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':

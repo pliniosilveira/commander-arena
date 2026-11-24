@@ -619,6 +619,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-self': asIs,
+  'static.prevent-damage-around': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
   'static.sacrifice-alt-cost': asIs,

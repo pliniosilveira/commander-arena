@@ -2130,6 +2130,15 @@ export type IrStaticEffect =
       readonly removeCounter?: string;
     }
   /**
+   * "Prevent all combat damage that would be dealt by ~." and "Prevent all noncombat damage that would be dealt to you and other permanents you control." (Planeswalker
+   * Party deck, CR 615.1): the engine's `preventDamageAround`. The subject is `~`.
+   */
+  | {
+      readonly kind: 'preventDamageAround';
+      readonly scope: 'all' | 'combat' | 'noncombat';
+      readonly events: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
+    }
+  /**
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.
    */

@@ -23,8 +23,10 @@ import type { ObjectId, SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
 import { allocateTimestamp } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
+import { controllerOf } from './control';
 import { endOf } from './control-effects';
 import { derive } from './derive';
+import { mayHaveStatic } from './printed-statics';
 import {
   isPlayerSelector,
   matchesFilter,
@@ -167,6 +169,8 @@ export interface StaticPrevention {
   readonly object: ObjectId;
   readonly index: number;
   readonly scope: PreventScope;
+  /** Set for a `preventDamageAround` of another permanent: what it covers (the recipient is not the permanent that has it). */
+  readonly around?: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
   /** The counter this prevention removes from the permanent for each damage event it prevents (issue 159). */
   readonly removeCounter?: string;
 }
@@ -179,11 +183,13 @@ export function staticPreventions(
   state: GameState,
   to: DamageRecipient,
   combat: boolean,
+  source?: ObjectId,
 ): readonly StaticPrevention[] {
-  if (to.kind !== 'object') return [];
+  const around = aroundPreventions(state, to, combat, source);
+  if (to.kind !== 'object') return around;
   const obj = state.objects[to.id];
-  if (obj === undefined || obj.zone !== 'battlefield') return [];
-  const found: StaticPrevention[] = [];
+  if (obj === undefined || obj.zone !== 'battlefield') return around;
+  const found: StaticPrevention[] = [...around];
   derive(state, obj).abilities.forEach((a, index) => {
     if (
       a.kind === 'static' &&
@@ -210,6 +216,50 @@ export function staticPreventions(
     });
   }
   return found;
+}
+
+/**
+ * The `preventDamageAround` statics of the permanents on the battlefield that cover this event (CR 615.1; Planeswalker Party deck): a permanent that prevents the damage
+ * `dealtByThis` when it is the source, or `dealtToYouAndYourOtherPermanents` when the recipient is its controller or another permanent that controller controls. Read from the
+ * abilities each permanent has now (CR 613.1f), with the controller it has now (CR 108.4, 613.1b).
+ */
+function aroundPreventions(
+  state: GameState,
+  to: DamageRecipient,
+  combat: boolean,
+  source: ObjectId | undefined,
+): readonly StaticPrevention[] {
+  const found: StaticPrevention[] = [];
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || !mayHaveStatic(state, obj, 'preventDamageAround')) continue;
+    const controller = controllerOf(state, obj);
+    derive(state, obj).abilities.forEach((a, index) => {
+      if (
+        a.kind !== 'static' ||
+        a.static.kind !== 'preventDamageAround' ||
+        !(a.static.scope === 'all' || (a.static.scope === 'combat') === combat)
+      ) {
+        return;
+      }
+      const covers =
+        a.static.events === 'dealtByThis'
+          ? source === obj.id
+          : to.kind === 'player'
+            ? to.seat === controller
+            : to.id !== obj.id &&
+              state.objects[to.id]?.zone === 'battlefield' &&
+              controllerOfId(state, to.id) === controller;
+      if (covers)
+        found.push({ object: obj.id, index, scope: a.static.scope, around: a.static.events });
+    });
+  }
+  return found;
+}
+
+function controllerOfId(state: GameState, id: ObjectId): SeatId | null {
+  const obj = state.objects[id];
+  return obj === undefined ? null : controllerOf(state, obj);
 }
 
 /**

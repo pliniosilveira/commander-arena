@@ -1519,6 +1519,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "Prevent all combat damage that would be dealt to this creature", "You have hexproof", "You can't lose the game and your
     // opponents can't win the game" (`cantLoseGame`, `opponentsCantWin`), "You can't cast ~ during your first, second, or third turns".
     'preventDamageToThis',
+    // Planeswalker Party deck: "Prevent all combat damage that would be dealt by this creature", "... to you and other permanents you control".
+    'preventDamageAround',
     'playerHexproof',
     'cantLoseGame',
     'opponentsCantWin',
@@ -2646,6 +2648,8 @@ export const STATIC_KINDS = [
   'setColors',
   /** "Prevent all combat damage that would be dealt to this creature" (CR 615.1, D-149): the engine's `preventDamageToThis`. */
   'preventDamageToThis',
+  /** "Prevent all combat damage that would be dealt by ~" and "Prevent all noncombat damage that would be dealt to you and other permanents you control" (CR 615.1): `preventDamageAround`. */
+  'preventDamageAround',
   /** "You have hexproof" (CR 702.11b, D-149): the engine's `playerHexproof`. */
   'playerHexproof',
   /** "You can't lose the game" and "your opponents can't win the game" (CR 104.2, 104.3, D-149): `cantLoseGame` and `opponentsCantWin`. */

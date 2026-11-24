@@ -293,6 +293,14 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         issue(out, `${path}.removeCounter`, 'removeCounter is a +1/+1 or a -1/-1 counter');
       }
       return true;
+    case 'preventDamageAround':
+      if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
+        issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
+      }
+      if (!isOneOf(s.events, ['dealtByThis', 'dealtToYouAndYourOtherPermanents'])) {
+        issue(out, `${path}.events`, `unknown events ${JSON.stringify(s.events)}`);
+      }
+      return true;
     case 'blockTax':
       checkBlockTax(s, path, out);
       return true;

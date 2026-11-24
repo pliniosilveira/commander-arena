@@ -8250,6 +8250,19 @@ export type StaticEffect =
       readonly removeCounter?: string;
     }
   /**
+   * "Prevent all combat damage that would be dealt by this creature" and "Prevent all noncombat damage that would be dealt to you and other permanents you control"
+   * (CR 615.1, 113.6, 120.3; Planeswalker Party deck): a static ability of a permanent that prevents all the damage of the `scope` (`combat`, `noncombat`, `all`) of one kind
+   * of event, as an effect that prevents all damage does (CR 615.6: it is never dealt). `dealtByThis`: every event whose source is this permanent, whoever or whatever is
+   * the recipient. `dealtToYouAndYourOtherPermanents`: every event whose recipient is the controller of the permanent or another permanent that controller controls (a
+   * permanent on the battlefield; not this one: it is said as `preventDamageToThis`), whatever the source. It reads the abilities the permanent has as the damage would be dealt (lost
+   * with "loses all abilities") and the controller as it is then (CR 613.1b). It is about permanents on the battlefield only.
+   */
+  | {
+      readonly kind: 'preventDamageAround';
+      readonly scope: PreventScope;
+      readonly events: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
+    }
+  /**
    * "Damage isn't removed from this creature during cleanup steps." (CR 514.2, 113.6, D-192): a static ability of a permanent: at the cleanup
    * step the damage marked on it, and the memory that a source with deathtouch dealt it damage, stay; the "until end of turn" effects still end.
    * It is read from the abilities the permanent has then (lost with "loses all abilities"). A permanent with it that has lethal damage dies

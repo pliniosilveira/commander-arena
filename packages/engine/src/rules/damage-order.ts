@@ -81,11 +81,13 @@ function modifiersFor(
 ): readonly DamageModifier[] {
   if (event.amount <= 0) return [];
   const { source, to, combat } = event;
-  const statics: DamageModifier[] = staticPreventions(state, to, combat).map((prevention) => ({
-    kind: 'prevent',
-    key: staticKey(prevention),
-    origin: { kind: 'static', prevention },
-  }));
+  const statics: DamageModifier[] = staticPreventions(state, to, combat, source).map(
+    (prevention) => ({
+      kind: 'prevent',
+      key: staticKey(prevention),
+      origin: { kind: 'static', prevention },
+    }),
+  );
   const redirects = (): DamageModifier[] =>
     redirectsFor(state, to, used).map((redirect) => ({
       kind: 'redirect',

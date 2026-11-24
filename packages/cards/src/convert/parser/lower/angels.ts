@@ -66,6 +66,7 @@ export type AngelStaticEffect = Extract<
       | 'damageCantBePrevented'
       | 'damageAsThoughWither'
       | 'preventDamageToThis'
+      | 'preventDamageAround'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
   }
@@ -80,6 +81,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'damageCantBePrevented' ||
     effect.kind === 'damageAsThoughWither' ||
     effect.kind === 'preventDamageToThis' ||
+    effect.kind === 'preventDamageAround' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
   );
@@ -208,6 +210,16 @@ export function lowerAngelStatic(
         });
         break;
       }
+      case 'preventDamageAround': {
+        if (subject.det !== 'self') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:preventDamageAround']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'preventDamageAround', scope: effect.scope, events: effect.events },
+        });
+        break;
+      }
       case 'cantCastThis': {
         // CR 101.2, 500.1: the card can't be cast during the first N turns of the player who would cast it.
         if (subject.det !== 'self' || effects.length !== 1) return failure(ability);
@@ -242,6 +254,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:damageCantBePrevented',
   'static:damageAsThoughWither',
   'static:preventDamageToThis',
+  'static:preventDamageAround',
   'static:cantCastThis',
   'condition:ownTurnNumber',
   'replacement:othersEnterWithCounters',
