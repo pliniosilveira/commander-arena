@@ -1233,9 +1233,10 @@ export type ObjectRef =
       readonly ids: readonly ObjectId[];
       /**
        * D-662 (CR 603.7c, 400.7): the zone the objects are expected in; left out, the battlefield (D-639). A card that left it is a new object with a new id and is not found.
-       * Surge to Victory's delayed ability is about the card it exiled, `exile`.
+       * Surge to Victory's delayed ability is about the card it exiled, `exile`. `graveyard` and `stack` (Endless Detour: the owner of a card of a graveyard or of a spell chooses where it goes) name
+       * the object the effect was about where it is as the effect runs.
        */
-      readonly zone?: 'exile' | 'library';
+      readonly zone?: 'exile' | 'library' | 'graveyard' | 'stack';
     }
   /**
    * "That creature", "it" for the permanent an earlier `sacrifice` effect of the same resolution sacrificed (D-177, CR 701.21, 603.12, 608.2h): in

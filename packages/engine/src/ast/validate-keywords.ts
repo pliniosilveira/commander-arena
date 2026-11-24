@@ -203,7 +203,11 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
           if (c?.kind === 'tapPermanents') {
             // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps `count` permanents for each mode beyond the first; the only cost of the keyword.
             if (k.cost.length !== 1) {
-              issue(out, `${path}.cost[${i}]`, 'a tap cost is the only cost of an escalate keyword');
+              issue(
+                out,
+                `${path}.cost[${i}]`,
+                'a tap cost is the only cost of an escalate keyword',
+              );
             }
           } else if (c?.kind !== 'mana') {
             issue(

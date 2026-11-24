@@ -297,3 +297,392 @@ describe('Summon: Yojimbo', () => {
     expect(treasures(chapterIV([MV3B.name, MV5.name], [MV1.name]))).toBe(1);
   });
 });
+
+describe('Summon: Magus Sisters (CR 700.2, 714)', () => {
+  const NAME = sisters.name;
+  /** Seat 0 casts it ({4}{G}) with seed `seed`; the mode of chapter I is drawn as the chapter ability goes on the stack. */
+  const cast = (seed: number) => {
+    const g = scenario({ seats: 2 })
+      .seed(seed)
+      .define(sisters)
+      .define(MV3A)
+      .seat(0)
+      .hand(NAME)
+      .library(...FILLER)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest', 'Forest')
+      .seat(1)
+      .library(...FILLER)
+      .battlefield(MV3A.name)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(NAME, { pay: true });
+    g.passAll();
+    const pending = g.state.pending;
+    if (pending?.kind === 'targets') {
+      const first = pending.specs[0]?.legal[0];
+      if (first?.kind === 'object') g.act(0).chooseTargets(String(first.id));
+      g.passAll();
+    }
+    return g;
+  };
+  const outcome = (g: ReturnType<typeof cast>) => {
+    const sistersId = g.id({ name: NAME, seat: 0 });
+    const wall = g.state.objects[g.id({ name: MV3A.name, seat: 1 })];
+    const counters = (id: typeof sistersId) => g.state.objects[id]?.counters ?? {};
+    if (wall?.zone === 'graveyard') return 'fight';
+    if ((counters(sistersId)['+1/+1'] ?? 0) === 3 || (wall?.counters['+1/+1'] ?? 0) === 3) {
+      return 'combine';
+    }
+    if ((counters(sistersId).shield ?? 0) === 1 || (wall?.counters.shield ?? 0) === 1) {
+      return 'defense';
+    }
+    return 'nothing';
+  };
+
+  test('chapter I does one of the three modes, drawn at random, and every one of them happens', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 30; seed++) seen.add(outcome(cast(seed)));
+    expect([...seen].sort()).toEqual(['combine', 'defense', 'fight']);
+  });
+
+  test('the modes do what they say', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const g = cast(seed);
+      const result = outcome(g);
+      if (result === 'defense') {
+        g.expect.life(0, 43);
+      } else if (result === 'fight') {
+        // 5 damage from the Saga kills the 2/4 wall; the wall dealt 2 damage back.
+        g.expect.damage(NAME, 2);
+        g.expect.life(0, 40);
+      } else {
+        g.expect.life(0, 40);
+      }
+      g.expect.invariants();
+    }
+  });
+});
+
+describe('Collective Effort (CR 702.120a, 118.3, 700.2)', () => {
+  const NAME = effort.name;
+  const A = 'SYNTHETIC Escalate Bear A';
+  const B = 'SYNTHETIC Escalate Bear B';
+  const bearA = parsed(A, 'Creature — Bear', '', { manaCost: '{1}', power: '2', toughness: '2' });
+  const bearB = parsed(B, 'Creature — Bear', '', { manaCost: '{1}', power: '2', toughness: '2' });
+  /** Seat 0 has `bears` creatures (the first one summoning sick: tapping for a cost needs no {T} ability) and three Plains; seat 1 has an enchantment and a power 5 creature. */
+  const setup = (bears: readonly string[]) => {
+    const b = scenario({ seats: 2 })
+      .define(effort)
+      .define(bearA)
+      .define(bearB)
+      .define(MV3B)
+      .define(ench)
+      .seat(0)
+      .hand(NAME)
+      .library(...FILLER)
+      .battlefield('Plains', 'Plains', 'Plains');
+    for (const name of bears) b.battlefield(name);
+    return b
+      .seat(1)
+      .library(...FILLER)
+      .battlefield(MV3B.name)
+      .battlefield(ENCH)
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+  const FOE = { name: MV3B.name, seat: 1 } as const;
+  const AURA = { name: ENCH, seat: 1 } as const;
+
+  test('the keyword reads as an escalate cost of tapping one untapped creature', () => {
+    expect(effort.faces[0]?.abilities).toContainEqual({
+      kind: 'keyword',
+      keyword: {
+        kind: 'escalate',
+        cost: [
+          { kind: 'tapPermanents', filter: { types: ['creature'], controller: 'you' }, count: 1 },
+        ],
+      },
+    });
+  });
+
+  test('one mode costs only the mana: no creature is tapped', () => {
+    const g = setup([A]);
+    g.act(0).cast(NAME).modes(1).targets([AURA]).pay();
+    g.passAll();
+    g.expect.zone(ENCH, 'graveyard', { seat: 1 });
+    g.expect.tapped(A, false);
+    g.expect.invariants();
+  });
+
+  test('two modes tap one untapped creature, and both modes happen', () => {
+    const g = setup([A]);
+    g.act(0).cast(NAME).modes(0, 1).targets([FOE, AURA]).pay();
+    g.expect.tapped(A, true);
+    g.passAll();
+    g.expect.zone(MV3B.name, 'graveyard', { seat: 1 });
+    g.expect.zone(ENCH, 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('three modes tap two creatures', () => {
+    const g = setup([A, B]);
+    g.act(0)
+      .cast(NAME)
+      .modes(0, 1, 2)
+      .targets([FOE, AURA, { player: 0 }])
+      .pay();
+    g.expect.tapped(A, true);
+    g.expect.tapped(B, true);
+    g.passAll();
+    // The counter goes on each creature seat 0 controls (they are tapped already, and still creatures).
+    g.expect.counters(A, { '+1/+1': 1 });
+    g.expect.counters(B, { '+1/+1': 1 });
+    g.expect.invariants();
+  });
+
+  test('with more untapped creatures than the cost needs, the caster chooses which one is tapped', () => {
+    const g = setup([A, B]);
+    g.act(0).cast(NAME).modes(0, 1).targets([FOE, AURA]).pay();
+    g.expect.pending('choosePermanent', 0);
+    g.act(0).choosePermanents(B);
+    g.expect.tapped(B, true);
+    g.expect.tapped(A, false);
+    g.passAll();
+    g.expect.zone(MV3B.name, 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('a creature that is already tapped cannot pay: with one untapped creature the third mode is not offered', () => {
+    const g = setup([A]);
+    g.act(0).cast(NAME);
+    const pending = g.state.pending;
+    expect(pending?.kind).toBe('chooseModes');
+    if (pending?.kind !== 'chooseModes') return;
+    // Three modes need two creatures to tap, two modes need one.
+    expect(pending.sets.map((set) => set.length)).not.toContain(3);
+    expect(pending.sets.map((set) => set.length)).toContain(2);
+  });
+
+  test('with no creature to tap only one mode can be chosen', () => {
+    const g = setup([]);
+    g.act(0).cast(NAME);
+    const pending = g.state.pending;
+    expect(pending?.kind).toBe('chooseModes');
+    if (pending?.kind !== 'chooseModes') return;
+    expect(pending.sets.every((set) => set.length === 1)).toBe(true);
+  });
+});
+
+describe("Yuna's Decision (CR 608.2d, 110.2a)", () => {
+  const NAME = decision.name;
+  const SAC = 'SYNTHETIC Sacrifice Fodder';
+  const fodder = parsed(SAC, 'Creature — Bear', '', {
+    manaCost: '{1}',
+    power: '1',
+    toughness: '1',
+  });
+  const HANDCREATURE = 'SYNTHETIC Hand Creature';
+  const handCreature = parsed(HANDCREATURE, 'Creature — Bear', '', {
+    manaCost: '{3}',
+    power: '3',
+    toughness: '3',
+  });
+  const setup = (fodderOnBoard: boolean) => {
+    const b = scenario({ seats: 2 })
+      .define(decision)
+      .define(fodder)
+      .define(handCreature)
+      .define(MV1)
+      .define(MV3A)
+      .seat(0)
+      .hand(NAME, HANDCREATURE, MV3A.name, 'Forest', 'Island')
+      .library('Plains', ...FILLER)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest')
+      .graveyard(MV1.name, 'Mountain', 'Swamp');
+    if (fodderOnBoard) b.battlefield(SAC);
+    return b
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+
+  test('continue the pilgrimage: sacrifice, draw, then a creature card and a land card may come from the hand', () => {
+    const g = setup(true);
+    g.act(0).cast(NAME).modes(0).pay();
+    g.passAll();
+    g.expect.zone(SAC, 'graveyard', { seat: 0 });
+    g.expect.zone('Plains', 'hand', { seat: 0 });
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards(HANDCREATURE);
+    g.expect.pending('chooseCards', 0);
+    // Either land card of the hand (the drawn Plains too) is a candidate; one is put.
+    g.act(0).chooseCards({ name: 'Island', zone: 'hand', seat: 0 });
+    g.expect.zone(HANDCREATURE, 'battlefield', { seat: 0 });
+    g.expect.zone('Island', 'battlefield', { seat: 0 });
+    // Only one card of each kind: the other creature card and the other lands stay in the hand.
+    g.expect.zone(MV3A.name, 'hand', { seat: 0 });
+    g.expect.zone('Forest', 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('each card is an offer of its own: either may be declined', () => {
+    const g = setup(true);
+    g.act(0).cast(NAME).modes(0).pay();
+    g.passAll();
+    g.act(0).chooseCards();
+    g.act(0).chooseCards({ name: 'Island', zone: 'hand', seat: 0 });
+    g.expect.zone(HANDCREATURE, 'hand', { seat: 0 });
+    g.expect.zone('Island', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with no creature to sacrifice nothing is drawn and nothing is put onto the battlefield', () => {
+    const g = setup(false);
+    g.act(0).cast(NAME).modes(0).pay();
+    g.passAll();
+    g.expect.zone('Plains', 'library', { seat: 0 });
+    g.expect.zone(HANDCREATURE, 'hand', { seat: 0 });
+    g.expect.pending('priority', 0);
+    g.expect.invariants();
+  });
+
+  test('find another way: one or two target permanent cards return from the graveyard', () => {
+    const g = setup(false);
+    g.act(0)
+      .cast(NAME)
+      .modes(1)
+      .targets([
+        { name: MV1.name, zone: 'graveyard', seat: 0 },
+        { name: 'Mountain', zone: 'graveyard', seat: 0 },
+      ])
+      .pay();
+    g.passAll();
+    g.expect.zone(MV1.name, 'hand', { seat: 0 });
+    g.expect.zone('Mountain', 'hand', { seat: 0 });
+    g.expect.zone('Swamp', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+});
+
+describe('Endless Detour (CR 108.3, 401.4, 115.1)', () => {
+  const NAME = detour.name;
+  const TOP = 'on top of your library';
+  const BOTTOM = 'on the bottom of your library';
+  /** Seat 0 has {G}{W}{U} open and Endless Detour; seat 1 has a creature, an enchantment and a land, a Bolt in hand and a card in its graveyard. */
+  const setup = (active: 0 | 1 = 0) =>
+    scenario({ seats: 2 })
+      .define(detour)
+      .define(MV3A)
+      .define(ench)
+      .seat(0)
+      .hand(NAME)
+      .library(...FILLER)
+      .battlefield('Forest', 'Plains', 'Island')
+      .seat(1)
+      .library(...FILLER)
+      .hand('Lightning Bolt')
+      .graveyard('Grizzly Bears')
+      .battlefield(MV3A.name)
+      .battlefield(ENCH)
+      .battlefield('Mountain')
+      .at('precombatMain', { active })
+      .build();
+  type Game = ReturnType<typeof setup>;
+  const top = (g: Game) => g.state.seats[1]?.library[0];
+  const bottom = (g: Game) => g.state.seats[1]?.library.at(-1);
+
+  test('a nonland permanent: its owner puts it on the top of their library', () => {
+    const g = setup();
+    g.act(0)
+      .cast(NAME)
+      .targets([{ name: MV3A.name, seat: 1 }])
+      .pay();
+    g.passAll();
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption(TOP);
+    g.expect.zone(MV3A.name, 'library', { seat: 1 });
+    expect(top(g)).toBe(g.id({ name: MV3A.name, zone: 'library', seat: 1 }));
+    g.expect.invariants();
+  });
+
+  test('the owner may put it on the bottom instead', () => {
+    const g = setup();
+    g.act(0)
+      .cast(NAME)
+      .targets([{ name: ENCH, seat: 1 }])
+      .pay();
+    g.passAll();
+    g.act(1).chooseOption(BOTTOM);
+    expect(bottom(g)).toBe(g.id({ name: ENCH, zone: 'library', seat: 1 }));
+    g.expect.invariants();
+  });
+
+  test('a land is not a legal target; a permanent and a card of a graveyard are', () => {
+    const g = setup();
+    g.act(0).cast(NAME);
+    const pending = g.state.pending;
+    expect(pending?.kind).toBe('targets');
+    if (pending?.kind !== 'targets') return;
+    const legal = (pending.specs[0]?.legal ?? []).flatMap((t) =>
+      t.kind === 'object' ? [t.id] : [],
+    );
+    expect(legal).not.toContain(g.id({ name: 'Mountain', seat: 1 }));
+    expect(legal).toContain(g.id({ name: 'Grizzly Bears', zone: 'graveyard', seat: 1 }));
+    expect(legal).toContain(g.id({ name: ENCH, seat: 1 }));
+    expect(legal).toContain(g.id({ name: MV3A.name, seat: 1 }));
+  });
+
+  test('a card in a graveyard goes to the library of its owner', () => {
+    const g = setup();
+    g.act(0)
+      .cast(NAME)
+      .targets([{ name: 'Grizzly Bears', zone: 'graveyard', seat: 1 }])
+      .pay();
+    g.passAll();
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption(TOP);
+    g.expect.zone('Grizzly Bears', 'library', { seat: 1 });
+    expect(top(g)).toBe(g.id({ name: 'Grizzly Bears', zone: 'library', seat: 1 }));
+    g.expect.invariants();
+  });
+
+  test('a spell on the stack: its owner is asked, and the spell does not resolve', () => {
+    const g = setup(1);
+    g.act(1).cast('Lightning Bolt', { pay: true, targets: [{ player: 0 }] });
+    g.pass(1);
+    g.act(0)
+      .cast(NAME)
+      .targets([{ name: 'Lightning Bolt', zone: 'stack', seat: 1 }])
+      .pay();
+    g.passAll();
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption(BOTTOM);
+    expect(bottom(g)).toBe(g.id({ name: 'Lightning Bolt', zone: 'library', seat: 1 }));
+    g.passAll();
+    g.expect.life(0, 40);
+    g.expect.invariants();
+  });
+
+  test('the owner chooses, not the controller: a permanent that is controlled by another player', () => {
+    const g = scenario({ seats: 2 })
+      .define(detour)
+      .define(MV3A)
+      .seat(0)
+      .hand(NAME)
+      .library(...FILLER)
+      .battlefield('Forest', 'Plains', 'Island')
+      .seat(1)
+      .library(...FILLER)
+      .battlefield(MV3A.name, { controller: 0 })
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(NAME).targets([MV3A.name]).pay();
+    g.passAll();
+    // Seat 0 controls the creature, seat 1 owns it: seat 1 is asked and the creature goes to seat 1's library.
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption(TOP);
+    expect(top(g)).toBe(g.id({ name: MV3A.name, zone: 'library', seat: 1 }));
+    g.expect.invariants();
+  });
+});

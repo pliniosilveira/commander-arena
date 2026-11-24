@@ -953,7 +953,10 @@ function walkAbility(
         ]);
       } else if (a.keyword.kind === 'escalate') {
         // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana, no X (D-145), or tapped permanents (Collective Effort: `casting.extra.tap`, rules/cast-additional.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'tapPermanents']);
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
+          'mana',
+          'tapPermanents',
+        ]);
       } else if (a.keyword.kind === 'replicate' || a.keyword.kind === 'buyback') {
         // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129). CR 702.27a: the same for the buyback cost (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);

@@ -22,9 +22,15 @@ export function runOwnerLibraryChoice(state: GameState, ids: readonly ObjectId[]
     ) {
       continue;
     }
+    // The object is found again where it is now (the graveyard, the stack): the owner is read from it, and the move is about that object.
+    const bound = {
+      kind: 'boundObjects' as const,
+      ids: [id],
+      ...(object.zone === 'graveyard' || object.zone === 'stack' ? { zone: object.zone } : {}),
+    };
     const move = (position: 'top' | 'bottom'): Effect => ({
       kind: 'moveToZone',
-      objects: { kind: 'boundObjects', ids: [id] },
+      objects: bound,
       to: 'library',
       position,
     });
@@ -33,7 +39,7 @@ export function runOwnerLibraryChoice(state: GameState, ids: readonly ObjectId[]
       effect: {
         kind: 'chooseOne',
         // The owner chooses, not the controller of the effect (CR 108.3).
-        chooser: { kind: 'ownerOf', of: { kind: 'boundObjects', ids: [id] } },
+        chooser: { kind: 'ownerOf', of: bound },
         options: [
           { label: 'on top of your library', effect: move('top') },
           { label: 'on the bottom of your library', effect: move('bottom') },

@@ -219,8 +219,13 @@ export const EFFECT_PUT_TWO_KINDS_FROM_HAND = defineRule<Clauses>({
     const first = r.value[1]?.toLowerCase();
     const second = r.value[2]?.toLowerCase();
     if (first === undefined || second === undefined || first === second) return fail(ctx, pos);
-    const span = { start: pos, end: r.pos };
-    const clauseFor = (type: string) => {
+    // Each offer has the words of its own card as its span (the binding pass keys nouns by their span).
+    const firstWords = `${first} card`;
+    const firstAt = ctx.text.indexOf(firstWords, pos);
+    const secondAt = ctx.text.indexOf(`${second} card`, firstAt + firstWords.length);
+    if (firstAt < 0 || secondAt < 0) return fail(ctx, pos);
+    const clauseFor = (type: string, at: number) => {
+      const words = { start: at, end: at + `${type} card`.length };
       const objects: IrNoun = {
         kind: 'noun',
         det: 'a',
@@ -228,16 +233,24 @@ export const EFFECT_PUT_TWO_KINDS_FROM_HAND = defineRule<Clauses>({
         upTo: false,
         plural: false,
         other: false,
-        span,
+        span: words,
         rule: PUT_TWO_KINDS_ID,
       };
-      const to: IrZoneSpec = { kind: 'zoneSpec', zone: 'battlefield', span, rule: PUT_TWO_KINDS_ID };
-      const may: IrFlag = { kind: 'flag', value: true, span, rule: PUT_TWO_KINDS_ID };
-      return makeClause(PUT_TWO_KINDS_ID, 'putFromZone', { objects, to, may }, span);
+      const to: IrZoneSpec = {
+        kind: 'zoneSpec',
+        zone: 'battlefield',
+        span: words,
+        rule: PUT_TWO_KINDS_ID,
+      };
+      const may: IrFlag = { kind: 'flag', value: true, span: words, rule: PUT_TWO_KINDS_ID };
+      return makeClause(PUT_TWO_KINDS_ID, 'putFromZone', { objects, to, may }, words);
     };
     return {
       ok: true,
-      value: [clauseFor(first), { ...clauseFor(second), connector: 'and' as const }],
+      value: [
+        clauseFor(first, firstAt),
+        { ...clauseFor(second, secondAt), connector: 'and' as const },
+      ],
       pos: r.pos,
     };
   },

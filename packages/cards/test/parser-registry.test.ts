@@ -1506,6 +1506,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
+  // Counter Blitz deck, group C (Endless Detour).
+  'noun.target-spell-permanent-or-graveyard-card': spell(
+    (e) => `The owner of ${e} puts it on their choice of the top or bottom of their library.`,
+  ),
   'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
   // The examples end with a sentence, or with the quote of the ability a creature spell gains.
   'effect.player-exiles-until-cast': permanent(

@@ -222,9 +222,9 @@ function lowerCostedKeyword(
       : // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
         name === 'escalate'
         ? ['mana', 'tapPermanents']
-      : name === 'ward'
-        ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
-        : ['mana', 'payLife'];
+        : name === 'ward'
+          ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
+          : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
