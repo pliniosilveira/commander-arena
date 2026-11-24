@@ -354,7 +354,6 @@ describe('other views', () => {
         onName={() => {}}
         onImport={() => {}}
         onExample={() => {}}
-        onSave={() => {}}
       />,
     );
     expect(out).toContain('Scryfall');
@@ -376,7 +375,6 @@ describe('other views', () => {
         onName={() => {}}
         onImport={() => {}}
         onExample={() => {}}
-        onSave={() => {}}
       />,
     );
     expect(out).toContain('Resolving cards (30 of 99)');

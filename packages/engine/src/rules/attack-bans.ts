@@ -59,9 +59,17 @@ export function withoutBannedTargets(
   for (const e of state.continuousEffects) {
     if (e.change.kind !== 'creaturesCantAttackPlayer') continue;
     const ctx = { controller: e.change.controller, source: null };
+    if (e.change.of !== undefined && controllerOf(state, obj) !== e.change.of) continue;
     if (!matchesFilter(state, obj, { ...e.change.filter, zone: 'battlefield' }, ctx)) continue;
     const protectedSeat = e.change.controller;
     allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== protectedSeat);
+  }
+  // CR 508.1a, 611.2a (Call for Aid): "You can't attack that player this turn": the creatures the player controls now may not attack the players named, whatever the creature is.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'controllerCantAttackPlayers') continue;
+    if (controllerOf(state, obj) !== e.change.seat) continue;
+    const barred = e.change.players;
+    allowed = allowed.filter((t) => t.kind !== 'player' || !barred.includes(t.seat));
   }
   // CR 508.1a (Promise of Loyalty): the continuous effects `cantAttackPlayer` bar their objects from the player and the planeswalkers that player controls.
   for (const e of state.continuousEffects) {

@@ -112,14 +112,19 @@ export function namedOptionPrompt(
     ChooseOptionDecision,
     'purpose' | 'options' | 'sourceName' | 'riotSoFar' | 'replacement'
   > &
-    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat' | 'meldOrder'>>,
+    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat' | 'meldOrder' | 'forCost'>>,
 ): string {
   if (isMeldOrderChoice(d)) return meldOrderPrompt(d.sourceName, d.meldOrder?.zone);
   if (isVoteChoice(d)) return votePrompt(d.options, d.vote, d.seat);
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   // CR 122.1, 122.5: the permanent and kind of counter taken, asked again while another may be.
-  if (isCounterPickChoice(d)) return `Choose a counter for ${d.sourceName}.`;
+  // CR 118.3, 602.2b: the counters removed to pay the cost of an ability, one at a time; Cancel takes the activation back.
+  if (isCounterPickChoice(d)) {
+    return d.forCost === true
+      ? `Choose a counter to remove as a cost for ${d.sourceName}.`
+      : `Choose a counter for ${d.sourceName}.`;
+  }
   if (isEffectChoice(d)) {
     // D-585 (CR 105.1, 608.2d): "Choose a color." offers the five colors of the game.
     return d.options.join(',') === 'white,blue,black,red,green'

@@ -911,6 +911,12 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly count: number;
   }[];
   /**
+   * For purpose `'counterPick'` when the counters are the cost of an activated ability (CR 118.3, 122.1, 602.2b, "Remove a counter from this Equipment", "Remove three counters from
+   * among other artifacts, creatures, and planeswalkers you control"): the activating player picks the next counter to remove, there is no "Done" among the options, and `cancel` is a
+   * legal answer that rewinds the activation (CR 733). Absent for every other question.
+   */
+  readonly forCost?: true;
+  /**
    * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
    * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
    * until end of turn. `source` is the spell or ability that resolves. For purpose `'protectionCardType'` (D-514, CR 702.16a, "gains protection from the card type of
@@ -1239,6 +1245,8 @@ export interface ChooseXDecision extends DecisionBase {
     readonly discard?: number;
     /** Permanents sacrificed for each point of X ("Sacrifice X creatures", D-488); absent for none. */
     readonly sacrifice?: number;
+    /** Counters removed for each point of X ("Remove X counters from an artifact or creature you control"); absent for none. */
+    readonly removeCounters?: number;
   };
   /** For `multikicker` and `replicate`: the cost paid each time. Absent for X. */
   readonly cost?: readonly Cost[];

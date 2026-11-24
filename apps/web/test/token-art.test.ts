@@ -11,7 +11,13 @@ import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test, vi } from 'vitest';
 import artifacts from '../src/precons/snapshots/artifacts.json';
 import zombies from '../src/precons/snapshots/zombies.json';
-import { createTokenArtLookup, parseTokenSearch } from '../src/ui/board/token-art';
+import { parseCardArt } from '../src/ui/board/image-uris';
+import {
+  createTokenArtLookup,
+  emblemSearchQuery,
+  parseTokenSearch,
+  tokenWantedText,
+} from '../src/ui/board/token-art';
 
 const dragon: TokenDefinition = {
   ...TOKEN_PRESETS.Treasure,
@@ -199,11 +205,105 @@ describe('token answers', () => {
     expect(url.searchParams.get('q')).toBe(query);
   });
 
-  test('remembers unsuccessful lookups and never rejects on network failure', async () => {
-    const request = vi.fn<RequestQueue['request']>().mockRejectedValue(new Error('offline'));
-    const lookup = createTokenArtLookup({ request });
-    expect(await lookup('unmatched')).toBeNull();
-    expect(await lookup('unmatched')).toBeNull();
+  test('remembers a definitive miss, retries a failure later and never rejects', async () => {
+    let clock = 0;
+    const miss = vi
+      .fn<RequestQueue['request']>()
+      .mockResolvedValue({ kind: 'response', status: 404, ok: false, json: {}, attempts: 1 });
+    const missed = createTokenArtLookup({ request: miss }, () => clock);
+    expect(await missed('unmatched')).toBeNull();
+    clock += 10 * 60_000;
+    expect(await missed('unmatched')).toBeNull();
+    expect(miss).toHaveBeenCalledTimes(1);
+
+    // Offline, rate-limited or a server error says nothing about the token: it is asked again once the wait is over,
+    // not for the rest of the session (a token whose first lookup failed kept its blank frame).
+    const request = vi
+      .fn<RequestQueue['request']>()
+      .mockResolvedValueOnce({
+        kind: 'failure',
+        reason: 'rate-limited',
+        message: 'slow down',
+        status: 429,
+        attempts: 1,
+      })
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ kind: 'response', status: 200, ok: true, json: answer, attempts: 1 });
+    clock = 0;
+    const lookup = createTokenArtLookup({ request }, () => clock);
+    expect(await lookup('q')).toBeNull();
+    expect(await lookup('q')).toBeNull();
     expect(request).toHaveBeenCalledTimes(1);
+    clock += 60_000;
+    expect(await lookup('q')).toBeNull();
+    expect(request).toHaveBeenCalledTimes(2);
+    clock += 60_000;
+    expect(await lookup('q')).toEqual(images);
+    expect(await lookup('q')).toEqual(images);
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('a token whose rules text is only keywords', () => {
+  // SYNTHETIC answers in the shape of Scryfall's for the two white 4/4 flying Angels: one with vigilance, one without.
+  const angel = { name: 'Angel', type_line: 'Token Creature — Angel', power: '4', toughness: '4' };
+  const plain = { normal: 'https://cards.scryfall.io/normal/angel-flying.jpg' };
+  const vigil = { normal: 'https://cards.scryfall.io/normal/angel-vigilance.jpg' };
+  const both = {
+    total_cards: 2,
+    has_more: false,
+    data: [
+      { ...angel, oracle_text: 'Flying, vigilance', colors: ['W'], image_uris: vigil },
+      { ...angel, oracle_text: 'Flying', colors: ['W'], image_uris: plain },
+    ],
+  };
+  const flier: TokenDefinition = {
+    ...dragon,
+    name: 'Angel',
+    subtypes: ['Angel'],
+    colors: ['W'],
+    power: 4,
+    toughness: 4,
+    oracleText: '',
+    abilities: [{ kind: 'keyword', keyword: { kind: 'flying' } }],
+  };
+  const guard: TokenDefinition = {
+    ...flier,
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'vigilance' } },
+      { kind: 'keyword', keyword: { kind: 'flying' } },
+    ],
+  };
+
+  test('the keywords stand for the text, so each token finds its own card', () => {
+    expect(tokenWantedText(flier)).toBe('Flying');
+    expect(parseTokenSearch(both, tokenWantedText(flier))).toEqual(plain);
+    // The order Scryfall prints them in does not matter.
+    expect(parseTokenSearch(both, tokenWantedText(guard))).toEqual(vigil);
+  });
+
+  test('a token with real rules text keeps it, and one with neither asks for no text', () => {
+    expect(tokenWantedText(dragon)).toBe('Flying, devour 2');
+    expect(tokenWantedText({ ...flier, abilities: [] })).toBeUndefined();
+  });
+});
+
+describe('double-faced token cards and emblems', () => {
+  test('a card with no image of its own is drawn with its front face', () => {
+    // SYNTHETIC answer in the shape of Scryfall's for "The Ring // The Ring Tempts You".
+    const front = { normal: 'https://cards.scryfall.io/normal/front.jpg' };
+    const back = { normal: 'https://cards.scryfall.io/normal/back.jpg' };
+    const card = { card_faces: [{ image_uris: front }, { image_uris: back }] };
+    expect(parseCardArt(card)).toEqual(front);
+    expect(parseCardArt({ ...card, image_uris: images })).toEqual(images);
+    expect(
+      parseCardArt({ card_faces: [{ image_uris: { normal: 'http://example.com/x.jpg' } }] }),
+    ).toBeNull();
+  });
+
+  test('an emblem is searched by its name; the generic "Emblem" of an effect has no card', () => {
+    expect(emblemSearchQuery('The Ring')).toBe('!"The Ring" t:emblem game:paper');
+    expect(emblemSearchQuery('Emblem')).toBeNull();
+    expect(emblemSearchQuery('')).toBeNull();
   });
 });

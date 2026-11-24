@@ -89,6 +89,8 @@ export interface ConditionContext {
   readonly moved?: readonly ObjectId[];
   /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-584, CR 602.2b). Absent for any other spell or ability. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** The cards discarded to pay the cost of the activated ability that is resolving, for `discardedAsCostMatches` (CR 602.2b, 701.9a). Absent for any other spell or ability. */
+  readonly costDiscarded?: readonly ObjectId[];
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
   readonly dieResult?: number;
@@ -344,6 +346,21 @@ export function evaluateCondition(
               // CR 205.2a: "shares a card type with that spell" reads the spell the trigger is about.
               ...(ctx.triggerSubject === undefined ? {} : { triggerSubject: ctx.triggerSubject }),
             },
+          )
+        );
+      });
+    }
+    case 'discardedAsCostMatches': {
+      // CR 602.2b, 701.9a, 608.2h: the card the cost discarded, as it is in the graveyard (or exile) or as it last was once it has left, against the filter.
+      return (ctx.costDiscarded ?? []).some((id) => {
+        const named = objectOrLki(state, id);
+        return (
+          named !== null &&
+          matchesFilter(
+            state,
+            named,
+            { ...condition.filter, zone: named.zone },
+            { controller: ctx.controller, source: ctx.source },
           )
         );
       });

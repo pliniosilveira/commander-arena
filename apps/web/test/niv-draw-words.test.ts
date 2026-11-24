@@ -45,6 +45,12 @@ test('the replacement of a draw, with and without a while', () => {
   );
 });
 
+test('the replacement of an opponent draw by another draw (Notion Thief)', () => {
+  expect(replacementWording({ kind: 'drawRedirect', exceptFirstInDrawStep: true })).toBe(
+    'If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card',
+  );
+});
+
 test('a while the words do not cover gives nothing, never a guess', () => {
   expect(
     skipDrawWording({

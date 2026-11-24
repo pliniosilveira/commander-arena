@@ -855,8 +855,16 @@ export const TOKEN_COPY = defineRule<IrToken>({
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
+    // Flamerush Rider (CR 508.4, 110.5b, 707.2): a copy that enters tapped and attacking.
+    "a token that's a copy of another target attacking creature and that's tapped and attacking",
+    'a token that’s a copy of target creature you control and that’s tapped and attacking',
   ],
   rejects: [
+    "a token that's a copy of target creature and that's tapped",
+    "a token that's a copy of target creature and that's attacking",
+    "a token that's a copy of target creature and that's untapped and attacking",
+    "a token that's a copy of target creature and that's tapped and attacking a player",
+    'two tokens that are copies of target creature and that are tapped and attacking',
     "a token that's a copy of target creature, except it's a 1/1",
     "a token that's a copy of target token you control",
     "a token that's a copy of equipped creature",
@@ -877,8 +885,19 @@ export const TOKEN_COPY = defineRule<IrToken>({
           map(spanned(article), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
           pattern(/ token that['’]s a copy of /i),
           COPY_SOURCE,
+          optional(
+            pattern(
+              / and that['’]s tapped and attacking(?![\p{L}\p{N}'’]|\s+(?:a|that|and|or)(?![\p{L}\p{N}]))/iu,
+            ),
+            null,
+          ),
         ),
-        ([count, , copyOf]): Bare => ({ kind: 'token', copyOf, count }),
+        ([count, , copyOf, attacking]): Bare => ({
+          kind: 'token',
+          copyOf,
+          count,
+          ...(attacking === null ? {} : { tappedAndAttacking: true as const }),
+        }),
       ),
       map(
         sequence(

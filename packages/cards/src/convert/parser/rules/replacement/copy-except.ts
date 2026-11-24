@@ -196,7 +196,85 @@ export const REPLACEMENT_ENTERS_AS_COPY_GRAVEYARD = defineRule<IrAbility>({
   },
 });
 
+/**
+ * `replacement.enters-as-copy-except-types`: "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types."
+ * (Phyrexian Metamorph; CR 614.12, 707.2, 707.9b, 205.1b: the permanent enters as a copy of any permanent of the kinds, whoever controls it, and the card type the exception names is
+ * part of its copiable values, so it is also an artifact.) The copy lasts for good (no duration is said). The engine's `entersAsCopy` with `addTypes`. Not read: the copied
+ * permanents of one player, a card type besides artifact and enchantment, "except it's a Dragon" (a creature type is `replacement.enters-as-copy-except`), a keyword or a name besides.
+ */
+export const REPLACEMENT_ENTERS_AS_COPY_EXCEPT_TYPES = defineRule<IrAbility>({
+  id: 'replacement.enters-as-copy-except-types',
+  family: 'replacement',
+  leading: ['you'],
+  cites: [
+    'CR 614.12 (Replacement Effects)',
+    'CR 707.2 (Copying Objects)',
+    'CR 707.9b (Copying Objects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact on the battlefield, except it's an enchantment in addition to its other types.",
+  ],
+  rejects: [
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types",
+    "You may have ~ enter as a copy of any artifact or creature you control on the battlefield, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of an artifact or creature on the battlefield, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's a land in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types and it has haste.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield until end of turn, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types. Draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.enters-as-copy-except-types';
+    const head = literal('you may have ~ enter as a copy of any ')(ctx, pos);
+    if (!head.ok) return head;
+    const kind = spanned(map(permanentPhrase(false, 'all'), withoutZone))(ctx, head.pos);
+    if (!kind.ok) return kind;
+    // The permanents it may copy are any on the battlefield: a controller or a quality of its own is another statement.
+    if (kind.value.value.controller !== undefined) return fail(ctx, pos);
+    const where = sequence(
+      literal(' on the battlefield'),
+      pattern(/, except it['’]s an? /iu),
+      spanned(pattern(/(artifact|enchantment)(?![\p{L}\p{N}])/u)),
+      literal(' in addition to its other types.'),
+    )(ctx, kind.pos);
+    if (!where.ok) return where;
+    const span = { start: pos, end: where.pos };
+    const [, , added] = where.value;
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: kind.value.value,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: kind.value.span,
+      rule: id,
+    };
+    const addTypes: IrTypeList = {
+      kind: 'typeList',
+      subtypes: [],
+      cardTypes: [added.value[1] ?? ''],
+      additive: true,
+      span: added.span,
+      rule: id,
+    };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersAsCopy',
+      args: { what, duration: { kind: 'flag', value: false, span, rule: id }, addTypes },
+      optional: true,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: where.pos };
+  },
+});
+
 export const COPY_EXCEPT_REPLACEMENT_RULES = [
   REPLACEMENT_ENTERS_AS_COPY_EXCEPT,
   REPLACEMENT_ENTERS_AS_COPY_GRAVEYARD,
+  REPLACEMENT_ENTERS_AS_COPY_EXCEPT_TYPES,
 ].map(quietly);

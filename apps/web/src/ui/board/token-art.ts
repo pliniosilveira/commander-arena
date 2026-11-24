@@ -1,7 +1,14 @@
-import { createRequestQueue, type RequestQueue, tokenSearchQuery } from '@commander-arena/cards';
+import {
+  createRequestQueue,
+  type RequestQueue,
+  tokenKeywordWords,
+  tokenSearchQuery,
+} from '@commander-arena/cards';
 import type { TokenDefinition } from '@commander-arena/engine';
 import { useEffect, useState } from 'react';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
+import { createLookupCache, outcomeOf } from './lookup-cache';
+import { chosenTokenArt, tokenChoiceKey } from './token-choices';
 
 /** What makes two token cards the same token, whatever their art: Scryfall keeps one card per printing family. */
 function sameToken(a: unknown, b: unknown): boolean {
@@ -18,7 +25,7 @@ function sameToken(a: unknown, b: unknown): boolean {
  * Rules text as two wordings of one ability compare equal: Scryfall writes "this creature" where a
  * card that makes the token says "this token", and the two differ in case and punctuation.
  */
-function plainText(text: unknown): string {
+export function plainText(text: unknown): string {
   return typeof text !== 'string'
     ? ''
     : text
@@ -27,6 +34,32 @@ function plainText(text: unknown): string {
         .replace(/\bthis (token|creature|artifact|permanent)\b/g, 'this')
         .replace(/[^a-z0-9+/{}]+/g, ' ')
         .trim();
+}
+
+/** The comma-separated parts of a rules text, in any order: "Flying, vigilance" and "Vigilance, flying" say the same. */
+function partsOf(text: unknown): string {
+  return typeof text !== 'string'
+    ? ''
+    : text
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, '')
+        .split(/[,\n]/)
+        .map((part) => part.trim())
+        .filter((part) => part !== '')
+        .sort()
+        .join('|');
+}
+
+/**
+ * What to compare a Scryfall token card's rules text with: the token's own text, or, for a token whose text is only its keywords (the
+ * Angel with flying: the definition keeps them as abilities and no text), those keywords as Scryfall prints them. Undefined for a
+ * token with neither, which the search already narrowed to the textless cards.
+ */
+export function tokenWantedText(token: TokenDefinition): string | undefined {
+  if (token.oracleText.trim() !== '') return token.oracleText;
+  const words = tokenKeywordWords(token);
+  const text = words.join(', ');
+  return text === '' ? undefined : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 }
 
 /**
@@ -58,28 +91,31 @@ export function parseTokenSearch(answer: unknown, oracleText?: string): CardArt 
           (card) =>
             typeof card === 'object' &&
             card !== null &&
-            plainText((card as { oracle_text?: unknown }).oracle_text) === wanted,
+            (plainText((card as { oracle_text?: unknown }).oracle_text) === wanted ||
+              partsOf((card as { oracle_text?: unknown }).oracle_text) === partsOf(oracleText)),
         );
   const [first, ...rest] = named;
   if (first === undefined || !rest.every((card) => sameToken(first, card))) return null;
   return parseCardArt(first);
 }
 
-/** Caches successes, misses and in-flight requests across instances and image versions. */
-export function createTokenArtLookup(queue: RequestQueue) {
-  const cache = new Map<string, Promise<CardArt | null>>();
-  return (query: string, oracleText?: string): Promise<CardArt | null> => {
-    const key = `${query}\n${oracleText ?? ''}`;
-    let result = cache.get(key);
-    if (result === undefined) {
-      result = queue
-        .request({ url: `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}` })
-        .then((r) => (r.kind === 'response' && r.ok ? parseTokenSearch(r.json, oracleText) : null))
-        .catch(() => null);
-      cache.set(key, result);
-    }
-    return result;
-  };
+/** Caches successes, definitive misses and in-flight requests across instances and image versions; a failed request is asked again later. */
+export function createTokenArtLookup(queue: RequestQueue, now?: () => number) {
+  const cache = createLookupCache<CardArt>(now);
+  return (query: string, oracleText?: string): Promise<CardArt | null> =>
+    cache(`${query}\n${oracleText ?? ''}`, async () =>
+      outcomeOf(
+        await queue.request({
+          url: `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}`,
+        }),
+        (json) => parseTokenSearch(json, oracleText),
+      ),
+    );
+}
+
+/** The search for an emblem card by its name; null for the generic "Emblem" an effect makes, which no card is named after. */
+export function emblemSearchQuery(name: string): string | null {
+  return name === '' || name === 'Emblem' ? null : `!${JSON.stringify(name)} t:emblem game:paper`;
 }
 
 const lookup = createTokenArtLookup(
@@ -96,10 +132,12 @@ export function useTokenArt(
   version: ArtVersion,
 ): string | null {
   const query = definition === undefined ? null : tokenSearchQuery(definition);
-  const text = definition?.oracleText;
+  const text = definition === undefined ? undefined : tokenWantedText(definition);
   const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
+  // The art the player chose for this token on the deck screen wins over the best printing.
+  const chosen = definition === undefined ? null : chosenTokenArt(tokenChoiceKey(definition));
   useEffect(() => {
-    if (query === null) return;
+    if (query === null || chosen !== null) return;
     let alive = true;
     void lookup(query, text).then((art) => {
       if (alive) setFound({ query, art });
@@ -107,6 +145,24 @@ export function useTokenArt(
     return () => {
       alive = false;
     };
-  }, [query, text]);
+  }, [query, text, chosen]);
+  if (chosen !== null) return chosen[version] ?? chosen.normal ?? null;
+  return found?.query === query ? (found?.art?.[version] ?? null) : null;
+}
+
+/** The picture of the emblem card named `name` (the Ring): null while it is asked for, when Scryfall has no such card, or for `name` null. */
+export function useEmblemArt(name: string | null, version: ArtVersion): string | null {
+  const query = name === null ? null : emblemSearchQuery(name);
+  const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
+  useEffect(() => {
+    if (query === null) return;
+    let alive = true;
+    void lookup(query).then((art) => {
+      if (alive) setFound({ query, art });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [query]);
   return found?.query === query ? (found?.art?.[version] ?? null) : null;
 }

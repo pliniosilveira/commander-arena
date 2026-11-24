@@ -1433,8 +1433,9 @@ describe('a card put back by an effect and a test of the permanent that triggere
     `${RETURN} If that land is Plains, you may return that nonland permanent card to the battlefield instead.`,
     `${RETURN} If that land is a Plains, you may return that permanent to the battlefield instead.`,
     'Whenever a land you control enters, you may return target creature from the battlefield to your hand. If that land is a Plains, you may return that card to the battlefield instead.',
-    'Whenever a land you control enters, exile target creature you control. Return that card to the battlefield.',
-    'Whenever a land you control enters, exile target creature you control. If that land is a Plains, return that card to the battlefield.',
+    // "Exile target creature you control. Return that card to the battlefield." is read since Gilraen (the card the exile moved), so the card here is one no exile moved.
+    'Whenever a land you control enters, tap target creature you control. Return that card to the battlefield.',
+    'Whenever a land you control enters, tap target creature you control. If that land is a Plains, return that card to the battlefield.',
   ])('is not read: %s', (text) => {
     expect(drop(text)).toMatchObject({
       reason: expect.stringMatching(/unrecognised|notRunnable|unboundReference/),

@@ -35,8 +35,8 @@ describe('the top of the printed card on a tile', () => {
   test('a tile is wider than tall, and keeps that shape at any width', () => {
     expect(CARD_TOP_ASPECT).toBeGreaterThan(1.05);
     expect(CARD_TOP_ASPECT).toBeLessThan(1.2);
-    expect(cardTopHeight(150)).toBe(136);
-    expect(cardTopHeight(135)).toBe(123);
+    expect(cardTopHeight(150)).toBe(135);
+    expect(cardTopHeight(135)).toBe(121);
   });
 
   test('a regular card shows its whole top; a planeswalker is covered under its higher type line', () => {
@@ -57,6 +57,17 @@ describe('the top of the printed card on a tile', () => {
     ['a battle', { types: ['battle'], subtypes: ['Siege'] }],
   ] as [string, Partial<ObjectView>][])('%s keeps the drawn frame', (_, over) => {
     expect(cardTopOf(obj(over))).toBeNull();
+  });
+
+  test('a melded permanent shows the top of its combined face, cut at its own type line', () => {
+    const meld = { components: [], manaValue: 13 };
+    const melded = cardTopOf(obj({ meld }));
+    expect(melded?.cover).toBeGreaterThan(0.95);
+    expect(melded?.cover).toBeLessThan(1);
+    const urza = cardTopOf(obj({ meld, types: ['planeswalker'] }));
+    const walker = cardTopOf(obj({ types: ['planeswalker'] }));
+    expect(urza?.cover).toBeGreaterThan(walker?.cover ?? 1);
+    expect(urza?.cover).toBeLessThan(melded?.cover ?? 0);
   });
 
   test('a token is cut where a card is', () => {

@@ -58,8 +58,8 @@ test('the board reads a chosen printing like any listed one', () => {
   const next = withPrinting(TEXT, 'Zed the Test', 'fdc', '6') ?? '';
   expect(commanderPrintingOf(next)?.printing).toEqual({ set: 'fdc', collector: '6' });
   setGamePrintings([next]);
-  expect(printingOf('Zed the Test')).toEqual({ set: 'fdc', collector: '6' });
-  expect(printingOf('Other Card')).toEqual({ set: 'xyz', collector: '12' });
+  expect(printingOf('Zed the Test', 0)).toEqual({ set: 'fdc', collector: '6' });
+  expect(printingOf('Other Card', 0)).toEqual({ set: 'xyz', collector: '12' });
 });
 
 test('every listed printing is read by the lower-case front face of the card', () => {

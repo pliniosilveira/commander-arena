@@ -133,6 +133,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:dealtDamageThisTurn',
   'selector:controllerDealtCombatDamageByAtLeast',
   'selector:modified',
   // CR 701.15b: "a goaded creature".
@@ -324,6 +325,7 @@ function lowerFilterAt(
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
   if (filter.hasCounter !== undefined) parts.push('selector:hasCounter');
   if (filter.commander !== undefined) parts.push('selector:commander');
+  if (filter.notCommander === true) parts.push('selector:notCommander');
   if (filter.isSelf === true) parts.push('selector:isSource');
   // D-180 (stage P37): "that was put there from the battlefield this turn" (CR 700.4), a card of a graveyard (the engine reads it of the filter of
   // a target or an `each` selector, never of a member of a choice).
@@ -374,6 +376,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
+  // Bitter Downfall: "that was dealt damage this turn" (CR 120.3), read where the filter is matched against the game; never a member of a choice.
+  if (filter.dealtDamageThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:dealtDamageThisTurn');
+  }
   // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2), read where the filter is matched against the game (a target slot, an `each` selector); never a member of a choice.
   if (filter.controllerDealtCombatDamageBy !== undefined) {
     if (inner) return bad([]);
@@ -388,6 +395,11 @@ function lowerFilterAt(
   if (filter.exiledThisWay === true) {
     if (inner || filter.zone !== 'exile') return bad([]);
     parts.push('selector:exiledThisWay');
+  }
+  // Grishnákh (CR 603.12, 701.47a): "power less than or equal to the amassed Army's power", read where the filter is matched against the game with what the reflexive ability carries (a target slot); never a member of a choice, and a battlefield permanent.
+  if (filter.powerAtMostMoved === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:powerAtMostMoved');
   }
   // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
   if (filter.putWithSelf === true) {
@@ -615,6 +627,7 @@ function lowerFilterAt(
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
     ...(filter.hasCounter === undefined ? {} : { hasCounter: filter.hasCounter }),
     ...(filter.commander === undefined ? {} : { commander: filter.commander }),
+    ...(filter.notCommander === true ? { notCommander: true as const } : {}),
     ...(filter.isSelf === true ? { isSource: true as const } : {}),
     ...(filter.manaValueX === true ? { manaValueX: true as const } : {}),
     ...(filter.controllerDamagedBySource === true
@@ -634,6 +647,7 @@ function lowerFilterAt(
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.dealtDamageThisTurn === true ? { dealtDamageThisTurn: true as const } : {}),
     ...(filter.controllerDealtCombatDamageBy === undefined
       ? {}
       : {
@@ -644,6 +658,7 @@ function lowerFilterAt(
         }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.exiledThisWay === true ? { exiledThisWay: true as const } : {}),
+    ...(filter.powerAtMostMoved === true ? { powerAtMostMoved: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
@@ -780,7 +795,18 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.xIs !== null &&
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
-  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX;
+  // "When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 107.3, 603.3d): X is the X announced for the cycling cost, which the cycled
+  // event carries as its number, so the slot is the engine's `upToTriggerAmount`; only the body of a cycling trigger reads it.
+  const upToCycleX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    ctx.cycleTriggerX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody &&
+    ctx.xIs === null &&
+    noun.rule !== 'noun.up-to-x-target-graveyard-cards';
+  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX && !upToCycleX;
   // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
   // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
   if (noun.rule === 'noun.up-to-x-target-graveyard-cards' && !upToDefinedX) {
@@ -802,7 +828,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       return failure(noun, []);
     }
   }
-  if (upToDefinedX) {
+  if (upToDefinedX || upToCycleX) {
     if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
@@ -1049,6 +1075,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         if (blocked.length > 0) return failure(noun, blocked);
         if (!ctx.scryTrigger || noun.det !== 'target') return failure(noun, []);
       }
+      if (upToCycleX) {
+        const blocked = missingFeatures(['selector:upToTriggerAmount']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
       // "another target artifact or creature you control" after a first target (stage P64, D-217, CR 115.3): not the target of the slot before it.
       const apart = noun.otherTarget === true ? ctx.targets[ctx.targets.length - 1]?.id : undefined;
       if (noun.otherTarget === true && apart === undefined) return failure(noun, []);
@@ -1101,7 +1131,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
             : upToAmount !== undefined
               ? { id, what: { kind: 'object', filter: filter.value }, upToAmount }
-              : noun.upToTriggerAmount === true
+              : noun.upToTriggerAmount === true || upToCycleX
                 ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
                 : noun.upToThatMany === true
                   ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }

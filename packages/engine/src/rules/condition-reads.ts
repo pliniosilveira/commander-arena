@@ -143,6 +143,8 @@ export function enteredThisTurnHolds(
   condition: EnteredCondition,
   source: ObjectId | null = null,
 ): boolean {
+  // CR 400.7 (Éowyn, Shieldmaiden): "another" leaves out the permanent with the ability; with no such permanent to leave out, the condition cannot be told and fails.
+  if (condition.other === true && source === null) return false;
   let n = 0;
   for (const e of state.turnLog.entered) {
     if (e.controller !== seat) continue;

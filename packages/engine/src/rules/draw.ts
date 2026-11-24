@@ -12,7 +12,8 @@
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction } from '../state/types';
 import { derive } from './derive';
-import { drawReplacementOf } from './draw-replace';
+import { drawRedirectOf, drawReplacementOf } from './draw-replace';
+import { drawSkippedBy } from './draw-skip';
 import { dredgeCandidate, dredgeQuestion, performDredge } from './dredge';
 import { drawCard } from './effect-support';
 import { miracleOffer } from './miracle';
@@ -21,6 +22,45 @@ import { done, type StepOutcome } from './step-outcome';
 type DrawInstruction = Extract<Instruction, { kind: 'draw' }>;
 
 export function runDraw(state: GameState, input: DrawInstruction): StepOutcome {
+  // CR 614.1a, 614.11 (Notion Thief): "If an opponent would draw a card except the first one ..., instead that player skips that draw and you draw a card": the draw does not happen and
+  // its controller draws a card of their own, which the effects that did not replace this draw can replace again (CR 614.5). A `skipDraw` of the player is applied first (D-332) and
+  // `drawCard` skips the draw. The draws this instruction still has to make follow the replacement draw.
+  const redirect =
+    drawSkippedBy(state, input.seat) === null
+      ? drawRedirectOf(state, input.seat, input.redirectedBy ?? [])
+      : null;
+  if (redirect !== null) {
+    const { redirectedBy: _by, dredgeAnswer: _a, dredgeAfter: _after, ...plain } = input;
+    const stillReplaced = (input.replacedLeft ?? 0) - 1;
+    const { replacedLeft: _left, ...bare } = plain;
+    const rest: Instruction[] =
+      input.count > 1
+        ? [
+            {
+              ...bare,
+              count: input.count - 1,
+              commanderChoice: null,
+              counted: true,
+              ...(stillReplaced > 0 ? { replacedLeft: stillReplaced } : {}),
+            },
+          ]
+        : [];
+    const instead: Instruction = {
+      kind: 'draw',
+      seat: redirect.controller,
+      count: 1,
+      commanderChoice: null,
+      redirectedBy: [...(input.redirectedBy ?? []), redirect.source],
+    };
+    return {
+      ...done(
+        state,
+        [{ kind: 'drawSkipped', seat: input.seat, source: redirect.source }],
+        [instead, ...rest],
+      ),
+      performed: 0,
+    };
+  }
   // CR 614.1a, 614.11a (D-379): a draw that a `drawInstead` replaces becomes the draws it says, which are made first (before the draws this instruction
   // still has to make) and are not replaced again (CR 614.5). The state is not changed until the first of them is drawn, so a question (CR 903.9b) that comes
   // up asks again from the same state and the instruction is replaced the same way.

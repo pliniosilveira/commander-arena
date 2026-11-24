@@ -60,6 +60,8 @@ import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNCIL_VOTES_EFFECT_RULES } from './council-votes';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
+import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_EFFECT_RULES } from './counter-intelligence-g3';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -158,6 +160,7 @@ import {
 } from './mana';
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
+import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
 import { MELD_EFFECT_RULES } from './meld';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -182,6 +185,7 @@ import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
 import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
+import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
@@ -212,6 +216,7 @@ import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
+import { PUT_ANY_GRAVEYARD_RULES } from './put-any-graveyard';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -232,6 +237,7 @@ import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
 import { REVEAL_UNTIL_OTHER_EFFECT_RULES } from './reveal-until-other';
 import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
 import { REVIVAL_TRANCE_EFFECT_RULES } from './revival-trance';
+import { RIDERS_B_EFFECT_RULES } from './riders-b';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -240,6 +246,7 @@ import { SECRET_VOTES_EFFECT_RULES } from './secret-votes';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
+import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -753,9 +760,15 @@ const WITH_A_COUNTER = map(
   sequence(
     literal(' with a '),
     pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
+    // Gilraen (CR 122.6): "with a vigilance counter and a lifelink counter on it": a second kind, said in the same breath.
+    optional(sequence(pattern(/ counter and a /iu), pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)), null),
     pattern(/ counter on it(?![\p{L}\p{N}])/iu),
   ),
-  ([, name]) => ({ count: 1, counter: name[0].toLowerCase() }),
+  ([, name, second]) => ({
+    count: 1,
+    counter: name[0].toLowerCase(),
+    ...(second === null ? {} : { also: [{ count: 1, counter: second[1][0].toLowerCase() }] }),
+  }),
 );
 
 /** " to the battlefield", then "tapped" and the control when the text says them, in that order, then the counter it enters with. */
@@ -976,6 +989,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
     "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
+    // Gilraen, Dúnedain Protector (CR 122.6): two kinds of counter it enters with.
+    "return it to the battlefield under its owner's control with a vigilance counter and a lifelink counter on it",
     // Echoing Return (CR 201.2, 608.2c): the target card and every card of your graveyard with its name.
     'return target creature card and all other cards with the same name as that card from your graveyard to your hand',
     // Persist (CR 205.4, 122.6, 614.1c): a nonlegendary card of your graveyard, entering with a -1/-1 counter.
@@ -1231,6 +1246,7 @@ export const EFFECT_RULES = [
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
   ...AHOY_G2_EFFECT_RULES,
+  ...MAY_PLAY_ANY_TYPE_EFFECT_RULES,
   // Summon: Esper Valigarmanda (issue 97): "exile an instant or sorcery card from each graveyard" and "you may cast an instant or sorcery card exiled with ~, and mana of any type ...".
   ...VALIGARMANDA_EFFECT_RULES,
   // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
@@ -1319,6 +1335,8 @@ export const EFFECT_RULES = [
   ...REVEAL_X_CARDS_EFFECT_RULES,
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...COPY_SPELL_TWICE_EFFECT_RULES,
+  // CR 702.44a (Sunburst): "it gains sunburst" of the spell of a cast trigger.
+  ...SPELL_GAINS_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
   // CR 701.46a (Adapt): "Adapt 4".
   ...ADAPT_EFFECT_RULES,
@@ -1337,6 +1355,8 @@ export const EFFECT_RULES = [
   ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
+  // Champions of Minas Tirith: "that opponent may pay {X}, where X is the number of cards in their hand. If they don't, they can't attack you this combat."
+  ...PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   // Strago and Relm (issue 97): "Target opponent exiles cards from the top of their library until they exile ... You may cast that card without paying its mana cost."
   ...EXILE_UNTIL_CAST_EFFECT_RULES,
@@ -1381,11 +1401,17 @@ export const EFFECT_RULES = [
   ...ELVEN_COUNCIL_REVEAL_EFFECT_RULES,
   ...HEXPROOF_LOSS_EFFECT_RULES,
   ...GOAD_EFFECT_RULES,
+  // Riders of Rohan deck, group B (Taunt from the Rampart, Call for Aid): the sentences about the group the sentence before named.
+  ...RIDERS_B_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
   // Limit Break deck, group 1 (Zack Fair): "Put ~'s counters on that creature", "attach an Equipment that was attached to ~ to that creature".
   ...LIMIT_BREAK_G1_EFFECT_RULES,
+  // Counter Intelligence deck, group 2: "Put those counters on target permanent you control".
+  ...COUNTER_INTELLIGENCE_G2_EFFECT_RULES,
+  // Counter Intelligence deck, group 3: "~ becomes a copy of target artifact you control", "any number of target ... become 3/3 artifact creatures", "choose any number of permanents you control that had a counter put on them this way" and "those permanents phase out" start like the plain becomes, any-number, choose and those rules.
+  ...COUNTER_INTELLIGENCE_G3_EFFECT_RULES,
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,
@@ -1598,6 +1624,7 @@ export const EFFECT_RULES = [
   ...ATTACH_RULES,
   ...LIBRARY_RULES,
   ...PUT_RULES,
+  ...PUT_ANY_GRAVEYARD_RULES,
   ...RECURSION_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,

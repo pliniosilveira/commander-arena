@@ -14,6 +14,7 @@ import {
   ENCORE_REMINDER,
   NINJUTSU_REMINDER,
   RIOT_REMINDER,
+  SUNBURST_REMINDER,
 } from '../../game/keywords-text';
 
 const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> = {
@@ -133,6 +134,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   ninjutsu: ['Nin', `Ninjutsu (${NINJUTSU_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
+  // CR 702.44a: Sunburst.
+  sunburst: ['Sun', `Sunburst (${SUNBURST_REMINDER})`],
 };
 
 /**
@@ -270,6 +273,7 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
     'NoAtk',
     "Can't attack a player it has already attacked this turn",
   ],
+  cantBeBlockedExceptByThreeOrMore: ['Unbl3', "Can't be blocked except by three or more creatures"],
   cantBeBlockedByMoreThanOne: ['Blk≤1', "Can't be blocked by more than one creature"],
   attacksEachCombat: ['Atk!', 'Attacks each combat'],
   mustBeBlocked: ['Blk!', 'Must be blocked if able'],

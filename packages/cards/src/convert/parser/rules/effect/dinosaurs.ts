@@ -714,6 +714,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     // Prismari deck, group 2 (D-657, CR 115.4): any target, as many as the damage can be divided among.
     '~ deals 4 damage divided as you choose among any number of targets',
     '~ deals 2 damage divided as you choose among one or two targets',
+    // Inferno Titan (CR 601.2d, 603.3d): one to three targets of any kind.
+    '~ deals 3 damage divided as you choose among one, two, or three targets',
     'it deals 5 damage divided as you choose among any number of target creatures and/or planeswalkers your opponents control',
   ],
   rejects: [
@@ -727,6 +729,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals X damage divided as you choose among any target',
     '~ deals 4 damage divided as you choose among any number of targets you control',
     '~ deals 2 damage divided as you choose among one or two target',
+    '~ deals 3 damage divided as you choose among one, two, or three target',
+    '~ deals 3 damage divided as you choose among one, two or three targets',
     'it deals 2 damage divided as you choose among one or two creatures',
     'its deals 2 damage divided as you choose among one or two targets',
   ],
@@ -748,6 +752,7 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
             'noun.any-number-targets',
             'noun.any-number-of-targets',
             'noun.one-or-two-targets-bare',
+            'noun.one-two-or-three-targets-bare',
           ],
         }),
         satisfy(

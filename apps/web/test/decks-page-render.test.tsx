@@ -80,12 +80,11 @@ describe('the editor on a precon', () => {
         onName={() => {}}
         onImport={() => {}}
         onExample={null}
-        onSave={() => {}}
         precon={precon}
       />,
     );
 
-  test('the name is fixed, the banner explains and Save keeps your version', () => {
+  test('the name is fixed, the banner explains and Import keeps your version', () => {
     const out = panel({
       name: 'SYNTHETIC Zombies',
       edited: false,
@@ -94,7 +93,8 @@ describe('the editor on a precon', () => {
     });
     expect(out).toContain('Editing the built-in deck');
     expect(out).toContain('readOnly=""');
-    expect(out).toContain('Save my version');
+    expect(out).toContain('your version is kept in this browser');
+    expect(out).not.toContain('Save my version');
     expect(out).toContain('Reset to default');
     expect(out).toContain('Stop editing this precon');
     expect(out).toContain('still the list that came with the app');
@@ -105,9 +105,10 @@ describe('the editor on a precon', () => {
     expect(out).toContain('the one the menu uses');
   });
 
-  test('a plain import has no banner and saves a deck', () => {
+  test('a plain import has no banner and one button, Import, which also saves', () => {
     const out = panel(null);
     expect(out).not.toContain('Editing the built-in deck');
-    expect(out).toContain('Save deck');
+    expect(out).not.toContain('Save deck');
+    expect(out).toContain('>Import<');
   });
 });

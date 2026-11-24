@@ -26,6 +26,7 @@ import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, connectorOf, listWithJoins, makeClause, VERB_LIST_JOIN } from './operands';
 import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled';
+import { playerSearchAction } from './player-search';
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
@@ -506,14 +507,16 @@ const investigateAction: Action = (subject, you, rule) =>
 
 /**
  * "become the monarch" (CR 725.1: "Some cards allow a player to become the monarch"; CR 725.3: there is only one
- * monarch at a time). Said of "you" only (stage P25, D-127): the engine's effect names one player and the corpus's
- * real line is "When ~ enters, you become the monarch."; "target player becomes the monarch" is not read.
+ * monarch at a time). Said of one player: "you" (stage P25, D-127: "When ~ enters, you become the monarch.") or "target
+ * player" / "target opponent" ("Target player becomes the monarch."): the engine's effect names one player. Several
+ * players ("each opponent becomes the monarch") are not read, as the monarch is only one of them.
  */
 const monarchAction: Action = (subject, you, rule) =>
-  !you
+  !(subject.det === 'you' || (subject.det === 'target' && subject.anyNumber !== true))
     ? (ctx, pos) => fail(ctx, pos)
-    : map(spanned(pattern(/become the monarch(?![\p{L}\p{N}])/iu)), ({ span }) =>
-        actionClause(rule, 'becomeMonarch', { player: subject }, span),
+    : map(
+        spanned(sequence(verbWord('become', you), pattern(/the monarch(?![\p{L}\p{N}])/iu))),
+        ({ span }) => actionClause(rule, 'becomeMonarch', { player: subject }, span),
       );
 
 /**
@@ -533,11 +536,14 @@ const extraTurnAction: Action = (subject, you, rule) =>
 /**
  * "gains control of ~" said of "that player" (CR 613.1b, 611.2a, 110.2: a control-changing effect with no duration lasts until the game ends or another effect changes it; the player
  * who gains control is the one the subject names): the player the event of a trigger is about, taking the permanent with the ability ("that player draws three cards and gains
- * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
+ * control of ~"), or the one player a target names ("target opponent gains control of ~", Humble Defector). The engine's `gainControl` of `this` for that player. Not read: any other subject,
+ * another object ("gains control of target creature"), a duration.
  */
 const gainControlOfSelfAction: Action = (subject, you, rule) =>
   you ||
-  (subject.det === 'playerToRight'
+  (subject.det === 'playerToRight' ||
+  // Riders of Rohan deck, group B (Humble Defector): "Target opponent gains control of ~." (CR 115.1, 613.1b): one chosen player takes the permanent with the ability.
+  (subject.det === 'target' && subject.anyNumber !== true && !subject.upTo)
     ? false
     : subject.det !== 'anaphor' || subject.filter.raw.toLowerCase() !== 'that player')
     ? (ctx, pos) => fail(ctx, pos)
@@ -656,6 +662,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
   ],
   examples: [
     'you become the monarch',
+    'target player becomes the monarch',
+    'target opponent becomes the monarch',
     'target player takes an extra turn after this one',
     'you take an extra turn after this one',
     'you draw a card',
@@ -710,6 +718,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'that player draws three cards and gains control of ~',
     'the player to your right gains control of ~',
     'The player to your right gains control of ~',
+    // Riders of Rohan deck, group B (Humble Defector, CR 115.1, 613.1b): a chosen player takes the permanent with the ability.
+    'target opponent gains control of ~',
+    'target player gains control of ~',
     'you and target opponent each draw two cards',
     'you and target player each discard a card',
     // Sylvan Offering (CR 111.2, 101.4): you and the chosen opponent each create the tokens, you first (the active player's turn order).
@@ -774,6 +785,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain 2 life, draw two cards, then discard two cards',
     'target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life',
     'target opponent discards a card, loses 3 life',
+    // Riders of Rohan deck, group B (Field of Ruin, CR 701.23a, 701.24): each player searches their own library, puts the card onto the battlefield, then shuffles.
+    'each player searches their library for a basic land card, puts it onto the battlefield, then shuffles',
+    'each opponent searches their library for a basic land card, puts it onto the battlefield tapped, then shuffles',
+    'target player searches their library for a Forest card, puts that card onto the battlefield, then shuffles',
   ],
   rejects: [
     // D-372: after a bare comma the next words are a verb of the same subject, which agrees with it.
@@ -861,7 +876,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you become monarch',
     'you become the monarchy',
     'you become the monarch of the realm',
-    'target player becomes the monarch',
+    'target player become the monarch',
+    'any number of target players become the monarch',
     'target player take an extra turn after this one',
     'target player takes two extra turns after this one',
     'you takes an extra turn after this one',
@@ -869,12 +885,24 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its controller becomes the monarch',
     'its controller become the monarch',
     'that player gains control of ~ until end of turn',
+    'target opponent gains control of ~ until end of turn',
+    'target opponent gains control of target creature',
+    'each opponent gains control of ~',
+    'target opponents gain control of ~',
     'that player gains control of target creature',
     'that player gain control of ~',
     'you gain control of ~',
     'the player to your right gains control of target creature',
     'the player to your right gains control of ~ until end of turn',
     'the player to your right draw a card',
+    'each player search their library for a basic land card, puts it onto the battlefield, then shuffles',
+    'each player searches their library for a basic land card, puts it into their hand, then shuffles',
+    'each player searches their library for a basic land card, puts it onto the battlefield',
+    'each player searches their library for basic land cards, puts them onto the battlefield, then shuffles',
+    'each player searches your library for a basic land card, puts it onto the battlefield, then shuffles',
+    'each player may search their library for a basic land card, put it onto the battlefield, then shuffle',
+    'each player searches their library for a basic land card, reveals it, puts it onto the battlefield, then shuffles',
+    'you and target opponent each search their library for a basic land card, puts it onto the battlefield, then shuffles',
   ],
   parse: chain(
     sequence(family<IrNoun>('noun', { only: PLAYER_SUBJECTS }), literal(' ')),
@@ -907,6 +935,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.extra-turn', extraTurnAction),
         alone('effect.player.lose-game', loseGameAction),
         alone('effect.player.gain-control-of-self', gainControlOfSelfAction),
+        // Riders of Rohan deck, group B (Field of Ruin): the players the subject names search their own libraries.
+        alone('effect.player.search', playerSearchAction),
       );
       return map(
         listWithJoins(actions, VERB_LIST_JOIN),

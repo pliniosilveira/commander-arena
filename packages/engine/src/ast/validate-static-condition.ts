@@ -143,12 +143,8 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       const amount = c.amount;
       // CR 613.8: the counters on this permanent belong to no layer, so `countersOn` of `this` may be read.
       if (typeof amount !== 'number' && amount?.kind === 'countersOn') {
-        if (amount.counter === undefined) {
-          issue(
-            out,
-            `${path}.amount.counter`,
-            "a static ability's condition names the kind of counter",
-          );
+        if (amount.counter !== undefined && typeof amount.counter !== 'string') {
+          issue(out, `${path}.amount.counter`, 'the kind of counter is a name');
         }
         if (amount.of?.kind !== 'this') {
           issue(

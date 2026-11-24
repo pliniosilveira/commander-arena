@@ -194,6 +194,11 @@ export interface LowerContext {
    */
   deathOfOther: boolean;
   /**
+   * True in the body of "Whenever a permanent you control leaves the battlefield, if it had counters on it, ..." (Resourceful Defense, CR 603.10a, 122.1): the trigger is about another
+   * permanent that had a counter of some kind, which `foldHadCounters` made a part of the trigger's filter; "those counters" are the counters that permanent had as it last was.
+   */
+  hadCountersTrigger: boolean;
+  /**
    * The player the last instruction lowered was said of (a `player` of the effect): "each other player" is every player but that one ("its owner draws that many cards and each
    * other player loses that much life"). Null before the first instruction and after one that names no player.
    */
@@ -371,10 +376,21 @@ export interface LowerContext {
    */
   lastCastRemembered: boolean;
   /**
-   * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
+   * The targets of the control effect the instruction just lowered gave (In the Darkness Bind Them, "Untap those creatures. They gain haste until end of turn."), or
+   * the group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
    * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
    */
   lastCounteredGroup: ObjectSelector | null;
+  /**
+   * True after a `gainControl` of a group of "each" (Call for Aid, CR 611.2c, 400.7j): "those creatures" and "they" of the instructions after it are the permanents it took, the engine's `moved`,
+   * until an instruction that moves, destroys, exiles, sacrifices or makes other objects is lowered. Filled by `lowerSentences`.
+   */
+  gainedGroup: boolean;
+  /**
+   * The id of the target the instruction just lowered made a creature for good (Depthshaker Titan, CR 603.7c: "any number of target noncreature artifacts you control become 3/3
+   * artifact creatures. Sacrifice them at the beginning of the next end step."): "them" is those targets. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  becameTarget: string | null;
   /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
@@ -490,6 +506,8 @@ export function newContext(
     lastEffectKind: null,
     lastCastRemembered: false,
     lastCounteredGroup: null,
+    gainedGroup: false,
+    becameTarget: null,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,
@@ -509,6 +527,7 @@ export function newContext(
     text: '',
     interveningCondition: false,
     deathOfOther: false,
+    hadCountersTrigger: false,
     lastPlayer: null,
     meldPartner: null,
     exiledWithCondition: false,

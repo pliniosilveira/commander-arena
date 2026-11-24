@@ -1,12 +1,14 @@
 /** The deck screen: every card of a deck in a grid, grouped by type; a click shows it large. */
 
 import { frontFaceName, type StoredCard } from '@commander-arena/cards';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ImportReport, ImportService } from '../../import/types';
 import { CardPrintsDialog } from './CardPrintsDialog';
 import { type CardPrint, listedKey, useListedImages } from './card-prints';
 import { printingInText, printingsInText, withPrinting } from './deck-text';
+import { deckTokens } from './deck-tokens';
 import { groupEntries, imageOf } from './deck-view-model';
+import { TokenSection } from './TokenSection';
 
 export function DeckScreen({
   name,
@@ -62,6 +64,7 @@ export function DeckScreen({
     );
   };
 
+  const tokens = useMemo(() => (report === null ? [] : deckTokens(report.entries)), [report]);
   const groups = report === null ? [] : groupEntries(report.entries);
   const shown = report?.entries.find((e) => e.card.stored.oracleId === open)?.card.stored;
 
@@ -108,6 +111,7 @@ export function DeckScreen({
             </ul>
           </section>
         ))}
+        <TokenSection tokens={tokens} />
       </div>
       {shown !== undefined && (
         <CardPrintsDialog

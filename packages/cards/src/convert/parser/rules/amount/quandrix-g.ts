@@ -28,9 +28,10 @@ export const AMOUNT_DAMAGE_DEALT_BY_TRIGGER = defineRule<IrAmount>({
     'equal to the damage dealt this turn',
     'equal to the damage dealt plus 1',
     'equal to the damage',
+    'equal to the damage dealt to target opponent this turn',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/equal to the damage dealt(?! this| plus|[\p{L}\p{N}])/iu)(ctx, pos);
+    const r = pattern(/equal to the damage dealt(?! this| plus| to |[\p{L}\p{N}])/iu)(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,

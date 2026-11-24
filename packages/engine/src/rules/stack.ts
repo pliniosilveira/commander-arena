@@ -182,6 +182,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedAsCost === undefined
         ? {}
         : { costSacrificed: obj.stack.sacrificedAsCost }),
+      ...(obj.stack?.discardedAsCost === undefined
+        ? {}
+        : { costDiscarded: obj.stack.discardedAsCost }),
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
@@ -289,6 +292,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 returned: (res.thisWay?.returned ?? 0) + (out.thisWay.returned ?? 0),
                 exiledCreatures:
                   (res.thisWay?.exiledCreatures ?? 0) + (out.thisWay.exiledCreatures ?? 0),
+                exiledCreatureCards:
+                  (res.thisWay?.exiledCreatureCards ?? 0) + (out.thisWay.exiledCreatureCards ?? 0),
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),

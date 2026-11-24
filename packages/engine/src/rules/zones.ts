@@ -19,7 +19,7 @@
  *   enters, whatever put it there (a resolving spell, an effect, a land played from the hand); the
  *   caller asks and calls again with `entersChosen` set, and the answer is stored on the new object.
  */
-import type { Ability, Zone } from '../ast/types';
+import type { Ability, EnteringCounters, Zone } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type {
@@ -92,6 +92,7 @@ import {
   riotDecision,
   riotGivesHaste,
   riotInstances,
+  sunburstCounters,
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
@@ -101,6 +102,7 @@ import { opponentGraveyardReplacement } from './graveyard-replacement';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
 import { gainLife } from './life-gain';
+import { manaSpentOf } from './mana-spent';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
@@ -160,7 +162,7 @@ export interface MoveRequest {
    * The permanent enters with counters on it (CR 122.6, 614.1c): "return it to the battlefield with a -1/-1
    * counter on it" (Persist). Only for a move to the battlefield; the counters are on it as it enters.
    */
-  readonly withCounters?: { readonly counter: string; readonly count: number };
+  readonly withCounters?: EnteringCounters;
   /**
    * The face the new object has up, when it is not simply carried over: the face being cast when a
    * card moves to the stack (CR 709.3, 712.11b, 715.3), the face of a modal double-faced card played
@@ -842,12 +844,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       castX,
       escaped,
       (a) =>
-        a.kind === 'diedThisTurn'
-          ? historyCount(nextBefore, a, enterController)
-          : a.kind === 'aggregate'
-            ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
-              amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
-            : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+        a.kind === 'manaSpent'
+          ? // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell this permanent came from; nothing for a card that was not cast.
+            manaSpentOf(old, a.fromType, a.snow === true, a.colors === true)
+          : a.kind === 'diedThisTurn'
+            ? historyCount(nextBefore, a, enterController)
+            : a.kind === 'aggregate'
+              ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
+                amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
+              : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.
@@ -858,8 +863,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       request.entersChosen ?? null,
     );
     if (request.withCounters !== undefined) {
-      const { counter, count } = request.withCounters;
-      counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
+      const { counter, count, also } = request.withCounters;
+      for (const entering of [{ counter, count }, ...(also ?? [])]) {
+        counters = {
+          ...counters,
+          [entering.counter]: (counters[entering.counter] ?? 0) + entering.count,
+        };
+      }
     }
     // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
     // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
@@ -872,6 +882,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     counters = addCounterMaps(
       counters,
       keywordEntryCounters(abilities, riotAnswers, request.devoured ?? 0),
+    );
+    // CR 702.44a, 702.44b (Sunburst): counters for the colors of the mana spent on the spell this permanent came from; a creature gets +1/+1 counters, any other permanent charge counters.
+    counters = addCounterMaps(
+      counters,
+      sunburstCounters(abilities, old, face?.types.includes('creature') === true),
     );
     if (revealRule !== null && !tapped && !untappedByEffect) {
       if (mayReveal && request.entersPaid === true) {

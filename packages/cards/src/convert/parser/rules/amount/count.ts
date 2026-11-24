@@ -63,6 +63,12 @@ const TARGET_PLAYER_CONTROLS = pattern(
  */
 const ITS_CONTROLLER_CONTROLS = pattern(new RegExp(` its controller controls${BOUNDARY}`, 'iu'));
 
+/**
+ * " that player controls" (Cavern-Hoard Dragon, CR 109.4, 608.2c): the permanents of the player an earlier noun of the text names, "create a Treasure token for each artifact that player
+ * controls" after "deals combat damage to a player". The binding pass finds the player.
+ */
+const THAT_PLAYER_CONTROLS = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'));
+
 /** " they control": the permanents of the player an earlier noun of the text names (see `battlefield`). */
 const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
 
@@ -186,6 +192,10 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       const itsController = targeted.ok ? null : ITS_CONTROLLER_CONTROLS(ctx, end);
       // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
       const they = targeted.ok || itsController?.ok === true ? null : THEY_CONTROL(ctx, end);
+      const thatPlayer =
+        targeted.ok || itsController?.ok === true || they?.ok === true
+          ? null
+          : THAT_PLAYER_CONTROLS(ctx, end);
       if (itsController?.ok === true) {
         const start = end + 1;
         const controller: IrNoun = {
@@ -206,6 +216,11 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
         if (!player.ok) return fail(ctx, end);
         filter = { ...filter, controller: { noun: player.value } };
         end = they.pos;
+      } else if (thatPlayer?.ok === true) {
+        const player = family<IrNoun>('noun', { only: ['noun.that-player'] })(ctx, end + 1);
+        if (!player.ok) return fail(ctx, end);
+        filter = { ...filter, controller: { noun: player.value } };
+        end = thatPlayer.pos;
       } else if (targeted.ok) {
         const word = targeted.value[1] ?? '';
         const start = end + 1;
@@ -294,6 +309,31 @@ const inTargetPlayersZone: Parser<{
   return { ok: true, value: { zone, controller: { noun: player } }, pos: r.pos };
 };
 
+/**
+ * " in that player's graveyard" (The Mouth of Sauron, CR 108.3, 404.1): the graveyard of the player an earlier instruction of the text targeted ("target player mills three cards.
+ * Then amass Orcs X, where X is the number of instant and sorcery cards in that player's graveyard"). The owner is an anaphor the binding pass resolves to that target.
+ */
+const inThatPlayersGraveyard: Parser<{
+  zone: 'graveyard';
+  controller: { readonly noun: IrNoun };
+}> = (ctx, pos) => {
+  const r = pattern(/ in (that (?:player|opponent))['’]s graveyard(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const word = r.value[1] ?? '';
+  const start = pos + ' in '.length;
+  const player: IrNoun = {
+    kind: 'noun',
+    det: 'anaphor',
+    filter: { raw: word },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start, end: start + word.length },
+    rule: 'noun.player',
+  };
+  return { ok: true, value: { zone: 'graveyard', controller: { noun: player } }, pos: r.pos };
+};
+
 function cards(plural: boolean): Parser<IrFilter> {
   const itsControllerGraveyard: Parser<{
     zone: 'graveyard';
@@ -344,6 +384,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     itsControllerGraveyard,
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersZone,
+    inThatPlayersGraveyard,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(

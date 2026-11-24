@@ -22,6 +22,8 @@ import { AURA_GRAVEYARD_NEEDS } from './aura-graveyard';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
 import { COUNCIL_VOTES_NEEDS } from './council-votes';
+import { COUNTER_INTELLIGENCE_G2_NEEDS } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_NEEDS } from './counter-intelligence-g3';
 import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
@@ -42,7 +44,12 @@ import { PLANESWALKER_NEEDS } from './planeswalker';
 import { REVEAL_TOP_CARD_NEEDS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
 import { SECRET_VOTES_NEEDS } from './secret-votes';
-import { COMBAT_DAMAGE_TO_PLAYER_NEEDS, NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
+import {
+  COMBAT_DAMAGE_BATCH_NEEDS,
+  COMBAT_DAMAGE_TO_PLAYER_NEEDS,
+  NEXT_CAST_NEEDS,
+  SENTENCE_NEEDS,
+} from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
@@ -168,6 +175,8 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...LOCKE_NEEDS,
     ...AURA_GRAVEYARD_NEEDS,
     ...LIMIT_BREAK_G1_NEEDS,
+    ...COUNTER_INTELLIGENCE_G2_NEEDS,
+    ...COUNTER_INTELLIGENCE_G3_NEEDS,
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,
@@ -188,6 +197,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...SENTENCE_NEEDS,
     ...NEXT_CAST_NEEDS,
     ...COMBAT_DAMAGE_TO_PLAYER_NEEDS,
+    ...COMBAT_DAMAGE_BATCH_NEEDS,
     ...AMOUNT_NEEDS,
     ...(Object.values(SELECTOR_NEEDS) as FeatureRef[]),
     'token:Treasure',

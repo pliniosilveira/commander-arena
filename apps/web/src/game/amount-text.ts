@@ -184,6 +184,8 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledCreatures':
       // Issue 81 (Mass Polymorph): the creatures an earlier exile exiled, tokens included.
       return 'the number of creatures exiled this way';
+    case 'exiledCreatureCards':
+      return 'the number of creature cards exiled this way';
     case 'discardedTypeCount':
       // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way".
       return 'the number of card types among cards discarded this way';

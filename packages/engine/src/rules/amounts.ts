@@ -306,6 +306,24 @@ export function amountOf(
   if (amount.kind === 'playerCount') {
     return resolvePlayers(state, amount.of, ctx, targets).length;
   }
+  if (amount.kind === 'greatestCountOfAnOpponent') {
+    // CR 109.4: each opponent still in the game in turn is "you" of the filter; the greatest of the counts.
+    let greatest = 0;
+    for (const seat of opponentsOf(state, ctx.controller)) {
+      const count = countMatching(
+        state,
+        { ...amount.filter, controller: 'you' },
+        { ...ctx, controller: seat },
+      );
+      if (count > greatest) greatest = count;
+    }
+    return greatest;
+  }
+  if (amount.kind === 'damageDealtToThisTurn') {
+    // CR 120.3: the damage every source has dealt to the player this turn (damage prevented was never dealt).
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : (state.turnLog.damageTaken[seat] ?? 0);
+  }
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;
@@ -533,7 +551,7 @@ export function stateAmountOf(
     case 'commanderColors':
       return commanderIdentity(state, ctx.controller).length;
     case 'commanderManaValue':
-      return commandersManaValue(state, ctx.controller);
+      return commandersManaValue(state, ctx.controller, amount.zones);
     case 'commanderCasts': {
       if (amount.player !== undefined) {
         // CR 903.8: the player the selector names ("target player ... they've cast").

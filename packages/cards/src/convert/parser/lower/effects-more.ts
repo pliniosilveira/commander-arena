@@ -185,10 +185,13 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).
     const who = arg(clause, 'player');
     const may = arg(clause, 'may');
-    if ((who === undefined) !== (may === undefined)) return failure(clause);
+    // `may` is said only with a player ("its controller may search ..."); a player with no "may" (Field of Ruin: "each player searches ...") searches as an instruction.
+    if (who === undefined && may !== undefined) return failure(clause);
     let player: PlayerSelector = { kind: 'you' };
     if (who !== undefined) {
-      if (who.kind !== 'noun' || may?.kind !== 'flag') return failure(clause);
+      if (who.kind !== 'noun' || (may !== undefined && (may.kind !== 'flag' || !may.value))) {
+        return failure(clause);
+      }
       const selector = playerSelectorOf(who, ctx);
       if (!selector.ok) return selector;
       player = selector.value;
@@ -199,10 +202,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
         {
           kind: 'search',
           player,
-          // A "may" is the searching player's to answer; "each player searches" (Field of Ruin) is not one (`may` false).
-          ...(who === undefined || may?.kind !== 'flag' || !may.value
-            ? {}
-            : { optional: true as const }),
+          ...(may === undefined ? {} : { optional: true as const }),
           filter: limit === undefined ? filter.value : { ...filter.value, manaValueAtMost: limit },
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),

@@ -455,6 +455,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   ringBearerLost: [],
   creaturesPaired: [],
   creaturesUnpaired: [],
+  votesRevealed: [],
 };
 
 describe('the classification of the view fields and the event kinds', () => {

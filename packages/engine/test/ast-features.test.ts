@@ -76,6 +76,7 @@ describe('the dimensions', () => {
       'mill',
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
+      'putLinkedExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -150,6 +151,7 @@ describe('the dimensions', () => {
       'thisWayAtLeast',
       'diedThisWay',
       'objectMatches',
+      'discardedAsCostMatches',
       'giftPromised',
       'opponentControlsAtLeast',
       // D-139: "if you control the artifact with the greatest mana value or tied".
@@ -237,6 +239,8 @@ describe('the dimensions', () => {
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
+      // "The monarch controls enchanted creature." (CR 613.1b, 725.1).
+      'controlAttached',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'revealTopOfLibrary',

@@ -371,8 +371,8 @@ describe('"Its controller may search their library ..." (CR 701.23a, 608.2d, 110
   test.each([
     [
       'Exile target creature. Its controller searches their library for a basic land card, put it onto the battlefield, then shuffle.',
-      'searches their library for a basic land card, put it onto the battlefield, then shuffle.',
-      'effect.player',
+      ', put it onto the battlefield, then shuffle.',
+      'effect.player.search',
     ],
     [
       'Exile target creature. Its controller may search their library for a basic land card, reveal it, put it onto the battlefield, then shuffle.',

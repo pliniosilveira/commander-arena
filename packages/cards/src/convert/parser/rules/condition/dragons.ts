@@ -234,6 +234,8 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     'two or more Treasures entered the battlefield under your control this turn',
     // Elven Council deck (Galadriel, Elven-Queen, CR 400.7): the permanent with the condition does not count.
     'another Elf entered the battlefield under your control this turn',
+    // Riders of Rohan deck, group C (Éowyn, Shieldmaiden, CR 400.7): "another" leaves out the permanent with the ability.
+    'another Human entered the battlefield under your control this turn',
     'another creature entered the battlefield under your control this turn',
   ],
   rejects: [
@@ -252,6 +254,10 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     'two or more another creatures entered the battlefield under your control this turn',
     'another entered the battlefield under your control this turn',
     'another Elf entered the battlefield under an opponent’s control this turn',
+    'another Human entered the battlefield under an opponent’s control this turn',
+    'another Human entered under your control this turn',
+    'two or more another Humans entered the battlefield under your control this turn',
+    'another Humans entered the battlefield under your control this turn',
   ],
   parse: (ctx, pos) => {
     const id = 'condition.entered-this-turn';
@@ -274,13 +280,12 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
       filter = several.value[2];
       end = several.pos;
     } else {
-      // "another Elf entered ..." (Galadriel, Elven-Queen, CR 400.7): the permanent with the condition is not counted.
-      const single = sequence(pattern(/(an?|another) /iu), kindOf(false), entered)(ctx, pos);
+      const single = sequence(pattern(/(?:an? |another )/iu), kindOf(false), entered)(ctx, pos);
       if (!single.ok) return single;
       count = 1;
       filter = single.value[1];
       end = single.pos;
-      other = single.value[0][1]?.toLowerCase() === 'another';
+      other = /^another /iu.test(ctx.text.slice(pos, pos + 8));
     }
     // What the engine reads of a permanent that entered: its card types, the types it is not, its subtypes and whether it is a token. Nothing else.
     if (

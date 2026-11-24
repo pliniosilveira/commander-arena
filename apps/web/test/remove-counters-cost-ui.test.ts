@@ -140,3 +140,31 @@ describe('the log line of the cost', () => {
     );
   });
 });
+
+describe('the costs that remove counters of any kind (Counter Intelligence deck, group 2)', () => {
+  test('from the permanent itself, from among other permanents, and X from one permanent', () => {
+    expect(activationCostText([{ kind: 'removeCounters', count: 1 }], 'Equipment')).toBe(
+      'Remove a counter from this Equipment',
+    );
+    expect(
+      activationCostText([
+        {
+          kind: 'removeCounters',
+          count: 3,
+          among: { types: ['creature'], controller: 'you', other: true },
+        },
+      ]),
+    ).toMatch(/^Remove 3 counters from among /);
+    expect(
+      activationCostText([
+        {
+          kind: 'removeCounters',
+          count: 1,
+          countX: true,
+          fromOne: true,
+          among: { anyOf: [{ types: ['artifact'] }, { types: ['creature'] }], controller: 'you' },
+        },
+      ]),
+    ).toBe('Remove X counters from an artifact or creature you control');
+  });
+});

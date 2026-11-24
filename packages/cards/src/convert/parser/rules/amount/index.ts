@@ -22,10 +22,11 @@ import {
   AMOUNT_FOR_EACH_SCRIED,
 } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
+import { HOSTS_MISC_AMOUNT_RULES } from './hosts-misc';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
-import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { AMOUNT_FOR_EACH_COLOR_SPENT, AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
 import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
@@ -522,6 +523,7 @@ export const AMOUNT_RULES = [
   ...ENERGY_PAID_AMOUNT_RULES,
   // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
   ...QUANDRIX_G_AMOUNT_RULES,
+  ...HOSTS_MISC_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".
   ...HASHATON_G2_AMOUNT_RULES,
   // CR 402.1: "equal to the number of cards in that player's hand", the amount of damage to each opponent.
@@ -561,6 +563,7 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_STILL_EXILED,
   AMOUNT_FOR_EACH_AURA_ATTACHED,
   AMOUNT_FOR_EACH_MANA_SPENT,
+  AMOUNT_FOR_EACH_COLOR_SPENT,
   // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
   ...LOREHOLD_G2_AMOUNT_RULES,
   // Quandrix Unlimited deck, group D2: "half X, rounded down".

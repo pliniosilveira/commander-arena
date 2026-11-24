@@ -50,6 +50,7 @@ import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
 import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
+import { HOSTS_CONTROL_NOUN_RULES } from './hosts-control';
 import {
   HYLDA_G2_EARLY_NOUN_RULES,
   HYLDA_G2_NOUN_RULES,
@@ -322,8 +323,13 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target Aura spell',
     'target spell with mana value 1',
     'target creature spell with mana value 3 or less',
+    // Frontline Medic (CR 107.3, 202.1): a spell whose mana cost has an {X}.
+    'target spell with {X} in its mana cost',
+    'target creature spell with {X} in its mana cost',
   ],
   rejects: [
+    'target spell with {X} in its mana cost and',
+    'target spell with {X} in its',
     'target spells',
     'target spell or ability',
     'target tapped spell',
@@ -342,6 +348,15 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     (ctx, pos) => {
       const head = sequence(literal('target '), spellPhrase())(ctx, pos);
       if (!head.ok) return head;
+      // Frontline Medic (CR 107.3): "with {X} in its mana cost", the engine's `xInManaCost` of the spell on the stack.
+      const xCost = pattern(/ with \{X\} in its mana cost(?![\p{L}\p{N}])/iu)(ctx, head.pos);
+      if (xCost.ok) {
+        return {
+          ok: true,
+          value: { ...head.value[1], xInManaCost: true as const },
+          pos: xCost.pos,
+        };
+      }
       const suffix = sequence(
         literal(' with mana value less than or equal to '),
         family<IrAmount>('amount'),
@@ -728,6 +743,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'each of up to two target creatures',
     'each of two target creatures',
     'target Dragon',
+    // Hosts of Mordor deck (Corsairs of Umbar): one permanent of one of three creature types.
+    'target Goblin, Orc, or Pirate',
     'target Forest',
     'target Equipment you control',
     'target Elf creature',
@@ -1051,6 +1068,8 @@ export const NOUN_RULES = [
   ...ABZAN_ARMOR_NOUN_RULES,
   // Legions to Ashes: "target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent", which `noun.target-permanent` would stop in the middle of.
   ...SAME_NAME_TOKENS_NOUN_RULES,
+  // Hosts of Mordor deck, control group (Grishnákh): "target creature ... with power less than or equal to the amassed Army's power", which `noun.target-permanent` would stop in the middle of.
+  ...HOSTS_CONTROL_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

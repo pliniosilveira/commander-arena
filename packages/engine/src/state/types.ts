@@ -10,6 +10,7 @@ import type {
   Cost,
   DoorValues,
   Effect,
+  EnteringCounters,
   InlineChoice,
   Keyword,
   NamedAlternativeKind,
@@ -98,6 +99,11 @@ export interface GameObject {
    * that is later than the start of their turn (`rules/control.ts`, `controlledSince`). Absent for a permanent whose control never went back.
    */
   readonly controlChangedAt?: number;
+  /**
+   * The controller this permanent had when a static control effect on it ("The monarch controls enchanted creature.", `rules/static-control.ts`) was last looked at, set only
+   * while one applies to it: the state-based actions compare it with the controller it has now to see the effect begin, change hands or end (`rules/static-control-sync.ts`).
+   */
+  readonly staticControlSeen?: SeatId;
   /** Tokens carry their own characteristics and abilities. */
   readonly token: TokenData | null;
   /**
@@ -503,6 +509,11 @@ export interface StackData {
    */
   readonly manaSpent?: ManaSpent;
   /**
+   * The keywords the spell gained while it was on the stack (`spellGainsKeyword`, "it gains sunburst", CR 702.44d), one entry for each time one was gained: the permanent the spell
+   * becomes reads them as it enters (`rules/enters-keywords.ts`). Absent when none, and for an ability.
+   */
+  readonly gainedKeywords?: readonly Extract<Keyword, { readonly kind: 'sunburst' }>[];
+  /**
    * The life paid for the Phyrexian mana symbols of the spell's mana cost (CR 107.4f, 601.2h; 2 life for each symbol), written as the cost is paid: Compleated (CR 702.150a) reads it
    * as the permanent enters. Absent when no Phyrexian symbol was paid with life, and for an ability.
    */
@@ -629,6 +640,11 @@ export interface StackData {
    * (D-491): the ids they had, which the amount and the condition `sacrificedAsCost` count (absent when none was). Absent for every other object.
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
+  /**
+   * For an activated ability whose cost discarded cards from the hand (CR 602.2b, 701.9a): the ids the cards have after the discard (in the graveyard, or in exile for madness), which
+   * the condition `discardedAsCostMatches` reads (from last-known information once they have moved on, CR 113.7a). Absent for every other object.
+   */
+  readonly discardedAsCost?: readonly ObjectId[];
   /**
    * For a spell cast with Convoke (CR 702.51a): the creatures the caster tapped to help pay for it, in the order chosen, which the `convokers` reference reads ("each creature that
    * convoked this spell"). Absent when no creature was tapped for it, and for every other object.
@@ -1046,6 +1062,7 @@ export interface CastingContext {
     | 'payment'
     | 'behold'
     | 'additionalExile'
+    | 'linkedExile'
     | 'harmonize'
     | 'sacrifice'
     | 'discard'
@@ -1140,6 +1157,8 @@ export interface ActivationContext {
    * is still owed. Absent when the cost has no such part.
    */
   readonly countersLeft?: number;
+  /** The one permanent a cost "Remove X counters from an artifact or creature you control" takes all its counters from (`fromOne`): left out until the first counter has been picked. */
+  readonly removedFrom?: ObjectId;
 }
 
 export type Instruction =
@@ -1153,6 +1172,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      readonly anyNumber?: true;
+      readonly fromMoved?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1384,6 +1405,8 @@ export type Instruction =
       readonly left: number | null;
       readonly removed: number;
       readonly chosen: string | null;
+      /** A move that takes "any number of counters": the player may stop (`left` is null), as a removal may (Resourceful Defense). */
+      readonly anyNumber?: true;
     }
   | {
       readonly kind: 'moveCounters';
@@ -1521,13 +1544,13 @@ export type Instruction =
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
        */
       readonly among?: readonly ObjectId[];
-      /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
+      /** `ChooseSelector.fromAnyGraveyard` (issue 159): the cards may be in the graveyard of any player (with `among` the moved ones only, without it every graveyard's). */
       readonly anyOwner?: true;
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
@@ -1754,7 +1777,7 @@ export type Instruction =
       readonly object: ObjectId;
       readonly tapped: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2096,6 +2119,11 @@ export type Instruction =
        */
       readonly dredgeAfter?: ObjectId;
       readonly dredgeAnswer?: { readonly card: ObjectId; readonly accepted: boolean };
+      /**
+       * The permanents whose `drawRedirect` already replaced the draw this instruction stands for (Notion Thief, CR 614.5: an effect applies once to a draw): the instruction is the draw
+       * their controller makes in its place, so those effects do not replace it again. Absent for a draw nothing replaced.
+       */
+      readonly redirectedBy?: readonly ObjectId[];
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {
@@ -2108,7 +2136,7 @@ export type Instruction =
       /** Enter the battlefield under the owner's control or the resolving ability's controller's. */
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
@@ -2119,6 +2147,8 @@ export type Instruction =
       readonly countsReturned?: true;
       /** A creature that really goes to exile adds `power` to the total of `seat` in `thisWay` `exiledPowerBy` (Oversimplify; both read before the creatures left, CR 608.2h). */
       readonly exiledPower?: { readonly seat: SeatId; readonly power: number };
+      /** A creature card that really goes to exile is counted as `thisWay` `exiledCreatureCards` (Grey Host Reinforcements, CR 608.2c). */
+      readonly countsCreatureCard?: true;
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
       readonly replacers?: readonly ObjectId[];
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
@@ -2272,6 +2302,8 @@ export interface ResolutionContext {
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What `discardedAsCostMatches` reads: `StackData.discardedAsCost`. */
+  readonly costDiscarded?: readonly ObjectId[];
   /** What the attacker returned to pay the cost of the activated ability that is resolving was attacking (`StackData.returnedAttack`), for `enterAttacking.asReturned` (Ninjutsu). Absent for any other spell or ability. */
   readonly costReturnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
   /** What `tappedAsCostPower` means (CR 702.184a): `StackData.tappedPowerAsCost`. */
@@ -2349,6 +2381,8 @@ export interface ThisWayCounts {
   readonly milledCreature?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
+  /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */
+  readonly exiledCreatureCards?: number;
   /** The card types of the cards `discard` effects discarded, each once, and how many they are (Occult Epiphany: "for each card type among cards discarded this way", CR 205.2a). */
   readonly discardedTypes?: readonly string[];
   readonly discardedTypeCount?: number;
@@ -2627,6 +2661,8 @@ export type ContinuousChange =
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
+      /** "That opponent can't attack you this combat": only the creatures this player controls (fixed as the effect was made). */
+      readonly of?: SeatId;
     }
   /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each
@@ -2665,6 +2701,19 @@ export type ContinuousChange =
    * `seat` controls. A restriction of the rules, read where the legality of a block is worked out (`rules/combat-legality.ts`), not in a layer.
    */
   | { readonly kind: 'cantBeBlockedByPlayer'; readonly seat: SeatId }
+  /**
+   * "You can't attack that player this turn" (`youCantAttackPlayers`, Call for Aid, CR 508.1a): no creature `seat` controls can be declared attacking a player of `players`; no fixed set of objects (`objects`
+   * is empty), a restriction of the rules read in `rules/attack-bans.ts`.
+   */
+  | {
+      readonly kind: 'controllerCantAttackPlayers';
+      readonly seat: SeatId;
+      readonly players: readonly SeatId[];
+    }
+  /**
+   * "You can't sacrifice those creatures this turn" (`youCantSacrifice`, Call for Aid, CR 701.21a, 101.2): `seat` can't sacrifice the objects of the effect while it controls them; read in `rules/sacrifice-prevention.ts`.
+   */
+  | { readonly kind: 'controllerCantSacrifice'; readonly seat: SeatId }
   | {
       readonly kind: 'cantAttackPlayer';
       readonly seat: SeatId;
@@ -2907,6 +2956,11 @@ export interface TurnLog {
   /** The damage each player has been dealt this turn, by seat (D-151, CR 120.3): all damage that was dealt after prevention, combat or not. */
   readonly damageTaken: readonly number[];
   /**
+   * The permanents that have been dealt damage this turn (CR 120.3, 400.7: the same object; one that left and came back is a new one), each once, for "a creature that was dealt damage
+   * this turn" (`ObjectFilter.dealtDamageThisTurn`). Damage that was prevented was never dealt. Absent until some permanent was dealt damage, so the state of a game without any hashes as before.
+   */
+  readonly damagedObjects?: readonly ObjectId[];
+  /**
    * Each time a creature was declared as an attacker this turn, by its id (D-151): a creature that attacks in two combat phases appears twice.
    * "Whenever this creature attacks for the first time each turn" reads it.
    */
@@ -2980,6 +3034,8 @@ export interface TurnLog {
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-646 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
    * announced, as it does for a spell on the stack), for "the greatest mana value among instant and sorcery spells you've cast this turn".
    */
+  /** The permanents exerted this turn (CR 701.43a), as exerted as an attacker or as a cost; "if ~ hasn't been exerted this turn" reads it. */
+  readonly exerted: readonly ObjectId[];
   readonly castSpells: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
@@ -3010,6 +3066,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   leftGraveyard: [],
   graveyardEntries: [],
   modesChosen: [],
+  exerted: [],
   castSpells: [],
 };
 

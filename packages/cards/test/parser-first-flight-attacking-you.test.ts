@@ -129,7 +129,7 @@ describe('Vow of Duty: "Enchanted creature gets +2/+2, has vigilance, and can\'t
   });
 
   test.each([
-    "Enchant creature\nEnchanted creature can't attack you.",
+    "Enchant creature\nEnchanted creature can't attack your opponents.",
     "Enchant creature\nEnchanted creature can't attack you or planeswalkers.",
     "Enchant creature\nEnchanted creature can't attack planeswalkers you control.",
     "Enchant creature\nEnchanted creature gets +2/+2, has vigilance, and can't attack you or planeswalkers you control",

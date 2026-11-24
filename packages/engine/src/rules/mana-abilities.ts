@@ -19,6 +19,7 @@ import { hasteActivationSources } from './derive-statics';
 import { exertPermanent } from './exert';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
+import { putOwnCounters } from './mana-put-counter';
 import { additionalManaOptions } from './mana-triggers';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
@@ -227,7 +228,9 @@ export function counterCostsOf(
   ability: ManaAbility,
 ): readonly { readonly counter: string; readonly count: number }[] {
   return ability.cost.flatMap((c) =>
-    c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+    c.kind === 'removeCounters' && c.counter !== undefined
+      ? [{ counter: c.counter, count: c.count }]
+      : [],
   );
 }
 
@@ -474,6 +477,10 @@ export function payManaAbilityCosts(
       events.push(...sacrificed.events);
     }
   }
+  // CR 605.3b, 122.6 (Empowered Autogenerator): the ability's first instruction, the counters it puts on its own permanent, before the mana is added.
+  const put = putOwnCounters(next, id, ability, seat);
+  next = put.state;
+  events.push(...put.events);
   return { state: next, events };
 }
 

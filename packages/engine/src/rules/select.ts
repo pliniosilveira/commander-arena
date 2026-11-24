@@ -357,12 +357,24 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    ...(filter.dealtDamageThisTurn === true
+      ? { damagedObjects: state.turnLog.damagedObjects ?? [] }
+      : {}),
     // CR 607.2a, 400.7 (Lorehold group 2): the cards the source exiled with its linked ability; a source that left the battlefield is a new object with none.
     ...(filter.exiledWithSource === true
       ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
       : {}),
     // CR 603.12, 400.7j (Espers to Magicite): the cards the resolution that created the reflexive ability exiled.
     ...(filter.exiledThisWay === true ? { exiledThisWay: ctx.moved ?? [] } : {}),
+    // CR 208.1, 603.12, 701.47a (Grishnákh): the Army the amass before the reflexive ability chose, as it is now.
+    ...(filter.powerAtMostMoved === true
+      ? (() => {
+          const first = ctx.moved?.[0];
+          const army = first === undefined ? undefined : state.objects[first];
+          const power = army === undefined ? null : derive(state, army).power;
+          return power === null ? {} : { movedPower: power };
+        })()
+      : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     // CR 205.2a, 701.21a (Braids): "shares a card type with it" after a sacrifice reads the permanent sacrificed first in this resolution, as it last was.
     // CR 205.3m, 113.7a (Titan of Littjara): "shares a creature type with it" of an ability about its own source reads the source, as it is or as it last was.
@@ -400,8 +412,10 @@ function readsGame(f: ObjectFilter): boolean {
     f.putFromBattlefieldThisTurn === true ||
     f.discardedOrFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.dealtDamageThisTurn === true ||
     f.exiledWithSource === true ||
     f.exiledThisWay === true ||
+    f.powerAtMostMoved === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
     f.notTriggerCard === true ||
