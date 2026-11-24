@@ -193,13 +193,17 @@ describe('validation', () => {
     expect(
       validateCard(withStatic({ kind: 'loseAllAbilities', subject: { kind: 'attached' } })),
     ).toEqual([]);
+    // A group (a filter) is a valid subject since Sludge Monster (CR 613.8); the permanent itself is not.
     expect(
       validateCard(
         withStatic({
           kind: 'loseAllAbilities',
           subject: { kind: 'filter', filter: { types: ['creature'] } },
         }),
-      ).length,
+      ),
+    ).toEqual([]);
+    expect(
+      validateCard(withStatic({ kind: 'loseAllAbilities', subject: { kind: 'this' } })).length,
     ).toBeGreaterThan(0);
     expect(
       validateCard(
