@@ -2149,6 +2149,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'creatureTypesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
     case 'chosenPlayerLead':
@@ -2174,6 +2175,15 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'multiple':
       checkAmount({ ...a, of: 0 }, path, NO_SCOPE, out);
       checkStateAmount(a.of, `${path}.of`, out, label);
+      break;
+    case 'extreme':
+      // CR 608.2c (Valiant Changeling: "can't reduce ... by more than {5}"): the lesser or the greater of amounts that each read the game as it is now.
+      checkAmount({ ...a, of: [0, 0] }, path, NO_SCOPE, out);
+      if (Array.isArray(a.of)) {
+        a.of.forEach((part, i) => {
+          checkStateAmount(part, `${path}.of[${i}]`, out, label);
+        });
+      }
       break;
     case 'sum':
       checkAmount({ ...a, of: [0, 0] }, path, NO_SCOPE, out);
@@ -2363,6 +2373,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'creatureTypesAmong':
+      // CR 205.3m (Valiant Changeling): the distinct creature types among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'creatureTypesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'creatureTypesAmong counts the creature types of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'creatureTypesAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }
@@ -2959,7 +2996,7 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' = 'countOf',
+  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' | 'cardTypesAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -2988,7 +3025,7 @@ function checkCountOnly(
     );
   }
   if (
-    kind === 'greatestPowerAmong' &&
+    (kind === 'greatestPowerAmong' || kind === 'cardTypesAmong') &&
     filterSome(
       amount.filter,
       (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
@@ -2997,7 +3034,9 @@ function checkCountOnly(
     issue(
       out,
       `${path}.filter.zone`,
-      'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
+      kind === 'cardTypesAmong'
+        ? 'only the card types of cards outside the battlefield and the stack are counted (CR 613.8)'
+        : 'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, readsCombatOrSource)) {
@@ -3126,8 +3165,35 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, `${path}.of`, 'a sum needs at least two counts');
     } else {
       amount.of.forEach((part, i) => {
-        checkCountOnly(part, `${path}.of[${i}]`, out, 'countOf', plain);
+        // CR 604.3, 208.2a ("1 plus the number of ..."): a characteristic-defining ability's sum may also have a whole number and a count of card types among the cards of a zone.
+        if (!plain && typeof part === 'number') {
+          if (!Number.isSafeInteger(part) || part < 1) {
+            issue(out, `${path}.of[${i}]`, 'a number in a sum is a whole number of 1 or more');
+          }
+          return;
+        }
+        checkCountOnly(
+          part,
+          `${path}.of[${i}]`,
+          out,
+          !plain && (part as { kind?: string })?.kind === 'cardTypesAmong'
+            ? 'cardTypesAmong'
+            : 'countOf',
+          plain,
+        );
       });
+      if (!plain && !amount.of.some((part) => typeof part !== 'number')) {
+        issue(out, `${path}.of`, 'a sum counts something besides numbers');
+      }
+    }
+    return;
+  }
+  // CR 205.2a, 604.3 (Nighthawk Scavenger): "equal to the number of card types among cards in your opponents' graveyards": a characteristic-defining ability only.
+  if (amount?.kind === 'cardTypesAmong') {
+    if (plain) {
+      issue(out, path, 'a card type count is the amount of a characteristic-defining ability');
+    } else {
+      checkCountOnly(a, path, out, 'cardTypesAmong', false);
     }
     return;
   }

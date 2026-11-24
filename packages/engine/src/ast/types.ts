@@ -267,6 +267,13 @@ export type Amount =
    */
   | { readonly kind: 'differentNamesAmong'; readonly filter: ObjectFilter }
   /**
+   * "~ costs {1} less to cast for each creature type among creatures you control" (Valiant Changeling, CR 205.3m, 205.3d): how many distinct creature types the battlefield permanents
+   * `filter` matches have between them, each counted once however many have it (a creature with every creature type, CR 702.73a, counts all of them), as the permanents have them now
+   * (layers 1 and 4). Subtypes that are not creature types (Equipment, Aura, ...) are not counted. The filter names the battlefield (or leaves it out) and reads no power, toughness,
+   * combat or source power.
+   */
+  | { readonly kind: 'creatureTypesAmong'; readonly filter: ObjectFilter }
+  /**
    * "Create a number of 5/5 Elemental tokens equal to the number of colors among permanents you control", "each opponent loses X life, where X is the number of colors among
    * permanents you control" (CR 105.2, 608.2c; Vivid): how many of the five colors the permanents `filter` matches on the battlefield have between them, each counted once
    * however many have it, colorless being no color (CR 105.2c). Read as the instruction runs, through the layers like a count. The filter names the battlefield (or leaves it out) and
@@ -660,11 +667,18 @@ export type StaticPtAmount =
   | { readonly kind: 'countersOnSource'; readonly counter: string }
   | CountAmount
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
-  | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
+  | { readonly kind: 'sum'; readonly of: readonly (CountAmount | StaticPtSumPart)[] };
+
+/**
+ * A part of a characteristic-defining ability's sum besides a count (CR 604.3, 208.2a): a whole number ("1 plus the number of ..." for a printed `1+*`) or the number of card types among
+ * cards in a zone other than the battlefield ("the number of card types among cards in your opponents' graveyards"); a plain "+N/+N" sum reads counts only (`validateCard`).
+ */
+export type StaticPtSumPart = number | Extract<Amount, { readonly kind: 'cardTypesAmong' }>;
 
 /** What a characteristic-defining ability sets a power or toughness to: a count, or a multiple of one (CR 604.3). */
 export type DefinedPtAmount =
   | CountAmount
+  | Extract<Amount, { readonly kind: 'cardTypesAmong' }>
   | Extract<Amount, { readonly kind: 'devotion' }>
   /** "~'s power is equal to the number of creatures in your party" (CR 700.8, 604.3): the party size of the controller of the object, read through layers 1 and 4. */
   | { readonly kind: 'partySize' }
@@ -675,7 +689,7 @@ export type DefinedPtAmount =
    */
   | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
-  | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
+  | { readonly kind: 'sum'; readonly of: readonly (CountAmount | StaticPtSumPart)[] };
 
 // ---- Filters and selectors
 
@@ -8415,7 +8429,17 @@ export type StaticEffect =
    * a graveyard has it at once, a card that leaves does not), and is not given to a card that has an Encore of its own (it keeps that one). A permanent that lost all its abilities
    * gives nothing (CR 613.1f).
    */
-  | { readonly kind: 'grantEncoreToGraveyardCards'; readonly what: ObjectFilter };
+  | { readonly kind: 'grantEncoreToGraveyardCards'; readonly what: ObjectFilter }
+  /**
+   * "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}." (Solemn Doomguide, CR 702.84a, 613.1f, 604.3): as `grantEncoreToGraveyardCards`, a static
+   * ability of a permanent on the battlefield that gives the cards of its controller's graveyard that `what` matches an Unearth ability with the fixed cost `cost`. It works from the graveyard only,
+   * is read as the cards are looked at, and a card that has an Unearth of its own has one instance of the keyword. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantUnearthToGraveyardCards';
+      readonly what: ObjectFilter;
+      readonly cost: readonly Cost[];
+    };
 
 // ---- Abilities (CR 113)
 

@@ -184,7 +184,7 @@ const DEFINES = pattern(
  * `validateCard` refuses a line for a stat the card prints as a number and a `*` with no line). It
  * works in every zone (CR 604.3), which the engine runs. Since stage P28 (D-131) the count may be a sum of counts
  * ("each equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards"). Not
- * read: a number added ("1+*"), "twice the number of", another player's objects, "the greatest power among", "the
+ * read: a number added to a printed `*` that is not stated ("1 plus" is the whole number the printed `1+*` needs, CR 208.2a), "twice the number of", another player's objects, "the greatest power among", "the
  * number of card types among" and a power line and a toughness line joined in one sentence.
  */
 export const STATIC_DEFINES_PT = defineRule<IrStatic>({
@@ -210,6 +210,8 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     "~'s power and toughness are each equal to your life total.",
     "~'s power is equal to your life total.",
     "~'s power is equal to the number of creatures in your party.",
+    // CR 205.2a, 208.2a (Nighthawk Scavenger): the printed `1+*` is stated whole by "1 plus ...".
+    "~'s power is equal to 1 plus the number of card types among cards in your opponents' graveyards.",
   ],
   rejects: [
     "~'s power and toughness are each equal to the number of creatures you control plus half the number of lands you control.",

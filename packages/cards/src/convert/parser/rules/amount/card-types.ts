@@ -141,7 +141,49 @@ export const AMOUNT_FOR_EACH_DIFFERENT_MANA_VALUE = defineRule<IrAmount>({
   },
 });
 
+/**
+ * `amount.for-each-creature-type`: "for each creature type among creatures you control" (Valiant Changeling, CR 205.3m, 608.2c): how many distinct creature types the permanents of a group
+ * have between them, each once. The engine's `creatureTypesAmong`. Not read: "for each type", "for each creature type" with no group, "among cards in your graveyard", "among the creatures
+ * you control", the plural "creature types".
+ */
+export const AMOUNT_FOR_EACH_CREATURE_TYPE = defineRule<IrAmount>({
+  id: 'amount.for-each-creature-type',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 205.3m (Subtypes)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'for each creature type among creatures you control',
+    'for each creature type among creatures your opponents control',
+  ],
+  rejects: [
+    'for each type among creatures you control',
+    'for each creature type',
+    'for each creature type among cards in your graveyard',
+    'for each creature type among the creatures you control',
+    'for each creature types among creatures you control',
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'amount.for-each-creature-type';
+    const r = spanned(sequence(literal('for each creature type among '), counted(rule, true)))(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const of = r.value.value[1];
+    // The permanents of the battlefield only: a card of a graveyard or a hand has creature types too, which the engine's count does not read.
+    if (of.filter.card === true || (of.filter.zone ?? 'battlefield') !== 'battlefield') {
+      return fail(ctx, pos);
+    }
+    return {
+      ok: true,
+      value: { kind: 'creatureTypesAmong', of, span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
 export const CARD_TYPES_AMOUNT_RULES = [
+  AMOUNT_FOR_EACH_CREATURE_TYPE,
   AMOUNT_FOR_EACH_CARD_TYPE,
   AMOUNT_FOR_EACH_CARD_TYPE_AMONG_THOSE_CARDS,
   AMOUNT_FOR_EACH_DIFFERENT_MANA_VALUE,

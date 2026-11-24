@@ -213,6 +213,7 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   // CR 702.189a: each instance of firebending is its own triggered ability (the ruling: "Multiple instances of firebending on the same creature trigger separately").
   'firebending',
   'myriad',
+  'extort',
   'demonstrate',
   'storm',
   'cascade',
@@ -224,6 +225,8 @@ const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = [
   'cycling',
   'replicate',
   'encore',
+  // CR 702.84a: Unearth given to a card of a graveyard (Solemn Doomguide) is the activated ability it stands for.
+  'unearth',
   // CR 702.6a: a granted equip is the activated ability it stands for ("Treasures you control have equip {3}").
   'equip',
 ];

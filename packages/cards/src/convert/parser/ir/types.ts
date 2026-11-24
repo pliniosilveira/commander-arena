@@ -545,6 +545,8 @@ export type IrAmount =
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
   // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
   | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
+  // "for each creature type among creatures you control" (Valiant Changeling, CR 205.3m): the creature types the permanents of the group have between them, each once
+  | { readonly kind: 'creatureTypesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each different mana value among instant and sorcery cards in your graveyard" (Eris, issue 121, CR 202.3): the distinct mana values the cards of the group have, each once
   | { readonly kind: 'differentManaValuesAmong'; readonly of: IrNoun; readonly span: Span }
   // "equal to the number of differently named tokens you control" (Neriv, issue 101, CR 201.2): the distinct names the permanents of the group have, each once
@@ -1296,6 +1298,8 @@ export interface IrTypeList extends IrNode {
   readonly subtypes: readonly string[];
   readonly cardTypes?: readonly string[];
   readonly additive?: boolean;
+  /** "becomes a 2/2 creature with all creature types" (CR 205.3m, 702.73a): every creature type is added (the engine's `setTypes` `allCreatureTypes`), besides the types listed. */
+  readonly allCreatureTypes?: boolean;
   /** "It's a black Zombie in addition to its other colors and types" (issue 159, CR 105.3): the color letters the object also has, as names ("black"). */
   readonly colors?: readonly string[];
 }
@@ -2269,6 +2273,11 @@ export type IrStaticEffect =
    * (the statement's subject, `you`) have Encore with the cost the mana value of the card.
    */
   | { readonly kind: 'graveyardEncore'; readonly cards: IrNoun }
+  /**
+   * "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}." (Solemn Doomguide, CR 702.84a, 613.1f): the cards of `cards` in the graveyard of
+   * the controller (the statement's subject, `you`) have Unearth with the plain mana cost `cost`.
+   */
+  | { readonly kind: 'graveyardUnearth'; readonly cards: IrNoun; readonly cost: IrCost }
   | { readonly kind: 'raw'; readonly text: string };
 
 /** One more subject of a statement and what it gets or has: "~ gets +2/+2 and creatures you control have vigilance". */
@@ -2425,6 +2434,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'manaValueOf',
   'colorsOf',
   'cardTypesAmong',
+  'creatureTypesAmong',
   'differentNamesAmong',
   'timesKicked',
   'lifeLostThisWay',
@@ -2492,6 +2502,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'aggregate':
     case 'colorsAmong':
     case 'cardTypesAmong':
+    case 'creatureTypesAmong':
       return [amount.of];
     case 'half':
     case 'multiple':

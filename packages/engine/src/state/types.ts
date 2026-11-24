@@ -203,6 +203,11 @@ export interface GameObject {
    */
   readonly evokeGranted?: true;
   /**
+   * Present on a permanent returned by an Unearth that a static ability gave its card in the graveyard (`grantUnearthToGraveyardCards`): its `alt` of `unearth` has no unearth keyword
+   * on its face to show for it. Absent otherwise.
+   */
+  readonly unearthGranted?: true;
+  /**
    * How many times the spell this permanent came from was kicked, when it was kicked with Multikicker (CR
    * 702.33c, D-110): "for each time it was kicked" reads it. Absent for a permanent that was not kicked
    * and for one that came from a spell kicked with plain Kicker (which has `kicked` and counts once).

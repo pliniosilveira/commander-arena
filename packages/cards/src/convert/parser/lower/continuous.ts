@@ -449,6 +449,10 @@ function becoming(
       ...(types.additive === true ? { additive: true as const } : {}),
       duration: END,
     });
+    // CR 205.3m, 613.1d: "with all creature types" is the layer 4 effect of its own (the engine keeps it apart from the types listed).
+    if (types.allCreatureTypes === true) {
+      out.push({ kind: 'setTypes', objects, allCreatureTypes: true, duration: END });
+    }
   }
   if (colors !== undefined) out.push({ kind: 'setColors', objects, colors, duration: END });
   if (base !== undefined) {

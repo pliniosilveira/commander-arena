@@ -877,6 +877,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-different-mana-value': spell(
     (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
   ),
+  // Valiant Changeling (CR 205.3m): the distinct creature types among the permanents of a group.
+  'amount.for-each-creature-type': spell(
+    (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.for-each-card-type-among-those-cards': permanent(
     (e) =>
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
@@ -972,6 +976,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.legend-rule-doesnt-apply': asIs,
   'static.groups-are-the-chosen-type': asIs,
   'static.graveyard-cards-have-encore': asIs,
+  'static.graveyard-cards-have-unearth': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.group-is-equipment': asIs,
@@ -1508,6 +1513,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
+  'noun.target-creature-power-less-than-source': permanent((e) => `{T}: Destroy ${e}.`),
+  'noun.target-spell-or-permanent': permanent((e) => `{1}: ${e} becomes white until end of turn.`),
   'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
   // The examples end with a sentence, or with the quote of the ability a creature spell gains.
   'effect.player-exiles-until-cast': permanent(

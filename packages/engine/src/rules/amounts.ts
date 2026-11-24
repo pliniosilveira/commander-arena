@@ -9,6 +9,7 @@
  * objects or an amount of life or cards is needed).
  */
 import type { Amount, ObjectFilter, PlayerStat } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState } from '../state/types';
@@ -64,9 +65,12 @@ type StateAmount = Extract<
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
       | 'differentNamesAmong'
+      | 'creatureTypesAmong'
       | 'colorsAmong';
   }
 >;
+
+const CREATURE_TYPE_SET: ReadonlySet<string> = new Set(CREATURE_TYPES);
 
 /** History uses the event's controller and types, never the object's current zone or characteristics. */
 export function historyCount(
@@ -121,6 +125,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
     amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'creatureTypesAmong' ||
     amount.kind === 'colorsAmong'
   );
 }
@@ -214,6 +219,23 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(derive(state, obj).name);
+  }
+  return seen.size;
+}
+
+/**
+ * CR 205.3m (Valiant Changeling): "the number of creature types among creatures you control": the creature types (not the other subtypes, CR 205.3d) of the battlefield permanents the
+ * filter matches, each once, as the permanents have them now (layers 1 and 4, through `derive`: a permanent with every creature type has them all).
+ */
+function creatureTypesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, filter.zone ?? 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const subtype of derive(state, obj).subtypes) {
+      if (CREATURE_TYPE_SET.has(subtype)) seen.add(subtype);
+    }
   }
   return seen.size;
 }
@@ -521,6 +543,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'creatureTypesAmong':
+      return creatureTypesAmongOf(state, amount.filter, ctx);
     case 'colorsAmong':
       return colorsAmongOf(state, amount.filter, ctx);
     case 'devotion':

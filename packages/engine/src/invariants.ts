@@ -478,7 +478,8 @@ export function checkInvariants(state: GameState): string[] {
         // token has no alternative costs to look up.
         obj.token === null &&
         (obj.alt === 'unearth' || obj.alt === 'suspend'
-          ? !face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === obj.alt)
+          ? !face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === obj.alt) &&
+            !(obj.alt === 'unearth' && obj.unearthGranted === true)
           : face?.alternativeCosts?.some((a) => a.kind === obj.alt) !== true &&
             !(obj.alt === 'escape' && obj.escapeGranted === true) &&
             !(obj.alt === 'evoke' && obj.evokeGranted === true))

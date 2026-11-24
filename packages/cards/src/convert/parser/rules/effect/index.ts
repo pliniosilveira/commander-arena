@@ -494,6 +494,7 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
     'destroy target permanent you own',
+    "destroy target creature with power less than ~'s power",
   ],
   rejects: [
     'destroy it',
@@ -506,7 +507,12 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       literal('destroy '),
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
-        [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+        [
+          // Firja's Retribution (CR 208.1): "destroy target creature with power less than this creature's power".
+          'noun.target-creature-power-less-than-source',
+          ...SELF_OR_PERMANENT_OPERANDS,
+          'noun.target-permanent-of-that-player',
+        ],
         'effect.destroy',
       ),
     ),

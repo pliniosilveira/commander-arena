@@ -381,12 +381,17 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     'target creature becomes red and gains haste until end of turn',
     'target creature becomes blue and gains flying and first strike until end of turn',
     'it becomes colorless and gains haste until end of turn',
+    // Eight-and-a-Half-Tails (CR 115.1, 105.3): a spell on the stack or a permanent becomes a color.
+    'target spell or permanent becomes white until end of turn',
     // D-474 (CR 305.7, Zombie Trailblazer): a land becomes a basic land type.
     'target land becomes a Swamp until end of turn',
     'target land becomes an Island until end of turn',
     'target land becomes a Plains until end of turn',
   ],
   rejects: [
+    'target spell or permanent becomes a Frog until end of turn',
+    'target spell or permanent becomes white and gains haste until end of turn',
+    'target spell or permanent becomes an artifact creature until end of turn',
     'target land becomes a Swamp',
     'target land becomes a swamp until end of turn',
     'target land becomes a Swamp and gains haste until end of turn',
@@ -425,7 +430,8 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const rule = 'effect.becomes';
     const r = sequence(
-      family<IrNoun>('noun', { only: SINGLE_SUBJECTS }),
+      // Eight-and-a-Half-Tails (CR 115.1, 105.3): "target spell or permanent becomes white until end of turn", only a color alone (checked below).
+      family<IrNoun>('noun', { only: [...SINGLE_SUBJECTS, 'noun.target-spell-or-permanent'] }),
       literal(' becomes '),
       becoming(rule, true),
       // D-454 (Crimson Wisps, CR 613.1e, 613.1f): "becomes red and gains haste until end of turn": the keywords the same object gains for the same duration.
@@ -438,6 +444,13 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [subject, , what, gains, , duration] = r.value;
+    // A spell or a permanent: the engine's slot of the two takes a color and nothing else here.
+    if (
+      subject.orSpell !== undefined &&
+      (gains !== null || what.colors === null || what.types !== null || what.basePt !== null)
+    ) {
+      return fail(ctx, pos);
+    }
     // CR 305.7 (D-474): only a land can be set to a basic land type; a creature "becomes a Forest" is nothing the engine knows.
     if (setsBasicLandType(what)) {
       const types = subject.filter.types;
