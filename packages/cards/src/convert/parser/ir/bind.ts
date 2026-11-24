@@ -959,6 +959,11 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   ) {
     binder.seedControllerOfSubject(subject);
   }
+  // CR 508.6 (Calculating Lich): "Whenever a creature attacks one of your opponents, that player loses 1 life": "that player" is the opponent attacked (the lowering reads it
+  // as the engine's `triggerAttackedPlayer`).
+  if (source.event === 'attacks' && source.at === 'opponent' && subject !== undefined) {
+    binder.seedControllerOfSubject(subject);
+  }
   return {
     ...source,
     ...(subject === undefined ? {} : { subject }),

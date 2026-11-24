@@ -224,6 +224,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           ? failure(t)
           : ok({ kind: 'attacks', what: what.value, firstTimeEachTurn: true });
       }
+      // CR 508.1 (Battalion): "~ and at least two other creatures attack" is a feature of the engine's `attacks` trigger.
+      if (t.withOthers !== undefined) {
+        const blocked = missingFeatures(['trigger:attacksWithOthers']);
+        return blocked.length > 0
+          ? failure(t, blocked)
+          : ok({ kind: 'attacks', what: what.value, withOthers: t.withOthers });
+      }
       // CR 506.5: "attacks alone" is a feature of the engine's `attacks` trigger (D-110).
       if (t.alone !== true) return ok({ kind: 'attacks', what: what.value });
       const blocked = missingFeatures(['trigger:alone']);
@@ -864,6 +871,13 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   }
   if (only.actor?.det === 'you') {
     return { selector: { kind: 'you' }, needs: ['selector:you'] };
+  }
+  // CR 508.6 (Calculating Lich): "that player" of "whenever a creature attacks one of your opponents" is the opponent attacked, not the attacking player.
+  if (only.event === 'attacks' && only.at === 'opponent') {
+    return {
+      selector: { kind: 'triggerAttackedPlayer' },
+      needs: ['selector:triggerAttackedPlayer'],
+    };
   }
   // Stage P29 (D-133): the engine's `triggerPlayer` is the player the event is about: the player who drew, who was dealt
   // combat damage, whose spell or ability targeted, who sacrificed. A step, a death and an entering have none.
@@ -1981,6 +1995,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:attacks',
   'trigger:alone',
   'trigger:attacksAt',
+  'trigger:attacksWithOthers',
   'trigger:dealtDamage',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',

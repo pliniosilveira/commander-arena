@@ -98,7 +98,10 @@ function countersOn(rule: string, head: Parser<unknown>, plural: boolean): Parse
 export const NUMBER_OF_ANY_COUNTERS = (rule: string): Parser<IrAmount> => {
   return (ctx, pos) => {
     const r = spanned(
-      pattern(/the number of counters on (that creature|that permanent|it|~)(?![\p{L}\p{N}'’])/iu),
+      // CR 603.10a, 122.1 (Felisa, Fang of Silverquill): "the number of counters it had on it" is the same count for the permanent that left the battlefield, read as it last existed.
+      pattern(
+        /the number of counters (?:(?:that creature|it) had )?on (that creature|that permanent|it|~)(?![\p{L}\p{N}'’])/iu,
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     const word = (r.value.value[1] ?? '').toLowerCase();

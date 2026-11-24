@@ -1624,6 +1624,8 @@ export interface IrTrigger extends IrNode {
   readonly yourGraveyard?: true;
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
+  /** 'attacks' with others (Battalion, CR 508.1): "~ and at least two other creatures attack", the number of other creatures the declaration must hold. */
+  readonly withOthers?: number;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
   readonly spellOnly?: true;
   /** 'becomesTarget' (Limit Break deck, Professor Hojo, CR 602.2): only an activated ability triggers it. */
@@ -1649,7 +1651,7 @@ export interface IrTrigger extends IrNode {
    * 'attacks' at someone (stage P29, D-133, CR 508.1b): "attacks you" (`you`) or "attacks you or a planeswalker you control"
    * (`youOrPlaneswalkers`); left out, an attack at anyone.
    */
-  readonly at?: 'you' | 'youOrPlaneswalkers';
+  readonly at?: 'you' | 'youOrPlaneswalkers' | 'opponent';
   /** 'dealtDamage': "is dealt combat damage" rather than "is dealt damage" (stage P29, D-133). */
   readonly combat?: true;
   /** 'enters': "enters untapped" (`false`) or "enters tapped" (`true`), how the permanent entered (stage P30, CR 603.6a). */
