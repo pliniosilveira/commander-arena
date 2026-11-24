@@ -43,6 +43,7 @@ import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { NUMBER_OF_OPPONENTS_WHO_CONTROL } from './opponents-who-control';
 import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 
@@ -583,6 +584,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     OPPONENT_COUNT,
     // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
     NUMBER_OF_OPPONENTS_WITH_MORE,
+    // Counter Blitz deck, group C (Summon: Yojimbo): "the number of opponents who control a creature with power 4 or greater".
+    NUMBER_OF_OPPONENTS_WHO_CONTROL,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),

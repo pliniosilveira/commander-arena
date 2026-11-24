@@ -329,6 +329,10 @@ export function targetText(spec: TargetSpec | undefined): string {
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
     case 'objectOrSpell':
       // Issue 81 (Fatehold Charm, CR 115.1): "target spell or creature".
+      // Endless Detour (CR 115.1): "target spell, nonland permanent, or card in a graveyard".
+      if (spec.what.card !== undefined) {
+        return `target spell, ${nounOf(spec.what.filter)}, or card in a graveyard`;
+      }
       return `target spell or ${nounOf(spec.what.filter)}`;
     case 'objectOrGraveyardCard': {
       // D-270 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".

@@ -1515,6 +1515,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
+  // Counter Blitz deck, group C (Endless Detour).
+  'noun.target-spell-permanent-or-graveyard-card': spell(
+    (e) => `The owner of ${e} puts it on their choice of the top or bottom of their library.`,
+  ),
   'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
   // The examples end with a sentence, or with the quote of the ability a creature spell gains.
   'effect.player-exiles-until-cast': permanent(
@@ -1563,6 +1567,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-player-who': permanent(
     (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
   ),
+  // Counter Blitz deck, group C.
+  'amount.for-each-opponent-who-controls': permanent(
+    (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
+  ),
+  'keyword.escalate-tap': asIs,
   // Abzan Armor deck.
   'condition.n-cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,

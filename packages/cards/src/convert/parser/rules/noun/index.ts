@@ -31,6 +31,7 @@ import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
+import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
@@ -998,6 +999,8 @@ export const NOUN_RULES = [
   ...STACK_ABILITY_EARLY_NOUN_RULES,
   NOUN_TARGET_SPELL,
   ...SPELL_OR_CREATURE_NOUN_RULES,
+  // Counter Blitz deck, group C (Endless Detour): "target spell, nonland permanent, or card in a graveyard".
+  ...COUNTER_BLITZ_C_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".
   ...GALADRIEL_G3_NOUN_RULES,
   // Issue 100 (Sublime Epiphany): "target activated or triggered ability".

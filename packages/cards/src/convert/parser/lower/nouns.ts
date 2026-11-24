@@ -867,15 +867,29 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       ) {
         return failure(noun, []);
       }
-      const blocked = missingFeatures(['selector:objectOrSpell']);
+      const blocked = missingFeatures([
+        'selector:objectOrSpell',
+        // Endless Detour (CR 115.1, 404.1): "target spell, nonland permanent, or card in a graveyard": the third half, a card of any graveyard.
+        ...(noun.orCard === undefined ? [] : (['ability:spellPermanentOrCard'] as const)),
+      ]);
       if (blocked.length > 0) return failure(noun, blocked);
       const permanents = lowerFilter(noun);
       if (!permanents.ok) return permanents;
       const spells = lowerFilterAt(noun.orSpell, { ...noun, other: false }, false);
       if (!spells.ok) return spells;
+      const cards =
+        noun.orCard === undefined
+          ? undefined
+          : lowerFilterAt(noun.orCard, { ...noun, other: false }, false);
+      if (cards !== undefined && !cards.ok) return cards;
       spec = {
         id,
-        what: { kind: 'objectOrSpell', filter: permanents.value, spell: spells.value },
+        what: {
+          kind: 'objectOrSpell',
+          filter: permanents.value,
+          spell: spells.value,
+          ...(cards === undefined ? {} : { card: cards.value }),
+        },
         ...boundsOf(noun),
       };
     } else if (noun.orCard !== undefined) {
@@ -1606,8 +1620,20 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
         return failure(noun, []);
       }
-      const blocked = gate(noun, need === undefined ? [] : [need]);
-      return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
+      // CR 102.2 (Summon: Yojimbo): "the number of opponents who control a creature with power 4 or greater" counts only the opponents of the controller.
+      const opponents = noun.whoGroup === 'eachOpponent';
+      const blocked = gate(noun, [
+        ...(need === undefined ? [] : [need]),
+        ...(opponents ? (['ability:opponentsControlling'] as const) : []),
+      ]);
+      return (
+        blocked ??
+        ok({
+          kind: 'eachPlayerControlling',
+          filter: filter.value,
+          ...(opponents ? { opponentsOnly: true as const } : {}),
+        })
+      );
     }
     case 'lostLifeThisTurn': {
       // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.

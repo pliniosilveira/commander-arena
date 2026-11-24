@@ -50,6 +50,8 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Counter Blitz deck, group C (Collective Effort): "each creature target player controls".
+  'noun.each-permanent-of-target-player',
 ] as const;
 
 /**

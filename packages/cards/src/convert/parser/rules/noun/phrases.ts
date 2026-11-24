@@ -717,48 +717,63 @@ export function permanentPhrase(
   // "noncreature artifact or noncreature enchantment" (stage P15): a choice whose every member has
   // modifiers of its own. A modifier on the first member alone ("tapped creature or planeswalker") is
   // ambiguous and stays unread, so each member must carry at least one.
-  const member: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(
-      satisfy(many(MODIFIER), (modifiers) => modifiers.length > 0),
-      typeWords(PERMANENT_TYPES, false),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    const [modifiers, types] = r.value;
-    const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), { ...NO_PARTS, types });
-    const { zone, ...filter } = toFilter('battlefield', parts, ctx.text.slice(pos, r.pos));
-    void zone;
-    return { ok: true, value: filter, pos: r.pos };
-  };
-  const modifiedChoice: Parser<IrFilter> = (ctx, pos) => {
-    const first = member(ctx, pos);
-    if (!first.ok) return first;
-    const more = many(
-      map(sequence(pattern(/(, or | or |, )/i), member), ([separator, filter]) => ({
-        separator: separator[0].toLowerCase(),
-        filter,
-      })),
-    )(ctx, first.pos);
-    if (!more.ok) return more;
-    const items = more.value;
-    const last = items[items.length - 1];
-    if (last === undefined) return fail(ctx, pos);
-    const shaped =
-      items.slice(0, -1).every((i) => i.separator === ', ') &&
-      (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
-    if (!shaped) return fail(ctx, pos);
-    const controller = optional(CONTROL_SUFFIX, undefined)(ctx, more.pos);
-    if (!controller.ok) return controller;
-    const base = toFilter(
-      'battlefield',
-      { ...NO_PARTS, controller: controller.value },
-      ctx.text.slice(pos, controller.pos),
-    );
-    return {
-      ok: true,
-      value: { ...base, anyOf: [first.value, ...items.map((i) => i.filter)] },
-      pos: controller.pos,
+  // `plain` (Summon: Yojimbo, "artifact, enchantment, or tapped creature an opponent controls"): the member may have no modifier, so a list of plain types ends in one member that has them.
+  const memberOf =
+    (plain: boolean): Parser<IrFilter & { readonly hadModifiers?: boolean }> =>
+    (ctx, pos) => {
+      const r = sequence(
+        satisfy(many(MODIFIER), (modifiers) => plain || modifiers.length > 0),
+        typeWords(PERMANENT_TYPES, false),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [modifiers, types] = r.value;
+      const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), { ...NO_PARTS, types });
+      const { zone, ...filter } = toFilter('battlefield', parts, ctx.text.slice(pos, r.pos));
+      void zone;
+      return { ok: true, value: { ...filter, hadModifiers: modifiers.length > 0 }, pos: r.pos };
     };
-  };
+  // `plain` false: every member has a modifier (the choice of stage P15). `plain` true (Summon: Yojimbo): a list of plain types may end in one member that has them.
+  const modifiedChoiceOf =
+    (plain: boolean): Parser<IrFilter> =>
+    (ctx, pos) => {
+      const first = memberOf(plain)(ctx, pos);
+      if (!first.ok) return first;
+      const more = many(
+        map(sequence(pattern(/(, or | or |, )/i), memberOf(plain)), ([separator, filter]) => ({
+          separator: separator[0].toLowerCase(),
+          filter,
+        })),
+      )(ctx, first.pos);
+      if (!more.ok) return more;
+      const items = more.value;
+      const last = items[items.length - 1];
+      if (last === undefined) return fail(ctx, pos);
+      // A modifier belongs to the one member it stands before: every member has one, or only the last does ("artifact, enchantment, or tapped creature"; "tapped creature or planeswalker" stays unread).
+      const members = [first.value, ...items.map((i) => i.filter)];
+      const allModifiers = members.every((m) => m.hadModifiers === true);
+      const onlyLastModified =
+        members.slice(0, -1).every((m) => m.hadModifiers !== true) &&
+        members[members.length - 1]?.hadModifiers === true;
+      if (!allModifiers && !onlyLastModified) return fail(ctx, pos);
+      const shaped =
+        items.slice(0, -1).every((i) => i.separator === ', ') &&
+        (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
+      if (!shaped) return fail(ctx, pos);
+      const controller = optional(CONTROL_SUFFIX, undefined)(ctx, more.pos);
+      if (!controller.ok) return controller;
+      const base = toFilter(
+        'battlefield',
+        { ...NO_PARTS, controller: controller.value },
+        ctx.text.slice(pos, controller.pos),
+      );
+      return {
+        ok: true,
+        value: { ...base, anyOf: members.map(({ hadModifiers: _had, ...member }) => member) },
+        pos: controller.pos,
+      };
+    };
+  const modifiedChoice = modifiedChoiceOf(false);
+  const mixedChoice = modifiedChoiceOf(true);
   // "Angel or Cleric you control" (stage P28): a choice of creature types (or other subtypes) for one object, each
   // word a listed subtype in the singular (CR 205.3).
   const subtypeChoice: Parser<IrFilter> = (ctx, pos) => {
@@ -835,7 +850,14 @@ export function permanentPhrase(
   // artifacts and enchantments") join with "and" and are not read.
   const phrase: Parser<IrFilter> = plural
     ? choice(quiet(pluralAndOr), single)
-    : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
+    : choice(
+        choose,
+        quiet(modifiedChoice),
+        quiet(mixedChoice),
+        quiet(typeOrSubtype),
+        quiet(subtypeChoice),
+        single,
+      );
   // "target artifact or enchantment with mana value X or less" (D2 group, Kinetic Ooze, CR 202.3): the mana value is at most the X a "where X is ..." defines, or the X of the spell
   // the permanent came from; the lowering says which, and refuses a text with neither.
   return (ctx, pos) => {
