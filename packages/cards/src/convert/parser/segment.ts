@@ -340,6 +340,9 @@ const IF_EQUIPMENT_ATTACH =
   /^if an equipment is put onto the battlefield this way, you may attach it to a creature you control\.$/i;
 const PUT_REST_OF_THOSE = /^put the rest of those cards [^.]*\.$/i;
 /** "Put any number of nonland permanent cards with total mana value 4 or less from among them onto the battlefield." (stage P68, D-230): the middle sentence of the same instruction. */
+/** "Put up to two planeswalker cards from among them onto the battlefield." (Deploy the Gatewatch): the middle sentence of a look at the top cards, for `effect.look-put-up-to`. */
+const PUT_UP_TO_FROM_AMONG =
+  /^put up to (?:two|three|four|\d+) [^.]* cards from among them onto the battlefield\.$/i;
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
@@ -1278,6 +1281,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(b, TAKE_FROM_AMONG) ||
           said(b, TAKE_ANY_OF_CHOSEN_TYPE) ||
           said(b, PUT_ANY_TOTAL) ||
+          said(b, PUT_UP_TO_FROM_AMONG) ||
           said(b, PUT_FROM_AMONG_ONTO) ||
           said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&

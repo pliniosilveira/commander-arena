@@ -1019,6 +1019,7 @@ describe('unmatched abilities', () => {
       'effect.each-exiles-then-counters',
       'effect.exiled-owner-creates-token',
       'effect.look-put-total',
+      'effect.look-put-up-to',
       'effect.create-copy-spirit',
       'effect.return-exiled-card',
       'effect.player-adds-mana',
