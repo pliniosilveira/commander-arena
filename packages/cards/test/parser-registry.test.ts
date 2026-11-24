@@ -179,6 +179,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-654: "an enchanted creature dies".
   'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
+  'keyword.replicate-tap': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
   'keyword.station': asIs,
@@ -1266,6 +1267,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.graveyard-events': whenever,
   // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
   'trigger.put-into-graveyard': whenever,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
+  'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.this-exploits': whenever,
+  'condition.this-suspended': permanent(
+    (e) =>
+      `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,
+  ),
   'trigger.self-put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,

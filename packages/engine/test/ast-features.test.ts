@@ -206,6 +206,7 @@ describe('the dimensions', () => {
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
+      'thisSuspended',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',

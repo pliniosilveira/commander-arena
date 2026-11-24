@@ -3573,6 +3573,11 @@ export type Effect =
       readonly objects: SacrificeSelector;
       readonly player?: PlayerSelector;
       readonly byController?: true;
+      /**
+       * The sacrifice of Exploit's ability (CR 702.110a, 702.110b): what is sacrificed is "exploited" by the creature with the ability, which the `exploits` trigger of that creature reads. Only the
+       * engine's own Exploit ability writes it (`validateCard` refuses it in card data); with a `choose` selector and no `player`.
+       */
+      readonly exploit?: true;
     }
   /**
    * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (Slaughter the Strong, CR 608.2d,
@@ -5651,9 +5656,10 @@ export type Trigger =
       readonly kind: 'putIntoGraveyard';
       /**
        * `you`: the graveyard of the controller of this ability. `any` ("a creature card is put into a graveyard from anywhere other than the battlefield", CR 603.2,
-       * 404.1): the graveyard of any player; not with `firstTimeEachTurn`.
+       * 404.1): the graveyard of any player; not with `firstTimeEachTurn`. `opponent` ("a card is put into an opponent's graveyard from anywhere", CR 404.1): the graveyard of
+       * a player other than the controller (any of them, with several opponents); not with `firstTimeEachTurn`, `batch` or `self`.
        */
-      readonly who: 'you' | 'any';
+      readonly who: 'you' | 'any' | 'opponent';
       /** `notBattlefield` (CR 700.4): any zone but the battlefield, so a permanent that dies is not counted. */
       readonly from: 'anywhere' | 'library' | 'notBattlefield';
       readonly filter?: ObjectFilter;
@@ -5672,6 +5678,12 @@ export type Trigger =
    * The ability is the half's own: unlocking the other half does not trigger it. `triggerSubject` is the Room.
    */
   | { readonly kind: 'doorUnlocked'; readonly who: 'you'; readonly door: 'this' }
+  /**
+   * "When this creature exploits a creature" (CR 702.110b, Exploit; the rules text was not available to check the number): the creature with this ability, whose exploit ability
+   * resolved and whose controller sacrificed a creature (itself or another) as it did. The trigger of the creature itself only. `triggerSubject` is the creature. It triggers also when the
+   * creature sacrificed itself (it is looked at as it was on the battlefield, CR 603.10a).
+   */
+  | { readonly kind: 'exploits' }
   /**
    * "Whenever one or more cards are put into exile from your library and/or your graveyard" (CR 603.2c, 400.7, D-229): a batch trigger on the cards of the
    * controller of this ability that are put into exile from their library or from their graveyard in one run of events. Once, however many. A card put
@@ -6565,6 +6577,12 @@ export type Keyword =
    */
   | { readonly kind: 'livingWeapon' }
   /**
+   * CR 702.110a (Exploit; the rules text was not available to check the number): "When this creature enters, you may sacrifice a creature." The engine expands the keyword
+   * (`rules/derive-keywords.ts`) into that triggered ability, whose sacrifice makes the creature "exploit a creature" for its own "When this creature exploits a creature" abilities (the
+   * `exploits` trigger). The creature may sacrifice itself.
+   */
+  | { readonly kind: 'exploit' }
+  /**
    * CR 702.182a (Job select, D-206): "When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it." A triggered
    * ability the engine writes itself (`rules/derive-keywords.ts`), as for Living weapon; only on an Equipment (`validateCard`).
    */
@@ -7174,6 +7192,11 @@ export type Condition =
    * (`functionsIn: 'graveyard'`).
    */
   | { readonly kind: 'thisInYourGraveyard' }
+  /**
+   * "If this card is suspended" (CR 702.62b, 603.4): the card the condition belongs to is in exile, has a Suspend ability and has a time counter on it. Read from the object itself
+   * (once the card leaves exile it is a new object, CR 400.7), as the event happens and again as the ability resolves. Only for an ability that works from exile (`functionsIn: 'exile'`).
+   */
+  | { readonly kind: 'thisSuspended' }
   /**
    * "If it's on the battlefield" (CR 603.4, 400.7; Animate Dead): the permanent the condition belongs to is on the battlefield now, the same object that triggered (an object that has
    * left is a new object elsewhere, so this reads the live object, never last-known information). Read as the event happens and again as the ability resolves.
@@ -8566,8 +8589,10 @@ export type Ability =
        * "Whenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand." (CR 113.6b, 603.2, D-151):
        * the ability triggers while its card is in its owner's graveyard, and not on the battlefield. The card is "this" (`this` names it while it
        * is still in the graveyard as the same object, CR 400.7); the controller of the ability is the owner of the card.
+       * `exile` ("Whenever a card is put into an opponent's graveyard from anywhere, if this card is suspended, you may remove a time counter from this card", CR 113.6b, 702.62b): the
+       * ability triggers while its card is in exile (checked by the intervening `thisSuspended`), where "this" is that card and the controller of the ability is its owner (CR 108.4).
        */
-      readonly functionsIn?: 'graveyard';
+      readonly functionsIn?: 'graveyard' | 'exile';
     }
   | {
       readonly kind: 'activated';

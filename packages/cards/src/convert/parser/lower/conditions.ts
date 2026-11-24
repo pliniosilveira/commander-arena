@@ -259,6 +259,14 @@ export function lowerCondition(
       if (ctx?.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisInYourGraveyard' });
     }
+    case 'thisSuspended': {
+      // CR 702.62b, 603.4 (Nihilith): "if this card is suspended" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then makes it an ability that works
+      // from exile); anywhere else it is a test the engine does not run for that shape.
+      const blocked = missingFeatures(['condition:thisSuspended']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisSuspended' });
+    }
     case 'thisOnBattlefield': {
       // CR 603.4, 400.7 (issue 89, Animate Dead): "if it's on the battlefield" is read only as the intervening "if" of a trigger about the source itself, where "it" is the source.
       const blocked = missingFeatures(['condition:thisOnBattlefield']);
@@ -1042,6 +1050,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
+  'condition:thisSuspended',
   'condition:thisOnBattlefield',
   'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',

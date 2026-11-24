@@ -567,7 +567,15 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
-  const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
+  // CR 702.56a (Psionic Ritual, "Replicate—Tap an untapped Horror you control"): a replicate cost that taps permanents is paid once for each time the caster chose, so that many are tapped;
+  // `validateCard` refuses a face that also has a `tapPermanents` alternative cost.
+  const replicaTap = replicate?.find((c) => c.kind === 'tapPermanents');
+  const tap =
+    tapAlt !== null
+      ? { filter: tapAlt.filter, count: tapAlt.count }
+      : replicaTap?.kind === 'tapPermanents'
+        ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
+        : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
     alternative === 'sacrificeFromGraveyard'

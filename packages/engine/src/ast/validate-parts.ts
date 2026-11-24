@@ -4080,6 +4080,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'thisSuspended':
+      // CR 702.62b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
     case 'thisOnBattlefield':
       // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
       break;
@@ -5865,6 +5868,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'another player can sacrifice only permanents they choose: use a choose selector',
           );
         }
+      }
+      if (e.exploit !== undefined) {
+        // CR 702.110b: the sacrifice of the engine's own Exploit ability; a card writes the keyword.
+        issue(
+          out,
+          `${path}.exploit`,
+          "exploit is the sacrifice of the engine's Exploit ability (CR 702.110a); a card writes the keyword",
+        );
       }
       if (e.byController !== undefined) {
         // D-196: "its controller sacrifices it": a named permanent, sacrificed by whoever controls it; no player and no choice.

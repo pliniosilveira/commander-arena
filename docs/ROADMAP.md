@@ -141,6 +141,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 
 - Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
+- A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
+- Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
 - "As you cast this spell" amounts are worked out as the spell becomes cast, costs paid; only one such amount is kept for a spell, and only in a spell's own text.
