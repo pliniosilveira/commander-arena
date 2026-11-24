@@ -325,7 +325,10 @@ function simple(
             { thisCard: true, triggerSubject: true, moved: true }
           : verb === 'tap' || verb === 'untap'
             ? { moved: true }
-            : {},
+            : verb === 'explore'
+              ? // "Whenever a creature you control enters, it explores." (Path of Discovery, CR 701.44a): the creature whose entering caused the trigger.
+                { triggerSubject: true }
+              : {},
       ),
   };
 }

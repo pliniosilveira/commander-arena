@@ -8660,8 +8660,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'explore':
-      // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents.
-      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents, or the permanent a trigger is about ("it explores").
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
       break;
     case 'scry':
     case 'surveil':
