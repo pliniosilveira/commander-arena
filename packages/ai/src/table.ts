@@ -9,6 +9,7 @@ import type { Agent } from './agent';
 import { type AgentFactory, MATCH_LIMITS, type ReasonCounts } from './arena';
 import { isExplaining, type Reason, type ReasonRecord, reasonHistogram } from './reasons';
 import { type EndReason, type RunOptions, runGame } from './runner';
+import { type TableEvent, TableObserver } from './table-events';
 
 /** One deck for every seat (a mirror), or one deck for each seat, in seat order (issue 527: a precon for each seat). */
 export type TableDeck = DeckConfig | readonly DeckConfig[];
@@ -26,6 +27,8 @@ export interface TableOptions {
   readonly budget?: number;
   readonly now?: () => number;
   readonly limits?: Pick<RunOptions, 'maxTurns' | 'maxActions'>;
+  /** Keep the events of every game in `TableGame.events` (what `table-report.ts` reads). Off by default. */
+  readonly trace?: boolean;
 }
 
 export interface TableGame {
@@ -39,6 +42,13 @@ export interface TableGame {
   readonly end: EndReason;
   readonly drew: boolean;
   readonly turns: number;
+  /**
+   * The place each SEAT finished in (1 is the winner; the first out of four is 4; every survivor of a game
+   * without a winner shares 1), by seat. Use `rotation` to find the agent: agent `k` sat in seat `(k + rotation) % seats`.
+   */
+  readonly places: readonly number[];
+  /** The events of the game, only when `TableOptions.trace` is on. */
+  readonly events?: readonly TableEvent[];
 }
 
 export interface TableResult {
@@ -110,7 +120,11 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
         const k = (seat - rotation + seats) % seats;
         return made[k] as Agent;
       });
-      const game = await runGame({ seed, decks }, bySeatAgent, run);
+      const observer = new TableObserver(seats);
+      const game = await runGame({ seed, decks }, bySeatAgent, {
+        ...run,
+        onAction: (step) => observer.observe(step),
+      });
       turns += game.state.turn.number;
       fallbacks += game.counters.fallbacks;
       rejectedActions += game.counters.rejectedActions;
@@ -146,6 +160,8 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
         end: game.reason,
         drew: game.result?.kind === 'draw',
         turns: game.state.turn.number,
+        places: observer.placements(),
+        ...(options.trace ? { events: observer.events } : {}),
       });
     }
   }

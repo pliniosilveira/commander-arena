@@ -1,6 +1,13 @@
-import type { MatchResult, TableResult } from '@commander-arena/ai';
+import type { MatchResult, TableReport, TableResult } from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { formatMatch, formatRound, formatTable, formatTimes, percentile } from './format.ts';
+import {
+  formatMatch,
+  formatRound,
+  formatTable,
+  formatTableReport,
+  formatTimes,
+  percentile,
+} from './format.ts';
 
 const result: MatchResult = {
   a: 'casual',
@@ -131,5 +138,78 @@ describe('percentile and formatRound', () => {
       5000,
     );
     expect(line).toContain('95th percentile 5.5 ms');
+  });
+});
+
+describe('formatTableReport', () => {
+  const report: TableReport = {
+    seats: 4,
+    games: 8,
+    agents: [
+      {
+        label: 'heuristic',
+        wins: 2,
+        survival: {
+          games: 8,
+          meanPlace: 2.5,
+          firstOut: 2,
+          eliminated: 6,
+          meanEliminationTurn: 31.8,
+          causes: { life: 5, commander: 1 },
+        },
+        attack: { attacks: 31, allIn: 26, meanPower: 18.2, allInThenOut: 1 },
+        block: {
+          declarations: 12,
+          noBlocks: 5,
+          lethal: 4,
+          unblocked: 319,
+          avoidable: 118,
+          avoidableAtLeast5: 2,
+          avoidableAtLeast10: 2,
+        },
+        removal: {
+          casts: 6,
+          tokens: 0,
+          bands: [0, 1, 1, 4],
+          meanShareOfBest: 0.91,
+          atAttacker: 0,
+          atAttackerOfMine: 0,
+        },
+      },
+    ],
+  };
+  const text = formatTableReport(report);
+
+  test('reads survival, the race, blocks and removal of each agent, with their denominators', () => {
+    expect(text).toContain('table report: 8 games at 4 seats');
+    expect(text).toContain('mean place 2.50 (1 best), wins 2, first out 2, eliminated 6/8');
+    expect(text).toContain('mean elimination turn 31.8, by life 5, commander 1');
+    expect(text).toContain('all-in 26 (83.9%)');
+    expect(text).toContain('no block 5 (41.7%)');
+    expect(text).toContain('avoidable 118 (37.0%)');
+    expect(text).toContain('by value <2 / 2-4 / 4-6 / 6+: 0 / 1 / 1 / 4');
+  });
+
+  test('an agent that never faced an attack or cast removal prints dashes, not NaN', () => {
+    const empty = formatTableReport({
+      ...report,
+      agents: [
+        {
+          ...(report.agents[0] as TableReport['agents'][number]),
+          attack: { attacks: 0, allIn: 0, meanPower: 0, allInThenOut: 0 },
+          block: {
+            declarations: 0,
+            noBlocks: 0,
+            lethal: 0,
+            unblocked: 0,
+            avoidable: 0,
+            avoidableAtLeast5: 0,
+            avoidableAtLeast10: 0,
+          },
+        },
+      ],
+    });
+    expect(empty).not.toContain('NaN');
+    expect(empty).toContain('all-in 0 (-)');
   });
 });
