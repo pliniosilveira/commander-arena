@@ -44,6 +44,7 @@ import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
+import { EXACT_PT_CONDITION_RULES } from './exact-pt';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
@@ -591,6 +592,7 @@ export const CONDITION_RULES = [
   ...ARTIFACT_CONDITION_RULES,
   // Stage P32 (D-147): "you don't control another Dinosaur", "the creature you control has trample".
   ...DINOSAUR_CONDITION_RULES,
+  ...EXACT_PT_CONDITION_RULES,
   // Jeskai free-cast cards (issue 100): "you cast it".
   ...JESKAI_CASTFREE_CONDITION_RULES,
   // Stage P34 (D-152): the most life, the total power of the attackers, the damage and the permanents of the turn.

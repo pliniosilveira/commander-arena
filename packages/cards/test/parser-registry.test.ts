@@ -381,6 +381,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-at-most': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-a': permanent((e) => `~ enters tapped unless ${e}.`),
+  'condition.control-exact-pt-creature': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-land-type': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.opponents-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   // An intervening "if" (CR 603.4): the condition follows the trigger, after "if".

@@ -571,6 +571,7 @@ describe('unmatched abilities', () => {
       'condition.control-greatest',
       'condition.dont-control-a',
       'condition.object-has-keyword',
+      'condition.control-exact-pt-creature',
       'condition.was-cast',
       'condition.attacking-most-life',
       'condition.attackers-total-power',

@@ -318,3 +318,41 @@ describe('"At the beginning of your upkeep, exile the top card of each opponent\
     g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
   });
 });
+
+describe('"~ can\'t attack unless you control a 1/1 creature." (CR 508.1a, 101.2, 208.1)', () => {
+  const beast = parsed(
+    'SYNTHETIC Lonely Beast',
+    'Creature — Beast',
+    "~ can't attack unless you control a 1/1 creature.",
+    { manaCost: '{2}{G}', power: '5', toughness: '5', colors: ['G'] },
+  );
+  const tiny = parsed('SYNTHETIC Tiny One', 'Creature — Elf', '', {
+    manaCost: '{G}',
+    power: '1',
+    toughness: '1',
+    colors: ['G'],
+  });
+  const build = (...others: string[]) =>
+    scenario()
+      .define(beast)
+      .define(tiny)
+      .seat(0)
+      .battlefield(beast.name, ...others)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('it attacks while you control a 1/1 creature', () => {
+    const g = build(tiny.name);
+    const before = g.state.seats[1]?.life ?? 0;
+    g.playCombat({ attack: [beast.name], until: 'combatDamage' });
+    expect(g.state.seats[1]?.life).toBe(before - 5);
+  });
+
+  test('with no 1/1 creature it cannot attack', () => {
+    const g = build('Grizzly Bears');
+    expect(() => g.playCombat({ attack: [beast.name], until: 'combatDamage' })).toThrow();
+  });
+});
