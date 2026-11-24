@@ -23,7 +23,7 @@ import {
   spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
-import { cardTypesAmongForSource, countForSource } from './derive-count';
+import { cardTypesAmongForSource, countForSource, partySizeForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders, hasMaxSpeed } from './designations';
 import { matchesFilterWith } from './filter-match';
@@ -114,7 +114,9 @@ export function staticConditionHolds(
           ? cardTypesAmongForSource(state, condition.amount.filter, source)
           : condition.amount.kind === 'countOf'
             ? countForSource(state, condition.amount.filter, source)
-            : null;
+            : condition.amount.kind === 'partySize' // CR 700.8: the party of the source's controller, through layers 1, 4 and 5
+              ? partySizeForSource(state, source)
+              : null;
       if (n === null) return false;
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;

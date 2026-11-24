@@ -137,7 +137,11 @@ export function angelsStaticWording(effect: StaticEffect, noun: string): string 
       return "Your opponents can't cast spells during your turn";
     case 'preventDamageToThis': {
       const scope = PREVENT_SCOPE[effect.scope];
-      return scope === undefined ? null : `Prevent ${scope} that would be dealt to this ${noun}`;
+      if (scope === undefined) return null;
+      // CR 303.4, 301.5: an Aura or Equipment prevents the damage dealt to the permanent it is attached to.
+      return effect.subject.kind === 'attached'
+        ? `Prevent ${scope} that would be dealt to the permanent this is attached to`
+        : `Prevent ${scope} that would be dealt to this ${noun}`;
     }
     case 'blockTax':
       return blockTaxWording(effect);

@@ -21,6 +21,8 @@ const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
   'loseKeyword',
   'grantAbility',
   'restriction',
+  // CR 615.1, 700.8c (Multiclass Baldric): "As long as you have a full party, prevent all damage that would be dealt to equipped creature": read where the damage is dealt (`rules/prevention.ts`).
+  'preventDamageToThis',
   // D-133: read where the attackers are declared, with `evaluateCondition` (`rules/attack-tax.ts`).
   'attackTax',
   // D-133: read as the spell is cast, with `evaluateCondition` (`rules/legality.ts`).
@@ -179,6 +181,8 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
         }
         return;
       }
+      // CR 700.8, 613.8 (full party): the creatures in the party, read through layers 1, 4 and 5 like a count of objects.
+      if (typeof amount !== 'number' && amount?.kind === 'partySize') return;
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,

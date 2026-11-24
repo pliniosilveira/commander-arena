@@ -8245,11 +8245,13 @@ export type StaticEffect =
    * ability all the damage of the `scope` (`combat`: combat damage, `noncombat`, `all`) that would be dealt to it is prevented, as an
    * effect that prevents all damage does (CR 615.6: it is never dealt, so no marked damage, no life loss from it, no lifelink,
    * no deathtouch). It reads the abilities the permanent has as the damage would be dealt, so it is lost with "loses all abilities". It
-   * is about the permanent itself (`this`).
+   * is about the permanent itself (`this`), or, on an Aura or Equipment, about the permanent it is attached to (`attached`, "prevent all damage that would be
+   * dealt to equipped creature", CR 303.4, 301.5): the prevention effect then comes from the attaching permanent, so a creature that loses its abilities is still
+   * protected, and the effect's `condition` ("as long as you have a full party") is read for the attaching permanent's controller.
    */
   | {
       readonly kind: 'preventDamageToThis';
-      readonly subject: { readonly kind: 'this' };
+      readonly subject: { readonly kind: 'this' } | { readonly kind: 'attached' };
       readonly scope: PreventScope;
       /**
        * "If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it." (issue 159, CR 615.1, 122.1): each

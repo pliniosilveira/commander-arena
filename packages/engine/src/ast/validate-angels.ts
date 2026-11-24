@@ -283,8 +283,15 @@ function checkEnteringFilter(what: ObjectFilter, path: string, out: AstIssue[]):
 export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]): boolean {
   switch (s?.kind) {
     case 'preventDamageToThis':
-      if (kindOf(s.subject) !== 'this') {
-        issue(out, `${path}.subject`, 'preventDamageToThis is about the permanent itself ("this")');
+      if (kindOf(s.subject) !== 'this' && kindOf(s.subject) !== 'attached') {
+        issue(
+          out,
+          `${path}.subject`,
+          'preventDamageToThis is about the permanent itself ("this") or the permanent it is attached to ("attached")',
+        );
+      }
+      if (kindOf(s.subject) === 'attached' && s.removeCounter !== undefined) {
+        issue(out, `${path}.removeCounter`, 'a prevention of the attached permanent removes no counter');
       }
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
