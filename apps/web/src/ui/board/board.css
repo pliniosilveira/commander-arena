@@ -1297,10 +1297,10 @@
   display: inline-flex;
 }
 
-/* A stack of equal permanents: the front card is a little smaller than its tile (in the same shape, so its picture is cut
-   where a single card's is) and two cards stand behind it, up and to the right, whatever the number: the count says how many,
-   the stack says "several". Each card behind is drawn with the card's own picture, a little darker the further back, so what
-   shows of it is the edge of a real card. All of it is inside the tile's own box: no row clips it, no neighbour covers it. */
+/* A stack of equal permanents (stack-shape.ts): the front card is a little smaller than its tile (in the same shape, so its
+   picture is cut where a single card's is) and one card stands behind it for each other copy, each a step to the right and a
+   little higher. Each is drawn with the card's own picture, darker the further back, so what shows of it is the edge of a real
+   card. Tile.tsx places each one; the group keeps the room beside the tile clear (Row.tsx). */
 .board-tile.is-group .board-tile-inner {
   inset: 11px 12px 0 0;
   /* The tile's centre, so a tapped front card turns with the cards behind it. */
@@ -1315,18 +1315,13 @@
 
 .board-tile-layer {
   position: absolute;
-  inset: 0 0 11px 12px;
+  width: calc(var(--w) - 12px);
+  height: calc(var(--h) - 11px);
   overflow: hidden;
   background: var(--bg-raised);
   border: 1px solid var(--bg-sunken);
   border-radius: 6px;
   box-shadow: -1px 1px 3px color-mix(in srgb, var(--bg-sunken) 90%, transparent);
-  filter: brightness(0.6);
-}
-
-.board-tile-layer + .board-tile-layer {
-  inset: 5.5px 6px 5.5px 6px;
-  filter: brightness(0.8);
 }
 
 /* A stack is tapped or untapped as a whole (grouping never mixes the two), so the cards behind the front one tilt with it. */

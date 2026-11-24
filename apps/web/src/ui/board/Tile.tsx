@@ -36,6 +36,7 @@ import {
   PRINTED_TITLE,
   roleText,
 } from './resolve';
+import { STACK_FRONT_TOP, stackShape } from './stack-shape';
 
 export interface TileProps {
   readonly object: ObjectView;
@@ -141,6 +142,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
   ]
     .filter(Boolean)
     .join(' ');
+  const stack = stackShape(count);
   const picture = isFaceDownPermanent(o) ? (
     // D-315: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
     <FaceDownArt version="art_crop" className="board-tile-art" />
@@ -194,10 +196,25 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
       }}
     >
       {count > 1 && (
-        // Two cards behind the front one, each drawn with the card's own picture, so the stack reads as cards.
+        // One card behind the front one for each other copy, each drawn with the card's own picture, the furthest first.
         <span className="board-tile-stack" aria-hidden="true">
-          <span className="board-tile-layer">{picture}</span>
-          <span className="board-tile-layer">{picture}</span>
+          {Array.from({ length: stack.behind }, (_, i) => {
+            const k = stack.behind - i;
+            return (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: the cards behind are alike and never reordered
+                key={i}
+                className="board-tile-layer"
+                style={{
+                  left: k * stack.dx,
+                  top: STACK_FRONT_TOP - k * stack.dy,
+                  filter: `brightness(${(0.9 - (0.3 * k) / Math.max(stack.behind, 2)).toFixed(2)})`,
+                }}
+              >
+                {picture}
+              </span>
+            );
+          })}
         </span>
       )}
       <span className="board-tile-inner">
