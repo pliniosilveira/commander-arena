@@ -203,3 +203,57 @@ describe('"~ deals 2 damage to each opponent and each creature they control. If 
     g.expect.noObject('Serra Angel', { zone: 'battlefield' });
   });
 });
+
+describe('"... you may cast spells from among those exiled cards this turn" and "... without paying its mana cost" (CR 601.2, 118.9, 305.1)', () => {
+  const among = parsed(
+    'SYNTHETIC Among Spells',
+    'Sorcery',
+    'Exile the top two cards of your library. You may cast spells from among those exiled cards this turn.',
+    { manaCost: '{1}', colors: [] },
+  );
+  const free = parsed(
+    'SYNTHETIC Free Play',
+    'Sorcery',
+    'Exile the top card of your library. You may play it this turn without paying its mana cost.',
+    { manaCost: '{1}', colors: [] },
+  );
+  const build = (spell: string, ...top: string[]) =>
+    scenario()
+      .define(among)
+      .define(free)
+      .seat(0)
+      .hand(spell)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest')
+      .library(...top, ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('a spell among the exiled cards can be cast, a land among them cannot be played', () => {
+    const g = build(among.name, 'Forest', 'Grizzly Bears');
+    g.act(0).cast(among.name, { pay: true });
+    g.passAll();
+    expect(g.legalActions(0).some((a) => a.type === 'playLand')).toBe(false);
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Forest', 'exile');
+  });
+
+  test('without paying its mana cost: the spell is cast for no mana', () => {
+    const g = build(free.name, 'Grizzly Bears');
+    g.act(0).cast(free.name, { pay: true });
+    g.passAll();
+    const untappedBefore = Object.values(g.state.objects).filter(
+      (o) => o.zone === 'battlefield' && o.tapped !== true,
+    ).length;
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { alternative: 'free' });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    const untappedAfter = Object.values(g.state.objects).filter(
+      (o) => o.zone === 'battlefield' && o.tapped !== true,
+    ).length;
+    expect(untappedAfter).toBe(untappedBefore + 1);
+  });
+});
