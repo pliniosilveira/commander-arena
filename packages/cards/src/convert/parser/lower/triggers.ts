@@ -278,6 +278,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:surveils']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
     }
+    case 'milled': {
+      // "Whenever a player mills one or more creature cards" (Zellix, CR 701.17a, 603.2c): the player is relative to the controller; a kind of card filters the cards milled.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:milled']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const kind = t.subject?.filter;
+      if (t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)) {
+        return ok({ kind: 'milled', who });
+      }
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      return ok({ kind: 'milled', who, filter: filter.value });
+    }
     case 'rollsHighest': {
       // "Whenever you roll a die's highest natural result" (Galadriel deck, group 3, CR 706.1a, 706.2): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
@@ -886,6 +900,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'tokenCreated',
       'scries',
       'surveils',
+      'milled',
       'rollsHighest',
       'winsCoinFlip',
     ].includes(only.event) &&
@@ -1127,6 +1142,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   const eventDamage = events.every(
     (e) =>
       e.event === 'lifeGained' ||
+      (e.event === 'lifeLost' && e.batch !== true) ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
       // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.

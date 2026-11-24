@@ -18,7 +18,7 @@ import type {
   TokenDefinition,
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
-import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { keywordKind, landwalkOf, plainKeyword } from '../rules/keyword/vocabulary';
 import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
@@ -2401,6 +2401,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       const unsupportedToxic = missingFeatures(['ability:keyword', 'keyword:toxic']);
       if (unsupportedToxic.length > 0) return { ok: false, needs: unsupportedToxic, ...at };
       abilities.push({ kind: 'keyword', keyword: { kind: 'toxic', count: Number(toxic[1]) } });
+      continue;
+    }
+    // "with islandwalk" (Chasm Skulker, CR 702.14a): a landwalk of the token itself, with the land type (or "nonbasic", CR 702.14c).
+    const landType = landwalkOf(word);
+    if (landType !== undefined) {
+      const unsupportedWalk = missingFeatures(['ability:keyword', 'keyword:landwalk']);
+      if (unsupportedWalk.length > 0) return { ok: false, needs: unsupportedWalk, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'landwalk', landType } });
       continue;
     }
     const kind = keywordKind(word);

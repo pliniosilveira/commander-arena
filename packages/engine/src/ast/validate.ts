@@ -1217,6 +1217,27 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
       }
       break;
+    case 'milled':
+      // CR 701.17a: a card read where it went (a graveyard), so no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards milled are read in the graveyard: the filter names no zone, controller or owner',
+          );
+        }
+      }
+      if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'activatesAbility':
@@ -1707,6 +1728,8 @@ function hasDamage(t: Trigger): boolean {
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
+    // CR 119.3: "Whenever an opponent loses life, ... that many": the life that event lost. A batch spans several events, so it has no one amount.
+    (t?.kind === 'lifeLost' && t.batch !== true) ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||
     t?.kind === 'surveils'

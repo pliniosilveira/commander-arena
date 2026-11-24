@@ -635,6 +635,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
     'surveils',
+    // CR 701.17a: "Whenever a player mills one or more creature cards".
+    'milled',
     // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
     'rollsHighest',
     // CR 705.2 (Setzer): "Whenever you win a coin flip".
@@ -3282,6 +3284,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbility: true,
   scries: true,
   surveils: true,
+  milled: true,
   rollsHighest: true,
   winsCoinFlip: true,
   interveningIf: true,

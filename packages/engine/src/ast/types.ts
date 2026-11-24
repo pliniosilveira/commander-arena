@@ -5521,6 +5521,16 @@ export type Trigger =
    */
   | { readonly kind: 'surveils'; readonly who: 'you' | 'opponent' | 'any' }
   /**
+   * "Whenever a player mills one or more creature cards" (CR 701.17a, 603.2c, 701.17: Mill): once each time the player `who` names (relative to the controller of the ability) mills
+   * cards (one `mill` instruction for one player is one event, however many cards) and at least one of the cards matches `filter` (read against the card in the graveyard, so no zone,
+   * controller or owner; left out, any card). A library that is empty mills nothing and triggers nothing. `triggerPlayer` is the player who milled.
+   */
+  | {
+      readonly kind: 'milled';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly filter?: ObjectFilter;
+    }
+  /**
    * "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2, 603.2; Galadriel group 3): once each time the player `who` names (relative to the controller of
    * this ability) rolls a die and its natural result (the number on the top face before any modifier) is the greatest the die can show: its number of sides (a d4 rolls 4).
    * Every die of a roll counts apart. The roll that triggers it is the roll of `rollDie` (the event `dieRolled`).

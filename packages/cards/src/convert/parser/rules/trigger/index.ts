@@ -59,6 +59,7 @@ import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
+import { MILL_TRIGGER_RULES } from './mill';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
@@ -1423,6 +1424,8 @@ export const TRIGGER_RULES = [
   ...VRASKA_TRIGGER_RULES,
   // Hashaton deck, group 1 (D-374): "you cycle or discard another card".
   ...HASHATON_G1_TRIGGER_RULES,
+  // Mind Flayarrrs deck, group 4: "a player mills one or more creature cards".
+  ...MILL_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
   // Death Toll deck, group D: "you play a card with two or more card types".
