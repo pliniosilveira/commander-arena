@@ -121,6 +121,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'defendingPlayer',
   // "the player to your right": one player the text names, so a later "that player" is bound to it.
   'playerToRight',
+  // "the chosen player": one player the permanent chose as it entered.
+  'enteredChosenPlayer',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
   // "each of those opponents" of a damage batch trigger: several players, as above.

@@ -540,6 +540,8 @@ function recipientText(
       return 'the defending player';
     case 'playerToYourRight':
       return 'the player to your right';
+    case 'enteredChosenPlayer':
+      return 'the chosen player';
     case 'chosenPlayer':
       return 'that player';
     case 'attackedBy':
@@ -750,6 +752,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'playerToYourRight':
       return { who: 'the player to your right', third: true };
+    case 'enteredChosenPlayer':
+      return { who: 'the chosen player', third: true };
     case 'chosenPlayer':
       return { who: 'that player', third: true };
     case 'triggerPlayer':

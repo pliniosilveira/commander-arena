@@ -1082,6 +1082,11 @@ export function resolvePlayers(
       const seat = defendingPlayerOf(state, ctx.source);
       return seat === null ? [] : [seat];
     }
+    case 'enteredChosenPlayer': {
+      // CR 614.12a, 607.2d (Stuffy Doll): the player the permanent chose as it entered, read from it or from its last-known information; nobody when it has left the game.
+      const seat = chosenOf(state, ctx.source)?.player;
+      return seat === undefined || getSeat(state, seat).hasLost ? [] : [seat];
+    }
     case 'chosenPlayer':
       // The Black Gate: the player the `choosePlayer` before it chose; nobody when it has left the game.
       return ctx.chosenPlayer === undefined || getSeat(state, ctx.chosenPlayer).hasLost
@@ -1235,6 +1240,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'playerToYourRight' ||
     sel.kind === 'chosenPlayer' ||
+    sel.kind === 'enteredChosenPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||

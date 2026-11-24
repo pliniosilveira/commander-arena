@@ -16,7 +16,8 @@ export type ChoiceKind =
   | 'option'
   | 'cardType'
   | 'planeswalkerType'
-  | 'lifePaid';
+  | 'lifePaid'
+  | 'player';
 
 /** The options of a question, in the fixed order its legal actions follow. */
 export function optionsFor(
@@ -27,6 +28,8 @@ export function optionsFor(
   life = 0,
 ): readonly string[] {
   // CR 119.4, 119.4b: "pay any amount of life": 0 can always be paid, and no more than the life total.
+  // CR 614.12a: "choose a player" is one of the players in the game, the options (`seat:<n>`) the caller names (`playerOptions`).
+  if (what === 'player') return named;
   if (what === 'lifePaid')
     return Array.from({ length: Math.max(life, 0) + 1 }, (_, i) => String(i));
   // Cloud Key (CR 205.2a): a card type choice may list the types it offers; with none listed every card type is offered.
@@ -36,6 +39,11 @@ export function optionsFor(
   // Issue 184: "choose a color other than blue" leaves that color out.
   if (what === 'color') return COLORS.filter((c) => c !== except);
   return what === 'creatureType' ? CREATURE_TYPES : what === 'option' ? named : COLORS;
+}
+
+/** The options of "choose a player": every player still in the game, in turn order from the first seat, as `seat:<n>` (CR 614.12a, 800.4a: a player who has left cannot be chosen). */
+export function playerOptions(state: GameState): readonly string[] {
+  return state.seats.flatMap((s) => (s.hasLost ? [] : [`seat:${s.id}`]));
 }
 
 /**
@@ -53,6 +61,11 @@ export function chosenFromOption(
   named: readonly string[] = [],
 ): ChosenValues | null {
   if (what === 'option') return named.includes(option) ? { option } : null;
+  // CR 614.12a: the player chosen is one of the options offered, `seat:<n>`.
+  if (what === 'player') {
+    const seat = /^seat:(\d+)$/u.exec(option)?.[1];
+    return named.includes(option) && seat !== undefined ? { player: Number(seat) } : null;
+  }
   // CR 119.4 (pay any amount of life): the amount is one of the options the question offered (0 to the life total).
   if (what === 'lifePaid') return named.includes(option) ? { lifePaid: Number(option) } : null;
   if (what === 'creatureType')

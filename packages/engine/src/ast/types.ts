@@ -1363,6 +1363,12 @@ export type PlayerSelector =
    */
   | { readonly kind: 'chosenPlayer' }
   /**
+   * "The chosen player" of "As this creature enters, choose a player" (Stuffy Doll, CR 614.12a, 607.2d): the player the permanent with the ability chose as it entered
+   * (`GameObject.chosen.player`), read from it or from its last-known information once it has left (CR 113.7a). Nobody when it chose none or the player has left the game.
+   * Valid only on a face with an `asEntersChoose` of `player`.
+   */
+  | { readonly kind: 'enteredChosenPlayer' }
+  /**
    * "That player", "that creature's controller", "its controller" in a triggered ability (D-133): the player the
    * event that caused the trigger is about. For `drawn` the player who drew; for `dealsCombatDamage` to a player the
    * player who was damaged; for `castSpell` the player who cast the spell, for `becomesTarget` the controller of the
@@ -5547,7 +5553,8 @@ export type Trigger =
   | {
       readonly kind: 'dealsDamage';
       readonly what: TriggerSubject;
-      readonly to: 'opponent' | 'player';
+      /** `you` ("Whenever a permanent deals damage to you", Dissipation Field): the controller of this ability. */
+      readonly to: 'opponent' | 'player' | 'you';
     }
   /**
    * "Whenever a source you control deals noncombat damage to an opponent" (CR 120.2b, 603.2, 603.2c, D-333): once for each source and each player it
@@ -7413,6 +7420,8 @@ export type Replacement =
        * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
        * `planeswalkerType` (CR 205.3j, "As this enchantment enters, choose a planeswalker type"): one of `PLANESWALKER_TYPES`; read by the `chosenPlaneswalkerType` quality of a filter.
        * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
+       * `player` (CR 614.12a, Stuffy Doll: "As this creature enters, choose a player"): the controller chooses one of the players in the game (any, themselves included); the answer is
+       * kept on the permanent (`GameObject.chosen.player`) and read by the player selector `enteredChosenPlayer`.
        * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
        */
       readonly what:
@@ -7421,7 +7430,8 @@ export type Replacement =
         | 'option'
         | 'cardType'
         | 'planeswalkerType'
-        | 'lifePaid';
+        | 'lifePaid'
+        | 'player';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition

@@ -327,7 +327,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever enchanted creature deals damage to an opponent" (issue 347, CR 120.2, 603.2c): damage of any kind to a player.
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
-      if (t.damaged !== 'player' && t.damaged !== 'opponent') return failure(t);
+      if (t.damaged !== 'player' && t.damaged !== 'opponent' && t.damaged !== 'you') {
+        return failure(t);
+      }
       const missing = missingFeatures(['trigger:dealsDamage']);
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: 'dealsDamage', what: what.value, to: t.damaged });
@@ -1635,6 +1637,7 @@ function lowerTriggeredAbility(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  ctx.itIsDamageSource = triggers.length > 0 && triggers.every((t) => t.kind === 'dealsDamage');
   // Troyan 2 deck (CR 603.6c): "When ~ is put into a graveyard from anywhere": "it" is the card of the ability itself.
   ctx.selfGraveyardEntry =
     triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.self === true);

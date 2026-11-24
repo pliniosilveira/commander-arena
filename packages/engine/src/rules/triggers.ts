@@ -1202,10 +1202,13 @@ function matches(
       );
     }
     case 'dealsDamage': {
+      // CR 110.1, 120.3: "a permanent deals damage" is about a permanent (as it is, or as it last was on the battlefield), never a spell or an ability on the stack.
+      if (subject?.zone !== 'battlefield') return false;
       if (!matchesWhat(state, trigger.what, subject, candidate)) return false;
       const damaged = occ.damaged;
       if (damaged?.kind !== 'player') return false;
-      // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants).
+      // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants); "you" is that controller.
+      if (trigger.to === 'you') return damaged.seat === candidate.controller;
       return trigger.to === 'player' || damaged.seat !== candidate.controller;
     }
     case 'damageToPlayerPrevented':

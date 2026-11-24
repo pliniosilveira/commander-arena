@@ -145,6 +145,7 @@ export interface IrNoun extends IrNode {
     | 'players' // "you and target opponent each": several player nouns acting at once (`members`)
     | 'defendingPlayer' // "defending player" (CR 508.5) body
     | 'playerToRight' // "the player to your right" (Hithlain Rope)
+    | 'enteredChosenPlayer' // "the chosen player" of "As ~ enters, choose a player" (Stuffy Doll)
     | 'sacrificed' // "the sacrificed creature": what the cost of the ability sacrificed (stage P29, D-133)
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
@@ -1477,7 +1478,14 @@ export interface IrRestrictionArg extends IrNode {
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
   /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
-  readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'planeswalkerType' | 'lifePaid';
+  readonly what:
+    | 'creatureType'
+    | 'color'
+    | 'option'
+    | 'cardType'
+    | 'planeswalkerType'
+    | 'lifePaid'
+    | 'player';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
   /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */

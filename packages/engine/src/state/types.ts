@@ -340,6 +340,8 @@ export interface ChosenValues {
   readonly option?: string;
   /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */
   readonly lifePaid?: number;
+  /** The player chosen as it entered (CR 614.12a: "As this creature enters, choose a player", Stuffy Doll), read by the player selector `enteredChosenPlayer`. */
+  readonly player?: SeatId;
 }
 
 export interface TokenData {

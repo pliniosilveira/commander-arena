@@ -437,6 +437,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           'cardType',
           'planeswalkerType',
           'lifePaid',
+          'player',
         ])
       ) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
@@ -1669,7 +1670,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'dealsDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
-      if (!isOneOf(t.to, ['opponent', 'player'])) {
+      if (!isOneOf(t.to, ['opponent', 'player', 'you'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;

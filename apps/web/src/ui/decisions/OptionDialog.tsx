@@ -24,7 +24,9 @@ export function OptionDialog({
       ? 'Choose a color'
       : d.purpose === 'planeswalkerType'
         ? 'Choose a planeswalker type'
-        : 'Choose a creature type';
+        : d.purpose === 'player'
+          ? 'Choose a player'
+          : 'Choose a creature type';
   return (
     <Dialog label={label} className="dec-option">
       <h2 className="dec-title">{d.sourceName}</h2>

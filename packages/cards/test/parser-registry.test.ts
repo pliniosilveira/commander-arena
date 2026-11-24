@@ -497,6 +497,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
   ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
+  'noun.entered-chosen-player': spell((e) => `~ deals 2 damage to ${e}.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
   // Stage P19: the header line of a modal spell, followed by two bullets.

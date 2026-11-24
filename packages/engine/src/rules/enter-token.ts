@@ -13,7 +13,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { attachEntered } from './attach';
-import { optionsFor } from './chosen';
+import { optionsFor, playerOptions } from './chosen';
 import { type OrderFlow, quietFlow } from './damage-order';
 import { bindEncoreToken } from './encore';
 import {
@@ -195,7 +195,7 @@ export function runEnterToken(
       purpose: what,
       options: optionsFor(
         what,
-        entersOptions(definition.abilities),
+        what === 'player' ? playerOptions(state) : entersOptions(definition.abilities),
         entersColorExcept(definition.abilities),
         lifeTotalIsLocked(state, seat) ? 0 : getSeat(state, seat).life,
       ),
