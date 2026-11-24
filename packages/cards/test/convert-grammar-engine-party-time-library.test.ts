@@ -297,3 +297,62 @@ describe("Gonti, Lord of Luxury (When Gonti enters, look at the top four cards o
     expect(() => g.act(1).cast(RED.name, { pay: true })).toThrow(/cast|legal|exile/i);
   });
 });
+
+describe('Aven Mindcensor (If an opponent would search a library, that player searches the top four cards of that library instead.)', () => {
+  const MINDCENSOR = real('Aven Mindcensor');
+  const SEEKER = parsed(
+    'SYNTHETIC Seeker',
+    'Sorcery',
+    'Search your library for a Plains card, reveal it, put it into your hand, then shuffle.',
+    { manaCost: '{1}' },
+  );
+  const board = (opponentHasMindcensor: boolean, active: 0 | 1 = 0) => {
+    const b = scenario().define(MINDCENSOR).define(SEEKER);
+    b.seat(0).battlefield('Island').hand(SEEKER.name);
+    if (!opponentHasMindcensor) b.battlefield(MINDCENSOR.name);
+    b.library('Island', 'Island', 'Plains', 'Island', 'Island', 'Plains', ...FILLER);
+    b.seat(1).hand(SEEKER.name).battlefield('Island');
+    if (opponentHasMindcensor) b.battlefield(MINDCENSOR.name);
+    b.library('Island', 'Island', 'Plains', 'Island', 'Island', 'Plains', ...FILLER);
+    return b.at('precombatMain', { active, turn: 1 }).build();
+  };
+  const legalOf = (g: ReturnType<typeof board>) => {
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error(`expected a search, got ${d?.kind}`);
+    return d.legal;
+  };
+
+  test("an opponent of the Mindcensor's controller can find only a card among the top four (CR 701.23, 614.1a)", () => {
+    // Seat 0 controls the Mindcensor; seat 1 searches.
+    const g = board(false, 1);
+    g.act(1).cast(SEEKER.name, { pay: true });
+    g.passAll();
+    expect(legalOf(g)).toHaveLength(1);
+  });
+
+  test("the controller of the Mindcensor searches the whole library", () => {
+    const g = board(false);
+    g.act(0).cast(SEEKER.name, { pay: true });
+    g.passAll();
+    expect(legalOf(g)).toHaveLength(2);
+  });
+
+  test('with no card of the kind among the top four, nothing can be found', () => {
+    const g = scenario()
+      .define(MINDCENSOR)
+      .define(SEEKER)
+      .seat(0)
+      .battlefield(MINDCENSOR.name)
+      .library(...FILLER)
+      .seat(1)
+      .hand(SEEKER.name)
+      .battlefield('Island')
+      .library('Island', 'Island', 'Island', 'Island', 'Plains', ...FILLER)
+      .at('precombatMain', { active: 1, turn: 1 })
+      .build();
+    g.act(1).cast(SEEKER.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Plains', 'library', { seat: 1 });
+    expect(g.state.pending?.kind).toBe('priority');
+  });
+});

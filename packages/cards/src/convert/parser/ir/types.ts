@@ -2112,6 +2112,8 @@ export type IrStaticEffect =
   | { readonly kind: 'damageCantBePrevented' }
   /** "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d): the permanent changes a rule of the game. */
   | { readonly kind: 'damageAsThoughWither' }
+  /** "If an opponent would search a library, that player searches the top four cards of that library instead." (Aven Mindcensor, CR 701.23): the number of cards. */
+  | { readonly kind: 'opponentSearchTopOnly'; readonly count: number }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
    * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.

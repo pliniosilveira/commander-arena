@@ -1756,7 +1756,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     // Issue 81 (Omnath): "If you would lose unspent mana, that mana becomes colorless instead." is a static ability of the permanent about its controller's pool (`static.unspent-mana-colorless`).
     (/ would /.test(text) &&
       / instead\b/.test(text) &&
-      !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text))
+      !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text) &&
+      // Aven Mindcensor: "If an opponent would search a library, that player searches the top four cards of that library instead." is a static ability of the permanent (`static.opponent-search-top-only`).
+      !/^if an opponent would search a library, that player searches the top \w+ cards of that library instead\.$/iu.test(
+        text,
+      ))
   ) {
     return { ...base, head: 'replacement' };
   }

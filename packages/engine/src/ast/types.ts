@@ -8203,6 +8203,12 @@ export type StaticEffect =
    */
   | { readonly kind: 'damageAsThoughWither' }
   /**
+   * "If an opponent would search a library, that player searches the top four cards of that library instead." (Aven Mindcensor, CR 701.23, 614.1a, 604.1): while the permanent has the
+   * ability, a search of a library by an opponent of its controller finds only among the top `count` cards of that library (the library is shuffled afterwards as the search says). Read from
+   * the abilities of the permanents on the battlefield after the layers (`rules/global-statics.ts`); with several, the smallest number applies. No condition.
+   */
+  | { readonly kind: 'opponentSearchTopOnly'; readonly count: number }
+  /**
    * "Creatures you control can't have -1/-1 counters put on them." (D-380, CR 122.6, 101.2, 604.1; the Hashaton deck, Darksteel Angel): while the permanent has the
    * ability, no counter of the kind `counter` is put on a permanent `subject` names (a group, `this`, or `attached`), by any means: an effect that puts counters
    * on it, proliferate, wither and infect damage, a connive or a loyalty cost, a counter it would enter with (CR 122.6: counters put on an object as it enters the

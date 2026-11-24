@@ -24,6 +24,7 @@ import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
+import { searchTopLimit } from './global-statics';
 import { discardOne } from './madness';
 import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
@@ -69,10 +70,13 @@ export function searchCandidates(
   zones: readonly SearchZone[] = ['library'],
 ): ObjectId[] {
   const found: { id: ObjectId; name: string }[] = [];
+  // CR 701.23, 614.1a (Aven Mindcensor): an opponent of the controller of such a permanent searches only the top cards of the library.
+  const topOnly = searchTopLimit(state, seat);
   // CR 701.23a: the cards of every zone searched ("your graveyard, hand, and/or library") that match, in one list.
   for (const zone of zones) {
     const scoped: ObjectFilter = { ...filter, zone };
-    for (const id of getSeat(state, seat)[zone]) {
+    const cards = getSeat(state, seat)[zone];
+    for (const id of zone === 'library' && topOnly !== null ? cards.slice(0, topOnly) : cards) {
       const obj = state.objects[id];
       if (obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source })) {
         found.push({ id, name: derive(state, obj).name });

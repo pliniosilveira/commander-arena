@@ -637,6 +637,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.players-cant-gain-life': asIs,
   'static.damage-cant-be-prevented': asIs,
   'static.all-damage-as-though-wither': asIs,
+  'static.opponent-search-top-only': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
   'static.you-planeswalkers-creatures-hexproof': asIs,

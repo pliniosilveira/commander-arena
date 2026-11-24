@@ -324,6 +324,15 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
     case 'damageCantBePrevented':
     case 'damageAsThoughWither':
       return true;
+    case 'opponentSearchTopOnly':
+      if (!isCount(s.count) || s.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'opponentSearchTopOnly searches a whole number of cards, one or more',
+        );
+      }
+      return true;
     case 'cantBeSacrificed':
       // CR 701.21a: said of the permanent itself, with nothing to check.
       return true;
