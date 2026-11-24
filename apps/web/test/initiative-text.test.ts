@@ -58,7 +58,9 @@ test('on the stack the initiative says what its ability does, for either viewer'
   // The room ability that the venture then triggers says what its room does (CR 309.4c).
   g.pass();
   g.pass();
-  expect(wordsOf().monarchWords).toContain('Secret Entrance — When you move your venture marker into this room');
+  expect(wordsOf().monarchWords).toContain(
+    'Secret Entrance — When you move your venture marker into this room',
+  );
 });
 
 test('the question that asks which room the venture marker moves to', () => {
