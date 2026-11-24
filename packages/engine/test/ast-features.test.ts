@@ -161,6 +161,7 @@ describe('the dimensions', () => {
       'yourTurn',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
+      'playedLandThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".

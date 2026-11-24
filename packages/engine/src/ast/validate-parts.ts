@@ -3667,6 +3667,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'cardLeftYourGraveyard':
     case 'descendedThisTurn':
+    case 'playedLandThisTurn':
     case 'yourMainPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.

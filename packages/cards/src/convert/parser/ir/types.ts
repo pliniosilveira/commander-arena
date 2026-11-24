@@ -1036,6 +1036,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Ahoy Mateys deck, group 5: "you descended this turn".
     | { readonly kind: 'descendedThisTurn' }
+    // Mind Flayarrrs deck (River of Tears): "you played a land this turn" (CR 305.1).
+    | { readonly kind: 'playedLandThisTurn' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
     | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' | 'hand' | 'exile' }

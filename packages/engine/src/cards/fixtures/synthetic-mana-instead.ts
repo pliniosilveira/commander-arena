@@ -88,4 +88,23 @@ export const SYNTHETIC_MANA_INSTEAD_LIST: readonly CardDefinition[] = [
       { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'anyColor', count: 2 } },
     ],
   }),
+  singleFace({
+    name: 'SYNTHETIC Tidal Flat',
+    manaCost: null,
+    types: ['land'],
+    colors: [],
+    colorIdentity: ['U', 'B'],
+    oracleText: '{T}: Add {U}. If you played a land this turn, add {B} instead.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'fixed', mana: ['U'] },
+        instead: {
+          condition: { kind: 'playedLandThisTurn' },
+          production: { kind: 'fixed', mana: ['B'] },
+        },
+      },
+    ],
+  }),
 ];

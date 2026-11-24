@@ -6952,6 +6952,12 @@ export type Condition =
    */
   | { readonly kind: 'descendedThisTurn' }
   /**
+   * "If you played a land this turn" (River of Tears, CR 305.1, 305.2): the controller has played a land since the turn began (`SeatState.landsPlayedThisTurn`, which counts the
+   * land plays of the player, as the special action or as an effect says, and starts again at 0 every turn). A land another player played, or a land put onto the battlefield
+   * without being played, does not count. Read as the instruction or the mana ability is used.
+   */
+  | { readonly kind: 'playedLandThisTurn' }
+  /**
    * "If at least four mana was spent to cast it" (CR 601.2h, 603.4, D-206): the spell that caused a cast trigger (its `triggerSubject`) was cast with at
    * least `count` mana spent on its cost in all (the mana of Convoke, Improvise and Delve and life paid for Phyrexian mana are not counted, as
    * for `manaSpent`). Only in the intervening "if" of a `castSpell` trigger.

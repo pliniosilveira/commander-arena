@@ -517,6 +517,9 @@ export function evaluateCondition(
       return state.turnLog.graveyardEntries.some(
         (e) => e.seat === ctx.controller && e.types.some(isPermanentType),
       );
+    case 'playedLandThisTurn':
+      // CR 305.1, 305.2: the land plays of the controller this turn (a land put onto the battlefield by an effect is not played).
+      return getSeat(state, ctx.controller).landsPlayedThisTurn > 0;
     case 'manaSpentAtLeast': {
       // CR 601.2h (D-206): the spell that caused the cast trigger, as it is on the stack.
       const spell =
