@@ -10,6 +10,7 @@ import { optionText, purposeNoun } from '../src/game/chosen';
 import { describeEvent } from '../src/game/describe';
 import { hasOwnWords, inherentNameOf } from '../src/game/monarch-text';
 import { dungeonTitle } from '../src/ui/board/PlayerStrip';
+import { triggerGist } from '../src/ui/decisions/ability-label';
 import { optionPrompt } from '../src/ui/decisions/option-picker';
 import { stackWording } from '../src/ui/panels/stack-wording';
 
@@ -143,4 +144,18 @@ test('the chip of a seat in Undercity names the room, its text and where the mar
   const last = getView(bottom.state, 1).seats[0]?.dungeon;
   if (last === undefined) throw new Error('the seat is not in a dungeon');
   expect(dungeonTitle(last)).toContain('bottommost room');
+});
+
+test('the effects are worded as the cards write them', () => {
+  const gist = (effect: unknown): string =>
+    triggerGist(
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'you' },
+        effect,
+      } as never,
+      undefined,
+    );
+  expect(gist({ kind: 'takeInitiative', player: { kind: 'you' } })).toBe('You take the initiative');
+  expect(gist({ kind: 'ventureIntoDungeon', dungeon: 'undercity' })).toBe('Venture into Undercity');
 });
