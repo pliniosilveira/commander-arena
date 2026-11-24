@@ -324,14 +324,14 @@ export const EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE = defineRule<Clauses>({
   },
 });
 
-const CAST_THAT_ID = 'effect.may-cast-that-card';
+const CAST_THAT_ID = 'effect.may-cast-moved-card';
 
 /**
- * `effect.may-cast-that-card`: "You may cast that card." (the "you may" is the sentence's) (Chandra, Torch of Defiance; CR 608.2g, 601.2): the card an instruction before it exiled is cast now, as the effect resolves, paying
+ * `effect.may-cast-moved-card`: "You may cast that card." (the "you may" is the sentence's) (Chandra, Torch of Defiance; CR 608.2g, 601.2): the card an instruction before it exiled is cast now, as the effect resolves, paying
  * its mana cost, or not at all; a card that can't be cast (a land, no mana) is not offered. The engine's `castCard` of `moved`, which a following "If you don't" reads. Not read: "this turn"
  * (`effect.may-play-this-turn`), "without paying its mana cost", "target card", "them", "play".
  */
-export const EFFECT_MAY_CAST_THAT_CARD = defineRule<Clauses>({
+export const EFFECT_MAY_CAST_MOVED_CARD = defineRule<Clauses>({
   id: CAST_THAT_ID,
   family: 'effect',
   leading: ['cast'],
@@ -417,7 +417,7 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
-  quietly(EFFECT_MAY_CAST_THAT_CARD),
+  quietly(EFFECT_MAY_CAST_MOVED_CARD),
   quietly(EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE),
   quietly(EFFECT_EACH_DEALS_DAMAGE_TO_THAT),
   quietly(EFFECT_LEAD_EACH_BECOMES_CREATURE),
