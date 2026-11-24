@@ -301,6 +301,8 @@ class Binder {
   private playerAsked = false;
 
   private resolveAnaphor(noun: IrNoun): IrNoun {
+    // "for each card in their graveyard" (Guiltfeeder): "their" is the player of the instruction, which the lowering of that instruction names; the binding pass has nothing to say of it.
+    if (noun.rule === 'noun.their-zone') return noun;
     const pronoun = classify(noun.filter.raw);
     const recent = [...this.antecedents].reverse();
     let found: Antecedent | undefined;
@@ -901,6 +903,7 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',
+  'becomesUnblocked',
   // The source deals the damage on the battlefield (stage P18, D-111).
   'dealsCombatDamage',
   'dealsDamage',

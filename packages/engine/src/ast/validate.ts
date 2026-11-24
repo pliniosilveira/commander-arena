@@ -1084,6 +1084,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
       // CR 509.3d (Flanking): the filter the blocking creature must match, on the battlefield, no zone, owner or combat.
@@ -1763,6 +1764,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
     case 'landfall':
     case 'diesBatch':

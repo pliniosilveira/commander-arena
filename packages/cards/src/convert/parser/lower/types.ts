@@ -209,6 +209,16 @@ export interface LowerContext {
    */
   itIsCard: boolean;
   /**
+   * True when every event of the trigger is a creature becoming blocked or unblocked (CR 509.1h, 509.3c): the permanent the trigger is about is still on the battlefield, in combat, when the
+   * ability resolves, so "it" in "return it to its owner's hand" names it (the engine's `triggerSubject`; a permanent that left meanwhile is a new object, CR 400.7, and nothing moves).
+   */
+  itStaysInCombat: boolean;
+  /**
+   * The one player the instruction being lowered is about, where "their" in a count names them ("defending player loses 1 life for each card in their graveyard", CR 108.3, 404.1): set only
+   * while the amount of a loss of life is lowered, for a player the engine can name as one (a target, the defending player, the player of the trigger); null anywhere else.
+   */
+  theirPlayer: PlayerSelector | null;
+  /**
    * True in the body of "When ~ is put into a graveyard from anywhere" (Troyan 2 deck, CR 603.6c, 400.7): "it" is the card of the ability itself, in the graveyard it is in as the
    * ability resolves, which the engine names `this` (the ability is found on that card).
    */
@@ -507,6 +517,8 @@ export function newContext(
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,
+    itStaysInCombat: false,
+    theirPlayer: null,
     selfGraveyardEntry: false,
     auraDies: false,
     returnedDyingCard: false,

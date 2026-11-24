@@ -595,6 +595,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
     'blocks',
     'becomesBlocked',
+    // CR 509.1h: "whenever this creature attacks and isn't blocked".
+    'becomesUnblocked',
     // CR 509.3d, 702.25a: "becomes blocked by a creature without flanking" (Flanking).
     'becomesBlockedBy',
     // D-139: a state trigger, "when there are four or more page counters on this artifact" (CR 603.8), and the triggered mana ability
@@ -3257,6 +3259,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leavesBattlefield: true,
   blocks: true,
   becomesBlocked: true,
+  becomesUnblocked: true,
   becomesBlockedBy: true,
   state: true,
   tappedForMana: true,

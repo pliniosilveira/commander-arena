@@ -64,6 +64,7 @@ const TRIGGER_KIND = {
   becomesMonstrous: 'becomesMonstrous',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
+  becomesUnblocked: 'becomesUnblocked',
   landfall: 'landfall',
   upkeep: 'upkeep',
   endStep: 'endStep',
@@ -295,6 +296,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesUntapped':
     case 'becomesMonstrous': {
       const what = whatOf(t, ctx);
@@ -1592,6 +1594,10 @@ function lowerTriggeredAbility(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  // CR 509.1h, 509.3c: after a creature becomes blocked (or unblocked) it is still the same permanent in combat, which "it" names.
+  ctx.itStaysInCombat =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'becomesBlocked' || t.kind === 'becomesUnblocked');
   // Troyan 2 deck (CR 603.6c): "When ~ is put into a graveyard from anywhere": "it" is the card of the ability itself.
   ctx.selfGraveyardEntry =
     triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.self === true);
@@ -1987,6 +1993,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:becomesMonstrous',
   'trigger:blocks',
   'trigger:becomesBlocked',
+  'trigger:becomesUnblocked',
   'trigger:landfall',
   'trigger:upkeep',
   'trigger:endStep',

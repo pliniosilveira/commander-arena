@@ -665,6 +665,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
     case 'dealsCombatDamage':
     case 'dealsDamage':
