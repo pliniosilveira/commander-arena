@@ -2923,6 +2923,11 @@ export interface TurnLog {
    */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
   /**
+   * Each card put into a graveyard this turn from a library (milled, CR 701.17; or any other move from a library), by the id it has in the graveyard, a discard not among them
+   * (Captain N'ghathrod, `putFromLibraryThisTurn`). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly graveyardedFromLibrary?: readonly ObjectId[];
+  /**
    * Each card put into a graveyard this turn from a zone other than the battlefield (a hand, a library, the stack, exile, the command zone), by the id it has in the graveyard (CR 404.1,
    * 400.7; Banon, the Returners' Leader: "put there from anywhere other than the battlefield this turn"). A token is not a card. Absent until one was recorded.
    */

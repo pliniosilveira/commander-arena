@@ -46,6 +46,7 @@ import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
+import { CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES } from './choose-opponent-library-card';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
@@ -1408,6 +1409,7 @@ export const EFFECT_RULES = [
   ...F144_EFFECT_RULES,
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
   ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
+  ...CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES,
   ...OPPONENT_GRAVEYARD_CAST_EFFECT_RULES,
   ...PUT_ANY_GRAVEYARD_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,

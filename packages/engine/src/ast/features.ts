@@ -1057,6 +1057,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromBattlefieldThisTurn',
     // Ahoy Mateys deck: "that was discarded or put there from a library this turn" (`ObjectFilter.discardedOrFromLibraryThisTurn`).
     'discardedOrFromLibraryThisTurn',
+    // Captain N'ghathrod: "that was put there from their library this turn" (`ObjectFilter.putFromLibraryThisTurn`).
+    'putFromLibraryThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
@@ -2130,6 +2132,8 @@ export const SELECTOR_KINDS = [
   'controllerDealtCombatDamageByAtLeast',
   /** "That was discarded or put there from a library this turn" (CR 701.9, 701.17, Ahoy Mateys deck): the engine's `ObjectFilter.discardedOrFromLibraryThisTurn`. */
   'discardedOrFromLibraryThisTurn',
+  /** "That was put there from their library this turn" (CR 404.1, 701.17, Captain N'ghathrod): the engine's `ObjectFilter.putFromLibraryThisTurn`. */
+  'putFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */

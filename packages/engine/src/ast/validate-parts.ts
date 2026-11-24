@@ -401,6 +401,7 @@ export function checkFilter(
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'discardedOrFromLibraryThisTurn',
+    'putFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
@@ -584,6 +585,13 @@ export function checkFilter(
     issue(
       out,
       `${path}.discardedOrFromLibraryThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
+  if (f.putFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.putFromLibraryThisTurn`,
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
@@ -917,6 +925,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
+  f.putFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.exiledThisWay !== undefined ||

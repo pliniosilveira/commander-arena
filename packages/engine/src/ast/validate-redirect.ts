@@ -41,6 +41,7 @@ function checkDamageBonus(
         f.controllerDealtCombatDamageByAtLeast !== undefined ||
         f.putFromBattlefieldThisTurn !== undefined ||
         f.discardedOrFromLibraryThisTurn !== undefined ||
+        f.putFromLibraryThisTurn !== undefined ||
         f.enteredThisTurn !== undefined,
     )
   ) {
@@ -88,6 +89,7 @@ export function checkRedirectReplacement(r: Replacement, path: string, out: AstI
         f.controllerDealtCombatDamageByAtLeast !== undefined ||
         f.putFromBattlefieldThisTurn !== undefined ||
         f.discardedOrFromLibraryThisTurn !== undefined ||
+        f.putFromLibraryThisTurn !== undefined ||
         f.enteredThisTurn !== undefined,
     )
   ) {

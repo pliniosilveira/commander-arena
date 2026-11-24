@@ -750,6 +750,12 @@ export interface ObjectFilter {
    */
   readonly discardedOrFromLibraryThisTurn?: true;
   /**
+   * "That was put there from their library this turn" (Captain N'ghathrod; CR 404.1, 701.17 mill, 400.3): the card is in a graveyard and was put into it, during this turn, from a library
+   * (milled, or any other move from a library). A card that was discarded, or put there from the battlefield or the stack, is not. Read from the turn log where the filter is matched;
+   * refused in a static ability, as `putFromBattlefieldThisTurn` is.
+   */
+  readonly putFromLibraryThisTurn?: true;
+  /**
    * "Spells you cast from anywhere other than your hand" (CR 601.2a, 601.2f, D-235): the spell on the stack was cast from a zone other than the hand (the graveyard, exile, the command
    * zone, the library). Read from the spell itself as it is cast, so only a spell is matched; in a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
