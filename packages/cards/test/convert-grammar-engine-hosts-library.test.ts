@@ -134,6 +134,51 @@ describe('Extract from Darkness (CR 701.17, 404.1, 608.2d, 110.2a: mill, then ch
   });
 });
 
+describe('Lidless Gaze (CR 701.13, 601.2, 305.1, 609.4b, 611.2a: exile the top card of each library, play them, any mana pays)', () => {
+  const GAZE = 'Lidless Gaze';
+  const gaze = real(GAZE);
+
+  const board = () =>
+    scenario({ seats: 3 })
+      .define(gaze)
+      .seat(0)
+      .hand(GAZE)
+      .pool('BRBB')
+      .battlefield('Swamp', 'Swamp')
+      .library('Forest', 'Plains')
+      .seat(1)
+      .library('Lightning Bolt', 'Plains')
+      .seat(2)
+      .library('Island', 'Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('is valid, and the permission lasts until the end of the controller next turn', () => {
+    expect(validateCard(gaze)).toEqual([]);
+    const text = JSON.stringify(gaze.faces[0]?.spell);
+    expect(text).toContain('"lasts":"endOfYourNextTurn"');
+    expect(text).toContain('"anyManaType":true');
+  });
+
+  test('exiles the top card of every library, and the controller casts an opponent card with mana of the wrong color and plays a land of another player', () => {
+    const g = board();
+    g.act(0).cast(GAZE, { pay: true });
+    g.passAll();
+    g.expect.zone('Forest', 'exile', { seat: 0 });
+    g.expect.zone('Lightning Bolt', 'exile', { seat: 1 });
+    g.expect.zone('Island', 'exile', { seat: 2 });
+    g.expect.librarySize(1, 1);
+    // {R} is paid with a Swamp: mana of any type can be spent to cast those spells (CR 609.4b).
+    g.act(0).cast({ name: 'Lightning Bolt', seat: 1 }, { targets: [{ player: 2 }], pay: true });
+    g.passAll();
+    g.expect.life(2, 37);
+    g.expect.zone('Lightning Bolt', 'graveyard', { seat: 1 });
+    g.act(0).playLand({ name: 'Island', seat: 2 });
+    g.expect.zone('Island', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+});
+
 describe('Notion Thief (CR 614.1a, 614.11, 504.1, 614.5: an opponent draw but the first of the draw step is skipped and the controller draws)', () => {
   const THIEF = 'Notion Thief';
   const thief = real(THIEF);

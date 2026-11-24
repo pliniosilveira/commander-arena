@@ -3142,7 +3142,7 @@ export type Effect =
       readonly anyManaColor?: true;
       /**
        * "You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell" (Hostage Taker, CR 609.4b): the spell cast with this permission can be
-       * paid with any mana for any symbol of its cost, colored or colorless (`StackData.anyManaType`). Needs `castOnly`: the rider is about casting a spell.
+       * paid with any mana for any symbol of its cost, colored or colorless (`StackData.anyManaType`). With `castOnly`, or without it (Lidless Gaze: "you may play those cards, and mana of any type can be spent to cast those spells": a land card is played as usual).
        */
       readonly anyManaType?: true;
       /**
