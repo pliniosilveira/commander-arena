@@ -112,7 +112,7 @@ function isCreature(state: GameState, id: string): boolean {
 function controllerOfSource(state: GameState, id: string): SeatId | null {
   const live = state.objects[id as never];
   if (live !== undefined) return controllerOf(state, live);
-  return state.lki[id as never]?.object.controller ?? null;
+  return state.lki[id as never]?.object.controller ?? null; // stored controller: frozen as it left
 }
 
 function pending(

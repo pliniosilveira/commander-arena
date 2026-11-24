@@ -49,7 +49,7 @@ describe('taking the initiative (CR 726.1, 726.3, 726.5)', () => {
   test('there is no initiative until an effect makes a player take it', () => {
     const g = base().at('precombatMain').build();
     expect(g.state.initiative ?? null).toBeNull();
-    expect(getView(g.state, 0).initiative).toBeNull();
+    expect(getView(g.state, 0).initiative).toBeUndefined();
     g.expect.initiative(null);
   });
 

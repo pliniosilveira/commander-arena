@@ -30,6 +30,7 @@ import type {
   SeatState,
   TriggeredAbility,
 } from '../state/types';
+import { controllerOf } from './control';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -189,7 +190,9 @@ function roomAbilityWaiting(state: GameState, seat: SeatId): boolean {
   if (state.triggering?.queue.some((t) => isRoom(t.inherent, t.controller)) === true) return true;
   return state.stack.some((id) => {
     const obj: GameObject | undefined = state.objects[id];
-    return obj?.stack?.inherent !== undefined && isRoom(obj.stack.inherent, obj.controller);
+    return (
+      obj?.stack?.inherent !== undefined && isRoom(obj.stack.inherent, controllerOf(state, obj))
+    );
   });
 }
 
