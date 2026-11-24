@@ -6667,6 +6667,12 @@ export type Condition =
    */
   | { readonly kind: 'subjectControlledByYou' }
   /**
+   * "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil; CR 603.4, 603.10a, 113.7a): the permanent whose event caused the trigger matches `filter`, as it
+   * is now or as it last was once it has left (a creature that died is read with the types it had on the battlefield). The filter describes the object: it names no zone, controller or
+   * owner. Read as the ability triggers and again as it resolves, in the intervening "if" or a conditional effect of a trigger about a permanent; false where there is none.
+   */
+  | { readonly kind: 'subjectMatches'; readonly filter: ObjectFilter }
+  /**
    * "If its power is greater than each other creature's power" (Selvala, Heart of the Wilds; CR 603.10a, 113.7a, 208.1, 608.2c): the `stat` of the permanent whose event caused the trigger (as it
    * is now, or as it last was once it has left) is greater than that of every other battlefield permanent the `filter` matches, whoever controls it. The permanent itself is left
    * out; one with no such stat (a noncreature has no power) is left out too. With no other such permanent it holds. False where the trigger has no permanent. Where it may stand is as for

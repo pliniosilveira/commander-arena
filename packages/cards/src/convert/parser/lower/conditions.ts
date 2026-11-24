@@ -555,6 +555,13 @@ export function lowerCondition(
         if (subject.length > 0) return failure(c, subject);
         const matched = lowerFilter({ ...test.who, det: 'a', filter: test.filter });
         if (!matched.ok) return matched;
+        // "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil, CR 603.4, 603.10a): the intervening "if" asks what the permanent the event is about is,
+        // as it last was: the engine's `subjectMatches`, read as the ability triggers and again as it resolves.
+        if (ctx?.interveningCondition === true) {
+          const intervening = missingFeatures(['condition:subjectMatches']);
+          if (intervening.length > 0) return failure(c, intervening);
+          return ok({ kind: 'subjectMatches', filter: matched.value });
+        }
         return ok({ kind: 'objectMatches', of: { kind: 'triggerSubject' }, filter: matched.value });
       }
       // "When ~ dies, if it was a creature, ..." (Enduring Tenacity, CR 603.4, 603.10a, 113.7a): the intervening "if" of an ability about the source itself, whose "it" is the
@@ -995,6 +1002,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:aPlayerCardsInHand',
   'condition:subjectControllerHasMore',
   'condition:subjectControlledByYou',
+  'condition:subjectMatches',
   'condition:subjectStat',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',

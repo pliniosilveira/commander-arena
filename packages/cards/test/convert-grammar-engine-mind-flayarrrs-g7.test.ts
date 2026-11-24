@@ -1,8 +1,9 @@
-// Mind Flayarrrs deck, group 7. Nighthowler: the REAL Oracle text of the golden corpus goes through the grammar with no override and is played through applyAction with the
-// scenario DSL, with three seats (creature cards in ALL graveyards count, every player's). Pins: CR 702.103 (Bestow; the rules text was not available, so the subrule
-// letters are unchecked), CR 613.4c (a "+X/+X" follows the board), CR 107.3c (X is what the text defines), CR 205.1a (an Aura that is not a creature).
+// Mind Flayarrrs deck, group 7. Endless Evil and Nighthowler: the REAL Oracle text of the golden corpus goes through the grammar with no override and is played through
+// applyAction with the scenario DSL, with three seats. Pins: CR 702.103 (Bestow; the rules text was not available, so the subrule letters are unchecked), CR 707.9b (a copy's
+// exception is part of its copiable values), CR 603.4 and 603.10a (an intervening "if" is read again as the ability resolves, the creature that died as it last was), CR 613.4c
+// (a "+X/+X" follows the board), CR 107.3c (X is what the text defines), CR 205.1a (an Aura that is not a creature).
 import { readFileSync } from 'node:fs';
-import { type CardDefinition, validateCard } from '@commander-arena/engine';
+import { type CardDefinition, getView, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
@@ -78,5 +79,88 @@ describe('the grammar', () => {
     ],
   ])('%s is not read', (_what, text) => {
     expect(dropped(text, 'creature')).toBeDefined();
+  });
+});
+
+const ENDLESS = real('Endless Evil');
+const HORROR = 'SYNTHETIC Madness Fiend';
+const BOLT = 'Lightning Bolt';
+const LIB = Array.from({ length: 12 }, () => 'Plains');
+
+describe('Endless Evil: a 1/1 copy each upkeep, and back to hand when a Horror dies', () => {
+  const build = (host: string) =>
+    scenario({ seats: 3 })
+      .define(ENDLESS)
+      .seat(0)
+      .library(...LIB)
+      .battlefield(host)
+      .battlefield(ENDLESS.name, { attachedTo: host })
+      .seat(1)
+      .library(...LIB)
+      .hand(BOLT)
+      .battlefield('Mountain')
+      .seat(2)
+      .library(...LIB)
+      .battlefield('Serra Angel')
+      .at('end', { active: 2, turn: 5 })
+      .build();
+  const bodies = (g: { state: Parameters<typeof getView>[0] }, name: string) =>
+    getView(g.state, 0).battlefield.filter((o) => o.name === name);
+
+  test('the card copies the enchanted creature with a set power and toughness, and checks the creature that died', () => {
+    const text = JSON.stringify(ENDLESS.faces[0]?.abilities);
+    expect(text).toContain('"setPt":{"power":1,"toughness":1}');
+    expect(text).toContain('"subjectMatches"');
+  });
+
+  test("at the beginning of its controller's upkeep it makes a 1/1 token copy of the host (three seats)", () => {
+    const g = build(HORROR);
+    g.advanceTo('upkeep');
+    g.passAll();
+    const copies = bodies(g, HORROR);
+    expect(copies).toHaveLength(2);
+    expect(copies.map((o) => `${o.power}/${o.toughness}`).sort()).toEqual(['1/1', '4/3']);
+    expect(copies.map((o) => o.subtypes)).toEqual([['Horror'], ['Horror']]);
+    g.expect.invariants();
+  });
+
+  test("another player's upkeep makes nothing", () => {
+    const g = scenario({ seats: 3 })
+      .define(ENDLESS)
+      .seat(0)
+      .battlefield(HORROR)
+      .battlefield(ENDLESS.name, { attachedTo: HORROR })
+      .seat(1)
+      .library(...LIB)
+      .seat(2)
+      .library(...LIB)
+      .at('end', { active: 0, turn: 4 })
+      .build();
+    g.advanceTo('upkeep');
+    g.passAll();
+    expect(bodies(g, HORROR)).toHaveLength(1);
+  });
+
+  test("a Horror enchanted creature dies: the Aura returns to its owner's hand (CR 603.10a)", () => {
+    const g = build(HORROR);
+    g.advanceTo('upkeep');
+    g.passAll();
+    g.advanceTo('precombatMain');
+    g.act(0).pass();
+    g.act(1).cast(BOLT, { targets: [{ name: HORROR, seat: 0, nth: 0 }], pay: true });
+    g.passAll();
+    g.expect.zone(ENDLESS.name, 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a creature that is not a Horror dies: the Aura goes to the graveyard', () => {
+    const g = build('Grizzly Bears');
+    g.advanceTo('precombatMain');
+    g.act(0).pass();
+    g.act(1).cast(BOLT, { targets: [{ name: 'Grizzly Bears', seat: 0, nth: 0 }], pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0, count: 1 });
+    g.expect.zone(ENDLESS.name, 'graveyard', { seat: 0 });
+    g.expect.noObject(ENDLESS.name, { zone: 'hand' });
   });
 });

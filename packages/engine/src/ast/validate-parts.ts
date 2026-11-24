@@ -3857,6 +3857,18 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
       }
       break;
+    case 'subjectMatches':
+      // CR 603.10a (Endless Evil): the filter describes the permanent the event is about; where it may stand is checked with the trigger (validate.ts).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
+      }
+      break;
     case 'subjectControlledByYou':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
       break;
@@ -4736,6 +4748,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
     case 'target':
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'attached':
+      // CR 707.2, 303.4b (Endless Evil, Helm of the Host): "a token that's a copy of enchanted creature": the permanent the Aura or Equipment is attached to.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     case 'chosen':
       // D-642 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
       checkRef(ref, 'object', path, scope, out);
@@ -5319,6 +5335,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectMatches':
     case 'subjectStat':
     case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.

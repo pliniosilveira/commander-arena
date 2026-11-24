@@ -20,6 +20,7 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // CR 603.10a, 608.2h (Auntie Ool): "draw a card if you control that creature" reads the permanent the trigger is about, as the ability resolves.
   if (
     effects.includes('"subjectControlledByYou"') ||
+    effects.includes('"subjectMatches"') ||
     effects.includes('"subjectStat"') ||
     // Selvala: "if its power is greater than each other creature's power" reads the creature that entered as the ability resolves.
     effects.includes('"subjectGreaterThanEach"')
@@ -44,6 +45,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
     // Massacre Girl: the toughness the creature that died had, read again as the ability resolves.
     condition.includes('"subjectStat"') ||
     condition.includes('"subjectControlledByYou"') ||
+    // Endless Evil: the type the creature that died had, read again as the ability resolves.
+    condition.includes('"subjectMatches"') ||
     // Galadriel group 1: the creature the Ring tempted its controller to choose, read again as the ability resolves.
     condition.includes('"ringBearerChosen"') ||
     condition.includes('"manaSpentAtLeast"') ||

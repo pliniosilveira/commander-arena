@@ -31,6 +31,7 @@ import {
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
 import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
+import { TOKEN_COPY_EXCEPT_PT } from './copy-except-pt';
 import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
@@ -964,6 +965,7 @@ export const TOKEN_RULES = [
   TOKEN_COPY_EXCEPT_ADDITIVE_TYPES,
   // Espers to Magicite: "..., except it's an artifact and it loses all other card types".
   TOKEN_COPY_EXCEPT_SET_TYPES,
+  TOKEN_COPY_EXCEPT_PT,
   // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
