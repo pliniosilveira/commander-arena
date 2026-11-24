@@ -40,7 +40,15 @@ const MOVE_COUNTER: Lowering<IrClause, Effects> = {
     }
     return {
       ok: true,
-      value: [{ kind: 'moveCounter', from: source.value, to: destination.value }],
+      value: [
+        {
+          kind: 'moveCounter',
+          from: source.value,
+          to: destination.value,
+          // "Move any number of counters" (Resourceful Defense, CR 122.5, 608.2d).
+          ...(arg(clause, 'anyNumber') === undefined ? {} : { anyNumber: true as const }),
+        },
+      ],
       rule: clause.rule,
     };
   },

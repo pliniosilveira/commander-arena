@@ -498,15 +498,33 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           'producedType is only the effect of a triggered mana ability',
         );
       }
-      if (
-        a.instead.production?.kind === 'couldProduce' ||
-        a.instead.production?.kind === 'anyColorAmong'
-      ) {
+      if (a.instead.production?.kind === 'anyColorAmong') {
         issue(
           out,
           `${path}.instead.production`,
           'the replacing production does not look at other permanents',
         );
+      }
+      // Incubation Druid (CR 106.7): a "could produce" production may replace another "could produce" production (three mana of the type instead of one), never a fixed or other one.
+      if (a.instead.production?.kind === 'couldProduce' && a.production?.kind !== 'couldProduce') {
+        issue(
+          out,
+          `${path}.instead.production`,
+          'the replacing production does not look at other permanents unless the ability does too',
+        );
+      }
+      // The replacing production names lands of its own, on the battlefield.
+      if (a.instead.production?.kind === 'couldProduce') {
+        const lands = a.instead.production.lands;
+        if (lands === undefined || lands === null) {
+          issue(
+            out,
+            `${path}.instead.production.lands`,
+            'couldProduce needs a filter for the permanents',
+          );
+        } else {
+          checkBattlefieldFilter(lands, `${path}.instead.production.lands`, out);
+        }
       }
     }
   }

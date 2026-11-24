@@ -40,7 +40,11 @@ import {
   sacrificeGroups,
 } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
-import { answerRemoveCountersCost, payRemoveCounters } from './activate-remove-counters';
+import {
+  answerRemoveAnyCounterCost,
+  answerRemoveCountersCost,
+  payRemoveCounters,
+} from './activate-remove-counters';
 import { answerUntapPermanentsCost, payUntap } from './activate-untap';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
@@ -719,6 +723,13 @@ export function answerBlight(state: GameState, chosen: readonly ObjectId[]): Res
 /** The answer to the question of a cost that removes counters from among permanents (CR 118.3, 122.1): one counter comes off, then the rest of the cost goes on. */
 export function answerRemoveCounters(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerRemoveCountersCost(state, chosen, (paid, events) =>
+    payBlight(paid, events, paySacrifice),
+  );
+}
+
+/** The answer to the question of a cost that takes a counter of any kind off one permanent (CR 118.3, 122.1): the counter comes off, then the rest of the cost goes on. */
+export function answerRemoveCountersPick(state: GameState, index: number): Result {
+  return answerRemoveAnyCounterCost(state, index, (paid, events) =>
     payBlight(paid, events, paySacrifice),
   );
 }

@@ -61,6 +61,7 @@ import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
+import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
@@ -1374,6 +1375,7 @@ export const TRIGGER_RULES = [
   ...ATTACK_A_PLAYER_TRIGGER_RULES,
   // Issue 160 (D-629): "Whenever enchanted player is attacked".
   ...ENCHANTED_PLAYER_TRIGGER_RULES,
+  ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,

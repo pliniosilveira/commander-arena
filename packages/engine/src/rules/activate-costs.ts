@@ -33,7 +33,7 @@ import { discardOne } from './madness';
 import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
-import { removalCounters } from './remove-counters-candidates';
+import { anyCounterPicks, removalCounters } from './remove-counters-candidates';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
@@ -102,6 +102,8 @@ export interface CostBreakdown {
     readonly counter: string;
     readonly count: number;
     readonly filter: ObjectFilter;
+    /** "Remove a counter from a nonland permanent you control": a counter of any kind (`counter` is empty). */
+    readonly anyKind: boolean;
   } | null;
 }
 
@@ -170,7 +172,12 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'removeCounters':
         if (cost.among !== undefined) {
           removeAmongCosts += 1;
-          removeAmong = { counter: cost.counter, count: cost.count, filter: cost.among };
+          removeAmong = {
+            counter: cost.counter,
+            count: cost.count,
+            filter: cost.among,
+            anyKind: cost.anyKind === true,
+          };
           break;
         }
         counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
@@ -586,8 +593,12 @@ export function costRefusal(
   }
   if (parts.removeAmong !== null) {
     // CR 118.3, 122.1: enough counters of the kind among the permanents that match.
-    const { counter, count, filter } = parts.removeAmong;
-    if (removalCounters(paid, seat, source.id, filter, counter).total < count) {
+    const { counter, count, filter, anyKind } = parts.removeAmong;
+    if (anyKind) {
+      if (anyCounterPicks(paid, seat, source.id, filter).length === 0) {
+        return 'you control no permanent with a counter to remove';
+      }
+    } else if (removalCounters(paid, seat, source.id, filter, counter).total < count) {
       return `you control too few ${counter} counters to remove`;
     }
   }

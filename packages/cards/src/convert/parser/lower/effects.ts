@@ -1091,6 +1091,7 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
     case 'thatColor':
     case 'anyOneColorX':
     case 'anyCombinationX':
+    case 'couldProduceThatType':
     case 'producedType':
       // Only the effect of a triggered mana ability, which `lowerTappedForMana` builds itself.
       return null;

@@ -59,7 +59,11 @@ const COUNTER_OPERANDS = [
  * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
  */
 const ADD_COUNTERS_OPERANDS = [
+  // Lulu, Stern Guardian: "put a stun counter on target creature attacking you" (before the plain target, which would stop at "creature").
+  'noun.target-creature-attacking-you-plain',
   ...COUNTER_OPERANDS,
+  // "Choose target creature attacking you. Put a stun counter on that creature.": the object the sentence before named (CR 608.2c).
+  'noun.that-object',
   'noun.a-permanent',
   // "each of up to two Soldiers you control": a resolving choice of up to that many.
   'noun.each-of-up-to-permanents',
@@ -79,6 +83,9 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put two +1/+1 counters on it',
     'put two +1/+1 counters on that token',
     'put a stun counter on each of them',
+    // Lulu, Stern Guardian (CR 608.2c, 508.1b): the object an earlier sentence named, and a target attacking you.
+    'put a stun counter on that creature',
+    'put a stun counter on target creature attacking you',
     'put X +1/+1 counters on target creature',
     'put X +1/+1 counters on ~',
     'put X charge counters on ~',
@@ -100,7 +107,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put X +1/+1 counters on it for each time it was kicked',
     'put a +1/+1 counter on it for each time',
     'put a +1/+1 counter on it for each creature',
-    'put a +1/+1 counter on that creature',
+    'put a +1/+1 counter on that creatures',
     'put a +1/+1 counter on each of those',
     'put a +1/+1 counter on each of it',
     'put a card from your hand onto the battlefield',

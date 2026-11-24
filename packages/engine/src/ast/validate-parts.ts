@@ -3488,7 +3488,21 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'removeCounters':
     case 'putCounters':
-      if (typeof cost.counter !== 'string' || cost.counter === '') {
+      if (cost.kind === 'removeCounters' && cost.anyKind !== undefined) {
+        // O'aka, Traveling Merchant (CR 118.3, 122.1): "Remove a counter from a nonland permanent you control": any kind, so no kind is named; one counter, off a permanent the filter names.
+        if (cost.anyKind !== true) issue(out, `${path}.anyKind`, 'anyKind is true when present');
+        if (cost.among === undefined) {
+          issue(
+            out,
+            `${path}.anyKind`,
+            'a counter of any kind comes off a permanent the among filter names',
+          );
+        }
+        if (cost.counter !== '') {
+          issue(out, `${path}.counter`, 'a counter of any kind names no kind: counter is empty');
+        }
+        if (cost.count !== 1) issue(out, `${path}.count`, 'one counter of any kind');
+      } else if (typeof cost.counter !== 'string' || cost.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       if (!isCount(cost.count) || cost.count < 1) {
@@ -6856,6 +6870,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
       checkRef(e.from, 'object', `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
+      if (e.anyNumber !== undefined && e.anyNumber !== true) {
+        issue(out, `${path}.anyNumber`, 'anyNumber is true when present');
+      }
       break;
     case 'removeChosenCounters':
       // CR 122.1, 608.2d: the permanents the counters may come off, and at most `upTo` of them.

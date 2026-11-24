@@ -201,6 +201,8 @@ const LEAD_CONDITIONS = [
   'condition.there-are-counters-on-self',
   // Kes, Evolving Telepath: "Then if she has nine or more time counters on her, sacrifice her." (CR 122.1, 608.2c).
   'condition.this-counter-count',
+  // Incubation Druid: "If ~ has a +1/+1 counter on it, add three mana of that type instead." (CR 122.1, 608.2c).
+  'condition.this-has-counter',
   // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
   'condition.the-player-is-opponent-with-cards',
   // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.

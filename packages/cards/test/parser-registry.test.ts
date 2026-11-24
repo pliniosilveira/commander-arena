@@ -423,6 +423,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
+  'noun.target-creature-attacking-you-plain': permanent(
+    (e) => `Whenever you gain life, choose ${e}.`,
+  ),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
   'noun.all-tokens': spell((e) => `Destroy ${e}.`),
@@ -1094,6 +1097,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.enchanted-player-attacked': whenever,
+  'trigger.opponent-attacks-you': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),
@@ -1433,6 +1437,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
   // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
   'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  'cost.remove-any-counter': permanent((e) => `{T}, ${e}: Draw a card.`),
   'condition.it-has-greater-power': permanent(
     (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
   ),
