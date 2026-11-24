@@ -830,6 +830,7 @@ describe('unmatched abilities', () => {
       'effect.lead-may-cast-kind-from-those-free',
       'effect.each-deals-damage-to-that',
       'effect.lead-each-becomes-creature',
+      'effect.lead-they-become-colored-creatures-ability',
       'effect.damage',
       'effect.damage-count',
       'effect.bite',

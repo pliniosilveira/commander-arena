@@ -18,6 +18,7 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { CREATURE_TYPE_LIST } from './becomes';
 import { type Clauses, makeClause } from './operands';
 import { impliedYou } from './player';
+import { EFFECT_LEAD_THEY_BECOME_COLORED_CREATURES_ABILITY } from './they-become-bird';
 
 const ID = 'effect.damage-exile-if-dies';
 
@@ -773,4 +774,5 @@ export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE),
   quietly(EFFECT_EACH_DEALS_DAMAGE_TO_THAT),
   quietly(EFFECT_LEAD_EACH_BECOMES_CREATURE),
+  quietly(EFFECT_LEAD_THEY_BECOME_COLORED_CREATURES_ABILITY),
 ];
