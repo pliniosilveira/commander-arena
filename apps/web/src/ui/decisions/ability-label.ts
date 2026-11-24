@@ -387,6 +387,11 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'boundObjects':
       // D-639: the engine's own form of `moved` inside a delayed ability.
       return 'it';
+    case 'putCountersOn':
+      // Spectacular Showdown (CR 608.2c): the objects the counters of the instruction before it went on.
+      return what.counter === undefined
+        ? 'each creature that had counters put on it this way'
+        : `each creature that had a ${what.counter} counter put on it this way`;
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
       // permanent or creature the trigger is about (D-133): "put a +1/+1 counter on it".
@@ -586,6 +591,7 @@ function recipientText(
     case 'this':
     case 'thisSpell':
     case 'moved':
+    case 'putCountersOn':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
