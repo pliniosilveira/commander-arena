@@ -99,6 +99,8 @@ export const DAMAGE_RECIPIENTS = [
   // Stage P37 (D-180): "target player or planeswalker" and "each creature that player controls".
   'noun.player-or-planeswalker',
   'noun.each-permanent-of-player',
+  // Rowan Kenrith: "each tapped creature target player controls", the player a target of the ability.
+  'noun.each-permanent-of-target-player',
   // Stage P34 (D-152): "each other opponent".
   'noun.each-other-opponent',
   // Snort (CR 701.9a): "each opponent who discarded their hand this way", before `noun.player` would stop at "each opponent".

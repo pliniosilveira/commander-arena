@@ -138,6 +138,7 @@ import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
+import { KENRITH_EFFECT_RULES } from './kenrith';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
@@ -292,6 +293,8 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     // Stage P35 (D-176, CR 109.4): the controller of an object an earlier instruction named.
     '~ deals 2 damage to that permanent’s controller',
     '~ deals 2 damage to its controller',
+    // Rowan Kenrith: the creatures of a player the ability targets.
+    '~ deals 3 damage to each tapped creature target player controls',
   ],
   rejects: [
     '~ deals 2 damage to target creature and planeswalker',
@@ -1382,6 +1385,8 @@ export const EFFECT_RULES = [
   ...ADAPT_EFFECT_RULES,
   // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
   ...NEXT_SPELL_EFFECT_RULES,
+  // Will Kenrith (issue 167): "Until your next turn, up to two target creatures each have base power and toughness 0/3 and lose all abilities" and "... spells that player casts cost {2} less to cast".
+  ...KENRITH_EFFECT_RULES,
   // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
   ...PUT_MILLED_EFFECT_RULES,
   // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.

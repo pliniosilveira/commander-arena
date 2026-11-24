@@ -2549,6 +2549,16 @@ export type ContinuousChange =
       readonly grants?: 'storm' | 'cascade';
     }
   /**
+   * "Until your next turn, instant, sorcery, and planeswalker spells that player casts cost {2} less to cast" (`playerSpellsCostLess`, CR 601.2f, 118.7a): every spell `seat` casts that
+   * `spells` describes costs `lessGeneric` less (generic mana only) while the effect lasts. No layer: read where the cost is determined (`rules/spell-discount.ts`).
+   */
+  | {
+      readonly kind: 'spellsCostLess';
+      readonly seat: SeatId;
+      readonly spells: ObjectFilter;
+      readonly lessGeneric: number;
+    }
+  /**
    * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, CR 118.9, 601.2b): `seat` may cast their next
    * spell by the alternative cost `lifeForMana`. The next spell `seat` casts uses it up, whether or not they pay that way (`rules/next-spell-life.ts`). No layer: read where casting is decided.
    */

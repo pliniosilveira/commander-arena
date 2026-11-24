@@ -6161,6 +6161,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.duration !== 'untilEndOfTheirNextTurn') {
         issue(out, `${path}.duration`, "this lasts through the end of the player's next turn");
       }
+      if (e.anything !== undefined && e.anything !== true) {
+        issue(out, `${path}.anything`, 'anything is true when present');
+      }
       break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for the named permanents: a target, a group (`each`) or the permanent that caused the trigger.

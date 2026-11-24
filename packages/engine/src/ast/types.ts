@@ -3280,6 +3280,18 @@ export type Effect =
       readonly grants?: 'storm' | 'cascade';
     }
   /**
+   * "Until your next turn, instant, sorcery, and planeswalker spells that player casts cost {2} less to cast." (CR 601.2f, 118.7a, 611.2a, 500.1; Will Kenrith): each player `player` names
+   * (fixed as the effect resolves, CR 611.2c) casts the spells `spells` describes (a spell being cast, as `costReduction`'s filter does: no zone) for `amount` generic mana less, never below
+   * zero, until the next turn of the controller of the effect begins (the turn it resolves in not counted). It applies to every spell that matches, not once. `duration` is `untilYourNextTurn`.
+   */
+  | {
+      readonly kind: 'playerSpellsCostLess';
+      readonly player: PlayerSelector;
+      readonly spells: ObjectFilter;
+      readonly amount: number;
+      readonly duration: 'untilYourNextTurn';
+    }
+  /**
    * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, Marshland Bloodcaster, CR 118.9, 601.2b,
    * 601.2f, 202.3e, 119.4, 611.2a): until end of turn, the controller may cast the next spell they cast by the alternative cost `lifeForMana`: no mana cost, and life equal to the spell's
    * mana value (an {X} counts as the X announced). The effect is used up by the next spell the controller casts, used or not, and ends with the turn (`rules/next-spell-life.ts`).
@@ -4092,7 +4104,8 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly power: PtAmount;
       readonly toughness: PtAmount;
-      readonly duration: Duration;
+      /** `untilYourNextTurn` (CR 611.2a, 500.1; Will Kenrith): the objects named as the effect resolves (CR 611.2c) have it until the next turn of the controller begins, the turn it resolves in not counted. */
+      readonly duration: Duration | 'untilYourNextTurn';
     }
   /**
    * "Switch this creature's power and toughness until end of turn" (CR 613.4d, layer 7d): each object `objects` names, fixed as the effect resolves (CR 611.2c), has its power
@@ -4111,8 +4124,11 @@ export type Effect =
   | {
       readonly kind: 'loseAllAbilities';
       readonly objects: ObjectSelector;
-      /** `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. */
-      readonly duration: Duration | 'forAsLongAsThisRemains';
+      /**
+       * `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. `untilYourNextTurn` (CR 611.2a, 500.1;
+       * Will Kenrith): the objects named as the effect resolves (CR 611.2c) lose their abilities until the next turn of the controller begins, the turn it resolves in not counted.
+       */
+      readonly duration: Duration | 'forAsLongAsThisRemains' | 'untilYourNextTurn';
     }
   /**
    * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-649):
@@ -4479,11 +4495,14 @@ export type Effect =
    * creatures the player `player` controls, read whenever that player declares attackers, for the creatures they control then (a creature that arrives later is required too,
    * CR 611.2c is about characteristics). Each such creature that is able to attack the permanent with the ability attacks it. It lasts through the end of that player's next turn
    * (the turn it resolves in not counted). Only in the ability of a permanent; the player is fixed as the effect resolves (a target player).
+   * `anything` ("During target player's next turn, each creature that player controls attacks if able", CR 508.1d): the requirement is only to attack, a player or a permanent, not
+   * the permanent with the ability; it is the group requirement of `requireAttack` for the creatures that player controls, so it needs no permanent and holds when the source has left.
    */
   | {
       readonly kind: 'requireAttackSource';
       readonly player: PlayerSelector;
       readonly duration: 'untilEndOfTheirNextTurn';
+      readonly anything?: true;
     }
   /**
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
