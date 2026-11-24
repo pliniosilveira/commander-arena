@@ -6,6 +6,7 @@
  * A resolving creature-type choice instead belongs to that spell's effect sequence (D-566). This file
  * only imports types, so `validate-parts.ts` can call it.
  */
+import { CARD_TYPES } from '../characteristics';
 import type { Ability } from './types';
 import type { AstIssue } from './validate-base';
 
@@ -50,6 +51,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   if (o.monocoloredChosen === true || o.onlyChosenColor === true) found.add('color');
   // D-376: "protection from the chosen card type", on a keyword or a player's protection, reads the card type the permanent chose.
   if (o.from === 'chosenCardType') found.add('cardType');
+  // CR 205.2a, 607.2d (Cloud Key): "spells you cast of the chosen type" reads the card type the permanent chose.
+  if (o.chosenCardType === true) found.add('cardType');
   // D-652: "protection from the chosen color" reads the color the permanent chose.
   if (o.from === 'chosenColor') found.add('color');
   // D-151: "Khans — ..." reads the option the permanent chose.
@@ -149,10 +152,23 @@ export function chosenIssues(
             message: 'a choice among options names at least two different options',
           });
         }
+      } else if (a.replacement.what === 'cardType' && named !== undefined) {
+        // Cloud Key (CR 205.2a): "choose artifact, creature, enchantment, instant, or sorcery": the card types the controller may choose among, at least two different ones.
+        if (
+          !Array.isArray(named) ||
+          named.length < 2 ||
+          new Set(named).size !== named.length ||
+          named.some((n) => !(CARD_TYPES as readonly string[]).includes(n))
+        ) {
+          out.push({
+            path: `${path}.abilities`,
+            message: 'a choice among some card types names at least two different card types',
+          });
+        }
       } else if (named !== undefined) {
         out.push({
           path: `${path}.abilities`,
-          message: 'only a choice among options (what: "option") lists options',
+          message: 'only a choice among options (what: "option") or card types lists options',
         });
       }
     } else if (a.replacement?.kind === 'entersTappedUnlessReveals') {
@@ -160,7 +176,8 @@ export function chosenIssues(
       reveals += 1;
     } else if (
       a.replacement?.kind === 'entersTappedUnlessPays' ||
-      a.replacement?.kind === 'entersAsCopy'
+      a.replacement?.kind === 'entersAsCopy' ||
+      a.replacement?.kind === 'asEntersRemoveCounters'
     ) {
       questions += 1;
     }

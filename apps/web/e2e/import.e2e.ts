@@ -166,8 +166,7 @@ test('an imported deck whose cards are all supported is saved and played from th
   await expect(page.getByRole('button', { name: 'Play this deck' })).toHaveCount(0);
   await expect(page.getByText('Play this deck')).toHaveCount(0);
   await expect(page.getByTestId('play-note')).toContainText('The deck is ready.');
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText('Saved "SYNTHETIC Hundred".')).toBeVisible();
+  await expect(page.getByText('Imported and saved "SYNTHETIC Hundred".')).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
   const mine = await openStartFlow(page);
   await chooseDeck(mine, 'My Decks', /SYNTHETIC Hundred/);
@@ -190,12 +189,12 @@ test('saved decks: save, list, open and delete', async ({ page }) => {
   await openImport(page);
   await page.getByLabel('Deck name').fill('SYNTHETIC Saved');
   await page.getByLabel(/^Decklist/).fill(hundredCardList());
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText('Saved "SYNTHETIC Saved".')).toBeVisible();
+  await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(page.getByText('Imported and saved "SYNTHETIC Saved".')).toBeVisible();
 
   await page.getByRole('button', { name: 'My decks' }).click();
-  await expect(page.locator('strong', { hasText: 'SYNTHETIC Saved' })).toBeVisible();
-  await page.getByRole('button', { name: /^Open/ }).first().click();
+  await expect(page.locator('.scr-deck-name', { hasText: 'SYNTHETIC Saved' })).toBeVisible();
+  await page.getByRole('button', { name: /^Edit/ }).first().click();
   await expect(page.getByTestId('coverage-headline')).toHaveText('91 of 100 cards supported', {
     timeout: 30_000,
   });
@@ -206,7 +205,7 @@ test('saved decks: save, list, open and delete', async ({ page }) => {
     .getByRole('button', { name: /^Delete/ })
     .first()
     .click();
-  await expect(page.locator('strong', { hasText: 'SYNTHETIC Saved' })).toHaveCount(0);
+  await expect(page.locator('.scr-deck-name', { hasText: 'SYNTHETIC Saved' })).toHaveCount(0);
 });
 
 test('a commander chosen after the import is still the commander after Save and Open (issue 123)', async ({
@@ -222,12 +221,11 @@ test('a commander chosen after the import is still the commander after Save and 
   await expect(page.getByRole('heading', { name: 'Choose your commander' })).toHaveCount(0, {
     timeout: 30_000,
   });
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText('Saved "SYNTHETIC Hundred".')).toBeVisible();
+  await expect(page.getByText('Imported and saved "SYNTHETIC Hundred".')).toBeVisible();
 
   // Leave and come back: the commander is read from the saved deck, not asked for again.
   await page.getByRole('button', { name: 'My decks' }).click();
-  await page.getByRole('button', { name: /^Open/ }).first().click();
+  await page.getByRole('button', { name: /^Edit/ }).first().click();
   await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('heading', { name: 'Choose your commander' })).toHaveCount(0);
   await expect(page.getByLabel(/^Decklist/)).toHaveValue(/SYNTHETIC Commander \*CMDR\*/);

@@ -22,10 +22,7 @@ export const SPEED_NAME = 'Speed';
 /** The name the engine gives the abilities of the initiative (`ObjectView.name`, CR 726.2). */
 export const INITIATIVE_NAME = 'The initiative';
 
-/** The name the engine gives the room abilities of Undercity (`ObjectView.name`, CR 309.4c). */
-export const UNDERCITY_NAME = 'Undercity';
-
-/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, "The initiative", the dungeon of a room ability, else "The monarch". */
+/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, "The initiative", the dungeon's name for a room ability, else "The monarch". */
 export const inherentNameOf = (inherent: string): string =>
   inherent.startsWith('ring')
     ? RING_NAME
@@ -33,16 +30,19 @@ export const inherentNameOf = (inherent: string): string =>
       ? SPEED_NAME
       : inherent.startsWith('initiative')
         ? INITIATIVE_NAME
-        : inherent.startsWith('room:')
+        : inherent.startsWith('undercity:')
           ? UNDERCITY_NAME
           : MONARCH_NAME;
 
+/** The name the engine gives a room ability of Undercity (`ObjectView.name`, CR 309.4c). */
+export const UNDERCITY_NAME = 'Undercity';
+
 /**
- * Whether an ability on the stack is one of the initiative's or a room ability of a dungeon (CR 726.2, 309.4c): the engine states their words in the object's own text
- * (the trigger they carry is never read), so they are shown as it gives them.
+ * Whether an inherent ability shows the rule's own text instead of words made from its trigger (`ObjectView.oracleText`): the initiative's three (CR 726.2) and the room abilities
+ * of a dungeon (CR 309.4c), whose triggers stand for rules the AST has no trigger for.
  */
-export const hasOwnWords = (o: Pick<ObjectView, 'name'>): boolean =>
-  o.name === INITIATIVE_NAME || o.name === UNDERCITY_NAME;
+export const showsRuleText = (name: string): boolean =>
+  name === INITIATIVE_NAME || name === UNDERCITY_NAME;
 
 /** True for an ability on the stack that has no source: the monarch's (CR 725.2). */
 export function isInherentAbility(o: Pick<ObjectView, 'ability' | 'abilitySource'>): boolean {

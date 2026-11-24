@@ -354,6 +354,23 @@ export function lowerCondition(
       }
       return ok({ kind: 'thisWayAtLeast', what: 'countersPut', count: test.atLeast });
     }
+    case 'counterPutOnSelf': {
+      // CR 122.6, 603.4 (Wakka): a counter put on the permanent with the ability this turn by anyone, from the turn log.
+      const blocked = missingFeatures(['condition:counterPutOnThisThisTurn']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'counterPutOnThisThisTurn',
+        ...(test.counter === undefined ? {} : { counter: test.counter }),
+      });
+    }
+    case 'subjectPowerLessThanSelf': {
+      // CR 208.1, 608.2c (Shelinda): "put a +1/+1 counter on that creature if its power is less than ~'s power" is read as the instruction comes up (a conditional effect, not the
+      // intervening "if"), of the permanent the trigger is about.
+      const blocked = missingFeatures(['condition:subjectPowerLessThanThis']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition === true) return failure(c, []);
+      return ok({ kind: 'subjectPowerLessThanThis' });
+    }
     case 'putCountersThisTurn': {
       // CR 122.6, 603.4 (Lasting Tarfire): read from the turn log, for the controller of the ability.
       const blocked = missingFeatures(['condition:putCountersThisTurn']);
@@ -611,9 +628,26 @@ export function lowerCondition(
       if (filter.value.powerGreaterThanSource === true) at.comparedPowerOf = of;
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'discardedAsCostMatches': {
+      // CR 602.2b, 701.9a (Moria Scavenger): the card the cost of this activated ability discarded, as it last was.
+      const blocked = missingFeatures(['condition:discardedAsCostMatches']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const matched = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: test.filter,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      });
+      return matched.ok ? ok({ kind: 'discardedAsCostMatches', filter: matched.value }) : matched;
+    }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of the target an earlier instruction of the text named (or the object it moved), against an amount read as the instruction runs.
-      const blocked = missingFeatures(['condition:manaValueAtMostAmount']);
+      const blocked = missingFeatures([`condition:${test.kind}`]);
       if (blocked.length > 0) return failure(c, blocked);
       const at = ctx ?? newContext('ability', []);
       const id = test.who.ref ?? '';
@@ -626,7 +660,7 @@ export function lowerCondition(
         id === 'moved' || at.movedOnto === id
           ? ({ kind: 'moved' } as const)
           : ({ kind: 'target', id } as const);
-      return ok({ kind: 'manaValueAtMostAmount', of, amount: amount.value });
+      return ok({ kind: test.kind, of, amount: amount.value });
     }
     case 'milledThisWay': {
       // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
@@ -876,6 +910,18 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'voteMost': {
+      // CR 701.38a (issue 17): "if time gets more votes", read as the instruction comes up; `validateCard` refuses an option the vote before it does not offer.
+      const blocked = missingFeatures(['condition:voteMost']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'voteMost', option: test.option });
+    }
+    case 'voteTied': {
+      // CR 701.38a (issue 17): "if the vote is tied": more than one option got the most votes.
+      const blocked = missingFeatures(['condition:voteTied']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'voteTied' });
+    }
     case 'abilityResolvedTimes': {
       // CR 608.2c (Galadriel deck, group 1): read as the instruction comes up, in the effect of a triggered ability.
       const blocked = missingFeatures(['condition:abilityResolvedTimes']);
@@ -930,6 +976,7 @@ export function lowerCondition(
         ...(test.notTypes === undefined ? {} : { notTypes: [...test.notTypes] as CardType[] }),
         ...(test.subtypes === undefined ? {} : { subtypes: [...test.subtypes] }),
         ...(test.token === undefined ? {} : { token: test.token }),
+        ...(test.other === true ? { other: true as const } : {}),
       });
     }
     case 'hadCounters':
@@ -1014,6 +1061,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectStat',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
+  'condition:counterPutOnThisThisTurn',
+  'condition:subjectPowerLessThanThis',
   'condition:triggerPlayerHasMore',
   'condition:triggerPlayerTurn',
   'condition:triggerPlayerIsOpponent',
@@ -1031,6 +1080,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:manaValueAtMostAmount',
+  'condition:manaValueAtLeastAmount',
   'condition:giftPromised',
   'condition:wasCast',
   'condition:opponentControlsAtLeast',
@@ -1075,4 +1125,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   // Galadriel deck group 1: "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   'condition:abilityResolvedTimes',
   'condition:ringBearerChosen',
+  // Issue 17 (Elven Council): "if time gets more votes", "if the vote is tied".
+  'condition:voteMost',
+  'condition:voteTied',
 ];

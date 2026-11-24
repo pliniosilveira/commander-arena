@@ -235,6 +235,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   milled: { kind: 'milled', who: 'any', filter: { types: ['creature'] } },
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
   winsCoinFlip: { kind: 'winsCoinFlip', who: 'you' },
+  votingFinished: { kind: 'votingFinished' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },
@@ -270,6 +271,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },
   attackBatch: { kind: 'attackBatch', who: 'you', atLeast: 2 },
   playerAttacksOpponent: { kind: 'playerAttacksOpponent' },
+  damageToPlayerPrevented: { kind: 'damageToPlayerPrevented', who: 'you' },
   unblockedAttackBatch: { kind: 'unblockedAttackBatch', who: 'opponent' },
   tappedForMana: {
     kind: 'tappedForMana',
@@ -353,5 +355,16 @@ describe('spells with {X} in their mana cost (Quandrix Unlimited group E)', () =
         ctx,
       ),
     ).toBeNull();
+  });
+});
+
+describe('"Whenever a player attacks you" (Mirkwood Trapper, CR 508.1b)', () => {
+  test('is said as it is, not as an attack at anyone', () => {
+    expect(
+      triggerWording({ kind: 'attackBatch', who: 'any', atLeast: 1, attackedYou: true }, ctx),
+    ).toBe('Whenever a player attacks you');
+    expect(triggerWording({ kind: 'attackBatch', who: 'any', atLeast: 1 }, ctx)).toBe(
+      'Whenever one or more creatures attack',
+    );
   });
 });

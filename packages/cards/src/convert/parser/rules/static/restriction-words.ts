@@ -147,6 +147,15 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
           ),
         ]
       : []),
+    // CR 508.1a (Fealty to the Realm): "can't attack you", said of the permanent an Aura or Equipment is attached to: the player only, not their planeswalkers.
+    ...(subject === 'attached'
+      ? [
+          map(
+            pattern(new RegExp(`can['’]t attack you(?! or planeswalkers)${END}`, 'iu')),
+            (): IrStaticEffect => ({ kind: 'cantAttackYou', playersOnly: true }),
+          ),
+        ]
+      : []),
     // CR 508.1a, 506.3 (Vow of Duty): "can't attack you or planeswalkers you control", said of the permanent an Aura or Equipment is attached to; before the plain "can't attack".
     ...(subject === 'attached'
       ? [
@@ -165,6 +174,10 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
     ...(subject === 'attached' ? [phrase('is goaded', 'goaded')] : []),
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
+    phrase(
+      "can['’]t be blocked except by three or more creatures",
+      'cantBeBlockedExceptByThreeOrMore',
+    ),
     BLOCKED_EXCEPT_BY,
     BLOCKED_BY_MONARCH,
     BLOCKED_BY_GREATER_POWER,

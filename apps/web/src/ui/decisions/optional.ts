@@ -512,6 +512,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'searchPut') {
+    // CR 608.2d, 701.23 (`search.mayPut`): the card found and revealed may be put onto the battlefield; otherwise it goes into the hand.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? 'the card';
+    return {
+      prompt: `${d.sourceName}: put ${card} onto the battlefield? If you don't, it goes into your hand.`,
+      yes: 'Put it onto the battlefield',
+      no: 'Put it into my hand',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'clash') {
     // CR 701.30a, 701.30c: "clash with an opponent": the card this player revealed is the top card of their library; they may put it on the bottom. Nothing is rewound.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? 'the card';

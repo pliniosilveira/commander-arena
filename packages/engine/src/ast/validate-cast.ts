@@ -55,8 +55,22 @@ export function checkFlashbackCost(cost: readonly Cost[], path: string, out: Ast
       if (cost.filter((o) => o?.kind === 'sacrifice').length > 1) {
         issue(out, `${path}[${i}]`, 'a flashback cost has one sacrifice');
       }
+    } else if (c?.kind === 'exileFromGraveyard') {
+      // CR 702.34a, 107.3a, 118.9: "Flashback—{3}{U}{R}, Exile X cards from your graveyard": the X announced as the spell is cast, one such cost, of cards of any kind.
+      if (
+        c.countX !== true ||
+        c.count !== 1 ||
+        Object.keys(c.filter).length > 0 ||
+        cost.filter((o) => o?.kind === 'exileFromGraveyard').length > 1
+      ) {
+        issue(out, `${path}[${i}]`, 'a flashback exile of graveyard cards is X cards of any kind');
+      }
     } else if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana, life or a sacrifice only');
+      issue(
+        out,
+        `${path}[${i}]`,
+        'a flashback cost may be mana, life, a sacrifice or an exile of X graveyard cards only',
+      );
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }

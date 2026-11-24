@@ -171,6 +171,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         // D-149: each instance granted is its own triggered ability (CR 702.83b, 702.108b).
         'exalted',
         'prowess',
+        // Pontiff of Blight (CR 702.101b): each instance granted triggers separately.
+        'extort',
         // D-185: riot, given to a group by a static ability and read as a permanent enters (an effect or an attached host cannot give it).
         'riot',
         // D-472, D-473: afflict and landwalk carry a number or a land type, checked by `checkGrantedParameter`.
@@ -183,6 +185,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'annihilator',
         // CR 702.189a: firebending carries a number, checked by `checkGrantedParameter`; each instance granted triggers separately.
         'firebending',
+        // CR 702.121b: melee, given by a static ability (Depthshaker Titan); each instance granted triggers separately.
+        'melee',
         // D-638: ward carries a cost, checked by `checkGrantedParameter`; each instance granted is a triggered ability of its own.
         'ward',
         // D-478: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.

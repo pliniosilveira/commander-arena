@@ -21,7 +21,7 @@ import type { Effect, ObjectFilter, PreventScope } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
-import { allocateTimestamp } from '../state/ops';
+import { allocateTimestamp, objectsInZone } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
 import { endOf } from './control-effects';
 import { derive } from './derive';
@@ -33,6 +33,7 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+import { staticConditionHolds } from './static-conditions';
 import { done, type StepOutcome } from './step-outcome';
 
 type PreventNode = Extract<Effect, { kind: 'preventDamage' }>;
@@ -73,6 +74,10 @@ export function runPreventDamage(
     ...(node.byFilter === undefined
       ? {}
       : { sourceFilter: { filter: node.byFilter, controller: ctx.controller } }),
+    // CR 615.5 (Gatta and Luzzu): "prevent that damage and put that many +1/+1 counters on it": the controller of the effect puts them.
+    ...(node.countersPrevented === undefined
+      ? {}
+      : { countersPrevented: { counter: node.countersPrevented, controller: ctx.controller } }),
     // CR 615.5 (Inkshield): "For each 1 damage prevented this way, create a token": the controller of the effect makes it.
     ...(node.perPrevented === undefined
       ? {}
@@ -188,7 +193,9 @@ export function staticPreventions(
     if (
       a.kind === 'static' &&
       a.static.kind === 'preventDamageToThis' &&
-      (a.static.scope === 'all' || (a.static.scope === 'combat') === combat)
+      a.static.subject.kind === 'this' &&
+      (a.static.scope === 'all' || (a.static.scope === 'combat') === combat) &&
+      (a.condition === undefined || staticConditionHolds(state, a.condition, obj))
     ) {
       found.push({
         object: obj.id,
@@ -198,6 +205,24 @@ export function staticPreventions(
       });
     }
   });
+  // CR 615.1, 303.4, 301.5 (Multiclass Baldric): "prevent all damage that would be dealt to equipped creature" is a prevention effect of the Equipment (or Aura) attached
+  // to the permanent, read from the attaching permanent's abilities and its condition ("as long as you have a full party", for the Equipment's controller). The effect is
+  // the attaching permanent's, not an ability of the creature, so the creature losing its abilities does not end it.
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const attacher = state.objects[id];
+    if (attacher === undefined || attacher.attachedTo !== obj.id) continue;
+    derive(state, attacher).abilities.forEach((a, index) => {
+      if (
+        a.kind === 'static' &&
+        a.static.kind === 'preventDamageToThis' &&
+        a.static.subject.kind === 'attached' &&
+        (a.static.scope === 'all' || (a.static.scope === 'combat') === combat) &&
+        (a.condition === undefined || staticConditionHolds(state, a.condition, attacher))
+      ) {
+        found.push({ object: attacher.id, index, scope: a.static.scope });
+      }
+    });
+  }
   // CR 122.1c (Shield counters): one or more shield counters make one prevention effect, "If damage would be dealt to this permanent, prevent that damage and
   // remove a shield counter from it". It is a prevention effect of the permanent, not an ability (so losing all abilities does not turn it off), and it is listed
   // last so the default order spends the counter only when nothing else prevents the damage.

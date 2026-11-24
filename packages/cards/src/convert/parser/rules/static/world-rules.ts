@@ -3,8 +3,9 @@
  * and "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d). Each is a line of its own: the permanent changes a rule of the game, whoever
  * controls it. The subject is a noun the lowering ignores for the two damage lines (there is no player or permanent it is said of).
  */
-import { literal, pattern, sequence } from '../../combinators';
+import { literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun, IrStatic } from '../../ir/types';
+import { quantity } from '../amount/index';
 import { defineRule, quietly, spanned } from '../registry';
 import { staticOf, subjectNoun } from './angels-words';
 
@@ -141,6 +142,55 @@ export const STATIC_ALL_DAMAGE_AS_THOUGH_WITHER = defineRule<IrStatic>({
 });
 
 /**
+ * `static.opponent-search-top-only`: "If an opponent would search a library, that player searches the top four cards of that library instead." (Aven Mindcensor, CR 701.23, 614.1a,
+ * 604.1: the opponents of the controller look only at the top cards of a library they search). A line of its own. Not read: another player, "a player", another number word of
+ * zero or one, the cards of your own library, a duration or a condition, and more words after it.
+ */
+export const STATIC_OPPONENT_SEARCH_TOP_ONLY = defineRule<IrStatic>({
+  id: 'static.opponent-search-top-only',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 701.23 (Search)',
+    'CR 614.1a (Replacement Effects)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If an opponent would search a library, that player searches the top four cards of that library instead.',
+    'if an opponent would search a library, that player searches the top three cards of that library instead.',
+  ],
+  rejects: [
+    'If an opponent would search a library, that player searches the top four cards of that library instead',
+    'If a player would search a library, that player searches the top four cards of that library instead.',
+    'If an opponent would search a library, that player searches the top one cards of that library instead.',
+    'If an opponent would search a library, that player searches the top four cards of their library instead.',
+    'If an opponent would search a library, that player searches the top four cards of that library instead until end of turn.',
+    'If an opponent would search a library, that player searches the top four cards of that library instead and you draw a card.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(pattern(/if an opponent would search a library, that player searches the top /iu)),
+      satisfy(quantity, (n) => n >= 2),
+      pattern(/ cards of that library instead\./iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [read, count] = r.value;
+    const id = 'static.opponent-search-top-only';
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        damageNoun(read.span, id),
+        [{ kind: 'opponentSearchTopOnly', count }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `static.activated-abilities-of-chosen-name`: "Activated abilities of sources with the chosen name can't be activated." (Phyrexian Revoker; CR 602.5, 605.1a, 607.2d, 604.1): no
  * activated ability of an object with the name this permanent chose as it entered, mana abilities included. The engine's `cantActivateChosenName`; the card must also choose a name as it
  * enters (`asEntersChoose` of `cardName`, which `validateCard` checks). Not read: "unless they're mana abilities" (Pithing Needle, another rule), a name the text gives, a duration or a
@@ -193,6 +243,7 @@ export const STATIC_ACTIVATED_ABILITIES_OF_CHOSEN_NAME = defineRule<IrStatic>({
 });
 
 export const WORLD_RULES_STATIC_RULES = [
+  STATIC_OPPONENT_SEARCH_TOP_ONLY,
   STATIC_PLAYERS_CANT_GAIN_LIFE,
   STATIC_DAMAGE_CANT_BE_PREVENTED,
   STATIC_ALL_DAMAGE_AS_THOUGH_WITHER,

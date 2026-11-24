@@ -1,217 +1,184 @@
 /**
- * Dungeons and venturing into them (CR 309, 701.49).
+ * Dungeons and venturing (CR 309, 701.49). A player's dungeon is the dungeon card they own in the command zone and the room their venture marker is on
+ * (`SeatState.dungeon`); the cards themselves are data (`rules/dungeon-data.ts`), outside the game until a venture brings one in (CR 309.2).
  *
- * A dungeon is data (`data/dungeons.ts`). The dungeon card a player owns in the command zone, and the room their venture marker is on, are a record of the seat
- * (`SeatState.dungeon`): nothing reads a dungeon card's characteristics, so it is not an object here (as the Ring is not, `ring.ts`).
- *
- * "Venture into Undercity" (`ventureIntoDungeon`, CR 701.49, 701.49d) is the instruction `venture`:
- * - with no dungeon the player puts Undercity into the command zone and the marker on its topmost room (CR 701.49a, 309.4a);
- * - with the marker on any other room they move it along an arrow pointing away from the room, and choose one when there are two (CR 701.49b, 309.5a; a `chooseOption`
- *   decision of purpose 'dungeonRoom', unless one arrow leaves the room);
- * - with the marker on the bottommost room (the room ability of which is still on its way, CR 309.6) the dungeon is removed, completed, and the player enters afresh (CR 701.49c, 309.5b).
- *
- * Moving the marker into a room is the event `ventured`, which triggers the room ability (CR 309.4c: "When you move your venture marker into this room, [effect]"): an inherent
- * ability with no source, controlled by the player who owns the dungeon (`findDungeonTriggers`), that goes on the stack like any other and chooses its targets as it does.
- * A venture marker on the bottommost room completes the dungeon as a state-based action once no room ability of that player is waiting or on the stack (CR 309.6, 309.7,
- * `completeDungeons`).
+ * - "Venture into [a dungeon]" is the `venture` effect, run as the `venture` instruction (`runVenture`): a player in no dungeon puts the dungeon into the command zone and the marker on
+ *   its topmost room (CR 701.49a, 701.49d, 309.4a); a player in a room moves the marker to the next room, choosing which when two arrows leave it (CR 701.49b, 309.5a: a
+ *   `chooseOption` decision of purpose `dungeonRoom`); a player on the bottommost room completes the dungeon and enters it again (CR 701.49c, 309.5b). Undercity is the only dungeon,
+ *   so "venture into Undercity" and "venture into the dungeon" are the same here, and the rulings that a player in another dungeon continues in it hold trivially.
+ * - Each room has a triggered room ability, "When you move your venture marker into this room, [effect]" (CR 309.4c): `findDungeonTriggers` makes it a pending trigger with no source from
+ *   the `ventured` event, controlled by the dungeon's owner (it goes on the stack with its targets chosen as any trigger's, CR 603.3d).
+ * - CR 704.5t, 309.6, 309.7: a venture marker on the bottommost room whose dungeon is not the source of a room ability that has triggered and not yet left the stack: the dungeon is removed
+ *   from the game, and its owner has completed it (`completeDungeons`, run with the state-based actions).
  */
 
-import type { DungeonId, TargetSpec } from '../ast/types';
-import { type DungeonRoom, roomOf, topmostRoom } from '../data/dungeons';
+import type { UndercityRoom } from '../ast/types';
 import type { SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { getSeat, patchSeat } from '../state/ops';
+import { getSeat, patchSeat, setSeat } from '../state/ops';
 import type {
-  GameObject,
   GameState,
+  InherentAbility,
   Instruction,
   PendingTrigger,
   ResolutionContext,
-  SeatState,
   TriggeredAbility,
 } from '../state/types';
-import { controllerOf } from './control';
-import { sourceInfo } from './source-info';
+import { DUNGEONS, type RoomData, roomAbilityKey, UNDERCITY_ROOMS } from './dungeon-data';
 import { done, type StepOutcome } from './step-outcome';
 
-type Venture = Extract<Instruction, { kind: 'venture' }>;
+type VentureInstruction = Extract<Instruction, { kind: 'venture' }>;
 
-/** The inherent ability of a room is named `room:<room id>`. */
-export const roomAbilityName = (room: string): `room:${string}` => `room:${room}`;
-
-/** The room an inherent ability name stands for, or null when it is not a room ability. */
-export function roomOfInherent(inherent: string | undefined): string | null {
-  return inherent?.startsWith('room:') === true ? inherent.slice('room:'.length) : null;
-}
-
-/** The dungeon and room of a room ability (the only dungeon built is Undercity, which is the one every room id is looked up in). */
-function findRoom(room: string): { dungeon: DungeonId; room: DungeonRoom } | null {
-  const found = roomOf('undercity', room);
-  return found === undefined ? null : { dungeon: 'undercity', room: found };
-}
-
-/** CR 309.4c: the room ability of a room, as an ability with no source. */
-export function roomAbility(room: DungeonRoom): TriggeredAbility {
+/** The room ability of `room` of Undercity as a triggered ability (CR 309.4c); its trigger is a record of the rule, never evaluated (the pending trigger is made from the event). */
+function roomAbility(data: RoomData): TriggeredAbility {
   return {
     kind: 'triggered',
-    // Never read: `findDungeonTriggers` makes the pending trigger from the `ventured` event.
-    trigger: { kind: 'endStep', whose: 'you' },
-    effect: room.effect,
-    ...(room.targets === undefined ? {} : { targets: room.targets as TargetSpec[] }),
+    trigger: { kind: 'upkeep', whose: 'each' },
+    effect: data.effect,
+    ...(data.targets === undefined ? {} : { targets: data.targets }),
   };
 }
 
-/** The text a room ability shows on the stack: "When you move your venture marker into this room, [effect]" (CR 309.4c). */
-export function roomText(room: string): string {
-  const found = findRoom(room);
-  return found === null ? '' : `${found.room.name}: ${found.room.text}`;
+/** The text a room ability shows on the stack (CR 309.4c). */
+export function roomText(room: UndercityRoom): string {
+  const data = DUNGEONS.undercity.rooms[room];
+  return `${data.name} — When you move your venture marker into this room, ${data.text.charAt(0).toLowerCase()}${data.text.slice(1)}`;
 }
 
-/** The name a room ability is shown under: the dungeon it belongs to. */
-export function roomDungeonName(room: string): string {
-  return findRoom(room) === null ? 'Dungeon' : 'Undercity';
+/** The room abilities' texts by the key of their inherent ability (`INHERENT_TEXT`). */
+export const ROOM_TEXT: Readonly<Record<`undercity:${UndercityRoom}`, string>> = Object.fromEntries(
+  UNDERCITY_ROOMS.map((room) => [roomAbilityKey(room), roomText(room)]),
+) as Record<`undercity:${UndercityRoom}`, string>;
+
+/** The room an inherent ability key names, or null when it is not a room ability. */
+export function roomOfInherent(inherent: InherentAbility): UndercityRoom | null {
+  const prefix = 'undercity:';
+  if (!inherent.startsWith(prefix)) return null;
+  const room = inherent.slice(prefix.length) as UndercityRoom;
+  return DUNGEONS.undercity.rooms[room] === undefined ? null : room;
 }
 
-/** `seat` puts the venture marker on `room`: the event that triggers the room ability. */
-function moveMarker(
-  state: GameState,
-  seat: SeatId,
-  dungeon: DungeonId,
-  room: DungeonRoom,
-  from: string | null,
-): { readonly state: GameState; readonly events: GameEvent[] } {
-  return {
-    state: patchSeat(state, seat, { dungeon: { dungeon, room: room.id } }),
-    events: [{ kind: 'ventured', seat, dungeon, room: room.id, from }],
-  };
-}
-
-/** The seat without its dungeon (`patchSeat` merges, so it could not remove the key, which the hash reads). */
+/** `seat` has no dungeon: the dungeon card is removed from the game (CR 309.7); the field is left out rather than set to undefined. */
 function withoutDungeon(state: GameState, seat: SeatId): GameState {
-  const current = getSeat(state, seat);
-  const { dungeon: _gone, ...rest } = current;
-  return {
-    ...state,
-    seats: state.seats.map((s) => (s.id === seat ? (rest as SeatState) : s)),
-  };
+  const { dungeon: _removed, ...rest } = getSeat(state, seat);
+  return setSeat(state, rest);
 }
 
-/** CR 309.7: the player completes the dungeon as its card is removed from the game. */
-function completeDungeon(
+/** The room with this name (the option of the question), or null. */
+function roomNamed(name: string): UndercityRoom | null {
+  return UNDERCITY_ROOMS.find((room) => DUNGEONS.undercity.rooms[room].name === name) ?? null;
+}
+
+/** The option of the room question that stands for `room`. */
+export const roomOption = (room: UndercityRoom): string => DUNGEONS.undercity.rooms[room].name;
+
+/**
+ * The instruction `venture` (CR 701.49): moves the venture marker of `ins.seat`. Asks which room when two arrows leave the one it is on and `chosen` is null.
+ */
+export function runVenture(
   state: GameState,
-  seat: SeatId,
-  dungeon: DungeonId,
-): { readonly state: GameState; readonly events: GameEvent[] } {
-  const removed = withoutDungeon(state, seat);
-  return {
-    state: patchSeat(removed, seat, {
-      dungeonsCompleted: (getSeat(state, seat).dungeonsCompleted ?? 0) + 1,
-    }),
-    events: [{ kind: 'dungeonCompleted', seat, dungeon }],
-  };
+  res: ResolutionContext,
+  ins: VentureInstruction,
+): StepOutcome {
+  const seat = getSeat(state, ins.seat);
+  if (seat.hasLost) return done(state);
+  const dungeon = DUNGEONS[ins.dungeon];
+  const here = seat.dungeon;
+  const events: GameEvent[] = [];
+  let from: UndercityRoom | null = null;
+  let to: UndercityRoom;
+  let next = state;
+  const exits = here === undefined ? [] : DUNGEONS[here.dungeon].rooms[here.room].exits;
+  if (here === undefined) {
+    // CR 701.49a, 309.4a: the dungeon comes into the command zone, the marker on the topmost room.
+    to = dungeon.top;
+  } else if (exits.length === 0) {
+    // CR 701.49c, 309.5b: on the bottommost room: the dungeon is removed from the game (completed, CR 309.7), then a dungeon is put into the command zone again.
+    next = withoutDungeon(next, ins.seat);
+    events.push({ kind: 'dungeonCompleted', seat: ins.seat, dungeon: here.dungeon });
+    to = dungeon.top;
+  } else {
+    from = here.room;
+    const [only] = exits;
+    if (exits.length === 1 && only !== undefined) {
+      to = only;
+    } else if (ins.chosen !== null && exits.includes(ins.chosen)) {
+      // CR 701.49b, 309.5a: the room the player chose among the arrows leaving the one they are in.
+      to = ins.chosen;
+    } else {
+      return {
+        state,
+        events: [],
+        front: [],
+        needs: {
+          kind: 'chooseOption',
+          seat: ins.seat,
+          purpose: 'dungeonRoom',
+          options: exits.map(roomOption),
+          source: res.object,
+          sourceName: dungeon.name,
+          sourceOracleText: '',
+        },
+      };
+    }
+  }
+  next = patchSeat(next, ins.seat, { dungeon: { dungeon: ins.dungeon, room: to } });
+  events.push({ kind: 'ventured', seat: ins.seat, dungeon: ins.dungeon, room: to, from });
+  return done(next, events);
 }
 
-/**
- * Runs `venture` (CR 701.49). With two arrows leading away from the room the player is asked which to follow (the instruction stays at the head of the queue and
- * nothing has changed yet); with one it is followed.
- */
-export function runVenture(state: GameState, res: ResolutionContext, ins: Venture): StepOutcome {
-  const seat = ins.seat;
-  if (getSeat(state, seat).hasLost) return done(state);
-  const current = getSeat(state, seat).dungeon;
-  const here = current === undefined ? undefined : roomOf(current.dungeon, current.room);
-  if (current === undefined || here === undefined) {
-    // CR 701.49a: no dungeon: put it into the command zone and the marker on the topmost room.
-    const top = topmostRoom(ins.dungeon);
-    const entered = moveMarker(state, seat, ins.dungeon, top, null);
-    return done(entered.state, entered.events);
-  }
-  if (here.leadsTo.length === 0) {
-    // CR 701.49c, 309.5b: on the bottommost room: the dungeon is removed and completed, and the player enters a dungeon afresh.
-    const completed = completeDungeon(state, seat, current.dungeon);
-    const entered = moveMarker(completed.state, seat, ins.dungeon, topmostRoom(ins.dungeon), null);
-    return done(entered.state, [...completed.events, ...entered.events]);
-  }
-  const options = here.leadsTo;
-  const picked = ins.chosen !== null && options.includes(ins.chosen) ? ins.chosen : options[0];
-  if (options.length >= 2 && ins.chosen === null) {
-    const info = sourceInfo(state, res.source);
-    return {
-      state,
-      events: [],
-      front: [],
-      needs: {
-        kind: 'chooseOption',
-        seat,
-        purpose: 'dungeonRoom',
-        options: [...options],
-        source: res.object,
-        sourceName: info?.name ?? 'Undercity',
-        sourceOracleText: info?.oracleText ?? '',
-      },
-    };
-  }
-  const next = picked === undefined ? undefined : roomOf(current.dungeon, picked);
-  if (next === undefined) return done(state);
-  const moved = moveMarker(state, seat, current.dungeon, next, here.id);
-  return done(moved.state, moved.events);
+/** The room the answer of the question names, for the instruction that asked. */
+export function roomChosen(option: string): UndercityRoom | null {
+  return roomNamed(option);
 }
 
-/**
- * The room abilities (CR 309.4c) the `ventured` events trigger. Each belongs to the player who owns the dungeon, has no source and goes on the stack like any other, choosing
- * its targets as it does.
- */
-export function findDungeonTriggers(
-  _state: GameState,
-  events: readonly GameEvent[],
-): PendingTrigger[] {
+/** CR 309.4c: the room abilities that the `ventured` events trigger, each controlled by the player who moved their venture marker. */
+export function findDungeonTriggers(events: readonly GameEvent[]): PendingTrigger[] {
   const found: PendingTrigger[] = [];
   for (const e of events) {
     if (e.kind !== 'ventured') continue;
-    const room = roomOf(e.dungeon, e.room);
-    if (room === undefined) continue;
     found.push({
       source: null,
-      inherent: roomAbilityName(room.id),
+      inherent: roomAbilityKey(e.room),
       controller: e.seat,
       abilityIndex: -1,
-      ability: roomAbility(room),
+      ability: roomAbility(DUNGEONS[e.dungeon].rooms[e.room]),
       subject: null,
     });
   }
   return found;
 }
 
-/** Whether a room ability of the seat has triggered and not yet left the stack (CR 309.6): waiting to be put there, or on the stack. */
-function roomAbilityWaiting(state: GameState, seat: SeatId): boolean {
-  const isRoom = (inherent: string | undefined, controller: SeatId) =>
-    roomOfInherent(inherent) !== null && controller === seat;
-  if (state.pendingTriggers.some((t) => isRoom(t.inherent, t.controller))) return true;
-  if (state.triggering?.queue.some((t) => isRoom(t.inherent, t.controller)) === true) return true;
-  return state.stack.some((id) => {
-    const obj: GameObject | undefined = state.objects[id];
-    return (
-      obj?.stack?.inherent !== undefined && isRoom(obj.stack.inherent, controllerOf(state, obj))
-    );
-  });
+/** Whether a room ability of `seat`'s dungeon has triggered and not yet left the stack (CR 704.5t): waiting to go on the stack, being put there, or on it. */
+function hasRoomAbilityPending(state: GameState, seat: SeatId): boolean {
+  const isRoom = (inherent: InherentAbility | undefined): boolean =>
+    inherent !== undefined && roomOfInherent(inherent) !== null;
+  return (
+    state.pendingTriggers.some((t) => t.controller === seat && isRoom(t.inherent)) ||
+    (state.triggering?.queue ?? []).some((t) => t.controller === seat && isRoom(t.inherent)) ||
+    state.stack.some((id) => {
+      const obj = state.objects[id];
+      return obj?.controller === seat && isRoom(obj.stack?.inherent);
+    })
+  );
 }
 
 /**
- * CR 309.6, 309.7: a player's venture marker is on the bottommost room of the dungeon, and the dungeon is not the source of a room ability that has triggered but not yet left the
- * stack, so the dungeon is removed from the game and the player completes it. A state-based action: null when nothing is to be done.
+ * CR 704.5t, 309.6, 309.7: every player whose venture marker is on the bottommost room of their dungeon, and whose dungeon is the source of no room ability that is waiting or on the
+ * stack, has the dungeon removed from the game: they complete it. Returns null when no player does.
  */
 export function completeDungeons(
   state: GameState,
 ): { readonly state: GameState; readonly events: GameEvent[] } | null {
   let next = state;
   const events: GameEvent[] = [];
-  for (const s of state.seats) {
-    if (s.hasLost || s.dungeon === undefined) continue;
-    const room = roomOf(s.dungeon.dungeon, s.dungeon.room);
-    if (room === undefined || room.leadsTo.length > 0 || roomAbilityWaiting(state, s.id)) continue;
-    const completed = completeDungeon(next, s.id, s.dungeon.dungeon);
-    next = completed.state;
-    events.push(...completed.events);
+  for (const seat of state.seats) {
+    const here = seat.dungeon;
+    if (here === undefined) continue;
+    if (DUNGEONS[here.dungeon].rooms[here.room].exits.length > 0) continue;
+    if (hasRoomAbilityPending(state, seat.id)) continue;
+    next = withoutDungeon(next, seat.id);
+    events.push({ kind: 'dungeonCompleted', seat: seat.id, dungeon: here.dungeon });
   }
   return events.length === 0 ? null : { state: next, events };
 }

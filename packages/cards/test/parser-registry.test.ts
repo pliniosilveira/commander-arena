@@ -98,6 +98,8 @@ const atStep = permanent((e) => `At ${e}, you gain 1 life.`);
 
 const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.life-gain-double': asIs,
+  // Counter Intelligence deck, group 2 (Tekuthal).
+  'replacement.proliferate-twice': asIs,
   'keyword.line': asIs,
   'replacement.enters-tapped': asIs,
   'replacement.enters-with-counters': asIs,
@@ -132,6 +134,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
+  'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
   'keyword.multikicker': asIs,
@@ -196,12 +199,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
+  'replacement.as-enters-remove-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
+  'static.attached-keywords-if': asIs,
+  'static.monarch-controls-attached': asIs,
   'static.permanents': asIs,
   'static.self': asIs,
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
+  'static.self-cost-reduction-this-way': asIs,
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
   'static.nth-spell-cost-reduction': asIs,
@@ -250,6 +257,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-and-each': permanent((e) => `~ gets +1/+1 ${e}.`),
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
+  ),
+  // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
+  'amount.for-each-scried': permanent(
+    (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
   ),
   'amount.number-of': spell((e) => `You gain life ${e}.`),
   'cost.tap': { face: 'permanent', line: (e) => `${e}: Add {G}.` },
@@ -430,6 +441,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
+  'noun.target-creature-attacking-you-plain': permanent(
+    (e) => `Whenever you gain life, choose ${e}.`,
+  ),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
   'noun.all-tokens': spell((e) => `Destroy ${e}.`),
@@ -468,6 +482,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),
   'amount.for-each-counter': spell((e) => `Draw a card ${e}.`),
+  // Blitzball Stadium: the cards a creature draws when it deals combat damage.
+  'amount.for-each-counter-kind': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, draw a card ${e}.`,
+  ),
   'amount.for-each-opponent': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
@@ -477,6 +495,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `When ~ enters, if ${e}, you gain 1 life.`,
   ),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.counters-among': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
   'condition.its-stat-greater-than-each-other': permanent(
     (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
@@ -512,6 +531,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
+  'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
@@ -548,6 +568,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.gift': asIs,
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
+  ),
+  'condition.discarded-card-matches': permanent(
+    (e) => `{T}, Discard a card: Draw a card. If ${e}, you gain 1 life.`,
   ),
   'condition.gift-promised': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Issue 100 (Transcendent Dragon): the intervening "if" of an enters trigger of the permanent itself.
@@ -587,6 +610,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.tapped-for-mana': whenever,
   'trigger.taps-for-mana': whenever,
   'trigger.state': whenever,
+  // Counter Intelligence deck, group 3 (Darksteel Reactor): "~ has twenty or more charge counters on it".
+  'trigger.state-has': whenever,
   'trigger.enters-during': whenever,
   'condition.control-greatest': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'restriction.once-each-turn': permanent((e) => `{1}: Draw a card. ${e}`),
@@ -625,6 +650,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.life-gain-bonus': asIs,
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
+  'static.prevent-damage-to-attached': asIs,
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
@@ -648,6 +674,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.activated-abilities-of-chosen-name': asIs,
   // Sludge Monster: the line stands alone.
   'static.group-loses-abilities-base-pt': asIs,
+  'static.opponent-search-top-only': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
   'static.you-planeswalkers-creatures-hexproof': asIs,
@@ -662,6 +689,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
+  'static.others-enter-with-counters-equal-to': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
@@ -697,6 +725,19 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.its-stat-was': permanent(
     (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
+  ),
+  // Wakka, Devoted Guardian: a counter put on the permanent with the ability this turn, the intervening "if" of an end step trigger.
+  'condition.counter-was-put-on-self-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  // Shelinda, Yevon Acolyte: the creature the trigger is about against the permanent with the ability, at the end of a sentence.
+  'condition.its-power-less-than-self': permanent(
+    (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
+  ),
+  // Yuna, Grand Summoner: "that number" of the counters a permanent had, in the body of a trigger about it.
+  'amount.that-number': permanent(
+    (e) =>
+      `Whenever another permanent you control dies, if it had one or more counters on it, put ${e} of +1/+1 counters on target creature.`,
   ),
   'condition.you-put-counter-this-turn': permanent(
     (e) => `At the beginning of each end step, if ${e}, ~ deals 2 damage to each opponent.`,
@@ -737,6 +778,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
+  // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
+  'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'replacement.damage-double': asIs,
@@ -813,6 +856,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.one-or-two-targets-bare': spell(
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,
   ),
+  'amount.damage-dealt-to-player-this-turn': permanent((e) => `When ~ enters, draw cards ${e}.`),
+  'noun.one-two-or-three-targets-bare': spell(
+    (e) => `~ deals 3 damage divided as you choose among ${e}.`,
+  ),
   'condition.that-spells-stat': permanent(
     (e) => `Whenever you cast a creature spell, if ${e}, you gain 1 life.`,
   ),
@@ -859,6 +906,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
   // Exert (CR 701.43d): the trigger is the first sentence of a paragraph, the body follows "When you do,".
   'trigger.exerted': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.exerted-once-a-turn': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.self-and-others-attack': whenever,
+  'trigger.attack-your-opponents': whenever,
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),
@@ -886,6 +936,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-different-mana-value': spell(
     (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
   ),
+  // Valiant Changeling (CR 205.3m): the distinct creature types among the permanents of a group.
+  'amount.for-each-creature-type': spell(
+    (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.for-each-card-type-among-those-cards': permanent(
     (e) =>
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
@@ -904,6 +958,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-mana-spent': permanent(
     (e) => `Each creature you control enters with an additional +1/+1 counter on it ${e}.`,
   ),
+  // Converge (CR 105.1): the colors of the mana spent, after a quantity of counters.
+  'amount.for-each-color-spent': permanent((e) => `~ enters with a +1/+1 counter on it ${e}.`),
   // Stage P41 (D-188): the expensive singles. The trigger follows "Whenever"; the condition follows a landfall trigger's comma; the noun is what a
   // sacrifice names; the static is a line of its own.
   'trigger.you-attack': whenever,
@@ -946,6 +1002,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
+  'trigger.activate-ability-of-kinds': whenever,
   'trigger.targets-activated-batch': whenever,
   'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
   'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
@@ -962,6 +1019,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.roll-highest': whenever,
   // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
   'trigger.win-coin-flip': whenever,
+  // Secret council (Erestor of the Council, Model of Unity): "players finish voting" follows "Whenever"; the sentences read the record of the vote that finished.
+  'trigger.players-finish-voting': whenever,
+  'effect.secret-vote': spell((e) => `${cap(e)}.`),
+  'effect.each-player-draws-per-vote': spell((e) => `${cap(e)}.`),
+  'effect.each-player-without-votes-may-put': spell((e) => `${cap(e)}.`),
+  'effect.stun-voted-creatures': spell((e) => `${cap(e)}.`),
+  'effect.voter-chooses-per-vote': spell((e) => `${cap(e)}.`),
+  'effect.gain-control-chosen-cant-attack-owner': spell((e) => `${cap(e)}.`),
+  'effect.then-for-each-vote-counters': spell((e) => `${cap(e)}.`),
+  'effect.voters-create-treasure': spell((e) => `${cap(e)}.`),
+  'effect.scry-opponents-who-voted-differently': spell((e) => `${cap(e)}.`),
+  'effect.you-and-voters-may-scry': spell((e) => `${cap(e)}.`),
   'effect.flip-coin': spell((e) => `${cap(e)}.`),
   // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
   'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
@@ -984,6 +1053,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.legend-rule-doesnt-apply': asIs,
   'static.groups-are-the-chosen-type': asIs,
   'static.graveyard-cards-have-encore': asIs,
+  'static.graveyard-cards-have-unearth': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.group-is-equipment': asIs,
@@ -1102,12 +1172,23 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.keep-one-loyalty': asIs,
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
+  'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
+  'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
+  'trigger.player-attacks-you': whenever,
+  'trigger.player-attacks-bare': whenever,
+  'condition.they-arent-attacking-you': permanent(
+    (e) => `Whenever a player attacks, if ${e}, draw a card.`,
+  ),
+  'effect.that-player-chooses-attacking-creature': permanent(
+    (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
+  ),
+  'trigger.opponent-attacks-you': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),
@@ -1128,6 +1209,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.enchanted-by-you-attack': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
+  'trigger.lands-enter-opponent-not-played': whenever,
   'trigger.cast-or-copy': whenever,
   // D-650: "each other creature that's attacking one of your opponents".
   'noun.each-other-attacking-opponent': permanent(
@@ -1164,6 +1246,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.that-mana-value-at-most': permanent(
     (e) =>
       `At the beginning of your end step, choose target creature card in your graveyard. If ${e}, return it to the battlefield.`,
+  ),
+  // Summoner's Sending: the trailing "if" of an instruction after the exile.
+  'condition.exiled-mana-value-at-least': permanent(
+    (e) =>
+      `At the beginning of your end step, you may exile target creature card from a graveyard. If you do, create a 1/1 white Spirit creature token. Put a +1/+1 counter on it if ${e}.`,
   ),
   // Yavimaya Bloomsage.
   'condition.that-object-power': spell(
@@ -1312,6 +1399,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.behold': spell((e) => `As an additional cost to cast ~, ${e}. Draw a card.`),
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
@@ -1430,6 +1518,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-of-that-player': permanent(
     (e) => `At the beginning of each opponent's upkeep, tap ${e}.`,
   ),
+  // Grishnákh: the target of the reflexive ability after an amass.
+  'noun.target-permanent-power-at-most-amassed': permanent(
+    (e) =>
+      `When ~ enters, amass Orcs 2. When you do, until end of turn, gain control of ${e}. Untap that creature.`,
+  ),
   'condition.card-types-among': permanent(
     (e) =>
       `At the beginning of each opponent's upkeep, if ${e}, tap target creature that player controls.`,
@@ -1449,6 +1542,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
   // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
   'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  // Counter Intelligence deck, group 2: counters of any kind, from ~, from among permanents, or from one.
+  'cost.remove-any-counters': permanent((e) => `{2}, ${e}: Draw a card.`),
   'condition.it-has-greater-power': permanent(
     (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
   ),
@@ -1459,6 +1554,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
+  ),
+  // Elven Council deck (issue 17): what a vote came to.
+  'condition.vote-result': permanent(
+    (e) =>
+      `When ~ enters, starting with you, each player votes for time or knowledge. If ${e}, draw a card.`,
   ),
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
   'condition.a-player-cards-in-hand': permanent(
@@ -1531,6 +1631,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
+  'noun.target-spell-or-permanent': permanent((e) => `{1}: ${e} becomes white until end of turn.`),
+  // Counter Blitz deck, group C (Endless Detour).
+  'noun.target-spell-permanent-or-graveyard-card': spell(
+    (e) => `The owner of ${e} puts it on their choice of the top or bottom of their library.`,
+  ),
   'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
   // The examples end with a sentence, or with the quote of the ability a creature spell gains.
   'effect.player-exiles-until-cast': permanent(
@@ -1582,6 +1687,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-player-who': permanent(
     (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
   ),
+  // Counter Blitz deck, group C.
+  'amount.for-each-opponent-who-controls': permanent(
+    (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
+  ),
+  'keyword.escalate-tap': asIs,
   // Abzan Armor deck.
   'condition.n-cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
@@ -1589,6 +1699,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
+  // The party (CR 700.8).
+  'condition.full-party': permanent(
+    (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,
+  ),
+  'amount.for-each-party-creature': permanent(
+    (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
+  ),
+  'static.self-also-types': asIs,
+  'noun.target-graveyard-card-shared-zone': spell(
+    (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

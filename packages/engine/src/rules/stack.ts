@@ -10,7 +10,7 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import { isPermanentType } from '../characteristics';
+import { isPermanentType, type PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat, patchObject } from '../state/ops';
@@ -30,6 +30,7 @@ import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
 import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
+import { roomChosen } from './dungeon';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
@@ -55,6 +56,7 @@ import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { TIME_COUNTER } from './time-counter';
 import { collectTriggers } from './triggers';
+import { tallyCast } from './vote-options';
 import { moveObject } from './zones';
 
 export interface ResolveOutcome {
@@ -181,6 +183,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedAsCost === undefined
         ? {}
         : { costSacrificed: obj.stack.sacrificedAsCost }),
+      ...(obj.stack?.discardedAsCost === undefined
+        ? {}
+        : { costDiscarded: obj.stack.discardedAsCost }),
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
@@ -192,6 +197,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { costReturnedAttack: obj.stack.returnedAttack }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
+      // CR 701.38a (Erestor of the Council): a `votingFinished` ability reads the vote that finished as if it had just been made.
+      ...(obj.stack?.triggerVotes === undefined
+        ? {}
+        : { voteCast: obj.stack.triggerVotes, votes: tallyCast(obj.stack.triggerVotes) }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
@@ -270,6 +279,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(out.lifeLost === undefined ? {} : { lifeLost: (res.lifeLost ?? 0) + out.lifeLost }),
         // D-194: the tally of a vote that is finished, for "twice the number of profit votes" (a later vote of the resolution replaces it).
         ...(out.votes === undefined ? {} : { votes: out.votes }),
+        // CR 701.38a: who voted for what, for the amounts and selectors that read the votes of a player.
+        ...(out.voteCast === undefined ? {} : { voteCast: out.voteCast }),
         // D-131: what this instruction did, for "for each creature sacrificed this way" and the like.
         ...(out.thisWay === undefined
           ? {}
@@ -282,6 +293,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 returned: (res.thisWay?.returned ?? 0) + (out.thisWay.returned ?? 0),
                 exiledCreatures:
                   (res.thisWay?.exiledCreatures ?? 0) + (out.thisWay.exiledCreatures ?? 0),
+                exiledCreatureCards:
+                  (res.thisWay?.exiledCreatureCards ?? 0) + (out.thisWay.exiledCreatureCards ?? 0),
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
@@ -385,7 +398,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
         ...(head.kind === 'chooseObjects' && head.chosen !== null
-          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          ? {
+              chosenObjects: {
+                ...res.chosenObjects,
+                // CR 701.38a (`perVote`): the choices of every vote are one set, a permanent chosen for several votes once.
+                [head.id]:
+                  head.asVoter === undefined || head.asVoter.first
+                    ? head.chosen
+                    : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],
+              },
+            }
           : {}),
         // The Black Gate: the player chosen is what "that player" means for the rest of the resolution.
         ...(head.kind === 'choosePlayer' && head.chosen !== null
@@ -434,9 +456,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     // D-185: the answers of devour and riot belong to the one move that asked for them, too.
     if (
       head.kind === 'move' &&
-      (state.resolution?.entersDevour !== undefined || state.resolution?.entersRiot !== undefined)
+      (state.resolution?.entersDevour !== undefined ||
+        state.resolution?.entersRiot !== undefined ||
+        state.resolution?.entersRemoved !== undefined)
     ) {
-      const { entersDevour: _devoured, entersRiot: _riot, ...rest } = state.resolution;
+      const {
+        entersDevour: _devoured,
+        entersRiot: _riot,
+        entersRemoved: _removed,
+        ...rest
+      } = state.resolution;
       state = { ...state, resolution: rest };
     }
     events.push(...out.events);
@@ -566,6 +595,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
+      ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       ...(adventure && timeCounters === null ? { onAdventure: true as const } : {}),
@@ -737,7 +767,9 @@ export function answerResolutionChoice(
   const asked = state.pending;
   if (
     head.kind === 'chooseSacrifice' &&
-    (head.keepPowerAtMost !== undefined || head.keepCountAtMost !== undefined)
+    (head.keepPowerAtMost !== undefined ||
+      head.keepCountAtMost !== undefined ||
+      head.keepCountExactly !== undefined)
   ) {
     if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
     const sacrificed = asked.legal.filter(
@@ -757,6 +789,27 @@ export function answerResolutionChoice(
     head.kind === 'proliferate' ? { ...head, chosen, players } : { ...head, chosen };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to a chooseParty decision (CR 700.8d) on the `chooseParty` instruction that asked, then continues. Null when no such question is pending. The caller has checked
+ * the answer against the decision.
+ */
+export function answerResolutionParty(
+  state: GameState,
+  party: readonly { readonly type: PartyType; readonly object: ObjectId }[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'chooseParty') return null;
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, queue: [{ ...head, chosen: party }, ...res.queue.slice(1)] },
+    },
     [],
   );
 }
@@ -938,6 +991,27 @@ export function answerResolutionSearchMay(
 }
 
 /**
+ * Records the answer to "you may put that card onto the battlefield" of a search (CR 608.2d, 701.23; `search.mayPut`): the card found goes onto the battlefield when accepted and to the
+ * hand when declined. Null when no such question is waiting.
+ */
+export function answerResolutionSearchPut(
+  state: GameState,
+  accept: boolean,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (!res || head?.kind !== 'search' || head.put !== null || d?.kind !== 'confirmOptional') {
+    return null;
+  }
+  const events: GameEvent[] = [
+    { kind: 'optionalAnswered', seat: d.seat, source: res.source, accepted: accept },
+  ];
+  const queue: readonly Instruction[] = [{ ...head, put: accept }, ...res.queue.slice(1)];
+  return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
+}
+
+/**
  * Records the answer to "you may pay ... or it enters tapped" (CR 614.12) for the permanent that
  * asked, which is the head of the queue when it is a move, or the spell resolving when the queue is
  * empty, then continues. Null when no such question is waiting.
@@ -1050,6 +1124,33 @@ export function answerResolutionRiot(state: GameState, option: string): ResolveO
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, entersRiot: answers } },
     events,
+  );
+}
+
+/**
+ * Records the answer to "As this enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12) for the permanent that asked, as `answerResolutionDevour` does
+ * for devour, then continues. Null when no such question is waiting.
+ */
+export function answerResolutionRemoveCounters(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'entersRemoveCounters') return null;
+  const head = res.queue[0];
+  if (head?.kind === 'enterToken' && d.source === res.object) {
+    const updated: Instruction = { ...head, removed: chosen };
+    return continueResolution(
+      { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+      [],
+    );
+  }
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source) return null;
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, entersRemoved: chosen } },
+    [],
   );
 }
 
@@ -1267,8 +1368,14 @@ export function answerResolutionChooseOpponent(
   );
 }
 
-/** Records the room the player chose to move their venture marker to (CR 701.49b, 309.5a) on the instruction that asked, and continues. Null when no such question is waiting. */
-export function answerResolutionVenture(state: GameState, option: string): ResolveOutcome | null {
+/**
+ * Records the room a venturing player chose among the arrows leaving the room their venture marker is on (CR 701.49b, 309.5a) on the instruction that asked, and continues. Null when no such
+ * question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionDungeonRoom(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
   const res = state.resolution;
   const head = res?.queue[0];
   const d = state.pending;
@@ -1282,7 +1389,9 @@ export function answerResolutionVenture(state: GameState, option: string): Resol
   ) {
     return null;
   }
-  const updated: Instruction = { ...head, chosen: option };
+  const room = roomChosen(option);
+  if (room === null) return null;
+  const updated: Instruction = { ...head, chosen: room };
   const event: GameEvent = {
     kind: 'optionChosen',
     seat: d.seat,

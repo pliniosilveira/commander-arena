@@ -86,6 +86,37 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
   acceptsOptional: true,
   lower(clause, ctx) {
     const lasts = clause.duration === undefined ? undefined : PLAY_UNTIL[clause.duration.scope];
+    // CR 601.2, 611.2a, 400.7 (Emry, Lurker of the Loch): "Choose target artifact card in your graveyard. You may cast that card this turn.": right after a choice of one target card of the
+    // controller's own graveyard (the only instruction before it, which makes no effect), "that card" is that target: the engine's `mayCast` until end of turn. The permission is the offer.
+    const [chosen, ...others] = ctx.targets;
+    if (
+      ctx.exiled === null &&
+      ctx.lastEffectKind === null &&
+      lasts === 'endOfTurn' &&
+      arg(clause, 'castOnly')?.kind === 'flag' &&
+      chosen?.what.kind === 'object' &&
+      others.length === 0 &&
+      chosen.what.filter.zone === 'graveyard' &&
+      chosen.what.filter.controller === 'you'
+    ) {
+      const blocked = missingFeatures([
+        'effect:mayCast',
+        'selector:target',
+        'duration:untilEndOfTurn',
+      ]);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'mayCast',
+            objects: { kind: 'target', id: chosen.id },
+            duration: 'untilEndOfTurn',
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     if (
       lasts === undefined ||
       (ctx.exiled !== 'top' && ctx.exiled !== 'milled' && ctx.exiled !== 'cards')

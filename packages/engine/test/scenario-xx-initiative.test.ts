@@ -1,203 +1,235 @@
-// The initiative (CR 726): a designation a player can have, one player at most. "You take the initiative" is an effect; the
-// three inherent triggered abilities (CR 726.2) have no source: at the beginning of the upkeep of the holder they venture into
-// Undercity, whenever one or more creatures a player controls deal combat damage to the holder that player takes the initiative,
-// and whenever a player takes it they venture into Undercity. They are controlled by the player who had the initiative as they
-// triggered, and go on the stack like any trigger.
-// Pins: CR 726.1 (no initiative until an effect says so), 726.2 (the three abilities, no source), 726.3 (one at a time),
-// 726.4 (the holder leaves the game: the active player, else the next player in turn order), 726.5 (taking it while holding it
-// ventures again and does not create a second designation), 603.3 (triggers use the stack), 510.2 and 120.2 (combat damage),
-// 800.4 (players leaving the game), 101.4 (APNAP order).
-// Cards are SYNTHETIC (src/cards/fixtures/synthetic-initiative.ts) or real fixtures.
+// The initiative (CR 726): a designation a player can have, one player at most. "You take the initiative" is an effect; the player with the initiative ventures into Undercity at the
+// beginning of their upkeep, a player who takes it ventures into Undercity, and a player whose creatures deal combat damage to the player who has it takes it. The three inherent
+// triggered abilities have no source (CR 726.2): they go on the stack like any trigger, controlled by the player who had the initiative as they triggered.
+// Pins: CR 726.1 (no initiative until an effect says so), 726.2 (the three abilities, no source, one occurrence for one or more creatures a player controls), 726.3 (one at a time: the
+// old holder ceases to have it), 726.4 (the holder leaves the game: the active player takes it, else the next player in turn order, and ventures), 726.5 (taking it again: no second
+// designation, the venture triggers), 603.3 (triggers use the stack), 510.2 and 120.2 (combat damage), 101.4 (APNAP), 800.4 (a player leaving).
+// Cards are SYNTHETIC (src/cards/fixtures/synthetic-initiative.ts) or real fixtures. The venture itself is tested in scenario-xx-undercity.test.ts.
 import { describe, expect, test } from 'vitest';
 import {
-  applyAction,
   type GameEvent,
   getView,
   isFeatureSupported,
-  SUPPORTED_FEATURES,
-  stateHash,
+  syntheticCard,
+  validateCard,
 } from '../src/index';
 import { findInitiativeTriggers } from '../src/rules/initiative';
-import { scenario } from '../src/testing/index';
+import { createDriver, type ScenarioGame, scenario } from '../src/testing/index';
+import { settle } from './dungeon-helpers';
 
-const CLAIM = 'SYNTHETIC Initiative Claim'; // {2}{U} sorcery: you take the initiative
-const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
+const HERALD = 'SYNTHETIC Initiative Herald'; // {2}{W} 2/2: when it enters, you take the initiative
+const FLASH = 'SYNTHETIC Initiative Flash'; // {1}{W} instant: you take the initiative
+const GIFT = 'SYNTHETIC Initiative Gift'; // {1}{W} sorcery: target player takes the initiative
 const BEARS = 'Grizzly Bears';
+const ELVES = 'Llanowar Elves';
+const FILLER = Array.from({ length: 12 }, () => 'Plains');
 
 type Builder = ReturnType<typeof scenario>;
-type Game = ReturnType<Builder['build']>;
 
-const base = (seats: 2 | 3 | 4 = 2, build: (b: Builder) => Builder = (b) => b): Builder => {
-  let b = scenario({ seats });
-  for (let s = 0; s < seats; s += 1)
+/** `seats` players, each with a library of Plains (so Secret Entrance has a basic land to find). */
+function table(seats: 2 | 3 | 4, build: (b: Builder) => Builder = (b) => b): Builder {
+  let b = scenario({ seats })
+    .seat(0)
+    .life(20)
+    .library(...FILLER);
+  for (let seat = 1; seat < seats; seat += 1)
     b = b
-      .seat(s)
+      .seat(seat)
       .life(20)
       .library(...FILLER);
   return build(b);
-};
+}
 
-/** Passes priority until the stack is empty again (everybody passes each time). */
-const resolveAll = (g: Game, seats = 2): void => {
-  for (let i = 0; i < 40 && g.state.stack.length > 0; i += 1) {
-    if (g.state.pending?.kind !== 'priority') return;
-    for (let s = 0; s < seats && g.state.stack.length > 0; s += 1) g.pass();
-  }
-};
+const resolveAll = (g: ScenarioGame): void => void settle(g);
 
 describe('taking the initiative (CR 726.1, 726.3, 726.5)', () => {
   test('there is no initiative until an effect makes a player take it', () => {
-    const g = base().at('precombatMain').build();
-    expect(g.state.initiative ?? null).toBeNull();
+    const g = table(2).at('precombatMain').build();
+    expect(g.state.initiative).toBeUndefined();
     expect(getView(g.state, 0).initiative).toBeUndefined();
     g.expect.initiative(null);
+    g.expect.dungeon(0, null);
   });
 
-  test('"You take the initiative.": the player has it, and the ability that ventures is on the stack', () => {
-    const g = base(2, (b) => b.seat(0).hand(CLAIM).battlefield('Island', { count: 3 }))
+  test('a spell: the player has the initiative at once and the venture it triggers is on the stack, named "The initiative"', () => {
+    const g = table(2, (b) => b.seat(0).hand(FLASH).battlefield('Plains', { count: 2 }))
       .at('precombatMain')
       .build();
-    g.act(0).cast(CLAIM, { pay: true });
+    g.act(0).cast(FLASH, { pay: true });
     g.pass();
     g.pass();
     g.expect.initiative(0);
-    expect(getView(g.state, 1).initiative).toBe(0);
+    g.expect.dungeon(0, null);
+    g.expect.eventLog([{ kind: 'initiativeTaken', seat: 0, from: null }]);
     g.expect.stack(['The initiative (ability)']);
     const top = getView(g.state, 1).stack[0];
     expect(top?.name).toBe('The initiative');
     expect(top?.abilitySource).toBeUndefined();
-    expect(top?.oracleText).toBe('Whenever you take the initiative, venture into Undercity.');
+    expect(top?.oracleText).toBe(
+      'Whenever a player takes the initiative, that player ventures into Undercity.',
+    );
     expect(top?.controller).toBe(0);
-    g.expect.eventLog([
-      { kind: 'initiativeChanged', from: null, to: 0 },
-      { kind: 'initiativeTaken', seat: 0 },
-    ]);
+    expect(getView(g.state, 1).initiative).toBe(0);
+    resolveAll(g);
+    // Taking it ventured: Undercity is in the command zone with the marker on Secret Entrance (CR 701.49a, 309.4a).
+    g.expect.initiative(0);
+    g.expect.dungeon(0, 'secretEntrance');
+    expect(getView(g.state, 1).seats[0]?.dungeon?.roomName).toBe('Secret Entrance');
   });
 
-  test('the ability that resolves ventures into Undercity: the marker is on the topmost room', () => {
-    const g = base(2, (b) => b.seat(0).hand(CLAIM).battlefield('Island', { count: 3 }))
+  test('"When ~ enters, you take the initiative.": the trigger resolves and the controller has it', () => {
+    const g = table(2, (b) => b.seat(0).hand(HERALD).battlefield('Plains', { count: 3 }))
       .at('precombatMain')
       .build();
-    g.act(0).cast(CLAIM, { pay: true });
-    g.pass();
-    g.pass();
-    g.expect.dungeon(0, null);
-    g.pass();
-    g.pass();
-    g.expect.dungeon(0, 'secret-entrance');
-    expect(getView(g.state, 1).seats[0]?.dungeon?.name).toBe('Undercity');
-    expect(getView(g.state, 1).seats[0]?.dungeon?.leadsTo).toEqual(['forge', 'lost-well']);
-    g.expect.dungeon(1, null);
-    g.expect.eventLog([{ kind: 'ventured', seat: 0, room: 'secret-entrance', from: null }]);
+    g.act(0).cast(HERALD, { pay: true });
+    resolveAll(g);
+    g.expect.initiative(0);
+    g.expect.dungeon(0, 'secretEntrance');
+    g.expect.zone(HERALD, 'battlefield');
   });
 
-  test('taking it while holding it ventures again and does not move the designation (CR 726.5)', () => {
-    const g = base(2, (b) => b.seat(0).hand(CLAIM).battlefield('Island', { count: 3 }))
+  test('taking it while already holding it changes nothing but still ventures (CR 726.5)', () => {
+    const g = table(2, (b) =>
+      b.seat(0).hand(FLASH).battlefield('Plains', { count: 2 }).dungeon('forge'),
+    )
       .at('precombatMain', { initiative: 0 })
       .build();
-    g.act(0).cast(CLAIM, { pay: true });
+    g.act(0).cast(FLASH, { pay: true });
     g.pass();
     g.pass();
     g.expect.initiative(0);
-    g.expect.noEvent({ kind: 'initiativeChanged' });
+    g.expect.eventLog([{ kind: 'initiativeTaken', seat: 0, from: 0 }]);
     g.expect.stack(['The initiative (ability)']);
-    g.pass();
-    g.pass();
-    g.expect.dungeon(0, 'secret-entrance');
+    resolveAll(g);
+    // From Forge a venture moves on (a choice of Trap! and Arena, answered with the first); it does not start a second dungeon.
+    g.expect.dungeon(0, 'trap');
+    g.expect.initiative(0);
   });
 
-  test('a second player taking it takes it from the first, who ceases to have it (CR 726.3)', () => {
-    const g = base(2, (b) => b.seat(1).hand(CLAIM).battlefield('Island', { count: 3 }))
-      .at('precombatMain', { initiative: 0, active: 1, turn: 2 })
+  test('"Target player takes the initiative.": the old holder ceases to have it and the new one ventures (CR 726.3)', () => {
+    const g = table(2, (b) => b.seat(0).hand(GIFT).battlefield('Plains', { count: 2 }))
+      .at('precombatMain', { initiative: 0 })
       .build();
-    g.act(1).cast(CLAIM, { pay: true });
+    g.act(0).cast(GIFT, { targets: [{ player: 1 }], pay: true });
     g.pass();
     g.pass();
     g.expect.initiative(1);
-    g.expect.eventLog([{ kind: 'initiativeChanged', from: 0, to: 1 }]);
-    g.pass();
-    g.pass();
-    g.expect.dungeon(1, 'secret-entrance');
+    g.expect.eventLog([{ kind: 'initiativeTaken', seat: 1, from: 0 }]);
+    // The venture trigger is the new holder's: seat 1 enters Undercity, seat 0 does nothing.
+    expect(g.state.objects[g.state.stack[0] ?? 'o0']?.controller).toBe(1);
+    resolveAll(g);
+    g.expect.dungeon(1, 'secretEntrance');
     g.expect.dungeon(0, null);
   });
 
-  test('replaying the same actions gives the same hash', () => {
-    const play = () => {
-      const g = base(2, (b) => b.seat(0).hand(CLAIM).battlefield('Island', { count: 3 }))
-        .at('precombatMain')
-        .build();
-      g.act(0).cast(CLAIM, { pay: true });
-      resolveAll(g);
-      return stateHash(g.state);
-    };
-    expect(play()).toBe(play());
+  test('the target may be a player who is not an opponent: the caster takes it with "target player"', () => {
+    const g = table(2, (b) => b.seat(0).hand(GIFT).battlefield('Plains', { count: 2 }))
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(GIFT, { targets: [{ player: 0 }], pay: true });
+    g.pass();
+    g.pass();
+    g.expect.initiative(0);
+  });
+
+  test('the effect names exactly one player: validation refuses every player', () => {
+    const card = syntheticCard(GIFT);
+    const face = card.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const bad = {
+      ...card,
+      faces: [
+        { ...face, spell: { effect: { kind: 'takeInitiative', player: { kind: 'eachPlayer' } } } },
+      ],
+    } as never;
+    expect(JSON.stringify(validateCard(bad))).toContain('only one player can have the initiative');
+    expect(isFeatureSupported('effect:takeInitiative')).toBe(true);
+    expect(isFeatureSupported('effect:venture')).toBe(true);
   });
 });
 
 describe('the upkeep of the player who has the initiative (CR 726.2)', () => {
-  test('at the beginning of their upkeep they venture into Undercity', () => {
-    const g = base().at('postcombatMain', { initiative: 0 }).build();
+  test('they venture into Undercity at the beginning of their upkeep, named "The initiative"', () => {
+    const g = table(2).at('end', { initiative: 0, active: 1, turn: 2 }).build();
     g.advanceTo('upkeep', { turn: 'next' });
-    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.step('upkeep', { active: 0 });
     g.expect.stack(['The initiative (ability)']);
-    expect(getView(g.state, 0).stack[0]?.oracleText).toBe(
-      'At the beginning of your upkeep, venture into Undercity.',
+    const top = getView(g.state, 0).stack[0];
+    expect(top?.oracleText).toBe(
+      'At the beginning of the upkeep of the player who has the initiative, that player ventures into Undercity.',
     );
-    g.pass();
-    g.pass();
-    g.expect.dungeon(0, 'secret-entrance');
+    expect(top?.controller).toBe(0);
+    resolveAll(g);
+    g.expect.dungeon(0, 'secretEntrance');
   });
 
-  test('not at the upkeep of another player', () => {
-    const g = base().at('postcombatMain', { initiative: 0 }).build();
+  test('only at the upkeep of the holder, not at the upkeep of another player', () => {
+    const g = table(2).at('end', { initiative: 1, active: 1, turn: 2 }).build();
     g.advanceTo('upkeep', { turn: 'next' });
-    g.expect.step('upkeep', { active: 1 });
+    g.expect.step('upkeep', { active: 0 });
     g.expect.stack([]);
+    g.expect.dungeon(0, null);
+    g.expect.dungeon(1, null);
   });
 
-  test('without the initiative nothing triggers', () => {
-    const g = base().at('postcombatMain').build();
+  test('every turn of the holder: the marker moves one room down each upkeep', () => {
+    const g = table(2).at('end', { initiative: 0, active: 1, turn: 2 }).build();
     g.advanceTo('upkeep', { turn: 'next' });
-    g.expect.stack([]);
+    resolveAll(g);
+    g.expect.dungeon(0, 'secretEntrance');
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.step('upkeep', { active: 0 });
+    resolveAll(g);
+    // Forge: the first exit of Secret Entrance, as the question is answered with the first room offered.
+    g.expect.dungeon(0, 'forge');
+  });
+
+  test('with three seats only the holder ventures at the start of their own upkeep', () => {
+    const g = table(3).at('end', { initiative: 2, active: 1, turn: 2 }).build();
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.step('upkeep', { active: 2 });
+    g.expect.stack(['The initiative (ability)']);
+    resolveAll(g);
+    g.expect.dungeon(2, 'secretEntrance');
+    g.expect.dungeon(0, null);
+    g.expect.dungeon(1, null);
   });
 });
 
 describe('creatures deal combat damage to the player who has the initiative (CR 726.2)', () => {
-  const attack = (seats: 2 | 3 | 4 = 2, extra: (b: Builder) => Builder = (b) => b) =>
-    extra(base(seats, (b) => b.seat(0).battlefield(BEARS)))
+  test('the controller of the creatures takes it: the trigger is the old holder’s, and the new holder ventures', () => {
+    const g = table(2, (b) => b.seat(0).battlefield(BEARS))
       .at('precombatMain', { initiative: 1 })
       .build();
-
-  test('their controller takes the initiative through a trigger of the holder, then ventures', () => {
-    const g = attack();
     g.playCombat({ attack: [BEARS], until: 'combatDamage' });
     g.expect.life(1, 18);
     g.expect.stack(['The initiative (ability)']);
-    // The trigger is the holder's (CR 726.2: controlled by the player who had the initiative as it triggered).
     expect(g.state.objects[g.state.stack[0] ?? 'o0']?.controller).toBe(1);
     expect(getView(g.state, 0).stack[0]?.oracleText).toBe(
-      'Whenever one or more creatures a player controls deal combat damage to you, that player takes the initiative.',
+      'Whenever one or more creatures a player controls deal combat damage to the player who has the initiative, the controller of those creatures takes the initiative.',
     );
     g.expect.initiative(1);
     resolveAll(g);
     g.expect.initiative(0);
-    g.expect.dungeon(0, 'secret-entrance');
+    g.expect.dungeon(0, 'secretEntrance');
     g.expect.dungeon(1, null);
-    g.expect.eventLog([
-      { kind: 'initiativeChanged', from: 1, to: 0 },
-      { kind: 'initiativeTaken', seat: 0 },
-    ]);
+    g.expect.eventLog([{ kind: 'initiativeTaken', seat: 0, from: 1 }]);
   });
 
-  test('two creatures of one player dealing damage together are one ability (one or more creatures)', () => {
-    const g = attack(2, (b) => b.seat(0).battlefield('Typhoid Rats'));
-    g.playCombat({ attack: [BEARS, 'Typhoid Rats'], until: 'combatDamage' });
-    g.expect.life(1, 17);
+  test('two creatures of the same player are one occurrence: one trigger, one venture', () => {
+    const g = table(2, (b) => b.seat(0).battlefield(BEARS).battlefield(ELVES))
+      .at('precombatMain', { initiative: 1 })
+      .build();
+    g.playCombat({ attack: [BEARS, ELVES], until: 'combatDamage' });
     g.expect.stack(['The initiative (ability)']);
+    resolveAll(g);
+    g.expect.initiative(0);
+    g.expect.dungeon(0, 'secretEntrance');
   });
 
   test('damage to a player who does not have the initiative does nothing', () => {
-    const g = base(2, (b) => b.seat(0).battlefield(BEARS))
+    const g = table(2, (b) => b.seat(0).battlefield(BEARS))
       .at('precombatMain', { initiative: 0 })
       .build();
     g.playCombat({ attack: [BEARS], until: 'combatDamage' });
@@ -206,8 +238,10 @@ describe('creatures deal combat damage to the player who has the initiative (CR 
     g.expect.initiative(0);
   });
 
-  test('a blocked creature deals damage to the blocker, not to the player: nothing happens', () => {
-    const g = attack(2, (b) => b.seat(1).battlefield('Typhoid Rats'));
+  test('damage to a creature the holder controls (a blocked creature) does nothing', () => {
+    const g = table(2, (b) => b.seat(0).battlefield(BEARS).seat(1).battlefield('Typhoid Rats'))
+      .at('precombatMain', { initiative: 1 })
+      .build();
     g.playCombat({
       attack: [BEARS],
       block: [{ blocker: 'Typhoid Rats', attacker: BEARS }],
@@ -219,7 +253,7 @@ describe('creatures deal combat damage to the player who has the initiative (CR 
   });
 
   test('damage that is not combat damage does nothing: a spell’s damage to the holder', () => {
-    const g = base(2, (b) => b.seat(0).hand('Lightning Bolt').battlefield('Mountain'))
+    const g = table(2, (b) => b.seat(0).hand('Lightning Bolt').battlefield('Mountain'))
       .at('precombatMain', { initiative: 1 })
       .build();
     g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
@@ -230,149 +264,128 @@ describe('creatures deal combat damage to the player who has the initiative (CR 
     g.expect.initiative(1);
   });
 
-  test('with three seats the player whose creatures dealt the damage takes it, whichever seat that is', () => {
-    const g = attack(3, (b) => b.seat(2).battlefield('Typhoid Rats'));
+  test('with three seats the creatures of the third player take it from the second, and the first player is not involved', () => {
+    const g = table(3, (b) => b.seat(2).battlefield(BEARS))
+      .at('precombatMain', { initiative: 1, active: 2, turn: 3 })
+      .build();
     g.playCombat({ attack: [{ attacker: BEARS, target: { player: 1 } }], until: 'combatDamage' });
     g.expect.stack(['The initiative (ability)']);
-    resolveAll(g, 3);
-    g.expect.initiative(0);
-    g.expect.dungeon(0, 'secret-entrance');
-    g.expect.dungeon(2, null);
+    expect(g.state.objects[g.state.stack[0] ?? 'o0']?.controller).toBe(1);
+    resolveAll(g);
+    g.expect.initiative(2);
+    g.expect.dungeon(2, 'secretEntrance');
+    g.expect.dungeon(0, null);
+    g.expect.dungeon(1, null);
   });
 
-  test('with four seats: the holder is a third opponent, and the attacker takes it', () => {
-    const g = base(4, (b) => b.seat(1).battlefield(BEARS))
-      .at('precombatMain', { initiative: 3, active: 1, turn: 2 })
+  test('with four seats the creatures of the active player take it from the holder; the other seats are not involved', () => {
+    const g = table(4, (b) => b.seat(0).battlefield(BEARS).seat(2).battlefield(ELVES))
+      .at('precombatMain', { initiative: 1, active: 0, turn: 4 })
       .build();
-    g.playCombat({
-      attack: [{ attacker: BEARS, target: { player: 3 } }],
-      until: 'combatDamage',
-    });
-    g.expect.life(3, 18);
+    g.playCombat({ attack: [{ attacker: BEARS, target: { player: 1 } }], until: 'combatDamage' });
     g.expect.stack(['The initiative (ability)']);
-    resolveAll(g, 4);
-    g.expect.initiative(1);
-    g.expect.dungeon(1, 'secret-entrance');
-  });
-
-  test('the creature that left the battlefield: its controller as it last was takes it (CR 608.2h)', () => {
-    const g = attack(2, (b) => b.seat(1).hand('Murder').battlefield('Swamp', { count: 3 }));
-    g.playCombat({ attack: [BEARS], until: 'combatDamage' });
-    g.expect.stack(['The initiative (ability)']);
-    g.pass(0);
-    g.act(1).cast('Murder', { targets: [{ name: BEARS }], pay: true });
-    g.pass();
-    g.pass();
-    g.expect.zone(BEARS, 'graveyard');
     resolveAll(g);
     g.expect.initiative(0);
+    g.expect.dungeon(0, 'secretEntrance');
+    g.expect.dungeon(1, null);
+    g.expect.dungeon(2, null);
+    g.expect.dungeon(3, null);
   });
 
-  test('creatures of two players dealing combat damage together make one ability for each player, in turn', () => {
-    // CR 510.2: combat damage is dealt at once; "a player controls" names each player, so each takes the initiative in turn (APNAP,
-    // CR 101.4, is for the choice of order, which the holder, who controls all of them, makes). Events are made by hand: two controllers
-    // never deal combat damage to the same player at once in a real combat unless control changes in it.
-    const g = base(3, (b) => b.seat(1).battlefield(BEARS).seat(2).battlefield('Typhoid Rats'))
-      .at('precombatMain', { initiative: 0 })
+  test('creatures of two players deal damage to the holder together: one trigger for each player, the holder orders them and the last to resolve keeps it', () => {
+    const g = table(3, (b) =>
+      b.seat(0).battlefield(BEARS).battlefield(ELVES).seat(2).battlefield('Giant Spider'),
+    )
+      .at('precombatMain', { initiative: 1, active: 0, turn: 3 })
       .build();
-    const bears = g.id(BEARS);
-    const rats = g.id('Typhoid Rats');
-    const dealt = (source: string): GameEvent => ({
+    const damage = (label: string, seat: number): GameEvent => ({
       kind: 'damageDealt',
-      source: source as never,
-      to: { kind: 'player', seat: 0 },
+      source: g.id({ name: label, seat }),
+      to: { kind: 'player', seat: 1 },
       amount: 2,
       combat: true,
     });
-    const found = findInitiativeTriggers(g.state, [dealt(bears), dealt(rats)]);
-    expect(found.map((t) => [t.inherent, t.controller, t.player])).toEqual([
-      ['initiativeDamage', 0, 1],
-      ['initiativeDamage', 0, 2],
+    // Two creatures of seat 0 and one of seat 2 (the combat of an effect that lets both players' creatures attack): one occurrence for each controller (CR 603.2c).
+    const found = findInitiativeTriggers(g.state, [
+      damage(BEARS, 0),
+      damage(ELVES, 0),
+      damage('Giant Spider', 2),
     ]);
-  });
-
-  test('replaying the same actions gives the same hash', () => {
-    const play = () => {
-      const g = attack();
-      g.playCombat({ attack: [BEARS], until: 'combatDamage' });
-      resolveAll(g);
-      return stateHash(g.state);
-    };
-    expect(play()).toBe(play());
+    expect(found.map((t) => [t.controller, t.player])).toEqual([
+      [1, 0],
+      [1, 2],
+    ]);
+    const d = createDriver({ ...g.state, pendingTriggers: found });
+    d.pass();
+    d.expect.pending('orderTriggers', 1);
+    // The first listed goes on the stack first and resolves last: seat 0's, so seat 2 takes it first and seat 0 last.
+    d.act(1).orderTriggers(0, 1);
+    resolveAll(d);
+    d.expect.initiative(0);
+    d.expect.dungeon(0, 'secretEntrance');
+    d.expect.dungeon(2, 'secretEntrance');
+    d.expect.dungeon(1, null);
+    // The other order: seat 2 keeps it.
+    const e = createDriver({ ...g.state, pendingTriggers: found });
+    e.pass();
+    e.act(1).orderTriggers(1, 0);
+    resolveAll(e);
+    e.expect.initiative(2);
   });
 });
 
-describe('the player who has the initiative leaves the game (CR 726.4)', () => {
-  test('the active player takes it as the holder concedes, and ventures', () => {
-    const g = base().at('precombatMain', { initiative: 1, priority: 1 }).build();
-    g.act(1).concede();
-    g.expect.hasLost(1);
+/** `seat` concedes: priority is passed (the stack is empty) to the seat first. */
+function concedeAs(g: ScenarioGame, seat: number): void {
+  for (let i = 0; i < 8 && g.deciding !== seat; i += 1) g.pass();
+  g.act(seat).concede();
+}
+
+describe('the holder leaves the game (CR 726.4)', () => {
+  test('the active player takes the initiative as the holder leaves, and ventures', () => {
+    const g = table(3).at('precombatMain', { initiative: 2, active: 0, priority: 2 }).build();
+    g.act(2).concede();
     g.expect.initiative(0);
-    g.expect.eventLog([
-      { kind: 'initiativeChanged', from: 1, to: 0 },
-      { kind: 'initiativeTaken', seat: 0 },
-    ]);
+    g.expect.eventLog([{ kind: 'initiativeTaken', seat: 0, from: 2 }]);
+    g.expect.hasLost(2, true);
+    resolveAll(g);
+    g.expect.dungeon(0, 'secretEntrance');
+    g.expect.dungeon(1, null);
   });
 
-  test('the active player conceding while holding it: the next player in turn order takes it', () => {
-    const g = base(3).at('precombatMain', { initiative: 0 }).build();
-    g.act(0).concede();
-    g.expect.initiative(1);
-  });
-
-  test('a holder who loses to state-based actions hands it on too', () => {
-    const g = base(2, (b) => b.seat(0).life(1))
-      .at('precombatMain', { initiative: 0, active: 1, turn: 2 })
-      .seat(1)
-      .hand('Lightning Bolt')
-      .battlefield('Mountain')
-      .build();
-    g.act(1).cast('Lightning Bolt', { targets: [{ player: 0 }], pay: true });
-    g.pass();
-    g.pass();
-    g.expect.hasLost(0);
-    g.expect.initiative(1);
-  });
-
-  test('with four seats the next player still in the game', () => {
-    const g = base(4).at('precombatMain', { initiative: 1, priority: 1 }).build();
+  test('when the active player is the holder who leaves, the next player in turn order takes it', () => {
+    const g = table(4).at('precombatMain', { initiative: 1, active: 1, turn: 2 }).build();
     g.act(1).concede();
+    g.expect.initiative(2);
+    resolveAll(g);
+    g.expect.dungeon(2, 'secretEntrance');
+  });
+
+  test('the next player in turn order skips a player who has left already (four seats)', () => {
+    const g = table(4)
+      .at('precombatMain', { initiative: 1, active: 1, turn: 2, priority: 2 })
+      .build();
+    g.act(2).concede();
+    g.expect.initiative(1);
+    concedeAs(g, 1);
+    g.expect.initiative(3);
+    resolveAll(g);
+    g.expect.dungeon(3, 'secretEntrance');
+  });
+
+  test('a player who does not have the initiative leaving changes nothing', () => {
+    const g = table(3).at('precombatMain', { initiative: 1, active: 0, priority: 2 }).build();
+    g.act(2).concede();
+    g.expect.initiative(1);
+    g.expect.stack([]);
+    g.expect.noEvent({ kind: 'initiativeTaken' });
+  });
+
+  test('a holder who loses the game by an effect (life 0) hands it on as well', () => {
+    const g = table(3, (b) => b.seat(1).life(0))
+      .at('precombatMain', { initiative: 1, active: 0 })
+      .build();
+    g.pass();
+    g.expect.hasLost(1, true);
     g.expect.initiative(0);
-    const h = base(4).at('precombatMain', { initiative: 0 }).build();
-    h.act(0).concede();
-    h.expect.initiative(1);
-  });
-
-  test('a player who does not have it concedes: nothing changes', () => {
-    const g = base().at('precombatMain', { priority: 1 }).build();
-    g.act(1).concede();
-    g.expect.initiative(null);
-    g.expect.noEvent({ kind: 'initiativeChanged' });
-  });
-});
-
-describe('the engine reports it (CR 726)', () => {
-  test('feature ids', () => {
-    expect(SUPPORTED_FEATURES.effectKinds).toContain('takeInitiative');
-    expect(SUPPORTED_FEATURES.effectKinds).toContain('ventureIntoDungeon');
-    expect(isFeatureSupported('effect:takeInitiative')).toBe(true);
-    expect(isFeatureSupported('effect:ventureIntoDungeon')).toBe(true);
-  });
-
-  test('the decision to choose a room cannot be answered with another room', () => {
-    const g = base(2, (b) =>
-      b
-        .seat(0)
-        .hand('SYNTHETIC Undercity Dive')
-        .battlefield('Island', { count: 2 })
-        .inUndercity('secret-entrance'),
-    )
-      .at('precombatMain')
-      .build();
-    g.act(0).cast('SYNTHETIC Undercity Dive', { pay: true });
-    g.pass();
-    g.pass();
-    expect(g.state.pending?.kind).toBe('chooseOption');
-    expect(applyAction(g.state, 0, { kind: 'chooseOption', option: 'archives' }).ok).toBe(false);
   });
 });

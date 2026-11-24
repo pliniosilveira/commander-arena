@@ -8,7 +8,7 @@ import { scenario } from '@commander-arena/engine/testing';
 import { expect, test } from 'vitest';
 import { optionText, purposeNoun } from '../src/game/chosen';
 import { describeEvent } from '../src/game/describe';
-import { hasOwnWords, inherentNameOf } from '../src/game/monarch-text';
+import { inherentNameOf, showsRuleText } from '../src/game/monarch-text';
 import { dungeonTitle } from '../src/ui/board/PlayerStrip';
 import { triggerGist } from '../src/ui/decisions/ability-label';
 import { optionPrompt } from '../src/ui/decisions/option-picker';
@@ -30,13 +30,13 @@ const game = () =>
 
 test('the abilities of the initiative and the room abilities are named for what they belong to', () => {
   expect(inherentNameOf('initiativeUpkeep')).toBe('The initiative');
-  expect(inherentNameOf('initiativeDamage')).toBe('The initiative');
+  expect(inherentNameOf('initiativeSteal')).toBe('The initiative');
   expect(inherentNameOf('initiativeTaken')).toBe('The initiative');
-  expect(inherentNameOf('room:forge')).toBe('Undercity');
+  expect(inherentNameOf('undercity:forge')).toBe('Undercity');
   expect(inherentNameOf('monarchDraw')).toBe('The monarch');
-  expect(hasOwnWords({ name: 'The initiative' })).toBe(true);
-  expect(hasOwnWords({ name: 'Undercity' })).toBe(true);
-  expect(hasOwnWords({ name: 'The monarch' })).toBe(false);
+  expect(showsRuleText('The initiative')).toBe(true);
+  expect(showsRuleText('Undercity')).toBe(true);
+  expect(showsRuleText('The monarch')).toBe(false);
 });
 
 test('on the stack the initiative says what its ability does, for either viewer', () => {
@@ -124,7 +124,7 @@ test('the chip of a seat in Undercity names the room, its text and where the mar
     .seat(0)
     .library(...LIBRARY)
     .hand(DIVE)
-    .inUndercity('secret-entrance')
+    .dungeon('secretEntrance')
     .seat(1)
     .library(...LIBRARY)
     .build();
@@ -137,7 +137,7 @@ test('the chip of a seat in Undercity names the room, its text and where the mar
   const bottom = scenario()
     .seat(0)
     .library(...LIBRARY)
-    .inUndercity('throne-of-the-dead-three')
+    .dungeon('throneOfTheDeadThree')
     .seat(1)
     .library(...LIBRARY)
     .build();
@@ -157,5 +157,5 @@ test('the effects are worded as the cards write them', () => {
       undefined,
     );
   expect(gist({ kind: 'takeInitiative', player: { kind: 'you' } })).toBe('You take the initiative');
-  expect(gist({ kind: 'ventureIntoDungeon', dungeon: 'undercity' })).toBe('Venture into Undercity');
+  expect(gist({ kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' })).toBe('Venture into Undercity');
 });

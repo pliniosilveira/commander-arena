@@ -88,6 +88,33 @@ export function checkPreventDamage(
       }
     }
   }
+  // CR 615.5 (Gatta and Luzzu): "prevent that damage and put that many +1/+1 counters on it": the counters go on the permanent that would have been damaged.
+  if (e.countersPrevented !== undefined) {
+    if (typeof e.countersPrevented !== 'string' || e.countersPrevented === '') {
+      issue(out, `${path}.countersPrevented`, 'countersPrevented names a kind of counter');
+    }
+    if (e.amount !== 'all') {
+      issue(
+        out,
+        `${path}.countersPrevented`,
+        'counters for prevented damage go with a shield that prevents all of it',
+      );
+    }
+    if (e.perPrevented !== undefined) {
+      issue(
+        out,
+        `${path}.countersPrevented`,
+        'name tokens or counters for the prevented damage, not both',
+      );
+    }
+    if (e.to?.kind !== 'target' && e.to?.kind !== 'this' && e.to?.kind !== 'each') {
+      issue(
+        out,
+        `${path}.countersPrevented`,
+        'counters are put on a permanent: the recipient is this, a target or each permanent',
+      );
+    }
+  }
   // CR 615.5: "for each 1 damage prevented this way, create a token": a predefined or a described token, made as the damage is prevented (no question can be asked).
   if (e.perPrevented !== undefined) {
     if (e.perPrevented === null || typeof e.perPrevented !== 'object') {

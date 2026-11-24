@@ -4,10 +4,12 @@
  * (SPEC 17.1 A1); events describe what actually happened.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { DungeonId, Zone } from '../ast/types';
+import type { DungeonId, UndercityRoom, Zone } from '../ast/types';
+import type { PartyType } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
+import type { VoteCast } from './decisions';
 import type { StepId } from './types';
 
 export type GameEvent =
@@ -141,6 +143,18 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly sides: number;
       readonly result: number;
+    }
+  /**
+   * CR 701.38a (Vote): every player has voted in a vote of the spell or ability `source` (controlled by `controller`): `cast` is who voted for what, in the order they voted (an option is a word of
+   * the card, `seat:<n>` for a player or `object:<id>` for a permanent). With `secret` the votes were hidden until now (the log says nothing about a vote before this event). The trigger
+   * `votingFinished` reads it and keeps the record.
+   */
+  | {
+      readonly kind: 'votesRevealed';
+      readonly source: ObjectId;
+      readonly controller: SeatId;
+      readonly cast: readonly VoteCast[];
+      readonly secret: boolean;
     }
   /**
    * CR 705.2: `seat` flipped a coin after calling `call`; `result` is the side that came up, drawn from the seeded generator of the game, and `won` is whether the call matched it
@@ -513,6 +527,17 @@ export type GameEvent =
       readonly subject?: ObjectId;
     }
   /**
+   * CR 700.8d (Stick Together): `seat` chose a party from among the creatures they control: `party` lists the creature that fills each type, empty when they chose none. `automatic`
+   * is true when the player controls no creature of a party type, so there was nothing to choose. The creatures left out are sacrificed once the last player has chosen.
+   */
+  | {
+      readonly kind: 'partyChosen';
+      readonly seat: SeatId;
+      readonly source: ObjectId;
+      readonly party: readonly { readonly type: PartyType; readonly object: ObjectId }[];
+      readonly automatic: boolean;
+    }
+  /**
    * CR 701.34a (Proliferate, D-149): `seat` proliferated: each permanent in `objects` and each player in `players` was given one more counter of
    * each kind it had (the `counterAdded` and `poisonChanged` events follow). Emitted even when nothing was chosen, once a choice was offered.
    */
@@ -776,28 +801,22 @@ export type GameEvent =
       readonly to: SeatId | null;
     }
   /**
-   * The initiative designation moved (CR 726.1, 726.3, 726.4): `from` is the previous holder (null if there was none), `to` the new one (null when the holder left the game and
-   * nobody could take over, CR 726.4).
+   * `seat` took the initiative (CR 726.1, 726.3, 726.5): `from` is the player who had it (null if none; `seat` itself when they already had it, which still triggers the
+   * venture of CR 726.2).
    */
-  | {
-      readonly kind: 'initiativeChanged';
-      readonly from: SeatId | null;
-      readonly to: SeatId | null;
-    }
-  /** `seat` took the initiative (CR 726.2, 726.5), also when they had it already: "Whenever a player takes the initiative" triggers from this. */
-  | { readonly kind: 'initiativeTaken'; readonly seat: SeatId }
+  | { readonly kind: 'initiativeTaken'; readonly seat: SeatId; readonly from: SeatId | null }
   /**
-   * `seat` moved their venture marker into the room `room` of the dungeon (CR 701.49, 309.4c): from the room `from`, or from none when the dungeon was just put into the
-   * command zone. The room ability triggers from this.
+   * `seat` moved their venture marker into `room` of `dungeon` (CR 701.49a, 701.49b, 309.4a, 309.5a): `from` is the room it left, null when the dungeon was just put into the
+   * command zone. The room ability triggers from this (CR 309.4c).
    */
   | {
       readonly kind: 'ventured';
       readonly seat: SeatId;
       readonly dungeon: DungeonId;
-      readonly room: string;
-      readonly from: string | null;
+      readonly room: UndercityRoom;
+      readonly from: UndercityRoom | null;
     }
-  /** `seat` completed the dungeon (CR 309.6, 309.7, 701.49c): the dungeon card was removed from the game. */
+  /** `seat` completed `dungeon` (CR 309.7, 701.49c, 704.5t): the dungeon card was removed from the game. */
   | { readonly kind: 'dungeonCompleted'; readonly seat: SeatId; readonly dungeon: DungeonId }
   /** The game became day or night (CR 731.1, 502.2, 702.145d, 702.145g): `from` is what it was (null while it was neither), `to` what it is now. */
   | {

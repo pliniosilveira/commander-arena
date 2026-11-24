@@ -14,6 +14,7 @@ import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
+import { greatestAmong } from './sacrifice-choice';
 import { matchesFilter } from './select';
 import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
@@ -213,6 +214,9 @@ export function runChooseMove(
         if (i.kind !== 'move') return i;
         // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
         if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
+        // CR 610.3: "until this creature leaves the battlefield": each card exiled comes back when the permanent leaves.
+        if (instruction.untilLeaves !== undefined)
+          return { ...i, untilLeaves: instruction.untilLeaves };
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
@@ -249,59 +253,57 @@ export function runChooseMove(
             )
           );
         })
-      : fromCards && instruction.anyGraveyard === true
-        ? // CR 404.1, 608.2d (Extract from Darkness): "a creature card from a graveyard": the matching cards of every player's graveyard, in turn order from the chooser.
-          seatsInOrder(state, chooser)
-            .flatMap((seat) => zoneList(state, 'graveyard', seat))
-            .filter((id) => {
-              const obj = state.objects[id];
-              const { controller: _owner, ...described } = instruction.filter;
-              return (
-                obj !== undefined &&
-                matchesFilter(
-                  state,
-                  obj,
-                  { ...described, zone: 'graveyard' },
-                  { controller: chooser, source: res.source },
-                )
-              );
-            })
-        : fromCards && instruction.anyOwner === true
-          ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
-            (instruction.among ?? []).filter((id) => {
-              const obj = state.objects[id];
-              const { controller: _owner, ...described } = instruction.filter;
-              return (
-                obj !== undefined &&
-                obj.zone === 'graveyard' &&
-                matchesFilter(
-                  state,
-                  obj,
-                  { ...described, zone: 'graveyard' },
-                  {
-                    controller: chooser,
-                    source: res.source,
-                  },
-                )
-              );
-            })
-          : fromCards
-            ? cardCandidates(
+      : fromCards && instruction.anyOwner === true
+        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter. Without `among`
+          // (Extract from Darkness, CR 404.1: "a creature card from a graveyard") every card of every graveyard.
+          (
+            instruction.among ??
+            seatsInOrder(state, chooser).flatMap((seat) => zoneList(state, 'graveyard', seat))
+          ).filter((id) => {
+            const obj = state.objects[id];
+            const { controller: _owner, ...described } = instruction.filter;
+            return (
+              obj !== undefined &&
+              obj.zone === 'graveyard' &&
+              matchesFilter(
                 state,
-                chooser,
-                res.source,
-                instruction.filter,
-                instruction.alsoGraveyard === true,
-                res.triggerDamage,
-                instruction.among,
-                instruction.handOf,
-                res.chosenCreatureType,
-              ).filter(
-                // D-411: only the cards the effect before it moved.
-                (id) => instruction.among === undefined || instruction.among.includes(id),
+                obj,
+                { ...described, zone: 'graveyard' },
+                {
+                  controller: chooser,
+                  source: res.source,
+                },
               )
-            : controlledCandidates(state, chooser, res.source, instruction.filter);
-  const legal = legalAll.filter((id) => !chosenBefore.includes(id));
+            );
+          })
+        : fromCards
+          ? cardCandidates(
+              state,
+              chooser,
+              res.source,
+              instruction.filter,
+              instruction.alsoGraveyard === true,
+              res.triggerDamage,
+              instruction.among,
+              instruction.handOf,
+              res.chosenCreatureType,
+            ).filter(
+              // D-411: only the cards the effect before it moved.
+              (id) => instruction.among === undefined || instruction.among.includes(id),
+            )
+          : controlledCandidates(state, chooser, res.source, instruction.filter);
+  // "A creature with the greatest mana value among creatures they control" (`moveToZone.player`, CR 608.2d): only the candidates tied for the extreme value of the stat can be chosen.
+  const extreme =
+    instruction.greatest !== undefined
+      ? ({ stat: instruction.greatest, which: 'greatest' } as const)
+      : instruction.least !== undefined
+        ? ({ stat: instruction.least, which: 'least' } as const)
+        : undefined;
+  const legal = (
+    extreme === undefined || fromCards || legalAll.length === 0
+      ? legalAll
+      : greatestAmong(state, legalAll, extreme.stat, extreme.which)
+  ).filter((id) => !chosenBefore.includes(id));
   // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
   // shown it even when none can be chosen; an empty hand shows nothing.
   const looked =
@@ -330,7 +332,7 @@ export function runChooseMove(
   const anyNumber = instruction.anyNumber === true;
   if (!anyNumber && !optional && legal.length <= instruction.count) return run(legal, true);
   const max = anyNumber ? legal.length : Math.min(instruction.count, legal.length);
-  const min = optional ? 0 : max;
+  const min = optional || anyNumber ? 0 : max;
   if (fromCards) {
     const zone =
       instruction.filter.zone === 'graveyard'
@@ -380,10 +382,10 @@ export function runChooseMove(
                       ? 'from among the cards exiled this way'
                       : instruction.among !== undefined
                         ? 'from among the cards put into your graveyard'
-                        : zone === 'exile'
-                          ? 'exiled with this permanent'
-                          : instruction.anyGraveyard === true
-                            ? 'from a graveyard'
+                        : instruction.anyOwner === true
+                          ? 'from a graveyard'
+                          : zone === 'exile'
+                            ? 'exiled with this permanent'
                             : instruction.graveyardOf !== undefined
                               ? instruction.graveyardOf === chooser
                                 ? 'from your graveyard'

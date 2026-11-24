@@ -30,6 +30,10 @@ export function devourReminder(n: number, quality?: string): string {
 export const RIOT_REMINDER =
   'This permanent enters with your choice of an additional +1/+1 counter or haste.';
 
+/** The reminder of Sunburst (CR 702.44a). */
+export const SUNBURST_REMINDER =
+  'This enters with a +1/+1 counter on it for each color of mana spent to cast it if it is a creature, otherwise with a charge counter for each.';
+
 /** The answers of a riot question (CR 702.136a), as the buttons word them: `counter` and `haste`. */
 export const RIOT_ROWS: Readonly<
   Record<string, { readonly label: string; readonly detail: string }>
@@ -55,6 +59,18 @@ export function riotAnswerText(option: string): string {
 /** "Sacrifice any number of creatures as X enters (devour)." The prompt of the devour question (CR 702.82a). */
 export function devourPrompt(sourceName: string, quality?: string): string {
   return `Choose any number of ${devourKind(quality)} to sacrifice as ${sourceName} enters (devour). None is fine.`;
+}
+
+/** The prompt of "As X enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12, 122.1): which permanents lose every counter. */
+export function removeCountersPrompt(sourceName: string): string {
+  return `Choose any number of permanents to remove all counters from as ${sourceName} enters. It enters with +1/+1 counters for the counters removed. None is fine.`;
+}
+
+/** The second line of the bar of that question: what is chosen so far. */
+export function removeCountersDetail(chosen: number): string {
+  return chosen === 0
+    ? 'Click the permanents to remove every counter from, or confirm to remove none.'
+    : `${chosen} chosen: every counter on ${chosen === 1 ? 'it' : 'them'} is removed.`;
 }
 
 /** The second line of the devour bar: what is chosen so far. */

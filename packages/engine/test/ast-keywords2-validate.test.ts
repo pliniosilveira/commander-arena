@@ -127,7 +127,6 @@ describe('the batch is supported and valid', () => {
       'mentor',
       'evolve',
       'bushido',
-      'extort',
       'affinity',
       'convoke',
       'improvise',

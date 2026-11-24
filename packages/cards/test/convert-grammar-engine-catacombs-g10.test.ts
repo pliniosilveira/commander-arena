@@ -89,7 +89,7 @@ describe('Put target creature card from a graveyard onto the battlefield under y
     expect(bears?.controller).toBe(0);
     expect(bears?.counters.corpse).toBe(1);
     g.expect.initiative(0);
-    g.expect.eventLog([{ kind: 'initiativeChanged', from: null, to: 0 }]);
+    g.expect.eventLog([{ kind: 'initiativeTaken', seat: 0, from: null }]);
   });
 
   test('taking the initiative makes you venture into Undercity: the Secret Entrance', () => {
@@ -100,7 +100,7 @@ describe('Put target creature card from a graveyard onto the battlefield under y
     g.expect.stack(['The initiative (ability)']);
     g.pass();
     g.pass();
-    g.expect.dungeon(0, 'secret-entrance');
+    g.expect.dungeon(0, 'secretEntrance');
   });
 
   test('a creature card of your own graveyard is a target too, and a card of any graveyard', () => {

@@ -10,6 +10,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
+import { COUNTER_INTELLIGENCE_G2_COST_RULES } from './counter-intelligence-g2';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
 import { EXTRA_TURN_COST_RULES } from './extra-turns';
 import { FEDERATION_D_COST_RULES } from './federation-d';
@@ -19,6 +20,7 @@ import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
 import { PAY_ENERGY_COST_RULES } from './pay-energy';
+import { PUT_LINKED_EXILE_COST_RULES } from './put-linked-exile';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -33,6 +35,24 @@ export const COST_TAP = defineRule<IrCost>({
     'cost.tap',
     map(literal('{T}'), (raw) => raw),
     () => ({ kind: 'tap' }),
+  ),
+});
+
+/**
+ * `cost.untap`: "{Q}" (CR 107.6 the untap symbol: "Untap this permanent", which an untapped permanent cannot pay; CR 602.5a: a creature's ability with {Q} in its cost cannot be activated unless
+ * it has been under its controller's control since the start of their most recent turn): untapping the permanent itself as a cost (the engine's `untap`).
+ */
+export const COST_UNTAP = defineRule<IrCost>({
+  id: 'cost.untap',
+  family: 'cost',
+  leading: ['{q}'],
+  cites: ['CR 107.6 (Numbers and Symbols)', 'CR 602.5a (Activating Activated Abilities)'],
+  examples: ['{Q}', '{q}'],
+  rejects: ['{T}', 'untap', '{Q}{Q}', '{1}', 'Q'],
+  parse: node<string, IrCost>(
+    'cost.untap',
+    map(pattern(/\{q\}(?!\{q\})/i), (m) => m[0]),
+    () => ({ kind: 'untap' }),
   ),
 });
 
@@ -923,6 +943,7 @@ export const COST_ENERGY = defineRule<IrCost>({
 export const COST_RULES = [
   COST_BEHOLD,
   COST_TAP,
+  COST_UNTAP,
   COST_TAP_PERMANENTS,
   // Before the plain mana cost, which would take the plain prefix of "{1}{R/W}" and stop there.
   COST_MANA_HYBRID,
@@ -938,6 +959,7 @@ export const COST_RULES = [
   ...HOFRI_COST_RULES,
   // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
   ...EXTRA_TURN_COST_RULES,
+  ...PUT_LINKED_EXILE_COST_RULES,
   // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,
@@ -962,4 +984,5 @@ export const COST_RULES = [
   ...UNTAP_PERMANENTS_COST_RULES,
   // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
   ...FEDERATION_D_COST_RULES,
+  ...COUNTER_INTELLIGENCE_G2_COST_RULES,
 ];

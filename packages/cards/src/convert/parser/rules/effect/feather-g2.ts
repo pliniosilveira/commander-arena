@@ -61,18 +61,19 @@ export const EFFECT_DAMAGE_SAME_SOURCE = defineRule<Clauses>({
 });
 
 /**
- * `effect.monstrosity`: "Monstrosity 5" (CR 701.37a: "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous."). A whole number of one or more;
- * "Monstrosity X" (CR 701.37c: X is the value announced, which other abilities of the permanent may read) is another reading and is not made. The engine's `monstrosity`.
+ * `effect.monstrosity`: "Monstrosity 5" (CR 701.37a: "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous."). A whole number of one or more, or
+ * X with the ", where X is ..." the sentence says (Maester Seymour: X is worked out once, as the effect resolves); an X that the text does not define is refused at the lowering, and
+ * the value other abilities of the permanent may read (CR 701.37c) is not made. The engine's `monstrosity`.
  */
 export const EFFECT_MONSTROSITY = defineRule<Clauses>({
   id: 'effect.monstrosity',
   family: 'effect',
   leading: ['monstrosity'],
   cites: ['CR 701.37 (Monstrosity)', 'CR 701.37a (Monstrosity)', 'CR 701.37b (Monstrosity)'],
-  examples: ['Monstrosity 5', 'monstrosity 3', 'Monstrosity 1', 'monstrosity 10'],
+  examples: ['Monstrosity 5', 'monstrosity 3', 'Monstrosity 1', 'monstrosity 10', 'Monstrosity X'],
   rejects: [
     'Monstrosity',
-    'Monstrosity X',
+    'Monstrosity x2',
     'Monstrosity 0',
     'Monstrosity five',
     'Monstrosity 5 and draw a card',
@@ -81,10 +82,14 @@ export const EFFECT_MONSTROSITY = defineRule<Clauses>({
     'Monstrosity 2.5',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/monstrosity ([1-9]\d*)(?![\p{L}\p{N}]|\.\d)/iu))(ctx, pos);
+    const r = spanned(pattern(/monstrosity ([1-9]\d*|x)(?![\p{L}\p{N}]|\.\d)/iu))(ctx, pos);
     if (!r.ok) return r;
     const id = 'effect.monstrosity';
-    const count: IrAmount = { kind: 'number', value: Number(r.value.value[1]), span: r.value.span };
+    const word = r.value.value[1] ?? '';
+    const count: IrAmount =
+      word.toLowerCase() === 'x'
+        ? { kind: 'x', span: r.value.span }
+        : { kind: 'number', value: Number(word), span: r.value.span };
     return {
       ok: true,
       value: [makeClause(id, 'monstrosity', { count }, r.value.span)],

@@ -117,14 +117,19 @@ export function namedOptionPrompt(
     ChooseOptionDecision,
     'purpose' | 'options' | 'sourceName' | 'riotSoFar' | 'replacement'
   > &
-    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat' | 'meldOrder'>>,
+    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat' | 'meldOrder' | 'forCost'>>,
 ): string {
   if (isMeldOrderChoice(d)) return meldOrderPrompt(d.sourceName, d.meldOrder?.zone);
   if (isVoteChoice(d)) return votePrompt(d.options, d.vote, d.seat);
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   // CR 122.1, 122.5: the permanent and kind of counter taken, asked again while another may be.
-  if (isCounterPickChoice(d)) return `Choose a counter for ${d.sourceName}.`;
+  // CR 118.3, 602.2b: the counters removed to pay the cost of an ability, one at a time; Cancel takes the activation back.
+  if (isCounterPickChoice(d)) {
+    return d.forCost === true
+      ? `Choose a counter to remove as a cost for ${d.sourceName}.`
+      : `Choose a counter for ${d.sourceName}.`;
+  }
   if (isEffectChoice(d)) {
     // D-585 (CR 105.1, 608.2d): "Choose a color." offers the five colors of the game.
     return d.options.join(',') === 'white,blue,black,red,green'
@@ -156,8 +161,16 @@ export function votePrompt(
   vote: ChooseOptionDecision['vote'],
   seat?: number,
 ): string {
-  const question = `Vote for ${optionList(options)}.`;
+  // CR 701.38b: a vote for players or permanents has no words to list; CR 701.38a ("secretly"): nobody sees the votes until all are cast.
+  const question =
+    vote?.choices === undefined
+      ? `Vote for ${optionList(options)}.`
+      : vote.choices.some((c) => c.kind === 'object')
+        ? 'Vote for a creature.'
+        : 'Vote for a player.';
+  const secret = vote?.secret === true ? ' The votes are secret until everyone has voted.' : '';
   const cast = vote?.cast ?? [];
+  if (secret !== '') return `${question}${secret}`;
   if (cast.length === 0) return question;
   const who = (voter: number) => (voter === seat ? 'You' : 'Opponent');
   return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
@@ -260,8 +273,25 @@ export interface NamedOptionRow {
 
 /** The buttons, in the engine's order: "Chapter II" with its text for a Saga, the name itself for any other choice. */
 export function namedOptionRows(
-  d: Pick<ChooseOptionDecision, 'purpose' | 'options' | 'sourceOracleText' | 'replacement'>,
+  d: Pick<ChooseOptionDecision, 'purpose' | 'options' | 'sourceOracleText' | 'replacement'> &
+    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat'>>,
 ): readonly NamedOptionRow[] {
+  // CR 701.38b: a vote for players or for permanents: one button for each, "You" or "Player 2", or the name of the permanent and who controls it.
+  const choices = d.vote?.choices;
+  if (isVoteChoice(d) && choices !== undefined) {
+    const seatWord = (seat: number) => (seat === d.seat ? 'You' : `Player ${seat + 1}`);
+    return d.options.map((option, i) => {
+      const choice = choices[i];
+      if (choice === undefined) return { option, label: option, detail: null };
+      return choice.kind === 'player'
+        ? { option, label: seatWord(choice.seat), detail: null }
+        : {
+            option,
+            label: choice.name,
+            detail: `Controlled by ${choice.controller === d.seat ? 'you' : seatWord(choice.controller)}`,
+          };
+    });
+  }
   if (isReplacementChoice(d)) {
     // One button for each effect, the words of the effect and, under them, what it leads to (the engine's `outcome`).
     return d.options.map((option) => {

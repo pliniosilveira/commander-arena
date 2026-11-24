@@ -72,7 +72,8 @@ export function optionsFor(
   // CR 119.4, 119.4b: "pay any amount of life": 0 can always be paid, and no more than the life total.
   if (what === 'lifePaid')
     return Array.from({ length: Math.max(life, 0) + 1 }, (_, i) => String(i));
-  if (what === 'cardType') return CARD_TYPES;
+  // Cloud Key (CR 205.2a): a card type choice may list the types it offers; with none listed every card type is offered.
+  if (what === 'cardType') return named.length > 0 ? named : CARD_TYPES;
   // CR 205.3j: "choose a planeswalker type" is one of the planeswalker types the rules list.
   if (what === 'planeswalkerType') return PLANESWALKER_TYPES;
   // Issue 184: "choose a color other than blue" leaves that color out.

@@ -151,7 +151,7 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
     }
     return { kind: 'chooseOption', option: best ?? d.options[0] ?? '' };
   }
-  // CR 701.49b, 309.5a: which room of the dungeon the venture marker moves to (casual-dungeon.ts).
+  // CR 701.49b, 309.5a: the room to move a venture marker into (casual-dungeon.ts).
   if (d.purpose === 'dungeonRoom') return chooseDungeonRoom(view, d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);

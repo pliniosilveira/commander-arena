@@ -37,6 +37,7 @@ export function loseTheGame(
     const handed = monarchAfterLoss(state);
     state = handed.state;
     events.push(...handed.events);
+    // CR 726.4: the initiative passes the same way.
     const initiative = initiativeAfterLoss(state);
     state = initiative.state;
     events.push(...initiative.events);

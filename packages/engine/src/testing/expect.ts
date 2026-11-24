@@ -367,10 +367,9 @@ export function createExpectations(
     },
     initiative(seat) {
       const state = getState();
-      const holder = state.initiative ?? null;
-      if (holder !== seat) {
+      if ((state.initiative ?? null) !== seat) {
         fail(
-          `Expected ${seat === null ? 'no initiative' : `seat ${seat} to have the initiative`} but ${holder === null ? 'there is none' : `seat ${holder} has it`}`,
+          `Expected ${seat === null ? 'no initiative' : `seat ${seat} to have the initiative`} but ${state.initiative === undefined ? 'nobody has it' : `seat ${state.initiative} does`}`,
           state,
         );
       }
@@ -380,17 +379,7 @@ export function createExpectations(
       const actual = state.seats[seat]?.dungeon?.room ?? null;
       if (actual !== room) {
         fail(
-          `Expected seat ${seat}'s venture marker ${room === null ? 'to be in no dungeon' : `on ${room}`} but it is ${actual === null ? 'in no dungeon' : `on ${actual}`}`,
-          state,
-        );
-      }
-    },
-    dungeonsCompleted(seat, count) {
-      const state = getState();
-      const actual = state.seats[seat]?.dungeonsCompleted ?? 0;
-      if (actual !== count) {
-        fail(
-          `Expected seat ${seat} to have completed ${count} dungeons but it has ${actual}`,
+          `Expected seat ${seat} to be ${room === null ? 'in no dungeon' : `in ${room}`} but they are ${actual === null ? 'in none' : `in ${actual}`}`,
           state,
         );
       }

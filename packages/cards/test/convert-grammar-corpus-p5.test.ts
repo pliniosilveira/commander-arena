@@ -90,9 +90,9 @@ const GAINS: readonly Line[] = [
   },
   {
     kind: 'instant',
-    // Feather deck group 1 (D-452): protection from a color is read now; a quality that is not a color is not.
-    text: 'Target creature gains protection from artifacts until end of turn.',
-    expect: no('protection from artifacts until end of turn.', 'effect.gain-keyword-and-ability'),
+    // Feather deck group 1 (D-452): protection from a color is read now, and from a card type since Seasoned Dungeoneer; another quality is not.
+    text: 'Target creature gains protection from everything until end of turn.',
+    expect: no('protection from everything until end of turn.', 'effect.gain-keyword-and-ability'),
     note: 'backlog: 7 cards; a keyword with a parameter is not read',
   },
   {
@@ -300,9 +300,9 @@ const PRONOUNS: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: 'When ~ enters, put a +1/+1 counter on that creature.',
-    expect: no('that creature.', 'effect.add-counters-distinct-targets'),
-    note: 'SYNTHETIC; "that creature" is not read as a noun',
+    text: 'When ~ enters, sacrifice that creature.',
+    expect: no('that creature.', 'effect.sacrifice'),
+    note: 'SYNTHETIC; "that creature" is not read as a noun by a sacrifice (counters read it since Lulu)',
   },
   {
     kind: 'equipment',

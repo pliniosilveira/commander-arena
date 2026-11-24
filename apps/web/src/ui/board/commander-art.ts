@@ -6,25 +6,18 @@ import { createRequestQueue, type RequestQueue } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
 import { printingOf } from './deck-printings';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
+import { createLookupCache, outcomeOf } from './lookup-cache';
 
 type Queue = Pick<RequestQueue, 'request'>;
 
-/** One cached GET: successes, misses and requests in flight are remembered by URL. */
+/** One cached GET: successes and misses are remembered by URL, a failure is asked again later (`lookup-cache.ts`). */
 function cachedGet(
-  cache: Map<string, Promise<CardArt | null>>,
+  cache: ReturnType<typeof createLookupCache<CardArt>>,
   queue: Queue,
   url: string,
   parse: (json: unknown) => CardArt | null,
 ): Promise<CardArt | null> {
-  let result = cache.get(url);
-  if (result === undefined) {
-    result = queue
-      .request({ url })
-      .then((r) => (r.kind === 'response' && r.ok ? parse(r.json) : null))
-      .catch(() => null);
-    cache.set(url, result);
-  }
-  return result;
+  return cache(url, async () => outcomeOf(await queue.request({ url }), parse));
 }
 
 /**
@@ -32,7 +25,7 @@ function cachedGet(
  * another printed name (a Universes Beyond reprint) is used: the deck's list chose it.
  */
 export function createPrintingLookup(queue: Queue) {
-  const cache = new Map<string, Promise<CardArt | null>>();
+  const cache = createLookupCache<CardArt>();
   return (set: string, collector: string, name: string): Promise<CardArt | null> =>
     cachedGet(
       cache,
@@ -58,15 +51,17 @@ const queue = createRequestQueue({
 const lookupPrinting = createPrintingLookup(queue);
 
 /**
- * The picture of the printing the deck's list names for the card `name`.
+ * The picture of the printing the list of the deck of seat `owner` names for the card `name`; a card with no owner is drawn by name.
  * `pending` while it is asked for, so the card is not first drawn in another printing; `url` null when the list names none, or
  * when Scryfall answers another card or a printing under another name (then the card is drawn by name).
  */
 export function useListedArt(
   name: string | null,
   version: ArtVersion,
+  owner: number | undefined,
 ): { readonly pending: boolean; readonly url: string | null } {
-  const printing = name === null || name === '' ? null : printingOf(name);
+  const printing =
+    name === null || name === '' || owner === undefined ? null : printingOf(name, owner);
   const key =
     printing === null || name === null ? null : `${printing.set}/${printing.collector}\n${name}`;
   const [found, setFound] = useState<{ key: string; art: CardArt | null } | null>(null);

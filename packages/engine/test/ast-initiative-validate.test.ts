@@ -35,13 +35,13 @@ describe('take the initiative (CR 726.3)', () => {
 
 describe('venture into the dungeon (CR 701.49)', () => {
   test('Undercity', () => {
-    expect(messages(spell({ kind: 'ventureIntoDungeon', dungeon: 'undercity' }))).toEqual([]);
+    expect(messages(spell({ kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' }))).toEqual([]);
   });
 
   test('a dungeon that is not built is refused', () => {
     expect(
-      messages(spell({ kind: 'ventureIntoDungeon', dungeon: 'tomb' as never })).join(' '),
-    ).toContain('Undercity');
+      messages(spell({ kind: 'venture', player: { kind: 'you' }, dungeon: 'tomb' as never })).join(' '),
+    ).toContain('undercity');
   });
 });
 

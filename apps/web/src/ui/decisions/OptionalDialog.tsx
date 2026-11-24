@@ -39,6 +39,7 @@ const DIALOG_LABELS: Readonly<
   exert: 'Exert',
   clash: 'Clash',
   openingHand: 'Opening hand',
+  searchPut: 'Search',
 };
 
 /**

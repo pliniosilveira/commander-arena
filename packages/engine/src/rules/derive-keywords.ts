@@ -667,8 +667,8 @@ function affinityAbility(filter: ObjectFilter): Ability {
 }
 
 /**
- * CR 702.125a: "Undaunted" means "This spell costs {1} less to cast for each opponent": a static ability that functions on the stack (CR 113.6d), a cost reduction of the
- * spell itself by the number of the caster's opponents still in the game (`opponentCount`), read as the cost is determined (CR 601.2f).
+ * CR 702.125a: "Undaunted" means "This spell costs {1} less to cast for each opponent you have": a static ability that functions on the stack (CR 113.6d), a cost reduction of
+ * the spell itself by the opponents of its caster still in the game (CR 702.125b, 102.2), counted as the cost is determined (CR 601.2f). Each instance applies (CR 702.125c).
  */
 const UNDAUNTED_ABILITY: Ability = {
   kind: 'static',
@@ -931,6 +931,10 @@ export function expansionOf(ability: Ability): Ability[] {
           ability.keyword.restriction,
           ability.keyword.costReducedIf,
         ),
+        // CR 702.6a, 702.6d (Gavel of the Righteous): "Equip—Pay {3} or remove a counter from ~": the other way to pay is another equip ability, the player picks by activating it.
+        ...(ability.keyword.orCost === undefined
+          ? []
+          : [equipAbility(ability.keyword.orCost, ability.keyword.restriction)]),
       ];
     case 'reconfigure':
       return reconfigureAbilities(ability.keyword.cost);

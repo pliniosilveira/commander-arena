@@ -23,7 +23,8 @@ import {
   spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
-import { cardTypesAmongForSource, countForSource } from './derive-count';
+import { countersOfKind } from './counters-of-kind';
+import { cardTypesAmongForSource, countForSource, partySizeForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders, hasMaxSpeed } from './designations';
 import { matchesFilterWith } from './filter-match';
@@ -89,7 +90,7 @@ export function staticConditionHolds(
     case 'chosenOption': // D-151: what the permanent chose as it entered, which no layer changes
       return source.chosen?.option === condition.option;
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
-      return enteredThisTurnHolds(state, controllerOf(state, source), condition);
+      return enteredThisTurnHolds(state, controllerOf(state, source), condition, source.id);
     case 'thisEnteredThisTurn': // D-423 (CR 400.7): the turn log, which no layer changes
       return state.turnLog.entered.some((e) => e.object === source.id);
     case 'amountIs': {
@@ -97,10 +98,8 @@ export function staticConditionHolds(
       if (typeof condition.amount === 'number') return false;
       if (condition.amount.kind === 'countersOn') {
         // CR 122.1, CR 613.8: the counters on the source itself, which no layer changes.
-        const have =
-          condition.amount.counter === undefined
-            ? 0
-            : (source.counters[condition.amount.counter] ?? 0);
+        // Gavel of the Righteous: with no kind named, the counters of every kind added together.
+        const have = countersOfKind(source.counters, condition.amount.counter);
         const c = condition.compare;
         return c.cmp === 'atLeast'
           ? have >= c.value
@@ -114,7 +113,9 @@ export function staticConditionHolds(
           ? cardTypesAmongForSource(state, condition.amount.filter, source)
           : condition.amount.kind === 'countOf'
             ? countForSource(state, condition.amount.filter, source)
-            : null;
+            : condition.amount.kind === 'partySize' // CR 700.8: the party of the source's controller, through layers 1, 4 and 5
+              ? partySizeForSource(state, source)
+              : null;
       if (n === null) return false;
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;

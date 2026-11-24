@@ -19,7 +19,7 @@
  *   enters, whatever put it there (a resolving spell, an effect, a land played from the hand); the
  *   caller asks and calls again with `entersChosen` set, and the answer is stored on the new object.
  */
-import type { Ability, Zone } from '../ast/types';
+import type { Ability, EnteringCounters, Zone } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type {
@@ -92,7 +92,14 @@ import {
   riotDecision,
   riotGivesHaste,
   riotInstances,
+  sunburstCounters,
 } from './enters-keywords';
+import {
+  entersRemoveCountersOf,
+  removeAllCountersAsEntering,
+  removeCountersCandidates,
+  removeCountersDecision,
+} from './enters-remove-counters';
 import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
@@ -101,6 +108,7 @@ import { opponentGraveyardReplacement } from './graveyard-replacement';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
 import { gainLife } from './life-gain';
+import { manaSpentOf } from './mana-spent';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
@@ -145,6 +153,13 @@ export interface MoveRequest {
    */
   readonly entersDevour?: readonly ObjectId[];
   /**
+   * The controller's answer to "remove all counters from any number of artifacts, creatures, and enchantments" as the permanent enters (`asEntersRemoveCounters`, Sin, Unending Cataclysm), once
+   * asked: the permanents the counters come off, possibly none. Absent means "not asked yet". Ignored for a permanent without that ability.
+   */
+  readonly entersRemoved?: readonly ObjectId[];
+  /** Set by `moveObject` itself: how many counters came off the permanents of `entersRemoved`, which the permanent's `countersRemovedAsEntered` counters read. */
+  readonly countersRemoved?: number;
+  /**
    * The controller's answers to riot (CR 702.136a, 702.136b, D-185) so far, one for each instance asked: `counter` or `haste`. The permanent is
    * asked again while there are fewer answers than instances. Ignored for a permanent without riot.
    */
@@ -160,7 +175,7 @@ export interface MoveRequest {
    * The permanent enters with counters on it (CR 122.6, 614.1c): "return it to the battlefield with a -1/-1
    * counter on it" (Persist). Only for a move to the battlefield; the counters are on it as it enters.
    */
-  readonly withCounters?: { readonly counter: string; readonly count: number };
+  readonly withCounters?: EnteringCounters;
   /**
    * The face the new object has up, when it is not simply carried over: the face being cast when a
    * card moves to the stack (CR 709.3, 712.11b, 715.3), the face of a modal double-faced card played
@@ -362,6 +377,18 @@ export function isCommanderCard(state: GameState, obj: GameObject): boolean {
  * so by the time it is answered nothing else can need a decision and the sacrifices are never done twice.
  */
 export function moveObject(state: GameState, request: MoveRequest): MoveResult {
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this enters, remove all counters from any number of ...": the counters come off before the permanent is on the battlefield, and the
+  // move then counts them. Asked after devour, so nothing else is left to ask by now. None chosen is still an answer: the move counts 0.
+  if (
+    request.to === 'battlefield' &&
+    request.entersRemoved !== undefined &&
+    request.countersRemoved === undefined
+  ) {
+    const removed = removeAllCountersAsEntering(state, request.entersRemoved);
+    const moved = moveObject(removed.state, { ...request, countersRemoved: removed.count });
+    if (moved.kind !== 'done') return moved;
+    return { ...moved, events: [...removed.events, ...moved.events] };
+  }
   const chosen = request.entersDevour ?? [];
   if (request.to !== 'battlefield' || chosen.length === 0 || request.devoured !== undefined) {
     return moveOne(state, request);
@@ -758,6 +785,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments": the last question, asked only
+  // when there is a permanent with a counter that matches (the permanent is not on the battlefield, so it is not one of them).
+  const removeRule = entersRemoveCountersOf(faceAbilities);
+  if (removeRule !== null && to === 'battlefield' && request.entersRemoved === undefined) {
+    const legal = removeCountersCandidates(before, enterController, removeRule, old.id);
+    if (legal.length > 0) {
+      return {
+        kind: 'needsDecision',
+        decision: removeCountersDecision(enterController, old.id, legal),
+      };
+    }
+  }
+
   // --- Commit.
   // The old object ceases to exist (CR 400.7). Its last-known information is kept in `lki`.
   // D-283: a permanent of an event of several leaving together has its record from before the first of them moved (CR 603.10a).
@@ -843,14 +883,22 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       castX,
       escaped,
       (a) =>
-        a.kind === 'diedThisTurn'
-          ? historyCount(nextBefore, a, enterController)
-          : a.kind === 'aggregate'
-            ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
-              amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
-            : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+        a.kind === 'manaSpent'
+          ? // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell this permanent came from; nothing for a card that was not cast.
+            manaSpentOf(old, a.fromType, a.snow === true, a.colors === true)
+          : a.kind === 'diedThisTurn'
+            ? historyCount(nextBefore, a, enterController)
+            : a.kind === 'aggregate'
+              ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
+                amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
+              : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
+      request.countersRemoved ?? 0,
     );
+    // CR 614.1c, 122.6 (Yuna, Grand Summoner): "that creature enters with two additional +1/+1 counters on it", from the effect the spell used up as it was cast.
+    if (old.zone === 'stack' && old.stack?.entersWithCounters !== undefined) {
+      counters = addCounterMaps(counters, old.stack.entersWithCounters);
+    }
     // CR 714.3a: a Saga enters with a lore counter.
     counters = entersAsSaga(
       face?.subtypes ?? [],
@@ -859,8 +907,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       request.entersChosen ?? null,
     );
     if (request.withCounters !== undefined) {
-      const { counter, count } = request.withCounters;
-      counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
+      const { counter, count, also } = request.withCounters;
+      for (const entering of [{ counter, count }, ...(also ?? [])]) {
+        counters = {
+          ...counters,
+          [entering.counter]: (counters[entering.counter] ?? 0) + entering.count,
+        };
+      }
     }
     // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
     // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
@@ -873,6 +926,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     counters = addCounterMaps(
       counters,
       keywordEntryCounters(abilities, riotAnswers, request.devoured ?? 0),
+    );
+    // CR 702.44a, 702.44b (Sunburst): counters for the colors of the mana spent on the spell this permanent came from; a creature gets +1/+1 counters, any other permanent charge counters.
+    counters = addCounterMaps(
+      counters,
+      sunburstCounters(abilities, old, face?.types.includes('creature') === true),
     );
     if (revealRule !== null && !tapped && !untappedByEffect) {
       if (mayReveal && request.entersPaid === true) {
@@ -1030,6 +1088,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
+    // CR 702.84a, 613.1f: the Unearth was one a static ability gave the card in the graveyard, which its face does not have.
+    ...(to === 'battlefield' &&
+    request.alt === 'unearth' &&
+    printed !== null &&
+    definitionOf(next, printed).faces[faceIndex]?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'unearth',
+    ) !== true
+      ? { unearthGranted: true as const }
+      : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").
     ...(to === 'battlefield' && riotGivesHaste(riotAnswers) ? { riotHaste: true as const } : {}),
     // CR 715.3d: an Adventure that resolved is exiled, and its owner may cast the card from there.
@@ -1158,6 +1225,17 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           change: { kind: 'grantKeyword', keyword: { kind: 'haste' } },
         },
       ],
+    };
+  }
+  // CR 400.7a (Eight-and-a-Half-Tails): an effect that changed the color of a permanent spell on the stack goes on applying to the permanent the spell becomes.
+  if (to === 'battlefield' && old.zone === 'stack') {
+    next = {
+      ...next,
+      continuousEffects: next.continuousEffects.map((e) =>
+        e.change.kind === 'setColors' && e.objects.includes(old.id)
+          ? { ...e, objects: [...e.objects, newId] }
+          : e,
+      ),
     };
   }
   // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the permanent a creature spell with that rider becomes has the abilities.

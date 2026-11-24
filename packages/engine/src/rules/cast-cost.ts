@@ -228,6 +228,7 @@ function reductionFor(
   excluded: ObjectId | undefined,
   optimistic = false,
   castFrom?: CastFrom,
+  alternative?: CastAlternative,
 ): number {
   let total = 0;
   const base = excluded === undefined ? {} : { excluded };
@@ -237,6 +238,8 @@ function reductionFor(
     if (a.kind !== 'static' || a.static.kind !== 'costReduction' || !('kind' in a.static.spells)) {
       continue;
     }
+    // CR 702.34a, 601.2f (Visions of Glory): "This spell costs {X} less to cast this way" reduces only the cast for the flashback cost.
+    if (a.static.forAlternative !== undefined && a.static.forAlternative !== alternative) continue;
     // CR 601.2f (D-181): "This spell costs {3} less to cast if you control a creature with power 4 or greater" is read when the cost is determined.
     if (
       a.condition !== undefined &&
@@ -461,8 +464,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);
+  const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
   if (escalate !== null) {
-    const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
   // CR 601.2f (D-641): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
@@ -539,6 +542,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       request.excluded,
       request.optimistic === true,
       request.zone,
+      alternative,
     ) +
       // CR 702.180a (Harmonize): the tapped creature's power in generic mana off the total cost.
       (alternative === 'harmonize'
@@ -563,18 +567,25 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ? 0
             : (graveyardPlayPermission(state, seat, card, false)?.exileOthers ?? 0);
         })());
+  // CR 702.34a, 107.3a, 601.2b: "Flashback—..., Exile X cards from your graveyard" exiles the X announced, besides what an escape cost or a permission asks.
   const exile =
-    alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile;
+    (alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile) +
+    (perX.exile ?? 0) * x;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
+  // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps that many permanents once for each mode chosen beyond the first.
+  const escalateTap = escalate?.find((c) => c.kind === 'tapPermanents');
+  const escalatedModes = escalateTap === undefined ? 0 : Math.max(0, modes - 1);
   // CR 702.56a (Psionic Ritual, "Replicate—Tap an untapped Horror you control"): a replicate cost that taps permanents is paid once for each time the caster chose, so that many are tapped;
   // `validateCard` refuses a face that also has a `tapPermanents` alternative cost.
   const replicaTap = replicate?.find((c) => c.kind === 'tapPermanents');
   const tap =
     tapAlt !== null
       ? { filter: tapAlt.filter, count: tapAlt.count }
-      : replicaTap?.kind === 'tapPermanents'
-        ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
+      : escalateTap?.kind === 'tapPermanents' && escalatedModes > 0
+        ? { filter: escalateTap.filter, count: escalateTap.count * escalatedModes }
+        : replicaTap?.kind === 'tapPermanents'
+          ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
         : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =

@@ -1,8 +1,8 @@
 /**
  * The deck import screen (M4, SPEC 6, 7.1): paste a list, see what Scryfall and the parser
- * made of it, see why a card is unsupported and save the deck (it is played from the menu).
+ * made of it, see why a card is unsupported. Import also saves the deck (it is played from the menu).
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { markCommanders } from '../../import';
 import type { ImportService, SavedDeck } from '../../import/types';
 import type { DeckChoice } from '../../precons';
@@ -20,6 +20,8 @@ import { OfflineNotice, ResultsView } from './ResultsView';
 import { useImportFlow } from './use-import-flow';
 import { WhyDialog } from './WhyDialog';
 import './import.css';
+
+const DEFAULT_DECK_NAME = 'My Commander deck';
 
 type DialogState = { readonly kind: 'why'; readonly oracleId: string } | null;
 
@@ -72,14 +74,22 @@ export function ImportScreen() {
   const defaultListOf = (id: string): string =>
     precons.list.find((precon) => precon.id === id)?.decklist ?? '';
 
+  /**
+   * Import saves the deck too (issue 512): the saved list is the one just imported, so each report of
+   * the run keeps it current (a close match accepted, a commander chosen). A deck opened from
+   * "My decks" is already saved and is not written again until it is imported anew.
+   */
   const save = async () => {
     // A commander chosen above, because the list marks none, is part of the deck: it is written
     // into the saved text, or the deck forgets it on the next load (issue 123).
     const text = markCommanders(flow.text, flow.commanderNames);
+    // No name typed: the commander names the deck, so Import never leaves a deck unsaved.
+    const name = flow.name.trim() || report?.commanders[0]?.stored.name || DEFAULT_DECK_NAME;
     try {
       if (editing === null) {
-        await env.decks.save({ name: flow.name.trim(), text });
-        setSaveMessage(`Saved "${flow.name.trim()}".`);
+        await env.decks.save({ name, text });
+        setSaveMessage(`Imported and saved "${name}".`);
+        if (flow.name.trim() === '') flow.setName(name);
       } else if (text.trim() === defaultListOf(editing.id).trim()) {
         // The shipped list again: nothing to keep apart.
         await env.decks.removeOverride(editing.id);
@@ -100,6 +110,14 @@ export function ImportScreen() {
     }
   };
 
+  // Every new report of an import the player started is saved; `latestSave` is the render's own closure.
+  const keepSaved = useRef(false);
+  const latestSave = useRef(save);
+  latestSave.current = save;
+  useEffect(() => {
+    if (keepSaved.current && report !== null) void latestSave.current();
+  }, [report]);
+
   /** "Reset to default": forgets your version; an editor open on that precon shows the shipped list again. */
   const resetPrecon = async (precon: { readonly id: string; readonly name: string }) => {
     try {
@@ -109,6 +127,7 @@ export function ImportScreen() {
       return;
     }
     if (editing?.id === precon.id) {
+      keepSaved.current = false;
       void flow.start({
         text: defaultListOf(precon.id),
         name: precon.name,
@@ -146,6 +165,7 @@ export function ImportScreen() {
     setEditing(null);
     setSaveMessage(null);
     setTab('import');
+    keepSaved.current = false;
     void flow.start({ text: deck.text, name: deck.name });
   };
 
@@ -185,7 +205,11 @@ export function ImportScreen() {
             saveMessage={saveMessage}
             onText={flow.setText}
             onName={flow.setName}
-            onImport={() => void flow.start()}
+            onImport={() => {
+              keepSaved.current = true;
+              setSaveMessage(null);
+              void flow.start();
+            }}
             onExample={
               sample === null
                 ? null
@@ -194,7 +218,6 @@ export function ImportScreen() {
                     flow.setName(sample.name);
                   }
             }
-            onSave={() => void save()}
             precon={editingPrecon}
           />
           {flow.error !== null && (

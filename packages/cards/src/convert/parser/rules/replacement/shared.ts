@@ -114,7 +114,7 @@ export function countersTail(
                 sequence(
                   literal(' '),
                   family<IrAmount>('amount', {
-                    only: ['amount.for-each', 'amount.times-kicked'],
+                    only: ['amount.for-each', 'amount.times-kicked', 'amount.for-each-color-spent'],
                   }),
                   // Grave Danger (issue 159, Unbreathing Horde): "... for each other Zombie you control and each Zombie
                   // card in your graveyard": a second count joined by "and each", added to the first (CR 614.12).

@@ -4,15 +4,16 @@
  */
 import type {
   Cost,
+  DungeonId,
   NamedAlternativeKind,
   ObjectFilter,
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  UndercityRoom,
 } from './ast/types';
 import type { CardLayout } from './cards/definition';
 import type { CardType, Characteristics, Color, Subtype, Supertype } from './characteristics';
-import { DUNGEONS, roomOf } from './data/dungeons';
 import type { ObjectId, SeatId } from './ids';
 import type { ManaColor, ManaObject } from './mana/types';
 import { activatedAbilitiesOf } from './rules/activate-legality';
@@ -21,10 +22,11 @@ import { alternativeCostsOf, castCostOf } from './rules/cast-cost';
 import { type ControlEnd, controlEndOf, controllerOf } from './rules/control';
 import { copiableValues } from './rules/copiable';
 import { derive, oracleTextOf } from './rules/derive';
+import { DUNGEONS } from './rules/dungeon-data';
 import { faceDownBy, faceDownLabel, withoutFaceDown } from './rules/face-down';
 import { turnUpSymbols } from './rules/face-down-legality';
 import { goadersOf } from './rules/goad';
-import { inherentName, inherentText as inherentTextOf } from './rules/inherent';
+import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyLimitReached } from './rules/loyalty';
 import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
@@ -478,6 +480,36 @@ export interface CompanionView {
   readonly brought: boolean;
 }
 
+/** A player's dungeon (CR 309, 701.49): the dungeon card in their command zone and the room their venture marker is on, with the names the card prints (CR 309.4b). */
+export interface DungeonView {
+  readonly dungeon: DungeonId;
+  /** The name of the dungeon card. */
+  readonly name: string;
+  readonly room: UndercityRoom;
+  /** The name of the room the venture marker is on. */
+  readonly roomName: string;
+  /** The text of the room ability of that room (CR 309.4c). */
+  readonly roomText: string;
+  /** Whether the marker is on the bottommost room: the next venture completes the dungeon (CR 701.49c). */
+  readonly bottom: boolean;
+}
+
+function dungeonViewOf(d: {
+  readonly dungeon: DungeonId;
+  readonly room: UndercityRoom;
+}): DungeonView {
+  const card = DUNGEONS[d.dungeon];
+  const room = card.rooms[d.room];
+  return {
+    dungeon: d.dungeon,
+    name: card.name,
+    room: d.room,
+    roomName: room.name,
+    roomText: room.text,
+    bottom: room.exits.length === 0,
+  };
+}
+
 export interface SeatView {
   readonly id: SeatId;
   readonly life: number;
@@ -516,20 +548,8 @@ export interface SeatView {
   readonly ringTempted?: number;
   /** This player has the city's blessing (CR 702.131c, D-264): public, kept for the rest of the game. Absent until they get it. */
   readonly citysBlessing?: true;
-  /**
-   * The dungeon this player is in and the room their venture marker is on (CR 309.4, 701.49), with the rooms the venture marker could move to next (CR 309.5a) and the room's name and
-   * text. Public. Absent while they are in no dungeon.
-   */
-  readonly dungeon?: {
-    readonly dungeon: string;
-    readonly name: string;
-    readonly room: string;
-    readonly roomName: string;
-    readonly roomText: string;
-    readonly leadsTo: readonly string[];
-  };
-  /** How many dungeons this player has completed (CR 309.7). Public. Absent until the first. */
-  readonly dungeonsCompleted?: number;
+  /** The dungeon this player is in and the room their venture marker is on (CR 309.4, 701.49): public. Absent while they are in none. */
+  readonly dungeon?: DungeonView;
   /** This player's speed (CR 702.179b): 1 to 4. Public. Absent until they have one. */
   readonly speed?: number;
   /** The energy counters this player has (CR 107.14, D-209). Public. Absent until the first time. */
@@ -565,8 +585,8 @@ export interface GameView {
   readonly seats: readonly SeatView[];
   /** The monarch (CR 725.1, D-127): public. Null while nobody has the designation. */
   readonly monarch: SeatId | null;
-  /** The player who has the initiative (CR 726.1): public. Absent while nobody has the designation. */
-  readonly initiative?: SeatId | null;
+  /** The player with the initiative (CR 726.1): public. Absent while nobody has the designation. */
+  readonly initiative?: SeatId;
   /** The game's day or night designation (CR 731.1): public. Null while it is neither. */
   readonly dayNight: 'day' | 'night' | null;
   readonly battlefield: readonly ObjectView[];
@@ -774,6 +794,17 @@ function specialActionFields(
 function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView {
   const obj = getObject(state, id);
   if (isFaceDownTo(state, obj, viewer)) return faceDownView(state, obj);
+  // CR 602.2b, 702.29a (Cycling): an ability activated from a hand is on the stack while its costs are still to be paid (an {X} is chosen first), and its source card is still in that hand:
+  // nobody but its owner may learn what the card is yet, so the other seats see a face-down placeholder.
+  // Only while the activation is being made (`state.casting`): once it is on the stack for good, a triggered ability from a revealed hand card (Miracle, CR 702.94b) is public.
+  if (
+    obj.stack?.kind === 'ability' &&
+    state.casting?.object === obj.id &&
+    state.casting.fromZone === 'hand' &&
+    state.casting.seat !== viewer
+  ) {
+    return faceDownView(state, obj);
+  }
   const d = derive(state, obj);
   const shown = printedCard(obj);
   const def = shown === null ? null : definitionOf(state, shown);
@@ -783,8 +814,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   // CR 725.2, 701.54c (D-127, D-196): the abilities of the monarch and of the Ring have no source; they are shown as "The monarch" or
   // "The Ring" with the rule's text.
   const inherentShown = obj.stack?.inherent === undefined ? null : inherentName(obj.stack.inherent);
-  const inherentText =
-    obj.stack?.inherent === undefined ? null : inherentTextOf(obj.stack.inherent);
+  const inherentText = obj.stack?.inherent === undefined ? null : INHERENT_TEXT[obj.stack.inherent];
   const bearerSeat = ringBearerSeat(state, obj);
   const goaders =
     obj.zone === 'battlefield' ? [...new Set([...goadersOf(state, obj.id), ...d.goadedBy])] : [];
@@ -1067,8 +1097,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       ...companionViewOf(state, s.id),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
-      ...dungeonViewOf(s),
-      ...(s.dungeonsCompleted === undefined ? {} : { dungeonsCompleted: s.dungeonsCompleted }),
+      ...(s.dungeon === undefined ? {} : { dungeon: dungeonViewOf(s.dungeon) }),
       ...(s.speed === undefined ? {} : { speed: s.speed }),
       ...(s.energy === undefined ? {} : { energy: s.energy }),
       ...(s.experience === undefined ? {} : { experience: s.experience }),
@@ -1120,9 +1149,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
     prioritySeat: state.turn.prioritySeat,
     seats,
     monarch: state.monarch,
-    ...(state.initiative === undefined || state.initiative === null
-      ? {}
-      : { initiative: state.initiative }),
+    ...(state.initiative === undefined ? {} : { initiative: state.initiative }),
     dayNight: state.dayNight ?? null,
     battlefield: state.battlefield.map((id) => objectView(state, id, viewer)),
     exile: state.exile.map((id) => objectView(state, id, viewer)),
@@ -1169,21 +1196,3 @@ export function getView(state: GameState, viewer: SeatId): GameView {
   };
 }
 
-/** The dungeon view of a seat: the dungeon it is in, the room its marker is on and where the marker could go next (CR 309.4, 309.5a). */
-function dungeonViewOf(s: GameState['seats'][number]): {
-  readonly dungeon?: NonNullable<SeatView['dungeon']>;
-} {
-  if (s.dungeon === undefined) return {};
-  const room = roomOf(s.dungeon.dungeon, s.dungeon.room);
-  if (room === undefined) return {};
-  return {
-    dungeon: {
-      dungeon: s.dungeon.dungeon,
-      name: DUNGEONS[s.dungeon.dungeon].name,
-      room: room.id,
-      roomName: room.name,
-      roomText: room.text,
-      leadsTo: room.leadsTo,
-    },
-  };
-}

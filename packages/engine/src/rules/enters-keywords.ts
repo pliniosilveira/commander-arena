@@ -17,6 +17,7 @@ import type { ChooseOptionDecision, ChoosePermanentDecision } from '../state/dec
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { manaSpentOf } from './mana-spent';
 import { mayHaveStatic } from './printed-statics';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { matchesFilter } from './select';
@@ -160,4 +161,26 @@ export function keywordEntryCounters(
 /** Whether an instance of riot chose haste (CR 702.136a: "If you don't, it gains haste"). */
 export function riotGivesHaste(riot: readonly string[]): boolean {
   return riot.some((r) => r === 'haste');
+}
+
+/** The counter Sunburst puts on a permanent that is not a creature (CR 702.44a). */
+export const CHARGE_COUNTER = 'charge';
+
+/**
+ * The counters Sunburst puts on a permanent as it enters (CR 702.44a, 702.44b, 702.44d): for each instance (the printed ones in `abilities` and the ones the spell gained as it was cast,
+ * `StackData.gainedKeywords`), one counter for each color of mana spent to cast the spell, read from the spell the permanent came from. A +1/+1 counter if the object enters as a creature
+ * (`isCreature`: its card type, ignoring type-changing effects), otherwise a charge counter. Nothing unless it enters from the stack as a resolving spell and colored mana was spent on it
+ * (a token, a copy of a spell and a card put onto the battlefield by an effect have no mana spent).
+ */
+export function sunburstCounters(
+  abilities: readonly Ability[],
+  spell: GameObject,
+  isCreature: boolean,
+): Record<string, number> {
+  if (spell.zone !== 'stack' || spell.stack?.kind !== 'spell') return {};
+  const instances =
+    abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'sunburst').length +
+    (spell.stack.gainedKeywords?.length ?? 0);
+  const count = instances * manaSpentOf(spell, undefined, false, true);
+  return count > 0 ? { [isCreature ? PLUS_COUNTER : CHARGE_COUNTER]: count } : {};
 }

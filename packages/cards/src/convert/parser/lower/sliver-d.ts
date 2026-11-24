@@ -60,6 +60,8 @@ export function usesSharesWithSource(written: unknown): boolean {
     const quoted = record.ability as { readonly ability?: { readonly kind?: unknown } } | undefined;
     if (quoted?.ability?.kind === 'triggered') return false;
   }
+  // An ability in quotes is read as the ability of the permanent that has it, with its own check (Folk Hero: a granted triggered ability).
+  if (record.kind === 'quoted') return false;
   if (record.sharesCreatureTypeWithSource === true) return true;
   return Object.values(record).some(usesSharesWithSource);
 }

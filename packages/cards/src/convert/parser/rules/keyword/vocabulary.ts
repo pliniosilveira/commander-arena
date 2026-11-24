@@ -46,6 +46,7 @@ export type SimpleKeyword = Extract<
   | 'convoke'
   | 'improvise'
   | 'delve'
+  | 'undaunted'
   | 'cascade'
   | 'compleated'
   | 'demonstrate'
@@ -60,6 +61,7 @@ export type SimpleKeyword = Extract<
   | 'myriad'
   | 'decayed'
   | 'riot'
+  | 'sunburst'
   | 'ascend'
   | 'soulbond'
   | 'daybound'
@@ -131,6 +133,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['convoke', 'convoke'],
   ['improvise', 'improvise'],
   ['delve', 'delve'],
+  // CR 702.125a (Undaunted): a printed ability of a spell with no parameter, never granted.
+  ['undaunted', 'undaunted'],
   ['cascade', 'cascade'],
   // CR 702.150a (Compleated): a printed ability on a planeswalker, never granted; the engine reads the life paid for its Phyrexian mana as it enters.
   ['compleated', 'compleated'],
@@ -155,6 +159,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['decayed', 'decayed'],
   // Stage P40 (D-186, CR 702.136a): Riot is a printed ability and, as a static ability's grant to a group, "Nontoken creatures you control have riot" (the engine lists it in its GRANTABLE_KEYWORDS; its validators refuse every other way of giving it).
   ['riot', 'riot'],
+  // CR 702.44a: Sunburst is printed on a permanent (the reminder text is stripped before the line is read); it is gained only by a spell ("it gains sunburst", `effect.spell-gains-sunburst`), so the engine's GRANTABLE_KEYWORDS does not list it.
+  ['sunburst', 'sunburst'],
   // D-264 (CR 702.131b): Ascend on a permanent is a printed static ability that gives the city's blessing; the engine does not let it be granted.
   ['ascend', 'ascend'],
   // D-286 (CR 702.95a): Soulbond is printed on a creature and stands for two triggered abilities the engine builds; it can not be granted (the engine's

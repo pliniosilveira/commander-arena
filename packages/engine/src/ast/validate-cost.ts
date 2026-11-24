@@ -372,6 +372,17 @@ export function checkCostReduction(
   path: string,
   out: Out,
 ): void {
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is the spell's own reduction, for its flashback cost.
+  if (
+    s.forAlternative !== undefined &&
+    (s.forAlternative !== 'flashback' || kindOf(s.spells) !== 'this')
+  ) {
+    issue(
+      out,
+      `${path}.forAlternative`,
+      "forAlternative is flashback, and only on the spell's own reduction",
+    );
+  }
   // CR 113.6 (issue 81, Eminence): "in the command zone" is for a reduction of other spells, not the spell's own `this` ability.
   if (s.inCommandZone !== undefined && (s.inCommandZone !== true || kindOf(s.spells) === 'this')) {
     issue(out, `${path}.inCommandZone`, 'inCommandZone is true, and only on a reduction by filter');

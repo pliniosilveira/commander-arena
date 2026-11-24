@@ -14,6 +14,7 @@ import {
   answerDiscardCost,
   answerExileCost,
   answerRemoveCounters,
+  answerRemoveCountersKind,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -93,6 +94,7 @@ import { sameCombination } from './rules/mana-outcomes';
 import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
+import { isLegalParty } from './rules/party';
 import { answerResolutionPile } from './rules/pile-answer';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
@@ -117,22 +119,25 @@ import {
   answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionDredge,
+  answerResolutionDungeonRoom,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
   answerResolutionOptional,
+  answerResolutionParty,
   answerResolutionPayAmount,
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
   answerResolutionProtector,
+  answerResolutionRemoveCounters,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
   answerResolutionRiot,
   answerResolutionSearchMay,
+  answerResolutionSearchPut,
   answerResolutionUnlessConfirm,
   answerResolutionUnlessPayment,
-  answerResolutionVenture,
   continueResolution,
 } from './rules/stack';
 import type { PutResult } from './rules/trigger-stack';
@@ -329,7 +334,10 @@ function concede(state: GameState, seat: SeatId): Result {
   // CR 725.4 (D-127): a monarch who concedes hands the designation on at once.
   const left = leaveGame(next, [seat]);
   events.push(...left.events);
-  const handed = monarchAfterLoss(left.state);
+  const monarchHanded = monarchAfterLoss(left.state);
+  events.push(...monarchHanded.events);
+  // CR 726.4: a player with the initiative who concedes hands it on at once (and the player who takes it ventures, CR 726.2).
+  const handed = initiativeAfterLoss(monarchHanded.state);
   events.push(...handed.events);
   // CR 726.4: the same for the initiative.
   const initiative = initiativeAfterLoss(handed.state);
@@ -487,6 +495,9 @@ function answerConfirm(
   // CR 608.2d, 701.23: "may search" is answered by the player who would search.
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
+  // CR 608.2d, 701.23 (`search.mayPut`): "you may put that card onto the battlefield", else it goes into the hand.
+  if (d.purpose === 'searchPut')
+    return finishResolutionAnswer(answerResolutionSearchPut(state, accept));
   const head = state.resolution?.queue[0]?.kind;
   if (
     head === 'confirmOptional' ||
@@ -560,9 +571,9 @@ function answerChooseOption(
     return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
   }
   if (d.purpose === 'dungeonRoom') {
-    // CR 701.49b, 309.5a: the room the player chose to move their venture marker to.
+    // CR 701.49b, 309.5a: the room a player venturing chose among the arrows leaving their room.
     if (!d.options.includes(option)) return fail('That is not one of the options');
-    return finishResolutionAnswer(answerResolutionVenture(state, option));
+    return finishResolutionAnswer(answerResolutionDungeonRoom(state, option));
   }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
@@ -606,6 +617,11 @@ function answerChooseOption(
     // CR 702.16a, 608.2d (D-514): the card type the controller chose for "gains protection from the card type of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
+  }
+  if (d.purpose === 'counterPick' && d.forCost === true) {
+    // CR 118.3, 122.1, 602.2b: the counter the activating player picks to remove for the cost of an ability.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return answerRemoveCountersKind(state, option);
   }
   if (d.purpose === 'counterPick') {
     // CR 122.1, 122.5, 608.2d: the counter the controller takes (or "Done") for "remove any number of counters" and "move a counter".
@@ -1127,6 +1143,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
       if (d.purpose === 'entersCopy')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
+      if (d.purpose === 'entersRemoveCounters')
+        return finishResolutionAnswer(answerResolutionRemoveCounters(state, action.objects));
       // CR 702.82a (D-185): the creatures sacrificed as a permanent with devour enters.
       if (d.purpose === 'devour')
         return finishResolutionAnswer(answerResolutionDevour(state, action.objects));
@@ -1219,6 +1238,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       return fail('Accept or decline');
     }
     case 'chooseOption': {
+      // CR 733: the counters removed to pay a cost can be taken back with `cancel`, which rewinds the activation.
+      if (d.forCost === true && action.kind === 'cancel') return cancelCast(state);
       if (action.kind !== 'chooseOption') return fail('Choose one of the options');
       return answerChooseOption(state, seat, d, action.option);
     }
@@ -1265,6 +1286,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (!isLegalModeSet(d.sets, action.modes)) return fail('That is not a legal choice of modes');
       if (d.forTrigger === true) return answerTriggerModeChoice(state, action.modes);
       return answerModes(state, action.modes);
+    }
+    case 'chooseParty': {
+      // CR 700.8d, 101.4 (Stick Together): the party the player chose among the creatures they control.
+      if (action.kind !== 'chooseParty') return fail('Choose a party');
+      if (!isLegalParty(d.slots, action.party)) return fail('That is not a legal party');
+      return finishResolutionAnswer(answerResolutionParty(state, action.party));
     }
     case 'choosePayOptions': {
       // CR 601.2f-h, 702.51a, 702.126a, 702.66a (D-120): what is tapped or exiled for the cost of a spell being

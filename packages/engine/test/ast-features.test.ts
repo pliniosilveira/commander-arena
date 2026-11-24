@@ -50,6 +50,8 @@ describe('the dimensions', () => {
     // The costs and durations the engine pays and ends (scenario-xx-activated-*, -pump-*).
     expect(SUPPORTED_FEATURES.costKinds).toEqual([
       'tap',
+      // CR 107.6: the untap symbol {Q}.
+      'untap',
       'mana',
       'payLife',
       'payXLife',
@@ -76,6 +78,7 @@ describe('the dimensions', () => {
       'mill',
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
+      'putLinkedExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -120,6 +123,8 @@ describe('the dimensions', () => {
       'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',
+      'counterPutOnThisThisTurn',
+      'subjectPowerLessThanThis',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
       'triggerPlayerTurn',
@@ -147,10 +152,12 @@ describe('the dimensions', () => {
       'movedShareAllCardTypes',
       // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have".
       'manaValueAtMostAmount',
+      'manaValueAtLeastAmount',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'diedThisWay',
       'objectMatches',
+      'discardedAsCostMatches',
       'giftPromised',
       'opponentControlsAtLeast',
       // D-139: "if you control the artifact with the greatest mana value or tied".
@@ -203,6 +210,8 @@ describe('the dimensions', () => {
       'dieResult',
       // CR 701.30d: "If you win" after a clash.
       'clashWon',
+      'voteMost',
+      'voteTied',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
@@ -238,6 +247,8 @@ describe('the dimensions', () => {
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
+      // "The monarch controls enchanted creature." (CR 613.1b, 725.1).
+      'controlAttached',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'revealTopOfLibrary',
@@ -288,9 +299,11 @@ describe('the dimensions', () => {
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',
+      'cantAttackItsOwner',
       'cantGainLife',
       'damageCantBePrevented',
       'damageAsThoughWither',
+      'opponentSearchTopOnly',
       'playerProtection',
       'cantHaveCounters',
       'cantBeSacrificed',
@@ -322,6 +335,7 @@ describe('the dimensions', () => {
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
       'grantEncoreToGraveyardCards',
+      'grantUnearthToGraveyardCards',
     ]);
     expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.
@@ -392,7 +406,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('amount:countOf')).toBe(true);
     expect(isFeatureSupported('static:costReduction')).toBe(true);
     expect(isFeatureSupported('condition:controlCommander')).toBe(true);
-    expect(isFeatureSupported('cost:untap')).toBe(false);
+    expect(isFeatureSupported('cost:untap')).toBe(true);
     // D-232: the cost of an activated ability (Coin of Fate); an additional cost of a spell refuses it.
     expect(isFeatureSupported('cost:exileFromGraveyard')).toBe(true);
     expect(isFeatureSupported('selector:anyOf')).toBe(true);

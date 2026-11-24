@@ -5,7 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import { CARD_TYPES, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -168,7 +168,9 @@ export function checkDragonsEffect(
       for (const rider of ['anyManaType', 'exileInstead'] as const) {
         if (e[rider] === undefined) continue;
         if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
-        if (e.castOnly !== true) {
+        // Lidless Gaze ("you may play those cards, and mana of any type can be spent to cast those spells"): `anyManaType` is about the spells cast, so it also goes with a permission to
+        // play (a land card among the cards is played as usual); `exileInstead` is the rider of one spell and needs `castOnly`.
+        if (rider === 'exileInstead' && e.castOnly !== true) {
           issue(
             out,
             `${path}.${rider}`,
@@ -527,6 +529,7 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.exertTrigger !== true &&
         scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true
@@ -663,11 +666,20 @@ export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[])
         'a trigger that works from the graveyard is not a cast trigger of the spell itself',
       );
     }
+  } else if (a.kind === 'replacement') {
+    // CR 113.6b, 614.12 (Dearly Departed): the permanents that enter are not the card, so a group replacement may work from the graveyard.
+    if (a.replacement?.kind !== 'othersEnterWithCounters') {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        `a replacement that works from the graveyard is a group that enters with counters, not ${String(a.replacement?.kind)}`,
+      );
+    }
   } else {
     issue(
       out,
       `${path}.functionsIn`,
-      'only a static or a triggered ability works from the graveyard here',
+      'only a static, a replacement or a triggered ability works from the graveyard here',
     );
   }
 }
@@ -973,7 +985,37 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
   ) {
     issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
   }
+  // CR 707.9b (Phyrexian Metamorph): "except it's an artifact in addition to its other types".
+  if (r.addTypes !== undefined) {
+    if (!Array.isArray(r.addTypes) || r.addTypes.length === 0) {
+      issue(out, `${path}.addTypes`, 'addTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.addTypes`, r.addTypes, CARD_TYPES, 'card type');
+    }
+  }
   return true;
+}
+
+/** The abilities of the tokens a spell describes (`createToken` of a described token), wherever the effect is nested. */
+function tokenAbilitiesOf(value: unknown): Ability[] {
+  const found: Ability[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (node === null || typeof node !== 'object') return;
+    const record = node as Record<string, unknown>;
+    if (
+      record.kind === 'custom' &&
+      Array.isArray((record.definition as { abilities?: unknown })?.abilities)
+    ) {
+      found.push(...(record.definition as { abilities: Ability[] }).abilities);
+    }
+    Object.values(record).forEach(walk);
+  };
+  walk(value);
+  return found;
 }
 
 /**
@@ -1048,7 +1090,21 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
       );
     }
   });
-  const spell = JSON.stringify(face.spell ?? null);
+  // CR 111.4, 113.1 (Wake the Dragon): a token a spell creates has abilities of its own, triggered ones too: they are checked as the abilities they are, and the words of the
+  // spell are read without them.
+  const withoutTokenAbilities = (value: unknown): string =>
+    JSON.stringify(value ?? null, (key, v: unknown) => (key === 'abilities' ? undefined : v));
+  tokenAbilitiesOf(face.spell).forEach((a, i) => {
+    if (!JSON.stringify(a ?? null).includes('"controller":"triggerPlayer"')) return;
+    if (a?.kind !== 'triggered' || !triggerHasPlayer(a.trigger)) {
+      issue(
+        out,
+        `${path}.spell.token.abilities[${i}]`,
+        "controller 'triggerPlayer' needs a triggered ability whose event is about a player",
+      );
+    }
+  });
+  const spell = withoutTokenAbilities(face.spell);
   if (
     spell.includes('"controller":"triggerPlayer"') ||
     spell.includes('"controller":"defendingPlayer"') ||

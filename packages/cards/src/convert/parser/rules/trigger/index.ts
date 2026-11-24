@@ -40,6 +40,7 @@ import { CLASS_TRIGGER_RULES } from './class';
 import { COIN_FLIP_TRIGGER_RULES } from './coin-flip';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
+import { DAMAGE_PREVENTED_TRIGGER_RULES } from './damage-prevented';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
@@ -66,10 +67,14 @@ import { MILL_TRIGGER_RULES } from './mill';
 import { MIND_FLAYARRRS_G8_TRIGGER_RULES } from './mind-flayarrrs-g8';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
+import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
+import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
+import { PLAYER_ATTACKS_TRIGGER_RULES } from './player-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { RIDERS_C_TRIGGER_RULES } from './riders-c';
 import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
@@ -83,6 +88,7 @@ import {
 import { TROYAN2_TRIGGER_RULES } from './troyan2';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
+import { VOTING_TRIGGER_RULES } from './voting';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -360,8 +366,11 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
     'another creature attacks you',
     'a creature with flying attacks you or a planeswalker you control',
     'a nontoken creature attacks you',
+    'a creature attacks one of your opponents',
   ],
   rejects: [
+    'a creature attacks one of your opponent',
+    'a creature attacks one of your opponents and',
     'a creature attacks',
     'a creature attacks you or',
     'a creature attacks you or a planeswalker',
@@ -381,6 +390,11 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
           () => 'youOrPlaneswalkers' as const,
         ),
         map(pattern(/ attacks you(?![\p{L}\p{N}]| or )/iu), () => 'you' as const),
+        // CR 508.1b, 508.6, 603.2 (Calculating Lich): a creature declared as attacking one of the controller's opponents as a player.
+        map(
+          pattern(/ attacks one of your opponents(?![\p{L}\p{N}'’]| (?:and|or)(?![\p{L}\p{N}]))/iu),
+          () => 'opponent' as const,
+        ),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -880,12 +894,19 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // Don Andres, the Renegade (CR 108.3): a spell whose owner is another player.
     "you cast a noncreature spell you don't own",
     'you cast a spell you don’t own',
+    // Folk Hero (CR 205.3m): a spell that has a creature type the source has.
+    'you cast a spell that shares a creature type with ~',
+    'you cast a creature spell that shares a creature type with this creature',
   ],
   rejects: [
     'the chosen player cast a spell',
     'the chosen players casts a spell',
     'the chosen opponent casts a spell',
     'the chosen player casts spells',
+    'you cast a spell that shares a creature type with',
+    'you cast a spell that shares a creature type with it',
+    'you cast a spell that shares a creature type with ~ that targets a creature',
+    'an opponent casts a spell that shares a creature types with ~',
     "you cast a noncreature spell you don't own that targets a creature",
     "you cast a spell you don't own or",
     "you cast a spell you don't owns",
@@ -960,6 +981,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(pattern(/ you don['’]t own(?![\p{L}\p{N}'’])/iu), null),
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
       optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
+      // Folk Hero (CR 205.3m, 702.73a): "a spell that shares a creature type with ~", a spell that has a creature type the source of the ability has.
+      optional(
+        pattern(/ that shares a creature type with (?:~|this creature)(?![\p{L}\p{N}'’])/iu),
+        null,
+      ),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
       optional(choice(AIMED, AIMED_SELF, AIMED_ANY), null),
@@ -967,8 +993,14 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, unowned, colored, aimed, alternative] = r.value;
+    const [actor, spell, unowned, colored, shares, aimed, alternative] = r.value;
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
+    if (
+      shares !== null &&
+      (unowned !== null || colored !== null || aimed !== null || alternative !== null)
+    ) {
+      return fail(ctx, pos);
+    }
     if (unowned !== null && (colored !== null || aimed !== null || alternative !== null)) {
       return fail(ctx, pos);
     }
@@ -978,7 +1010,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       return fail(ctx, pos);
     }
     const base: IrFilter =
-      colored === null ? spellBase : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
+      shares !== null
+        ? { ...spellBase, sharesCreatureTypeWithSource: true }
+        : colored === null
+          ? spellBase
+          : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
     let filter: IrFilter;
     if (alternative !== null) {
       // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
@@ -1218,6 +1254,7 @@ function stepRule(
   word: string,
   more: { readonly examples: readonly string[]; readonly rejects: readonly string[] },
   bare = false,
+  monarch = false,
 ) {
   return defineRule<IrTrigger>({
     id,
@@ -1231,13 +1268,27 @@ function stepRule(
     parse: (ctx, pos) => {
       const r = sequence(
         literal('the beginning of '),
-        stepOwner(bare),
+        monarch
+          ? choice(
+              // CR 725.2: "the monarch's end step" is the turn of whoever is the monarch as it begins (before "the ", the bare reading of `stepOwner`).
+              map(pattern(/the monarch['’]s /i), () => 'monarch' as const),
+              stepOwner(bare),
+            )
+          : stepOwner(bare),
         pattern(new RegExp(`${word}(?![\\p{L}\\p{N}])`, 'iu')),
       )(ctx, pos);
       if (!r.ok) return r;
       const span = { start: pos, end: r.pos };
-      const actor = makeNoun(id, span, r.value[1], { raw: r.value[1] });
-      return { ok: true, value: trigger(id, span, event, { actor }), pos: r.pos };
+      const owner = r.value[1] === 'monarch' ? 'eachPlayer' : r.value[1];
+      const actor = makeNoun(id, span, owner, { raw: owner });
+      return {
+        ok: true,
+        value: {
+          ...trigger(id, span, event, { actor }),
+          ...(r.value[1] === 'monarch' ? { monarchTurn: true as const } : {}),
+        },
+        pos: r.pos,
+      };
     },
   });
 }
@@ -1271,8 +1322,15 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of each end step',
       'the beginning of the end step',
       "the beginning of each opponent's end step",
+      // Archivist of Gondor (CR 725.2, 603.2b): the end step of the turn of the monarch.
+      "the beginning of the monarch's end step",
+      'the beginning of the monarch’s end step',
     ],
     rejects: [
+      "the beginning of the monarch's upkeep",
+      "the beginning of the monarch's",
+      'the beginning of the monarch end step',
+      "the beginning of each monarch's end step",
       'the beginning of the next end step',
       "the beginning of your opponent's end step",
       'the beginning of your upkeep',
@@ -1280,6 +1338,7 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of the upkeep',
     ],
   },
+  true,
   true,
 );
 
@@ -1478,15 +1537,21 @@ export const TRIGGER_RULES = [
   ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
+  // Riders of Rohan group C: "~ and at least two other creatures attack", "one or more creatures attack one of your opponents or a planeswalker they control" (before the plainer "one or more creatures attack").
+  ...RIDERS_C_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
   // Landroval: "two or more creatures you control attack a player".
   ...ATTACK_A_PLAYER_TRIGGER_RULES,
   // Issue 160 (D-629): "Whenever enchanted player is attacked".
   ...ENCHANTED_PLAYER_TRIGGER_RULES,
+  // Mirkwood Trapper: "a player attacks you" and "a player attacks".
+  ...PLAYER_ATTACKS_TRIGGER_RULES,
+  ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  ...PARTY_TIME_LIBRARY_TRIGGER_RULES,
   // Syr Konrad: "another creature dies, or a creature card is put into a graveyard from anywhere other than the battlefield, or a creature card leaves your graveyard" (a prefix
   // of which `trigger.dies` would read, so it comes first).
   ...GRAVEYARD_EVENTS_TRIGGER_RULES,
@@ -1528,6 +1593,8 @@ export const TRIGGER_RULES = [
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
   // Issue 190 (Sun Droplet): "you're dealt damage".
   ...PLAYER_DEALT_DAMAGE_TRIGGER_RULES,
+  // Riders of Rohan deck, group D (Selfless Squire): "damage that would be dealt to you is prevented".
+  ...DAMAGE_PREVENTED_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".
   ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".
@@ -1551,6 +1618,7 @@ export const TRIGGER_RULES = [
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
   ...COIN_FLIP_TRIGGER_RULES,
+  ...VOTING_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".

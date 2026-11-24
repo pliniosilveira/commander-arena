@@ -13,7 +13,7 @@ import type {
   SeatId,
   StepId,
 } from '@commander-arena/engine';
-import { faceDownLabel } from '@commander-arena/engine';
+import { DUNGEONS, faceDownLabel } from '@commander-arena/engine';
 import { alternativeLogWords, isNamedAlternative } from './alt-cost';
 import { findEffect } from './artifacts-text';
 import { castCardAnswerLine } from './cast-card-text';
@@ -230,6 +230,13 @@ export function describeEvent(
   };
   const seatCount = seatsOf(after);
   const who = (seat: SeatId) => seatName(seat, viewer, seatCount);
+  /** What a vote was for (CR 701.38b): the word of the card, a player ("seat:1": "you", "Opponent") or a permanent ("object:o5": its name). */
+  const voteChoiceText = (option: string): string => {
+    const seatMatch = /^seat:(\d+)$/u.exec(option);
+    if (seatMatch !== null) return who(Number(seatMatch[1]));
+    const objectMatch = /^object:(o\d+)$/u.exec(option);
+    return objectMatch === null ? option : name(objectMatch[1] as ObjectId);
+  };
   const verb = (seat: SeatId, you: string, they: string) => (seat === viewer ? you : they);
   const line = (
     level: LogLevel,
@@ -1172,7 +1179,7 @@ export function describeEvent(
       if (event.purpose === 'vote') {
         return line(
           'major',
-          `${who(event.seat)} ${verb(event.seat, 'vote', 'votes')} for ${event.option} (${label(event.source)}).`,
+          `${who(event.seat)} ${verb(event.seat, 'vote', 'votes')} for ${voteChoiceText(event.option)} (${label(event.source)}).`,
           event.seat,
           [],
           'CR 701.38a',
@@ -1577,44 +1584,34 @@ export function describeEvent(
         [],
         'CR 725.3',
       );
-    case 'initiativeChanged':
-      // CR 726.3, 726.4: the designation moved; `to` is null when no player could take it over.
-      return line(
-        'detail',
-        event.to === null
-          ? 'There is no initiative.'
-          : `The initiative passes to ${event.to === viewer ? 'you' : who(event.to)}.`,
-        event.to,
-        [],
-        'CR 726.3',
-      );
     case 'initiativeTaken':
-      // CR 726.2, 726.5: a player took the initiative (also one who had it already).
+      // CR 726.1, 726.3, 726.5: a player takes the initiative (again, when they already had it: `from` is themselves).
       return line(
         'major',
         `${who(event.seat)} ${verb(event.seat, 'take', 'takes')} the initiative.`,
         event.seat,
         [],
-        'CR 726.2',
+        'CR 726.3',
       );
     case 'ventured': {
-      // CR 701.49, 309.4c: the venture marker moved into a room, the topmost one as the dungeon entered the command zone.
-      const room = optionText('dungeonRoom', event.room);
+      // CR 701.49, 309.4a, 309.5a: the venture marker moved into a room of the dungeon (the dungeon came into the command zone when `from` is null).
+      const dungeon = DUNGEONS[event.dungeon];
+      const room = dungeon.rooms[event.room].name;
       return line(
         'major',
         event.from === null
-          ? `${who(event.seat)} ${verb(event.seat, 'enter', 'enters')} Undercity: ${room}.`
-          : `${who(event.seat)} ${verb(event.seat, 'move', 'moves')} ${verb(event.seat, 'your', 'their')} venture marker into ${room}.`,
+          ? `${who(event.seat)} ${verb(event.seat, 'enter', 'enters')} ${dungeon.name}: ${verb(event.seat, 'move', 'moves')} the venture marker to ${room}.`
+          : `${who(event.seat)} ${verb(event.seat, 'move', 'moves')} the venture marker to ${room} (${dungeon.name}).`,
         event.seat,
         [],
         'CR 701.49',
       );
     }
     case 'dungeonCompleted':
-      // CR 309.7: the dungeon card was removed from the game.
+      // CR 309.7, 704.5t: the dungeon card was removed from the game.
       return line(
         'major',
-        `${who(event.seat)} ${verb(event.seat, 'complete', 'completes')} Undercity.`,
+        `${who(event.seat)} ${verb(event.seat, 'complete', 'completes')} ${DUNGEONS[event.dungeon].name}.`,
         event.seat,
         [],
         'CR 309.7',
@@ -1866,6 +1863,32 @@ export function describeEvent(
         [event.object],
         'CR 702.139a',
       );
+    case 'votesRevealed': {
+      // CR 701.38a ("secretly"): nothing was shown while the votes were cast; now they are all revealed together. A public vote was logged vote by vote already.
+      if (!event.secret) return null;
+      return line(
+        'major',
+        `The votes are revealed (${label(event.source)}): ${event.cast
+          .map((c) => `${who(c.seat)} voted for ${voteChoiceText(c.option)}`)
+          .join(', ')}.`,
+        null,
+        [],
+        'CR 701.38a',
+      );
+    }
+    case 'partyChosen': {
+      // CR 700.8d (Stick Together): the party a player kept; the creatures left out are sacrificed (their own lines follow).
+      const members = event.party.map((m) => `${name(m.object)} (${m.type})`);
+      return line(
+        event.automatic ? 'detail' : 'major',
+        event.party.length === 0
+          ? `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} no party${event.automatic ? ': no creature could be in it' : ''}.`
+          : `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} a party: ${joinNames(members)}.`,
+        event.seat,
+        event.party.map((m) => m.object),
+        'CR 700.8d',
+      );
+    }
     default: {
       const unreachable: never = event;
       return unreachable;

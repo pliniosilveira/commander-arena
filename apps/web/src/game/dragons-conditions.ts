@@ -33,6 +33,10 @@ function enteredWords(condition: Entered, negate: boolean): string {
   if (condition.count <= 1) {
     const noun = enteredNoun(condition, false);
     const article = /^[aeiou]/i.test(noun) ? 'an' : 'a';
+    // "another Elf entered ..." (CR 400.7): the permanent with the condition is not counted.
+    if (condition.other === true) {
+      return negate ? `no other ${noun} ${tail}` : `another ${noun} ${tail}`;
+    }
     return negate ? `no ${noun} ${tail}` : `${article} ${noun} ${tail}`;
   }
   const many = enteredNoun(condition, true);

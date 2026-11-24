@@ -14,7 +14,7 @@ export function optionPrompt(
     Partial<
       Pick<
         ChooseOptionDecision,
-        'options' | 'riotSoFar' | 'replacement' | 'vote' | 'seat' | 'meldOrder'
+        'options' | 'riotSoFar' | 'replacement' | 'vote' | 'seat' | 'meldOrder' | 'forCost'
       >
     >,
 ): string {
@@ -26,9 +26,9 @@ export function optionPrompt(
   if (d.purpose === 'clashOpponent') return `Choose an opponent to clash with (${d.sourceName}).`;
   // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller chooses which opponent.
   if (d.purpose === 'chooseOpponent') return `Choose an opponent (${d.sourceName}).`;
-  // CR 701.49b, 309.5a: the venture marker has two ways on.
+  // CR 701.49b, 309.5a: the room to move a venture marker into; the options are the names of the rooms.
   if (d.purpose === 'dungeonRoom')
-    return `Choose the room to move your venture marker to (${d.sourceName}).`;
+    return `Choose the room to move your venture marker into (${d.sourceName}).`;
   // CR 310.9a: "its controller chooses a player to be its protector".
   if (d.purpose === 'protector') return `Choose a protector for ${d.sourceName}.`;
   // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life"; Slithermuse (CR 102.2): "choose an opponent". The options say which players are on offer.
@@ -55,6 +55,7 @@ export function optionPrompt(
       options: d.options,
       sourceName: d.sourceName,
       ...(d.riotSoFar === undefined ? {} : { riotSoFar: d.riotSoFar }),
+      ...(d.forCost === undefined ? {} : { forCost: d.forCost }),
       ...(d.replacement === undefined ? {} : { replacement: d.replacement }),
       ...(d.vote === undefined ? {} : { vote: d.vote }),
       ...(d.meldOrder === undefined ? {} : { meldOrder: d.meldOrder }),
