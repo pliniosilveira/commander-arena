@@ -93,6 +93,12 @@ import {
   riotGivesHaste,
   riotInstances,
 } from './enters-keywords';
+import {
+  entersRemoveCountersOf,
+  removeAllCountersAsEntering,
+  removeCountersCandidates,
+  removeCountersDecision,
+} from './enters-remove-counters';
 import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
@@ -144,6 +150,13 @@ export interface MoveRequest {
    * the permanent enters, possibly none. Absent means "not asked yet". Ignored for a permanent without devour.
    */
   readonly entersDevour?: readonly ObjectId[];
+  /**
+   * The controller's answer to "remove all counters from any number of artifacts, creatures, and enchantments" as the permanent enters (`asEntersRemoveCounters`, Sin, Unending Cataclysm), once
+   * asked: the permanents the counters come off, possibly none. Absent means "not asked yet". Ignored for a permanent without that ability.
+   */
+  readonly entersRemoved?: readonly ObjectId[];
+  /** Set by `moveObject` itself: how many counters came off the permanents of `entersRemoved`, which the permanent's `countersRemovedAsEntered` counters read. */
+  readonly countersRemoved?: number;
   /**
    * The controller's answers to riot (CR 702.136a, 702.136b, D-185) so far, one for each instance asked: `counter` or `haste`. The permanent is
    * asked again while there are fewer answers than instances. Ignored for a permanent without riot.
@@ -362,6 +375,18 @@ export function isCommanderCard(state: GameState, obj: GameObject): boolean {
  * so by the time it is answered nothing else can need a decision and the sacrifices are never done twice.
  */
 export function moveObject(state: GameState, request: MoveRequest): MoveResult {
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this enters, remove all counters from any number of ...": the counters come off before the permanent is on the battlefield, and the
+  // move then counts them. Asked after devour, so nothing else is left to ask by now. None chosen is still an answer: the move counts 0.
+  if (
+    request.to === 'battlefield' &&
+    request.entersRemoved !== undefined &&
+    request.countersRemoved === undefined
+  ) {
+    const removed = removeAllCountersAsEntering(state, request.entersRemoved);
+    const moved = moveObject(removed.state, { ...request, countersRemoved: removed.count });
+    if (moved.kind !== 'done') return moved;
+    return { ...moved, events: [...removed.events, ...moved.events] };
+  }
   const chosen = request.entersDevour ?? [];
   if (request.to !== 'battlefield' || chosen.length === 0 || request.devoured !== undefined) {
     return moveOne(state, request);
@@ -757,6 +782,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments": the last question, asked only
+  // when there is a permanent with a counter that matches (the permanent is not on the battlefield, so it is not one of them).
+  const removeRule = entersRemoveCountersOf(faceAbilities);
+  if (removeRule !== null && to === 'battlefield' && request.entersRemoved === undefined) {
+    const legal = removeCountersCandidates(before, enterController, removeRule, old.id);
+    if (legal.length > 0) {
+      return {
+        kind: 'needsDecision',
+        decision: removeCountersDecision(enterController, old.id, legal),
+      };
+    }
+  }
+
   // --- Commit.
   // The old object ceases to exist (CR 400.7). Its last-known information is kept in `lki`.
   // D-283: a permanent of an event of several leaving together has its record from before the first of them moved (CR 603.10a).
@@ -849,6 +887,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
               amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
             : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
+      request.countersRemoved ?? 0,
     );
     // CR 614.1c, 122.6 (Yuna, Grand Summoner): "that creature enters with two additional +1/+1 counters on it", from the effect the spell used up as it was cast.
     if (old.zone === 'stack' && old.stack?.entersWithCounters !== undefined) {

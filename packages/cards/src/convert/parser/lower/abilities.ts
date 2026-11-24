@@ -26,6 +26,7 @@ import { lowerAmount } from './amounts';
 import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
+import { lowerEntersRemoveCounters } from './counter-blitz-g';
 import { lowerClause } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes } from './modal';
@@ -717,6 +718,8 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       value: [{ kind: 'replacement', replacement }],
       rule: ability.rule,
     }) as const;
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): two abilities from one line.
+  if (event.verb === 'entersRemoveCounters') return lowerEntersRemoveCounters(ability);
   if (event.verb === 'entersTapped') {
     const blocked = gate(ability, ['ability:replacement', 'replacement:entersTapped']);
     if (blocked !== null) return blocked;
@@ -1334,6 +1337,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTappedUnlessPays',
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',
+  'replacement:asEntersRemoveCounters',
   'replacement:entersAsCopy',
   'replacement:skipDraw',
   'replacement:keepOneLoyalty',

@@ -125,6 +125,7 @@ import {
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
   answerResolutionProtector,
+  answerResolutionRemoveCounters,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
@@ -1116,6 +1117,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
       if (d.purpose === 'entersCopy')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
+      if (d.purpose === 'entersRemoveCounters')
+        return finishResolutionAnswer(answerResolutionRemoveCounters(state, action.objects));
       // CR 702.82a (D-185): the creatures sacrificed as a permanent with devour enters.
       if (d.purpose === 'devour')
         return finishResolutionAnswer(answerResolutionDevour(state, action.objects));

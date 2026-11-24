@@ -454,6 +454,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'auraHost'
     | 'entersCopy'
     | 'devour'
+    | 'entersRemoveCounters'
     | 'ringBearer'
     | 'empowerJace'
     | 'amass'
@@ -475,6 +476,10 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'entersCopy'` (D-151, CR 707.9, 614.12: "As this artifact enters, you may have it become a copy of any creature on the battlefield"): `seat`, the
    * player the permanent `subject` enters under, chooses which permanent of `legal` it becomes a copy of; `min` is 0 when that is optional, `max` 1. The
    * permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'entersRemoveCounters'` (Sin, Unending Cataclysm, CR 614.12, 122.1: "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments"): `seat`, the player the
+   * permanent `subject` enters under, chooses which of the permanents in `legal` (those of every player that have a counter and match the filter) lose every counter; `min` is 0 and `max` is
+   * `legal.length`, and the permanent enters with counters for the number removed. The permanent has not entered yet: `source` and `subject` are the object it is now, or, for a token, the spell or
+   * ability creating it. The removal is not a cost and cannot be taken back.
    * For `'devour'` (D-185, CR 702.82a: "As this creature enters, you may sacrifice any number of creatures"): `seat`, the player the permanent
    * `subject` enters under, chooses which of the creatures in `legal` (all they control) to sacrifice; `min` is 0 and `max` is `legal.length`, and the
    * permanent enters with N +1/+1 counters for each one chosen. The permanent has not entered yet: `source` and `subject` are the object it is now,

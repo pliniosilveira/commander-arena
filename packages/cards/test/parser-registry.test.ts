@@ -193,6 +193,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
+  'replacement.as-enters-remove-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
   'static.permanents': asIs,
