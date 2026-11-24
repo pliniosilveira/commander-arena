@@ -7,7 +7,7 @@
 // through the golden corpus. Each line says whether it must import as supported, or where and why it stops, so a
 // change that makes the grammar read less OR more than it should fails here. The kinds of expectation are those of
 // convert-grammar-corpus.test.ts.
-import { type Line, NONE, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
+import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
 
 const SUPPORTED: readonly Line[] = [
   {
