@@ -371,6 +371,11 @@ export interface LowerContext {
    */
   lastCounteredGroup: ObjectSelector | null;
   /**
+   * True after a `gainControl` of a group of "each" (Call for Aid, CR 611.2c, 400.7j): "those creatures" and "they" of the instructions after it are the permanents it took, the engine's `moved`,
+   * until an instruction that moves, destroys, exiles, sacrifices or makes other objects is lowered. Filled by `lowerSentences`.
+   */
+  gainedGroup: boolean;
+  /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
@@ -484,6 +489,7 @@ export function newContext(
     lastEffectKind: null,
     lastCastRemembered: false,
     lastCounteredGroup: null,
+    gainedGroup: false,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,

@@ -26,10 +26,16 @@ export const EFFECT_GOAD = defineRule<Clauses>({
     'goad each creature target opponent controls',
     // Issue 144 (Grenzo, Havoc Raiser): the creature of the player the trigger is about.
     'goad target creature that player controls',
+    // Riders of Rohan deck, group B (Taunt from the Rampart, CR 701.15a): a group of the creatures a player or the players name control.
+    'goad all creatures your opponents control',
+    'goad each creature your opponents control',
+    'goad all creatures target opponent controls',
   ],
   rejects: [
     'goad each creature',
-    'goad all creatures your opponents control',
+    'goad all creatures',
+    'goad all artifacts your opponents control',
+    'goad all creatures your opponents control until end of turn',
     'goad them',
     'goad target player',
     'goads target creature',
@@ -46,8 +52,21 @@ export const EFFECT_GOAD = defineRule<Clauses>({
           'noun.target-permanent',
           'noun.it',
           'noun.each-permanent-of-target-player',
+          // Riders of Rohan deck, group B (Taunt from the Rampart): "goad all creatures your opponents control".
+          'noun.all-permanents',
+          'noun.each-permanent',
         ],
         'effect.goad',
+        {
+          // A group names whose creatures it is ("your opponents control"): "goad all creatures" and a group of a kind other than creatures are other lines.
+          accept: (n) =>
+            n.rule !== 'noun.all-permanents' && n.rule !== 'noun.each-permanent'
+              ? true
+              : n.filter.controller !== undefined &&
+                n.filter.types?.length === 1 &&
+                n.filter.types[0] === 'creature',
+          locate: (n) => n.span.start,
+        },
       ),
     ),
     ([, objects]) => ({ verb: 'goad', args: { objects } }),

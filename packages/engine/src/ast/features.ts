@@ -370,6 +370,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromHandOnBottom',
     // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
     'cantAttackPlaneswalkers',
+    // Riders of Rohan deck, group B (Call for Aid): "You can't attack that player this turn", "You can't sacrifice those creatures this turn".
+    'youCantAttackPlayers',
+    'youCantSacrifice',
     // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
     'choosePlayer',
     'cantBeBlockedByPlayer',
@@ -3124,6 +3127,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   putFromHandOnTop: true,
   putFromHandOnBottom: true,
   cantAttackPlaneswalkers: true,
+  youCantAttackPlayers: true,
+  youCantSacrifice: true,
   choosePlayer: true,
   cantBeBlockedByPlayer: true,
   createToken: true,

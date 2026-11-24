@@ -227,6 +227,7 @@ import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
 import { REVEAL_UNTIL_OTHER_EFFECT_RULES } from './reveal-until-other';
 import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
 import { REVIVAL_TRANCE_EFFECT_RULES } from './revival-trance';
+import { RIDERS_B_EFFECT_RULES } from './riders-b';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -1373,6 +1374,8 @@ export const EFFECT_RULES = [
   ...REVEAL_TOP_DUEL_EFFECT_RULES,
   ...HEXPROOF_LOSS_EFFECT_RULES,
   ...GOAD_EFFECT_RULES,
+  // Riders of Rohan deck, group B (Taunt from the Rampart, Call for Aid): the sentences about the group the sentence before named.
+  ...RIDERS_B_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".

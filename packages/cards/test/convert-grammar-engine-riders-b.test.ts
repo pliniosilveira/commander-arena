@@ -11,6 +11,12 @@ const FILLER = Array.from({ length: 14 }, () => 'Island');
 
 const DEFECTOR = real('Humble Defector');
 const FIELD = real('Field of Ruin');
+const TAUNT = real('Taunt from the Rampart');
+const VIGILANT = parsed('SYNTHETIC Vigilant Guard', 'Creature — Human Soldier', 'Vigilance', {
+  manaCost: '{1}',
+  power: '2',
+  toughness: '2',
+});
 // SYNTHETIC nonbasic lands: a Plains-less "Tower" with an ability, and a basic-typed land that is not basic.
 const TOWER = parsed('SYNTHETIC Tower', 'Land', '{T}: Add {C}.');
 const SNOW_TOWER = parsed('SYNTHETIC Snow Tower', 'Snow Land — Forest', '{T}: Add {G}.');
@@ -81,10 +87,14 @@ describe('Humble Defector: "{T}: Draw two cards. Target opponent gains control o
 describe('Field of Ruin: "{2}, {T}, Sacrifice ~: Destroy target nonbasic land an opponent controls. Each player searches ..." (CR 701.23a, 701.24, 701.8)', () => {
   const board = (seats: 2 | 3 | 4, libraries: readonly (readonly string[])[]) => {
     const b = table(seats, [FIELD, TOWER, SNOW_TOWER]);
-    for (let seat = 0; seat < seats; seat += 1) b.seat(seat).library(...(libraries[seat] ?? FILLER));
+    for (let seat = 0; seat < seats; seat += 1)
+      b.seat(seat).library(...(libraries[seat] ?? FILLER));
     b.seat(0).battlefield(FIELD.name).battlefield('Island', { count: 2 });
     b.seat(1).battlefield(TOWER.name, { label: 'tower1' });
-    if (seats > 2) b.seat(2).battlefield(TOWER.name, { label: 'tower2' }).battlefield('Forest', { label: 'basic2' });
+    if (seats > 2)
+      b.seat(2)
+        .battlefield(TOWER.name, { label: 'tower2' })
+        .battlefield('Forest', { label: 'basic2' });
     return b.at('precombatMain', { active: 0, turn: seats + 1 }).build();
   };
   const LIB = ['Forest', 'Island', 'Island', 'Island', 'Island'];
@@ -115,9 +125,12 @@ describe('Field of Ruin: "{2}, {T}, Sacrifice ~: Destroy target nonbasic land an
     const g = board(4, [LIB, LIB, LIB, LIB]);
     g.act(0).activate(FIELD.name, { targets: ['tower1'], pay: true });
     g.passAll();
-    for (let seat = 0; seat < 4; seat += 1) g.act(g.deciding).chooseCards(g.id({ name: 'Forest', zone: 'library', seat: g.deciding }));
+    for (let seat = 0; seat < 4; seat += 1)
+      g.act(g.deciding).chooseCards(g.id({ name: 'Forest', zone: 'library', seat: g.deciding }));
     for (let seat = 0; seat < 4; seat += 1) {
-      expect(g.find({ name: 'Forest', zone: 'battlefield', seat }).length).toBeGreaterThanOrEqual(1);
+      expect(g.find({ name: 'Forest', zone: 'battlefield', seat }).length).toBeGreaterThanOrEqual(
+        1,
+      );
     }
     expect(g.state.pending?.kind).not.toBe('chooseCards');
   });
@@ -125,8 +138,13 @@ describe('Field of Ruin: "{2}, {T}, Sacrifice ~: Destroy target nonbasic land an
   test('a basic land cannot be the target, and neither can your own nonbasic land', () => {
     const b = table(3, [FIELD, TOWER, SNOW_TOWER]);
     for (let seat = 0; seat < 3; seat += 1) b.seat(seat).library(...LIB);
-    b.seat(0).battlefield(FIELD.name).battlefield(TOWER.name, { label: 'mine' }).battlefield('Island', { count: 2 });
-    b.seat(1).battlefield('Forest', { label: 'basic' }).battlefield(SNOW_TOWER.name, { label: 'snow' });
+    b.seat(0)
+      .battlefield(FIELD.name)
+      .battlefield(TOWER.name, { label: 'mine' })
+      .battlefield('Island', { count: 2 });
+    b.seat(1)
+      .battlefield('Forest', { label: 'basic' })
+      .battlefield(SNOW_TOWER.name, { label: 'snow' });
     const g = b.at('precombatMain', { active: 0, turn: 4 }).build();
     g.act(0).activate(FIELD.name);
     expect(() => g.act(0).chooseTargets('basic')).toThrow();

@@ -27,6 +27,7 @@ import { lowerClause } from './effects';
 import { noteExiledOwnGraveyards } from './exile-own-graveyards';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter, playerSelectorOf } from './nouns';
+import { lowerThoseRestriction } from './riders-b';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 /**
@@ -198,6 +199,19 @@ function noteMadeToken(clause: IrClause, effects: readonly Effect[], ctx: LowerC
   if (effects.some((e) => MOVES.includes(e.kind))) ctx.madeToken = null;
 }
 
+/** The instructions that change what the engine's `moved` names (CR 400.7j): after one of them "those creatures" of a group control change is no longer the group it took. */
+const GROUP_BREAKERS: readonly string[] = [
+  'moveToZone',
+  'destroy',
+  'exile',
+  'sacrifice',
+  'createToken',
+  'createCopies',
+  'populate',
+  'search',
+  'gainControl',
+];
+
 function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerResult<Effects> {
   const effects: Effect[] = [];
   for (const [i, clause] of clauses.entries()) {
@@ -221,6 +235,13 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
           lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
           ? ctx.lastCounteredGroup
           : null;
+    // Call for Aid: "those creatures" after "gain control of all creatures target opponent controls": the permanents the group `gainControl` took (`moved`), until an instruction moves other objects.
+    ctx.gainedGroup =
+      lastLowered?.kind === 'gainControl' && lastLowered.objects.kind === 'each'
+        ? true
+        : lowered.value.some((e) => GROUP_BREAKERS.includes(e.kind))
+          ? false
+          : ctx.gainedGroup;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastCastRemembered = lastEffect?.kind === 'castFree' && lastEffect.remember === true;
@@ -1042,7 +1063,11 @@ function lowerThoseGroup(
       ? e.objects
       : e.kind === 'gainControl' && e.objects.kind === 'target'
         ? e.objects
-        : null,
+        : // Call for Aid (CR 611.2c, 400.7j): the permanents a group `gainControl` took are "those creatures": the engine's `moved`, as the filter of the group (the creatures the other player
+          // controls) no longer names them once they are controlled by you.
+          e.kind === 'gainControl' && e.objects.kind === 'each'
+          ? ({ kind: 'moved' } as const)
+          : null,
   );
   // Champions from Beyond (CR 508.1): with no instruction before it, "those creatures" of an attack batch trigger are the creatures the attack declared.
   if (before === undefined && ctx.attackBatchThose) {
@@ -2831,6 +2856,13 @@ function lowerStep(
     const untapped = lowerThoseGroup(sentence, steps[steps.length - 1], ctx);
     if (!untapped.ok) return stop(untapped);
     steps.push({ effects: untapped.value, replaceable: false });
+    return { last: i };
+  }
+  // "Goad all creatures your opponents control. Until your next turn, those creatures can't block." (Riders of Rohan deck, group B, CR 611.2c): the group the goad before it named.
+  if (first.verb === 'restrictThose') {
+    const restricted = lowerThoseRestriction(sentence, steps[steps.length - 1]);
+    if (!restricted.ok) return stop(restricted);
+    steps.push({ effects: restricted.value, replaceable: false });
     return { last: i };
   }
   // "Exile it. If you do, you gain 4 life." (stage P31, D-140, CR 608.2c): what an instruction the engine can tell was done did.
