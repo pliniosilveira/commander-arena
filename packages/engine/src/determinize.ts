@@ -176,7 +176,38 @@ function sample(state: GameState, viewer: SeatId, rng: RngState): GameState {
           ...state.casting,
           snapshot: sample(state.casting.snapshot, viewer, createRng(snapshotWord)),
         };
-  return { ...state, objects, seats, casting, seed: seedWord, rng: createRng(rngWord) };
+  return {
+    ...hideSecretVotes(state, viewer),
+    objects,
+    seats,
+    casting,
+    seed: seedWord,
+    rng: createRng(rngWord),
+  };
+}
+
+/**
+ * CR 701.38a ("secretly"): the votes other seats have cast in a secret vote still being made are not known to the viewer. The sample keeps that the seats have voted but gives each of
+ * their votes the first choice the viewer's own question offers, so nothing of what was cast leaks.
+ */
+function hideSecretVotes(state: GameState, viewer: SeatId): GameState {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const asked = state.pending;
+  if (
+    res === null ||
+    res === undefined ||
+    head?.kind !== 'vote' ||
+    head.secret !== true ||
+    asked?.kind !== 'chooseOption' ||
+    asked.purpose !== 'vote'
+  ) {
+    return state;
+  }
+  const blank = asked.options[0];
+  if (blank === undefined) return state;
+  const cast = head.cast.map((c) => (c.seat === viewer ? c : { ...c, option: blank }));
+  return { ...state, resolution: { ...res, queue: [{ ...head, cast }, ...res.queue.slice(1)] } };
 }
 
 /**

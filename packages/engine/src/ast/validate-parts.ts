@@ -112,6 +112,10 @@ export interface Scope {
   readonly thisWay?: readonly ThisWayKind[];
   /** The options of the latest `vote` earlier in the same sequence: the amount `votesFor` reads a tally of one of them (CR 701.38a, D-194). */
   readonly voteOptions?: readonly string[];
+  /** What the latest vote earlier in the same sequence is for (CR 701.38b): `players` or `objects` for a `voteFor`, `words` for a `vote`. The votes of players and of permanents are read only after the matching one. */
+  readonly voteChoices?: 'words' | 'players' | 'objects';
+  /** True in an ability whose trigger is `votingFinished`: it reads the record of the vote that finished (CR 701.38a), whatever the vote was for. */
+  readonly voteTrigger?: boolean;
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
   readonly selfCast?: boolean;
   /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
@@ -1562,6 +1566,18 @@ export function checkRef(
         issue(out, path, "'attached' is only valid in abilities of an Aura or an Equipment");
       }
       break;
+    case 'votedObjects':
+      // CR 701.38a, 701.38b (Trap the Trespassers): the permanents with votes, after a vote for permanents (or in the ability a vote triggered).
+      if (expect === 'player')
+        issue(out, path, "'votedObjects' is a set of permanents, not a player");
+      else if (scope.voteChoices !== 'objects' && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          "'votedObjects' needs a vote for permanents before it in the same sequence",
+        );
+      }
+      break;
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
       if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");
@@ -1706,6 +1722,8 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'combatDamagedThisTurn':
     case 'discardedThisWay':
     case 'opponentsAttackingTriggerPlayer':
+    case 'eachPlayerWithoutVotes':
+    case 'eachOpponentWhoVoted':
     case 'all':
       return true;
     default:
@@ -1861,6 +1879,29 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerWithoutVotes':
+      // CR 701.38a (Círdan the Shipwright): "each player who received no votes": a vote for players before it in the same sequence, or the vote that triggered the ability.
+      if (scope.voteChoices !== 'players' && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          "'eachPlayerWithoutVotes' needs a vote for players before it in the same sequence",
+        );
+      }
+      break;
+    case 'eachOpponentWhoVoted':
+      // CR 701.38a (Erestor of the Council): who voted for what, in a vote earlier in the same sequence or the one that triggered the ability.
+      if (scope.voteChoices === undefined && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          "'eachOpponentWhoVoted' needs a vote before it in the same sequence or a votingFinished ability",
+        );
+      }
+      if (sel.choice !== 'same' && sel.choice !== 'different') {
+        issue(out, `${path}.choice`, "'eachOpponentWhoVoted' reads 'same' or 'different'");
+      }
+      break;
     case 'couldntSacrificeThisWay':
       // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('sacrificed')) {
@@ -1933,6 +1974,8 @@ export const PLAYER_ONLY = [
   'lostLifeThisTurn',
   'combatDamagedThisTurn',
   'discardedThisWay',
+  'eachPlayerWithoutVotes',
+  'eachOpponentWhoVoted',
 ];
 
 export function checkDamageRecipient(
@@ -2742,6 +2785,23 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           `"${a.option}" is not an option of the vote (${scope.voteOptions.join(', ')})`,
         );
       }
+      break;
+    case 'votesReceived':
+      // CR 701.38a, 701.38b (Círdan the Shipwright): the votes for the player who is "you" here, in a vote for players earlier in the sequence or the vote that triggered the ability.
+      if (scope.voteChoices !== 'players' && scope.voteTrigger !== true) {
+        issue(out, path, 'votesReceived needs a vote for players before it in the same sequence');
+      }
+      break;
+    case 'votesForObject':
+      // CR 701.38a, 701.38b (Trap the Trespassers): the votes for one permanent, in a vote for permanents earlier in the sequence or the vote that triggered the ability.
+      if (scope.voteChoices !== 'objects' && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          'votesForObject needs a vote for permanents before it in the same sequence',
+        );
+      }
+      checkAmountObject(a.of, `${path}.of`, scope, out);
       break;
     case 'triggerDamage':
       // D-133: "that much": the damage that caused the trigger.
@@ -5614,6 +5674,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
+      // CR 701.38a (Elrond of the White Council): "for each fellowship vote, the voter chooses": a vote for that option before it in the same sequence or the one that triggered the ability.
+      if (e.perVote !== undefined) {
+        if (e.chooser !== undefined) {
+          issue(out, `${path}.perVote`, 'each voter chooses: no chooser of its own');
+        }
+        if (typeof e.perVote !== 'string' || e.perVote.trim() === '') {
+          issue(out, `${path}.perVote`, 'perVote names the option whose voters choose');
+        } else if (scope.voteTrigger !== true) {
+          if (scope.voteOptions === undefined) {
+            issue(out, `${path}.perVote`, 'perVote needs a vote before it in the same sequence');
+          } else if (!scope.voteOptions.includes(e.perVote)) {
+            issue(
+              out,
+              `${path}.perVote`,
+              `"${e.perVote}" is not an option of the vote (${scope.voteOptions.join(', ')})`,
+            );
+          }
+        }
+      }
       break;
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
@@ -5692,7 +5771,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           if (child?.kind === 'clash') after = { ...after, clashed: true };
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
-            after = { ...after, voteOptions: child.options };
+            after = { ...after, voteOptions: child.options, voteChoices: 'words' };
+          }
+          // CR 701.38b: after a vote for players or permanents, the votes for each can be read; no option word is named.
+          if (child?.kind === 'voteFor') {
+            after = {
+              ...after,
+              voteOptions: [],
+              voteChoices: child.choices?.kind === 'objects' ? 'objects' : 'players',
+            };
           }
           // D-131: after a sacrifice, a destroy or a draw, "for each ... this way" can be read.
           const produced = thisWayProduced(child).filter((k) => !(after.thisWay ?? []).includes(k));
@@ -6121,7 +6208,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       const named = kindOf(e.objects);
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
-      else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      else if (named === 'target' || named === 'chosen')
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       else if (named === 'each') {
         // CR 613.1b, 611.2c: "gain control of all artifacts that player controls": the group is fixed as the effect begins.
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -6132,7 +6220,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target, a group, the permanent that caused the trigger, or the permanent with the ability',
+          'gainControl names a target, the permanents chosen earlier, a group, the permanent that caused the trigger, or the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -8340,6 +8428,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       });
       if (e.startingWith !== 'you') {
         issue(out, `${path}.startingWith`, 'a vote starts with "you", the controller (CR 701.38a)');
+      }
+      if (e.secret !== undefined && e.secret !== true) {
+        issue(out, `${path}.secret`, 'secret must be true when present');
+      }
+      break;
+    }
+    case 'voteFor': {
+      // CR 701.38a, 701.38b: the choices are the players or the permanents a filter names; the voting starts with the controller.
+      const choices = e.choices;
+      if (choices?.kind === 'objects') {
+        checkFilter(choices.filter, `${path}.choices.filter`, out, scope);
+        if (choices.filter.zone !== undefined && choices.filter.zone !== 'battlefield') {
+          issue(
+            out,
+            `${path}.choices.filter.zone`,
+            'a vote for permanents is among the battlefield',
+          );
+        }
+      } else if (choices?.kind !== 'players') {
+        issue(out, `${path}.choices`, 'a vote is for players or for permanents a filter names');
+      }
+      if (e.startingWith !== 'you') {
+        issue(out, `${path}.startingWith`, 'a vote starts with "you", the controller (CR 701.38a)');
+      }
+      if (e.secret !== undefined && e.secret !== true) {
+        issue(out, `${path}.secret`, 'secret must be true when present');
       }
       break;
     }

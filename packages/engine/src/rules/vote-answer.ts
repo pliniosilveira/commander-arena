@@ -1,7 +1,7 @@
 /**
  * The answer to a vote (CR 701.38a, D-194): the option the voter chose is added to the votes of the `vote` instruction at the head of the queue,
- * logged as an `optionChosen` event of purpose 'vote', and the resolution goes on (to the next voter, or, when everyone has voted, to the rest of
- * the spell or ability). Kept apart from `stack.ts`, which holds the other answers, to stay small.
+ * logged as an `optionChosen` event of purpose 'vote' (not for a secret vote: nothing is shown until `votesRevealed`), and the resolution goes on (to the next voter, or, when everyone has voted,
+ * to the rest of the spell or ability). Kept apart from `stack.ts`, which holds the other answers, to stay small.
  */
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction } from '../state/types';
@@ -15,17 +15,14 @@ export function answerResolutionVote(state: GameState, option: string): ResolveO
   if (!res || head?.kind !== 'vote' || d?.kind !== 'chooseOption' || d.purpose !== 'vote') {
     return null;
   }
-  if (!head.options.includes(option)) return null;
+  if (!d.options.includes(option)) return null;
   const updated: Instruction = { ...head, cast: [...head.cast, { seat: d.seat, option }] };
-  const event: GameEvent = {
-    kind: 'optionChosen',
-    seat: d.seat,
-    source: d.source,
-    purpose: 'vote',
-    option,
-  };
+  const events: GameEvent[] =
+    head.secret === true
+      ? []
+      : [{ kind: 'optionChosen', seat: d.seat, source: d.source, purpose: 'vote', option }];
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
-    [event],
+    events,
   );
 }

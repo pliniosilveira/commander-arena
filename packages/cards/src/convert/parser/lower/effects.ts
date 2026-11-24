@@ -174,6 +174,7 @@ import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
@@ -2838,6 +2839,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...COUNCIL_VOTES_LOWERINGS,
+  ...SECRET_VOTES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,

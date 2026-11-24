@@ -413,6 +413,7 @@ describe('supported feature gate', () => {
         'playsCard',
         'unblockedAttackBatch',
         'upkeep',
+        'votingFinished',
         'winsCoinFlip',
       ].sort(),
     );

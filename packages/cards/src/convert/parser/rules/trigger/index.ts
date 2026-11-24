@@ -79,6 +79,7 @@ import {
 import { TROYAN2_TRIGGER_RULES } from './troyan2';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
+import { VOTING_TRIGGER_RULES } from './voting';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -1441,6 +1442,7 @@ export const TRIGGER_RULES = [
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
   ...COIN_FLIP_TRIGGER_RULES,
+  ...VOTING_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".

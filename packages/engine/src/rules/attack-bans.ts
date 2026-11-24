@@ -47,6 +47,14 @@ export function withoutBannedTargets(
       .map((a) => a.player);
     allowed = allowed.filter((t) => t.kind !== 'player' || !already.includes(t.seat));
   }
+  // CR 508.1a (Elrond of the White Council): "This creature can't attack its owner": the player who owns it may not be attacked by it (planeswalkers they control still may be).
+  if (
+    derive(state, obj).abilities.some(
+      (a) => a.kind === 'static' && a.static.kind === 'cantAttackItsOwner',
+    )
+  ) {
+    allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== obj.owner);
+  }
   // CR 508.1a, 611.2c (Chronomantic Escape): "Until your next turn, creatures can't attack you": the creatures the filter matches now may not attack that player.
   for (const e of state.continuousEffects) {
     if (e.change.kind !== 'creaturesCantAttackPlayer') continue;

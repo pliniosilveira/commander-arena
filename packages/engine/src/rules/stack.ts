@@ -55,6 +55,7 @@ import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { TIME_COUNTER } from './time-counter';
 import { collectTriggers } from './triggers';
+import { tallyCast } from './vote-options';
 import { moveObject } from './zones';
 
 export interface ResolveOutcome {
@@ -192,6 +193,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { costReturnedAttack: obj.stack.returnedAttack }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
+      // CR 701.38a (Erestor of the Council): a `votingFinished` ability reads the vote that finished as if it had just been made.
+      ...(obj.stack?.triggerVotes === undefined
+        ? {}
+        : { voteCast: obj.stack.triggerVotes, votes: tallyCast(obj.stack.triggerVotes) }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
@@ -270,6 +275,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(out.lifeLost === undefined ? {} : { lifeLost: (res.lifeLost ?? 0) + out.lifeLost }),
         // D-194: the tally of a vote that is finished, for "twice the number of profit votes" (a later vote of the resolution replaces it).
         ...(out.votes === undefined ? {} : { votes: out.votes }),
+        // CR 701.38a: who voted for what, for the amounts and selectors that read the votes of a player.
+        ...(out.voteCast === undefined ? {} : { voteCast: out.voteCast }),
         // D-131: what this instruction did, for "for each creature sacrificed this way" and the like.
         ...(out.thisWay === undefined
           ? {}
@@ -385,7 +392,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
         ...(head.kind === 'chooseObjects' && head.chosen !== null
-          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          ? {
+              chosenObjects: {
+                ...res.chosenObjects,
+                // CR 701.38a (`perVote`): the choices of every vote are one set, a permanent chosen for several votes once.
+                [head.id]:
+                  head.asVoter === undefined || head.asVoter.first
+                    ? head.chosen
+                    : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],
+              },
+            }
           : {}),
         // The Black Gate: the player chosen is what "that player" means for the rest of the resolution.
         ...(head.kind === 'choosePlayer' && head.chosen !== null

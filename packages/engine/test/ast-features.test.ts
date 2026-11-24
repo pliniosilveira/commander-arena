@@ -284,6 +284,7 @@ describe('the dimensions', () => {
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',
+      'cantAttackItsOwner',
       'cantGainLife',
       'damageCantBePrevented',
       'damageAsThoughWither',
