@@ -301,8 +301,10 @@ const PRONOUNS: readonly Line[] = [
   {
     kind: 'creature',
     text: 'When ~ enters, put a +1/+1 counter on that creature.',
-    expect: no('that creature.', 'effect.add-counters-distinct-targets'),
-    note: 'SYNTHETIC; "that creature" is not read as a noun',
+    expect: no('put a +1/+1 counter on that creature.', 'effect.add-counters', {
+      reason: 'notRunnable',
+    }),
+    note: 'SYNTHETIC; "that creature" of a trigger about ~ itself names nothing',
   },
   {
     kind: 'equipment',

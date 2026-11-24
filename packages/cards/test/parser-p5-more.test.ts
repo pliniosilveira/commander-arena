@@ -251,19 +251,10 @@ describe('the pronoun "it" in a trigger about ~ is ~ (D-082 follow-up)', () => {
     ]);
   });
 
-  test('"that creature" is not read as a noun: after ~ or after another subject', () => {
+  test('"that creature" of a trigger about ~ itself has no other creature to name: read but not run', () => {
     expect(
       dropped('When ~ enters, put a +1/+1 counter on that creature.', 'creature'),
-    ).toMatchObject({
-      reason: 'unrecognised',
-      stoppedAt: 'that creature.',
-    });
-    expect(
-      dropped(
-        'Whenever another creature you control enters, put a +1/+1 counter on that creature.',
-        'creature',
-      ),
-    ).toMatchObject({ reason: 'unrecognised', stoppedAt: 'that creature.' });
+    ).toMatchObject({ reason: 'notRunnable' });
   });
 
   test('"it" with nothing before it is an unbound reference', () => {
