@@ -883,6 +883,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
     }
   }
+  if (r.notLegendary !== undefined && r.notLegendary !== true) {
+    issue(out, `${path}.notLegendary`, 'notLegendary is true when present');
+  }
+  if (r.extraCounters !== undefined) {
+    if (!Array.isArray(r.extraCounters) || r.extraCounters.length === 0) {
+      issue(out, `${path}.extraCounters`, 'extraCounters is a non-empty list when present');
+    } else {
+      r.extraCounters.forEach((c, i) => {
+        if (!isOneOf(c?.type, ['creature', 'planeswalker'])) {
+          issue(
+            out,
+            `${path}.extraCounters[${i}].type`,
+            'the card type is creature or planeswalker',
+          );
+        }
+        if (typeof c?.counter !== 'string' || c.counter === '') {
+          issue(out, `${path}.extraCounters[${i}].counter`, 'a kind of counter');
+        }
+      });
+    }
+  }
   if (r.optional !== undefined && r.optional !== true) {
     issue(out, `${path}.optional`, 'optional is true or absent');
   }

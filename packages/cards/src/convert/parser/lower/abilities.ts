@@ -954,6 +954,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       ...(event.args.addLegendary?.kind === 'flag' && event.args.addLegendary.value
         ? { addSupertypes: ['legendary' as const] }
         : {}),
+      // CR 707.9b, 614.12, 205.4a (Spark Double): "... an additional +1/+1 counter if it's a creature, ... a loyalty counter if it's a planeswalker, and it isn't legendary".
+      ...(event.args.extraCounters?.kind === 'flag' && event.args.extraCounters.value
+        ? {
+            extraCounters: [
+              { type: 'creature' as const, counter: '+1/+1' },
+              { type: 'planeswalker' as const, counter: 'loyalty' },
+            ],
+          }
+        : {}),
+      ...(event.args.notLegendary?.kind === 'flag' && event.args.notLegendary.value
+        ? { notLegendary: true as const }
+        : {}),
       // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
       ...(event.args.withX?.kind === 'flag' && event.args.withX.value
         ? { withX: { counter: '+1/+1' } }

@@ -60,9 +60,13 @@ export function becomeCopyAsItEnters(
       : copiedValues;
   // CR 707.9b (issue 103): "except it's a Dragon in addition to its other types": the creature types of the exception are part of the copiable values.
   const excepted =
-    rule.addSubtypes === undefined
+    rule.addSubtypes === undefined && rule.notLegendary !== true
       ? withEmbalm
-      : withCopyExceptions(withEmbalm, { addSubtypes: rule.addSubtypes });
+      : withCopyExceptions(withEmbalm, {
+          ...(rule.addSubtypes === undefined ? {} : { addSubtypes: rule.addSubtypes }),
+          // CR 707.9b, 205.4a (Spark Double): "except it isn't legendary".
+          ...(rule.notLegendary === true ? { notLegendary: true as const } : {}),
+        });
   // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types": the name the card has itself, and the supertypes added.
   const own = rule.keepName === true ? state.objects[entering] : undefined;
   const values =

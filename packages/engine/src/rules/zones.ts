@@ -1131,6 +1131,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       }
     }
   }
+  // CR 707.9b, 614.12, 122.6 (Spark Double): "except it enters with an additional +1/+1 counter on it if it's a creature, ... an additional loyalty counter on it if it's a planeswalker".
+  if (to === 'battlefield' && copyRule?.extraCounters !== undefined && copiedObject !== undefined) {
+    const types = derive(next, getObject(next, newId)).types;
+    for (const extra of copyRule.extraCounters) {
+      if (!types.includes(extra.type)) continue;
+      counters = { ...counters, [extra.counter]: (counters[extra.counter] ?? 0) + 1 };
+      const copy = getObject(next, newId);
+      next = setObject(next, {
+        ...copy,
+        counters: { ...copy.counters, [extra.counter]: (copy.counters[extra.counter] ?? 0) + 1 },
+      });
+    }
+  }
   if (to === 'battlefield') {
     // CR 614.12, 122.6 (D-149): apply entry counters to the characteristics after an as-entry copy, without the entering group on the battlefield.
     const entering = getObject(next, newId);

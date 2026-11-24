@@ -7406,6 +7406,20 @@ export type Replacement =
        */
       readonly addSupertypes?: readonly Supertype[];
       /**
+       * "..., except it isn't legendary" (Spark Double; CR 707.9b, 205.4a): the supertype legendary is not among the copiable values of the permanent; its other supertypes stay.
+       * Only `true`.
+       */
+      readonly notLegendary?: true;
+      /**
+       * "..., except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker" (Spark Double; CR
+       * 707.9b, 614.12, 122.6): for each entry whose card type the permanent has as the copy (a creature that is also a planeswalker gets both), one more counter of the kind as
+       * it enters, besides those a copied planeswalker enters with (CR 306.5b). Counters are not copied (CR 707.2), so they come from the exception. Never empty.
+       */
+      readonly extraCounters?: readonly {
+        readonly type: 'creature' | 'planeswalker';
+        readonly counter: string;
+      }[];
+      /**
        * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
        * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not
        * embalmed, is not changed by them.
