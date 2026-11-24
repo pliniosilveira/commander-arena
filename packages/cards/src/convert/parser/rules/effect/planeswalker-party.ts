@@ -46,8 +46,18 @@ export const EFFECT_DAMAGE_EXILE_IF_DIES = defineRule<Clauses>({
     if (!r.ok) return r;
     const [clauses] = r.value;
     const [first, ...rest] = clauses;
-    if (first === undefined || rest.length > 0 || first.verb !== 'dealDamage')
+    const to = first?.args.to;
+    const items = to?.kind === 'noun' ? [to] : to?.kind === 'nounList' ? to.items : [];
+    // One target: the permanent "dealt damage this way" is that target (CR 115.1), so a group ("each creature") is not read.
+    if (
+      first === undefined ||
+      rest.length > 0 ||
+      first.verb !== 'dealDamage' ||
+      items.length !== 1 ||
+      items[0]?.det !== 'target'
+    ) {
       return fail(ctx, pos);
+    }
     const marked = makeClause(
       ID,
       'dealDamage',
