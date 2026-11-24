@@ -40,7 +40,11 @@ import {
   sacrificeGroups,
 } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
-import { answerRemoveCountersCost, payRemoveCounters } from './activate-remove-counters';
+import {
+  answerRemoveCountersCost,
+  answerRemoveCountersPick,
+  payRemoveCounters,
+} from './activate-remove-counters';
 import { answerUntapPermanentsCost, payUntap } from './activate-untap';
 import {
   activationExileDecision,
@@ -772,6 +776,13 @@ export function answerBlight(state: GameState, chosen: readonly ObjectId[]): Res
 /** The answer to the question of a cost that removes counters from among permanents (CR 118.3, 122.1): one counter comes off, then the rest of the cost goes on. */
 export function answerRemoveCounters(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerRemoveCountersCost(state, chosen, (paid, events) =>
+    payBlight(paid, events, paySacrifice),
+  );
+}
+
+/** The answer to the question of a cost that removes counters of any kind (Gavel of the Righteous, Moxite Refinery): the counter the player picked comes off, then the rest of the cost goes on. */
+export function answerRemoveCountersKind(state: GameState, option: string): Result {
+  return answerRemoveCountersPick(state, option, (paid, events) =>
     payBlight(paid, events, paySacrifice),
   );
 }

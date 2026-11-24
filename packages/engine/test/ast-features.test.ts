@@ -237,6 +237,8 @@ describe('the dimensions', () => {
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
+      // "The monarch controls enchanted creature." (CR 613.1b, 725.1).
+      'controlAttached',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'revealTopOfLibrary',

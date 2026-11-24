@@ -111,7 +111,7 @@ import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
-import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
+import { costWithHandSizeX, lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
@@ -140,6 +140,7 @@ import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
+import { runYouCantAttackPlayers, runYouCantSacrifice } from './player-bans';
 import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerCantCast, runPlayerLock } from './player-lock';
@@ -148,6 +149,7 @@ import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
+import { proliferateTimes } from './proliferate-replacement';
 import {
   givesProtectionOfCardTypeChoice,
   givesProtectionOfChoice,
@@ -275,11 +277,21 @@ export function runInstruction(
   }
   if (instruction.kind === 'chooseObjects') {
     if (instruction.chosen !== null) return done(state);
-    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter((id) =>
-      matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+    // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
+    const among =
+      instruction.fromMoved === true
+        ? new Set((res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield'))
+        : null;
+    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter(
+      (id) =>
+        (among === null || among.has(id)) &&
+        matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
-    const max = Math.min(instruction.count, candidates.length);
+    const max =
+      instruction.anyNumber === true
+        ? candidates.length
+        : Math.min(instruction.count, candidates.length);
     return {
       state,
       events: [],
@@ -713,6 +725,11 @@ export function runInstruction(
       hidden.objects[result.newObject]?.zone === 'exile'
         ? instruction.exiledPower
         : undefined;
+    // CR 608.2c (Grey Host Reinforcements): a creature card that really went to exile counts, "the number of creature cards exiled this way".
+    const countedCreatureCard =
+      instruction.countsCreatureCard === true &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'exile';
     // CR 608.2c (Mass Polymorph: "that many creature cards"): every creature the `exile` effect really exiled counts, a token included (it is exiled, then ceases to exist, CR 111.7).
     const exiledCreature =
       instruction.exiledPower !== undefined &&
@@ -724,12 +741,17 @@ export function runInstruction(
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland || countedReturned || exiledPower !== undefined || exiledCreature
+      ...(countedNonland ||
+      countedReturned ||
+      countedCreatureCard ||
+      exiledPower !== undefined ||
+      exiledCreature
         ? {
             thisWay: {
               ...(countedNonland ? { exiledNonland: 1 } : {}),
               ...(countedReturned ? { returned: 1 } : {}),
               ...(exiledCreature ? { exiledCreatures: 1 } : {}),
+              ...(countedCreatureCard ? { exiledCreatureCards: 1 } : {}),
               ...(exiledPower === undefined
                 ? {}
                 : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),
@@ -925,6 +947,8 @@ function runEffect(
             filter: effect.filter,
             count: effect.count,
             ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
+            ...(effect.fromMoved === true ? { fromMoved: true as const } : {}),
             chosen: null,
           },
         ],
@@ -1259,7 +1283,12 @@ function runEffect(
                   },
                 }
               : {};
-          return { ...i, ...link, ...lost };
+          // CR 608.2c (Grey Host Reinforcements): a creature card, in a graveyard or anywhere else, is counted when it really goes to exile; a token is not a card.
+          const creatureCard =
+            obj !== undefined && obj.token === null && derive(state, obj).types.includes('creature')
+              ? { countsCreatureCard: true as const }
+              : {};
+          return { ...i, ...link, ...lost, ...creatureCard };
         }),
       );
       return moving(together.state, together.instructions);
@@ -1464,18 +1493,29 @@ function runEffect(
     case 'unlessPays': {
       // CR 118.12a: each player the selector names may pay; the effect happens for each who does not.
       // Run as instructions (rules/pay-unless.ts) because the payer is asked in the middle of this.
+      // CR 107.3 (Champions of Minas Tirith): "pay {X}, where X is the number of cards in their hand" is worked out for each player as they are asked; a player with no card
+      // in hand has a cost of {0}, paid at once, so nothing is asked and the effect does not happen for them.
       return done(
         state,
         [],
-        resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
-          kind: 'unlessPays' as const,
-          seat,
-          cost: effect.cost,
-          stage: 'ask' as const,
-          effect: effect.effect,
-          optional: effect.optional === true,
-          ...(effect.upkeep === undefined ? {} : { upkeep: effect.upkeep }),
-        })),
+        resolvePlayers(state, effect.player, ctx, targets).flatMap((seat) => {
+          const cost =
+            effect.xIsHandSize === true
+              ? costWithHandSizeX(effect.cost, state.seats[seat]?.hand.length ?? 0)
+              : effect.cost;
+          if (cost === null) return [];
+          return [
+            {
+              kind: 'unlessPays' as const,
+              seat,
+              cost,
+              stage: 'ask' as const,
+              effect: effect.effect,
+              optional: effect.optional === true,
+              ...(effect.upkeep === undefined ? {} : { upkeep: effect.upkeep }),
+            },
+          ];
+        }),
       );
     }
 
@@ -1778,6 +1818,30 @@ function runEffect(
         ],
       });
     }
+    case 'delayedCombatDamageBatchTurn':
+      // CR 603.7, 603.7c, 603.2c, 510.2, 514.2: "Whenever one or more creatures you control deal combat damage to one or more players this turn, ...": a delayed ability of the
+      // controller that triggers like the batch trigger, once for each player damaged in one combat damage event, until the end of the turn.
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: {
+                kind: 'combatDamageBatch' as const,
+                what: effect.filter,
+                to: 'player' as const,
+              },
+              effect: effect.effect,
+            },
+          },
+        ],
+      });
     case 'delayedCombatDamageToPlayer': {
       // CR 603.7, 603.7c, 510.3a, 514.2 (issue 144): "Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token": a delayed
       // ability of the controller, for damage to the player the spell targeted, which is fixed as it is made. A player that is not there (not a legal target any more) gets none.
@@ -1872,6 +1936,27 @@ function runEffect(
             ...effect.effect,
             effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
           },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            { source: res.source, controller: res.controller, ability },
+          ],
+        });
+      }
+      // CR 603.7c, 701.21a (Depthshaker Titan): "any number of target noncreature artifacts you control become 3/3 artifact creatures. Sacrifice them at the beginning of the next end
+      // step.": one delayed ability about the permanents the targets of the effect named as it was created (`boundObjects`), found later only if each is still that object on the
+      // battlefield. With no target chosen there is nothing to wait for.
+      if (effect.effect.kind === 'sacrifice' && effect.effect.objects.kind === 'target') {
+        const ids = resolveObjects(state, effect.effect.objects, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'battlefield',
+        );
+        if (ids.length === 0) return done(state);
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
@@ -2047,6 +2132,30 @@ function runEffect(
           },
         ],
       });
+    }
+
+    case 'spellGainsKeyword': {
+      // CR 702.44a, 702.44d: "it gains sunburst": the spell the cast trigger is about, if it is still a spell on the stack as this resolves, remembers the keyword; the permanent it
+      // becomes reads it as it enters (`rules/enters-keywords.ts`), one instance for each time it was gained. A copy of a spell was not cast (CR 707.10) and is not given one.
+      let next = state;
+      for (const id of resolveObjects(state, effect.spell, ctx, targets)) {
+        const spell = next.objects[id];
+        if (
+          spell === undefined ||
+          spell.zone !== 'stack' ||
+          spell.stack?.kind !== 'spell' ||
+          spell.copyOf !== undefined
+        ) {
+          continue;
+        }
+        next = patchObject(next, id, {
+          stack: {
+            ...spell.stack,
+            gainedKeywords: [...(spell.stack.gainedKeywords ?? []), effect.keyword],
+          },
+        });
+      }
+      return done(next);
     }
 
     case 'createEmblem': {
@@ -3712,7 +3821,7 @@ function runEffect(
     }
 
     case 'moveCounter': {
-      // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
+      // CR 122.5: one counter (or, with `anyNumber`, as many as the controller likes), of a kind they choose, from the first permanent to the second (rules/counter-pick.ts).
       const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
       const toId = resolveObjects(state, effect.to, ctx, targets)[0];
       if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
@@ -3725,9 +3834,10 @@ function runEffect(
             mode: 'move',
             objects: [fromId],
             to: toId,
-            left: 1,
+            left: effect.anyNumber === true ? null : 1,
             removed: 0,
             chosen: null,
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
           },
         ],
       );
@@ -3831,11 +3941,18 @@ function runEffect(
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
       // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      // CR 701.34a, 614.1a, 614.5 (Tekuthal): each `proliferateDouble` replacement of the controller doubles how many times.
       return done(
         state,
         [],
         Array.from(
-          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          {
+            length: proliferateTimes(
+              state,
+              ctx.controller,
+              effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets),
+            ),
+          },
           () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
         ),
       );
@@ -4046,7 +4163,7 @@ function runEffect(
 
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.
-      return runCreaturesCantAttackYou(state, effect, ctx);
+      return runCreaturesCantAttackYou(state, effect, ctx, targets);
 
     case 'restrictGroup':
       // CR 609.4, 611.2c: a rule change on a group of creatures, read where the rule acts (attackers declared, combat damage assigned).
@@ -4059,6 +4176,14 @@ function runEffect(
     case 'cantBeBlockedByPlayer':
       // CR 509.1b, 611.2a (The Black Gate): the creatures named can't be blocked by creatures a player controls this turn.
       return runCantBeBlockedByPlayer(state, effect, ctx, targets);
+
+    case 'youCantAttackPlayers':
+      // CR 508.1a, 611.2a (Call for Aid): the controller can't attack the players named with any creature this turn.
+      return runYouCantAttackPlayers(state, effect, ctx, targets);
+
+    case 'youCantSacrifice':
+      // CR 701.21a, 101.2, 611.2a (Call for Aid): the controller can't sacrifice the permanents named this turn.
+      return runYouCantSacrifice(state, effect, ctx, targets);
 
     case 'cantAttackPlaneswalkers':
       // CR 508.1a, 611.2a (issue 81): the creatures named can't attack the controller's planeswalkers of a subtype this turn.

@@ -1119,6 +1119,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const what =
         effect.optional === true && inner.startsWith('You ') ? `You may ${inner.slice(4)}` : inner;
       const payer = payerWords(effect.player);
+      // Champions of Minas Tirith (CR 107.3): {X} is the number of cards in the hand of the player asked.
+      if (effect.xIsHandSize === true) {
+        return `${what} unless ${payer.who} pays {X}, where X is the number of cards in their hand`;
+      }
       return `${what} unless ${payer.who} ${unlessCostPhrase(effect.cost, payer.third)}`;
     }
     case 'cumulativeUpkeep':
@@ -1550,6 +1554,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'delayedCombatDamageTurn':
       // CR 603.7, 510.3a (D-663): a delayed ability for the turn.
       return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
+    case 'delayedCombatDamageBatchTurn': {
+      // CR 603.7, 603.2c: a delayed ability for the turn, for combat damage to players by one or more creatures.
+      const inner = effectText(effect.effect, ability, self, defs);
+      return inner === ''
+        ? UNSAID
+        : `Whenever one or more creatures you control deal combat damage to one or more players this turn, ${lower(inner)}`;
+    }
     case 'delayedCombatDamageToPlayer': {
       // CR 603.7c (issue 144): a delayed ability for the turn, for damage to the player the spell targeted.
       const inner = effectText(effect.effect, ability, self, defs);
@@ -1605,6 +1616,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return requireAttackText(effect) ?? UNSAID;
     case 'creaturesCantAttackYou':
       // Federation Fleet group F (CR 508.1a): "Until your next turn, creatures can't attack you".
+      // Champions of Minas Tirith (CR 508.1a, 511.3): "they can't attack you this combat", of the creatures of one player.
+      if (effect.duration === 'thisCombat') {
+        return effect.player === undefined
+          ? "Creatures can't attack you this combat"
+          : "That player can't attack you this combat";
+      }
       return "Until your next turn, creatures can't attack you";
     case 'restrictGroup': {
       // Abzan Armor group A (CR 609.4, 611.2c): "Creatures you control with defender can attack this turn as though they didn't have defender".
@@ -1744,6 +1761,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       if (count === UNSAID) return UNSAID;
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
+    }
+    case 'spellGainsKeyword': {
+      // CR 702.44a, 702.44d: "It gains sunburst" / "That spell gains sunburst", said of the spell of the cast trigger.
+      const spell = object(effect.spell);
+      return spell === UNSAID ? UNSAID : `${capital(spell)} gains sunburst`;
     }
     case 'doubleSpellX':
       // CR 107.3 (Unbound Flourishing): the X of the spell that was cast.

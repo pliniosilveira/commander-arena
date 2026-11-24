@@ -6,7 +6,7 @@ import type { ObjectFilter } from '../src/ast/types';
 import { matchesFilterWith } from '../src/rules/filter-match';
 
 const base = { types: ['creature'], supertypes: [], subtypes: [], colors: [] } as const;
-const state = { continuousEffects: [] } as never;
+const state = { continuousEffects: [], battlefield: [], objects: {}, definitions: {} } as never;
 const ctx = { controller: 0, source: null } as const;
 const object = (owner: number, controller: number) =>
   ({ zone: 'battlefield', owner, controller, tapped: false, id: 'o1' }) as never;

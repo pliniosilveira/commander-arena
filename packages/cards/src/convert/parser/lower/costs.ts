@@ -119,6 +119,24 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
         : failure(cost);
+    case 'removeAnyCounters': {
+      // CR 118.3, 122.1, 602.2b: counters of any kind, the player choosing which. "Remove a counter from ~" is also the cost of a keyword's ability (Equip); every other reading is the cost of an
+      // ordinary activated ability, where the engine asks which counters.
+      if (cost.what === null && !cost.x) {
+        return cost.count >= 1 ? ok({ kind: 'removeCounters', count: cost.count }) : failure(cost);
+      }
+      if (options.ordinary !== true || cost.count < 1) return failure(cost);
+      const filter = cost.what === null ? null : lowerFilter(cost.what);
+      if (filter !== null && !filter.ok) return filter;
+      if (cost.fromOne && filter === null) return failure(cost);
+      return ok({
+        kind: 'removeCounters',
+        count: cost.count,
+        ...(cost.x ? { countX: true as const } : {}),
+        ...(filter === null ? {} : { among: filter.value }),
+        ...(cost.fromOne ? { fromOne: true as const } : {}),
+      });
+    }
     case 'removeCountersAmong': {
       // "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the engine's `removeCounters` with `among`, a cost of an ordinary activated ability.
       if (options.ordinary !== true) return failure(cost);

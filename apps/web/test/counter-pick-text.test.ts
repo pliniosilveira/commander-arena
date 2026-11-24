@@ -22,6 +22,16 @@ describe('the counter question', () => {
     expect(purposeNoun('counterPick')).toBe('counter');
   });
 
+  test('a counter removed as the cost of an ability says so, and its dialog can be cancelled (CR 118.3, 733)', () => {
+    const cost = { ...asked, sourceName: 'Tekuthal, Inquiry Dominus', forCost: true as const };
+    expect(namedOptionPrompt(cost)).toBe(
+      'Choose a counter to remove as a cost for Tekuthal, Inquiry Dominus.',
+    );
+    expect(optionPrompt(cost)).toBe(
+      'Choose a counter to remove as a cost for Tekuthal, Inquiry Dominus.',
+    );
+  });
+
   test('"the number of counters among creatures you control" reads as the words say', () => {
     expect(
       amountPhrase({

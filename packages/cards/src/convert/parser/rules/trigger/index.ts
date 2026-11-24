@@ -37,6 +37,7 @@ import { CLASS_TRIGGER_RULES } from './class';
 import { COIN_FLIP_TRIGGER_RULES } from './coin-flip';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
+import { DAMAGE_PREVENTED_TRIGGER_RULES } from './damage-prevented';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
@@ -65,6 +66,7 @@ import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { RIDERS_C_TRIGGER_RULES } from './riders-c';
 import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
@@ -1163,6 +1165,7 @@ function stepRule(
   word: string,
   more: { readonly examples: readonly string[]; readonly rejects: readonly string[] },
   bare = false,
+  monarch = false,
 ) {
   return defineRule<IrTrigger>({
     id,
@@ -1176,13 +1179,27 @@ function stepRule(
     parse: (ctx, pos) => {
       const r = sequence(
         literal('the beginning of '),
-        stepOwner(bare),
+        monarch
+          ? choice(
+              // CR 725.2: "the monarch's end step" is the turn of whoever is the monarch as it begins (before "the ", the bare reading of `stepOwner`).
+              map(pattern(/the monarch['’]s /i), () => 'monarch' as const),
+              stepOwner(bare),
+            )
+          : stepOwner(bare),
         pattern(new RegExp(`${word}(?![\\p{L}\\p{N}])`, 'iu')),
       )(ctx, pos);
       if (!r.ok) return r;
       const span = { start: pos, end: r.pos };
-      const actor = makeNoun(id, span, r.value[1], { raw: r.value[1] });
-      return { ok: true, value: trigger(id, span, event, { actor }), pos: r.pos };
+      const owner = r.value[1] === 'monarch' ? 'eachPlayer' : r.value[1];
+      const actor = makeNoun(id, span, owner, { raw: owner });
+      return {
+        ok: true,
+        value: {
+          ...trigger(id, span, event, { actor }),
+          ...(r.value[1] === 'monarch' ? { monarchTurn: true as const } : {}),
+        },
+        pos: r.pos,
+      };
     },
   });
 }
@@ -1216,8 +1233,15 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of each end step',
       'the beginning of the end step',
       "the beginning of each opponent's end step",
+      // Archivist of Gondor (CR 725.2, 603.2b): the end step of the turn of the monarch.
+      "the beginning of the monarch's end step",
+      'the beginning of the monarch’s end step',
     ],
     rejects: [
+      "the beginning of the monarch's upkeep",
+      "the beginning of the monarch's",
+      'the beginning of the monarch end step',
+      "the beginning of each monarch's end step",
       'the beginning of the next end step',
       "the beginning of your opponent's end step",
       'the beginning of your upkeep',
@@ -1225,6 +1249,7 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of the upkeep',
     ],
   },
+  true,
   true,
 );
 
@@ -1368,6 +1393,8 @@ export const TRIGGER_RULES = [
   ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
+  // Riders of Rohan group C: "~ and at least two other creatures attack", "one or more creatures attack one of your opponents or a planeswalker they control" (before the plainer "one or more creatures attack").
+  ...RIDERS_C_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
   // Landroval: "two or more creatures you control attack a player".
@@ -1417,6 +1444,8 @@ export const TRIGGER_RULES = [
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
   // Issue 190 (Sun Droplet): "you're dealt damage".
   ...PLAYER_DEALT_DAMAGE_TRIGGER_RULES,
+  // Riders of Rohan deck, group D (Selfless Squire): "damage that would be dealt to you is prevented".
+  ...DAMAGE_PREVENTED_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".
   ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".

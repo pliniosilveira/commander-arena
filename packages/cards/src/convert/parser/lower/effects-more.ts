@@ -185,7 +185,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).
     const who = arg(clause, 'player');
     const may = arg(clause, 'may');
-    // A "may" needs another player; "each player searches" (Field of Ruin) names the players with no "may" (CR 701.23a).
+    // `may` is said only with a player ("its controller may search ..."); a player with no "may" (Field of Ruin: "each player searches ...") searches as an instruction.
     if (who === undefined && may !== undefined) return failure(clause);
     let player: PlayerSelector = { kind: 'you' };
     if (who !== undefined) {

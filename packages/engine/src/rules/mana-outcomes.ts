@@ -26,6 +26,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { colorSetAmongForSource } from './derive-count';
+import { putOwnCounters } from './mana-put-counter';
 import { matchesFilter } from './select';
 
 /** The mana types in the order a player is shown them: the five colors, then colorless (CR 106.1b). */
@@ -429,6 +430,12 @@ export function productionOutcomes(
 ): ManaColor[][] {
   const p = effectiveManaAbility(state, obj, ability).production;
   if (p.kind === 'couldProduce') return couldProduceOutcomes(state, obj, p);
+  // CR 605.3b (Empowered Autogenerator): the ability puts its counters first, so an amount counts after them.
+  if (ability.putCounter !== undefined) {
+    const put = putOwnCounters(state, obj.id, ability, controllerOf(state, obj));
+    const after = put.state.objects[obj.id];
+    if (after !== undefined) return plainOutcomes(put.state, after, p);
+  }
   return plainOutcomes(state, obj, p);
 }
 

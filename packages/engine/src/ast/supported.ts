@@ -301,12 +301,14 @@ function walkEffect(
       return;
     case 'unlessPays':
       // CR 118.12a: paid as Ward's cost is (rules/pay-unless.ts), and, D-209, with energy; what happens when it is not is any effect.
-      activationCostIssues(effect.cost, `${path}.cost`, out, [
-        'mana',
-        'payLife',
-        'discard',
-        'energy',
-      ]);
+      // CR 107.3 (Champions of Minas Tirith): with `xIsHandSize` the {X} of the mana cost is a number of cards, worked out as the player is asked.
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard', 'energy'],
+        effect.xIsHandSize === true,
+      );
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'becomeCopy':
@@ -570,7 +572,11 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
-  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  const removingAmong = costs.filter(
+    (c) =>
+      c.kind === 'removeCounters' &&
+      (c.among !== undefined || c.counter === undefined || c.countX === true || c.fromOne === true),
+  );
   if (
     removingAmong.length > 1 ||
     (removingAmong.length === 1 &&
@@ -908,6 +914,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
         // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.kind === 'equip' && a.keyword.orCost !== undefined) {
+          activationCostIssues(a.keyword.orCost, `${path}.keyword.orCost`, out, ['removeCounters']);
+        }
         if (a.keyword.kind === 'equip' && a.keyword.costReducedIf !== undefined) {
           conditionIssues(
             a.keyword.costReducedIf.condition,

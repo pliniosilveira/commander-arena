@@ -40,6 +40,8 @@ const GAIN_CONTROL_OBJECT = // One permanent: a target, or "that artifact" and "
         'noun.target-permanent-of-that-player',
         // Limit Break deck, group 4 (Hellkite Tyrant): "gain control of all artifacts that player controls", a group of the permanents the player the text named controls.
         'noun.all-permanents-of-that-player',
+        // Riders of Rohan deck, group B (Call for Aid): "gain control of all creatures target opponent controls until end of turn", the group of a player chosen as a target.
+        'noun.all-permanents-of-target-player',
         // Hosts of Mordor deck (Subjugate the Hobbits): "gain control of each noncommander creature with mana value 3 or less", a group of the battlefield.
         'noun.each-permanent',
         // Hosts of Mordor deck (Grishnákh): "target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's power".
@@ -52,6 +54,7 @@ const GAIN_CONTROL_OBJECT = // One permanent: a target, or "that artifact" and "
     (n) =>
       (!n.plural ||
         n.rule === 'noun.all-permanents-of-that-player' ||
+        n.rule === 'noun.all-permanents-of-target-player' ||
         n.rule === 'noun.each-permanent') &&
       !n.upTo &&
       n.filter.player === undefined,
@@ -93,6 +96,9 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of ~',
     'gain control of ~ until end of turn',
     'gain control of all artifacts that player controls',
+    // Riders of Rohan deck, group B (Call for Aid, CR 613.1b, 611.2c): every creature of the player chosen as a target, for the turn.
+    'gain control of all creatures target opponent controls until end of turn',
+    'gain control of all creatures target player controls',
     'gain control of target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn',
   ],
   rejects: [

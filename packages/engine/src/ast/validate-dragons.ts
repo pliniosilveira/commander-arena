@@ -5,7 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import { CARD_TYPES, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -529,6 +529,7 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.exertTrigger !== true &&
         scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true
@@ -643,11 +644,20 @@ export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[])
         'a trigger that works from the graveyard is not a cast trigger of the spell itself',
       );
     }
+  } else if (a.kind === 'replacement') {
+    // CR 113.6b, 614.12 (Dearly Departed): the permanents that enter are not the card, so a group replacement may work from the graveyard.
+    if (a.replacement?.kind !== 'othersEnterWithCounters') {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        `a replacement that works from the graveyard is a group that enters with counters, not ${String(a.replacement?.kind)}`,
+      );
+    }
   } else {
     issue(
       out,
       `${path}.functionsIn`,
-      'only a static or a triggered ability works from the graveyard here',
+      'only a static, a replacement or a triggered ability works from the graveyard here',
     );
   }
 }
@@ -952,6 +962,14 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       r.addSubtypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t)))
   ) {
     issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
+  }
+  // CR 707.9b (Phyrexian Metamorph): "except it's an artifact in addition to its other types".
+  if (r.addTypes !== undefined) {
+    if (!Array.isArray(r.addTypes) || r.addTypes.length === 0) {
+      issue(out, `${path}.addTypes`, 'addTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.addTypes`, r.addTypes, CARD_TYPES, 'card type');
+    }
   }
   return true;
 }

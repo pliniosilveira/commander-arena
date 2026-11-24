@@ -166,6 +166,34 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."
       checkCosts(k.cost, `${path}.cost`, out);
+      // Gavel of the Righteous: "Equip—Pay {3} or remove a counter from ~": the other way to pay, the one cost of removing a counter from the Equipment itself.
+      if (k.orCost !== undefined) {
+        checkCosts(k.orCost, `${path}.orCost`, out);
+        if (
+          !Array.isArray(k.orCost) ||
+          k.orCost.length !== 1 ||
+          k.orCost.some(
+            (c) =>
+              c?.kind !== 'removeCounters' ||
+              c.among !== undefined ||
+              c.countX !== undefined ||
+              c.fromOne !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'the other way to pay an equip ability is the removal of counters from the Equipment itself',
+          );
+        }
+        if (k.costReducedIf !== undefined) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'an equip ability with another way to pay has no cost reduction',
+          );
+        }
+      }
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
@@ -350,6 +378,15 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       } else if (kindOf(r.count) === 'diedThisTurn') {
         // Issue 101: the creatures that died this turn, read from the history as the permanent enters; no state of the game is read, so nothing more to check.
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'manaSpent') {
+        // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell the permanent entered from; the spell is the permanent itself, so it names no other.
+        if ((r.count as { of?: unknown }).of !== undefined) {
+          issue(
+            out,
+            `${path}.count.of`,
+            'an enters-with count of the mana spent is the spell the permanent came from',
+          );
+        }
       } else if (kindOf(r.count) === 'sum') {
         // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
         const parts = (r.count as { of?: unknown }).of;
@@ -727,7 +764,11 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
     case 'optionalUntap':
+      break;
     case 'exertOnAttack':
+      if (s.unlessExertedThisTurn !== undefined && s.unlessExertedThisTurn !== true) {
+        issue(out, `${path}.unlessExertedThisTurn`, 'unlessExertedThisTurn is true when present');
+      }
       break;
     case 'crewSaddleBonus':
       // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
@@ -832,6 +873,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           'cantBeCountered is the spell\'s own ability: its subject is "this"',
         );
       }
+      break;
+    case 'controlAttached':
+      // CR 613.1b, 725.1: the permanent this one is attached to is controlled by the monarch.
+      if (s.by !== 'monarch') issue(out, `${path}.by`, 'controlAttached is by the monarch');
       break;
     case 'goaded':
       // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
@@ -1562,7 +1607,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           `alsoStep must be another known step, not ${String(t.alsoStep)}`,
         );
       }
-      if (!isOneOf(t.whose, ['you', 'each', 'opponent'])) {
+      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;
@@ -1628,6 +1673,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'damageToPlayerPrevented':
     case 'dealtDamageToPlayer':
       if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1704,6 +1750,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'dealtDamageToPlayer' ||
+    t?.kind === 'damageToPlayerPrevented' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
@@ -1927,6 +1974,8 @@ function hasXCost(
       (c.kind === 'discard' && (c as { countX?: unknown }).countX === true) ||
       // D-488: "Sacrifice X creatures" announces X as the ability is activated.
       (c.kind === 'sacrifice' && (c as { countX?: unknown }).countX === true) ||
+      // Moxite Refinery: "Remove X counters from an artifact or creature you control" announces X as the ability is activated.
+      (c.kind === 'removeCounters' && (c as { countX?: unknown }).countX === true) ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),
@@ -2063,6 +2112,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       break;
     case 'replacement':
       checkReplacement(a.replacement, `${path}.replacement`, out);
+      checkGraveyardAbility(a, path, out);
       break;
     case 'level':
       // CR 716.2a (D-235): the abilities a class level bar adds from level `level` on: two or more of them is not a thing, a nested bar is not either.
@@ -2213,6 +2263,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         triggeredAbility: true,
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
+        ...(a.trigger?.kind === 'exerted' ? { exertTrigger: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
         ...(a.trigger?.kind === 'dealsCombatDamage' ? { combatDamageTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
@@ -2800,6 +2851,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   checkArtifactsFace(face, path, out);
   checkDinosaursFace(face, path, out);
   checkDragonsFace(face, path, out);
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is for a flashback cost the face has.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'static' &&
+      a.static?.kind === 'costReduction' &&
+      a.static.forAlternative === 'flashback' &&
+      !face.abilities.some((k) => k?.kind === 'keyword' && k.keyword?.kind === 'flashback')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].static.forAlternative`,
+        'a reduction for the flashback cost needs the flashback keyword on the face',
+      );
+    }
+  });
   // CR 702.165a (D-230): Backup gives the abilities printed below it as they are: a static or replacement ability there would not be given, so the face is refused.
   const backupAt = face.abilities.findIndex(
     (a) => a?.kind === 'keyword' && a.keyword?.kind === 'backup',

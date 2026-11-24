@@ -259,6 +259,57 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.self-cost-reduction-this-way`: "~ costs {X} less to cast this way, where X is the greatest mana value of a commander you own on the battlefield or in the command zone." (Visions of Glory,
+ * CR 702.34a, 118.9, 601.2f: a spell with Flashback costs less when it is cast for its flashback cost; CR 107.3c: X is what the text defines). The spell's own reduction, for the
+ * flashback cost only (the engine's `costReduction` with `forAlternative`); the face must have the flashback keyword, which the engine checks. Not read: "this way" with no definition of X, a
+ * fixed number, a condition, another subject.
+ */
+export const STATIC_SELF_COST_REDUCTION_THIS_WAY = defineRule<IrStatic>({
+  id: 'static.self-cost-reduction-this-way',
+  family: 'static',
+  leading: ['~'],
+  cites: [
+    'CR 702.34a (Flashback)',
+    'CR 118.9 (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 107.3c (Numbers and Symbols)',
+  ],
+  examples: [
+    '~ costs {X} less to cast this way, where X is the greatest mana value of a commander you own on the battlefield or in the command zone.',
+    '~ costs {X} less to cast this way, where X is the number of creatures you control.',
+  ],
+  rejects: [
+    '~ costs {X} less to cast this way.',
+    '~ costs {2} less to cast this way.',
+    '~ costs {X} less to cast, where X is the number of creatures you control.',
+    '~ costs {X} less to cast this way, where X is the number of creatures you control',
+    '~ costs {X} less to cast this way, where Y is the number of creatures you control.',
+    '~ costs {X} less to cast this way if you control a Dragon.',
+    '~ costs {X} more to cast this way, where X is the number of creatures you control.',
+    'Creature spells cost {X} less to cast this way, where X is the number of creatures you control.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('~ costs {X} less to cast this way, '),
+      family<IrAmount>('amount', { only: ['amount.where-x'] }),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: statement(
+        'static.self-cost-reduction-this-way',
+        selfNoun('static.self-cost-reduction-this-way', pos),
+        { kind: 'costReduction' as const, amount: r.value[1], thisWay: 'flashback' as const },
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 const SPELLS = pattern(new RegExp(`spells${BOUNDARY}`, 'iu'));
 
 /** The singular "spell" that closes "Each Sliver spell you cast". */
@@ -1207,6 +1258,7 @@ export const STATIC_NTH_SPELL_COST_REDUCTION = defineRule<IrStatic>({
 
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
+  STATIC_SELF_COST_REDUCTION_THIS_WAY,
   STATIC_FIRST_X_SPELL_COST_REDUCTION,
   STATIC_NTH_SPELL_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,

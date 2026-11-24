@@ -46,6 +46,7 @@ import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
 import { gainStartingSpeeds } from './speed';
+import { settleStaticControl } from './static-control-sync';
 import { moveObject, recordLastKnown } from './zones';
 
 export interface SbaResult {
@@ -111,6 +112,13 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       performed: true,
       decision: null,
     };
+  }
+
+  // CR 613.1b, 506.4, 302.6: a static control effect ("The monarch controls enchanted creature.") began, changed hands or ended; the state it leaves is what everything
+  // below looks at, so the check is made again at once.
+  const settled = settleStaticControl(state);
+  if (settled !== null) {
+    return { state: settled.state, events: settled.events, performed: true, decision: null };
   }
 
   // CR 701.54a (D-196): a creature stops being a player's Ring-bearer when another player gains control of it.

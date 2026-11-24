@@ -574,6 +574,11 @@ export function matchesFilterWith(
     const type = ctx.sourceChosen?.planeswalkerType;
     if (type === undefined || !d.subtypes.includes(type)) return false;
   }
+  // CR 205.2a, 607.2d (Cloud Key): "spells ... of the chosen type" is the card type the source chose as it entered.
+  if (filter.chosenCardType === true) {
+    const type = ctx.sourceChosen?.cardType;
+    if (type === undefined || !d.types.includes(type)) return false;
+  }
   // D-261, CR 205.3m: "shares a creature type with it": a creature type (CR 205.3m: the subtypes of creatures and kindreds) that both have.
   if (filter.sharesCreatureTypeWith !== undefined) {
     const theirs = ctx.subjectSubtypes;

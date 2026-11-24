@@ -192,8 +192,9 @@ describe('"Amass Orcs X. Mill X cards. You may cast an instant or sorcery spell 
     expect(read(text, 'sorcery').unparsed.length).toBeGreaterThan(0);
   });
 
-  test('the Flashback line with an exile cost is not read, so the card stays unsupported', () => {
-    const first = dropped('Flashback—{3}{U}{R}, Exile X cards from your graveyard.', 'sorcery');
-    expect(first.reason).toBe('notRunnable');
+  test('the Flashback line with an exile cost is read now (packages/cards/test/parser-flashback-exile-x.test.ts)', () => {
+    expect(
+      read('Flashback—{3}{U}{R}, Exile X cards from your graveyard.', 'sorcery').unparsed,
+    ).toEqual([]);
   });
 });

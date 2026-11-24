@@ -92,6 +92,17 @@ export function NamedOptionDialog({
           </li>
         ))}
       </ul>
+      {d.forCost === true ? (
+        // CR 733: the counters of a cost can be taken back, which rewinds the whole activation.
+        <button
+          type="button"
+          className="dec-btn dec-btn-secondary"
+          data-option-cancel
+          onClick={() => act({ kind: 'cancel' })}
+        >
+          Cancel
+        </button>
+      ) : null}
     </Dialog>
   );
 }

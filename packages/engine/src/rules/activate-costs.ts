@@ -33,7 +33,7 @@ import { discardOne } from './madness';
 import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
-import { removalCounters } from './remove-counters-candidates';
+import { type RemoveCountersSpec, removeCountersRefusal } from './remove-counters-spec';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
@@ -100,11 +100,7 @@ export interface CostBreakdown {
   /** "Blight 1" (D-407, CR 701.68): the -1/-1 counters put on a creature the player controls, none when 0. */
   readonly blight: number;
   /** "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the counters taken off the player's permanents the filter matches, or null. */
-  readonly removeAmong: {
-    readonly counter: string;
-    readonly count: number;
-    readonly filter: ObjectFilter;
-  } | null;
+  readonly removeAmong: RemoveCountersSpec | null;
 }
 
 /**
@@ -172,12 +168,24 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         energy += cost.count;
         break;
       case 'removeCounters':
-        if (cost.among !== undefined) {
-          removeAmongCosts += 1;
-          removeAmong = { counter: cost.counter, count: cost.count, filter: cost.among };
+        // Counters of a named kind off the permanent with the ability are paid with the other immediate costs; every other way to remove them is chosen by the player (`rules/activate-remove-counters.ts`).
+        if (
+          cost.among === undefined &&
+          cost.counter !== undefined &&
+          cost.countX !== true &&
+          cost.fromOne !== true
+        ) {
+          counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
           break;
         }
-        counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
+        removeAmongCosts += 1;
+        removeAmong = {
+          counter: cost.counter,
+          // CR 107.3a, 602.2b: "Remove X counters" is the X announced for the ability.
+          count: cost.countX === true ? x : cost.count,
+          filter: cost.among ?? null,
+          fromOne: cost.fromOne === true,
+        };
         break;
       case 'loyalty':
         loyaltyCosts += 1;
@@ -595,11 +603,9 @@ export function costRefusal(
     }
   }
   if (parts.removeAmong !== null) {
-    // CR 118.3, 122.1: enough counters of the kind among the permanents that match.
-    const { counter, count, filter } = parts.removeAmong;
-    if (removalCounters(paid, seat, source.id, filter, counter).total < count) {
-      return `you control too few ${counter} counters to remove`;
-    }
+    // CR 118.3, 122.1: enough counters among the permanents that match (all on one permanent for "from an artifact or creature").
+    const refused = removeCountersRefusal(paid, seat, source.id, parts.removeAmong);
+    if (refused !== null) return refused;
   }
   if (parts.blight > 0 && blightCandidates(paid, seat).length === 0) {
     // CR 701.68b (D-407): a player with no creature that can take the counters can't choose to blight.

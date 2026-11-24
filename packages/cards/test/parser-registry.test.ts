@@ -98,6 +98,8 @@ const atStep = permanent((e) => `At ${e}, you gain 1 life.`);
 
 const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.life-gain-double': asIs,
+  // Counter Intelligence deck, group 2 (Tekuthal).
+  'replacement.proliferate-twice': asIs,
   'keyword.line': asIs,
   'replacement.enters-tapped': asIs,
   'replacement.enters-with-counters': asIs,
@@ -132,6 +134,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
+  'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
   'keyword.multikicker': asIs,
@@ -195,10 +198,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-pay-life': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
+  'static.monarch-controls-attached': asIs,
   'static.permanents': asIs,
   'static.self': asIs,
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
+  'static.self-cost-reduction-this-way': asIs,
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
   'static.nth-spell-cost-reduction': asIs,
@@ -470,6 +475,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `When ~ enters, if ${e}, you gain 1 life.`,
   ),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.counters-among': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
   'condition.its-stat-greater-than-each-other': permanent(
     (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
@@ -583,6 +589,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.tapped-for-mana': whenever,
   'trigger.taps-for-mana': whenever,
   'trigger.state': whenever,
+  // Counter Intelligence deck, group 3 (Darksteel Reactor): "~ has twenty or more charge counters on it".
+  'trigger.state-has': whenever,
   'trigger.enters-during': whenever,
   'condition.control-greatest': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'restriction.once-each-turn': permanent((e) => `{1}: Draw a card. ${e}`),
@@ -729,6 +737,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
+  // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
+  'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'replacement.damage-double': asIs,
@@ -855,6 +865,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
   // Exert (CR 701.43d): the trigger is the first sentence of a paragraph, the body follows "When you do,".
   'trigger.exerted': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.exerted-once-a-turn': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.self-and-others-attack': whenever,
+  'trigger.attack-your-opponents': whenever,
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),
@@ -900,6 +913,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-mana-spent': permanent(
     (e) => `Each creature you control enters with an additional +1/+1 counter on it ${e}.`,
   ),
+  // Converge (CR 105.1): the colors of the mana spent, after a quantity of counters.
+  'amount.for-each-color-spent': permanent((e) => `~ enters with a +1/+1 counter on it ${e}.`),
   // Stage P41 (D-188): the expensive singles. The trigger follows "Whenever"; the condition follows a landfall trigger's comma; the noun is what a
   // sacrifice names; the static is a line of its own.
   'trigger.you-attack': whenever,
@@ -939,6 +954,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
+  'trigger.activate-ability-of-kinds': whenever,
   'trigger.targets-activated-batch': whenever,
   'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
   'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
@@ -1097,6 +1113,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
+  'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
@@ -1438,6 +1455,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
   // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
   'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  // Counter Intelligence deck, group 2: counters of any kind, from ~, from among permanents, or from one.
+  'cost.remove-any-counters': permanent((e) => `{2}, ${e}: Draw a card.`),
   'condition.it-has-greater-power': permanent(
     (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
   ),

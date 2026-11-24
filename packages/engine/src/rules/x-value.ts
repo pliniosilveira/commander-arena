@@ -25,6 +25,8 @@ export interface XCost {
   readonly discard?: number;
   /** Permanents sacrificed for each point of X ("Sacrifice X creatures", CR 118.3, D-488); absent for none. */
   readonly sacrifice?: number;
+  /** Counters removed for each point of X ("Remove X counters from an artifact or creature you control", CR 118.3, 122.1); absent for none. */
+  readonly removeCounters?: number;
   /** Cards of the graveyard exiled for each point of X ("Flashback—{3}{U}{R}, Exile X cards from your graveyard", CR 702.34a, 107.3a); absent for none. */
   readonly exile?: number;
 }
@@ -60,12 +62,14 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
   let loyalty = 0;
   let sacrifice = 0;
   let discard = 0;
+  let removeCounters = 0;
   for (const c of costs) {
     if (c.kind === 'mana') mana += xSymbolCount(c.symbols);
     else if (c.kind === 'payXLife') life += 1;
     else if (c.kind === 'loyalty' && c.change === 'x') loyalty += 1;
     else if (c.kind === 'sacrifice' && c.countX === true) sacrifice += 1;
     else if (c.kind === 'discard' && c.countX === true) discard += 1;
+    else if (c.kind === 'removeCounters' && c.countX === true) removeCounters += 1;
   }
   return {
     mana,
@@ -73,6 +77,7 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
     ...(loyalty === 0 ? {} : { loyalty }),
     ...(sacrifice === 0 ? {} : { sacrifice }),
     ...(discard === 0 ? {} : { discard }),
+    ...(removeCounters === 0 ? {} : { removeCounters }),
   };
 }
 
@@ -142,6 +147,7 @@ export function hasX(cost: XCost): boolean {
       (cost.loyalty ?? 0) +
       (cost.discard ?? 0) +
       (cost.sacrifice ?? 0) +
+      (cost.removeCounters ?? 0) +
       (cost.exile ?? 0) >
     0
   );

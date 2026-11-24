@@ -57,6 +57,7 @@ export type ParseOutcome =
 const SPELL_STATICS = [
   'static.self',
   'static.self-cost-reduction',
+  'static.self-cost-reduction-this-way',
   // D-641 (Prismari group 1): "Strive — ~ costs {2}{R} more to cast for each target beyond the first."
   'static.cost-per-extra-target',
   // D-492: "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." is tried first (it starts like the next).

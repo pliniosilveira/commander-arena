@@ -147,6 +147,15 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
           ),
         ]
       : []),
+    // CR 508.1a (Fealty to the Realm): "can't attack you", said of the permanent an Aura or Equipment is attached to: the player only, not their planeswalkers.
+    ...(subject === 'attached'
+      ? [
+          map(
+            pattern(new RegExp(`can['’]t attack you(?! or planeswalkers)${END}`, 'iu')),
+            (): IrStaticEffect => ({ kind: 'cantAttackYou', playersOnly: true }),
+          ),
+        ]
+      : []),
     // CR 508.1a, 506.3 (Vow of Duty): "can't attack you or planeswalkers you control", said of the permanent an Aura or Equipment is attached to; before the plain "can't attack".
     ...(subject === 'attached'
       ? [

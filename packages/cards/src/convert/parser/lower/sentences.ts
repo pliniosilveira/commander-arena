@@ -27,6 +27,7 @@ import { lowerClause } from './effects';
 import { noteExiledOwnGraveyards } from './exile-own-graveyards';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter, playerSelectorOf } from './nouns';
+import { lowerThoseRestriction } from './riders-b';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 /**
@@ -198,6 +199,19 @@ function noteMadeToken(clause: IrClause, effects: readonly Effect[], ctx: LowerC
   if (effects.some((e) => MOVES.includes(e.kind))) ctx.madeToken = null;
 }
 
+/** The instructions that change what the engine's `moved` names (CR 400.7j): after one of them "those creatures" of a group control change is no longer the group it took. */
+const GROUP_BREAKERS: readonly string[] = [
+  'moveToZone',
+  'destroy',
+  'exile',
+  'sacrifice',
+  'createToken',
+  'createCopies',
+  'populate',
+  'search',
+  'gainControl',
+];
+
 function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerResult<Effects> {
   const effects: Effect[] = [];
   for (const [i, clause] of clauses.entries()) {
@@ -225,6 +239,19 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
             lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
             ? ctx.lastCounteredGroup
             : null;
+    // Call for Aid: "those creatures" after "gain control of all creatures target opponent controls": the permanents the group `gainControl` took (`moved`), until an instruction moves other objects.
+    ctx.gainedGroup =
+      lastLowered?.kind === 'gainControl' && lastLowered.objects.kind === 'each'
+        ? true
+        : lowered.value.some((e) => GROUP_BREAKERS.includes(e.kind))
+          ? false
+          : ctx.gainedGroup;
+    ctx.becameTarget =
+      lastLowered?.kind === 'setTypes' &&
+      lastLowered.objects.kind === 'target' &&
+      lastLowered.duration === 'permanent'
+        ? lastLowered.objects.id
+        : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastCastRemembered = lastEffect?.kind === 'castFree' && lastEffect.remember === true;
@@ -1046,7 +1073,11 @@ function lowerThoseGroup(
       ? e.objects
       : e.kind === 'gainControl' && e.objects.kind === 'target'
         ? e.objects
-        : null,
+        : // Call for Aid (CR 611.2c, 400.7j): the permanents a group `gainControl` took are "those creatures": the engine's `moved`, as the filter of the group (the creatures the other player
+          // controls) no longer names them once they are controlled by you.
+          e.kind === 'gainControl' && e.objects.kind === 'each'
+          ? ({ kind: 'moved' } as const)
+          : null,
   );
   // Champions from Beyond (CR 508.1): with no instruction before it, "those creatures" of an attack batch trigger are the creatures the attack declared.
   if (before === undefined && ctx.attackBatchThose) {
@@ -1606,6 +1637,100 @@ function lowerMayElse(
           },
         ];
   return { ok: true, value, rule: offer.rule };
+}
+
+/**
+ * "Exile another target creature you control. You may return that card to the battlefield under its owner's control. If you don't, at the beginning of the next end step, return that card
+ * to the battlefield under its owner's control with a vigilance counter and a lifelink counter on it." (Gilraen, Dúnedain Protector; CR 608.2c, 608.2d, 603.7c, 400.7, 122.6): the offer
+ * is the engine's `may` of the return of the card the exile before it moved; the sentence after it, for the player who did not (declined, or the card could not come back), is a
+ * `conditional` on "not `didPrevious`" of a delayed return of the same card, which the exile moved and the declined offer left as it was (`moved` is the exiled card, bound as the delayed
+ * ability is made). Null when the sentence is not such an offer; a pair of another shape is refused, never guessed.
+ */
+function lowerOfferedReturnElse(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: readonly Step[],
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const next = sentences[i + 1];
+  const [offer, ...more] = sentence.clauses;
+  if (
+    next?.condition?.test.kind !== 'youDont' ||
+    offer?.verb !== 'return' ||
+    !offer.optional ||
+    next.delayed === undefined
+  ) {
+    return null;
+  }
+  const [other, ...moreOther] = next.clauses;
+  const exiled = steps[steps.length - 1]?.effects.some((e) => e.kind === 'exile');
+  if (
+    more.length > 0 ||
+    other === undefined ||
+    moreOther.length > 0 ||
+    other.optional ||
+    other.verb !== 'return' ||
+    exiled !== true ||
+    offer.condition !== undefined ||
+    other.condition !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.mayBy !== undefined ||
+    next.delayed.step !== 'endStep'
+  ) {
+    return refuse(next);
+  }
+  const blocked = missingFeatures([
+    'effect:may',
+    'effect:conditional',
+    'effect:delayedTrigger',
+    'condition:didPrevious',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(next), needs: blocked };
+  // Both sentences name the card the one exile moved: the offer must not make the second forget it.
+  const exiledRef = ctx.exiledRef;
+  const offered = lowerClauses([{ ...offer, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  ctx.exiledRef = exiledRef;
+  const later = lowerClauses([other], ctx);
+  if (!later.ok) return later;
+  const [move, ...rest] = offered.value;
+  const [back, ...restBack] = later.value;
+  if (
+    move?.kind !== 'moveToZone' ||
+    move.objects.kind !== 'moved' ||
+    rest.length > 0 ||
+    back?.kind !== 'moveToZone' ||
+    back.objects.kind !== 'moved' ||
+    restBack.length > 0
+  ) {
+    return refuse(next);
+  }
+  return {
+    ok: true,
+    value: [
+      { kind: 'may', effect: move },
+      {
+        kind: 'conditional',
+        condition: { kind: 'not', term: { kind: 'didPrevious' } },
+        effect: {
+          kind: 'delayedTrigger',
+          at: { step: next.delayed.step, whose: next.delayed.whose },
+          effect: back,
+        },
+      },
+    ],
+    rule: offer.rule,
+  };
 }
 
 /**
@@ -2317,6 +2442,9 @@ function countsWhatHappened(
           word === 'permanent' ||
           names(earlier.args.objects).every((n) => n === word))
       );
+    case 'exiledCreatureCards':
+      // Grey Host Reinforcements (CR 608.2c): "the number of creature cards exiled this way": an `exile` before it in the same text.
+      return earlier.verb === 'exile';
     case 'exiledCreatures':
       // Issue 81 (Sunfall): "where X is the number of creatures exiled this way": an `exile` before it in the same text.
       return earlier.verb === 'exile';
@@ -2492,6 +2620,48 @@ function lowerNextCast(
   return { last: i };
 }
 
+/** What "Whenever one or more creatures you control deal combat damage to one or more players this turn, ..." needs of the engine (Forth Eorlingas!). */
+export const COMBAT_DAMAGE_BATCH_NEEDS: readonly FeatureRef[] = [
+  'effect:delayedCombatDamageBatchTurn',
+];
+
+/**
+ * "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become the monarch." (Forth Eorlingas!, CR 603.7, 603.7c, 603.2c, 510.2): the
+ * sentence is what a delayed triggered ability does, for the turn, which the engine's `delayedCombatDamageBatchTurn` creates. The sentence names no target of its own, and a test, a
+ * "you may" or a "where X" in it is not read inside it.
+ */
+function lowerCombatDamageBatch(
+  sentence: IrSentence,
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  const blocked = missingFeatures(COMBAT_DAMAGE_BATCH_NEEDS);
+  if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+  if (
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return stop(refuse(sentence));
+  }
+  const before = ctx.targets.length;
+  const inner = lowerClauses(sentence.clauses, ctx);
+  if (!inner.ok) return stop(inner);
+  // What the ability does reads nothing the spell chose (CR 603.7c): no target of its own.
+  if (ctx.targets.length !== before) return stop(refuse(sentence));
+  const effect: Effect = {
+    kind: 'delayedCombatDamageBatchTurn',
+    filter: { types: ['creature'], controller: 'you' },
+    effect: oneEffect(inner.value),
+  };
+  steps.push({ effects: [effect], replaceable: false });
+  return { last: i };
+}
+
 /** What "Whenever a creature you control deals combat damage to that player this turn, ..." needs of the engine (issue 144). */
 export const COMBAT_DAMAGE_TO_PLAYER_NEEDS: readonly FeatureRef[] = [
   'effect:delayedCombatDamageToPlayer',
@@ -2568,7 +2738,9 @@ export function lowerDelayedCast(
   ctx.castTriggerX = before;
   if (!inner.ok) return inner;
   const effect = oneEffect(inner.value);
-  const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
+  const onlyCopy =
+    (effect.kind === 'copySpell' || effect.kind === 'spellGainsKeyword') &&
+    effect.spell.kind === 'triggerSubject';
   const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
   const [choice, copy, ...rest] = inner.value;
@@ -2708,6 +2880,7 @@ function lowerStep(
     if (step === 'nextCast') return lowerNextCast(sentence, i, steps, ctx);
     if (step === 'combatDamageToThatPlayer')
       return lowerCombatDamageToThatPlayer(sentence, i, steps, ctx);
+    if (step === 'combatDamageBatch') return lowerCombatDamageBatch(sentence, i, steps, ctx);
     const blocked = missingFeatures(['effect:delayedTrigger']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
     // A test or a "you may" of the sentence is not read inside what a delayed ability does.
@@ -2812,6 +2985,13 @@ function lowerStep(
     return { last: asking.last };
   }
   if (sentence.condition?.test.kind === 'declined') return stop(refuse(sentence));
+  // "You may return that card to the battlefield under its owner's control. If you don't, at the beginning of the next end step, return that card ..." (Gilraen, CR 608.2c, 603.7c).
+  const returnOrLater = lowerOfferedReturnElse(sentence, sentences, i, steps, ctx);
+  if (returnOrLater !== null) {
+    if (!returnOrLater.ok) return stop(returnOrLater);
+    steps.push({ effects: returnOrLater.value, replaceable: false });
+    return { last: i + 1 };
+  }
   // "If it has mana value 3 or less, you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." (D-403, CR 608.2c, 608.2d).
   const putOrElse = lowerMayElse(sentence, sentences, i, ctx);
   if (putOrElse !== null) {
@@ -2885,6 +3065,13 @@ function lowerStep(
     const untapped = lowerThoseGroup(sentence, steps[steps.length - 1], ctx);
     if (!untapped.ok) return stop(untapped);
     steps.push({ effects: untapped.value, replaceable: false });
+    return { last: i };
+  }
+  // "Goad all creatures your opponents control. Until your next turn, those creatures can't block." (Riders of Rohan deck, group B, CR 611.2c): the group the goad before it named.
+  if (first.verb === 'restrictThose') {
+    const restricted = lowerThoseRestriction(sentence, steps[steps.length - 1]);
+    if (!restricted.ok) return stop(restricted);
+    steps.push({ effects: restricted.value, replaceable: false });
     return { last: i };
   }
   // "Exile it. If you do, you gain 4 life." (stage P31, D-140, CR 608.2c): what an instruction the engine can tell was done did.

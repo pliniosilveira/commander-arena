@@ -275,6 +275,9 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
     case 'riot':
       // CR 702.136a (D-185): no parameter.
       return true;
+    case 'sunburst':
+      // CR 702.44a: no parameter.
+      return true;
     case 'unearth':
       // CR 702.84a (D-124): the unearth cost is paid like an activation cost from the graveyard: mana, no X.
       checkCosts(k.cost, `${path}.cost`, out);

@@ -98,6 +98,25 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'eachAttackedPlayer does not go with attackedEnchantedPlayer',
         );
       }
+      if (t.includesSource !== undefined && t.includesSource !== true) {
+        issue(out, `${path}.includesSource`, 'includesSource is true when present');
+      }
+      if (t.includesSource === true && t.who !== 'you') {
+        issue(out, `${path}.includesSource`, "includesSource is about the creatures of 'you'");
+      }
+      if (t.attackingYourOpponents !== undefined && t.attackingYourOpponents !== true) {
+        issue(out, `${path}.attackingYourOpponents`, 'attackingYourOpponents is true when present');
+      }
+      if (
+        t.attackingYourOpponents === true &&
+        (t.eachAttackedPlayer === true || t.attackedEnchantedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackingYourOpponents`,
+          'attackingYourOpponents does not go with eachAttackedPlayer or attackedEnchantedPlayer',
+        );
+      }
       if (t.what !== undefined) {
         checkFilter(t.what, `${path}.what`, out, undefined, undefined, { sourceOk: true });
         if (
@@ -156,6 +175,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'lifeGainDouble':
+    case 'proliferateDouble':
       return true;
     case 'countersPlus':
       // CR 614.1a, 122.6: the permanents that get more counters of one kind, and how many more.

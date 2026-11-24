@@ -3,11 +3,12 @@
  * gives a keyword to the spells its controller casts that a filter names.
  */
 import type { Ability } from '@commander-arena/engine';
-import type { IrAbility, IrStaticEffect } from '../ir/types';
+import type { IrAbility, IrClause, IrStaticEffect } from '../ir/types';
+import { arg, type Effects, failure } from './clauses';
 import { lowerCost } from './costs';
 import { missingFeatures } from './features';
 import { lowerFilter } from './nouns';
-import type { LowerResult } from './types';
+import type { Lowering, LowerResult } from './types';
 
 type Static = Extract<IrAbility, { kind: 'static' }>;
 type SpellKeyword = Extract<IrStaticEffect, { kind: 'spellKeyword' }>;
@@ -120,3 +121,30 @@ export function lowerSpellKeywordStatic(ability: Static): LowerResult<readonly A
     rule: ability.rule,
   };
 }
+
+/**
+ * "it gains sunburst", "that spell gains sunburst" (CR 702.44a, 702.44d): the engine's `spellGainsKeyword` of the spell whose casting caused the trigger (`triggerSubject`, which the
+ * binding pass makes of the pronoun in a cast trigger or a "when you next cast" sentence); bound to anything else the pronoun is no spell and nothing is read.
+ */
+export const SPELL_GAINS_KEYWORD: Lowering<IrClause, Effects> = {
+  head: 'spellGainsKeyword',
+  id: 'lower.spellGainsKeyword',
+  needs: ['effect:spellGainsKeyword', 'keyword:sunburst'],
+  lower(clause) {
+    const noun = arg(clause, 'spell');
+    if (noun?.kind !== 'noun' || noun.det !== 'triggerSubject') return failure(clause);
+    const missing = missingFeatures(['selector:triggerSubject']);
+    if (missing.length > 0) return failure(clause, missing);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'spellGainsKeyword',
+          spell: { kind: 'triggerSubject' },
+          keyword: { kind: 'sunburst' },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
