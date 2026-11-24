@@ -20,9 +20,7 @@ describe('Counter Blitz group B words', () => {
         { kind: 'tap' },
         {
           kind: 'removeCounters',
-          counter: '',
           count: 1,
-          anyKind: true,
           among: { controller: 'you', notTypes: ['land'] },
         },
       ]),
