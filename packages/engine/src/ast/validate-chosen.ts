@@ -10,7 +10,14 @@ import { CARD_TYPES } from '../characteristics';
 import type { Ability } from './types';
 import type { AstIssue } from './validate-base';
 
-type Choice = 'creatureType' | 'color' | 'option' | 'cardType' | 'planeswalkerType' | 'lifePaid';
+type Choice =
+  | 'creatureType'
+  | 'color'
+  | 'option'
+  | 'cardType'
+  | 'planeswalkerType'
+  | 'lifePaid'
+  | 'player';
 
 /**
  * Every choice the value refers to: an object with `chosenType: true` refers to the creature type, one with
@@ -45,6 +52,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   if (o.kind === 'chosenOption') found.add('option');
   // CR 119.4: "the life paid as it entered" reads the amount the permanent paid.
   if (o.kind === 'lifePaidAsEntered') found.add('lifePaid');
+  // CR 614.12a, 607.2d (Stuffy Doll): "the chosen player" reads the player the permanent chose.
+  if (o.kind === 'enteredChosenPlayer') found.add('player');
   for (const [key, v] of Object.entries(o)) {
     if (key === 'definition' && o.kind === 'custom') continue;
     referencedChoices(v, found);
@@ -107,7 +116,8 @@ export function chosenIssues(
         a.replacement.what === 'option' ||
         a.replacement.what === 'cardType' ||
         a.replacement.what === 'planeswalkerType' ||
-        a.replacement.what === 'lifePaid'
+        a.replacement.what === 'lifePaid' ||
+        a.replacement.what === 'player'
       ) {
         asked.push(a.replacement.what);
       }
@@ -209,15 +219,17 @@ export function chosenIssues(
         message:
           choice === 'creatureType'
             ? 'it refers to the chosen creature type but does not choose one as it enters (CR 607.2d)'
-            : choice === 'lifePaid'
-              ? 'it refers to the life paid as it entered but does not pay any as it enters (CR 614.12)'
-              : choice === 'cardType'
-                ? 'it refers to the chosen card type but does not choose one as it enters (CR 607.2d)'
-                : choice === 'planeswalkerType'
-                  ? 'it refers to the chosen planeswalker type but does not choose one as it enters (CR 607.2d)'
-                  : choice === 'option'
-                    ? 'it refers to the chosen option but does not choose one as it enters (CR 607.2d)'
-                    : 'it refers to the chosen color but does not choose one as it enters (CR 607.2d)',
+            : choice === 'player'
+              ? 'it refers to the chosen player but does not choose one as it enters (CR 607.2d)'
+              : choice === 'lifePaid'
+                ? 'it refers to the life paid as it entered but does not pay any as it enters (CR 614.12)'
+                : choice === 'cardType'
+                  ? 'it refers to the chosen card type but does not choose one as it enters (CR 607.2d)'
+                  : choice === 'planeswalkerType'
+                    ? 'it refers to the chosen planeswalker type but does not choose one as it enters (CR 607.2d)'
+                    : choice === 'option'
+                      ? 'it refers to the chosen option but does not choose one as it enters (CR 607.2d)'
+                      : 'it refers to the chosen color but does not choose one as it enters (CR 607.2d)',
       });
     }
   }

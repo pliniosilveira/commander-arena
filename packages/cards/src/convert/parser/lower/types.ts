@@ -214,6 +214,11 @@ export interface LowerContext {
    */
   itIsCard: boolean;
   /**
+   * True in the body of "Whenever a permanent deals damage to you, return it to its owner's hand" (Dissipation Field, CR 120.3, 400.7): every event of the trigger is a
+   * permanent dealing damage, so "it" is that permanent (the engine's `triggerSubject`, read from last-known information once it has left, where nothing is moved).
+   */
+  itIsDamageSource: boolean;
+  /**
    * True in the body of "When ~ is put into a graveyard from anywhere" (Troyan 2 deck, CR 603.6c, 400.7): "it" is the card of the ability itself, in the graveyard it is in as the
    * ability resolves, which the engine names `this` (the ability is found on that card).
    */
@@ -525,6 +530,7 @@ export function newContext(
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,
+    itIsDamageSource: false,
     selfGraveyardEntry: false,
     auraDies: false,
     returnedDyingCard: false,

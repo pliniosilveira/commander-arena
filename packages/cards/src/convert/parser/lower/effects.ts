@@ -764,7 +764,12 @@ const RETURN: Lowering<IrClause, Effects> = {
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
-      zone === 'hand' || zone === 'battlefield' ? { thisCard: true } : {},
+      zone === 'hand' || zone === 'battlefield'
+        ? {
+            thisCard: true,
+            ...(zone === 'hand' && ctx.itIsDamageSource ? { triggerSubject: true } : {}),
+          }
+        : {},
     );
   },
 };

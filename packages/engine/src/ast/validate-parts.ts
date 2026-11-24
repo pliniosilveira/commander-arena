@@ -1726,6 +1726,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'defendingPlayer':
     case 'playerToYourRight':
     case 'chosenPlayer':
+    case 'enteredChosenPlayer':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1925,6 +1926,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
   'triggerDamagedPlayers',
   'attackedPlayers',
@@ -3625,6 +3627,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'defendingPlayer':
     case 'playerToYourRight':
     case 'chosenPlayer':
+    case 'enteredChosenPlayer':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -4268,6 +4271,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
 ];
 
@@ -6969,6 +6973,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // D-110: the card the source became, in an ability; it can be put onto the battlefield only.
         if (scope.owner !== 'ability') {
           issue(out, `${path}.objects`, "'thisCard' is only valid in abilities");
+        }
+      } else if (kindOf(e.objects) === 'triggerSubject') {
+        // CR 400.7, 608.2b (Dissipation Field): "return it to its owner's hand" of a trigger about a permanent that is still on the battlefield as it triggers; one that has
+        // left is a new object, so nothing is returned. Only to the hand: the other zones have no use for it in the cards.
+        checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
+        if (e.to !== 'hand') {
+          issue(out, `${path}.to`, 'the triggering permanent is returned to the hand');
         }
       } else if (kindOf(e.objects) === 'choose') {
         checkChooseMove(e.objects as ChooseSelector, `${path}.objects`, scope, out);

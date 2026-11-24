@@ -1171,6 +1171,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerToYourRight',
     // The Black Gate: `PlayerSelector` `chosenPlayer`, "that player" after "Choose a player ...".
     'chosenPlayer',
+    // Stuffy Doll: `PlayerSelector` `enteredChosenPlayer`, "the chosen player" of "As this enters, choose a player".
+    'enteredChosenPlayer',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
@@ -2259,6 +2261,8 @@ export const SELECTOR_KINDS = [
   'playerToYourRight',
   /** "That player" after "Choose a player with the most life" (The Black Gate): the engine's `PlayerSelector` `chosenPlayer`. */
   'chosenPlayer',
+  /** "The chosen player" of "As this creature enters, choose a player" (Stuffy Doll, CR 614.12a, 607.2d): the engine's `PlayerSelector` `enteredChosenPlayer`. */
+  'enteredChosenPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */

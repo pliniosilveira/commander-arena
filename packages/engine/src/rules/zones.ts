@@ -53,7 +53,7 @@ import type {
 } from '../state/types';
 import { amountOf, historyCount } from './amounts';
 import { protectorChoices, protectorOption } from './battle-protector';
-import { optionsFor } from './chosen';
+import { optionsFor, playerOptions } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { entryCounters } from './counter-bonus';
@@ -652,7 +652,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         purpose: choice,
         options: optionsFor(
           choice,
-          entering === null ? [] : entersOptions(entering.abilities),
+          choice === 'player'
+            ? playerOptions(before)
+            : entering === null
+              ? []
+              : entersOptions(entering.abilities),
           entering === null ? undefined : entersColorExcept(entering.abilities),
           // CR 119.4, 119.8: a player whose life total cannot change can pay only 0.
           lifeTotalIsLocked(before, enterController) ? 0 : getSeat(before, enterController).life,

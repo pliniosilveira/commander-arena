@@ -147,6 +147,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     // Cloud Key (CR 205.2a): some of the card types.
     'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery.',
     'As ~ enters, choose creature or artifact.',
+    // Stuffy Doll (CR 614.12a, 607.2d): a player.
+    'As ~ enters, choose a player.',
+    'As ~ enters the battlefield, choose a player.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -164,6 +167,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose a card name.',
     'As ~ enters, choose a number.',
     'As ~ enters, choose an opponent.',
+    'As ~ enters, choose two players.',
+    'As ~ enters, you may choose a player.',
+    'As ~ enters, choose a player other than you.',
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
     'As ~ enters, choose a card type',
@@ -192,7 +198,7 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(ENTERS, literal('it enters the battlefield'), literal('it enters')),
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
-        pattern(/, choose a (creature type|color|card type|planeswalker type)\./i),
+        pattern(/, choose a (creature type|color|card type|planeswalker type|player)\./i),
         // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
         pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
@@ -210,7 +216,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       kind === 'color' ||
       kind === 'creature type' ||
       kind === 'card type' ||
-      kind === 'planeswalker type';
+      kind === 'planeswalker type' ||
+      kind === 'player';
     // Cloud Key: a choice among card types listed in lowercase (the capitalized names of Khans or Dragons are the card's own).
     const types = plain ? null : cardTypeNames(tail[1] ?? '');
     const names = plain || types !== null ? null : optionNames(tail[1] ?? '');
@@ -229,7 +236,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
                     ? 'cardType'
                     : kind === 'planeswalker type'
                       ? 'planeswalkerType'
-                      : 'creatureType',
+                      : kind === 'player'
+                        ? 'player'
+                        : 'creatureType',
               ...(excluded === undefined ? {} : { except: excluded }),
               span,
               rule: id,

@@ -138,7 +138,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   // CR 608.2d (The Black Gate): "choose a player with the most life or tied for most life": an opponent if one is among them (the effect is a bar on their creatures), else the first.
   // CR 102.2 (Slithermuse): "choose an opponent" when it has more cards in hand than you means the opponent with the largest hand, so the opponent with the most cards in hand
   // (ties go to the first listed, so the answer is deterministic); that is also a sound pick for the bar of The Black Gate.
-  if (d.purpose === 'playerChoice') {
+  // CR 614.12a (Stuffy Doll): "As this creature enters, choose a player": the same pick as the Black Gate's, an opponent, the one with the largest hand.
+  if (d.purpose === 'playerChoice' || d.purpose === 'player') {
     const handOf = (option: string): number =>
       view.seats.find((s) => `seat:${s.id}` === option)?.handCount ?? 0;
     let best: string | undefined;

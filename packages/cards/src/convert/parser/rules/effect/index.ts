@@ -324,6 +324,54 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
 });
 
 /**
+ * `effect.damage-itself`: "~ deals 1 damage to itself" (CR 120.2, 120.3; Stuffy Doll): the permanent with the ability is the source and the recipient of the damage, the engine's
+ * `dealDamage` to `this`. Not read: an amount that is not a number or X ("equal to its power" is `dealDamageToSelf`'s), another recipient with it ("to itself and you"), "it deals".
+ */
+export const EFFECT_DAMAGE_ITSELF = defineRule<Clauses>({
+  id: 'effect.damage-itself',
+  family: 'effect',
+  leading: ['~'],
+  cites: ['CR 120.2 (Damage)', 'CR 120.3 (Damage)'],
+  examples: [
+    '~ deals 1 damage to itself',
+    '~ deals 2 damage to itself',
+    '~ deals X damage to itself',
+  ],
+  rejects: [
+    '~ deals 1 damage to itself and you',
+    '~ deals damage to itself',
+    '~ deals a damage to itself',
+    '~ deals 1 damage to himself',
+    '~ deals 1 damage to itselfs',
+  ],
+  parse: single(
+    'effect.damage-itself',
+    sequence(
+      literal('~ deals '),
+      DAMAGE_AMOUNT,
+      literal(' to '),
+      spanned(pattern(/itself(?![\p{L}\p{N}])/iu)),
+    ),
+    ([, amount, , itself]): { verb: string; args: Record<string, IrArg> } => ({
+      verb: 'dealDamage',
+      args: {
+        amount,
+        to: {
+          kind: 'noun',
+          det: 'self',
+          filter: { raw: 'itself' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: itself.span,
+          rule: 'effect.damage-itself',
+        },
+      },
+    }),
+  ),
+});
+
+/**
  * `effect.damage-count`: "~ deals damage to target player equal to the number of creatures on the
  * battlefield" (CR 120.2: damage to an object or a player; CR 608.2c: the instruction counts as it
  * runs, D-095). One recipient that is a target or "you": a mass recipient ("each creature") or
@@ -1362,6 +1410,7 @@ export const EFFECT_RULES = [
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
   EFFECT_DAMAGE,
+  EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.

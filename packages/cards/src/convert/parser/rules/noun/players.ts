@@ -129,6 +129,25 @@ export const NOUN_DEFENDING_PLAYER = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.entered-chosen-player`: "the chosen player" (CR 614.12a, 607.2d; Stuffy Doll): the player the permanent chose as it entered, by the linked "As ~ enters, choose a
+ * player". The engine's `PlayerSelector` `enteredChosenPlayer`; a face without that choice refuses it (`validateCard`). Not read: "the chosen creature type" or any other
+ * chosen thing, "chosen player" without "the", the plural.
+ */
+export const NOUN_ENTERED_CHOSEN_PLAYER = defineRule<IrNoun>({
+  id: 'noun.entered-chosen-player',
+  family: 'noun',
+  leading: ['the'],
+  cites: ['CR 614.12a (Replacement Effects)', 'CR 607.2d (Linked Abilities)'],
+  examples: ['the chosen player', 'The chosen player'],
+  rejects: ['the chosen players', 'chosen player', 'the chosen player’s', 'the chosen color'],
+  parse: phrase(
+    'noun.entered-chosen-player',
+    new RegExp(`the chosen player(?!['’]|s)${END}`, 'iu'),
+    (raw) => bare('enteredChosenPlayer', raw),
+  ),
+});
+
+/**
  * `noun.player-to-your-right`: "the player to your right" (Hithlain Rope): the player before you in turn order among the players still in the game, the
  * opponent in a two-player game. The engine's `PlayerSelector` `playerToYourRight`. Not read: "the player to your left", "players to your right", a
  * player "on your right".
@@ -270,6 +289,7 @@ export const PLAYER_NOUN_RULES = [
   NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER,
   NOUN_DEFENDING_PLAYER,
   NOUN_PLAYER_TO_YOUR_RIGHT,
+  NOUN_ENTERED_CHOSEN_PLAYER,
   NOUN_THAT_PLAYER,
   NOUN_THAT_ATTACKING_PLAYER,
   NOUN_THEY,

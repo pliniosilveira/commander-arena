@@ -57,6 +57,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   defendingPlayer: 'selector:defendingPlayer',
   // "the player to your right" (Hithlain Rope).
   playerToRight: 'selector:playerToYourRight',
+  // "the chosen player" of "As ~ enters, choose a player" (Stuffy Doll).
+  enteredChosenPlayer: 'selector:enteredChosenPlayer',
   // Stage P33 (D-150): "this card".
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
@@ -1570,6 +1572,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'playerToYourRight' });
     }
+    case 'enteredChosenPlayer': {
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'enteredChosenPlayer' });
+    }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return (
@@ -1750,6 +1756,8 @@ export function recipientOf(
     (noun.det === 'discardedThisWay' && noun.discardedHand === true) ||
     // Barret Wallace (CR 508.5): "it deals damage equal to ... to defending player".
     noun.det === 'defendingPlayer' ||
+    // Stuffy Doll (CR 614.12a): "it deals that much damage to the chosen player".
+    noun.det === 'enteredChosenPlayer' ||
     (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);

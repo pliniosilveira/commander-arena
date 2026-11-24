@@ -5,7 +5,7 @@
  * (`OptionNamesDialog.tsx`) draws what these return, so the words are unit tested without a DOM.
  */
 import type { ChooseOptionDecision } from '@commander-arena/engine';
-import { colorName } from '../../game/chosen';
+import { colorName, optionText } from '../../game/chosen';
 import { destroyReplacementPrompt, destroyReplacementThen } from '../../game/danitha-g4-text';
 import { RIOT_ROWS, riotPrompt } from '../../game/keywords-text';
 import { romanNumeral } from '../../game/saga';
@@ -131,6 +131,7 @@ export function namedOptionPrompt(
       ? `Choose a color for ${d.sourceName}.`
       : `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
   }
+  if (d.purpose === 'player') return `As ${d.sourceName} enters, choose a player.`;
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
   // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
   if (isProtectionColorChoice(d)) {
@@ -288,6 +289,14 @@ export function namedOptionRows(
       }
       return { option, label: choice?.text ?? option, detail };
     });
+  }
+  // CR 614.12a (Stuffy Doll): "seat:1" is the player in that seat.
+  if (d.purpose === 'player') {
+    return d.options.map((option) => ({
+      option,
+      label: optionText('player', option),
+      detail: null,
+    }));
   }
   if (
     isEffectChoice(d) ||
