@@ -16,7 +16,7 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
     manaCost: ['4'],
     types: ['artifact'],
     colors: [],
-    colorIdentity: [],
+    colorIdentity: ['U', 'B', 'R'],
     oracleText: '{T}: Add two mana in any combination of {U}, {B}, and/or {R}.',
     abilities: [
       {
