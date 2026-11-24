@@ -114,6 +114,7 @@ describe('amounts that read an object', () => {
       'cardTypesAmong',
       'differentManaValuesAmong',
       'differentNamesAmong',
+      'creatureTypesAmong',
       'timesAttacked',
       // Issue 81 (Omnath): "for each unspent mana you have".
       'unspentMana',
@@ -155,6 +156,7 @@ describe('amounts that read an object', () => {
       'cardsDrawnThisTurn',
       // CR 122.1: the experience counters a player has.
       'experienceCounters',
+      'partySize',
       // D-638 (CR 601.2i): the instants and sorceries cast this turn.
       'spellsCastThisTurn',
       // D-646 (CR 202.3, 601.2i): the greatest mana value among the spells cast this turn.

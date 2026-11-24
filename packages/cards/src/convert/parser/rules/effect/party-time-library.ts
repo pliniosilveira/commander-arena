@@ -13,7 +13,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrArg, IrFlag, IrNoun, IrNounList } from '../../ir/types';
-import { defineRule, family } from '../registry';
+import { defineRule, family, quietly } from '../registry';
 import { UNTIL_SOURCE_LEAVES } from './angels';
 import { TAKEN_CARD } from './library';
 import { type Clauses, makeClause, single } from './operands';
@@ -234,4 +234,4 @@ export const PARTY_TIME_LIBRARY_EFFECT_RULES = [
   EFFECT_LOOK_EXILE_CAST_ANY_TYPE,
   EFFECT_EXILE_ANY_NUMBER_UNTIL_LEAVES,
   EFFECT_LOOK_TAKE_KINDS,
-];
+].map(quietly);

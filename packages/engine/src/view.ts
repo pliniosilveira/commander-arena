@@ -757,6 +757,12 @@ function specialActionFields(
 function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView {
   const obj = getObject(state, id);
   if (isFaceDownTo(state, obj, viewer)) return faceDownView(state, obj);
+  // CR 602.2b, 702.29a (Cycling): an ability activated from a hand is on the stack while its costs are still to be paid (an {X} is chosen first), and its source card is still in that hand:
+  // nobody but its owner may learn what the card is yet, so the other seats see a face-down placeholder.
+  if (obj.stack?.kind === 'ability' && obj.stack.source !== null) {
+    const from = state.objects[obj.stack.source];
+    if (from?.zone === 'hand' && from.owner !== viewer) return faceDownView(state, obj);
+  }
   const d = derive(state, obj);
   const shown = printedCard(obj);
   const def = shown === null ? null : definitionOf(state, shown);

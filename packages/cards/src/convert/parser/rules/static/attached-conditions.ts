@@ -6,7 +6,7 @@
 import { fail, literal, type Parser, pattern, sequence } from '../../combinators';
 import type { IrCondition, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { KEYWORD_WORD } from '../keyword/list';
-import { defineRule, family } from '../registry';
+import { defineRule, family, quietly } from '../registry';
 import { STATIC_CONDITION } from './conditional';
 
 const PERIOD = pattern(/\./);
@@ -171,4 +171,4 @@ export const STATIC_PREVENT_DAMAGE_TO_ATTACHED = defineRule<IrStatic>({
 export const ATTACHED_CONDITION_STATIC_RULES = [
   STATIC_ATTACHED_KEYWORDS_IF,
   STATIC_PREVENT_DAMAGE_TO_ATTACHED,
-];
+].map(quietly);
