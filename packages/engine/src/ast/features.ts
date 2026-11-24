@@ -783,6 +783,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'retrace',
     // CR 702.133a: Jump-start, cast from the graveyard by discarding a card, then exiled.
     'jumpStart',
+    'undaunted',
     // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
     'aftermath',
     // D-124: Unearth (CR 702.84a).
@@ -3383,6 +3384,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   demonstrate: true,
   retrace: true,
   jumpStart: true,
+  undaunted: true,
   aftermath: true,
   unearth: true,
   encore: true,

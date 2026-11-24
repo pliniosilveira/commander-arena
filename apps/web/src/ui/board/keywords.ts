@@ -83,6 +83,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   demonstrate: ['Dem', 'Demonstrate'],
   retrace: ['Rtr', 'Retrace'],
   jumpStart: ['JmS', 'Jump-start'],
+  undaunted: ['Und', 'Undaunted'],
   aftermath: ['Aft', 'Aftermath'],
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],

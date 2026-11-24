@@ -31,7 +31,7 @@ const sacrifice: Cost = { kind: 'sacrifice', what: { types: ['creature'] } };
 const discard: Cost = { kind: 'discard', count: 1 };
 
 const withChoice = (
-  choice: readonly [readonly Cost[], readonly Cost[]],
+  choice: readonly (readonly Cost[])[],
   more: Partial<{
     additionalCosts: readonly Cost[];
     types: CardDefinition['faces'][number]['types'];

@@ -38,7 +38,7 @@ function game(creature: boolean, extraCard: boolean): ScenarioGame {
 describe('a choice of three additional costs', () => {
   test('all three can be paid: the first way is asked first, and the view lists the three', () => {
     const g = game(true, true);
-    const card = getView(g.state, 0).seats[0]?.hand.find((o) => o.name === TRIO);
+    const card = getView(g.state, 0).seats[0]?.hand?.find((o) => o.name === TRIO);
     expect(card?.additionalCostChoice).toHaveLength(3);
     g.act(0).cast(TRIO);
     const d = confirmOptionalDecision(g);

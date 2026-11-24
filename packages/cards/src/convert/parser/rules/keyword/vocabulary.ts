@@ -50,6 +50,7 @@ export type SimpleKeyword = Extract<
   | 'demonstrate'
   | 'retrace'
   | 'jumpStart'
+  | 'undaunted'
   | 'aftermath'
   | 'rebound'
   | 'readAhead'
@@ -135,6 +136,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['retrace', 'retrace'],
   // CR 702.133a (Jump-start): a printed ability with no parameter, never granted.
   ['jump-start', 'jumpStart'],
+  // CR 702.125a (Undaunted): a printed ability with no parameter, never granted.
+  ['undaunted', 'undaunted'],
   // CR 702.127a (Aftermath): printed on the second half of a split card, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['aftermath', 'aftermath'],
   // CR 702.88a (Rebound): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).

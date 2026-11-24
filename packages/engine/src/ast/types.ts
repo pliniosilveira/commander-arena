@@ -6313,6 +6313,11 @@ export type Keyword =
   /** CR 702.66a (Delve): as Convoke, exiling cards from the caster's graveyard for generic mana only. */
   | { readonly kind: 'delve' }
   /**
+   * CR 702.125a (Undaunted): "This spell costs {1} less to cast for each opponent." A static ability that functions on the stack: a cost reduction of the spell itself by the number
+   * of the caster's opponents still in the game, read as the cost is determined (CR 601.2f).
+   */
+  | { readonly kind: 'undaunted' }
+  /**
    * CR 702.85a (Cascade): "When you cast this spell, exile cards from the top of your library until you
    * exile a nonland card whose mana value is less than this spell's mana value. You may cast that card
    * without paying its mana cost if the resulting spell's mana value is less than this spell's mana value.
