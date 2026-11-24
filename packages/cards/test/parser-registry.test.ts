@@ -207,6 +207,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
   'static.nth-spell-cost-reduction': asIs,
+  'static.first-typed-spell-cost-reduction': asIs,
   'static.pay-life-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
@@ -708,6 +709,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
   ),
   'trigger.opponent-attacks-bare': whenever,
+  'condition.youre-defending-player': permanent(
+    (e) => `Whenever a creature an opponent controls attacks, if ${e}, draw a card.`,
+  ),
   'condition.they-attacked-you': permanent(
     (e) => `Whenever an opponent attacks, if ${e}, draw a card.`,
   ),

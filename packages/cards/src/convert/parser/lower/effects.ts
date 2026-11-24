@@ -3039,6 +3039,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
         kind === 'notDeclaredAttacker' ||
+        kind === 'youAreDefendingPlayer' ||
         kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||

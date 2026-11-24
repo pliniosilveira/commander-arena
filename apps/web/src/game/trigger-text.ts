@@ -435,7 +435,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
             : '';
       // D-151 (CR 500.8): "attacks for the first time each turn", not again in an additional combat phase.
       const first = trigger.firstTimeEachTurn === true ? ' for the first time each turn' : '';
-      return `Whenever ${what} attacks${aim}${trigger.alone ? ' alone' : ''}${first}`;
+      // CR 508.5: "..., if you're the defending player".
+      const defending = trigger.at === 'defendingYou' ? ", if you're the defending player" : '';
+      return `Whenever ${what} attacks${aim}${trigger.alone ? ' alone' : ''}${first}${defending}`;
     }
     case 'dealtDamage': {
       // D-133 (CR 120.3): once for each source that damages the permanent.

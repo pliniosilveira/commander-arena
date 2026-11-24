@@ -254,8 +254,11 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     // Federation Fleet deck, group E (Unification): a card of an artifact-only subtype.
     'you may put a Spacecraft card from your hand or graveyard onto the battlefield',
     'you may put a Vehicle card from your hand onto the battlefield',
+    // Terrain Generator (CR 205.4): the supertype basic.
+    'you may put a basic land card from your hand onto the battlefield tapped',
   ],
   rejects: [
+    'you may put a basic card from your hand onto the battlefield',
     'you may put an artifact card from your hand onto the battlefield under your control',
     'you may put an artifact from your hand onto the battlefield',
     'you may put two artifact cards from your hand onto the battlefield',
@@ -294,6 +297,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
             spanned(
               sequence(
                 pattern(/an? /i),
+                // CR 205.4 (Supertypes): "a basic land card" (Terrain Generator), the supertype basic.
+                optional(literal('basic '), null),
                 many(
                   map(
                     sequence(
@@ -363,7 +368,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         value: [null, tapped.value] as const,
         span: { start: onto.span.start, end: tapped.span.end },
       };
-      const [, subtypes, typeWordsRead, , limit, , zone] = card.value;
+      const [, basic, subtypes, typeWordsRead, , limit, , zone] = card.value;
       // No type word: only the subtypes that belong to no creature ("a Spacecraft card"); otherwise the card words stop where they did before.
       if (
         typeWordsRead.length === 0 &&
@@ -387,6 +392,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
             : {}),
           ...(types.length > 0 ? { types } : {}),
           ...(subtypes.length > 0 ? { subtypes } : {}),
+          ...(basic === null ? {} : { supertypes: ['basic'] }),
           ...(anyPermanent
             ? {
                 anyOf: PERMANENT_CARD_TYPES.map((t): IrFilter => ({ types: [t], raw: t })),

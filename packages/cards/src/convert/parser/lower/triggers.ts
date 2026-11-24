@@ -1517,6 +1517,16 @@ function lowerTriggeredAbility(
     const blocked = missingFeatures(['selector:xInManaCost', 'trigger:activatesAbilityX']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers.splice(0, triggers.length, ...folded);
+  } else if (ifWritten?.test.kind === 'youAreDefendingPlayer') {
+    // "Whenever a creature an opponent controls attacks, if you're the defending player, ..." (Kazuul, CR 508.5, 603.4): whom the creature was declared as attacking is a part of the
+    // event of the one `attacks` trigger, read as the attack is declared (the engine's `at: 'defendingYou'`), not an intervening "if" of its own.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'attacks' || only.at !== undefined) {
+      return failure(ifWritten, []);
+    }
+    const blocked = missingFeatures(['trigger:attacksAt']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers[0] = { ...only, at: 'defendingYou' };
   } else if (ifWritten?.test.kind === 'enteredFromGraveyard') {
     // "Whenever one or more other creatures you control enter, if they entered or were cast from a graveyard, ..." (Twilight Diviner, CR 603.4, 603.6a): the zone each permanent came from
     // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
