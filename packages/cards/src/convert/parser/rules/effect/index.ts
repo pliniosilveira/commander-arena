@@ -714,7 +714,12 @@ const RETURN_TO_HAND = map(
     literal('return '),
     // "return target creature that player controls to its owner's hand" (Sigil of Sleep, CR 115.1, 109.4, 400.3): the permanents of the player of the trigger.
     operands(
-      [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+      [
+        ...SELF_OR_PERMANENT_OPERANDS,
+        'noun.target-permanent-of-that-player',
+        // "return target spell you don't control to its owner's hand" (Hullbreaker Horror, CR 405.1, 108.3): a spell on the stack goes to its owner's hand.
+        'noun.target-spell',
+      ],
       'effect.return',
     ),
     spanned(OWNERS_HAND),
@@ -972,6 +977,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return target creature card from an opponent's graveyard to the battlefield tapped",
     "return ~ to its owner's hand",
     "return target creature that player controls to its owner's hand",
+    "return target spell you don't control to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",

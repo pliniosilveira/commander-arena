@@ -47,7 +47,7 @@ const TARGET_SPELL_OR_ABILITY = node<RegExpExecArray, IrNoun>(
 /** "target spell or ability" with no condition, for "change a target of ... to ~" (CR 115.7b): any number of targets. */
 const ANY_TARGET_SPELL_OR_ABILITY = node<RegExpExecArray, IrNoun>(
   'effect.change-target',
-  pattern(new RegExp(`target spell or ability(?= to ~)`, 'iu')),
+  pattern(/target spell or ability(?= to ~)/iu),
   (m): Omit<IrNoun, 'span' | 'rule'> => ({
     kind: 'noun',
     det: 'target',
