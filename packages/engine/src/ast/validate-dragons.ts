@@ -641,11 +641,20 @@ export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[])
         'a trigger that works from the graveyard is not a cast trigger of the spell itself',
       );
     }
+  } else if (a.kind === 'replacement') {
+    // CR 113.6b, 614.12 (Dearly Departed): the permanents that enter are not the card, so a group replacement may work from the graveyard.
+    if (a.replacement?.kind !== 'othersEnterWithCounters') {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        `a replacement that works from the graveyard is a group that enters with counters, not ${String(a.replacement?.kind)}`,
+      );
+    }
   } else {
     issue(
       out,
       `${path}.functionsIn`,
-      'only a static or a triggered ability works from the graveyard here',
+      'only a static, a replacement or a triggered ability works from the graveyard here',
     );
   }
 }

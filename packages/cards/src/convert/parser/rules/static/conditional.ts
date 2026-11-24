@@ -326,6 +326,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     // Stage P34 (D-152): the ability of a card in its owner's graveyard, and what ~ is while permanents entered this turn.
     'As long as this card is in your graveyard and you control a Mountain, creatures you control have haste.',
     'As long as this card is in your graveyard, creatures you control get +1/+0.',
+    // Dearly Departed (CR 113.6b, 614.12): a group that enters with counters, working from the graveyard.
+    'As long as ~ is in your graveyard, each Human creature you control enters with an additional +1/+1 counter on it.',
     'As long as two or more nonland permanents entered the battlefield under your control this turn, ~ is a Dragon with base power and toughness 4/4, flying, and "{R}: Dragons you control get +1/+0 until end of turn."',
     'As long as a creature entered the battlefield under your control this turn, ~ is an Elf with base power and toughness 2/2.',
     // D-427 (Danitha group 3): what an Aura gives while the creature is of a color, while another Aura is on it, or the turn it entered.
@@ -345,6 +347,9 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',
     'As long as this card is in your graveyard, you control a Mountain, creatures you control have haste.',
     'As long as this card is in your hand, creatures you control have haste.',
+    'As long as ~ is in your hand, each Human creature you control enters with an additional +1/+1 counter on it.',
+    'As long as ~ is in your graveyard and you control a Mountain, each Human creature you control enters with an additional +1/+1 counter on it.',
+    'As long as ~ is in your graveyard, each Human creature enters with an additional +1/+1 counter on it.',
     'As long as this card is in your graveyard or you control a Mountain, creatures you control have haste.',
     'As long as two or more nonland permanents entered the battlefield under your control this turn, ~ is a Dragon.',
     'As long as you control your commander, ~ gets +2/+2',
@@ -396,7 +401,7 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     }
     // "As long as this card is in your graveyard and you control a Mountain, ..." (stage P34, D-152, CR 113.6b): the ability works from the
     // graveyard, which the engine says as `functionsIn`; what follows "and" is the condition of the engine.
-    const grave = literal('this card is in your graveyard')(ctx, lead.pos);
+    const grave = pattern(/(?:this card|~) is in your graveyard/iu)(ctx, lead.pos);
     let condition: IrCondition | undefined;
     let at: number;
     if (grave.ok) {
@@ -414,6 +419,26 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
       if (!head.ok) return head;
       condition = head.value[0];
       at = head.pos;
+    }
+    // Dearly Departed (CR 113.6b, 614.12): "As long as ~ is in your graveyard, each Human creature you control enters with an additional +1/+1 counter on it.": a group of permanents
+    // that enter with counters, a replacement of the card that works from the graveyard (`functionsIn`).
+    if (grave.ok && condition === undefined) {
+      const enters = family<IrStatic>('static', { only: ['static.others-enter-with-counters'] })(
+        ctx,
+        at,
+      );
+      if (enters.ok) {
+        return {
+          ok: true,
+          value: {
+            ...enters.value,
+            functionsIn: 'graveyard' as const,
+            span: { start: pos, end: enters.pos },
+            rule: 'static.conditional-prefix',
+          },
+          pos: enters.pos,
+        };
+      }
     }
     const tax = family<IrStatic>('static', { only: ['static.attack-tax'] })(ctx, at);
     if (tax.ok) {

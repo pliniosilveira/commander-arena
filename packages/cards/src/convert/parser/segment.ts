@@ -173,6 +173,30 @@ function insideSpellTypeList(text: string, at: number): boolean {
   );
 }
 
+const ABILITY_KIND = '(?:artifact|creature|land|enchantment|planeswalker)';
+
+/**
+ * Whether the comma at `at` belongs to the trigger condition "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability" (Harsh Mentor, CR 602.2,
+ * 603.4): a comma between the kinds of permanent, or the one before the intervening "if it isn't a mana ability". The comma after "mana ability" is the one that ends the trigger.
+ */
+function insideActivationKindList(text: string, at: number): boolean {
+  const before = text.slice(Math.max(0, at - 110), at);
+  const after = text.slice(at, at + 90);
+  const head = new RegExp(
+    `activates? an ability of an? ${ABILITY_KIND}(?:, ${ABILITY_KIND})*$`,
+    'iu',
+  );
+  const tail = new RegExp(
+    `^, (?:${ABILITY_KIND}, )*(?:or )?${ABILITY_KIND} on the battlefield, if it`,
+    'iu',
+  );
+  const ifClause = /activates? an ability of an? [a-z, ]+ on the battlefield$/iu;
+  return (
+    (head.test(before) && tail.test(after)) ||
+    (ifClause.test(before) && /^, if it (?:isn['’]t|is not) a mana ability,/iu.test(after))
+  );
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -197,6 +221,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       !insideGraveyardEventList(text, i) &&
       // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
       !insideSpellTypeList(text, i) &&
+      // Harsh Mentor (CR 602.2, 603.4): "an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability, ...": the commas of the condition are not its end.
+      !insideActivationKindList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {

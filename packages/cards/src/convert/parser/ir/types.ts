@@ -629,7 +629,12 @@ export type IrAmount =
   // "the greatest power among those creatures" of an attack batch trigger (CR 508.1): the creatures the declaration of the trigger held
   | { readonly kind: 'attackersGreatestPower'; readonly span: Span }
   // "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3)
-  | { readonly kind: 'commanderManaValue'; readonly span: Span }
+  /** `zones`: "a commander you own on the battlefield or in the command zone" (Visions of Glory, CR 903.3, 108.3): only the commanders in these zones. */
+  | {
+      readonly kind: 'commanderManaValue';
+      readonly zones?: readonly ('battlefield' | 'command')[];
+      readonly span: Span;
+    }
   // "for each time you've cast your commander from the command zone this game" (stage P68, D-229, CR 903.8)
   | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
@@ -706,6 +711,7 @@ export type IrAmount =
         | 'discardedMost'
         | 'discardedTypeCount'
         | 'exiledCreatures'
+        | 'exiledCreatureCards'
         | 'damageDealt'
         | 'excessDamageDealt'
         | 'countersRemoved'
@@ -1856,7 +1862,13 @@ export type IrStaticEffect =
    * {1} less to cast" (stage P13, CR 118.7, 601.2f): `amount` generic mana less. The statement's
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
-  | { readonly kind: 'costReduction'; readonly amount: IrAmount; readonly inCommandZone?: true }
+  | {
+      readonly kind: 'costReduction';
+      readonly amount: IrAmount;
+      readonly inCommandZone?: true;
+      /** "~ costs {X} less to cast this way" (Visions of Glory, CR 702.34a): the reduction is for the flashback cost only. */
+      readonly thisWay?: 'flashback';
+    }
   /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
   | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off

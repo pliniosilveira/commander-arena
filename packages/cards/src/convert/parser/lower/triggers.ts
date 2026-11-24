@@ -340,6 +340,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: 'dealtDamageToPlayer', who: t.damaged });
     }
+    case 'damageToPlayerPrevented': {
+      // "Whenever damage that would be dealt to you is prevented" (Selfless Squire, CR 615.6, 603.2c): damage to a player a prevention effect prevented, once for each source.
+      if (t.damaged !== 'you' && t.damaged !== 'opponent' && t.damaged !== 'player') {
+        return failure(t);
+      }
+      const missing = missingFeatures(['trigger:damageToPlayerPrevented']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'damageToPlayerPrevented', who: t.damaged });
+    }
     case 'noncombatDamageDealt': {
       // "Whenever a source you control deals noncombat damage to an opponent" (issue 25, D-333, CR 120.2b, 603.2c): whose source it is and which player it damaged.
       if (t.by === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
@@ -895,7 +904,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       only.event === 'combatDamageBatch' ||
       only.event === 'damageBatch' ||
       only.event === 'noncombatDamageDealt' ||
-      only.event === 'playerDealtDamage') &&
+      only.event === 'playerDealtDamage' ||
+      only.event === 'damageToPlayerPrevented') &&
       only.recipient !== undefined);
   // The beginning of a step of another player's turn (CR 102.1: the active player is the player whose turn it is; CR 603.2b): "that player" is the active player, the engine's occurrence player of
   // `step`, `upkeep` and `endStep` (the beginning of your own step was answered above: "you").
@@ -1129,6 +1139,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       e.event === 'lifeGained' ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
+      e.event === 'damageToPlayerPrevented' ||
       // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.
       e.event === 'dealsCombatDamage' ||
       e.event === 'dealsDamage',
@@ -2017,6 +2028,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:lifeLost',
   'trigger:noncombatDamageDealt',
   'trigger:dealtDamageToPlayer',
+  'trigger:damageToPlayerPrevented',
   'trigger:countersAdded',
   'trigger:attackBatch',
   'trigger:unblockedAttackBatch',

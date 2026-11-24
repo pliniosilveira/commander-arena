@@ -713,6 +713,11 @@ export function runInstruction(
       hidden.objects[result.newObject]?.zone === 'exile'
         ? instruction.exiledPower
         : undefined;
+    // CR 608.2c (Grey Host Reinforcements): a creature card that really went to exile counts, "the number of creature cards exiled this way".
+    const countedCreatureCard =
+      instruction.countsCreatureCard === true &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'exile';
     // CR 608.2c (Mass Polymorph: "that many creature cards"): every creature the `exile` effect really exiled counts, a token included (it is exiled, then ceases to exist, CR 111.7).
     const exiledCreature =
       instruction.exiledPower !== undefined &&
@@ -724,12 +729,17 @@ export function runInstruction(
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland || countedReturned || exiledPower !== undefined || exiledCreature
+      ...(countedNonland ||
+      countedReturned ||
+      countedCreatureCard ||
+      exiledPower !== undefined ||
+      exiledCreature
         ? {
             thisWay: {
               ...(countedNonland ? { exiledNonland: 1 } : {}),
               ...(countedReturned ? { returned: 1 } : {}),
               ...(exiledCreature ? { exiledCreatures: 1 } : {}),
+              ...(countedCreatureCard ? { exiledCreatureCards: 1 } : {}),
               ...(exiledPower === undefined
                 ? {}
                 : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),
@@ -1258,7 +1268,12 @@ function runEffect(
                   },
                 }
               : {};
-          return { ...i, ...link, ...lost };
+          // CR 608.2c (Grey Host Reinforcements): a creature card, in a graveyard or anywhere else, is counted when it really goes to exile; a token is not a card.
+          const creatureCard =
+            obj !== undefined && obj.token === null && derive(state, obj).types.includes('creature')
+              ? { countsCreatureCard: true as const }
+              : {};
+          return { ...i, ...link, ...lost, ...creatureCard };
         }),
       );
       return moving(together.state, together.instructions);

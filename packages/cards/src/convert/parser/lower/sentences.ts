@@ -2263,6 +2263,9 @@ function countsWhatHappened(
           word === 'permanent' ||
           names(earlier.args.objects).every((n) => n === word))
       );
+    case 'exiledCreatureCards':
+      // Grey Host Reinforcements (CR 608.2c): "the number of creature cards exiled this way": an `exile` before it in the same text.
+      return earlier.verb === 'exile';
     case 'exiledCreatures':
       // Issue 81 (Sunfall): "where X is the number of creatures exiled this way": an `exile` before it in the same text.
       return earlier.verb === 'exile';

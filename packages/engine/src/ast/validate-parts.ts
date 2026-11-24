@@ -2004,6 +2004,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
+  exiledCreatureCards: 'an exile effect',
   discardedTypeCount: 'a discard effect',
 };
 
@@ -2055,7 +2056,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     return ['countersRemoved'];
   }
   // Oversimplify: the creatures an exile really exiled, by controller.
-  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
+  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures', 'exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -2456,7 +2457,21 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.colors === undefined) issue(out, `${path}.colors`, 'devotion needs at least one color');
       break;
     case 'commanderColors':
+      break;
     case 'commanderManaValue':
+      // CR 903.3, 108.3 (Visions of Glory): the zones the commanders must be in: the battlefield and/or the command zone.
+      if (
+        a.zones !== undefined &&
+        (!Array.isArray(a.zones) ||
+          a.zones.length === 0 ||
+          a.zones.some((z) => z !== 'battlefield' && z !== 'command'))
+      ) {
+        issue(
+          out,
+          `${path}.zones`,
+          'the zones of a commander are the battlefield and the command zone',
+        );
+      }
       break;
     case 'commanderCasts':
       // CR 903.8: "they've cast": the player a selector names, which may be a target of the effect.
@@ -3077,6 +3092,9 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
+    if ((amount as { zones?: unknown }).zones !== undefined) {
+      issue(out, path, 'a static power or toughness reads every commander, not those in a zone');
+    }
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not a commander');
     }

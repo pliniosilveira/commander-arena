@@ -803,9 +803,12 @@ function lowerCostReduction(
   amount: Extract<IrStaticEffect, { kind: 'costReduction' }>['amount'],
   ctx: LowerContext,
   inCommandZone?: true,
+  thisWay?: 'flashback',
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', 'static:costReduction']);
+  // Visions of Glory (CR 702.34a): "this way" is the spell's own reduction, for its flashback cost.
+  if (thisWay !== undefined && subject.det !== 'self') return failure(subject);
   if (missing.length > 0) return failure(ability, missing);
   const lowered = lowerAmount(amount, ctx, ability.rule);
   if (!lowered.ok) return lowered;
@@ -834,6 +837,7 @@ function lowerCostReduction(
           amount: lowered.value,
           // Eminence (issue 81, CR 113.6): the reduction works in the command zone too.
           ...(inCommandZone === true ? { inCommandZone: true as const } : {}),
+          ...(thisWay === undefined ? {} : { forAlternative: thisWay }),
         },
       },
     ],
@@ -1346,7 +1350,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with
   // a condition the engine reads as the total cost is determined (not by `derive`, so it may compare a power).
   if (first.kind === 'costReduction' && statement.condition !== undefined) {
-    if (more.length > 0 || statement.subject.det !== 'self') return failure(ability);
+    if (more.length > 0 || statement.subject.det !== 'self' || first.thisWay !== undefined) {
+      return failure(ability);
+    }
     const lowered = lowerCondition(statement.condition, false, ctx);
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
@@ -1436,7 +1442,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
-    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone);
+    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone, first.thisWay);
   }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')

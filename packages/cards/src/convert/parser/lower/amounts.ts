@@ -611,7 +611,15 @@ export function lowerAmount(
       // CR 903.3, 202.3 (stage P32, D-147): the greatest mana value among the controller's commanders, in any zone, as printed.
       const blocked = needs('commanderManaValue');
       if (blocked !== null) return blocked;
-      return { ok: true, value: { kind: 'commanderManaValue' }, rule };
+      // Visions of Glory (CR 903.3, 108.3): "a commander you own on the battlefield or in the command zone": only the commanders in those zones.
+      return {
+        ok: true,
+        value: {
+          kind: 'commanderManaValue',
+          ...(amount.zones === undefined ? {} : { zones: amount.zones }),
+        },
+        rule,
+      };
     }
     case 'commanderCasts': {
       // CR 903.8 (stage P68, D-229): the times the controller's commanders were cast from the command zone.
@@ -1022,6 +1030,8 @@ export function lowerStaticAmount(
   rule: string,
 ): LowerResult<StaticPtAmount> {
   if (amount.kind === 'commanderManaValue') {
+    // A static power or toughness reads every commander, not those in a zone (the engine refuses it).
+    if (amount.zones !== undefined) return { ok: false, needs: [], at: amount.span, rule };
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderManaValue' }, rule } : lowered;
   }

@@ -399,6 +399,19 @@ function occurrences(
             },
           ]
         : [];
+    case 'damageToPlayerPrevented':
+      // CR 615.6, 603.2c: damage that would be dealt to a player and was prevented, once for each source and each player; `amount` is the part prevented.
+      return event.kind === 'damagePrevented' && event.to.kind === 'player' && event.amount > 0
+        ? [
+            {
+              subject: event.source,
+              seat: null,
+              damaged: event.to,
+              damage: event.amount,
+              player: event.to.seat,
+            },
+          ]
+        : [];
     case 'noncombatDamageDealt':
       // CR 120.2b, 603.2c (D-333): one occurrence for each source and each player it damages. Damage that was prevented entirely, or is 0, has no
       // `damageDealt` event (CR 603.2g); the controller of the source is read as it is or as it last was (CR 113.7a).
@@ -1176,6 +1189,7 @@ function matches(
       // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants).
       return trigger.to === 'player' || damaged.seat !== candidate.controller;
     }
+    case 'damageToPlayerPrevented':
     case 'dealtDamageToPlayer': {
       const damaged = occ.damaged;
       if (damaged?.kind !== 'player') return false;
@@ -1253,6 +1267,8 @@ function isRelevant(event: GameEvent): boolean {
       );
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
+    case 'damagePrevented':
+      return true; // CR 615.6 (Selfless Squire): "whenever damage that would be dealt to you is prevented"
     case 'scried':
     case 'surveiled':
     case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"

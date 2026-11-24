@@ -590,6 +590,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'noncombatDamageDealt',
     // CR 120.2: "Whenever you're dealt damage" (Sun Droplet).
     'dealtDamageToPlayer',
+    // CR 615.6: "Whenever damage that would be dealt to you is prevented" (Selfless Squire).
+    'damageToPlayerPrevented',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -3253,6 +3255,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   dealsDamage: true,
   noncombatDamageDealt: true,
   dealtDamageToPlayer: true,
+  damageToPlayerPrevented: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,

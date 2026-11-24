@@ -1628,6 +1628,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'damageToPlayerPrevented':
     case 'dealtDamageToPlayer':
       if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1704,6 +1705,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'dealtDamageToPlayer' ||
+    t?.kind === 'damageToPlayerPrevented' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
@@ -2041,6 +2043,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       break;
     case 'replacement':
       checkReplacement(a.replacement, `${path}.replacement`, out);
+      checkGraveyardAbility(a, path, out);
       break;
     case 'level':
       // CR 716.2a (D-235): the abilities a class level bar adds from level `level` on: two or more of them is not a thing, a nested bar is not either.
@@ -2778,6 +2781,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   checkArtifactsFace(face, path, out);
   checkDinosaursFace(face, path, out);
   checkDragonsFace(face, path, out);
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is for a flashback cost the face has.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'static' &&
+      a.static?.kind === 'costReduction' &&
+      a.static.forAlternative === 'flashback' &&
+      !face.abilities.some((k) => k?.kind === 'keyword' && k.keyword?.kind === 'flashback')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].static.forAlternative`,
+        'a reduction for the flashback cost needs the flashback keyword on the face',
+      );
+    }
+  });
   // CR 702.165a (D-230): Backup gives the abilities printed below it as they are: a static or replacement ability there would not be given, so the face is refused.
   const backupAt = face.abilities.findIndex(
     (a) => a?.kind === 'keyword' && a.keyword?.kind === 'backup',
