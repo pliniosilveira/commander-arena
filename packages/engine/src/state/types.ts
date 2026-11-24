@@ -1521,6 +1521,8 @@ export type Instruction =
       readonly among?: readonly ObjectId[];
       /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
       readonly anyOwner?: true;
+      /** "A creature card from a graveyard" (`ChooseSelector.anyGraveyard`): the candidates are the matching cards of every player's graveyard. */
+      readonly anyGraveyard?: true;
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
       readonly minCardTypes?: number;

@@ -4544,6 +4544,24 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
       'fromAnyGraveyard is true and only with fromMoved (issue 159)',
     );
   }
+  // CR 404.1, 608.2d (Extract from Darkness): "a creature card from a graveyard": the cards of every graveyard; the destination is checked with the move.
+  if (sel.anyGraveyard !== undefined) {
+    if (
+      sel.anyGraveyard !== true ||
+      sel.filter?.zone !== 'graveyard' ||
+      sel.fromMoved === true ||
+      sel.alsoGraveyard === true ||
+      sel.eachGraveyard === true ||
+      sel.fromHandOf !== undefined ||
+      sel.chosenBy !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.anyGraveyard`,
+        "anyGraveyard is true, a choice of cards of zone 'graveyard' that is not among moved cards, not from the hand or each graveyard and not chosen by an opponent",
+      );
+    }
+  }
   // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
   if (sel.alsoGraveyard !== undefined) {
     if (sel.alsoGraveyard !== true) {
@@ -6902,6 +6920,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.to`,
             "a card chosen from another player's hand is put onto the battlefield",
+          );
+        }
+        if ((e.objects as ChooseSelector).anyGraveyard === true && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'a card chosen from any graveyard is put onto the battlefield (Extract from Darkness)',
           );
         }
         if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {

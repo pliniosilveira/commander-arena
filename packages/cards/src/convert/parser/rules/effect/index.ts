@@ -209,6 +209,7 @@ import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
+import { PUT_ANY_GRAVEYARD_EFFECT_RULES } from './put-any-graveyard';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -1408,6 +1409,7 @@ export const EFFECT_RULES = [
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
   ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
   ...OPPONENT_GRAVEYARD_CAST_EFFECT_RULES,
+  ...PUT_ANY_GRAVEYARD_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,

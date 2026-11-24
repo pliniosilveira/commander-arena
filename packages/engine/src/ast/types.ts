@@ -2257,6 +2257,12 @@ export interface ChooseSelector {
    */
   readonly fromAnyGraveyard?: true;
   /**
+   * "Then you put a creature card from a graveyard onto the battlefield under your control" (Extract from Darkness, CR 608.2d, 404.1, 110.2a): the candidates are the matching cards in
+   * every player's graveyard (the controller chooses, the cards are not only theirs). Only for `moveToZone` onto the battlefield, with `filter.zone` `graveyard`, and not with `fromMoved`,
+   * `alsoGraveyard`, `eachGraveyard`, `fromHandOf` or `chosenBy`.
+   */
+  readonly anyGraveyard?: true;
+  /**
    * "Put a land card from your hand or graveyard onto the battlefield" (Galadriel deck, group 2, D-544, CR 608.2d, 110.2a): the candidates are the matching cards of the
    * controller's hand and of their graveyard together (the filter's `zone` is `hand`, the graveyard is the one added). Only for `moveToZone` onto the battlefield, with
    * `filter.zone` `hand` and no `fromMoved`. The question is the `chooseCards` of purpose `move`, which lists both places.
