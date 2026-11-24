@@ -1653,11 +1653,12 @@ function lowerTriggeredAbility(
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
+  // Haunted One (CR 603.2e): a creature that "becomes tapped" is an ability about the creature itself as well; "it" is the creature that has the ability.
   ctx.selfEntersOrAttacksTrigger =
     triggers.length > 0 &&
     triggers.every(
       (t) =>
-        (t.kind === 'attacks' || t.kind === 'entersBattlefield') &&
+        (t.kind === 'attacks' || t.kind === 'entersBattlefield' || t.kind === 'becomesTapped') &&
         'kind' in t.what &&
         t.what.kind === 'this',
     );

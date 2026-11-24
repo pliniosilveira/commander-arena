@@ -241,6 +241,7 @@ import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
+import { TYPE_SHARERS_EFFECT_RULES } from './type-sharers';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VALIGARMANDA_EFFECT_RULES } from './valigarmanda';
@@ -1476,6 +1477,8 @@ export const EFFECT_RULES = [
   ...HASHATON_G5_EFFECT_RULES,
   // Stage P50 (D-207): "remove all counters from it".
   ...VRASKA_EFFECT_RULES,
+  // Haunted One: "it and other creatures you control that share a creature type with it each get +2/+0 and gain undying until end of turn".
+  ...TYPE_SHARERS_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
   // D-270: "return the exiled cards to their owners' hands" (Angel of Serenity).

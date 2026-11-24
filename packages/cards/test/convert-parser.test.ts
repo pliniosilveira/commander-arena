@@ -995,6 +995,7 @@ describe('unmatched abilities', () => {
       'effect.target-becomes-copy',
       'effect.gain-each-of-two',
       'effect.copy-each',
+      'effect.gain-it-and-type-sharers',
       'effect.do-once-each-turn',
       'effect.pay-x-at-most',
       'effect.return-exiled-cards-to-hand',
