@@ -62,7 +62,12 @@ import {
   runRestrictGroup,
 } from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
+import {
+  runExchangeControl,
+  runExchangeControlOfAll,
+  runGainControl,
+  runReturnControl,
+} from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -4221,6 +4226,10 @@ function runEffect(
     case 'exchangeControl':
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).
       return runExchangeControl(state, effect, ctx, targets);
+
+    case 'exchangeControlOfAll':
+      // CR 701.12a, 613.1b: the two groups change hands together (`rules/control-effects.ts`).
+      return runExchangeControlOfAll(state, effect, ctx, targets);
 
     case 'removeCounters': {
       // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.

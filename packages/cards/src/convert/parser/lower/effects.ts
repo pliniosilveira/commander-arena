@@ -58,7 +58,7 @@ import {
   RESTRICT,
   SET_PT,
 } from './continuous';
-import { GAIN_CONTROL } from './control';
+import { EXCHANGE_CONTROL_OF_ALL, GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
 import { COPY_CAST_PAYING_LOWERINGS } from './copy-cast-paying';
@@ -2994,6 +2994,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   BECOMES_LOSES_ALL,
   GIVE_POISON,
   GAIN_CONTROL,
+  EXCHANGE_CONTROL_OF_ALL,
 ];
 
 const BY_VERB = new Map(EFFECT_LOWERINGS.map((l) => [l.head, l]));

@@ -4550,6 +4550,19 @@ export type Effect =
       readonly second: ObjectSelector;
     }
   /**
+   * "You and that opponent each gain control of all creatures the other controls until end of turn." (CR 701.12a, 613.1b, 611.2a, 611.2c): `objects` is an `each` selector naming a
+   * kind of permanent; `player` names one other player (a target, or the player an earlier instruction named). The permanents it names that the controller of the effect controls
+   * go to that player and the ones that player controls go to the controller, both groups fixed as the effect begins and exchanged at the same moment (a layer 2 effect for each
+   * permanent, with `duration`: the turn, or no duration). Permanents of any other player are left alone. Afterwards `moved` names every permanent exchanged ("those creatures").
+   * A permanent that changed controller leaves combat (CR 506.4). The same player twice does nothing.
+   */
+  | {
+      readonly kind: 'exchangeControlOfAll';
+      readonly objects: ObjectSelector;
+      readonly player: PlayerSelector;
+      readonly duration: Duration;
+    }
+  /**
    * "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1, 122.2; Galadriel group 3): each permanent `objects` names loses `count` counters of the
    * kind `counter`, or all it has when it has fewer (nothing happens for a number of 0 or a permanent with none, and an event is emitted only when a counter came off). A planeswalker
    * with no loyalty counter left is put into its owner's graveyard by the state-based actions (CR 704.5i).

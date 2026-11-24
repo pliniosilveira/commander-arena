@@ -957,6 +957,7 @@ describe('unmatched abilities', () => {
       'effect.gain-control',
       'effect.gain-control-for-player',
       'effect.control-while-remains',
+      'effect.exchange-control-of-all',
       'effect.vote',
       'effect.ring-tempts',
       'effect.exchange-life-pt',
