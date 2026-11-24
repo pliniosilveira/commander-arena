@@ -720,6 +720,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
   ],
   examples: [
     'equal to the amount of life you gained this turn',
+    'equal to the number of creatures in your party',
     'equal to the number of nontoken creatures you had enter the battlefield under your control this turn',
     'equal to the greatest power among creatures you control',
     'equal to the total power of creatures you control',
@@ -778,7 +779,6 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to half the number of creatures you control',
     'equal to half the number of creatures you control, rounded',
     'equal to the number of creatures you control plus',
-    'equal to the number of creatures in your party',
     'equal to the number of creatures you control plus 1',
     'equal to the number of cards in your hand plus the number of lands you control minus',
     'equal to the number of cards in your hand plus the number of lands you control minus 0',

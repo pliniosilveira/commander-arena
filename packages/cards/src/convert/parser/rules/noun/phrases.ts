@@ -1117,7 +1117,7 @@ export function graveyardPhrase(
     preposition === 'sharedZone'
       ? // Thwart the Grave: "Return target creature card and up to one target Cleric creature card from your graveyard": the first card has no zone words of its own, the last
         // one's "from ..." says where both lie. The caller gives the first the owner of the last.
-        map(pattern(/(?= and (?:up to one )?target )/i), () => undefined)
+        map(literal(''), () => undefined)
       : preposition === 'fromTheirs'
         ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
           // graveyard, so no owner. The caller reads it only after "each player".

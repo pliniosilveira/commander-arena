@@ -450,17 +450,8 @@ export const NOUN_TARGET_GRAVEYARD_CARD_SHARED_ZONE = defineRule<IrNoun>({
   family: 'noun',
   leading: [],
   cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
-  examples: [
-    'target creature card and up to one target Cleric creature card',
-    'target creature card and target land card',
-  ],
-  rejects: [
-    'target creature card',
-    'target creature card from your graveyard and target land card',
-    'target creature and target land card',
-    'creature card and target land card',
-    'target card or target land card',
-  ],
+  examples: ['target creature card', 'target Cleric creature card', 'two target creature cards'],
+  rejects: ['target creature', 'creature card', 'target land', 'two target creature'],
   parse: targetOf('noun.target-graveyard-card-shared-zone', (plural) =>
     graveyardPhrase(plural, 'sharedZone'),
   ),

@@ -1561,6 +1561,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
+  // The party (CR 700.8).
+  'condition.full-party': permanent(
+    (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,
+  ),
+  'amount.for-each-party-creature': permanent(
+    (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
+  ),
+  'static.self-also-types': asIs,
+  'noun.target-graveyard-card-shared-zone': spell(
+    (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {
