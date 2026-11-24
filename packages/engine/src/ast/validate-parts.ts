@@ -3709,12 +3709,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'attackersAttackedYou':
-      // D-149: read from the declaration of the attack event, so only a conditional effect of an attackBatch trigger.
-      issue(
-        out,
-        path,
-        'attackersAttackedYou is only valid in a conditional effect of an attackBatch trigger (D-149)',
-      );
+      // D-149: read from the declaration of the attack event. Only a conditional effect of an attackBatch trigger has it (the conditional effect check below), or, CR 603.4 (Mirkwood
+      // Trapper: "if they aren't attacking you"), the intervening "if" of one, which `validateCard` checks with the trigger (validate.ts).
+      if (!path.endsWith('interveningIf') && !path.includes('interveningIf.')) {
+        issue(
+          out,
+          path,
+          'attackersAttackedYou is only valid in a conditional effect or the intervening "if" of an attackBatch trigger (D-149)',
+        );
+      }
       break;
     case 'didPrevious':
     case 'thisWayAtLeast':
@@ -5593,10 +5596,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
+      // CR 608.2d (Mirkwood Trapper): "that player chooses": a player other than the controller makes the choice; the permanents are not limited to the controller's.
+      if (e.chooser !== undefined) checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
       // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
       // controller's own permanents.
       // Zack Fair (CR 113.7a): "attach an Equipment that was attached to ~" is a forced choice among the objects that were attached to the sacrificed permanent, whoever controls them.
       if (
+        e.chooser === undefined &&
         e.filter.controller !== 'you' &&
         !(e.filter.controller === undefined && e.exactly !== true) &&
         !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')

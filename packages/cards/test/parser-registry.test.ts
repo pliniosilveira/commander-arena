@@ -1095,6 +1095,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.enchanted-player-attacked': whenever,
+  'trigger.player-attacks-you': whenever,
+  'trigger.player-attacks-bare': whenever,
+  'condition.they-arent-attacking-you': permanent(
+    (e) => `Whenever a player attacks, if ${e}, draw a card.`,
+  ),
+  'effect.that-player-chooses-attacking-creature': permanent(
+    (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
+  ),
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),

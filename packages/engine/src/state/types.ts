@@ -1145,6 +1145,8 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly count: number;
       readonly exactly?: true;
+      /** The player who chooses (`chooseObjects.chooser`): the controller of the effect when absent. */
+      readonly seat?: SeatId;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**

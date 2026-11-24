@@ -343,3 +343,14 @@ describe('spells with {X} in their mana cost (Quandrix Unlimited group E)', () =
     ).toBeNull();
   });
 });
+
+describe('"Whenever a player attacks you" (Mirkwood Trapper, CR 508.1b)', () => {
+  test('is said as it is, not as an attack at anyone', () => {
+    expect(
+      triggerWording({ kind: 'attackBatch', who: 'any', atLeast: 1, attackedYou: true }, ctx),
+    ).toBe('Whenever a player attacks you');
+    expect(triggerWording({ kind: 'attackBatch', who: 'any', atLeast: 1 }, ctx)).toBe(
+      'Whenever one or more creatures attack',
+    );
+  });
+});

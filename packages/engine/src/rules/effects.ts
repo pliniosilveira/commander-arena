@@ -286,7 +286,7 @@ export function runInstruction(
       front: [],
       needs: {
         kind: 'choosePermanent',
-        seat: res.controller,
+        seat: instruction.seat ?? res.controller,
         source: res.object,
         purpose: 'effect',
         min: instruction.exactly === true ? max : 0,
@@ -916,7 +916,13 @@ function runEffect(
   let next = state;
 
   switch (effect.kind) {
-    case 'chooseObjects':
+    case 'chooseObjects': {
+      // CR 608.2d (Mirkwood Trapper): "that player chooses": a player the effect names makes the choice; with none left in the game nothing is chosen.
+      let chooser: SeatId | undefined;
+      if (effect.chooser !== undefined) {
+        [chooser] = resolvePlayers(state, effect.chooser, ctx, targets);
+        if (chooser === undefined) return done(state);
+      }
       return done(
         state,
         [],
@@ -927,10 +933,12 @@ function runEffect(
             filter: effect.filter,
             count: effect.count,
             ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ...(chooser === undefined ? {} : { seat: chooser }),
             chosen: null,
           },
         ],
       );
+    }
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
       return done(

@@ -197,6 +197,7 @@ import {
   EFFECT_PLAYER_PROTECTION,
   EFFECT_SHUFFLE,
 } from './player';
+import { PLAYER_CHOOSES_ATTACKER_EFFECT_RULES } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
@@ -1526,6 +1527,8 @@ export const EFFECT_RULES = [
   ...PUMP_THOSE_EFFECT_RULES,
   ...PUMP_UNBLOCKABLE_EFFECT_RULES,
   ...COPY_CHOSEN_TOKEN_EFFECT_RULES,
+  // Mirkwood Trapper: "that player chooses an attacking creature".
+  ...PLAYER_CHOOSES_ATTACKER_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".
