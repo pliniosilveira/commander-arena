@@ -506,6 +506,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes monstrous`;
     }
+    case 'milled': {
+      // CR 701.17a, 603.2c: "Whenever a player mills one or more creature cards"; a filter the words do not cover leaves the trigger unsaid.
+      const who =
+        trigger.who === 'you' ? 'you' : trigger.who === 'opponent' ? 'an opponent' : 'a player';
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const said = base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards');
+      return `Whenever ${who} mill${trigger.who === 'you' ? '' : 's'} ${said}`;
+    }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =

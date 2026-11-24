@@ -221,6 +221,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   activatesAbility: { kind: 'activatesAbility', who: 'you' },
   scries: { kind: 'scries', who: 'you' },
   surveils: { kind: 'surveils', who: 'you' },
+  milled: { kind: 'milled', who: 'any', filter: { types: ['creature'] } },
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
   winsCoinFlip: { kind: 'winsCoinFlip', who: 'you' },
   upkeep: { kind: 'upkeep', whose: 'you' },

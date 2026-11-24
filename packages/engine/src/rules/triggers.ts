@@ -107,6 +107,8 @@ interface Occurrence {
   readonly fromZone?: Zone;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
+  /** For `milled`: the cards the instruction milled, as the objects they became in the graveyard (CR 701.17a), which the trigger's filter reads. */
+  readonly cards?: readonly ObjectId[];
   /** For `lifeLost`: whether this is the first time the player lost life this turn (CR 119.3, 603.2). */
   readonly firstLoss?: boolean;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
@@ -488,6 +490,11 @@ function occurrences(
             },
           ]
         : [];
+    case 'milled':
+      // CR 701.17a, 603.2c: one occurrence for the cards one player milled in one instruction; the filter reads them in `matches`.
+      return event.kind === 'milled'
+        ? [{ subject: null, seat: event.seat, player: event.seat, cards: event.objects }]
+        : [];
     case 'rollsHighest':
       // CR 706.1a, 706.2 (Galadriel group 3): a die rolled whose natural result is the highest its sides allow (the engine has no modifier of a roll, so the result is natural).
       return event.kind === 'dieRolled' && event.result === event.sides
@@ -646,6 +653,8 @@ function occurrences(
               seat: event.seat,
               player: event.seat,
               firstLoss: isFirstLifeLoss(state, batch.events, batch.index),
+              // CR 119.3: "that many" is the life this event lost.
+              damage: event.from - event.to,
             },
           ]
         : [];
@@ -967,6 +976,19 @@ function matches(
       }
       if (trigger.notAsAttacker === true && occ.attacker === true) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'milled':
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 701.17a: at least one card milled is of the kind the filter names, as it is in the graveyard (or as it last was).
+      return (
+        trigger.filter === undefined ||
+        (occ.cards ?? []).some((id) => {
+          const card = objectOrLki(state, id);
+          return (
+            card !== null && matchesFilter(state, card, { ...trigger.filter, zone: card.zone }, ctx)
+          );
+        })
+      );
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -1284,6 +1306,8 @@ function isRelevant(event: GameEvent): boolean {
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
     case 'lifeGained':
       return true; // CR 119.9 (D-149)
+    case 'milled':
+      return true; // CR 701.17a
     case 'lifeChanged':
       return true; // CR 119.3: a reduction of a life total is a loss ("whenever you lose life")
     case 'stepBegan':

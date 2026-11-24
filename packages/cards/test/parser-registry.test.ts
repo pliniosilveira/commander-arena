@@ -1006,6 +1006,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,
+  'trigger.milled': whenever,
   'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
