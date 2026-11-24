@@ -1,7 +1,12 @@
 // Hosts of Mordor, library group (issue 150): the REAL Oracle text (the corpus's golden.jsonl) goes through the grammar as cards with no override, is defined in an engine scenario and is
 // played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Games have three seats where the text speaks of each player or each opponent.
 import { readFileSync } from 'node:fs';
-import { type CardDefinition, validateCard } from '@commander-arena/engine';
+import {
+  type CardDefinition,
+  type GameState,
+  type ObjectId,
+  validateCard,
+} from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
@@ -271,5 +276,89 @@ describe('Notion Thief (CR 614.1a, 614.11, 504.1, 614.5: an opponent draw but th
     g.expect.handSize(1, 2);
     g.expect.handSize(0, 0);
     g.expect.handSize(2, 0);
+  });
+});
+
+const nameOf = (state: GameState, id: ObjectId): string => {
+  const card = state.objects[id]?.card;
+  return card === null || card === undefined
+    ? ''
+    : (state.definitions[state.cards[card]?.definition ?? -1]?.name ?? '');
+};
+
+describe('Gríma, Saruman’s Footman (CR 701.13, 608.2g, 118.9, 401.4: exile until an instant or sorcery, may cast it free, the rest to the bottom at random)', () => {
+  const GRIMA = 'Gríma, Saruman’s Footman';
+  const grima =
+    GOLDEN.find((c) => c.name.startsWith('Gríma')) === undefined
+      ? undefined
+      : real(GOLDEN.find((c) => c.name.startsWith('Gríma'))?.name ?? '');
+  const NAME = grima?.name ?? GRIMA;
+  const BOLT = 'Lightning Bolt';
+
+  /** Seat 0 attacks `victim` with Gríma; the library of each other seat is `library` (top first) then Islands. */
+  const hit = (library: readonly string[], victim = 2) => {
+    const islands = Array.from({ length: 4 }, () => 'Island');
+    const b = scenario({ seats: 3 }).define(grima as CardDefinition);
+    b.seat(0)
+      .life(20)
+      .battlefield(NAME)
+      .library(...islands);
+    b.seat(1)
+      .life(20)
+      .library(...library, ...islands);
+    b.seat(2)
+      .life(20)
+      .library(...library, ...islands);
+    const g = b.at('precombatMain', { active: 0, turn: 3 }).build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: NAME, target: { player: victim } }]);
+    // Through the blockers and the combat damage: the trigger resolves, and the question of the cast (or the end of the step) is what is waiting.
+    for (let i = 0; i < 8 && g.state.pending?.kind === 'priority'; i += 1) {
+      if (g.state.turn.step === 'combatDamage' && g.state.stack.length === 0) break;
+      g.passAll();
+    }
+    return g;
+  };
+
+  test('is valid', () => {
+    expect(grima).toBeDefined();
+    expect(validateCard(grima as CardDefinition)).toEqual([]);
+  });
+
+  test('the damaged player exiles until an instant, the controller casts it free, the other cards go to the bottom of that library; the other opponent is untouched', () => {
+    const g = hit(['Plains', 'Forest', BOLT, 'Mountain']);
+    const decision = g.state.pending;
+    expect(decision?.kind).toBe('chooseCards');
+    g.act(0).chooseCards({ name: BOLT, zone: 'exile', seat: 2 });
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.expect.life(1, 17);
+    g.expect.zone(BOLT, 'graveyard', { seat: 2 });
+    // The Mountain was never reached; the Plains and the Forest are at the bottom of the library of seat 2, and the cast card is not.
+    g.expect.librarySize(2, 7);
+    g.expect.librarySize(1, 8);
+    const library = g.state.seats[2]?.library ?? [];
+    const names = library.map((id) => nameOf(g.state, id));
+    expect(names.slice(0, 1)).toEqual(['Mountain']);
+    expect(names.slice(-2).sort()).toEqual(['Forest', 'Plains']);
+    g.expect.invariants();
+  });
+
+  test('declining the cast puts the card found with the others on the bottom', () => {
+    const g = hit(['Plains', BOLT]);
+    g.act(0).chooseCards();
+    g.passAll();
+    g.expect.noObject(BOLT, { zone: 'exile' });
+    const library = g.state.seats[2]?.library ?? [];
+    const names = library.map((id) => nameOf(g.state, id));
+    expect(names.slice(-2).sort()).toEqual([BOLT, 'Plains']);
+    g.expect.librarySize(2, 6);
+  });
+
+  test('a library with no instant or sorcery is exiled to its end and becomes the library again', () => {
+    const g = hit(['Plains', 'Forest']);
+    g.expect.librarySize(2, 6);
+    g.expect.pending('priority', 0);
+    g.expect.zone('Plains', 'library', { seat: 2 });
   });
 });
