@@ -123,7 +123,7 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
     text: 'When ~ enters, any number of target players become the monarch.',
-    expect: no('players become the monarch.', 'effect.player'),
+    expect: no('players become the monarch.', 'noun.any-number-targets'),
     note: 'SYNTHETIC: one monarch at a time; several target players are not read',
   },
   {
