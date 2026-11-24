@@ -459,7 +459,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Perpetual Timepiece: "any number of target cards" is read only for your own graveyard and into your library; a card of another graveyard needs another phrase.
 - Wave of Reckoning: a replacement or prevention effect that asks the player which applies asks once for each creature.
 - Voting: one vote for each player (CR 701.38d, extra votes, is not built); the vote starts with the controller; a vote for objects or players is not built.
-- Voting: a text that counts the votes of a player ("votes for ... more than ...", ties between the options said in words) is not read.
+- Voting: only "<option> gets more votes" and "the vote is tied" are read as results; "gets the most votes", "more votes than <option>" and the votes of one player are not.
 - "For each <option> vote" reads the votes of the vote before it in the same text; a later spell or ability cannot ask what was voted.
 - "Each opponent" as the recipient of "damage equal to ..." is read only with the milled value; "equal to the number of ..." for each opponent is not read.
 - `exiledWithSource`: a face with more than one ability that exiles, or with none, leaves the reader unread.

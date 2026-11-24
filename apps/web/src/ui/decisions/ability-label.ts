@@ -427,6 +427,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'eachObject':
       // Canopy Gargantuan: the creature the counters are being put on right now.
       return 'that creature';
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen).
+      return 'your Ring-bearer';
   }
 }
 
@@ -595,6 +598,7 @@ function recipientText(
     case 'linkedExile':
     case 'putWithThis':
     case 'eachObject':
+    case 'ringBearer':
     case 'each':
       return objectText(to, ability, self);
   }
@@ -1165,7 +1169,19 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? 'player'
             : null;
       const inner = effectText(effect.effect, ability, self, defs);
+      if (effect.runsAs === 'each') {
+        // Sail into the West: "Each player returns up to two cards from their graveyard to their hand": each does it themselves.
+        return who !== 'player' || inner === '' ? UNSAID : `Each player does this: ${lower(inner)}`;
+      }
       return who === null || inner === '' ? UNSAID : `For each ${who}, ${lower(inner)}`;
+    }
+    case 'repeat': {
+      // Travel Through Caradhras: "For each Redhorn Pass vote, ...".
+      const inner = effectText(effect.effect, ability, self, defs);
+      const times = effect.times;
+      return typeof times === 'object' && times.kind === 'votesFor' && inner !== ''
+        ? `For each ${times.option} vote, ${lower(inner)}`
+        : UNSAID;
     }
     case 'prepare':
       return `${capital(object(effect.objects))} becomes prepared`;

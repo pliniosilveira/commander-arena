@@ -1435,6 +1435,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
   ),
+  // Elven Council deck (issue 17): what a vote came to.
+  'condition.vote-result': permanent(
+    (e) =>
+      `When ~ enters, starting with you, each player votes for time or knowledge. If ${e}, draw a card.`,
+  ),
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
   'condition.a-player-cards-in-hand': permanent(
     (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,

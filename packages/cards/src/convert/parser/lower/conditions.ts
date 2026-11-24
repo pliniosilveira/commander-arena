@@ -856,6 +856,18 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'voteMost': {
+      // CR 701.38a (issue 17): "if time gets more votes", read as the instruction comes up; `validateCard` refuses an option the vote before it does not offer.
+      const blocked = missingFeatures(['condition:voteMost']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'voteMost', option: test.option });
+    }
+    case 'voteTied': {
+      // CR 701.38a (issue 17): "if the vote is tied": more than one option got the most votes.
+      const blocked = missingFeatures(['condition:voteTied']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'voteTied' });
+    }
     case 'abilityResolvedTimes': {
       // CR 608.2c (Galadriel deck, group 1): read as the instruction comes up, in the effect of a triggered ability.
       const blocked = missingFeatures(['condition:abilityResolvedTimes']);
@@ -910,6 +922,7 @@ export function lowerCondition(
         ...(test.notTypes === undefined ? {} : { notTypes: [...test.notTypes] as CardType[] }),
         ...(test.subtypes === undefined ? {} : { subtypes: [...test.subtypes] }),
         ...(test.token === undefined ? {} : { token: test.token }),
+        ...(test.other === true ? { other: true as const } : {}),
       });
     }
     case 'hadCounters':
@@ -1052,4 +1065,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   // Galadriel deck group 1: "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   'condition:abilityResolvedTimes',
   'condition:ringBearerChosen',
+  // Issue 17 (Elven Council): "if time gets more votes", "if the vote is tied".
+  'condition:voteMost',
+  'condition:voteTied',
 ];

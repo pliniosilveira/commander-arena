@@ -58,6 +58,7 @@ import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
+import { COUNCIL_VOTES_EFFECT_RULES } from './council-votes';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
@@ -1432,6 +1433,8 @@ export const EFFECT_RULES = [
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,
+  // Issue 17 (Elven Council): "for each Redhorn Pass vote, ...", "each player returns up to two cards ...".
+  ...COUNCIL_VOTES_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
   ...PLANESWALKER_EFFECT_RULES,

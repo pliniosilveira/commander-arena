@@ -66,6 +66,7 @@ import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { COUNCIL_VOTES_LOWERINGS } from './council-votes';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
@@ -2829,6 +2830,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...COUNCIL_VOTES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
@@ -3005,5 +3007,19 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
   }
   // A permission ("you may play that card") is no choice the engine asks about: the clause is read with or without the words.
   if (clause.optional && lowering.acceptsOptional !== true) return failure(clause);
-  return lowering.lower(clause, ctx);
+  const times = clause.args.repeatFor;
+  if (times === undefined) return lowering.lower(clause, ctx);
+  // "For each Redhorn Pass vote, search ..." (issue 17, CR 608.2c, 701.38b): the instruction is done as many times as there are votes for the option, one after the other.
+  const blocked = missingFeatures(['effect:repeat']);
+  if (blocked.length > 0) return failure(clause, blocked);
+  if (times.kind !== 'votesFor') return failure(clause);
+  const count = lowerAmount(times, ctx, clause.rule);
+  if (!count.ok) return count;
+  const { repeatFor: _repeated, ...args } = clause.args;
+  const once = lowering.lower({ ...clause, args }, ctx);
+  if (!once.ok) return once;
+  if (once.value.length !== 1) return failure(clause);
+  const [effect] = once.value;
+  if (effect === undefined) return failure(clause);
+  return { ok: true, value: [{ kind: 'repeat', times: count.value, effect }], rule: clause.rule };
 }
