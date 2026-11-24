@@ -1,5 +1,5 @@
 {
-  "parserVersion": 204,
+  "parserVersion": 205,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -430,6 +430,14 @@
       "reasons": [],
       "ast": "266ca19d"
     },
+    "063e05b0-554f-4b55-9feb-e11f3927f3a6": {
+      "name": "Círdan the Shipwright",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef33c363"
+    },
     "06496a05-7f1a-402c-9594-304cd82bfefd": {
       "name": "Scourge of the Throne",
       "group": "holdout",
@@ -662,6 +670,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "09685792"
+    },
+    "0a8956d0-bd37-4305-8443-4df043796f6e": {
+      "name": "Sail into the West",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5cff360c"
     },
     "0acc9372-58b4-43bf-ab82-1f95831c81d4": {
       "name": "Nesting Dragon",
@@ -2372,6 +2388,14 @@
       "reasons": [],
       "ast": "7122c83e"
     },
+    "2d47a98b-5700-4096-b080-32df4d79910c": {
+      "name": "Travel Through Caradhras",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cc7ff104"
+    },
     "2d4976d4-649c-4d42-ac5a-ada4b46a480c": {
       "name": "Angrath's Marauders",
       "group": "acceptance",
@@ -3161,6 +3185,14 @@
       "reasons": [],
       "ast": "4d098038"
     },
+    "39ab72e2-04f2-41cc-ae33-4cc564b1542b": {
+      "name": "Windswift Slice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a9445d0c"
+    },
     "39b67a4d-6a87-41f0-a86f-b66671ccc20d": {
       "name": "The Reaper, King No More",
       "group": "acceptance",
@@ -3232,6 +3264,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3835abde"
+    },
+    "3b22d21f-e19a-40df-840b-a2b7f11f79c2": {
+      "name": "Galadhrim Ambush",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "22e9899a"
     },
     "3b6ef144-bb98-4686-9718-204f1c3cf020": {
       "name": "Worldsoul's Rage",
@@ -3585,6 +3625,14 @@
       "reasons": [],
       "ast": "5ec25026"
     },
+    "440366dd-7654-4ede-aa47-7e8a7916e31e": {
+      "name": "Song of Eärendil",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ecdfc12"
+    },
     "44036bb5-f300-40bd-9180-6b246315d886": {
       "name": "Haughty Djinn",
       "group": "acceptance",
@@ -3656,6 +3704,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "979d925c"
+    },
+    "4563ae4b-6226-4cc9-abde-582d0ab83433": {
+      "name": "Gandalf, Westward Voyager",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09be8d82"
     },
     "457af74a-02b3-4659-846d-63e482667f34": {
       "name": "Deadly Dispute",
@@ -3808,6 +3864,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5dc4bb57"
+    },
+    "48d63b86-8ddd-4306-960f-98490d1d80b9": {
+      "name": "Seeds of Renewal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "41698004"
     },
     "48e603a2-b965-4fbc-ad57-4388bce5ac8b": {
       "name": "Gods Willing",
@@ -4301,7 +4365,7 @@
           "text": "−8: Draw seven cards. Then if your library has no cards in it, you win the game.",
           "reason": "unrecognised",
           "slot": "effect",
-          "closestRule": "ability.activated"
+          "closestRule": "effect.then-for-each-vote-counters"
         }
       ],
       "reasons": [],
@@ -4807,6 +4871,22 @@
       "reasons": [],
       "ast": "2465e513"
     },
+    "5ae4a172-b846-4ec2-8178-a8b762134bfe": {
+      "name": "Elrond of the White Council",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4ebad09f"
+    },
+    "5b29c26f-c0f0-4703-83db-3a249ebc5792": {
+      "name": "Mirkwood Elk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a843fb9d"
+    },
     "5b7bbc76-22cc-482e-8d65-34cff34c93c8": {
       "name": "Unstable Experiment",
       "group": "acceptance",
@@ -5209,6 +5289,14 @@
       "reasons": [],
       "ast": "dbf4b3fb"
     },
+    "63625b26-3a19-4c3c-b18a-91247bb2a40c": {
+      "name": "Lignify",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "99575851"
+    },
     "63a19c7c-49d7-4b75-aac8-d0ff36c45fb8": {
       "name": "Sowing Mycospawn",
       "group": "training",
@@ -5289,6 +5377,14 @@
       "reasons": [],
       "ast": "4d3c85de"
     },
+    "64fa0416-16b7-4128-ac6c-f30373074a1e": {
+      "name": "Celeborn the Wise",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0e56e5f6"
+    },
     "651c967c-8f71-4eb5-b22f-545e55ea050e": {
       "name": "Carnelian Orb of Dragonkind",
       "group": "holdout",
@@ -5304,6 +5400,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9ba24d1f"
+    },
+    "653217b1-1e92-49a7-81d9-fc4d70d4f27f": {
+      "name": "Haldir, Lórien Lieutenant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea302dc7"
     },
     "653e4b68-3184-4352-ac91-127f7e6d7c12": {
       "name": "Port Razer",
@@ -6040,6 +6144,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d6f9b3f5"
+    },
+    "732aaa4b-22ea-49e2-b09f-e6169f726537": {
+      "name": "Sylvan Offering",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "60f67a7c"
     },
     "7340dbcb-4b26-4038-be8c-a89e76294221": {
       "name": "Gideon Jura",
@@ -7265,6 +7377,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2099b32d"
+    },
+    "8b886623-5c96-48dd-a3d2-fd5865c58ff5": {
+      "name": "Plea for Power",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "985f5bb7"
     },
     "8ba36878-0816-44c7-b543-8ebfc28c2ecd": {
       "name": "Angelic Destiny",
@@ -8515,6 +8635,14 @@
       "reasons": [],
       "ast": "3e8aa54b"
     },
+    "a2a39123-8b70-4678-8675-ba79f37a5db8": {
+      "name": "Lothlórien Blade",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b5fdbb98"
+    },
     "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
       "name": "Ganax, Astral Hunter",
       "group": "acceptance",
@@ -9568,6 +9696,14 @@
       "reasons": [],
       "ast": "bf33267c"
     },
+    "b65e1dff-9423-4840-a6af-78cb3e6f4f31": {
+      "name": "Erestor of the Council",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "205e9f29"
+    },
     "b6689782-08d8-48e1-a05d-cd040dfe85bc": {
       "name": "Curse of Bounty",
       "group": "acceptance",
@@ -9695,6 +9831,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b0b11a9"
+    },
+    "b97a11c2-7119-4399-9565-bf69520d3988": {
+      "name": "Galadriel, Elven-Queen",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3d39c718"
     },
     "b997a982-09e1-4ae1-a972-3c2e5f101e8c": {
       "name": "Faithful Mending",
@@ -9864,6 +10008,14 @@
       "reasons": [],
       "ast": "1a4191d5"
     },
+    "bda83ef4-e345-495d-878c-4da171f997ba": {
+      "name": "Elvish Warmaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5209f0eb"
+    },
     "bdeb440d-a714-40e8-9038-f651e6ae45fb": {
       "name": "Springleaf Drum",
       "group": "acceptance",
@@ -9992,6 +10144,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "454567ca"
+    },
+    "c0891157-f3dd-4866-866f-fd13e9be9633": {
+      "name": "Arwen, Weaver of Hope",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0af77747"
     },
     "c0d8fef4-65f4-4769-982d-b397d2b7e977": {
       "name": "Animate Dead",
@@ -10659,6 +10819,14 @@
       "reasons": [],
       "ast": "0272657a"
     },
+    "ccb66cdc-909a-42c1-a10f-3886e9ed1936": {
+      "name": "Realm Seekers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "18c3e056"
+    },
     "cd2720c2-522c-4fdc-9cef-9c5ce250fe7b": {
       "name": "Zara, Renegade Recruiter",
       "group": "acceptance",
@@ -11123,6 +11291,14 @@
       "reasons": [],
       "ast": "4d69ece5"
     },
+    "d7b69fd7-e575-4009-8549-f576249ba641": {
+      "name": "Model of Unity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f2d69d81"
+    },
     "d7e2b2ba-cb5e-41f1-ad33-baf56c0b72ed": {
       "name": "Reckless Rage",
       "group": "acceptance",
@@ -11516,6 +11692,14 @@
       "reasons": [],
       "ast": "1bbdf98d"
     },
+    "debbbdb2-2fa8-413f-b394-977212915c65": {
+      "name": "Mirkwood Trapper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e2ca7efe"
+    },
     "debc69ea-372a-4720-838a-16856cd50b07": {
       "name": "March of Swirling Mist",
       "group": "acceptance",
@@ -11667,6 +11851,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a42cb03f"
+    },
+    "e2487868-f386-438e-a73f-b494f6d35fac": {
+      "name": "Genesis Wave",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c93e33c"
     },
     "e24916ff-7566-4f27-8e31-732311a4a88c": {
       "name": "Stormshriek Feral // Flush Out",
@@ -12301,6 +12493,14 @@
       "reasons": [],
       "ast": "1d437e7e"
     },
+    "ef72af33-37fc-48ed-90d8-547c90e1609d": {
+      "name": "Trap the Trespassers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6c5bd8cb"
+    },
     "ef833546-f755-4ac5-867a-3926984e68a0": {
       "name": "Archaeomancer's Map",
       "group": "acceptance",
@@ -12503,6 +12703,14 @@
         "faces[0].abilities[0].effect.effects[1].effect: a delayed trigger may draw, gain life, lose life or deal damage only (or return what the effect before it exiled), not untap"
       ],
       "ast": "b1faf333"
+    },
+    "f325fd7a-dcae-4892-adf5-de9893a23ac5": {
+      "name": "Learn from the Past",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c488bc30"
     },
     "f32aaa81-96bd-4213-b0b8-8c021f3cea57": {
       "name": "Spider Umbra",
@@ -13196,8 +13404,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1338,
-      "total": 1357
+      "supported": 1364,
+      "total": 1383
     }
   }
 }
