@@ -350,6 +350,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castSpellFromGraveyard');
   }
+  // Exit from Exile deck: "a spell cast from exile" (CR 601.2a), a spell on the stack.
+  if (filter.castFromExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castSpellFromExile');
+  }
   // Emet-Selch of the Third Seat: "spells you cast from your graveyard" (CR 601.2a, 404.1), a spell on the stack.
   if (filter.castFromOwnGraveyard === true) {
     if (inner) return bad([]);
@@ -629,6 +634,7 @@ function lowerFilterAt(
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
+    ...(filter.castFromExile === true ? { castFromExile: true as const } : {}),
     ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),

@@ -404,6 +404,7 @@ export function checkFilter(
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
+    'castFromExile',
     'castFromOwnGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',

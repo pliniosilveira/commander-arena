@@ -449,6 +449,13 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'graveyard') return false;
   }
+  // CR 601.2a, 406.1 (Exit from Exile deck): "a spell cast from exile": a spell on the stack that was cast from exile.
+  if (filter.castFromExile === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'exile') return false;
+  }
   // CR 601.2a, 404.1 (Emet-Selch of the Third Seat): "spells you cast from your graveyard": cast from a graveyard, the card owned by the caster (a graveyard is its owner's, CR 404.1).
   if (filter.castFromOwnGraveyard === true) {
     const from =

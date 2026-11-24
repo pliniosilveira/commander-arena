@@ -293,6 +293,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'trigger.cast-from-hand': whenever,
   'trigger.cast-from-graveyard': whenever,
+  'trigger.cast-from-exile': whenever,
   'trigger.token-combat-damage-batch': whenever,
   'trigger.enters-and-token-damage': permanent((e) => `When ${e}, you gain 1 life.`),
   'effect.exile-instead-when-leaving': permanent(
