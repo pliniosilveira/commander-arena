@@ -302,7 +302,7 @@ describe("Firja's Retribution, chapter II: Angels you control gain {T}: Destroy 
 });
 
 describe("Firja's Retribution, chapter III: Angels you control gain double strike until end of turn", () => {
-  test('your Angels have double strike for the turn, other creatures and the opponent's Angels do not', () => {
+  test('your Angels have double strike for the turn, other creatures and the opposing Angels do not', () => {
     const FIRJA = "Firja's Retribution";
     const g = scenario()
       .seat(0)
@@ -324,5 +324,49 @@ describe("Firja's Retribution, chapter III: Angels you control gain double strik
     g.expect.derived(theirs, { keywords: ['flying', 'vigilance'] });
     g.advanceTo('upkeep', { turn: 'next' });
     g.expect.derived(mine, { keywords: ['flying', 'vigilance'] });
+  });
+});
+
+describe('Folk Hero: commander creatures you own have "Whenever you cast a spell that shares a creature type with this creature, draw a card. Once each turn"', () => {
+  const HERO = 'Folk Hero';
+  const hero = real(HERO);
+  const start = () =>
+    scenario()
+      .seat(0)
+      .define(hero)
+      .battlefield(HERO, 'Forest', 'Forest', 'Forest', 'Forest')
+      .battlefield('Grizzly Bears', { commander: true, label: 'commander' })
+      .battlefield('Grizzly Bears', { label: 'plain' })
+      .hand('Grizzly Bears', 'Llanowar Elves', 'Grizzly Bears')
+      .library('Plains', 'Plains', 'Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('a spell that shares a creature type with the commander draws a card, one that does not draws none (CR 205.3m)', () => {
+    const g = start();
+    g.act(0).cast('Llanowar Elves', { pay: true });
+    g.expect.stack(['Llanowar Elves']);
+    g.passAll();
+    const before = g.state.seats[0]?.hand.length ?? 0;
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'hand', seat: 0, nth: 0 }, { pay: true });
+    g.expect.stack(['Grizzly Bears (ability)', 'Grizzly Bears']);
+    g.passAll();
+    expect(g.state.seats[0]?.hand.length).toBe(before); // one cast (-1), one drawn (+1)
+  });
+
+  test('the ability triggers only once each turn (CR 603.2)', () => {
+    const g = start();
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'hand', seat: 0, nth: 0 }, { pay: true });
+    g.passAll();
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'hand', seat: 0, nth: 0 }, { pay: true });
+    g.expect.stack(['Grizzly Bears']);
+  });
+
+  test('only the commander has it: two Bears on the battlefield, one trigger', () => {
+    const g = start();
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'hand', seat: 0, nth: 0 }, { pay: true });
+    expect(g.state.stack.length).toBe(2);
   });
 });

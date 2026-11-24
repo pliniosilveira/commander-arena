@@ -1630,7 +1630,15 @@ function lowerTriggeredAbility(
         t.what.kind === 'this',
     );
   // Titan of Littjara: "shares a creature type with it" is read only where "it" is the card itself.
-  if (!ctx.selfEntersOrAttacksTrigger && usesSharesWithSource(written)) return failure(written);
+  // Folk Hero (CR 205.3m): a spell cast "that shares a creature type with ~" is read against the creature types of the source of the ability, whatever the trigger is.
+  // Only in the trigger: "it" in the body of a cast trigger could be the spell.
+  const castTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'castSpell') &&
+    !usesSharesWithSource([ability.body, ability.modal]);
+  if (!ctx.selfEntersOrAttacksTrigger && !castTrigger && usesSharesWithSource(written)) {
+    return failure(written);
+  }
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

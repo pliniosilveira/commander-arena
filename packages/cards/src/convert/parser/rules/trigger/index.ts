@@ -838,8 +838,15 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // Don Andres, the Renegade (CR 108.3): a spell whose owner is another player.
     "you cast a noncreature spell you don't own",
     'you cast a spell you don’t own',
+    // Folk Hero (CR 205.3m): a spell that has a creature type the source has.
+    'you cast a spell that shares a creature type with ~',
+    'you cast a creature spell that shares a creature type with this creature',
   ],
   rejects: [
+    'you cast a spell that shares a creature type with',
+    'you cast a spell that shares a creature type with it',
+    'you cast a spell that shares a creature type with ~ that targets a creature',
+    'an opponent casts a spell that shares a creature types with ~',
     "you cast a noncreature spell you don't own that targets a creature",
     "you cast a spell you don't own or",
     "you cast a spell you don't owns",
@@ -905,6 +912,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(pattern(/ you don['’]t own(?![\p{L}\p{N}'’])/iu), null),
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
       optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
+      // Folk Hero (CR 205.3m, 702.73a): "a spell that shares a creature type with ~", a spell that has a creature type the source of the ability has.
+      optional(pattern(/ that shares a creature type with (?:~|this creature)(?![\p{L}\p{N}'’])/iu), null),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
       optional(choice(AIMED, AIMED_SELF, AIMED_ANY), null),
@@ -912,8 +921,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, unowned, colored, aimed, alternative] = r.value;
+    const [actor, spell, unowned, colored, shares, aimed, alternative] = r.value;
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
+    if (shares !== null && (unowned !== null || colored !== null || aimed !== null || alternative !== null)) {
+      return fail(ctx, pos);
+    }
     if (unowned !== null && (colored !== null || aimed !== null || alternative !== null)) {
       return fail(ctx, pos);
     }
@@ -923,7 +935,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       return fail(ctx, pos);
     }
     const base: IrFilter =
-      colored === null ? spellBase : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
+      shares !== null
+        ? { ...spellBase, sharesCreatureTypeWithSource: true }
+        : colored === null
+          ? spellBase
+          : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
     let filter: IrFilter;
     if (alternative !== null) {
       // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
