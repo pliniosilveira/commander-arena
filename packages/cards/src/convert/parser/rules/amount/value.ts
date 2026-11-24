@@ -337,6 +337,29 @@ const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
 };
 
 /**
+ * "the greatest mana value of a commander you own on the battlefield or in the command zone" (Visions of Glory, CR 903.3, 108.3, 202.3): the commanders of the controller that are on the
+ * battlefield or in the command zone now; one anywhere else does not count. Read as the engine's `commanderManaValue` with `zones`.
+ */
+const COMMANDER_IN_PLAY_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(
+      /the greatest mana value of a commander you own on the battlefield or in the command zone(?![\p{L}\p{N}'’])/iu,
+    ),
+  )(ctx, pos);
+  return r.ok
+    ? {
+        ok: true,
+        value: {
+          kind: 'commanderManaValue',
+          zones: ['battlefield', 'command'],
+          span: r.value.span,
+        },
+        pos: r.pos,
+      }
+    : r;
+};
+
+/**
  * "the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before ("Roll a d4. Scry X, where X is the result."). Only the
  * words "the result" followed by the end of the phrase; whether a die was rolled is the lowering's check.
  */
@@ -489,13 +512,19 @@ const LIFE_TOTAL =
  * engine counts as `thisWay` `exiledCreatureCards` (a token is not a card). The lowering refuses it unless the same text exiled before.
  */
 const CREATURE_CARDS_EXILED_THIS_WAY: Parser<IrAmount> = (ctx, pos) => {
-  const r = spanned(
-    pattern(/the number of creature cards exiled this way(?![\p{L}\p{N}])/iu),
-  )(ctx, pos);
+  const r = spanned(pattern(/the number of creature cards exiled this way(?![\p{L}\p{N}])/iu))(
+    ctx,
+    pos,
+  );
   if (!r.ok) return r;
   return {
     ok: true,
-    value: { kind: 'thisWay', what: 'exiledCreatureCards', words: ['creature'], span: r.value.span },
+    value: {
+      kind: 'thisWay',
+      what: 'exiledCreatureCards',
+      words: ['creature'],
+      span: r.value.span,
+    },
     pos: r.pos,
   };
 };
@@ -538,6 +567,7 @@ const DIFFERENCE = (rule: string): Parser<IrAmount> => {
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
+    COMMANDER_IN_PLAY_MANA_VALUE,
     DIFFERENCE(rule),
     HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
@@ -893,6 +923,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     "where X is the exiled card's power",
     // Stage P32 (D-147): the commanders' mana value, and a total read as the spell is cast.
     'where X is the greatest mana value among your commanders',
+    // CR 903.3, 108.3: the commanders you own that are on the battlefield or in the command zone (Visions of Glory).
+    'where X is the greatest mana value of a commander you own on the battlefield or in the command zone',
     'where X is the greatest power among creatures you control as you cast ~',
     // Galadriel deck group 3 (CR 706.2): the die rolled before.
     'where X is the result',
@@ -931,6 +963,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is half the number of Zombies you control',
     'where X is the greatest power among creatures you control as you cast it',
     'where X is the greatest mana value among commanders',
+    'where X is the greatest mana value of a commander you own on the battlefield',
+    'where X is the greatest mana value of a commander you own in the command zone',
+    'where X is the greatest mana value of a commander an opponent owns on the battlefield or in the command zone',
     'where X is the number of Zombies you control.',
     'where X is the number of cards in your hand minus',
     'where X is the number of cards in your hand minus 0',

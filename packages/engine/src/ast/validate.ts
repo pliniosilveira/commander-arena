@@ -2781,6 +2781,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   checkArtifactsFace(face, path, out);
   checkDinosaursFace(face, path, out);
   checkDragonsFace(face, path, out);
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is for a flashback cost the face has.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'static' &&
+      a.static?.kind === 'costReduction' &&
+      a.static.forAlternative === 'flashback' &&
+      !face.abilities.some((k) => k?.kind === 'keyword' && k.keyword?.kind === 'flashback')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].static.forAlternative`,
+        'a reduction for the flashback cost needs the flashback keyword on the face',
+      );
+    }
+  });
   // CR 702.165a (D-230): Backup gives the abilities printed below it as they are: a static or replacement ability there would not be given, so the face is refused.
   const backupAt = face.abilities.findIndex(
     (a) => a?.kind === 'keyword' && a.keyword?.kind === 'backup',

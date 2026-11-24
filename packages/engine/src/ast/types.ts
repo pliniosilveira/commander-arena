@@ -290,8 +290,11 @@ export type Amount =
    * the controller, wherever they are (the command zone, the battlefield, any other zone): the mana value of the card as printed (a copy
    * effect on a commander on the battlefield is not read, `docs/ROADMAP.md`). 0 for a player with no commander. Also readable by a static
    * ability's power or toughness (`StaticPtAmount`: "Equipped creature gets +X/+X, where X is ...").
+   * `zones` (Visions of Glory, CR 903.3, 108.3, 202.3: "the greatest mana value of a commander you own on the battlefield or in the command zone"): only the commanders of the controller
+   * that are in one of these zones count, as the card is now (the object on the battlefield, or the card in the command zone); a commander anywhere else does not. Not in a static ability's
+   * power or toughness.
    */
-  | { readonly kind: 'commanderManaValue' }
+  | { readonly kind: 'commanderManaValue'; readonly zones?: readonly ('battlefield' | 'command')[] }
   /**
    * "The number of times you've cast your commander from the command zone this game" (CR 903.8, D-229): the sum, over the commanders of the
    * controller (`SeatState.commanders`), of the times each was cast from the command zone (the count the commander tax is made from, `GameState.commanderCasts`).
@@ -7919,6 +7922,11 @@ export type StaticEffect =
       readonly kind: 'costReduction';
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
       readonly amount: Amount;
+      /**
+       * "Flashback {8}{W}{W}. This spell costs {X} less to cast this way" (Visions of Glory, CR 702.34a, 118.9, 601.2f): the spell's own reduction applies only while the spell is cast for the
+       * alternative cost named (`flashback`), not when it is cast from the hand for its mana cost. Only the spell's own reduction (`spells: this`).
+       */
+      readonly forAlternative?: 'flashback';
       /**
        * Eminence (issue 81, The Ur-Sphinx; CR 113.6, 903.8): "As long as ~ is in the command zone or on the battlefield": the reduction also applies while the card with it is one
        * of its owner's commanders in the command zone, with that player as "you". Only with a filter of spells, not `this`.

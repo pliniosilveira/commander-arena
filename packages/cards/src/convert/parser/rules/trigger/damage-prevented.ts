@@ -2,7 +2,7 @@
  * Trigger rules of the Riders of Rohan deck, group D (Selfless Squire): "whenever damage that would be dealt to you is prevented" (CR 615.6, 120.2, 603.2c: damage a prevention effect
  * prevented, once for each source and each player it would have damaged). The engine's `damageToPlayerPrevented`.
  */
-import { choice, map, pattern } from '../../combinators';
+import { map, pattern } from '../../combinators';
 import type { IrNoun, IrTrigger } from '../../ir/types';
 import { defineRule, quietly, spanned } from '../registry';
 import { makeNoun } from './subjects';

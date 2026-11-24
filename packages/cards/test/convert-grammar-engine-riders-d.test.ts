@@ -31,9 +31,10 @@ const greyHost = real('Grey Host Reinforcements');
 const squire = real('Selfless Squire');
 const mentor = real('Harsh Mentor');
 const departed = real('Dearly Departed');
+const visions = real('Visions of Glory');
 
 describe('the real cards are valid', () => {
-  test.each([anthem, greyHost, squire, mentor, departed])('$name', (card) => {
+  test.each([anthem, greyHost, squire, mentor, departed, visions])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 });
@@ -361,5 +362,56 @@ describe('Dearly Departed', () => {
     g.act(0).cast(KNIGHT, { pay: true });
     g.passAll();
     g.expect.counters(KNIGHT, {});
+  });
+});
+
+describe('Visions of Glory', () => {
+  const ANGEL = 'Serra Angel'; // mana value 5
+  const payTotal = (g: ReturnType<ReturnType<typeof scenario>['build']>): readonly string[] => {
+    const pay = g.state.pending;
+    if (pay?.kind !== 'payMana') throw new Error(`expected payMana, got ${pay?.kind}`);
+    return pay.totalCost;
+  };
+  const start = (where: 'command' | 'battlefield' | 'hand' | 'none') => {
+    const b = scenario().define(visions).seat(0).graveyard(visions.name).hand(visions.name);
+    const lands = b.battlefield('Plains', { count: 10 });
+    const placed =
+      where === 'command'
+        ? lands.commander(ANGEL)
+        : where === 'battlefield'
+          ? lands.battlefield(ANGEL, { commander: true })
+          : where === 'hand'
+            ? lands.hand(ANGEL, { commander: true })
+            : lands;
+    return placed
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 });
+  };
+
+  test('flashback costs {X} less, X the mana value of a commander in the command zone (CR 702.34a, 601.2f)', () => {
+    const g = start('command').build();
+    g.act(0).cast(visions.name, { alternative: 'flashback' });
+    // {8}{W}{W} less 5 generic.
+    expect(payTotal(g)).toEqual(['3', 'W', 'W']);
+  });
+
+  test('a commander you own that is on the battlefield counts too', () => {
+    const g = start('battlefield').build();
+    g.act(0).cast(visions.name, { alternative: 'flashback' });
+    expect(payTotal(g)).toEqual(['3', 'W', 'W']);
+  });
+
+  test('a commander in the hand does not count', () => {
+    const g = start('hand').build();
+    g.act(0).cast(visions.name, { alternative: 'flashback' });
+    expect(payTotal(g)).toEqual(['8', 'W', 'W']);
+  });
+
+  test('cast from the hand for its mana cost it is not reduced ("this way" is the flashback)', () => {
+    const g = start('command').build();
+    g.act(0).cast(visions.name);
+    expect(payTotal(g)).toEqual(['4', 'W']);
   });
 });

@@ -182,12 +182,15 @@ const ABILITY_KIND = '(?:artifact|creature|land|enchantment|planeswalker)';
 function insideActivationKindList(text: string, at: number): boolean {
   const before = text.slice(Math.max(0, at - 110), at);
   const after = text.slice(at, at + 90);
-  const head = new RegExp(`activates? an ability of an? ${ABILITY_KIND}(?:, ${ABILITY_KIND})*$`, 'iu');
-  const tail = new RegExp(`^, (?:${ABILITY_KIND}, )*(?:or )?${ABILITY_KIND} on the battlefield, if it`, 'iu');
-  const ifClause = new RegExp(
-    `activates? an ability of an? [a-z, ]+ on the battlefield$`,
+  const head = new RegExp(
+    `activates? an ability of an? ${ABILITY_KIND}(?:, ${ABILITY_KIND})*$`,
     'iu',
   );
+  const tail = new RegExp(
+    `^, (?:${ABILITY_KIND}, )*(?:or )?${ABILITY_KIND} on the battlefield, if it`,
+    'iu',
+  );
+  const ifClause = /activates? an ability of an? [a-z, ]+ on the battlefield$/iu;
   return (
     (head.test(before) && tail.test(after)) ||
     (ifClause.test(before) && /^, if it (?:isn['’]t|is not) a mana ability,/iu.test(after))

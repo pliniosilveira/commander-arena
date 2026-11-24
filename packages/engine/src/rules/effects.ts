@@ -1270,9 +1270,7 @@ function runEffect(
               : {};
           // CR 608.2c (Grey Host Reinforcements): a creature card, in a graveyard or anywhere else, is counted when it really goes to exile; a token is not a card.
           const creatureCard =
-            obj !== undefined &&
-            obj.token === null &&
-            derive(state, obj).types.includes('creature')
+            obj !== undefined && obj.token === null && derive(state, obj).types.includes('creature')
               ? { countsCreatureCard: true as const }
               : {};
           return { ...i, ...link, ...lost, ...creatureCard };

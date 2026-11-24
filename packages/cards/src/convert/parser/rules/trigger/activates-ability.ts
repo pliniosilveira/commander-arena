@@ -3,7 +3,7 @@
  * once each time the player activates an activated ability (a loyalty ability included) of a permanent that uses the stack.
  */
 import { fail, pattern } from '../../combinators';
-import type { IrNoun, IrTrigger, Span } from '../../ir/types';
+import type { IrFilter, IrNoun, IrTrigger, Span } from '../../ir/types';
 import { defineRule, quietly } from '../registry';
 import { makeNoun } from './subjects';
 
@@ -174,7 +174,7 @@ export const TRIGGER_ACTIVATE_ABILITY_OF_KINDS = defineRule<IrTrigger>({
     "an opponent activates an ability of an artifact, creature, or land you control on the battlefield, if it isn't a mana ability",
     "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability or",
     "an opponent activates an ability of artifacts, creatures, or lands on the battlefield, if it isn't a mana ability",
-    "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it is a mana ability",
+    'an opponent activates an ability of an artifact, creature, or land on the battlefield, if it is a mana ability',
     "each opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability",
   ],
   parse: (ctx, pos) => {
@@ -196,7 +196,7 @@ export const TRIGGER_ACTIVATE_ABILITY_OF_KINDS = defineRule<IrTrigger>({
         actor: actorNoun(words, pos),
         args: {
           ofSource: makeNoun('trigger.activate-ability-of-kinds', span, 'a', {
-            anyOf: kinds.map((type) => ({ types: [type] })),
+            anyOf: kinds.map((type): IrFilter => ({ types: [type], raw: type })),
             raw: (r.value[2] ?? '').toLowerCase(),
           }),
         },
