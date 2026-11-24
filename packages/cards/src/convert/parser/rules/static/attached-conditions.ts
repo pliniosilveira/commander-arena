@@ -77,9 +77,9 @@ export const STATIC_ATTACHED_KEYWORDS_IF = defineRule<IrStatic>({
     const shaped = separators.every((s, i) =>
       i < last ? s === ', ' : last === 0 ? s === ' and ' || s === ', and ' : s === ', and ',
     );
-    if (items.length < 2 || !shaped) return fail(ctx, end);
+    if (items.length < 2 || !shaped) return fail(ctx, pos);
     const keywords = items.map((i) => i.keyword);
-    if (keywords.some((k, i) => keywords.indexOf(k) !== i)) return fail(ctx, end);
+    if (keywords.some((k, i) => keywords.indexOf(k) !== i)) return fail(ctx, pos);
     const stop = PERIOD(ctx, end);
     if (!stop.ok) return stop;
     const effects: IrStaticEffect[] = keywords.map((keyword) => ({

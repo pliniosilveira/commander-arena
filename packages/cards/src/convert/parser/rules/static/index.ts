@@ -111,14 +111,14 @@ export const STATIC_RULES = [
   ...DEATH_TOLL_C_STATIC_RULES,
   // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard."
   ...ALSO_TYPES_STATIC_RULES,
-  // Multiclass Baldric: "Equipped creature has lifelink if you control a Cleric, deathtouch if ...", "As long as you have a full party, prevent all damage that would be dealt to equipped creature."
-  ...ATTACHED_CONDITION_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
   // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.
   ...EQUIPMENT_KIT_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
+  // Multiclass Baldric: "Equipped creature has lifelink if you control a Cleric, deathtouch if ...", "As long as you have a full party, prevent all damage that would be dealt to equipped creature."
+  ...ATTACHED_CONDITION_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
   // Call for Unity: "Creatures you control get +1/+1 for each unity counter on ~."
   ...PT_COUNTERS_ON_SOURCE_STATIC_RULES,
