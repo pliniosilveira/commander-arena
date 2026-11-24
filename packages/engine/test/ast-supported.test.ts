@@ -94,6 +94,7 @@ const EXECUTABLE_KEYWORDS = [
   'embalm', // scenario-xx-embalm
   'devour', // scenario-xx-devour-riot
   'riot', // scenario-xx-devour-riot
+  'sunburst', // convert-grammar-engine-sunburst (Counter Intelligence deck, group 1)
   'echo', // scenario-xx-echo
   'suspend', // scenario-xx-suspend
   'cumulativeUpkeep', // scenario-xx-cumulative-upkeep
@@ -222,6 +223,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   embalm: { kind: 'embalm', cost: [{ kind: 'mana', symbols: ['5', 'W'] }] },
   devour: { kind: 'devour', count: 2 },
   riot: { kind: 'riot' },
+  sunburst: { kind: 'sunburst' },
   echo: { kind: 'echo', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
   suspend: { kind: 'suspend', count: 2, cost: [{ kind: 'mana', symbols: ['R'] }] },
   cumulativeUpkeep: { kind: 'cumulativeUpkeep', cost: [{ kind: 'mana', symbols: ['1'] }] },

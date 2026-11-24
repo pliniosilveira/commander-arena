@@ -470,6 +470,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `When ~ enters, if ${e}, you gain 1 life.`,
   ),
   'condition.total-stat': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.counters-among': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Selvala: the creature the trigger is about, against every other creature, at the end of a sentence.
   'condition.its-stat-greater-than-each-other': permanent(
     (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
@@ -893,6 +894,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-mana-spent': permanent(
     (e) => `Each creature you control enters with an additional +1/+1 counter on it ${e}.`,
   ),
+  // Converge (CR 105.1): the colors of the mana spent, after a quantity of counters.
+  'amount.for-each-color-spent': permanent((e) => `~ enters with a +1/+1 counter on it ${e}.`),
   // Stage P41 (D-188): the expensive singles. The trigger follows "Whenever"; the condition follows a landfall trigger's comma; the noun is what a
   // sacrifice names; the static is a line of its own.
   'trigger.you-attack': whenever,

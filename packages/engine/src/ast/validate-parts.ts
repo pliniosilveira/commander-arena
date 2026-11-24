@@ -5471,6 +5471,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
 function isDelayedCastBody(e: Effect | undefined): boolean {
   if (e === undefined || e === null) return false;
   if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
+  // CR 702.44a, 603.7c (Solar Array): "When you next cast an artifact spell this turn, that spell gains sunburst."
+  if (e.kind === 'spellGainsKeyword') return kindOf(e.spell) === 'triggerSubject';
   if (e.kind === 'draw') return kindOf(e.player) === 'you';
   if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): "create a token that's a copy of a non-Saga token you control": the permanent is chosen as the ability resolves, then copied.
@@ -5509,7 +5511,7 @@ export function checkDelayedCast(
     issue(
       out,
       `${path}.effect`,
-      'a delayed cast trigger copies the spell that was cast, copies a permanent it chooses, or its controller draws cards and gains life',
+      'a delayed cast trigger copies the spell that was cast or gives it sunburst, copies a permanent it chooses, or its controller draws cards and gains life',
     );
     return;
   }
@@ -6403,6 +6405,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
+      break;
+    case 'spellGainsKeyword':
+      // CR 702.44a, 702.44d: the spell whose casting caused the trigger (a `castSpell` trigger or a `delayedCast`) gains Sunburst, and nothing else.
+      if (kindOf(e.spell) === 'triggerSubject') {
+        checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
+      } else {
+        issue(
+          out,
+          `${path}.spell`,
+          'spellGainsKeyword names the spell that was cast (triggerSubject)',
+        );
+      }
+      if (e.keyword?.kind !== 'sunburst') {
+        issue(out, `${path}.keyword`, 'only sunburst can be gained by a spell');
+      }
       break;
     case 'loseLifeManaValue':
       // Issue 97 (Kefka): the spells an earlier `castFree` with `remember` cast.

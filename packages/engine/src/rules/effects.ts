@@ -2048,6 +2048,30 @@ function runEffect(
       });
     }
 
+    case 'spellGainsKeyword': {
+      // CR 702.44a, 702.44d: "it gains sunburst": the spell the cast trigger is about, if it is still a spell on the stack as this resolves, remembers the keyword; the permanent it
+      // becomes reads it as it enters (`rules/enters-keywords.ts`), one instance for each time it was gained. A copy of a spell was not cast (CR 707.10) and is not given one.
+      let next = state;
+      for (const id of resolveObjects(state, effect.spell, ctx, targets)) {
+        const spell = next.objects[id];
+        if (
+          spell === undefined ||
+          spell.zone !== 'stack' ||
+          spell.stack?.kind !== 'spell' ||
+          spell.copyOf !== undefined
+        ) {
+          continue;
+        }
+        next = patchObject(next, id, {
+          stack: {
+            ...spell.stack,
+            gainedKeywords: [...(spell.stack.gainedKeywords ?? []), effect.keyword],
+          },
+        });
+      }
+      return done(next);
+    }
+
     case 'createEmblem': {
       // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem, or each player the effect names ("Target opponent gets an emblem with ...": they own and control it).
       let withEmblems = state;

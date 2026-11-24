@@ -503,6 +503,11 @@ export interface StackData {
    */
   readonly manaSpent?: ManaSpent;
   /**
+   * The keywords the spell gained while it was on the stack (`spellGainsKeyword`, "it gains sunburst", CR 702.44d), one entry for each time one was gained: the permanent the spell
+   * becomes reads them as it enters (`rules/enters-keywords.ts`). Absent when none, and for an ability.
+   */
+  readonly gainedKeywords?: readonly Extract<Keyword, { readonly kind: 'sunburst' }>[];
+  /**
    * The life paid for the Phyrexian mana symbols of the spell's mana cost (CR 107.4f, 601.2h; 2 life for each symbol), written as the cost is paid: Compleated (CR 702.150a) reads it
    * as the permanent enters. Absent when no Phyrexian symbol was paid with life, and for an ability.
    */

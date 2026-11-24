@@ -3465,6 +3465,18 @@ export type Effect =
       readonly repeat?: true;
     }
   /**
+   * "Whenever you cast an artifact creature spell, it gains sunburst." (CR 702.44a, 702.44d, 400.7, 611.2): the spell `spell` names, a spell on the stack (the `triggerSubject` of a cast
+   * trigger or of a `delayedCast`), gains the keyword for as long as it is a spell: it is kept in its stack data (`StackData.gainedKeywords`), and the permanent the spell becomes reads it as
+   * it enters (a new object, CR 400.7, so no continuous effect of the stack lasts, but Sunburst works as the object enters). Only Sunburst, the keyword whose counters the entering permanent
+   * gets from the spell it came from; each time it is gained is one more instance (CR 702.44d). Does nothing when the spell is no longer on the stack as this resolves, and for a copy of a
+   * spell or an ability (CR 707.10: not cast, so no mana was spent).
+   */
+  | {
+      readonly kind: 'spellGainsKeyword';
+      readonly spell: ObjectRef;
+      readonly keyword: Extract<Keyword, { readonly kind: 'sunburst' }>;
+    }
+  /**
    * CR 702.62a (Suspend, D-128): "remove a time counter from it", where "it" is the source: a card in exile that is
    * suspended (it has a time counter). Does nothing if the source is no longer that card in exile (CR 603.4: the
    * intervening "if this card is suspended" is checked again as the ability resolves). Only the effect of the
@@ -6422,6 +6434,15 @@ export type Keyword =
    */
   | { readonly kind: 'riot' }
   /**
+   * CR 702.44a (Sunburst): "If this object is entering as a creature, ignoring any type-changing effects that would affect it, it enters with a +1/+1 counter on it for each color of mana
+   * spent to cast it. Otherwise, it enters with a charge counter on it for each color of mana spent to cast it." A static ability that works as the object enters (CR 614.12), read
+   * from the spell the permanent came from: the colors of the mana spent are in its stack data (CR 601.2h, 105.1), counters are put only when it enters from the stack as a resolving
+   * spell (CR 702.44b: a token, a copy of a spell and a card put onto the battlefield by an effect get none). Each instance works separately (CR 702.44d): the printed ones and the ones
+   * the spell gained as it was cast (`spellGainsKeyword`). It cannot be granted to a permanent. The use of Sunburst as the number of another ability (CR 702.44c, "Modular-Sunburst") is not
+   * supported.
+   */
+  | { readonly kind: 'sunburst' }
+  /**
    * CR 702.30a (Echo, D-127): "Echo [cost]" means "At the beginning of your upkeep, if this permanent came under
    * your control since the beginning of your last upkeep, sacrifice it unless you pay [cost]." A triggered
    * ability that `derive` expands (`rules/derive-keywords.ts`): the intervening "if" is the
@@ -7219,6 +7240,11 @@ export type Replacement =
         | number
         | { readonly kind: 'x'; readonly times?: number }
         | { readonly kind: 'timesKicked' }
+        /**
+         * "... for each color of mana spent to cast it" (Converge, CR 105.1, 601.2h, 614.12): `manaSpent` without `of`, read from the spell the permanent entered from (its stack data);
+         * 0 for a permanent that was not cast with mana (a token, a card an effect put onto the battlefield, a copy of a spell, CR 707.10).
+         */
+        | Extract<Amount, { readonly kind: 'manaSpent' }>
         | CountAmount
         /** "... equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as the permanent enters. */
         | Extract<Amount, { readonly kind: 'diedThisTurn' }>
