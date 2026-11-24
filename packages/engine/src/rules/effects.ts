@@ -2804,9 +2804,19 @@ function runEffect(
         (n, e) => (e.kind === 'counterAdded' && e.counter === effect.counter ? n + e.count : n),
         0,
       );
+      // Spectacular Showdown (CR 608.2c): "each creature that had a double strike counter put on it this way" is the objects that really got a counter, each once.
+      const putOn = [
+        ...new Set(
+          events.flatMap((e) =>
+            e.kind === 'counterAdded' && e.counter === effect.counter ? [e.object] : [],
+          ),
+        ),
+      ];
       return {
         ...done(next, events),
-        ...(putCount > 0 ? { thisWay: { countersPut: putCount } } : {}),
+        ...(putCount > 0
+          ? { thisWay: { countersPut: putCount, countersPutOn: { [effect.counter]: putOn } } }
+          : {}),
       };
     }
 

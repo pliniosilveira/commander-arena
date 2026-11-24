@@ -863,6 +863,12 @@ export function resolveObjects(
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
+    case 'putCountersOn': {
+      // CR 608.2c: the objects the `addCounters` effects of this resolution put counters on (of the kind the text names, when it names one), each once.
+      const byKind = ctx.thisWay?.countersPutOn ?? {};
+      const kinds = selector.counter === undefined ? Object.keys(byKind) : [selector.counter];
+      return [...new Set(kinds.flatMap((kind) => byKind[kind] ?? []))];
+    }
     case 'triggerSubject':
       return ctx.triggerSubject === undefined ? [] : [ctx.triggerSubject];
     case 'sacrificed':

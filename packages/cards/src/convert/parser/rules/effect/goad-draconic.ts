@@ -1,9 +1,10 @@
 /**
  * Effect rules of the Draconic Dissent deck (issue 167) about goad and what is said with it.
  */
-import { literal, pattern, sequence } from '../../combinators';
-import type { IrArg, IrDuration } from '../../ir/types';
+import { choice, literal, map, pattern, sequence } from '../../combinators';
+import type { IrArg, IrCounterSpec, IrDuration } from '../../ir/types';
 import { defineRule, spanned } from '../registry';
+import { COUNTER_NAME } from './counters';
 import { type Clauses, single } from './operands';
 import { targetCreatures } from './restrict';
 
@@ -67,4 +68,72 @@ export const EFFECT_RESTRICT_UNBLOCKABLE_NEXT_TURN = defineRule<Clauses>({
   ),
 });
 
-export const GOAD_DRACONIC_EFFECT_RULES = [EFFECT_RESTRICT_UNBLOCKABLE_NEXT_TURN];
+const ID_COUNTERED = 'effect.goad-countered';
+
+/**
+ * `effect.goad-countered`: "goad each creature that had a double strike counter put on it this way", "goad each creature that had counters put on it this way" (Spectacular Showdown,
+ * Agitator Ant; CR 701.15a, 608.2c, 122.6): each creature the counters of the instruction before it really went on is goaded by the controller of the effect. The engine's `goad` of
+ * `putCountersOn`, with the kind of counter when the text names one. Not read: another group ("each creature you control that had ..."), "target", a count of counters other than "a" or
+ * a plural, "put on them", "this turn", a duration.
+ */
+export const EFFECT_GOAD_COUNTERED = defineRule<Clauses>({
+  id: ID_COUNTERED,
+  family: 'effect',
+  leading: ['goad'],
+  cites: ['CR 701.15a (Goad)', 'CR 608.2c (Resolving Spells and Abilities)', 'CR 122.6 (Counters)'],
+  examples: [
+    'goad each creature that had a double strike counter put on it this way',
+    'goad each creature that had counters put on it this way',
+    'Goad each creature that had a +1/+1 counter put on it this way',
+    'goad each creature that had a counter put on it this way',
+  ],
+  rejects: [
+    'goad each creature that had a double strike counter put on it',
+    'goad each creature you control that had a double strike counter put on it this way',
+    'goad each creature that had two counters put on it this way',
+    'goad each creature that had counters put on them this way',
+    'goad target creature that had a double strike counter put on it this way',
+    'goad each creature that had a double strike counter put on it this way until end of turn',
+    'goad each permanent that had counters put on it this way',
+    'goad each creature that had a double strike counter removed from it this way',
+  ],
+  parse: single(
+    ID_COUNTERED,
+    sequence(
+      literal('goad each creature that had '),
+      choice(
+        // "a double strike counter put on it this way": the kind is named.
+        map(
+          sequence(
+            pattern(/an? /iu),
+            spanned(pattern(new RegExp(`(?:${COUNTER_NAME.source})(?= counter put)`, 'iu'))),
+            pattern(/ counter put on it this way(?![\p{L}\p{N}])/iu),
+          ),
+          ([, kind]) => kind,
+        ),
+        // "a counter put on it this way": counters of any kind.
+        map(pattern(/an? counter put on it this way(?![\p{L}\p{N}])/iu), () => undefined),
+        // "counters put on it this way".
+        map(pattern(/counters put on it this way(?![\p{L}\p{N}])/iu), () => undefined),
+      ),
+    ),
+    ([, kind]) => {
+      const args: Record<string, IrArg> = {};
+      if (kind !== undefined) {
+        const counter: IrCounterSpec = {
+          kind: 'counterSpec',
+          name: kind.value[0].toLowerCase(),
+          span: kind.span,
+          rule: ID_COUNTERED,
+        };
+        args.counter = counter;
+      }
+      return { verb: 'goadCountered', args };
+    },
+  ),
+});
+
+export const GOAD_DRACONIC_EFFECT_RULES = [
+  EFFECT_RESTRICT_UNBLOCKABLE_NEXT_TURN,
+  EFFECT_GOAD_COUNTERED,
+];

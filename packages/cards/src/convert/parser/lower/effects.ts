@@ -277,6 +277,34 @@ const GOAD: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Goad each creature that had a double strike counter put on it this way" (Spectacular Showdown, CR 701.15a, 608.2c): the engine's `goad` of `putCountersOn`, the objects the counters of the
+ * instruction before it really went on. Only right after an `addCounters`: after any other instruction "this way" names nothing the engine tracks.
+ */
+const GOAD_COUNTERED: Lowering<IrClause, Effects> = {
+  head: 'goadCountered',
+  id: 'lower.goad-countered',
+  needs: ['effect:goad', 'selector:putCountersOn'],
+  lower(clause, ctx) {
+    if (ctx.lastEffectKind !== 'addCounters') return failure(clause);
+    const counter = arg(clause, 'counter');
+    if (counter !== undefined && counter.kind !== 'counterSpec') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'goad',
+          objects: {
+            kind: 'putCountersOn',
+            ...(counter === undefined ? {} : { counter: counter.name }),
+          },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** "Remove enchanted creature from combat", "remove target creature from combat" (CR 506.4, Observed Stasis): the engine's `removeFromCombat` on what the operand names. */
 const REMOVE_FROM_COMBAT: Lowering<IrClause, Effects> = {
   head: 'removeFromCombat',
@@ -2734,6 +2762,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  GOAD_COUNTERED,
   REMOVE_FROM_COMBAT,
   ATTACK_RANDOM_OPPONENT,
   ATTACK_RANDOM_OPPONENT_ANY,

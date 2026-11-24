@@ -1195,6 +1195,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'moved' }
   /**
+   * "Each creature that had a double strike counter put on it this way" (Spectacular Showdown, CR 608.2c, 122.6): the objects an `addCounters` effect earlier in the same resolution really
+   * put counters on (a replacement or a prevention may stop them), each once. `counter` names the kind ("a double strike counter"): only the objects that got a counter of that kind; left out
+   * ("counters put on it this way"), any kind. Empty when no counters were put.
+   */
+  | { readonly kind: 'putCountersOn'; readonly counter?: string }
+  /**
    * "It" in the body of a triggered ability, for the object whose event caused the trigger: the
    * spell or ability that targeted this permanent (Ward, CR 702.21a), the spell that was cast, the
    * permanent that entered or attacked. Valid only where the engine reads it: the `counterUnlessPays`

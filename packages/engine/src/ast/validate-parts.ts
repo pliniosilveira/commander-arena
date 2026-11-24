@@ -1517,6 +1517,9 @@ export function checkRef(
         );
       }
       break;
+    case 'putCountersOn':
+      // CR 608.2c: the objects the `addCounters` effects before it in the resolution put counters on; empty when there were none.
+      break;
     case 'triggerSubject':
       // The engine reads it only where a node says so (`checkSubjectRef`), not in any selector.
       issue(
