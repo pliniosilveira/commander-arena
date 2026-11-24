@@ -256,3 +256,35 @@ describe('"... you may cast spells from among those exiled cards this turn" and 
     expect(untappedAfter).toBe(untappedBefore + 1);
   });
 });
+
+describe('"Whenever ~ deals combat damage to a player, exile that many cards from the top of your library. Until end of turn, you may cast spells from among those exiled cards." (CR 510.2, 701.13, 601.2)', () => {
+  const pillager = parsed(
+    'SYNTHETIC Dream Raider',
+    'Creature — Human Pirate',
+    'Whenever ~ deals combat damage to a player, exile that many cards from the top of your library. Until end of turn, you may cast spells from among those exiled cards.',
+    { manaCost: '{1}{R}', power: '2', toughness: '2', colors: ['R'] },
+  );
+  const build = () =>
+    scenario()
+      .define(pillager)
+      .seat(0)
+      .battlefield(pillager.name, 'Forest', 'Forest')
+      .library('Grizzly Bears', 'Island', 'Plains', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('as many cards as the damage dealt are exiled, and a spell among them can be cast this turn', () => {
+    const g = build();
+    g.playCombat({ attack: [pillager.name], until: 'combatDamage' });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone('Island', 'exile', { seat: 0 });
+    g.expect.zone('Plains', 'library', { seat: 0 });
+    g.advanceTo('postcombatMain');
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+});
