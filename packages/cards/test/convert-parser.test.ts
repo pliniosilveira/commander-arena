@@ -673,6 +673,7 @@ describe('unmatched abilities', () => {
       'effect.counter-that-unless',
       'effect.put-commander-from-command-zone',
       'effect.return-to-command-zone-at-end-step',
+      'effect.return-to-hand-at-end-step',
       'effect.gain-keyword-for-good',
       'effect.exile-at-end-step',
       'effect.exile-instead-when-leaving',

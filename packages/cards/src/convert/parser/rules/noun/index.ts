@@ -711,6 +711,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'three target nonland permanents',
     'target creature or planeswalker',
     'target artifact or enchantment',
+    // Planeswalker Party deck (Nahiri): a member with no modifier before members that have one.
+    'target enchantment, tapped artifact, or tapped creature',
     'target artifact, creature, enchantment, or land',
     'target artifact or enchantment you control',
     'up to one target creature',

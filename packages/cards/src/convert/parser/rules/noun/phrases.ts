@@ -712,22 +712,45 @@ export function permanentPhrase(
     void zone;
     return { ok: true, value: filter, pos: r.pos };
   };
+  // Planeswalker Party deck (Nahiri, the Harbinger): "enchantment, tapped artifact, or tapped creature": a member with no modifier may come before the members that have
+  // one, since a modifier belongs to its own member only; after the first modified member, each one has its own (so "tapped creature or planeswalker" stays ambiguous and unread).
+  const bareMember: Parser<IrFilter> = (ctx, pos) => {
+    const r = typeWords(PERMANENT_TYPES, false)(ctx, pos);
+    if (!r.ok) return r;
+    const { zone, ...filter } = toFilter(
+      'battlefield',
+      { ...NO_PARTS, types: r.value },
+      ctx.text.slice(pos, r.pos),
+    );
+    void zone;
+    return { ok: true, value: filter, pos: r.pos };
+  };
+  const flagged = (
+    modified: boolean,
+    p: Parser<IrFilter>,
+  ): Parser<{ filter: IrFilter; modified: boolean }> => map(p, (filter) => ({ filter, modified }));
+  const anyMember = choice(flagged(true, member), flagged(false, bareMember));
   const modifiedChoice: Parser<IrFilter> = (ctx, pos) => {
-    const first = member(ctx, pos);
+    const first = anyMember(ctx, pos);
     if (!first.ok) return first;
     const more = many(
-      map(sequence(pattern(/(, or | or |, )/i), member), ([separator, filter]) => ({
+      map(sequence(pattern(/(, or | or |, )/i), anyMember), ([separator, found]) => ({
         separator: separator[0].toLowerCase(),
-        filter,
+        filter: found.filter,
+        modified: found.modified,
       })),
     )(ctx, first.pos);
     if (!more.ok) return more;
     const items = more.value;
     const last = items[items.length - 1];
     if (last === undefined) return fail(ctx, pos);
+    const flags = [first.value.modified, ...items.map((i) => i.modified)];
+    const firstModified = flags.indexOf(true);
     const shaped =
       items.slice(0, -1).every((i) => i.separator === ', ') &&
-      (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
+      (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ') &&
+      firstModified >= 0 &&
+      flags.slice(firstModified).every((f) => f);
     if (!shaped) return fail(ctx, pos);
     const controller = optional(CONTROL_SUFFIX, undefined)(ctx, more.pos);
     if (!controller.ok) return controller;
@@ -738,7 +761,7 @@ export function permanentPhrase(
     );
     return {
       ok: true,
-      value: { ...base, anyOf: [first.value, ...items.map((i) => i.filter)] },
+      value: { ...base, anyOf: [first.value.filter, ...items.map((i) => i.filter)] },
       pos: controller.pos,
     };
   };

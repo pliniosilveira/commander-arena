@@ -105,6 +105,29 @@ const RETURN_TO_COMMAND_AT_END_STEP: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Return it to your hand at the beginning of the next end step" (Nahiri, the Harbinger; CR 603.7c): the delayed move of the `moved` permanent to its owner's hand. */
+const RETURN_TO_HAND_AT_END_STEP: Lowering<IrClause, Effects> = {
+  head: 'returnToHandAtEndStep',
+  id: 'lower.return-to-hand-at-end-step',
+  needs: ['effect:delayedTrigger', 'effect:moveToZone', 'selector:moved'],
+  lower(clause, ctx) {
+    const lowered = eachObject(
+      clause,
+      ctx,
+      (objects) => ({
+        kind: 'delayedTrigger',
+        at: { step: 'endStep', whose: 'each' },
+        effect: { kind: 'moveToZone', objects, to: 'hand' },
+      }),
+      'objects',
+      { moved: true },
+    );
+    if (!lowered.ok) return lowered;
+    const inner = lowered.value.map((e) => (e.kind === 'delayedTrigger' ? e.effect : e));
+    return allMoved(inner) ? lowered : failure(clause);
+  },
+};
+
 /**
  * "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d, 110.2a): the engine's `moveToZone` of a `choose` among the commanders
  * the controller owns in their command zone, onto the battlefield under their control (`optional` for "you may").
@@ -181,6 +204,7 @@ export const GISA_G4_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_FOR_GOOD,
   EXILE_AT_END_STEP,
   RETURN_TO_COMMAND_AT_END_STEP,
+  RETURN_TO_HAND_AT_END_STEP,
   PUT_COMMANDER_FROM_COMMAND_ZONE,
   EXILE_IF_LEAVES,
   PUT_LINKED_EXILE,
