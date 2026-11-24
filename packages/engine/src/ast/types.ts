@@ -1567,8 +1567,8 @@ export interface TargetSpec {
   readonly upToThatMany?: true;
   /**
    * "Tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (CR 603.3d, 701.22, D-513): the slot takes up to as many targets as
-   * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry), none to that many; the number is fixed as the ability is put on the stack, and the
-   * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries`, with `min` and `max` left out.
+   * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry, or the X announced for the cycling cost of "When you cycle this card", CR 702.29a), none to that many; the number is fixed as the ability is put on the stack, and the
+   * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries` or `cycled`, with `min` and `max` left out.
    */
   readonly upToTriggerAmount?: true;
   /**

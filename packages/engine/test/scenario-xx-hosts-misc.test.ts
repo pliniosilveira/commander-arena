@@ -19,6 +19,9 @@ const game = (build: (b: ReturnType<typeof scenario>) => ReturnType<typeof scena
     .at('precombatMain')
     .build();
 
+/** The zone the object with this label (or name) is in now. */
+const zoneOf = (g: Game, ref: string): string | undefined => g.state.objects[g.id(ref)]?.zone;
+
 describe('"Add two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b, 605.3b)', () => {
   const RELIC = 'SYNTHETIC Tricolor Relic';
   const offered = (g: Game): string[] =>
@@ -79,5 +82,67 @@ describe('"Add two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b, 
     for (const bad of [['U'], ['U', 'U'], ['U', 'X'], [], 'UB']) {
       expect(validateCard(withColors(bad) as never).length, JSON.stringify(bad)).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('"When you cycle this card, destroy up to X target artifacts" (CR 702.29a, 107.3, 603.3d)', () => {
+  const MAMMOTH = 'SYNTHETIC Artifact Mammoth';
+  const RING = 'Sol Ring';
+  const board = () =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(MAMMOTH)
+      .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain')
+      .battlefield(RING, { label: 'mine' })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(RING, { label: 'theirs1' })
+      .seat(2)
+      .library(...LIBRARY)
+      .battlefield(RING, { label: 'theirs2' })
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card and the trigger are valid', () => {
+    expect(validateCard(syntheticCard(MAMMOTH))).toEqual([]);
+  });
+
+  test('X = 2: up to two artifacts of any players are destroyed, the third survives', () => {
+    const g = board();
+    g.act(0).activate(MAMMOTH, { x: 2, pay: true });
+    g.act(0).chooseTargets('theirs1', 'theirs2');
+    g.expect.zone(MAMMOTH, 'graveyard', { seat: 0 });
+    g.passAll();
+    expect(zoneOf(g, 'theirs1')).toBe('graveyard');
+    expect(zoneOf(g, 'theirs2')).toBe('graveyard');
+    expect(zoneOf(g, 'mine')).toBe('battlefield');
+  });
+
+  test('up to: fewer targets than X is allowed', () => {
+    const g = board();
+    g.act(0).activate(MAMMOTH, { x: 2, pay: true });
+    g.act(0).chooseTargets('theirs2');
+    g.passAll();
+    expect(zoneOf(g, 'theirs2')).toBe('graveyard');
+    expect(zoneOf(g, 'theirs1')).toBe('battlefield');
+    expect(zoneOf(g, 'mine')).toBe('battlefield');
+  });
+
+  test('more targets than X is refused', () => {
+    const g = board();
+    g.act(0).activate(MAMMOTH, { x: 1, pay: true });
+    const d = g.state.pending;
+    if (d?.kind !== 'targets') throw new Error('expected a targets decision');
+    expect(d.specs.map((s) => [s.min, s.max])).toEqual([[0, 1]]);
+    expect(() => g.act(0).chooseTargets('theirs1', 'theirs2')).toThrow(/room for 1/);
+  });
+
+  test('X = 0: the card is cycled and the trigger has no target, so nothing is destroyed (ruling 2023-06-16)', () => {
+    const g = board();
+    g.act(0).activate(MAMMOTH, { x: 0, pay: true });
+    g.expect.zone(MAMMOTH, 'graveyard', { seat: 0 });
+    g.passAll();
+    for (const l of ['mine', 'theirs1', 'theirs2']) expect(zoneOf(g, l)).toBe('battlefield');
   });
 });

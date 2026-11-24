@@ -980,7 +980,7 @@ export function declareTargets(
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
   /** `'slot'` (issue 345): only a slot of as many targets as the X announced (an activated ability whose cost has an X); `true` is a spell's own text, which also lets a division and a filter read X. */
   countXAllowed: boolean | 'slot' = false,
-  /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
+  /** D-513: only the targets of a triggered ability whose event carries a number (a scry, the X of a cycling cost) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
   upToAmountAllowed = false,
@@ -1204,7 +1204,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.upToTriggerAmount`,
-          'only a slot of a triggered ability whose event carries a number (whenever you scry) takes up to as many targets as that number',
+          'only a slot of a triggered ability whose event carries a number (whenever you scry, when you cycle this card) takes up to as many targets as that number',
         );
       } else if (
         spec.min !== undefined ||

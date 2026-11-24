@@ -26,4 +26,34 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts." (CR 702.29a, 107.3, 603.3d)
+  singleFace({
+    name: 'SYNTHETIC Artifact Mammoth',
+    manaCost: ['5', 'R', 'R'],
+    types: ['creature'],
+    subtypes: ['Elephant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 9,
+    toughness: 7,
+    oracleText: 'Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts.',
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: { kind: 'cycling', cost: [{ kind: 'mana', symbols: ['X', '2', 'R'] }] },
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'cycled' },
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'battlefield', types: ['artifact'] } },
+            upToTriggerAmount: true,
+          },
+        ],
+        effect: { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+      },
+    ],
+  }),
 ];
