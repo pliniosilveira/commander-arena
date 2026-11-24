@@ -885,6 +885,8 @@ describe('unmatched abilities', () => {
       'effect.shuffle-graveyard-cards',
       'effect.move-all-counters',
       'effect.bottom-graveyard-random',
+      'effect.target-player-shuffles-graveyard',
+      'effect.search-each-player',
       'effect.shuffle-into-libraries',
       'effect.tap-or-untap',
       'effect.you-and-permanents-gain-hexproof',
