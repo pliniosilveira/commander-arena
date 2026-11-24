@@ -272,6 +272,7 @@ describe('the dimensions', () => {
       // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
       'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
+      'beginGameOnBattlefield',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
