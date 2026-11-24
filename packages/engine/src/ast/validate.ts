@@ -350,6 +350,15 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       } else if (kindOf(r.count) === 'diedThisTurn') {
         // Issue 101: the creatures that died this turn, read from the history as the permanent enters; no state of the game is read, so nothing more to check.
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'manaSpent') {
+        // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell the permanent entered from; the spell is the permanent itself, so it names no other.
+        if ((r.count as { of?: unknown }).of !== undefined) {
+          issue(
+            out,
+            `${path}.count.of`,
+            'an enters-with count of the mana spent is the spell the permanent came from',
+          );
+        }
       } else if (kindOf(r.count) === 'sum') {
         // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
         const parts = (r.count as { of?: unknown }).of;

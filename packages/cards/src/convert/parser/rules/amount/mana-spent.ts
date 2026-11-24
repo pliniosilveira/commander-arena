@@ -98,3 +98,49 @@ export const AMOUNT_FOR_EACH_MANA_SPENT = defineRule<IrAmount>({
     };
   },
 });
+
+const FOR_EACH_COLOR = /for each color of mana spent to cast (it|~)(?![\p{L}\p{N}])/iu;
+
+/**
+ * `amount.for-each-color-spent`: "for each color of mana spent to cast it" (Converge, CR 105.1, 601.2h, 614.12): after a quantity of counters ("~ enters with a +1/+1 counter on it for each
+ * color of mana spent to cast it"), the number of the five colors the mana spent on the spell had, whatever the amount of each (colorless is no color). "It" is the permanent that enters, read from
+ * the spell it came from. The engine's `manaSpent` with `colors`. Not read: "that spell", "for each mana", "colors" in the plural, a spell that is not the one that enters.
+ */
+export const AMOUNT_FOR_EACH_COLOR_SPENT = defineRule<IrAmount>({
+  id: 'amount.for-each-color-spent',
+  family: 'amount',
+  leading: ['for'],
+  cites: [
+    'CR 105.1 (Colors)',
+    'CR 601.2h (Casting Spells)',
+    'CR 614.12 (Replacement Effects)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: ['for each color of mana spent to cast it', 'for each color of mana spent to cast ~'],
+  rejects: [
+    'for each color of mana',
+    'for each color of mana spent',
+    'for each color of mana spent to cast',
+    'for each color of mana spent to cast that spell',
+    'for each colors of mana spent to cast it',
+    'for each color spent to cast it',
+    'for each color of mana spent to cast its',
+    'for each color of mana from an artifact source spent to cast it',
+    'for each color of mana spent to cast it.',
+    'each color of mana spent to cast it',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(FOR_EACH_COLOR)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'manaSpent',
+        colors: true,
+        who: r.value[1] === '~' ? 'self' : 'it',
+        span: { start: pos, end: r.pos },
+      },
+      pos: r.pos,
+    };
+  },
+});

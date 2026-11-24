@@ -1225,6 +1225,24 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         count: { kind: 'timesKicked' },
       });
     }
+    // "enters with a +1/+1 counter on it for each color of mana spent to cast it" (Converge, CR 105.1, 601.2h, 614.12): the colors of the mana spent on the spell the permanent
+    // came from, counted as it enters. Only the colors of the permanent itself ("it" or "~"), nothing of another spell.
+    if (count?.kind === 'manaSpent') {
+      if (count.colors !== true || (count.who !== 'it' && count.who !== 'self')) {
+        return failure(ability);
+      }
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:manaSpent',
+      ]);
+      if (blocked !== null) return blocked;
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: { kind: 'manaSpent', colors: true },
+      });
+    }
     if (count?.kind !== 'number') return failure(ability);
     const blocked = gate(ability, ['ability:replacement', 'replacement:entersWithCounters']);
     if (blocked !== null) return blocked;
@@ -1294,6 +1312,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:embalm',
   'keyword:devour',
   'keyword:riot',
+  'keyword:sunburst',
   'keyword:suspend',
   'keyword:storm',
   'keyword:gift',

@@ -170,6 +170,10 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // CR 702.82c: "Devour Food 3", the variant with a quality.
     'Devour Food 3',
     'Trample, riot',
+    // CR 702.44a: Sunburst, alone and in a list (its reminder text is stripped before the line is read).
+    'Sunburst',
+    'sunburst',
+    'Flying, sunburst',
     // D-264 (CR 702.131b): Ascend on a permanent.
     'Ascend',
     'ascend',

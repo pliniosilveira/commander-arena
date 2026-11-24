@@ -438,6 +438,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
+    // CR 702.44a, 702.44d: "it gains sunburst" (a spell on the stack gains the keyword whose counters its permanent enters with).
+    'spellGainsKeyword',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
     'removeTimeCounter',
     'castExiled',
@@ -795,6 +797,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'embalm',
     'devour',
     'riot',
+    // CR 702.44a: Sunburst, read from the spell a permanent entered from.
+    'sunburst',
     // D-127: Echo (CR 702.30a) and Cumulative upkeep (CR 702.24a).
     'echo',
     'cumulativeUpkeep',
@@ -3164,6 +3168,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
+  spellGainsKeyword: true,
   removeTimeCounter: true,
   castExiled: true,
   may: true,
@@ -3390,6 +3395,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   embalm: true,
   devour: true,
   riot: true,
+  sunburst: true,
   echo: true,
   cumulativeUpkeep: true,
   suspend: true,

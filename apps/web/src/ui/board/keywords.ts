@@ -14,6 +14,7 @@ import {
   ENCORE_REMINDER,
   NINJUTSU_REMINDER,
   RIOT_REMINDER,
+  SUNBURST_REMINDER,
 } from '../../game/keywords-text';
 
 const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> = {
@@ -132,6 +133,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   ninjutsu: ['Nin', `Ninjutsu (${NINJUTSU_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
+  // CR 702.44a: Sunburst.
+  sunburst: ['Sun', `Sunburst (${SUNBURST_REMINDER})`],
 };
 
 /**

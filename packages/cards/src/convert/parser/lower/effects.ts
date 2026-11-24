@@ -171,6 +171,7 @@ import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
+import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
@@ -2706,6 +2707,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXTRA_TURN,
   DELAYED_DRAW,
   COPY_SPELL,
+  SPELL_GAINS_KEYWORD,
   EXILE_ON_RESOLVE,
   CHANGE_TARGET,
   libraryVerb('scry'),

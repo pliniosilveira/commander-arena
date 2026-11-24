@@ -234,6 +234,7 @@ import { SEARCH_PAIR_RULES } from './search-pair';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
+import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -1313,6 +1314,8 @@ export const EFFECT_RULES = [
   ...REVEAL_X_CARDS_EFFECT_RULES,
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...COPY_SPELL_TWICE_EFFECT_RULES,
+  // CR 702.44a (Sunburst): "it gains sunburst" of the spell of a cast trigger.
+  ...SPELL_GAINS_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
   // CR 701.46a (Adapt): "Adapt 4".
   ...ADAPT_EFFECT_RULES,

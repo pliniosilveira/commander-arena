@@ -118,7 +118,7 @@ export function entersWithCounters(
   escaped = false,
   /** Reads a `countOf` as the permanent enters (D-131): "for each Zombie card in your graveyard". */
   counted: (
-    count: CountAmount | Extract<Amount, { kind: 'diedThisTurn' | 'aggregate' }>,
+    count: CountAmount | Extract<Amount, { kind: 'diedThisTurn' | 'aggregate' | 'manaSpent' }>,
   ) => number = () => 0,
   /** The times the spell the permanent came from was kicked (D-254, CR 702.33c): "for each time it was kicked". 0 for a permanent that was not cast. */
   kicks = 0,
@@ -132,6 +132,7 @@ export function entersWithCounters(
           ? r.count
           : r.count.kind === 'countOf' ||
               r.count.kind === 'diedThisTurn' ||
+              r.count.kind === 'manaSpent' ||
               r.count.kind === 'aggregate'
             ? counted(r.count)
             : r.count.kind === 'sum'
