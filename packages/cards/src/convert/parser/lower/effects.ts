@@ -130,6 +130,7 @@ import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
 import { MELD_LOWERINGS } from './meld';
+import { MONARCH_LOWERINGS } from './monarch';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
 import { NEXT_SPELL_LOWERINGS } from './next-spell';
 import { NIV_LOWERINGS } from './niv';
@@ -2845,6 +2846,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUANDRIX_D2_LOWERINGS,
   ...EXILE_UNTIL_CAST_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
+  ...MONARCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,

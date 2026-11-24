@@ -1164,6 +1164,7 @@ function stepRule(
   word: string,
   more: { readonly examples: readonly string[]; readonly rejects: readonly string[] },
   bare = false,
+  monarch = false,
 ) {
   return defineRule<IrTrigger>({
     id,
@@ -1177,13 +1178,27 @@ function stepRule(
     parse: (ctx, pos) => {
       const r = sequence(
         literal('the beginning of '),
-        stepOwner(bare),
+        monarch
+          ? choice(
+              // CR 725.2: "the monarch's end step" is the turn of whoever is the monarch as it begins (before "the ", the bare reading of `stepOwner`).
+              map(pattern(/the monarch['’]s /i), () => 'monarch' as const),
+              stepOwner(bare),
+            )
+          : stepOwner(bare),
         pattern(new RegExp(`${word}(?![\\p{L}\\p{N}])`, 'iu')),
       )(ctx, pos);
       if (!r.ok) return r;
       const span = { start: pos, end: r.pos };
-      const actor = makeNoun(id, span, r.value[1], { raw: r.value[1] });
-      return { ok: true, value: trigger(id, span, event, { actor }), pos: r.pos };
+      const owner = r.value[1] === 'monarch' ? 'eachPlayer' : r.value[1];
+      const actor = makeNoun(id, span, owner, { raw: owner });
+      return {
+        ok: true,
+        value: {
+          ...trigger(id, span, event, { actor }),
+          ...(r.value[1] === 'monarch' ? { monarchTurn: true as const } : {}),
+        },
+        pos: r.pos,
+      };
     },
   });
 }
@@ -1217,8 +1232,15 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of each end step',
       'the beginning of the end step',
       "the beginning of each opponent's end step",
+      // Archivist of Gondor (CR 725.2, 603.2b): the end step of the turn of the monarch.
+      "the beginning of the monarch's end step",
+      'the beginning of the monarch’s end step',
     ],
     rejects: [
+      "the beginning of the monarch's upkeep",
+      "the beginning of the monarch's",
+      'the beginning of the monarch end step',
+      "the beginning of each monarch's end step",
       'the beginning of the next end step',
       "the beginning of your opponent's end step",
       'the beginning of your upkeep',
@@ -1226,6 +1248,7 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of the upkeep',
     ],
   },
+  true,
   true,
 );
 

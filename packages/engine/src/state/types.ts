@@ -2615,6 +2615,8 @@ export type ContinuousChange =
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
+      /** "That opponent can't attack you this combat": only the creatures this player controls (fixed as the effect was made). */
+      readonly of?: SeatId;
     }
   /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each

@@ -1146,6 +1146,8 @@ function matches(
     case 'step':
       // CR 503 to 514: whose turn it is, relative to the controller of the ability.
       if (trigger.whose === 'you') return occ.seat === candidate.controller;
+      // CR 725.2, 603.2b: the active player is the monarch as the step begins.
+      if (trigger.whose === 'monarch') return state.monarch !== null && occ.seat === state.monarch;
       return trigger.whose === 'each' || occ.seat !== candidate.controller;
     case 'drawn':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
@@ -1961,6 +1963,17 @@ function findDelayedTriggers(
       triggered: [],
     };
     const trigger = delayed.ability.trigger;
+    // CR 603.7, 603.2c (Forth Eorlingas!): a delayed ability of the one-or-more kind is found as the batch triggers of a permanent are, once for each player damaged in one run of events.
+    if (trigger.kind === 'combatDamageBatch') {
+      found.push(
+        ...batchTriggers(state, events, [delayed.source], () => ({
+          ...candidate,
+          triggered: [{ index: -1, ability: delayed.ability }],
+        })),
+      );
+      remaining.push(delayed);
+      continue;
+    }
     const matched = events
       .flatMap((event) => occurrences(state, trigger, event, null))
       .filter(

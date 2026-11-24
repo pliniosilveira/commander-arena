@@ -3285,6 +3285,17 @@ export type Effect =
       readonly effect: Effect;
     }
   /**
+   * "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become the monarch." (CR 603.7, 603.2c, 510.2, 514.2, Forth Eorlingas!): a
+   * delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers until the end of the turn (CR 514.2) as the `combatDamageBatch` trigger
+   * does: once for each player damaged in one combat damage event, however many of the sources `filter` names damaged them. `effect` runs each time, with the controller of the spell
+   * or ability as "you"; it names no target and reads nothing of the spell (CR 603.7c: nothing of it is left to name later).
+   */
+  | {
+      readonly kind: 'delayedCombatDamageBatchTurn';
+      readonly filter: ObjectFilter;
+      readonly effect: Effect;
+    }
+  /**
    * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (CR 603.7, 603.7c, 510.3a, 514.2, issue 144,
    * Great Train Heist): a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the
    * controller controls, as it is when the damage is dealt) deals combat damage to the one player `player` names, until the end of the turn (CR 514.2), once for each such creature
@@ -3693,6 +3704,11 @@ export type Effect =
       readonly cost: readonly Cost[];
       readonly effect: Effect;
       readonly optional?: true;
+      /**
+       * "That opponent may pay {X}, where X is the number of cards in their hand" (Champions of Minas Tirith, CR 107.3, 118.12a): the {X} symbols of the mana cost are the number of cards in the
+       * hand of the player asked, counted as that player is asked (a player with no card in hand pays nothing and is not asked: the cost is paid). Only a mana cost whose symbols are {X}.
+       */
+      readonly xIsHandSize?: true;
       /**
        * Marks the payment of an Echo trigger (CR 702.30a, D-127): the decisions it asks carry `upkeep: 'echo'`
        * so that the player is told why they are paying. Only the engine's expansion of Echo sets it.
@@ -4327,7 +4343,15 @@ export type Effect =
   | {
       readonly kind: 'creaturesCantAttackYou';
       readonly creatures: ObjectFilter;
-      readonly duration: 'untilYourNextTurn';
+      /**
+       * `thisCombat` (Champions of Minas Tirith: "they can't attack you this combat", CR 508.1a, 511.3): it ends as the end of combat step ends (`expireEndOfCombatEffects`), not at the end of the turn.
+       */
+      readonly duration: 'untilYourNextTurn' | 'thisCombat';
+      /**
+       * "That opponent can't attack you this combat" (CR 508.1a, 603.7c): only the creatures this one player controls are barred (the first player the selector names as the effect runs, fixed
+       * then; `creatures` still narrows them, as it does without this). Nobody is named once that player has left the game: nothing is barred.
+       */
+      readonly player?: PlayerSelector;
     }
   /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender." (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2; Wakestone Gargoyle): a rule-changing effect on a
@@ -5406,7 +5430,11 @@ export type Trigger =
   | {
       readonly kind: 'step';
       readonly step: TriggerStep;
-      readonly whose: 'you' | 'each' | 'opponent';
+      /**
+       * `monarch` (Archivist of Gondor, "At the beginning of the monarch's end step", CR 725.2, 603.2b): the turn of the player who is the monarch as the step begins;
+       * with no monarch it never triggers. `triggerPlayer` is that player.
+       */
+      readonly whose: 'you' | 'each' | 'opponent' | 'monarch';
       /**
        * "At the beginning of each of your main phases" (CR 505.1, 603.2b; issue 103): it triggers as `alsoStep` begins too, a second step of the same turn.
        * Never the same as `step`.

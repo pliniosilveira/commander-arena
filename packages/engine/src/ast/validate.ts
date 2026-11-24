@@ -1562,7 +1562,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           `alsoStep must be another known step, not ${String(t.alsoStep)}`,
         );
       }
-      if (!isOneOf(t.whose, ['you', 'each', 'opponent'])) {
+      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;

@@ -70,6 +70,9 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
 const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you do, /i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336) and "When you cast your next instant or sorcery spell this turn, " (Twinferno): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you (?:next cast an? |cast your next )[^,.]+ spell this turn, /i;
+/** "Whenever one or more creatures you control deal combat damage to one or more players this turn, " (Forth Eorlingas!, CR 603.7): the lead of a spell's sentence that creates a delayed triggered ability for the turn. */
+const DELAYED_COMBAT_BATCH_LEAD =
+  /^whenever one or more creatures you control deal combat damage to one or more players this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER =
@@ -637,6 +640,14 @@ const THOSE_CREATURES_CANT_ATTACK_YOU =
  * issue 81, CR 118.12a, 508.1a): the second sentence says what happens when the player does not pay the first one asks, so the two are read as one instruction.
  */
 const THEY_MAY_PAY = /(?:^|, )they may pay (?:\{[^}]+\})+\.$/i;
+/**
+ * "At the beginning of combat on each opponent's turn, if you're the monarch, that opponent may pay {X}, where X is the number of cards in their hand. If they don't, they can't attack you
+ * this combat." (Champions of Minas Tirith, CR 118.12a, 508.1a): the same pair of sentences, read as one instruction (`effect.pay-hand-or-cant-attack-you`).
+ */
+const THAT_OPPONENT_MAY_PAY_HAND =
+  /(?:^|, )that opponent may pay \{X\}, where X is the number of cards in their hand\.$/i;
+const IF_THEY_DONT_CANT_ATTACK_YOU_COMBAT =
+  /^if they don['’]t, they can['’]t attack you this combat\.$/i;
 const IF_THEY_DONT_CANT_ATTACK =
   /^if they don['’]t, creatures they control can['’]t attack [\p{L}]+ you control this turn\.$/iu;
 
@@ -1350,6 +1361,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       b !== undefined &&
+      said(a, THAT_OPPONENT_MAY_PAY_HAND) &&
+      said(b, IF_THEY_DONT_CANT_ATTACK_YOU_COMBAT)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
       said(a, REVEAL_UNTIL_OPPONENTS_FIRST) &&
       said(b, PUT_THOSE_CREATURES_SHUFFLE)
     ) {
@@ -1676,7 +1695,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
 
   // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7): a spell's sentence that creates a delayed triggered ability,
   // not a triggered ability of a permanent; it is read as the sentences of the body (`sentence.delayed`).
-  if (TRIGGER_WORD.test(text) && !DELAYED_CAST_LEAD.test(text)) {
+  if (
+    TRIGGER_WORD.test(text) &&
+    !DELAYED_CAST_LEAD.test(text) &&
+    !DELAYED_COMBAT_BATCH_LEAD.test(text)
+  ) {
     const word = /^\S+/.exec(text) ?? [''];
     const wordSpan = { start: 0, end: word[0].length };
     const bodyFrom = word[0].length + 1;

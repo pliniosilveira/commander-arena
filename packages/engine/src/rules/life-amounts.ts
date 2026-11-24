@@ -67,6 +67,16 @@ function ownLifeAmount(
 }
 
 /**
+ * The cost of an `unlessPays` whose {X} is a number of cards (`xIsHandSize`, CR 107.3): each {X} symbol of the mana is `n` generic mana. Null when that leaves nothing to pay (n is 0).
+ */
+export function costWithHandSizeX(cost: readonly Cost[], n: number): readonly Cost[] | null {
+  if (n <= 0) return null;
+  return cost.map((c) =>
+    c.kind === 'mana' ? { ...c, symbols: c.symbols.map((s) => (s === 'X' ? String(n) : s)) } : c,
+  );
+}
+
+/**
  * The cost of a `mayPay` with its life amounts worked out (CR 608.2c): `triggerDamage` is the life that was gained, a count is what it is now. Null when
  * a payment of life comes to 0 or less (nothing to pay, nothing bought, CR 119.4: a gain of 0 life was no event).
  */
