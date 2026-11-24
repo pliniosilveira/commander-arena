@@ -68,6 +68,7 @@ import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -2841,6 +2842,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_LOWERINGS,
   ...LIMIT_BREAK_G1_LOWERINGS,
   ...COUNTER_INTELLIGENCE_G2_LOWERINGS,
+  ...COUNTER_INTELLIGENCE_G3_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.

@@ -108,11 +108,14 @@ export function checkDelayedTrigger(
   // tokens of `createToken`, `createCopies` or `populate`), as they are when the ability is created; sacrificed by the controller of the ability.
   if (kind === 'sacrifice') {
     const sacrifice = inner as Extract<Effect, { kind: 'sacrifice' }>;
-    if (!exiledAvailable || kindOf(sacrifice.objects) !== 'moved') {
+    // Depthshaker Titan (CR 603.7c): "Sacrifice them at the beginning of the next end step" after "any number of target ... become ...": the targets of the spell or ability (the slot is
+    // checked where the effect is, as any `target` selector is).
+    const ofTarget = kindOf(sacrifice.objects) === 'target';
+    if (!ofTarget && (!exiledAvailable || kindOf(sacrifice.objects) !== 'moved')) {
       issue(
         out,
         `${path}.effect.objects`,
-        "a delayed sacrifice names the objects an effect before it made: 'moved' after a token is created",
+        "a delayed sacrifice names the objects an effect before it made: 'moved' after a token is created, or the targets of the ability",
       );
     }
     if (sacrifice.byController !== undefined || sacrifice.player !== undefined) {

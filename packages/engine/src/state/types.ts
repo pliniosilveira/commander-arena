@@ -1152,6 +1152,8 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly count: number;
       readonly exactly?: true;
+      readonly anyNumber?: true;
+      readonly fromMoved?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**

@@ -584,6 +584,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.tapped-for-mana': whenever,
   'trigger.taps-for-mana': whenever,
   'trigger.state': whenever,
+  // Counter Intelligence deck, group 3 (Darksteel Reactor): "~ has twenty or more charge counters on it".
+  'trigger.state-has': whenever,
   'trigger.enters-during': whenever,
   'condition.control-greatest': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'restriction.once-each-turn': permanent((e) => `{1}: Draw a card. ${e}`),
@@ -730,6 +732,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
+  // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
+  'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'replacement.damage-double': asIs,

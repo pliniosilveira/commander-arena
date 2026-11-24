@@ -77,6 +77,34 @@ function optionNames(text: string): readonly string[] | null {
   return new Set(parts).size === parts.length ? parts : null;
 }
 
+const CARD_TYPE_WORDS = [
+  'artifact',
+  'creature',
+  'enchantment',
+  'instant',
+  'sorcery',
+  'land',
+  'planeswalker',
+  'battle',
+];
+
+/**
+ * The card types of "choose artifact, creature, enchantment, instant, or sorcery" (Cloud Key, CR 205.2a): "A or B", "A, B, or C", each a card type in lowercase, none twice. Null
+ * when the words are not such a list.
+ */
+function cardTypeNames(text: string): readonly string[] | null {
+  const parts = text.split(/, or | or |, /);
+  const separators = [...text.matchAll(/, or | or |, /g)].map((m) => m[0]);
+  const shaped =
+    separators.length === parts.length - 1 &&
+    separators.slice(0, -1).every((sep) => sep === ', ') &&
+    separators[separators.length - 1] === (parts.length === 2 ? ' or ' : ', or ');
+  if (!shaped || parts.length < 2 || !parts.every((part) => CARD_TYPE_WORDS.includes(part))) {
+    return null;
+  }
+  return new Set(parts).size === parts.length ? parts : null;
+}
+
 const EXCLUDED_COLORS: Readonly<Record<string, 'W' | 'U' | 'B' | 'R' | 'G'>> = {
   white: 'W',
   blue: 'U',
@@ -116,6 +144,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters the battlefield, choose a card type.',
     // Issue 184 (Thriving Isle): a color other than one.
     'As ~ enters, choose a color other than blue.',
+    // Cloud Key (CR 205.2a): some of the card types.
+    'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery.',
+    'As ~ enters, choose creature or artifact.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -141,6 +172,13 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose two card types.',
     'As ~ enters, you may choose a card type.',
     'As ~ enters, choose a supertype.',
+    'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery',
+    'As ~ enters, choose artifact, creature, enchantment, instant and sorcery.',
+    'As ~ enters, choose artifact, creature, enchantment, instant, sorcery.',
+    'As ~ enters, choose artifact, artifact, or creature.',
+    'As ~ enters, choose artifact, creature, or goblin.',
+    'As ~ enters, choose artifact.',
+    'As ~ enters, you may choose artifact or creature.',
     'As ~ enters, choose a creature type. ~ enters with a fellowship counter on it.',
     '~ enters, choose a color.',
     'As ~ attacks, choose a color.',
@@ -159,6 +197,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
         pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
         pattern(/, choose (\p{Lu}[^.,—•\n]*(?:(?:, or | or |, )\p{Lu}[^.,—•\n]*)+)\./u),
+        // CR 205.2a (Cloud Key): "choose artifact, creature, enchantment, instant, or sorcery": some of the card types, in lowercase.
+        pattern(/, choose ((?:[a-z]+)(?:(?:, or | or |, )[a-z]+)+)\./u),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -171,26 +211,30 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       kind === 'creature type' ||
       kind === 'card type' ||
       kind === 'planeswalker type';
-    const names = plain ? null : optionNames(tail[1] ?? '');
-    if (!plain && names === null) return fail(ctx, pos);
+    // Cloud Key: a choice among card types listed in lowercase (the capitalized names of Khans or Dragons are the card's own).
+    const types = plain ? null : cardTypeNames(tail[1] ?? '');
+    const names = plain || types !== null ? null : optionNames(tail[1] ?? '');
+    if (!plain && types === null && names === null) return fail(ctx, pos);
     const excluded = EXCLUDED_COLORS[(tail[2] ?? '').toLowerCase()];
     const what: IrChoiceArg =
-      names === null
-        ? {
-            kind: 'choiceKind',
-            what:
-              kind === 'color'
-                ? 'color'
-                : kind === 'card type'
-                  ? 'cardType'
-                  : kind === 'planeswalker type'
-                    ? 'planeswalkerType'
-                    : 'creatureType',
-            ...(excluded === undefined ? {} : { except: excluded }),
-            span,
-            rule: id,
-          }
-        : { kind: 'choiceKind', what: 'option', options: names, span, rule: id };
+      types !== null
+        ? { kind: 'choiceKind', what: 'cardType', options: types, span, rule: id }
+        : names === null
+          ? {
+              kind: 'choiceKind',
+              what:
+                kind === 'color'
+                  ? 'color'
+                  : kind === 'card type'
+                    ? 'cardType'
+                    : kind === 'planeswalker type'
+                      ? 'planeswalkerType'
+                      : 'creatureType',
+              ...(excluded === undefined ? {} : { except: excluded }),
+              span,
+              rule: id,
+            }
+          : { kind: 'choiceKind', what: 'option', options: names, span, rule: id };
     const event: IrClause = {
       kind: 'clause',
       verb: 'entersChoose',

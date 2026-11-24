@@ -276,11 +276,21 @@ export function runInstruction(
   }
   if (instruction.kind === 'chooseObjects') {
     if (instruction.chosen !== null) return done(state);
-    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter((id) =>
-      matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+    // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
+    const among =
+      instruction.fromMoved === true
+        ? new Set((res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield'))
+        : null;
+    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter(
+      (id) =>
+        (among === null || among.has(id)) &&
+        matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
-    const max = Math.min(instruction.count, candidates.length);
+    const max =
+      instruction.anyNumber === true
+        ? candidates.length
+        : Math.min(instruction.count, candidates.length);
     return {
       state,
       events: [],
@@ -925,6 +935,8 @@ function runEffect(
             filter: effect.filter,
             count: effect.count,
             ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
+            ...(effect.fromMoved === true ? { fromMoved: true as const } : {}),
             chosen: null,
           },
         ],
@@ -1872,6 +1884,27 @@ function runEffect(
             ...effect.effect,
             effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
           },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            { source: res.source, controller: res.controller, ability },
+          ],
+        });
+      }
+      // CR 603.7c, 701.21a (Depthshaker Titan): "any number of target noncreature artifacts you control become 3/3 artifact creatures. Sacrifice them at the beginning of the next end
+      // step.": one delayed ability about the permanents the targets of the effect named as it was created (`boundObjects`), found later only if each is still that object on the
+      // battlefield. With no target chosen there is nothing to wait for.
+      if (effect.effect.kind === 'sacrifice' && effect.effect.objects.kind === 'target') {
+        const ids = resolveObjects(state, effect.effect.objects, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'battlefield',
+        );
+        if (ids.length === 0) return done(state);
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,

@@ -60,6 +60,7 @@ import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_EFFECT_RULES } from './counter-intelligence-g3';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -1384,6 +1385,8 @@ export const EFFECT_RULES = [
   ...LIMIT_BREAK_G1_EFFECT_RULES,
   // Counter Intelligence deck, group 2: "Put those counters on target permanent you control".
   ...COUNTER_INTELLIGENCE_G2_EFFECT_RULES,
+  // Counter Intelligence deck, group 3: "~ becomes a copy of target artifact you control", "any number of target ... become 3/3 artifact creatures", "choose any number of permanents you control that had a counter put on them this way" and "those permanents phase out" start like the plain becomes, any-number, choose and those rules.
+  ...COUNTER_INTELLIGENCE_G3_EFFECT_RULES,
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,
