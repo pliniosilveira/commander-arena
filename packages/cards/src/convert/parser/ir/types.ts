@@ -937,6 +937,8 @@ export interface IrCondition extends IrNode {
     // Stage P30 (D-135): "if it's a Zombie card", "if it's an Angel" (CR 608.2c): an object an earlier instruction of the
     // text moved or named, against a filter that says what it is (never where it is: no zone, controller or owner)
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
+    // "the discarded card was a creature card" (Moria Scavenger, CR 602.2b, 701.9a): the card the cost of the activated ability discarded, against a filter that says what it is
+    | { readonly kind: 'discardedAsCostMatches'; readonly filter: IrFilter }
     // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
     | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against

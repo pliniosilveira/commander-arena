@@ -181,6 +181,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedAsCost === undefined
         ? {}
         : { costSacrificed: obj.stack.sacrificedAsCost }),
+      ...(obj.stack?.discardedAsCost === undefined
+        ? {}
+        : { costDiscarded: obj.stack.discardedAsCost }),
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
