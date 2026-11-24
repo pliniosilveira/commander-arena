@@ -1360,6 +1360,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'yourTurn',
     'cardLeftYourGraveyard',
     'descendedThisTurn',
+    'playedLandThisTurn',
     'manaSpentAtLeast',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
@@ -2455,6 +2456,8 @@ export const CONDITION_KINDS = [
   'cardLeftYourGraveyard',
   /** "If you descended this turn": the engine's `descendedThisTurn`. */
   'descendedThisTurn',
+  /** "If you played a land this turn" (CR 305.1): the engine's `playedLandThisTurn`. */
+  'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
