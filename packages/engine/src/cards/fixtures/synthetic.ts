@@ -160,6 +160,7 @@ import { SYNTHETIC_NIV_GROUP_3_B_LIST } from './synthetic-niv-group-3-b';
 import { SYNTHETIC_NIV_GROUP_3_C_LIST } from './synthetic-niv-group-3-c';
 import { SYNTHETIC_NIV_PRIMITIVES_LIST } from './synthetic-niv-primitives';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
+import { SYNTHETIC_PARTY_LIST } from './synthetic-party';
 import { SYNTHETIC_PILES_LIST } from './synthetic-piles';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
 import { SYNTHETIC_PLATE_LIST } from './synthetic-plate';
@@ -500,6 +501,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DANITHA_G7_LIST,
   ...SYNTHETIC_ENERGY_LIST,
   ...SYNTHETIC_FEATHER_G2_LIST,
+  ...SYNTHETIC_PARTY_LIST,
   ...SYNTHETIC_GISA_G5_LIST,
   ...SYNTHETIC_HYLDA_G2_LIST,
   ...SYNTHETIC_GALADRIEL_G2_LIST,

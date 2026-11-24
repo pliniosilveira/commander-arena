@@ -1686,6 +1686,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // CR 122.1: "the number of experience counters you have".
     'experienceCounters',
+    // CR 700.8: "the number of creatures in your party".
+    'partySize',
     // D-638: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
     'spellsCastThisTurn',
     // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
@@ -2854,6 +2856,8 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
   'experienceCounters',
+  /** "The number of creatures in your party" (CR 700.8): the engine's `partySize`, an effect's amount, a cost reduction's, a condition's (a full party) or a characteristic-defining ability's. */
+  'partySize',
   /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-638): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */

@@ -462,6 +462,13 @@ export type Amount =
    */
   | { readonly kind: 'experienceCounters' }
   /**
+   * "The number of creatures in your party" (CR 700.8, 700.8a, 700.8b; Archpriest of Iona, Malakir Blood-Priest): how many creatures are in the party of the controller of the spell or
+   * ability (up to one Cleric, one Rogue, one Warrior and one Wizard among the creatures they control, a creature with several of the types filling one slot and the most creatures
+   * counting), 0 to 4, read from the types the creatures have as the instruction runs. "You have a full party" (CR 700.8c) is `amountIs` of this equal to 4. A state amount, so valid wherever an
+   * amount is; as the amount of a characteristic-defining ability it is read through layers 1 and 4 like a count (`DefinedPtAmount`).
+   */
+  | { readonly kind: 'partySize' }
+  /**
    * "One plus the number of instant and sorcery spells you've cast this turn" (Prismari deck, group 1, CR 601.2i, 707.10): how many spells the controller of the spell or ability
    * has cast this turn (`TurnLog.castSpells`: a spell counts once it is on the stack with its costs paid, whether or not it resolved or was countered; a copy is not cast, and an
    * opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that have at least one of those card types, as they were cast; left out,
@@ -659,6 +666,8 @@ export type StaticPtAmount =
 export type DefinedPtAmount =
   | CountAmount
   | Extract<Amount, { readonly kind: 'devotion' }>
+  /** "~'s power is equal to the number of creatures in your party" (CR 700.8, 604.3): the party size of the controller of the object, read through layers 1 and 4. */
+  | { readonly kind: 'partySize' }
   /**
    * "~'s power and toughness are each equal to your life total" (issue 145, CR 604.3, 119.1): the life total of the controller of the object (its owner outside the battlefield
    * and the stack), read each time the characteristics are worked out. Only `you`; a life total below 0 is 0 (CR 208.1: a negative power or toughness is 0 for state-based
