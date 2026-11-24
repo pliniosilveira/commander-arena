@@ -411,6 +411,16 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         if (times !== undefined && (!isCount(times) || times < 2)) {
           issue(out, `${path}.count.times`, 'the multiple of X is an integer of 2 or more');
         }
+      } else if (kindOf(r.count) === 'countersRemovedAsEntered') {
+        // Sin, Unending Cataclysm: the counters removed as it entered, times 1 (absent) or an integer of 2 or more; the face must remove them (below).
+        const times = (r.count as { times?: unknown }).times;
+        if (times !== undefined && (!isCount(times) || times < 2)) {
+          issue(
+            out,
+            `${path}.count.times`,
+            'the multiple of the counters removed is an integer of 2 or more',
+          );
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&
@@ -427,6 +437,19 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(out, `${path}.ifEscaped`, 'ifEscaped is true or absent');
       }
       break;
+    case 'asEntersRemoveCounters': {
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents are on the battlefield, of any player, so the filter names neither a zone nor a controller nor an owner.
+      checkFilter(r.filter, `${path}.filter`, out);
+      const f = r.filter as { zone?: unknown; controller?: unknown; owner?: unknown } | undefined;
+      if (f?.zone !== undefined || f?.controller !== undefined || f?.owner !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the permanents are those of the battlefield, of any player: no zone, controller or owner',
+        );
+      }
+      break;
+    }
     case 'asEntersChoose':
       // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
       if (
@@ -2190,6 +2213,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         a.trigger?.kind === 'scries' || a.trigger?.kind === 'cycled',
         true,
+        false,
+        // CR 107.3m: the enters trigger of the permanent itself may take up to as many targets as the X of the spell it came from.
+        a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -2383,7 +2409,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectStat',
+          'subjectGreaterThanEach',
+          'subjectPowerLessThanThis',
+        ]) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
               out,
@@ -2489,7 +2520,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectStat',
+          'subjectGreaterThanEach',
+          'subjectPowerLessThanThis',
+        ]) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
           }
@@ -2999,6 +3035,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   // CR 107.3m: "enters with X counters" reads the X of the spell's mana cost; without an {X} there
   // is nothing to read (a card that is not a spell has X = 0, CR 107.3g).
   face.abilities.forEach((a, i) => {
+    // Sin, Unending Cataclysm: the counters removed as it enters can only be read where the face removes them.
+    if (
+      a?.kind === 'replacement' &&
+      a.replacement?.kind === 'entersWithCounters' &&
+      kindOf(a.replacement.count) === 'countersRemovedAsEntered' &&
+      !face.abilities.some(
+        (b) => b?.kind === 'replacement' && b.replacement?.kind === 'asEntersRemoveCounters',
+      )
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].replacement.count`,
+        'it counts the counters removed as it enters, but the face removes none (asEntersRemoveCounters)',
+      );
+    }
     if (
       a?.kind === 'replacement' &&
       a.replacement?.kind === 'entersWithCounters' &&

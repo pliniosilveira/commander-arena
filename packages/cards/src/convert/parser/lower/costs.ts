@@ -148,6 +148,7 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         counter: cost.counter,
         count: cost.count,
         among: filter.value,
+        ...(cost.anyKind === true ? { anyKind: true as const } : {}),
       });
     }
     case 'sacrifice': {

@@ -220,7 +220,7 @@ const MODE_COST_LEAD = /^\p{Lu}[\p{L}'’ -]* — ((?:\{[^{}]+\})+) — (?=\S)/u
  * taken off only when the bullet did not read as written, as the flavor word of a line is (D-204), so a bullet that reads today never changes and a wrong strip can only
  * turn an unread mode into a read one.
  */
-const MODE_NAME_LEAD = /^\p{Lu}[\p{L}'’ -]* — (?=\S)/u;
+const MODE_NAME_LEAD = /^\p{Lu}[\p{L}'’ !?-]* — (?=\S)/u;
 
 /** Spree (CR 702.172a): "{2}{R} — ", the cost of a mode with no name before it; group 1 is the cost, in braces. */
 const SPREE_COST_LEAD = /^((?:\{[^{}]+\})+) — (?=\S)/u;

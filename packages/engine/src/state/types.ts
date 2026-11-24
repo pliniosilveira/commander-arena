@@ -530,6 +530,11 @@ export interface StackData {
    */
   readonly commanderCastCounters?: number;
   /**
+   * The counters the permanent this spell becomes enters with, from `nextSpellModifier` effects used up as the spell was cast (Yuna, Grand Summoner: "that creature enters with two additional +1/+1
+   * counters on it", CR 614.1c, 122.6). Absent when none.
+   */
+  readonly entersWithCounters?: Readonly<Record<string, number>>;
+  /**
    * A spell cast from the graveyard with the permission of a permanent (`playFromGraveyardOnceEachTurn`, D-232): that permanent, and what the permanent the spell becomes
    * does or has because of it (enters tapped; gains an ability). Applied as the spell enters the battlefield (`rules/zones.ts`).
    */
@@ -1551,6 +1556,9 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`): the choice is among the candidates with the greatest (smallest) value of the stat. */
+      readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      readonly least?: 'power' | 'toughness' | 'manaValue';
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1567,6 +1575,8 @@ export type Instruction =
       readonly seat: SeatId;
       readonly accepted: boolean | null;
       readonly chosen: readonly ObjectId[] | null;
+      /** `search.mayPut` (CR 608.2d): the answer of the searching player to "put that card onto the battlefield?": absent until the card is found, `null` once the search and the reveal have happened and the question is pending (or being asked), the answer after it. */
+      readonly put?: boolean | null;
       /**
        * CR 701.23i, 101.4: with several players, each looks at their library, then they decide in APNAP order which cards to find, and only then do the cards move and the libraries
        * get shuffled. This instruction is the one of the first player; `later` are the players who decide after, `held` what each did so far (`accepted` false: a "may" search they
@@ -1876,6 +1886,8 @@ export type Instruction =
       readonly settled?: true;
       /** The creatures its controller chose to sacrifice for devour (CR 702.82a, D-185), null until asked; absent when the definition has no devour. */
       readonly devoured?: readonly ObjectId[] | null;
+      /** The permanents whose counters its controller chose to remove as it enters (Sin, Unending Cataclysm), null until asked; absent when the definition removes none. */
+      readonly removed?: readonly ObjectId[] | null;
       /** The answers to the riot questions so far, one for each instance of riot (CR 702.136b, D-185): `counter` or `haste`. */
       readonly riot?: readonly string[];
       /** The card of the hand revealed for the "reveal a card" of a land this token is a copy of (CR 701.20a, D-225), once the player chose among several. */
@@ -2251,6 +2263,8 @@ export interface ResolutionContext {
    * none being an answer. Absent until answered, and cleared once that move is done.
    */
   readonly entersDevour?: readonly ObjectId[];
+  /** The answer to "remove all counters from any number of permanents" as it enters (Sin, Unending Cataclysm): the permanents chosen, none being an answer, for the move that asked it. Absent until answered, and cleared once that move is done. */
+  readonly entersRemoved?: readonly ObjectId[];
   /** The answers to the riot questions (CR 702.136a, 702.136b, D-185) of the move that asks them, one for each instance so far: `counter` or `haste`. Cleared once that move is done. */
   readonly entersRiot?: readonly string[];
   /** The card of the hand revealed for "you may reveal a Mountain or Plains card from your hand" (CR 701.20a, D-225), for the move that asked. Absent until answered; cleared once that move is done. */
@@ -2649,6 +2663,18 @@ export type ContinuousChange =
       readonly of?: SeatId;
     }
   /**
+   * "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (`creaturesCantAttackYou` with `tax`, CR 508.1d, 508.1h, 611.2c): no
+   * layer and no fixed set (`objects` is empty): read where an attack is taxed (`rules/attack-tax.ts`), for each creature `filter` matches then, with `controller` as "you": each such creature
+   * declared attacking `controller` as a player costs `symbols` (mana symbols) to its controller. `source` is the object named as the source of the payment.
+   */
+  | {
+      readonly kind: 'attackTaxPlayer';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+      readonly symbols: readonly string[];
+      readonly source: ObjectId | null;
+    }
+  /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each
    * creature `filter` matches when the rule asks (with `controller` as "you") has the restriction `restriction`, read by `hasRestriction` (`rules/restrictions.ts`).
    */
@@ -2767,6 +2793,8 @@ export type ContinuousChange =
       readonly sourceFilter?: { readonly filter: ObjectFilter; readonly controller: SeatId };
       /** "For each 1 damage prevented this way, create a token" (CR 615.5): the token `controller` (the controller of the effect) creates for each point this shield prevents. */
       readonly perPrevented?: { readonly definition: TokenDefinition; readonly controller: SeatId };
+      /** "Prevent that damage and put that many +1/+1 counters on it" (CR 615.5): the counters `controller` puts on the permanent that would have been damaged, as many as this shield prevents. */
+      readonly countersPrevented?: { readonly counter: string; readonly controller: SeatId };
     };
 
 /**
@@ -2892,6 +2920,11 @@ export interface TurnLog {
     readonly counter: string;
     readonly types: readonly CardType[];
   }[];
+  /**
+   * Each time counters were put on a permanent this turn by anyone (CR 122.6, Wakka, Devoted Guardian: "if a counter was put on this creature this turn"), in order: the permanent and the
+   * kind of counter. Unlike `countersPut` it also has the counters no player put. Absent until one was put, so the state of a game where none was is as it was.
+   */
+  readonly countersPutOn?: readonly { readonly object: ObjectId; readonly counter: string }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
   /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */

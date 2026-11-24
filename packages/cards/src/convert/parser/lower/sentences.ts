@@ -1967,6 +1967,74 @@ function lowerAfterExile(
 }
 
 /**
+ * "Reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library in a random order. When you reveal a
+ * creature card this way, put X +1/+1 counters on target creature you control, where X is the mana value of that card." (Yuna's Whistle; CR 603.12, 701.20, 202.3): the engine's `reflexive` ability
+ * with `ifMoved`, `ifMovedMatches` of the card type the words name and `carriesMoved`, created when the card found is of that type; its targets are its own and "that card" is the card found. It is the
+ * last sentence of the text and follows a `revealUntil` of the controller's own library that puts the card found into the hand. Any other shape is refused, never guessed.
+ */
+const REVEAL_TYPES: readonly string[] = [
+  'artifact',
+  'creature',
+  'enchantment',
+  'instant',
+  'land',
+  'planeswalker',
+  'sorcery',
+];
+
+function lowerAfterReveal(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const refused = (needs?: readonly FeatureRef[]): StepResult => ({
+    stopped: needs === undefined ? refuse(sentence) : { ...refuse(sentence), needs },
+  });
+  const type = sentence.afterReveal;
+  if (
+    type === undefined ||
+    !REVEAL_TYPES.includes(type) ||
+    i !== sentences.length - 1 ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refused();
+  }
+  const reveal = steps
+    .flatMap((s) => s.effects)
+    .find((e) => e.kind === 'revealUntil' && e.from === undefined && e.put === 'hand');
+  if (reveal?.kind !== 'revealUntil' || reveal.filter.types?.length !== 1) return refused();
+  if (!reveal.filter.types.includes(type as 'creature')) return refused();
+  const blocked = missingFeatures(['effect:reflexive']);
+  if (blocked.length > 0) return refused(blocked);
+  // "that card" is the card found, which the reflexive ability carries as `moved` (the same reading as the exile of the top card).
+  const before = ctx.exiled;
+  ctx.exiled = 'top';
+  const effect = lowerReflexive(sentence, ctx);
+  ctx.exiled = before;
+  if (!effect.ok) return { stopped: effect };
+  if (effect.value.kind !== 'reflexive') return refused();
+  steps.push({
+    effects: [
+      {
+        ...effect.value,
+        ifMoved: true,
+        carriesMoved: true,
+        ifMovedMatches: { types: [type as 'creature'] },
+      },
+    ],
+    replaceable: false,
+  });
+  return { last: i };
+}
+
+/**
  * "When this land enters, sacrifice it. When you do, search your library for a basic Forest card, put it onto the battlefield tapped, then
  * shuffle and you gain 1 life." (stage P36, D-178, CR 603.12): the reflexive ability of an instruction that is not an offer. The first sentence is one
  * plain instruction of a kind the engine can tell was done (`sacrifice`, a move, a draw, ...), the first of its body so that nothing earlier is
@@ -2015,7 +2083,13 @@ function lowerDoneReflexive(
   const [only, ...rest] = done.value;
   // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
   const madeToken = only?.kind === 'createToken';
-  if (only === undefined || rest.length > 0 || !(MAY_KINDS.has(only.kind) || madeToken)) {
+  // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done.
+  const putCounter = only?.kind === 'addCounters';
+  if (
+    only === undefined ||
+    rest.length > 0 ||
+    !(MAY_KINDS.has(only.kind) || madeToken || putCounter)
+  ) {
     return refuse(sentence);
   }
   // Tip the Scales (CR 107.3c, 603.12): "When you do, all creatures get -X/-X until end of turn, where X is the sacrificed creature's toughness.": the "where X is" of the
@@ -2741,7 +2815,9 @@ export function lowerDelayedCast(
   const onlyCopy =
     (effect.kind === 'copySpell' || effect.kind === 'spellGainsKeyword') &&
     effect.spell.kind === 'triggerSubject';
-  const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
+  const onlyOwn = inner.value.every(
+    (e) => e.kind === 'draw' || e.kind === 'gainLife' || e.kind === 'spellEntersWithCounters',
+  );
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
   const [choice, copy, ...rest] = inner.value;
   const copiesChosen =
@@ -2828,6 +2904,27 @@ function lowerStep(
     return lowerAfterDiscard(sentence, sentences, i, steps, ctx);
   // "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability of the exile of the top card before it.
   if (sentence.afterExile === true) return lowerAfterExile(sentence, sentences, i, steps, ctx);
+  // "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12): the reflexive ability of the reveal before it.
+  if (sentence.afterReveal !== undefined)
+    return lowerAfterReveal(sentence, sentences, i, steps, ctx);
+  // "Then you may have ~ become a copy of that creature, except its name is ~ and it has vigilance and this ability." (Kimahri, Valiant Guardian, CR 707.9b): one offered copy, the engine's
+  // `may` of the `becomeCopy` the lowering makes, after the instructions before it.
+  if (first.verb === 'becomeCopyKeepingAbility') {
+    if (
+      sentence.clauses.length !== 1 ||
+      sentence.condition !== undefined ||
+      sentence.where !== undefined ||
+      sentence.reflexive === true ||
+      sentence.instead === true ||
+      sentence.delayed !== undefined
+    ) {
+      return stop(refuse(sentence));
+    }
+    const offered = lowerClauses(sentence.clauses, ctx);
+    if (!offered.ok) return stop(offered);
+    steps.push({ effects: offered.value, replaceable: false });
+    return { last: i };
+  }
   // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
   // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
   if (

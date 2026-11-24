@@ -66,9 +66,10 @@ import { runExchangeControl, runGainControl, runReturnControl } from './control-
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
-import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
+import { counterBonuses, counterCountOn } from './counter-bonus';
 import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
+import { putCountersOn } from './counter-put';
 import {
   asking,
   runDealDamage,
@@ -183,6 +184,7 @@ import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { increaseSpeed } from './speed';
+import { runSpellEntersWithCounters } from './spell-enters-counters';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
 import { TIME_COUNTER } from './time-counter';
@@ -585,6 +587,7 @@ export function runInstruction(
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
+      ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       // "Under its owner's control" or "under your control" (CR 110.2): that seat takes the permanent.
@@ -1306,6 +1309,15 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // Summon: Valefor (CR 608.2d, 101.4): "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures ...": each player the effect names
+        // chooses among their own permanents, in APNAP order, and the permanents chosen move once the last has chosen.
+        const choosers =
+          effect.player === undefined
+            ? undefined
+            : resolvePlayers(state, effect.player, ctx, targets);
+        if (choosers !== undefined && choosers.length === 0)
+          return { ...done(state), lastMoved: [] };
+        const [firstChooser, ...laterChoosers] = choosers ?? [];
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
@@ -1317,6 +1329,12 @@ function runEffect(
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              ...(firstChooser === undefined ? {} : { seat: firstChooser }),
+              ...(laterChoosers.length === 0
+                ? {}
+                : { together: { later: laterChoosers, held: [] } }),
+              ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
+              ...(sel.least === undefined ? {} : { least: sel.least }),
               filter: sel.filter,
               // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
               ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined
@@ -1779,6 +1797,28 @@ function runEffect(
               effect: effect.effect,
             },
           })),
+        ],
+      });
+    case 'delayedDies':
+      // CR 603.7, 603.7c, 603.10a, 514.2 (Together Forever): "When that creature dies this turn, return that card to its owner's hand": one delayed ability of the controller for each
+      // permanent the effect names as it resolves, about that object only (`watched`), once, ended with the turn. A permanent that is not on the battlefield as it resolves makes none.
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          ...resolveObjects(state, effect.objects, ctx, targets)
+            .filter((id) => state.objects[id]?.zone === 'battlefield')
+            .map((watched) => ({
+              source: res.source,
+              controller: res.controller,
+              watched,
+              untilEndOfTurn: true as const,
+              ability: {
+                kind: 'triggered' as const,
+                trigger: { kind: 'dies' as const, what: {} },
+                effect: effect.effect,
+              },
+            })),
         ],
       });
     case 'delayedCombatDamageTurn': {
@@ -2406,6 +2446,9 @@ function runEffect(
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);
+    case 'spellEntersWithCounters':
+      // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
+      return runSpellEntersWithCounters(state, effect, ctx);
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
       return runNextSpellPayLife(state, res);
@@ -2805,9 +2848,10 @@ function runEffect(
         (n, e) => (e.kind === 'counterAdded' && e.counter === effect.counter ? n + e.count : n),
         0,
       );
+      // CR 603.12 (Auron, Venerated Guardian): "put a +1/+1 counter on it. When you do, ...": a counter really put is something done (`performed`).
       return {
         ...done(next, events),
-        ...(putCount > 0 ? { thisWay: { countersPut: putCount } } : {}),
+        ...(putCount > 0 ? { thisWay: { countersPut: putCount }, performed: 1 } : {}),
       };
     }
 
@@ -3980,7 +4024,7 @@ function runEffect(
 
     case 'becomeCopy':
       // CR 707.2, 613.2a: a layer 1 effect that gives the object the copiable values of another.
-      return runBecomeCopy(state, effect, ctx, targets);
+      return runBecomeCopy(state, effect, ctx, targets, state.objects[res.object]?.stack?.ability);
 
     case 'cascade':
       // CR 702.85a: exile until a cheaper nonland card, may cast it free, bottom the rest (rules/cascade.ts).
@@ -4267,32 +4311,6 @@ function runEffect(
       return unreachable;
     }
   }
-}
-
-/**
- * Puts `count` counters of a kind on one object as the effect of a spell or ability (CR 122.6, 101.2, D-380): nothing if the object is gone
- * or can't have counters of the kind. `read` is the state the counter blockers were read from.
- */
-function putCountersOn(
-  read: GameState,
-  state: GameState,
-  id: ObjectId,
-  counter: string,
-  count: number,
-  by: SeatId,
-  blockers: ReturnType<typeof counterBlockers>,
-  bonuses: ReturnType<typeof counterBonuses>,
-): { readonly state: GameState; readonly events: readonly GameEvent[] } {
-  const obj = state.objects[id];
-  if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
-  // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
-  const put = bonusCounters(read, bonuses, obj, counter, count);
-  return {
-    state: patchObject(state, id, {
-      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
-    }),
-    events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
-  };
 }
 
 /** An effect with each `thisWay` amount in it replaced by the number the effects before it counted (CR 603.7c: a delayed ability is about what happened as it was created). */

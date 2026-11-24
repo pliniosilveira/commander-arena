@@ -346,6 +346,23 @@ export function lowerCondition(
       }
       return ok({ kind: 'thisWayAtLeast', what: 'countersPut', count: test.atLeast });
     }
+    case 'counterPutOnSelf': {
+      // CR 122.6, 603.4 (Wakka): a counter put on the permanent with the ability this turn by anyone, from the turn log.
+      const blocked = missingFeatures(['condition:counterPutOnThisThisTurn']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'counterPutOnThisThisTurn',
+        ...(test.counter === undefined ? {} : { counter: test.counter }),
+      });
+    }
+    case 'subjectPowerLessThanSelf': {
+      // CR 208.1, 608.2c (Shelinda): "put a +1/+1 counter on that creature if its power is less than ~'s power" is read as the instruction comes up (a conditional effect, not the
+      // intervening "if"), of the permanent the trigger is about.
+      const blocked = missingFeatures(['condition:subjectPowerLessThanThis']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition === true) return failure(c, []);
+      return ok({ kind: 'subjectPowerLessThanThis' });
+    }
     case 'putCountersThisTurn': {
       // CR 122.6, 603.4 (Lasting Tarfire): read from the turn log, for the controller of the ability.
       const blocked = missingFeatures(['condition:putCountersThisTurn']);
@@ -612,9 +629,10 @@ export function lowerCondition(
       });
       return matched.ok ? ok({ kind: 'discardedAsCostMatches', filter: matched.value }) : matched;
     }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of the target an earlier instruction of the text named (or the object it moved), against an amount read as the instruction runs.
-      const blocked = missingFeatures(['condition:manaValueAtMostAmount']);
+      const blocked = missingFeatures([`condition:${test.kind}`]);
       if (blocked.length > 0) return failure(c, blocked);
       const at = ctx ?? newContext('ability', []);
       const id = test.who.ref ?? '';
@@ -627,7 +645,7 @@ export function lowerCondition(
         id === 'moved' || at.movedOnto === id
           ? ({ kind: 'moved' } as const)
           : ({ kind: 'target', id } as const);
-      return ok({ kind: 'manaValueAtMostAmount', of, amount: amount.value });
+      return ok({ kind: test.kind, of, amount: amount.value });
     }
     case 'milledThisWay': {
       // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
@@ -1010,6 +1028,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectStat',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
+  'condition:counterPutOnThisThisTurn',
+  'condition:subjectPowerLessThanThis',
   'condition:triggerPlayerHasMore',
   'condition:triggerPlayerTurn',
   'condition:triggerPlayerIsOpponent',
@@ -1027,6 +1047,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:manaValueAtMostAmount',
+  'condition:manaValueAtLeastAmount',
   'condition:giftPromised',
   'condition:wasCast',
   'condition:opponentControlsAtLeast',

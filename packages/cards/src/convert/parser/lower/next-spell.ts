@@ -47,7 +47,27 @@ const NEXT_SPELL_PAY_LIFE: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "That creature enters with two additional +1/+1 counters on it" (Yuna, Grand Summoner, CR 614.1c, 122.6): the engine's `spellEntersWithCounters`, read only in a delayed cast trigger. */
+const SPELL_ENTERS_WITH_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'spellEntersWithCounters',
+  id: 'lower.spell-enters-with-counters',
+  needs: ['effect:spellEntersWithCounters'],
+  lower(clause) {
+    const counter = arg(clause, 'counter');
+    const count = arg(clause, 'count');
+    if (counter?.kind !== 'counterSpec' || counter.name !== '+1/+1' || count?.kind !== 'number') {
+      return { ok: false, needs: [], at: clause.span, rule: clause.rule };
+    }
+    return {
+      ok: true,
+      value: [{ kind: 'spellEntersWithCounters', counter: counter.name, count: count.value }],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const NEXT_SPELL_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   NEXT_SPELL_MODIFIER,
   NEXT_SPELL_PAY_LIFE,
+  SPELL_ENTERS_WITH_COUNTERS,
 ];

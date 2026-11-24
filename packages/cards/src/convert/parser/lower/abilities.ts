@@ -27,6 +27,7 @@ import { lowerAmount } from './amounts';
 import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
+import { lowerEntersRemoveCounters } from './counter-blitz-g';
 import { lowerClause } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes } from './modal';
@@ -255,25 +256,36 @@ function lowerCostedKeyword(
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'replicate' ||
-    name === 'escalate' ||
     name === 'buyback' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
-      : name === 'ward'
-        ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
-        : ['mana', 'payLife'];
+      : // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
+        name === 'escalate'
+        ? ['mana', 'tapPermanents']
+        : name === 'ward'
+          ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
+          : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
     only,
-    name === 'cycling' ? { x: true } : name === 'ward' ? { ward: true } : {},
+    name === 'cycling'
+      ? { x: true }
+      : name === 'ward'
+        ? { ward: true }
+        : name === 'escalate'
+          ? { ordinary: true }
+          : {},
   );
   if (!cost.ok) return cost;
   const blocked = gate(ability, [
     'ability:keyword',
     `keyword:${name}`,
     `cost:${cost.value.kind}` as FeatureRef,
+    ...(name === 'escalate' && cost.value.kind === 'tapPermanents'
+      ? (['ability:escalateTapCost'] as const)
+      : []),
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
@@ -746,6 +758,8 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       value: [{ kind: 'replacement', replacement }],
       rule: ability.rule,
     }) as const;
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): two abilities from one line.
+  if (event.verb === 'entersRemoveCounters') return lowerEntersRemoveCounters(ability);
   if (event.verb === 'entersTapped') {
     const blocked = gate(ability, ['ability:replacement', 'replacement:entersTapped']);
     if (blocked !== null) return blocked;
@@ -1421,6 +1435,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTappedUnlessPays',
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',
+  'replacement:asEntersRemoveCounters',
   'replacement:entersAsCopy',
   'replacement:skipDraw',
   'replacement:keepOneLoyalty',

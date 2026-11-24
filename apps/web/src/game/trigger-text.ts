@@ -734,6 +734,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
           : null;
       }
+      // CR 508.1b (Lulu, Stern Guardian): "Whenever an opponent attacks you".
+      if (trigger.attackedYou === true) {
+        return trigger.who === 'opponent' && trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever an opponent attacks you'
+          : null;
+      }
       // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
       if (trigger.includesSource === true) {
         const others = trigger.atLeast - 1;

@@ -133,6 +133,13 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       if (mp.anyType !== undefined && typeof mp.anyType !== 'boolean') {
         issue(out, `${path}.anyType`, 'anyType must be a boolean');
       }
+      if (mp.count !== undefined && (!Number.isSafeInteger(mp.count) || mp.count < 2)) {
+        issue(
+          out,
+          `${path}.count`,
+          'count is a whole number of 2 or more (one mana is the plain production)',
+        );
+      }
       break;
     case 'combination':
       checkCombinations(mp.options, `${path}.options`, out);

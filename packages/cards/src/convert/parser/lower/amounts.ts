@@ -163,6 +163,7 @@ export function lowerAmount(
           kind: 'countersOn',
           of: of.value,
           ...(amount.counter === undefined ? {} : { counter: amount.counter }),
+          ...(amount.kinds === true ? { kinds: true as const } : {}),
         },
         rule,
       };
@@ -946,6 +947,7 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
     f.controllerDamagedBySource === true ||
     f.modified === true ||
     f.goaded === true ||
+    f.enteredThisTurn === true ||
     // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
     (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
     typeof f.controller === 'object' ||

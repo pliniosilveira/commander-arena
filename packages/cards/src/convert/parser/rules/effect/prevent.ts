@@ -35,6 +35,7 @@ import type {
   IrAmount,
   IrArg,
   IrClause,
+  IrCounterSpec,
   IrDamageScope,
   IrDuration,
   IrNoun,
@@ -530,7 +531,74 @@ export const EFFECT_PREVENT_ALL_CREATE_TOKENS = defineRule<Clauses>({
   },
 });
 
+const COUNTERS = 'effect.prevent-damage-put-counters';
+
+/**
+ * `effect.prevent-damage-put-counters`: "If damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it." (Gatta and Luzzu, CR 615.1, 615.5,
+ * 122.6): a prevention shield for all the damage the creature an earlier sentence named would be dealt this turn, and the additional effect of the prevention: as many counters on that creature
+ * as the damage prevented. The engine's `preventDamage` with `countersPrevented`. Not read: a number of damage ("the next 3"), another recipient ("to target creature", "to you"), another
+ * duration, another object for the counters ("on ~"), a number other than "that many", a text without "if".
+ */
+export const EFFECT_PREVENT_DAMAGE_PUT_COUNTERS = defineRule<Clauses>({
+  id: COUNTERS,
+  family: 'effect',
+  leading: ['if'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 615.5 (Prevention Effects)',
+    'CR 122.6 (Counters)',
+    'CR 514.2 (Cleanup Step)',
+  ],
+  examples: [
+    'if damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it',
+    'if damage would be dealt to it this turn, prevent that damage and put that many +1/+1 counters on it',
+  ],
+  rejects: [
+    'if damage would be dealt to that creature this turn, prevent that damage',
+    'if damage would be dealt to that creature this turn, prevent that damage and put two +1/+1 counters on it',
+    'if damage would be dealt to target creature this turn, prevent that damage and put that many +1/+1 counters on it',
+    'if damage would be dealt to you this turn, prevent that damage and put that many +1/+1 counters on it',
+    'if damage would be dealt to that creature, prevent that damage and put that many +1/+1 counters on it',
+    'if damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on ~',
+    'if combat damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it',
+    'if damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const lead = literal('if damage would be dealt to ')(ctx, pos);
+    if (!lead.ok) return lead;
+    const to = strict(family<IrNoun>('noun', { only: ['noun.that-object', 'noun.it'] }), isOne)(
+      ctx,
+      lead.pos,
+    );
+    if (!to.ok) return fail(ctx, pos);
+    const duration = thisTurn(COUNTERS)(ctx, to.pos);
+    if (!duration.ok) return fail(ctx, pos);
+    const tail = pattern(
+      /, prevent that damage and put that many ([+-]\d+\/[+-]\d+|[a-z]+) counters on it(?![\p{L}\p{N}])/iu,
+    )(ctx, duration.pos);
+    if (!tail.ok) return fail(ctx, pos);
+    const span = { start: pos, end: tail.pos };
+    const counter: IrCounterSpec = {
+      kind: 'counterSpec',
+      name: (tail.value[1] ?? '').toLowerCase(),
+      span: { start: duration.pos, end: tail.pos },
+      rule: COUNTERS,
+    };
+    const clause: IrClause = {
+      ...makeClause(
+        COUNTERS,
+        'preventDamageCounters',
+        { scope: scopeNode(COUNTERS, span, 'all', 'all'), to: to.value, counter },
+        span,
+      ),
+      duration: duration.value,
+    };
+    return { ok: true, value: [clause], pos: tail.pos };
+  },
+});
+
 export const PREVENT_RULES = [
+  EFFECT_PREVENT_DAMAGE_PUT_COUNTERS,
   EFFECT_PREVENT_ALL_CREATE_TOKENS,
   EFFECT_PREVENT_ALL,
   EFFECT_PREVENT_NEXT,

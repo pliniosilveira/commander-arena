@@ -27,6 +27,7 @@ import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { designationHolders, hasMaxSpeed } from './designations';
 import { manaSpentOf } from './mana-spent';
+import { manaValueOfCost } from './mana-value';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
 import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
@@ -279,6 +280,7 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
       return total === condition.compare.value;
     }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c, 608.2h (Meren of Clan Nel Toth): the mana value of the object the reference names (an {X} is 0 off the stack, CR 202.3e) against a state amount read now.
       const [id] = resolveObjects(
@@ -293,12 +295,20 @@ export function evaluateCondition(
         ctx.targets ?? [],
       );
       if (id === undefined) return false;
-      const value = statOf(state, id, 'manaValue');
+      // CR 608.2h: an object that has since moved (the card exiled earlier in this resolution) is read as it last was.
+      const last = state.lki[id];
+      const value =
+        state.objects[id] === undefined && last !== undefined
+          ? manaValueOfCost(last.characteristics.manaCost, last.object)
+          : statOf(state, id, 'manaValue');
       if (value === null || value === undefined) return false;
-      return (
-        value <=
-        amountOf(state, condition.amount, { controller: ctx.controller, source: ctx.source }, [])
+      const limit = amountOf(
+        state,
+        condition.amount,
+        { controller: ctx.controller, source: ctx.source },
+        [],
       );
+      return condition.kind === 'manaValueAtLeastAmount' ? value >= limit : value <= limit;
     }
     case 'movedShareAllCardTypes': {
       // CR 205.2a, 608.2c (Demonic Covenant): two of the cards an earlier instruction moved have exactly the same card types, as they are (or last were).
@@ -743,6 +753,23 @@ export function evaluateCondition(
           (condition.counter === undefined || e.counter === condition.counter) &&
           (condition.onType === undefined || e.types.includes(condition.onType)),
       );
+    case 'counterPutOnThisThisTurn':
+      // CR 122.6, 603.4 (Wakka): a counter (of the kind, when named) put on the permanent with this ability this turn by anyone, from the turn log.
+      return (
+        ctx.source !== null &&
+        (state.turnLog.countersPutOn ?? []).some(
+          (e) =>
+            e.object === ctx.source &&
+            (condition.counter === undefined || e.counter === condition.counter),
+        )
+      );
+    case 'subjectPowerLessThanThis': {
+      // CR 208.1, 113.7a, 608.2c (Shelinda): the power of the permanent the trigger is about against the power of the permanent with the ability, each as it is or as it last was.
+      if (ctx.source === null || ctx.triggerSubject === undefined) return false;
+      const subject = ptNow(state, ctx.triggerSubject);
+      const source = ptNow(state, ctx.source);
+      return subject !== null && source !== null && subject.power < source.power;
+    }
     case 'triggerPlayerHasMore':
       // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
       return (

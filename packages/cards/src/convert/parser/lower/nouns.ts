@@ -795,6 +795,15 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.xIs !== null &&
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
+  // CR 107.3m (Blitzball Stadium: "When this artifact enters, support X"): in the enters trigger of the permanent itself, up to as many targets as the X of the spell it came from.
+  const upToEnteredX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    noun.rule === 'effect.support' &&
+    ctx.entersX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody;
   // "When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 107.3, 603.3d): X is the X announced for the cycling cost, which the cycled
   // event carries as its number, so the slot is the engine's `upToTriggerAmount`; only the body of a cycling trigger reads it.
   const upToCycleX =
@@ -806,7 +815,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.triggeredBody &&
     ctx.xIs === null &&
     noun.rule !== 'noun.up-to-x-target-graveyard-cards';
-  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX && !upToCycleX;
+  const countX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    !upToDefinedX &&
+    !upToEnteredX &&
+    !upToCycleX;
   // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
   // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
   if (noun.rule === 'noun.up-to-x-target-graveyard-cards' && !upToDefinedX) {
@@ -828,7 +842,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       return failure(noun, []);
     }
   }
-  if (upToDefinedX || upToCycleX) {
+  if (upToDefinedX || upToEnteredX || upToCycleX) {
     if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
@@ -893,15 +907,29 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       ) {
         return failure(noun, []);
       }
-      const blocked = missingFeatures(['selector:objectOrSpell']);
+      const blocked = missingFeatures([
+        'selector:objectOrSpell',
+        // Endless Detour (CR 115.1, 404.1): "target spell, nonland permanent, or card in a graveyard": the third half, a card of any graveyard.
+        ...(noun.orCard === undefined ? [] : (['ability:spellPermanentOrCard'] as const)),
+      ]);
       if (blocked.length > 0) return failure(noun, blocked);
       const permanents = lowerFilter(noun);
       if (!permanents.ok) return permanents;
       const spells = lowerFilterAt(noun.orSpell, { ...noun, other: false }, false);
       if (!spells.ok) return spells;
+      const cards =
+        noun.orCard === undefined
+          ? undefined
+          : lowerFilterAt(noun.orCard, { ...noun, other: false }, false);
+      if (cards !== undefined && !cards.ok) return cards;
       spec = {
         id,
-        what: { kind: 'objectOrSpell', filter: permanents.value, spell: spells.value },
+        what: {
+          kind: 'objectOrSpell',
+          filter: permanents.value,
+          spell: spells.value,
+          ...(cards === undefined ? {} : { card: cards.value }),
+        },
         ...boundsOf(noun),
       };
     } else if (noun.orCard !== undefined) {
@@ -1095,6 +1123,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         }
       }
       let upToAmount: Amount | undefined;
+      if (upToEnteredX) {
+        const blocked = missingFeatures(['selector:upToAmount', 'amount:enteredX']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        upToAmount = { kind: 'enteredX' };
+      }
       if (upToDefinedX) {
         const blocked = missingFeatures(['selector:upToAmount']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -1636,8 +1669,20 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
         return failure(noun, []);
       }
-      const blocked = gate(noun, need === undefined ? [] : [need]);
-      return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
+      // CR 102.2 (Summon: Yojimbo): "the number of opponents who control a creature with power 4 or greater" counts only the opponents of the controller.
+      const opponents = noun.whoGroup === 'eachOpponent';
+      const blocked = gate(noun, [
+        ...(need === undefined ? [] : [need]),
+        ...(opponents ? (['ability:opponentsControlling'] as const) : []),
+      ]);
+      return (
+        blocked ??
+        ok({
+          kind: 'eachPlayerControlling',
+          filter: filter.value,
+          ...(opponents ? { opponentsOnly: true as const } : {}),
+        })
+      );
     }
     case 'lostLifeThisTurn': {
       // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.

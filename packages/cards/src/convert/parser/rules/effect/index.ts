@@ -58,7 +58,11 @@ import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
+import { COUNTER_BLITZ_C_EFFECT_RULES } from './counter-blitz-c';
+import { COUNTER_BLITZ_E_EFFECT_RULES } from './counter-blitz-e';
+import { COUNTER_BLITZ_G_EFFECT_RULES } from './counter-blitz-g';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
+import { COUNTER_GROUP_A_EFFECT_RULES } from './counter-group-a';
 import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_EFFECT_RULES } from './counter-intelligence-g3';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
@@ -137,6 +141,7 @@ import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
+import { KIMAHRI_EFFECT_RULES } from './kimahri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
@@ -1272,6 +1277,8 @@ export const EFFECT_RULES = [
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
   // choose and gain rules, and are tried first.
   ...PRISMARI_G1_EFFECT_RULES,
+  // Kimahri, Valiant Guardian (CR 707.9b): "have ~ become a copy of that creature, except its name is ~ and it has vigilance and this ability".
+  ...KIMAHRI_EFFECT_RULES,
   // Prismari deck, group 2 (issue 87, D-647 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
@@ -1334,6 +1341,8 @@ export const EFFECT_RULES = [
   ...DAMAGE_BATCH_EFFECT_RULES,
   // CR 701.46a (Adapt): "Adapt 4".
   ...ADAPT_EFFECT_RULES,
+  // Final Fantasy X counter group A: "support 2", "put those counters on target permanent you control", Rikku's evasion, Together Forever.
+  ...COUNTER_GROUP_A_EFFECT_RULES,
   // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
   ...NEXT_SPELL_EFFECT_RULES,
   // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
@@ -1347,6 +1356,8 @@ export const EFFECT_RULES = [
   ...DACK_EFFECT_RULES,
   ...EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES,
   ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
+  ...COUNTER_BLITZ_C_EFFECT_RULES,
+  ...COUNTER_BLITZ_E_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   // Champions of Minas Tirith: "that opponent may pay {X}, where X is the number of cards in their hand. If they don't, they can't attack you this combat."
@@ -1400,6 +1411,8 @@ export const EFFECT_RULES = [
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
   // Limit Break deck, group 1 (Zack Fair): "Put ~'s counters on that creature", "attach an Equipment that was attached to ~ to that creature".
   ...LIMIT_BREAK_G1_EFFECT_RULES,
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): "put its counters on target creature you control", "shuffle this card into its owner's library".
+  ...COUNTER_BLITZ_G_EFFECT_RULES,
   // Counter Intelligence deck, group 2: "Put those counters on target permanent you control".
   ...COUNTER_INTELLIGENCE_G2_EFFECT_RULES,
   // Counter Intelligence deck, group 3: "~ becomes a copy of target artifact you control", "any number of target ... become 3/3 artifact creatures", "choose any number of permanents you control that had a counter put on them this way" and "those permanents phase out" start like the plain becomes, any-number, choose and those rules.

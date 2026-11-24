@@ -38,6 +38,8 @@ const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-
 const COUNTER_OPERANDS = [
   'noun.self',
   'noun.it',
+  // CR 608.2c (Sphere Grid): "put a +1/+1 counter on that creature", the permanent the trigger is about.
+  'noun.that-object',
   // Stage P49 (D-206): "put two +1/+1 counters on that token" (the token the sentence before made).
   'noun.that-token',
   'noun.target-permanent',
@@ -50,6 +52,8 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Counter Blitz deck, group C (Collective Effort): "each creature target player controls".
+  'noun.each-permanent-of-target-player',
   // Monstrosity of the Lake: "Tap all creatures your opponents control, then put a stun counter on each of those creatures." (the binding pass turns the words into the group before)
   'noun.paired-creatures',
 ] as const;
@@ -59,7 +63,11 @@ const COUNTER_OPERANDS = [
  * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
  */
 const ADD_COUNTERS_OPERANDS = [
+  // Lulu, Stern Guardian: "put a stun counter on target creature attacking you" (before the plain target, which would stop at "creature").
+  'noun.target-creature-attacking-you-plain',
   ...COUNTER_OPERANDS,
+  // "Choose target creature attacking you. Put a stun counter on that creature.": the object the sentence before named (CR 608.2c).
+  'noun.that-object',
   'noun.a-permanent',
   // "each of up to two Soldiers you control": a resolving choice of up to that many.
   'noun.each-of-up-to-permanents',
@@ -98,6 +106,9 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put two +1/+1 counters on it',
     'put two +1/+1 counters on that token',
     'put a stun counter on each of them',
+    // Lulu, Stern Guardian (CR 608.2c, 508.1b): the object an earlier sentence named, and a target attacking you.
+    'put a stun counter on that creature',
+    'put a stun counter on target creature attacking you',
     'put X +1/+1 counters on target creature',
     'put X +1/+1 counters on ~',
     'put X charge counters on ~',
@@ -113,6 +124,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'you put two +1/+1 counters on a creature you control',
     'put two +1/+1 counters on a creature you control',
     'put a +1/+1 counter on each of up to two Soldiers you control',
+    'put a +1/+1 counter on that creature',
     // Unbreakable Formation (CR 608.2c): the group the sentence before named.
     'put a +1/+1 counter on each of those creatures',
   ],
@@ -121,7 +133,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put X +1/+1 counters on it for each time it was kicked',
     'put a +1/+1 counter on it for each time',
     'put a +1/+1 counter on it for each creature',
-    'put a +1/+1 counter on that creature',
+    'put a +1/+1 counter on that creatures',
     'put a +1/+1 counter on each of those',
     'put a +1/+1 counter on each of those creature',
     'put a +1/+1 counter on each of those permanents',

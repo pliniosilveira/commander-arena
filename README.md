@@ -82,6 +82,7 @@ The ready-made decks work without any setup:
 | Living Energy | A Commander precon led by Saheeli, Radiant Creator. |
 | Federation Fleet | A Commander precon led by Jean-Luc Picard, Luminary. |
 | Revival Trance | A Commander precon led by Terra, Herald of Hope. |
+| Counter Blitz | A Commander precon led by Tidus, Yuna's Guardian. |
 | Counter Intelligence | A Commander precon led by Kilo, Apogee Mind. |
 | Riders of Rohan | A Commander precon led by Éowyn, Shieldmaiden. |
 | Hosts of Mordor | A Commander precon led by Sauron, Lord of the Rings. |

@@ -620,6 +620,8 @@ export type IrAmount =
       readonly of: IrNoun;
       /** The kind of counter; left out for "the number of counters on that creature" (every kind added together). */
       readonly counter?: string;
+      /** "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter, not of counters. Never with `counter`. */
+      readonly kinds?: true;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"
@@ -957,6 +959,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'discardedAsCostMatches'; readonly filter: IrFilter }
     // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
     | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
+    // "the exiled card's mana value is 4 or greater" (Summoner's Sending, CR 202.3, 608.2c): the same object, against an amount it must reach
+    | { readonly kind: 'manaValueAtLeastAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
@@ -1012,6 +1016,10 @@ export interface IrCondition extends IrNode {
         readonly stat: 'power' | 'toughness';
         readonly types: readonly string[];
       }
+    // Wakka, Devoted Guardian (CR 122.6, 603.4): "a counter was put on ~ this turn": a counter (of the kind, when named) put on the permanent with the ability this turn by anyone
+    | { readonly kind: 'counterPutOnSelf'; readonly counter?: string }
+    // Shelinda, Yevon Acolyte (CR 208.1, 608.2c): "its power is less than ~'s power": the power of the permanent the trigger is about against the permanent with the ability
+    | { readonly kind: 'subjectPowerLessThanSelf' }
     // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
     | {
         readonly kind: 'putCountersThisTurn';
@@ -1117,6 +1125,8 @@ export type IrCost = IrNode &
         readonly counter: string;
         readonly count: number;
         readonly what: IrNoun;
+        /** "Remove a counter from a nonland permanent you control" (CR 118.3, 122.1): a counter of any kind; `counter` is empty and `count` 1. */
+        readonly anyKind?: true;
       }
     // "Remove a counter from ~", "Remove three counters from among other artifacts, creatures, and planeswalkers you control", "Remove X counters from an artifact or creature you control"
     // (Counter Intelligence deck, group 2, CR 118.3, 122.1, 602.2b): counters of any kind, the player choosing which. `count` how many (1 for `x`, the X announced); `what` the permanents
@@ -1243,7 +1253,12 @@ export interface IrManaSpec extends IrNode {
         readonly kind: 'couldProduce';
         readonly whose: 'you' | 'opponent';
         readonly anyType: boolean;
-      };
+      }
+    /**
+     * "three mana of that type" (Incubation Druid, CR 106.7, 605.3b): `count` mana of the one type the sentence before chose ("one mana of any type that a land you control could
+     * produce"); lowered only as the second sentence of a mana ability that says "instead", where it gives that ability's production a `count`.
+     */
+    | { readonly kind: 'couldProduceThatType'; readonly count: number };
 }
 
 /**
@@ -1629,6 +1644,11 @@ export interface IrSentence extends IrNode {
    */
   readonly afterExile?: true;
   /**
+   * "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12, 701.20): a reflexive triggered ability created when the "reveal cards until" instruction before it found a card of
+   * the card type the words name (kept here in lower case). Not `reflexive`: the lowering reads it alone, and refuses it where no such reveal came before.
+   */
+  readonly afterReveal?: string;
+  /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
    * not `optional`: the question is this node's. Only in the body of a triggered ability.
@@ -1741,6 +1761,8 @@ export interface IrTrigger extends IrNode {
   readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
+  /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
+  readonly attackedYou?: true;
   /** 'exerted' "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant, CR 701.43b): the exert is offered only to a creature not yet exerted this turn. */
   readonly unlessExertedThisTurn?: true;
   /** 'attackBatch' "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1): the permanent with the ability is one of the attackers counted. */

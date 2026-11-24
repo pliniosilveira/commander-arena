@@ -77,6 +77,9 @@ const SHARES_CREATURE_TYPE_WITH_IT = pattern(
   new RegExp(` that shares a creature type with it${BOUNDARY}`, 'iu'),
 );
 
+/** " that entered this turn" (Tromell, Seymour's Butler, CR 400.7): the permanents that entered the battlefield during this turn and are still the same objects. */
+const ENTERED_THIS_TURN = pattern(new RegExp(` that entered this turn${BOUNDARY}`, 'iu'));
+
 /** The words a list of kinds is joined with, in the shapes English has: "A or B", "A, B, or C". */
 const CONNECTORS = ['and/or', 'and', 'or'] as const;
 
@@ -248,6 +251,14 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (shares.ok) {
         filter = { ...filter, sharesCreatureTypeWithSource: true };
         end = shares.pos;
+      }
+    }
+    // Tromell, Seymour's Butler (CR 400.7, 110.1): "nontoken creatures you control that entered this turn", counted from the turn log (the engine's `enteredThisTurn`).
+    if (plural && filter.controller !== undefined) {
+      const entered = quiet(ENTERED_THIS_TURN)(ctx, end);
+      if (entered.ok) {
+        filter = { ...filter, enteredThisTurn: true };
+        end = entered.pos;
       }
     }
     // Shared Animosity (CR 508.1, 205.3m): "each other attacking creature that shares a creature type with it", whoever controls them: "other" and "it" are the creature the

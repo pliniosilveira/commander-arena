@@ -9,6 +9,7 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COUNTER_BLITZ_G_REPLACEMENT_RULES } from './counter-blitz-g';
 import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
@@ -417,4 +418,6 @@ export const REPLACEMENT_RULES = [
   ...KEEP_ONE_LOYALTY_REPLACEMENT_RULES,
   // Phyrexian Processor: "As ~ enters, pay any amount of life."
   ...PAY_LIFE_REPLACEMENT_RULES,
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): "As ~ enters, remove all counters from any number of artifacts, creatures, and enchantments. ..."
+  ...COUNTER_BLITZ_G_REPLACEMENT_RULES,
 ];

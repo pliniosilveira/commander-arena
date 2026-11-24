@@ -61,6 +61,18 @@ export function devourPrompt(sourceName: string, quality?: string): string {
   return `Choose any number of ${devourKind(quality)} to sacrifice as ${sourceName} enters (devour). None is fine.`;
 }
 
+/** The prompt of "As X enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12, 122.1): which permanents lose every counter. */
+export function removeCountersPrompt(sourceName: string): string {
+  return `Choose any number of permanents to remove all counters from as ${sourceName} enters. It enters with +1/+1 counters for the counters removed. None is fine.`;
+}
+
+/** The second line of the bar of that question: what is chosen so far. */
+export function removeCountersDetail(chosen: number): string {
+  return chosen === 0
+    ? 'Click the permanents to remove every counter from, or confirm to remove none.'
+    : `${chosen} chosen: every counter on ${chosen === 1 ? 'it' : 'them'} is removed.`;
+}
+
 /** The second line of the devour bar: what is chosen so far. */
 export function devourDetail(chosen: number, quality?: string): string {
   return chosen === 0

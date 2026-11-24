@@ -61,6 +61,7 @@ export const AMOUNT_TIMES_KICKED = defineRule<IrAmount>({
 export const FOR_EACH_AMOUNTS = [
   'amount.for-each',
   'amount.for-each-counter',
+  'amount.for-each-counter-kind',
   'amount.for-each-opponent',
   'amount.for-each-this-way',
   'amount.times-kicked',
@@ -81,6 +82,8 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-opponent-dealt-damage',
   // Scions & Spellcraft deck, group A: the players who lost life, or were dealt combat damage by a source, this turn.
   'amount.for-each-player-who',
+  // Counter Blitz deck, group C: the opponents who control a permanent of a kind.
+  'amount.for-each-opponent-who-controls',
   // Lock and Load (issue 121): the other instants and sorceries the controller has cast this turn.
   'amount.for-each-other-spell-cast',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.

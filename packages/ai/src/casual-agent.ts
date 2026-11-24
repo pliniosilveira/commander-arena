@@ -49,6 +49,7 @@ import { choosePopulateToken } from './casual-populate';
 import { choosePriorityAction, worthCasting } from './casual-priority';
 import { chooseAnyNumberToSacrifice, giftAnswer } from './casual-recursion';
 import { chooseNewTarget } from './casual-redirect';
+import { chooseCountersToRemove } from './casual-remove-counters';
 import { chooseRingBearer } from './casual-ring';
 import { chooseCardsFromZone } from './casual-search';
 import { chooseSoulbondPartner } from './casual-soulbond';
@@ -131,33 +132,35 @@ export function createCasualHandlers(
                       ? { kind: 'choosePermanents', objects: d.legal.slice(0, 1) } // CR 701.50c, D-223: every permanent connives; the first listed goes first
                       : d.purpose === 'entersCopy'
                         ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of
-                        : d.purpose === 'devour'
-                          ? chooseDevourSacrifice(view, d) // CR 702.82a, D-185: the tokens given up for counters, often none
-                          : d.purpose === 'crew'
-                            ? chooseCrewCreatures(view, d)
-                            : d.purpose === 'untapChoice' || d.purpose === 'untapCost'
-                              ? chooseUntap(view, d) // CR 701.26a, D-216: "Untap up to three lands", the agent's own; CR 701.26b: the creatures untapped for a cost, the ones it values most
-                              : d.purpose === 'spare'
-                                ? chooseSparedPermanent(view, d) // D-231: the permanents Tragic Arrogance keeps
-                                : d.purpose === 'effect'
-                                  ? choosePermanentToReturn(view, d)
-                                  : d.purpose === 'tap'
-                                    ? choosePermanentToTap(view, d) // D-133: the permanents tapped for a cost
-                                    : d.purpose === 'blight'
-                                      ? chooseBlightCreature(view, d) // D-407: the creature that gets the -1/-1 counters of a blight cost
-                                      : d.purpose === 'removeCountersCost'
-                                        ? choosePermanentToSacrifice(view, d) // CR 118.3, 122.1: the counter comes off the permanent the agent values least
-                                        : d.purpose === 'proliferate'
-                                          ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
-                                          : d.purpose === 'auraHost'
-                                            ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
-                                            : d.purpose === 'soulbond'
-                                              ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
-                                              : d.purpose === 'keep'
-                                                ? chooseCreaturesToKeep(view, d) // CR 608.2d, Slaughter the Strong: the creatures it keeps within the total power
-                                                : d.min === 0
-                                                  ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
-                                                  : choosePermanentToSacrifice(view, d),
+                        : d.purpose === 'entersRemoveCounters'
+                          ? chooseCountersToRemove(view, d) // CR 614.12, 122.1, Sin: the opponents' counters come off, the agent's own only when they hurt it
+                          : d.purpose === 'devour'
+                            ? chooseDevourSacrifice(view, d) // CR 702.82a, D-185: the tokens given up for counters, often none
+                            : d.purpose === 'crew'
+                              ? chooseCrewCreatures(view, d)
+                              : d.purpose === 'untapChoice' || d.purpose === 'untapCost'
+                                ? chooseUntap(view, d) // CR 701.26a, D-216: "Untap up to three lands", the agent's own; CR 701.26b: the creatures untapped for a cost, the ones it values most
+                                : d.purpose === 'spare'
+                                  ? chooseSparedPermanent(view, d) // D-231: the permanents Tragic Arrogance keeps
+                                  : d.purpose === 'effect'
+                                    ? choosePermanentToReturn(view, d)
+                                    : d.purpose === 'tap'
+                                      ? choosePermanentToTap(view, d) // D-133: the permanents tapped for a cost
+                                      : d.purpose === 'blight'
+                                        ? chooseBlightCreature(view, d) // D-407: the creature that gets the -1/-1 counters of a blight cost
+                                        : d.purpose === 'removeCountersCost'
+                                          ? choosePermanentToSacrifice(view, d) // CR 118.3, 122.1: the counter comes off the permanent the agent values least
+                                          : d.purpose === 'proliferate'
+                                            ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
+                                            : d.purpose === 'auraHost'
+                                              ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
+                                              : d.purpose === 'soulbond'
+                                                ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
+                                                : d.purpose === 'keep'
+                                                  ? chooseCreaturesToKeep(view, d) // CR 608.2d, Slaughter the Strong: the creatures it keeps within the total power
+                                                  : d.min === 0
+                                                    ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
+                                                    : choosePermanentToSacrifice(view, d),
     chooseCards: (d) => chooseCardsFromZone(view, d),
     arrangeCards: (d) => chooseArrangement(view, d),
     orderTriggers: (d) => orderTriggersAsListed(d),

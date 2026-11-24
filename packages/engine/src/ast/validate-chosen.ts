@@ -160,7 +160,8 @@ export function chosenIssues(
       reveals += 1;
     } else if (
       a.replacement?.kind === 'entersTappedUnlessPays' ||
-      a.replacement?.kind === 'entersAsCopy'
+      a.replacement?.kind === 'entersAsCopy' ||
+      a.replacement?.kind === 'asEntersRemoveCounters'
     ) {
       questions += 1;
     }
