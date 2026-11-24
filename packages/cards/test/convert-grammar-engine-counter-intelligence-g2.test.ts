@@ -30,6 +30,8 @@ const BOLT = 'Lightning Bolt';
 const FILLER = Array.from({ length: 8 }, () => 'Island');
 
 const DEFENSE = real('Resourceful Defense');
+const INSPIRIT = real('Inspirit, Flagship Vessel');
+const RING = 'Sol Ring';
 
 describe('Resourceful Defense', () => {
   test('is valid', () => {
@@ -181,6 +183,93 @@ describe('Resourceful Defense: move any number of counters (CR 122.5)', () => {
             .act(0)
             .activate(DEFENSE.name, { ability: 1, targets: ['mine', `theirs${seat}`], pay: true }),
         ).toThrow();
+      }
+    }
+  });
+});
+
+describe('Inspirit, Flagship Vessel: your choice of a +1/+1 counter or two charge counters (CR 122.6, 608.2d)', () => {
+  test('is valid, and the trigger is part of the 1+ striation (CR 721.2)', () => {
+    expect(validateCard(INSPIRIT)).toEqual([]);
+    const levels = (INSPIRIT.faces[0]?.abilities ?? []).filter((a) => a.kind === 'stationLevel');
+    const one = levels.find((a) => a.kind === 'stationLevel' && a.threshold === 1);
+    if (one?.kind !== 'stationLevel') throw new Error('no 1+ symbol');
+    expect(one.abilities).toHaveLength(1);
+    expect(one.abilities[0]).toMatchObject({
+      kind: 'triggered',
+      effect: {
+        kind: 'chooseOne',
+        options: [
+          { label: 'a +1/+1 counter', effect: { kind: 'addCounters', counter: '+1/+1', count: 1 } },
+          { label: 'two charge counters', effect: { kind: 'addCounters', counter: 'charge', count: 2 } },
+        ],
+      },
+    });
+  });
+
+  const start = (charge: number, active = 0, seats = 2) => {
+    const b = scenario({ seats })
+      .define(INSPIRIT)
+      .seat(0)
+      .library(...FILLER)
+      .battlefield(INSPIRIT.name, charge === 0 ? {} : { counters: { charge } })
+      .battlefield(RING, { label: 'ring' });
+    for (let seat = 1; seat < seats; seat += 1) {
+      b.seat(seat)
+        .library(...FILLER)
+        .battlefield(RING, { label: `theirs${seat}` });
+    }
+    return b.at('precombatMain', { active, turn: 3 }).build();
+  };
+
+  test('with a charge counter, at the beginning of combat on your turn, the controller picks the counters for the artifact', () => {
+    const g = start(1);
+    g.advanceTo('beginningOfCombat');
+    g.act(0).chooseTargets('ring');
+    g.passAll();
+    g.expect.pending('chooseOption', 0);
+    g.act(0).chooseOption('two charge counters');
+    g.expect.counters('ring', { charge: 2 });
+    g.expect.invariants();
+  });
+
+  test('or the +1/+1 counter', () => {
+    const g = start(1);
+    g.advanceTo('beginningOfCombat');
+    g.act(0).chooseTargets('ring');
+    g.passAll();
+    g.act(0).chooseOption('a +1/+1 counter');
+    g.expect.counters('ring', { '+1/+1': 1 });
+  });
+
+  test('"other": Inspirit itself is not a legal target, and up to one means none is allowed', () => {
+    const g = start(1);
+    g.advanceTo('beginningOfCombat');
+    expect(() => g.act(0).chooseTargets(INSPIRIT.name)).toThrow();
+    g.act(0).chooseTargets();
+    g.passAll();
+    g.expect.counters('ring', {});
+  });
+
+  test('with no charge counter the 1+ ability is not there (CR 721.2)', () => {
+    const g = start(0);
+    g.advanceTo('beginningOfCombat');
+    g.expect.pending('priority', 0);
+    g.expect.counters('ring', {});
+  });
+
+  test('only on your turn; the artifact may be any other one, an opponent of any seat included (2, 3 and 4 seats)', () => {
+    for (const seats of [2, 3, 4]) {
+      const theirTurn = start(1, 1, seats);
+      theirTurn.advanceTo('beginningOfCombat');
+      theirTurn.expect.pending('priority', 1);
+      for (let seat = 1; seat < seats; seat += 1) {
+        const mine = start(1, 0, seats);
+        mine.advanceTo('beginningOfCombat');
+        mine.act(0).chooseTargets(`theirs${seat}`);
+        mine.passAll();
+        mine.act(0).chooseOption('two charge counters');
+        mine.expect.counters(`theirs${seat}`, { charge: 2 });
       }
     }
   });
