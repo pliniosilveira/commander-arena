@@ -1263,6 +1263,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.put-into-graveyard': whenever,
   // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
   'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.this-exploits': whenever,
   'condition.this-suspended': permanent(
     (e) =>
       `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,

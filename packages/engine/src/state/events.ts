@@ -82,6 +82,17 @@ export type GameEvent =
       readonly cost: readonly string[];
     }
   /**
+   * CR 702.110b (Exploit; the rules text was not available to check the number): the creature `creature` with exploit exploited a creature: its controller `seat` sacrificed `sacrificed`
+   * as its exploit ability resolved (the creature may have sacrificed itself). Emitted just before the sacrifice moves the permanent, so a creature that sacrificed itself is still on the
+   * battlefield for the "When this creature exploits a creature" ability it has (CR 603.10a).
+   */
+  | {
+      readonly kind: 'exploited';
+      readonly seat: SeatId;
+      readonly creature: ObjectId;
+      readonly sacrificed: ObjectId;
+    }
+  /**
    * CR 709.5h (Room): `seat` unlocked the half `door` (0 the left half, 1 the right half) of the permanent `object`: it was given the unlocked designation, as it entered the
    * battlefield because that half was cast (CR 709.5d), by the special action (`cost` is the mana paid, CR 709.5e) or by an effect (CR 709.5f). `cost` is empty when none was paid.
    */

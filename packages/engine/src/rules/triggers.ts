@@ -541,6 +541,9 @@ function occurrences(
         event.card !== null
         ? [{ subject: null, seat: state.cards[event.card]?.owner ?? null, card: event.from }]
         : [];
+    case 'exploits':
+      // CR 702.110b (Exploit): the creature whose exploit ability had its controller sacrifice a creature; the creature itself is the subject.
+      return event.kind === 'exploited' ? [{ subject: event.creature, seat: event.seat }] : [];
     case 'doorUnlocked':
       // CR 709.5h: a half of a Room was given its unlocked designation, by the player who unlocked it; `door` is which half.
       return event.kind === 'doorUnlocked'
@@ -974,6 +977,9 @@ function matches(
     }
     case 'exiledFromLibraryOrGraveyard':
       return occ.seat === candidate.controller;
+    case 'exploits':
+      // CR 702.110b: "When this creature exploits a creature": only the creature with the ability, which the controller of the ability controls.
+      return subject?.id === candidate.id;
     case 'doorUnlocked':
       // CR 709.5h: "you unlock this door": the player is the controller of the ability and the Room is its source; whether the half is the ability's own is checked by the caller.
       return occ.seat === candidate.controller && subject?.id === candidate.id;
@@ -1336,6 +1342,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'crimeCommitted':
     case 'abilityActivated':
     case 'doorUnlocked': // CR 709.5h
+    case 'exploited': // CR 702.110b
     case 'ringTempted':
     case 'classLevelReached':
       return true;

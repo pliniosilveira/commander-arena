@@ -1744,6 +1744,15 @@ export function describeEvent(
         [event.permanent],
         'CR 701.42a',
       );
+    case 'exploited':
+      // CR 702.110b (Exploit): the creature exploited what its controller sacrificed; the sacrifice itself has its own line.
+      return line(
+        'major',
+        `${name(event.creature)} exploits ${name(event.sacrificed)}.`,
+        event.seat,
+        [event.creature, event.sacrificed],
+        'CR 702.110b',
+      );
     case 'doorUnlocked': {
       // CR 709.5h (Room): a half was given its unlocked designation, entering the battlefield with the half that was cast included.
       const room = after.objects[event.object];

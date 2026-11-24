@@ -42,6 +42,7 @@ export type SimpleKeyword = Extract<
   | 'flanking'
   | 'evolve'
   | 'extort'
+  | 'exploit'
   | 'convoke'
   | 'improvise'
   | 'delve'
@@ -125,6 +126,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['flanking', 'flanking'],
   ['evolve', 'evolve'],
   ['extort', 'extort'],
+  // CR 702.110 (Exploit): a printed ability with no parameter, never granted; the engine expands it into "When this creature enters, you may sacrifice a creature".
+  ['exploit', 'exploit'],
   ['convoke', 'convoke'],
   ['improvise', 'improvise'],
   ['delve', 'delve'],

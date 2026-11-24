@@ -5818,6 +5818,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      if (e.exploit !== undefined) {
+        // CR 702.110b: the sacrifice of the engine's own Exploit ability; a card writes the keyword.
+        issue(
+          out,
+          `${path}.exploit`,
+          "exploit is the sacrifice of the engine's Exploit ability (CR 702.110a); a card writes the keyword",
+        );
+      }
       if (e.byController !== undefined) {
         // D-196: "its controller sacrifices it": a named permanent, sacrificed by whoever controls it; no player and no choice.
         if (e.byController !== true)

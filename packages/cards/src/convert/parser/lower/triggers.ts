@@ -464,6 +464,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
             ...(t.fromExile === true ? { fromExile: true as const } : {}),
           });
     }
+    case 'exploits': {
+      // "When ~ exploits a creature" (CR 702.110b): the creature with the ability, which the engine's Exploit ability makes exploit what its controller sacrifices.
+      const blocked = missingFeatures(['trigger:exploits']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exploits' });
+    }
     case 'doorUnlocked': {
       // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
       if (t.actor?.det !== 'you') return failure(t);
@@ -2043,6 +2048,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:exerted',
   'trigger:playsCard',
   'trigger:doorUnlocked',
+  'trigger:exploits',
   'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',

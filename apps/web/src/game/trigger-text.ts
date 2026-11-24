@@ -546,6 +546,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'doorUnlocked':
       // CR 709.5h (Room): the half whose text has the ability.
       return 'When you unlock this door';
+    case 'exploits':
+      // CR 702.110b (Exploit): the creature with the ability.
+      return 'When this creature exploits a creature';
     case 'leftGraveyard': {
       // D-229 (CR 400.7, 603.2c): "one or more cards leave your graveyard", "a creature card leaves your graveyard".
       const base = trigger.filter === undefined ? 'a card' : discardedCardWords(trigger.filter);

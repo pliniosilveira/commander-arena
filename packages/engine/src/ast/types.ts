@@ -3552,6 +3552,11 @@ export type Effect =
       readonly objects: SacrificeSelector;
       readonly player?: PlayerSelector;
       readonly byController?: true;
+      /**
+       * The sacrifice of Exploit's ability (CR 702.110a, 702.110b): what is sacrificed is "exploited" by the creature with the ability, which the `exploits` trigger of that creature reads. Only the
+       * engine's own Exploit ability writes it (`validateCard` refuses it in card data); with a `choose` selector and no `player`.
+       */
+      readonly exploit?: true;
     }
   /**
    * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (Slaughter the Strong, CR 608.2d,
@@ -5642,6 +5647,12 @@ export type Trigger =
    */
   | { readonly kind: 'doorUnlocked'; readonly who: 'you'; readonly door: 'this' }
   /**
+   * "When this creature exploits a creature" (CR 702.110b, Exploit; the rules text was not available to check the number): the creature with this ability, whose exploit ability
+   * resolved and whose controller sacrificed a creature (itself or another) as it did. The trigger of the creature itself only. `triggerSubject` is the creature. It triggers also when the
+   * creature sacrificed itself (it is looked at as it was on the battlefield, CR 603.10a).
+   */
+  | { readonly kind: 'exploits' }
+  /**
    * "Whenever one or more cards are put into exile from your library and/or your graveyard" (CR 603.2c, 400.7, D-229): a batch trigger on the cards of the
    * controller of this ability that are put into exile from their library or from their graveyard in one run of events. Once, however many. A card put
    * into exile from a hand, the battlefield, the stack or an opponent's zones is not counted.
@@ -6533,6 +6544,12 @@ export type Keyword =
    * Equipment to it." A triggered ability the engine writes itself (`rules/derive-keywords.ts`); only on an Equipment (`validateCard`).
    */
   | { readonly kind: 'livingWeapon' }
+  /**
+   * CR 702.110a (Exploit; the rules text was not available to check the number): "When this creature enters, you may sacrifice a creature." The engine expands the keyword
+   * (`rules/derive-keywords.ts`) into that triggered ability, whose sacrifice makes the creature "exploit a creature" for its own "When this creature exploits a creature" abilities (the
+   * `exploits` trigger). The creature may sacrifice itself.
+   */
+  | { readonly kind: 'exploit' }
   /**
    * CR 702.182a (Job select, D-206): "When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it." A triggered
    * ability the engine writes itself (`rules/derive-keywords.ts`), as for Living weapon; only on an Equipment (`validateCard`).

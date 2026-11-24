@@ -579,6 +579,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putIntoGraveyard',
     // CR 709.5h: "When you unlock this door" (Room).
     'doorUnlocked',
+    // CR 702.110b: "When this creature exploits a creature" (Exploit).
+    'exploits',
     'becomesTarget',
     'chapter',
     // D-111: steps and phases, draws, combat damage dealt, leaving the battlefield.
@@ -821,6 +823,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gift',
     // D-139: Living weapon (CR 702.92).
     'livingWeapon',
+    // CR 702.110: Exploit.
+    'exploit',
     // D-206: Job select (CR 702.182).
     'jobSelect',
     // D-145: Escalate (CR 702.120) and Hideaway (CR 702.75).
@@ -3266,6 +3270,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   exiledFromLibraryOrGraveyard: true,
   putIntoGraveyard: true,
   doorUnlocked: true,
+  exploits: true,
   becomesTarget: true,
   chapter: true,
   step: true,
@@ -3424,6 +3429,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   replicate: true,
   gift: true,
   livingWeapon: true,
+  exploit: true,
   jobSelect: true,
   escalate: true,
   hideaway: true,

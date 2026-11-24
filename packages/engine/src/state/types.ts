@@ -1211,6 +1211,8 @@ export type Instruction =
       readonly kind: 'sacrifice';
       readonly object: ObjectId;
       readonly seat?: SeatId;
+      /** Exploit (CR 702.110b): the creature whose exploit ability this sacrifice is part of; an `exploited` event is emitted just before the permanent moves. */
+      readonly exploiter?: ObjectId;
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
       readonly lkiRecorded?: true;
     }
@@ -1222,6 +1224,8 @@ export type Instruction =
       readonly kind: 'chooseSacrifice';
       readonly filter: ObjectFilter;
       readonly count: number;
+      /** Exploit (CR 702.110b): the creature whose exploit ability asks for the sacrifice (`SacrificeEffect.exploit`); passed on to the sacrifice instructions. */
+      readonly exploiter?: ObjectId;
       /** "Any number of other permanents" (`ChooseSelector.anyNumber`, D-135): none to all of the candidates; `count` is 0. */
       readonly anyNumber?: true;
       /** "One or more" (`ChooseSelector.atLeastOne`, D-187): with `anyNumber`, at least one of the candidates. */

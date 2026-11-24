@@ -13,11 +13,16 @@ import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
 /** CR 701.21: the instructions that sacrifice each of `ids`. */
-export function sacrificeInstructions(ids: readonly ObjectId[], seat?: SeatId): Instruction[] {
+export function sacrificeInstructions(
+  ids: readonly ObjectId[],
+  seat?: SeatId,
+  exploiter?: ObjectId,
+): Instruction[] {
   return ids.map((object) => ({
     kind: 'sacrifice' as const,
     object,
     ...(seat === undefined ? {} : { seat }),
+    ...(exploiter === undefined ? {} : { exploiter }),
   }));
 }
 
@@ -73,7 +78,10 @@ export function runChooseSacrifice(
     const group = instruction.together;
     // D-283 (CR 603.10a): what is sacrificed together is recorded before the first moves.
     if (group === undefined) {
-      const together = recordTogether(state, sacrificeInstructions(chosen, instruction.seat));
+      const together = recordTogether(
+        state,
+        sacrificeInstructions(chosen, instruction.seat, instruction.exploiter),
+      );
       return {
         ...done(together.state, events, together.instructions),
         ...(couldnt ? { thisWay: { couldntSacrifice: [seat] } } : {}),

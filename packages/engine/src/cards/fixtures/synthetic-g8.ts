@@ -50,4 +50,36 @@ export const SYNTHETIC_G8_LIST: readonly CardDefinition[] = [
       "Suspend 3—{B}\nWhenever a card is put into an opponent's graveyard from anywhere, if this card is suspended, you may remove a time counter from this card.",
     abilities: [suspend(3, 'B'), watching],
   }),
+  // "Exploit. When this creature exploits a creature, you gain 3 life."
+  singleFace({
+    name: 'SYNTHETIC Exploit Spy',
+    manaCost: ['1', 'B'],
+    types: ['creature'],
+    subtypes: ['Rogue'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Exploit\nWhen this creature exploits a creature, you gain 3 life.',
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'exploit' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'exploits' },
+        effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 3 },
+      },
+    ],
+  }),
+  // "Exploit" alone: its exploit may feed another creature's trigger, never its own (it has none).
+  singleFace({
+    name: 'SYNTHETIC Exploit Plain',
+    manaCost: ['1', 'B'],
+    types: ['creature'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 1,
+    toughness: 1,
+    oracleText: 'Exploit',
+    abilities: [{ kind: 'keyword', keyword: { kind: 'exploit' } }],
+  }),
 ];

@@ -69,4 +69,43 @@ export const TRIGGER_PUT_INTO_OPPONENT_GRAVEYARD = defineRule<IrTrigger>({
   },
 });
 
-export const MIND_FLAYARRRS_G8_TRIGGER_RULES = [TRIGGER_PUT_INTO_OPPONENT_GRAVEYARD];
+/**
+ * `trigger.this-exploits`: "~ exploits a creature" (CR 702.110b: a creature with exploit exploits a creature when its controller sacrifices a creature as its exploit ability resolves;
+ * the rules text was not available to check the number). The engine's `exploits`, an ability of the creature itself. Not read: another creature ("another creature exploits a creature"),
+ * a kind of creature ("exploits a Zombie"), no object ("exploits"), the past tense, a second event.
+ */
+export const TRIGGER_THIS_EXPLOITS = defineRule<IrTrigger>({
+  id: 'trigger.this-exploits',
+  family: 'trigger',
+  leading: ['~'],
+  cites: ['CR 702.110b (Exploit)'],
+  examples: ['~ exploits a creature'],
+  rejects: [
+    '~ exploits',
+    '~ exploits a Zombie',
+    '~ exploits a creature or',
+    '~ exploits a creature and',
+    '~ exploited a creature',
+    'another creature exploits a creature',
+    'this creature exploits a creature',
+    '~ exploits creatures',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/~ exploits a creature(?![\p{L}\p{N}])(?!\s+(?:or|and)(?![\p{L}\p{N}]))/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: { kind: 'trigger', event: 'exploits', args: {}, span, rule: 'trigger.this-exploits' },
+      pos: r.pos,
+    };
+  },
+});
+
+export const MIND_FLAYARRRS_G8_TRIGGER_RULES = [
+  TRIGGER_PUT_INTO_OPPONENT_GRAVEYARD,
+  TRIGGER_THIS_EXPLOITS,
+];

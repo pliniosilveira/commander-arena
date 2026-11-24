@@ -1462,6 +1462,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'exploits':
+      // CR 702.110b: no parameters; the creature with the ability.
+      break;
     case 'doorUnlocked':
       // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1824,6 +1827,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       // One card for each occurrence; a batch is about several cards and has no one subject.
       return t.batch === true ? undefined : 'permanent';
     case 'doorUnlocked':
+    case 'exploits':
       return 'permanent';
     default:
       return undefined;
