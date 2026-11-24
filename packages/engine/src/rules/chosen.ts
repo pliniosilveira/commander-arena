@@ -10,6 +10,7 @@ import { PLANESWALKER_TYPES } from '../data/planeswalker-types';
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameState } from '../state/types';
 import { copiableValues } from './copiable';
+import { isFaceDown } from './face-down';
 
 export type ChoiceKind =
   | 'creatureType'
@@ -44,7 +45,7 @@ export const MAX_CARD_NAME_LENGTH = 200;
 export function visibleNonlandNames(state: GameState): readonly string[] {
   const names = new Set<string>();
   for (const obj of Object.values(state.objects)) {
-    if (obj.card === null || obj.token !== null || obj.faceDown !== undefined) continue;
+    if (obj.card === null || obj.token !== null || isFaceDown(obj)) continue;
     if (obj.emblem === true || obj.zone === 'hand' || obj.zone === 'library') continue;
     const { name, types } = copiableValues(state, obj).characteristics;
     if (name !== '' && !types.includes('land')) names.add(name);
