@@ -9,6 +9,7 @@ import type {
   Ability,
   Cost,
   DoorValues,
+  DungeonId,
   Effect,
   EnteringCounters,
   InlineChoice,
@@ -18,10 +19,11 @@ import type {
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  UndercityRoom,
   Zone,
 } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
-import type { CardType, Characteristics, Color, Subtype } from '../characteristics';
+import type { CardType, Characteristics, Color, PartyType, Subtype } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaObject } from '../mana/types';
 import type { RngState } from '../rng/types';
@@ -208,6 +210,11 @@ export interface GameObject {
    * no evoke cost on its face to show for it. Absent otherwise.
    */
   readonly evokeGranted?: true;
+  /**
+   * Present on a permanent returned by an Unearth that a static ability gave its card in the graveyard (`grantUnearthToGraveyardCards`): its `alt` of `unearth` has no unearth keyword
+   * on its face to show for it. Absent otherwise.
+   */
+  readonly unearthGranted?: true;
   /**
    * How many times the spell this permanent came from was kicked, when it was kicked with Multikicker (CR
    * 702.33c, D-110): "for each time it was kicked" reads it. Absent for a permanent that was not kicked
@@ -762,6 +769,11 @@ export interface SeatState {
    */
   readonly citysBlessing?: true;
   /**
+   * The dungeon this player is in (CR 309.2, 309.4a, 701.49): the dungeon card they own in the command zone and the room their venture marker is on. Absent while they have none
+   * (`rules/dungeon.ts`). A dungeon card is removed from the game as it is completed (CR 309.7, 704.5t). Public.
+   */
+  readonly dungeon?: { readonly dungeon: DungeonId; readonly room: UndercityRoom };
+  /**
    * The player's speed (CR 702.179b, 702.179c): a number from 1 to 4 once a rule or effect sets it, kept for the rest of the game (`rules/speed.ts`). Absent until then: a player
    * has no speed (CR 702.179b), which reads as 0 for an effect that refers to speed (CR 702.179f). Public.
    */
@@ -923,7 +935,12 @@ export type InherentAbility =
   | 'ringLoot'
   | 'ringBlocked'
   | 'ringDamage'
-  | 'speedUp';
+  | 'speedUp'
+  // CR 726.2: the three inherent abilities of the initiative (the upkeep, the steal, the venture when it is taken), and the room abilities of Undercity (CR 309.4c).
+  | 'initiativeUpkeep'
+  | 'initiativeSteal'
+  | 'initiativeTaken'
+  | `undercity:${UndercityRoom}`;
 
 export interface PendingTrigger {
   /**
@@ -1205,6 +1222,16 @@ export type Instruction =
       /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
       readonly seat?: SeatId;
     }
+  /**
+   * "[Player] ventures into [a dungeon]" (CR 701.49, 309.5; `venture`): `seat` moves their venture marker, enters the dungeon or completes it and enters it again. On a room with two arrows
+   * leaving it, `seat` chooses the next room (a `chooseOption` decision of purpose `dungeonRoom`, options the names of the rooms); `chosen` is null until answered. See `rules/dungeon.ts`.
+   */
+  | {
+      readonly kind: 'venture';
+      readonly seat: SeatId;
+      readonly dungeon: DungeonId;
+      readonly chosen: UndercityRoom | null;
+    }
   /** Run one effect node of the resolving spell or ability. */
   | {
       readonly kind: 'effect';
@@ -1249,6 +1276,18 @@ export type Instruction =
       readonly lkiRecorded?: true;
     }
   /**
+   * "Each player chooses a party from among creatures they control, then sacrifices the rest" (Stick Together, CR 700.8d, 701.21a, 101.4): `seat` chooses now (`chooseParty`
+   * decision); `later` are the players who choose after, in APNAP order, `held` what the earlier ones kept. Nothing is sacrificed until the last has chosen.
+   */
+  | {
+      readonly kind: 'chooseParty';
+      readonly seat: SeatId;
+      readonly later: readonly SeatId[];
+      readonly held: readonly { readonly seat: SeatId; readonly party: readonly ObjectId[] }[];
+      /** The party the answer chose; null until asked. */
+      readonly chosen: readonly { readonly type: PartyType; readonly object: ObjectId }[] | null;
+    }
+  /**
    * CR 608.2d: the controller chooses permanents to sacrifice. `chosen` is null until asked (or
    * chosen automatically); then the choice is run as sacrifice instructions.
    */
@@ -1275,6 +1314,8 @@ export type Instruction =
       readonly keepPowerAtMost?: number;
       /** `keepOrSacrifice` with `keepAtMost` (Archfiend of Depravity): the player keeps at most this many of the permanents that match, instead of a total power. */
       readonly keepCountAtMost?: number;
+      /** `balance` (Magus of the Balance): the player keeps exactly this many of the permanents that match (all of them when they control no more), the rest are sacrificed. `count` is 0. */
+      readonly keepCountExactly?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1564,6 +1605,8 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "... until this creature leaves the battlefield" (`moveToZone.untilSourceLeaves`, CR 610.3): the permanent whose leaving returns the cards exiled. */
+      readonly untilLeaves?: ObjectId;
       /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`): the choice is among the candidates with the greatest (smallest) value of the stat. */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
       readonly least?: 'power' | 'toughness' | 'manaValue';
@@ -1700,9 +1743,15 @@ export type Instruction =
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
       readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
+      /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
+      readonly libraryOf?: SeatId;
+      /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
+      readonly unlinked?: true;
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
+      /** The counters the cards taken enter the battlefield with (`take.withCounters`, CR 122.6). */
+      readonly withCounters?: EnteringCounters;
       /** Only cards with this mana value or less may be taken (`take.manaValueAtMost`, D-145), worked out when the effect started. */
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
@@ -1717,6 +1766,10 @@ export type Instruction =
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
       readonly revealed?: true;
+      /** One card for each of these filters, asked in turn (`take.kinds`, Harper Recruiter): `kindAt` is the filter being asked, `picked` the cards chosen so far. */
+      readonly kinds?: readonly ObjectFilter[];
+      readonly kindAt?: number;
+      readonly picked?: readonly ObjectId[];
       /** The remaining cards are left, ordered or randomized as the effect says. */
       readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
       readonly chosen: readonly ObjectId[] | null;
@@ -1823,6 +1876,8 @@ export type Instruction =
       readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
+      /** `balance` (Magus of the Balance, CR 701.9): the player discards all but this many cards (none when the hand holds no more); `count` is 0. */
+      readonly leave?: number;
       /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
       readonly hand?: true;
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */
@@ -3126,6 +3181,11 @@ export interface GameState {
    * ability triggered. Keyed by the seat; a seat that never became the monarch has no entry. Absent in a game saved before D-231.
    */
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
+  /**
+   * The player with the initiative (CR 726.1, 726.3): one at most, absent while no effect has made anyone take it (or when the holder left the game and no player could take
+   * over, CR 726.4). Public. See `rules/initiative.ts`.
+   */
+  readonly initiative?: SeatId;
   /**
    * How many spells each player cast in the turn before the current one (CR 601.2i), by seat, written as a turn begins from `SeatState.spellsCastThisTurn`: "if no spells were cast last turn",
    * "if a player cast two or more spells last turn" (issue 345). Absent before the second turn of the game, when there is no turn before.

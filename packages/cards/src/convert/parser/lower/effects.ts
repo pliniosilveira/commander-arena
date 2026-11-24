@@ -156,6 +156,8 @@ import {
   recipientOf,
 } from './nouns';
 import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
+import { PARTY_LOWERINGS } from './party';
+import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_CHOOSES_ATTACKER_LOWERINGS } from './player-chooses-attacker';
@@ -1665,6 +1667,26 @@ const BECOME_MONARCH: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "You take the initiative" (CR 726.1, 726.3): the engine's effect names the one player the grammar read, "you" or a target.
+ */
+const TAKE_INITIATIVE: Lowering<IrClause, Effects> = {
+  head: 'takeInitiative',
+  id: 'lower.takeInitiative',
+  needs: ['effect:takeInitiative'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [{ kind: 'takeInitiative', player: player.value }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Scry 2", "Surveil 1", "look at the top three cards of your library, then put them back in any
  * order" and "put two cards from your hand on top of your library" (CR 701.22a, 701.25a, 401.2,
  * 401.4): the engine's own nodes, always about the controller's library, so no player is named.
@@ -2205,6 +2227,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
+      // "each of those creatures" (Unbreakable Formation, CR 608.2c): the group an earlier instruction named, as it was lowered.
       { triggerSubject: true, moved: true, token: true, eachMention: true },
     );
   },
@@ -2857,6 +2880,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   MANIFEST,
   playerVerb('shuffle'),
   BECOME_MONARCH,
+  TAKE_INITIATIVE,
   EXTRA_TURN,
   DELAYED_DRAW,
   COPY_SPELL,
@@ -2939,6 +2963,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DANITHA_G2_LOWERINGS,
   // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
   ...DEATH_TOLL_WINTER_LOWERINGS,
+  ...PARTY_TIME_LIBRARY_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
@@ -3013,6 +3038,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,
+  ...PARTY_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,

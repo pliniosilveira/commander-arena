@@ -188,6 +188,8 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
     } else if (filter.attacking === true && filter.controller === undefined) {
+      // CR 508.1k (Ghalta and Mavren): "other attacking creatures" names the objects by what they do, whoever controls them, and needs no "on the battlefield".
+      // With "other": the creatures attacking besides the source. Without (Jazal Goldmane, "the number of attacking creatures"): every attacking creature.
       // CR 508.1k (Ghalta and Mavren, Galadhrim Ambush): "other attacking creatures" and "attacking creatures" name the objects by what they do, whoever controls them, and need no
       // "on the battlefield". With "other": the creatures attacking besides the source.
     } else if (filter.controller === undefined) {

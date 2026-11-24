@@ -136,6 +136,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
     'doOnlyOnceEachTurn',
+    // CR 305.1, 603.2c (Deep Gnome Terramancer): "Whenever one or more lands enter under an opponent's control without being played" (`entersBatch.notPlayed`).
+    'entersNotPlayed',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
     // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
@@ -156,6 +158,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAlsoGraveyard',
     // Death Toll deck: "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (`ChooseSelector.minCardTypes`, and `fromMoved` among the cards exiled).
     'chooseMinCardTypes',
+    // Glorious Protector (CR 610.3, 608.2d): "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (`moveToZone.untilSourceLeaves` of an `anyNumber` choice of permanents).
+    'chooseExileUntilLeaves',
+    // Harper Recruiter (CR 701.20, 608.2d): "You may reveal a Cleric card, a Rogue card, ... and/or a Wizard card from among them" (`lookAtTop` `take.kinds`).
+    'lookTakeKinds',
+    // Gonti, Lord of Luxury (CR 401.2, 406.3): "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (`lookAtTop.from`).
+    'lookTakeFromPlayer',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -251,6 +259,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrifice',
     // Slaughter the Strong: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (`keepOrSacrifice`).
     'keepOrSacrifice',
+    // Magus of the Balance: "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest" (`balance`).
+    'balance',
+    // Stick Together: "Each player chooses a party from among creatures they control, then sacrifices the rest" (`chooseParty`, CR 700.8d).
+    'chooseParty',
     'moveToZone',
     'counter',
     'draw',
@@ -435,6 +447,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cumulativeUpkeep',
     // D-127: "you become the monarch" (CR 725).
     'becomeMonarch',
+    // "You take the initiative" (CR 726) and "venture into Undercity" (CR 701.49, 309).
+    'takeInitiative',
+    'venture',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
     // Issue 97 (Kefka): "each player who owns a spell you cast this way loses life equal to its mana value".
@@ -1023,6 +1038,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // `mana` cost, with the value announced as the spell is cast or the ability activated.
   costKinds: [
     'tap',
+    // CR 107.6 (Order of Whiteclay): the untap symbol {Q}, "Untap this permanent".
+    'untap',
     'mana',
     'payLife',
     'payXLife',
@@ -1617,6 +1634,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
     'damageCantBePrevented',
     'damageAsThoughWither',
+    // CR 701.23, 614.1a: "If an opponent would search a library, that player searches the top four cards of that library instead."
+    'opponentSearchTopOnly',
     // D-377 (CR 702.16): "You have protection from the chosen card type."
     'playerProtection',
     // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
@@ -1657,6 +1676,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types." (CR 613.1d), "Each Sliver creature card in your graveyard has encore {X}" (CR 702.141a).
     'giveChosenCreatureType',
     'grantEncoreToGraveyardCards',
+    // "Each creature card in your graveyard that's a Cleric ... has unearth {1}{B}" (CR 702.84a).
+    'grantUnearthToGraveyardCards',
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
@@ -1740,6 +1761,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'differentManaValuesAmong',
     // Issue 101: "the number of differently named tokens you control" (CR 201.2).
     'differentNamesAmong',
+    // CR 205.3m: "for each creature type among creatures you control" (Valiant Changeling).
+    'creatureTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
@@ -1783,6 +1806,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // CR 122.1: "the number of experience counters you have".
     'experienceCounters',
+    // CR 700.8: "the number of creatures in your party".
+    'partySize',
     // D-638: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
     'spellsCastThisTurn',
     // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
@@ -1898,6 +1923,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'melee',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
+  // CR 702.101a, 702.101b (Extort): "Other creatures you control have extort"; each instance granted is a triggered ability of its own, like afflict's.
+  'extort',
 ];
 
 /** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
@@ -2027,6 +2054,8 @@ export const ABILITY_FEATURES = [
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
   'doOnlyOnceEachTurn',
+  /** "Whenever one or more lands enter under an opponent's control without being played" (Deep Gnome Terramancer, CR 305.1, 603.2c): the engine's `entersBatch` with `notPlayed`. */
+  'entersNotPlayed',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
   /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
@@ -2047,6 +2076,12 @@ export const ABILITY_FEATURES = [
   'chooseAlsoGraveyard',
   /** "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (Death Toll deck, CR 205.2a, 608.2d): the engine's `ChooseSelector.minCardTypes` of a `moveToZone` into exile, then `fromMoved` among the cards exiled. */
   'chooseMinCardTypes',
+  /** "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (Glorious Protector, CR 610.3, 608.2d): the engine's `moveToZone` into exile with `untilSourceLeaves` of an `anyNumber` choice among the controller's permanents. */
+  'chooseExileUntilLeaves',
+  /** "You may reveal a Cleric card, a Rogue card, a Warrior card, and/or a Wizard card from among them and put those cards into your hand" (Harper Recruiter, CR 608.2d): the engine's `lookAtTop` with `take.kinds`. */
+  'lookTakeKinds',
+  /** "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, CR 401.2, 406.3): the engine's `lookAtTop` with `from`. */
+  'lookTakeFromPlayer',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -2819,6 +2854,8 @@ export const STATIC_KINDS = [
   /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
   'damageCantBePrevented',
   'damageAsThoughWither',
+  /** "If an opponent would search a library, that player searches the top four cards of that library instead" (Aven Mindcensor, CR 701.23): the engine's `opponentSearchTopOnly`. */
+  'opponentSearchTopOnly',
   /** "You have protection from the chosen card type" (CR 702.16, D-377): the engine's `playerProtection`. */
   'playerProtection',
   /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */
@@ -2861,6 +2898,8 @@ export const STATIC_KINDS = [
   'giveChosenCreatureType',
   /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
   'grantEncoreToGraveyardCards',
+  /** "Each creature card in your graveyard that's a Cleric has unearth {1}{B}" (CR 702.84a): the engine's `grantUnearthToGraveyardCards`. */
+  'grantUnearthToGraveyardCards',
 ] as const;
 export type StaticKind = (typeof STATIC_KINDS)[number];
 
@@ -2969,6 +3008,8 @@ export const AMOUNT_KINDS = [
   'differentManaValuesAmong',
   /** "The number of differently named tokens you control" (CR 201.2, issue 101): the engine's `differentNamesAmong`. */
   'differentNamesAmong',
+  /** "For each creature type among creatures you control" (CR 205.3m): the engine's `creatureTypesAmong`. */
+  'creatureTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
@@ -3025,6 +3066,8 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
   'experienceCounters',
+  /** "The number of creatures in your party" (CR 700.8): the engine's `partySize`, an effect's amount, a cost reduction's, a condition's (a full party) or a characteristic-defining ability's. */
+  'partySize',
   /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-638): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */
@@ -3148,6 +3191,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   removeCountersX: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
+  entersNotPlayed: true,
   manaSpentRider: true,
   manaDistinctColors: true,
   manaColorSubset: true,
@@ -3158,6 +3202,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
   chooseMinCardTypes: true,
+  chooseExileUntilLeaves: true,
+  lookTakeKinds: true,
+  lookTakeFromPlayer: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   moveFaceDownLand: true,
@@ -3226,6 +3273,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exile: true,
   sacrifice: true,
   keepOrSacrifice: true,
+  balance: true,
+  chooseParty: true,
   moveToZone: true,
   counter: true,
   draw: true,
@@ -3334,6 +3383,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   encore: true,
   cumulativeUpkeep: true,
   becomeMonarch: true,
+  takeInitiative: true,
+  venture: true,
   extraTurn: true,
   loseLifeManaValue: true,
   delayedTrigger: true,

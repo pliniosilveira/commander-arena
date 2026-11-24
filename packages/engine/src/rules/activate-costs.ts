@@ -37,6 +37,7 @@ import { type RemoveCountersSpec, removeCountersRefusal } from './remove-counter
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
+import { untapPermanent } from './untap';
 import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
@@ -44,6 +45,8 @@ import { moveObject } from './zones';
 /** An activation cost split by how it is paid. */
 export interface CostBreakdown {
   readonly tap: boolean;
+  /** The untap symbol {Q} (CR 107.6): untap the permanent the ability belongs to. */
+  readonly untap: boolean;
   readonly life: number;
   /** "Pay {E}{E}" (CR 107.14, 118.3, issue 105): the energy counters the payer removes from themselves. */
   readonly energy: number;
@@ -112,6 +115,7 @@ export interface CostBreakdown {
  */
 export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
+  let untap = false;
   let life = 0;
   let energy = 0;
   let discardThis = false;
@@ -156,6 +160,9 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     switch (cost.kind) {
       case 'tap':
         tap = true;
+        break;
+      case 'untap':
+        untap = true;
         break;
       case 'payLife':
         // D-135: an amount that reads the game was worked out as the ability was activated (`rules/activate-adjust.ts`).
@@ -303,6 +310,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   }
   return {
     tap,
+    untap,
     life,
     energy,
     hasX: hasX(abilityXCost(costs)),
@@ -361,6 +369,11 @@ function immediateRefusal(
     // CR 602.5a, 302.6: a creature's {T} ability needs it to have been under control since the turn began.
     if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
   }
+  // CR 107.6, 602.5a: an untapped permanent can't be untapped to pay the cost, and a creature's {Q} ability needs it under control since the turn began.
+  if (costs.untap) {
+    if (source.zone !== 'battlefield' || !source.tapped) return 'it is already untapped';
+    if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
+  }
   // CR 119.4: life can be paid only if the life total is at least the amount.
   // A cost of no life is payable at any life total, a negative one included (the player cannot lose the game, CR 104.3b, issue 254).
   if (costs.life > 0 && costs.life > getSeat(state, seat).life) {
@@ -413,6 +426,12 @@ export function payImmediateCosts(
   if (costs.tap) {
     state = patchObject(state, source, { tapped: true });
     events.push({ kind: 'tapped', object: source, by: seat });
+  }
+  if (costs.untap) {
+    // CR 122.1d: a stun counter is removed instead of untapping, and the cost is paid all the same.
+    const untapped = untapPermanent(state, source);
+    state = untapped.state;
+    events.push(...untapped.events);
   }
   if (costs.life > 0) {
     const life = getSeat(state, seat).life;

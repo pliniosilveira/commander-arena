@@ -199,6 +199,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-remove-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
+  'static.attached-keywords-if': asIs,
   'static.monarch-controls-attached': asIs,
   'static.permanents': asIs,
   'static.self': asIs,
@@ -523,6 +524,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
+  'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
@@ -641,6 +643,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.life-gain-bonus': asIs,
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
+  'static.prevent-damage-to-attached': asIs,
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
@@ -660,6 +663,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.players-cant-gain-life': asIs,
   'static.damage-cant-be-prevented': asIs,
   'static.all-damage-as-though-wither': asIs,
+  'static.opponent-search-top-only': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
   'static.you-planeswalkers-creatures-hexproof': asIs,
@@ -921,6 +925,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-different-mana-value': spell(
     (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
   ),
+  // Valiant Changeling (CR 205.3m): the distinct creature types among the permanents of a group.
+  'amount.for-each-creature-type': spell(
+    (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.for-each-card-type-among-those-cards': permanent(
     (e) =>
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
@@ -1031,6 +1039,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.legend-rule-doesnt-apply': asIs,
   'static.groups-are-the-chosen-type': asIs,
   'static.graveyard-cards-have-encore': asIs,
+  'static.graveyard-cards-have-unearth': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.group-is-equipment': asIs,
@@ -1182,6 +1191,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.enchanted-by-you-attack': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
+  'trigger.lands-enter-opponent-not-played': whenever,
   'trigger.cast-or-copy': whenever,
   // D-650: "each other creature that's attacking one of your opponents".
   'noun.each-other-attacking-opponent': permanent(
@@ -1596,6 +1606,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
   ),
   'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
+  'noun.target-spell-or-permanent': permanent((e) => `{1}: ${e} becomes white until end of turn.`),
   // Counter Blitz deck, group C (Endless Detour).
   'noun.target-spell-permanent-or-graveyard-card': spell(
     (e) => `The owner of ${e} puts it on their choice of the top or bottom of their library.`,
@@ -1660,6 +1671,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
+  // The party (CR 700.8).
+  'condition.full-party': permanent(
+    (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,
+  ),
+  'amount.for-each-party-creature': permanent(
+    (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
+  ),
+  'static.self-also-types': asIs,
+  'noun.target-graveyard-card-shared-zone': spell(
+    (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
+  ),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

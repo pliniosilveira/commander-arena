@@ -83,6 +83,7 @@ import { UNEARTH_EXILE_ABILITY } from './derive-alt';
 import { settleDestruction } from './destroy-replacement';
 import { runDraw } from './draw';
 import { runDrawUpTo } from './draw-up-to';
+import { runVenture } from './dungeon';
 import {
   amountOf,
   gainLifeOf,
@@ -112,6 +113,7 @@ import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
+import { takeInitiative } from './initiative';
 import { costWithHandSizeX, lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
@@ -139,6 +141,7 @@ import { nextMainStep } from './next-main';
 import { runNextSpellModifier } from './next-spell';
 import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
+import { partyInstruction, runChooseParty } from './party-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runYouCantAttackPlayers, runYouCantSacrifice } from './player-bans';
@@ -223,6 +226,8 @@ export function runInstruction(
   const flow = askingFlow(res.damageAnswers);
   // CR 608.2d, 801.5b: "an opponent separates ...": with more than one opponent left, the controller is asked which one before the effect starts.
   if (instruction.kind === 'chooseOpponent') return runChooseOpponent(state, res, instruction);
+  // CR 701.49, 309.5: a player ventures into a dungeon (rules/dungeon.ts).
+  if (instruction.kind === 'venture') return runVenture(state, res, instruction);
   if (instruction.kind === 'effect') {
     const asked = askBeforeEffect(state, res, instruction);
     if (asked !== null) return asked;
@@ -338,6 +343,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'fightPairs') return runFightPairs(state, res, instruction, flow);
   if (instruction.kind === 'chooseSacrifice') return runChooseSacrifice(state, res, instruction);
+  if (instruction.kind === 'chooseParty') return runChooseParty(state, res, instruction);
   if (instruction.kind === 'chooseMove') return runChooseMove(state, res, instruction);
   if (instruction.kind === 'chooseTap') return runChooseTap(state, res, instruction);
   if (instruction.kind === 'chooseEach') return runChooseEach(state, res, instruction);
@@ -1134,6 +1140,56 @@ function runEffect(
       };
     }
 
+    case 'balance': {
+      // CR 101.4, 608.2d, 701.21a, 701.9 (Magus of the Balance): every player counts what they have; each keeps the smallest number, chosen in APNAP order, and the rest go at once.
+      const seats = resolvePlayers(state, { kind: 'eachPlayer' }, ctx, targets);
+      const [first, ...later] = seats;
+      if (first === undefined) return done(state);
+      if (effect.what === 'hand') {
+        const keep = Math.min(...seats.map((seat) => getSeat(state, seat).hand.length));
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'discard' as const,
+              seat: first,
+              count: 0,
+              leave: keep,
+              chosen: null,
+              ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+            },
+          ],
+        );
+      }
+      const filter: ObjectFilter =
+        effect.what === 'lands' ? { types: ['land'] } : { types: ['creature'] };
+      const keep = Math.min(
+        ...seats.map((seat) => controlledCandidates(state, seat, res.source, filter).length),
+      );
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseSacrifice' as const,
+            filter,
+            count: 0,
+            keepCountExactly: keep,
+            chosen: null,
+            seat: first,
+            ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+          },
+        ],
+      );
+    }
+
+    case 'chooseParty': {
+      // CR 700.8d, 101.4 (Stick Together): every player the effect names chooses a party, the active player first; nothing is sacrificed until the last has chosen.
+      const first = partyInstruction(resolvePlayers(state, effect.players, ctx, targets));
+      return first === null ? done(state) : done(state, [], [first]);
+    }
+
     case 'keepOrSacrifice': {
       // CR 101.4, 608.2d (Slaughter the Strong): every player the effect names chooses, the active player first, then nothing is sacrificed until the last has chosen.
       const seats = resolvePlayers(state, effect.players, ctx, targets);
@@ -1355,6 +1411,13 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // CR 610.3a, 610.3b (Glorious Protector): "... until this creature leaves the battlefield": if it has left already, as the exile would happen, nothing is exiled.
+        if (
+          effect.untilSourceLeaves === true &&
+          (res.source === null || state.objects[res.source]?.zone !== 'battlefield')
+        ) {
+          return { ...done(state), lastMoved: [] };
+        }
         // Summon: Valefor (CR 608.2d, 101.4): "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures ...": each player the effect names
         // chooses among their own permanents, in APNAP order, and the permanents chosen move once the last has chosen.
         const choosers =
@@ -1375,6 +1438,13 @@ function runEffect(
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              ...(effect.untilSourceLeaves === true && res.source !== null
+                ? { untilLeaves: res.source }
+                : {}),
+              // CR 608.2d: "any number of non-Angel creatures you control": none up to all of the candidates.
+              ...(sel.anyNumber === true && sel.minCardTypes === undefined
+                ? { anyNumber: true as const }
+                : {}),
               ...(firstChooser === undefined ? {} : { seat: firstChooser }),
               ...(laterChoosers.length === 0
                 ? {}
@@ -2399,6 +2469,29 @@ function runEffect(
       if (seat === undefined) return done(state);
       const r = becomeMonarch(state, seat);
       return done(r.state, r.events);
+    }
+
+    case 'takeInitiative': {
+      // CR 726.1, 726.3, 726.5: the one player the selector names takes the initiative; a player who has it takes it again (nothing changes but the venture it triggers).
+      const [seat] = resolvePlayers(state, effect.player, ctx, targets);
+      if (seat === undefined) return done(state);
+      const r = takeInitiative(state, seat);
+      return done(r.state, r.events);
+    }
+
+    case 'venture': {
+      // CR 701.49, 701.49d: each player the selector names ventures, in APNAP order (CR 101.4); each moves the marker as one instruction, which asks for the room when it must.
+      const named = resolvePlayers(state, effect.player, ctx, targets);
+      return done(
+        state,
+        [],
+        apnapOrder(state, named).map((seat) => ({
+          kind: 'venture' as const,
+          seat,
+          dungeon: effect.dungeon,
+          chosen: null,
+        })),
+      );
     }
 
     case 'loseLifeManaValue':
@@ -3627,6 +3720,13 @@ function runEffect(
       // bottom in a random order" (rules/look-take.ts).
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // Gonti (CR 608.2b): "target opponent's library": the one player the selector names; with none (the target is gone) nothing is looked at.
+      let libraryOf: SeatId | undefined;
+      if (effect.from !== undefined) {
+        libraryOf = resolvePlayers(state, effect.from, ctx, targets)[0];
+        if (libraryOf === undefined) return done(state);
+      }
+      const unlinked = effect.take.to === 'exileFaceDownUnlinked';
       return done(
         state,
         [],
@@ -3635,13 +3735,21 @@ function runEffect(
             kind: 'lookTake',
             stage: 'take',
             seat: res.controller,
+            ...(libraryOf === undefined ? {} : { libraryOf }),
+            ...(unlinked ? { unlinked: true as const } : {}),
             count,
             filter: effect.take.filter,
+            ...(effect.take.to === undefined
+              ? {}
+              : { to: unlinked ? ('exileFaceDown' as const) : effect.take.to }),
             // CR 701.20, 608.2c: "any number of ... cards from among them": up to every card looked at, a number known only now.
             max: effect.take.any === true ? count : effect.take.max,
-            ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
+            // CR 122.6, 614.1c: "onto the battlefield with three +1/+1 counters on it".
+            ...(effect.take.withCounters === undefined
+              ? {}
+              : { withCounters: effect.take.withCounters }),
             // CR 202.3 (D-145): "with mana value less than or equal to the number of lands you control", worked out as the effect runs.
             ...(effect.take.manaValueAtMost === undefined
               ? {}
@@ -3655,6 +3763,10 @@ function runEffect(
             ...(effect.take.elseAnyToHand === true ? { elseAnyToHand: true as const } : {}),
             // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
             ...(effect.take.all === true ? { all: true as const } : {}),
+            // Harper Recruiter: one card for each of several kinds.
+            ...(effect.take.kinds === undefined
+              ? {}
+              : { kinds: effect.take.kinds, kindAt: 0, picked: [] as ObjectId[] }),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
             ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,

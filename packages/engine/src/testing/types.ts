@@ -3,9 +3,9 @@
  * directly and then drives it only through applyAction.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Zone } from '../ast/types';
+import type { UndercityRoom, Zone } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
-import type { CardType } from '../characteristics';
+import type { CardType, PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { Action } from '../state/actions';
@@ -182,6 +182,8 @@ export interface AtOptions {
   readonly extraLandDrops?: number;
   /** The player who is the monarch at the start (CR 725.1, D-127). Default: nobody. */
   readonly monarch?: SeatId;
+  /** The player who has the initiative at the start (CR 726.1). Default: nobody. */
+  readonly initiative?: SeatId;
   /** The day or night designation the game has at the start (CR 731.1). Default: neither. */
   readonly dayNight?: 'day' | 'night';
 }
@@ -495,6 +497,8 @@ export interface Actor {
   declineCommandZone(): Actor;
   /** Answer a choosePermanent decision (CR 608.2d) with these permanents. */
   choosePermanents(...cards: CardRef[]): Actor;
+  /** Answer a chooseParty decision (CR 700.8d) with the creature that fills each party type left in; the types not named stay empty. */
+  chooseParty(party: Partial<Record<PartyType, CardRef>>): Actor;
   /**
    * Answer an orderTriggers decision (CR 603.3b). Each entry is the source name of a listed
    * trigger, or its index in the decision; the first entry is put on the stack first, so it
@@ -634,6 +638,10 @@ export interface Expectations {
   hasLost(seat: SeatId, lost?: boolean): void;
   /** `seat` is the monarch (CR 725), or nobody is when `seat` is null (D-127). */
   monarch(seat: SeatId | null): void;
+  /** `seat` has the initiative (CR 726), or nobody does when `seat` is null. */
+  initiative(seat: SeatId | null): void;
+  /** `seat`'s venture marker is on this room of Undercity (CR 309.4), or they are in no dungeon when `room` is null. */
+  dungeon(seat: SeatId, room: UndercityRoom | null): void;
   /** The game is `'day'`, `'night'`, or neither when `designation` is null (CR 731.1). */
   dayNight(designation: 'day' | 'night' | null): void;
   /** The Ring has tempted `seat` this many times (CR 701.54c, D-196); 0 means it has not, and the seat has no emblem. */

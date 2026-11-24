@@ -48,6 +48,11 @@ export interface BindScope {
    * says nothing of what it follows, and a line that starts with "it" is not read as the line before's.
    */
   lastTarget?: IrNoun;
+  /**
+   * The last group ("each", `det` each) noun of the spell lines read so far (CR 608.2c; Unbreakable Formation: "Creatures you control gain indestructible until end of turn.
+   * Addendum — If you cast this spell during your main phase, put a +1/+1 counter on each of those creatures"): the group "those creatures" on a line of its own is about.
+   */
+  lastGroup?: IrNoun;
 }
 
 export interface BindOptions {
@@ -77,6 +82,8 @@ interface Antecedent {
   readonly kind: 'object' | 'player';
   /** The target of the spell line before (stage P35, D-176): only a "that creature" of the next line may mean it. */
   readonly previousLine?: true;
+  /** The group of the spell line before (CR 608.2c): only "those creatures" of the next line may mean it. */
+  readonly groupLine?: true;
   /** The token one instruction made (stage P48, D-205): only "that token" may mean it, never "it" or "that creature". */
   readonly token?: true;
   /**
@@ -300,6 +307,28 @@ class Binder {
     });
   }
 
+  /** The last group of "each" objects this binder met, which a later spell line may name as "those creatures" (CR 608.2c). */
+  lastGroupNoun(): IrNoun | undefined {
+    return [...this.antecedents]
+      .reverse()
+      .find(
+        (a) =>
+          a.kind === 'object' &&
+          a.previousLine !== true &&
+          a.tokens !== true &&
+          a.noun.det === 'each' &&
+          /^m\d+$/u.test(a.noun.ref ?? ''),
+      )?.noun;
+  }
+
+  /** The group the spell line before this one named, the antecedent of a "those creatures" of this line and of no other pronoun (CR 608.2c). */
+  seedGroupLine(noun: IrNoun): void {
+    this.antecedents.push({ noun, kind: 'object', previousLine: true, groupLine: true });
+    // The refs of this line's own mentions go on from the one carried, so no ref of this line is the same as the group's.
+    const n = /^m(\d+)$/u.exec(noun.ref ?? '');
+    if (n !== null) this.mentionCount = Math.max(this.mentionCount, Number(n[1]));
+  }
+
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
   seedLine(noun: IrNoun): void {
     this.antecedents.push({ noun, kind: 'object', previousLine: true });
@@ -326,7 +355,9 @@ class Binder {
       case 'player':
         // Oracle "they" may refer to the most recent plural object group instead of a player.
         if (/^they$/iu.test(noun.filter.raw.trim())) {
-          const pluralIndex = recent.findIndex((a) => a.kind === 'object' && a.noun.plural);
+          const pluralIndex = recent.findIndex(
+            (a) => a.kind === 'object' && a.noun.plural && a.groupLine !== true,
+          );
           const playerIndex = recent.findIndex((a) => a.kind === 'player');
           if (pluralIndex >= 0 && (playerIndex < 0 || pluralIndex < playerIndex)) {
             found = recent[pluralIndex];
@@ -357,6 +388,7 @@ class Binder {
         found = recent.find(
           (a) =>
             a.kind === 'object' &&
+            (a.groupLine !== true || /^those /iu.test(noun.filter.raw.trim())) &&
             (a.tokens !== true || pronoun.each === true) &&
             (a.noun.plural ||
               (a.noun.det === 'each' && /^(?:each of )?those /iu.test(noun.filter.raw.trim()))),
@@ -383,6 +415,7 @@ class Binder {
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.thatCardOnly !== true || /^that card$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
+            a.groupLine !== true &&
             !a.noun.plural &&
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
@@ -406,6 +439,19 @@ class Binder {
       return noun;
     }
     const antecedent = found.noun;
+    // CR 608.2c (Unbreakable Formation): "those creatures" of a line after the one that named the group select the same objects again, so the pronoun becomes the group's
+    // own noun, and is the antecedent of what follows it in this line.
+    if (found.groupLine === true) {
+      this.mentionCount += 1;
+      const again: IrNoun = {
+        ...antecedent,
+        span: noun.span,
+        rule: noun.rule,
+        ref: `m${this.mentionCount}`,
+      };
+      this.antecedents.push({ noun: again, kind: 'object' });
+      return again;
+    }
     // "Tap enchanted creature and remove all counters from it" (stage P50, D-207): "it" is the permanent the Aura or Equipment is attached to, which the
     // engine names `attached`, so the pronoun takes the words of its antecedent.
     if (antecedent.det === 'enchanted' || antecedent.det === 'equipped') {
@@ -1026,6 +1072,11 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   ) {
     binder.seedControllerOfSubject(subject);
   }
+  // CR 508.6 (Calculating Lich): "Whenever a creature attacks one of your opponents, that player loses 1 life": "that player" is the opponent attacked (the lowering reads it
+  // as the engine's `triggerAttackedPlayer`).
+  if (source.event === 'attacks' && source.at === 'opponent' && subject !== undefined) {
+    binder.seedControllerOfSubject(subject);
+  }
   return {
     ...source,
     ...(subject === undefined ? {} : { subject }),
@@ -1070,9 +1121,12 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
   switch (ability.kind) {
     case 'spell': {
       if (scope.lastTarget !== undefined) binder.seedLine(scope.lastTarget);
+      if (scope.lastGroup !== undefined) binder.seedGroupLine(scope.lastGroup);
       const body = binder.body(ability.body);
       const last = binder.targets[binder.targets.length - 1];
       if (last !== undefined && !last.plural && !isPlayerNoun(last)) scope.lastTarget = last;
+      const group = binder.lastGroupNoun();
+      if (group !== undefined) scope.lastGroup = group;
       return done({ ...ability, body });
     }
     case 'activated': {

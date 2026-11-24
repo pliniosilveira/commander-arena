@@ -30,6 +30,7 @@ import { effectsOn } from './effects-on';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
 import { cardsOf } from './melded';
+import { partySizeOf } from './party';
 
 /**
  * How many objects in the filter's zone match it, for an ability whose source is `source`: "you" is
@@ -107,6 +108,22 @@ function countFresh(
     if (matchesFilterWith(state, obj, view, filter, ctx)) total += 1;
   }
   return total;
+}
+
+/**
+ * CR 700.8: the number of creatures in the party of the controller of `source`, read through `typeViewOf` like a count (layers 1, 4 and 5 and nothing of layer 7), so a
+ * characteristic-defining ability that counts it cannot loop (CR 613.8).
+ */
+export function partySizeForSource(state: GameState, source: GameObject): number {
+  const you = controllerOf(state, source);
+  const creatures: (readonly string[])[] = [];
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) !== you) continue;
+    const view = typeViewOf(state, obj);
+    if (view.types.includes('creature')) creatures.push(view.subtypes);
+  }
+  return partySizeOf(creatures);
 }
 
 /**
@@ -274,18 +291,29 @@ export function staticAmountOf(
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')
     return commandersCastCount(state, controllerOf(state, source));
+  if (amount.kind === 'partySize') return partySizeForSource(state, source);
   if (amount.kind === 'colorsAmong') return colorsAmongForSource(state, amount.filter, source);
   if (amount.kind === 'greatestPowerAmong')
     return greatestPrintedPowerFor(state, amount.filter, source);
   if (amount.kind === 'times')
     return amount.factor * countForSource(state, amount.of.filter, source, keywordsOf);
   // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".
+  // CR 604.3, 208.2a: and "1 plus the number of card types among cards in your opponents' graveyards" (a number, a count of card types).
   if (amount.kind === 'sum') {
-    return amount.of.reduce(
-      (n, part) => n + countForSource(state, part.filter, source, keywordsOf),
+    return amount.of.reduce<number>(
+      (n, part) =>
+        n +
+        (typeof part === 'number'
+          ? part
+          : part.kind === 'cardTypesAmong'
+            ? cardTypesAmongForSource(state, part.filter, source)
+            : countForSource(state, part.filter, source, keywordsOf)),
       0,
     );
   }
+  // CR 205.2a, 604.3: the card types among the cards of a zone other than the battlefield.
+  if (amount.kind === 'cardTypesAmong')
+    return cardTypesAmongForSource(state, amount.filter, source);
   return countForSource(state, amount.filter, source, keywordsOf);
 }
 

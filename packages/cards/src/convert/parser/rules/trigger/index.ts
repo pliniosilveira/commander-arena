@@ -63,6 +63,7 @@ import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
+import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
 import { PLAYER_ATTACKS_TRIGGER_RULES } from './player-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
@@ -353,8 +354,11 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
     'another creature attacks you',
     'a creature with flying attacks you or a planeswalker you control',
     'a nontoken creature attacks you',
+    'a creature attacks one of your opponents',
   ],
   rejects: [
+    'a creature attacks one of your opponent',
+    'a creature attacks one of your opponents and',
     'a creature attacks',
     'a creature attacks you or',
     'a creature attacks you or a planeswalker',
@@ -374,6 +378,11 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
           () => 'youOrPlaneswalkers' as const,
         ),
         map(pattern(/ attacks you(?![\p{L}\p{N}]| or )/iu), () => 'you' as const),
+        // CR 508.1b, 508.6, 603.2 (Calculating Lich): a creature declared as attacking one of the controller's opponents as a player.
+        map(
+          pattern(/ attacks one of your opponents(?![\p{L}\p{N}'’]| (?:and|or)(?![\p{L}\p{N}]))/iu),
+          () => 'opponent' as const,
+        ),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -843,8 +852,15 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // Don Andres, the Renegade (CR 108.3): a spell whose owner is another player.
     "you cast a noncreature spell you don't own",
     'you cast a spell you don’t own',
+    // Folk Hero (CR 205.3m): a spell that has a creature type the source has.
+    'you cast a spell that shares a creature type with ~',
+    'you cast a creature spell that shares a creature type with this creature',
   ],
   rejects: [
+    'you cast a spell that shares a creature type with',
+    'you cast a spell that shares a creature type with it',
+    'you cast a spell that shares a creature type with ~ that targets a creature',
+    'an opponent casts a spell that shares a creature types with ~',
     "you cast a noncreature spell you don't own that targets a creature",
     "you cast a spell you don't own or",
     "you cast a spell you don't owns",
@@ -910,6 +926,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(pattern(/ you don['’]t own(?![\p{L}\p{N}'’])/iu), null),
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
       optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
+      // Folk Hero (CR 205.3m, 702.73a): "a spell that shares a creature type with ~", a spell that has a creature type the source of the ability has.
+      optional(
+        pattern(/ that shares a creature type with (?:~|this creature)(?![\p{L}\p{N}'’])/iu),
+        null,
+      ),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
       optional(choice(AIMED, AIMED_SELF, AIMED_ANY), null),
@@ -917,8 +938,14 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, unowned, colored, aimed, alternative] = r.value;
+    const [actor, spell, unowned, colored, shares, aimed, alternative] = r.value;
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
+    if (
+      shares !== null &&
+      (unowned !== null || colored !== null || aimed !== null || alternative !== null)
+    ) {
+      return fail(ctx, pos);
+    }
     if (unowned !== null && (colored !== null || aimed !== null || alternative !== null)) {
       return fail(ctx, pos);
     }
@@ -928,7 +955,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       return fail(ctx, pos);
     }
     const base: IrFilter =
-      colored === null ? spellBase : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
+      shares !== null
+        ? { ...spellBase, sharesCreatureTypeWithSource: true }
+        : colored === null
+          ? spellBase
+          : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
     let filter: IrFilter;
     if (alternative !== null) {
       // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
@@ -1410,6 +1441,7 @@ export const TRIGGER_RULES = [
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  ...PARTY_TIME_LIBRARY_TRIGGER_RULES,
   // Syr Konrad: "another creature dies, or a creature card is put into a graveyard from anywhere other than the battlefield, or a creature card leaves your graveyard" (a prefix
   // of which `trigger.dies` would read, so it comes first).
   ...GRAVEYARD_EVENTS_TRIGGER_RULES,

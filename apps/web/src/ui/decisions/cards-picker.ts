@@ -143,7 +143,9 @@ export function lookTakeDestination(
 ): TakeTo {
   const to = sourceEffect(decision, index, 'lookAtTop')?.take.to ?? 'hand';
   // A card taken to be cast ("You may cast ... from among them") is chosen by the question of the cast (purpose 'cast'), never by this one.
-  return to === 'castFree' ? 'hand' : to;
+  if (to === 'castFree') return 'hand';
+  // Gonti: a card exiled face down from another player's library, remembered by no permanent, is shown as any card exiled face down.
+  return to === 'exileFaceDownUnlinked' ? 'exileFaceDown' : to;
 }
 
 /**

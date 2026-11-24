@@ -12,6 +12,7 @@
  * true })`. Library order is top first; every other zone keeps the order given.
  */
 
+import type { UndercityRoom } from '../ast/types';
 import { validateCardStructure } from '../ast/validate';
 import type { CardDefinition } from '../cards/definition';
 import type { SeatId } from '../ids';
@@ -54,6 +55,8 @@ export interface ScenarioBuilder {
   citysBlessing(): ScenarioBuilder;
   /** The seat has this speed at the start (CR 702.179b): 1 to 4; without it the seat has no speed. */
   speed(speed: number): ScenarioBuilder;
+  /** The seat has Undercity in the command zone with its venture marker on this room at the start (CR 309.4, 701.49). */
+  dungeon(room: UndercityRoom): ScenarioBuilder;
   hand(name: string, options?: PlaceOptions): ScenarioBuilder;
   hand(...names: string[]): ScenarioBuilder;
   /** Top of the library first. */
@@ -186,6 +189,10 @@ export function scenario(options: ScenarioOptions = {}): ScenarioBuilder {
     },
     speed(speed) {
       seatSpec('speed').speed = speed;
+      return builder;
+    },
+    dungeon(room) {
+      seatSpec('dungeon').dungeon = room;
       return builder;
     },
     ring(tempted) {

@@ -1007,6 +1007,17 @@
   border-color: var(--accent);
 }
 
+.board-flag-initiative {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-dungeon {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .board-flag-blessing {
   color: var(--accent);
   border-color: var(--accent);

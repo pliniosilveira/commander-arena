@@ -65,6 +65,7 @@ import {
 import { optionPrompt } from './option-picker';
 import { optionalAsk } from './optional';
 import { engineOrder } from './order';
+import { partyInOrder } from './party';
 import {
   candidatesInOrder,
   confirmText,
@@ -743,6 +744,23 @@ function handlers(
           inOverlay: true,
           cancel: button('cancel', 'Cancel', () => act({ kind: 'cancel' })),
         },
+      ),
+    }),
+
+    // CR 700.8d (Stick Together): the dialog draws a row of creatures for each type (PartyDialog); the answer is the party picked, which may be empty. The autopilot never answers it.
+    chooseParty: (d) => ({
+      interaction: interaction({}),
+      bar: bar(
+        'Choose a party from among your creatures. The rest are sacrificed.',
+        [
+          button(
+            'confirm',
+            ui.party.length === 0 ? 'Choose no one' : 'Confirm party',
+            () => act({ kind: 'chooseParty', party: partyInOrder(d, ui.party) }),
+            { primary: true },
+          ),
+        ],
+        { inOverlay: true },
       ),
     }),
 

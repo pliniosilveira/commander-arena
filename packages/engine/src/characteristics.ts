@@ -26,6 +26,10 @@ export type CardType = (typeof CARD_TYPES)[number];
 export const SUPERTYPES = ['basic', 'legendary', 'snow', 'world'] as const;
 export type Supertype = (typeof SUPERTYPES)[number];
 
+/** CR 700.8 (General): the creature types a party is made of, in the order the rule lists them. */
+export const PARTY_TYPES = ['Cleric', 'Rogue', 'Warrior', 'Wizard'] as const;
+export type PartyType = (typeof PARTY_TYPES)[number];
+
 /** Subtypes are open-ended (creature types, land types, Equipment, Aura, Saga, ...). */
 export type Subtype = string;
 

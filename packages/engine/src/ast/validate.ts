@@ -748,6 +748,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.alsoCardsAndSpells`, 'alsoCardsAndSpells is true or absent');
       }
       break;
+    case 'grantUnearthToGraveyardCards':
     case 'grantEncoreToGraveyardCards':
       // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.
       if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
@@ -771,6 +772,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           `${path}.what`,
           'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
         );
+      }
+      // CR 702.84a: the Unearth it gives is checked as a printed one is.
+      if (s.kind === 'grantUnearthToGraveyardCards') {
+        checkKeyword({ kind: 'unearth', cost: s.cost }, `${path}.cost`, out);
       }
       break;
     case 'creatureOffBattlefield':
@@ -1132,7 +1137,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
   if (at !== undefined) {
     if (t?.kind !== 'attacks') {
       issue(out, `${path}.at`, 'at (whom it attacks) belongs to an attacks trigger');
-    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers'])) {
+    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers', 'opponent'])) {
       issue(out, `${path}.at`, `unknown attack target ${JSON.stringify(at)}`);
     }
   }
@@ -1476,6 +1481,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           `${path}.what`,
           'the permanents that enter are on the battlefield: no zone, stackKind or combat',
         );
+      }
+      if (t.notPlayed !== undefined && t.notPlayed !== true) {
+        issue(out, `${path}.notPlayed`, 'notPlayed must be true when present');
       }
       if (t.fromGraveyard !== undefined && t.fromGraveyard !== true) {
         issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
@@ -2284,10 +2292,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
-        ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
+        ...(a.trigger?.kind === 'attackBatch' ||
+        a.trigger?.kind === 'playerAttacksOpponent' ||
+        (a.trigger?.kind === 'attacks' && a.trigger.at === 'opponent')
           ? { triggerAttacked: true }
           : {}),
         ...(a.trigger?.kind === 'playerAttacksOpponent' ||
+        (a.trigger?.kind === 'attacks' && a.trigger.at === 'opponent') ||
         (a.trigger?.kind === 'attackBatch' && a.trigger.eachAttackedPlayer === true)
           ? { triggerAttackedSingle: true }
           : {}),

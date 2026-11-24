@@ -10,7 +10,7 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import { isPermanentType } from '../characteristics';
+import { isPermanentType, type PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat, patchObject } from '../state/ops';
@@ -30,6 +30,7 @@ import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
 import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
+import { roomChosen } from './dungeon';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
@@ -766,7 +767,9 @@ export function answerResolutionChoice(
   const asked = state.pending;
   if (
     head.kind === 'chooseSacrifice' &&
-    (head.keepPowerAtMost !== undefined || head.keepCountAtMost !== undefined)
+    (head.keepPowerAtMost !== undefined ||
+      head.keepCountAtMost !== undefined ||
+      head.keepCountExactly !== undefined)
   ) {
     if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
     const sacrificed = asked.legal.filter(
@@ -786,6 +789,27 @@ export function answerResolutionChoice(
     head.kind === 'proliferate' ? { ...head, chosen, players } : { ...head, chosen };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to a chooseParty decision (CR 700.8d) on the `chooseParty` instruction that asked, then continues. Null when no such question is pending. The caller has checked
+ * the answer against the decision.
+ */
+export function answerResolutionParty(
+  state: GameState,
+  party: readonly { readonly type: PartyType; readonly object: ObjectId }[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'chooseParty') return null;
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, queue: [{ ...head, chosen: party }, ...res.queue.slice(1)] },
+    },
     [],
   );
 }
@@ -1331,6 +1355,43 @@ export function answerResolutionChooseOpponent(
     return null;
   }
   const updated: Instruction = { ...head, chosen: Number(option.slice('seat:'.length)) };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
+/**
+ * Records the room a venturing player chose among the arrows leaving the room their venture marker is on (CR 701.49b, 309.5a) on the instruction that asked, and continues. Null when no such
+ * question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionDungeonRoom(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'venture' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'dungeonRoom' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const room = roomChosen(option);
+  if (room === null) return null;
+  const updated: Instruction = { ...head, chosen: room };
   const event: GameEvent = {
     kind: 'optionChosen',
     seat: d.seat,
