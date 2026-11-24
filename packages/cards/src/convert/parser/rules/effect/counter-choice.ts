@@ -104,7 +104,8 @@ export const EFFECT_REMOVE_CHOSEN_COUNTERS = defineRule<Clauses>({
 /**
  * `effect.move-counter`: "Move a counter from target permanent you control onto a second target permanent" (CR 122.5, 115.3, 608.2d): one counter of a kind the controller chooses as the
  * effect resolves. The two permanents are two targets; "a second target" and "another target" both read (CR 122.5: moving a counter from a permanent onto itself does nothing, so the
- * second need not differ). Not read: a kind of counter, "all counters" (`effect.move-all-counters`), "any number of", plural or "up to" targets, "~", a trailing clause.
+ * second need not differ). "Move any number of counters from ... onto ..." (Resourceful Defense) lets the controller move as many as they like, or none (`anyNumber`). Not read: a kind of
+ * counter, "all counters" (`effect.move-all-counters`), "up to" a number, plural or "up to" targets, "~", a trailing clause.
  */
 export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
   id: MOVE_ID,
@@ -119,6 +120,9 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     'move a counter from target permanent you control onto a second target permanent',
     'move a counter from target creature onto a second target creature',
     'move a counter from target permanent onto another target permanent',
+    // Resourceful Defense: as many as the controller likes, one at a time, or none.
+    'move any number of counters from target permanent you control onto a second target permanent you control',
+    'move any number of counters from target creature onto another target creature',
   ],
   rejects: [
     'move a counter from target permanent onto target permanent',
@@ -127,12 +131,19 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     'move a counter from target permanent you control onto ~',
     'move two counters from target permanent onto a second target permanent',
     'move all counters from target permanent onto a second target permanent',
-    'move any number of counters from target permanent onto a second target permanent',
     'move a counter from target permanents onto a second target permanent',
     'move a counter from target permanent onto a second target permanents',
     'move a counter from up to one target permanent onto a second target permanent',
     'move a counter from target permanent onto a second target permanent and draw a card',
     'move a counter from target permanent onto a third target permanent',
+    'move any number of +1/+1 counters from target permanent onto a second target permanent',
+    'move any number of counters from ~ onto a second target permanent',
+    'move any number of counters from target permanent onto ~',
+    'move any number of counters from target permanent onto target permanent',
+    'move any number of counters from target permanents onto a second target permanent',
+    'move any number of counters from target permanent onto a second target permanent and draw a card',
+    'move any number of counters from target permanent onto a third target permanent',
+    'move up to two counters from target permanent onto a second target permanent',
   ],
   parse: (ctx, pos) => {
     const first = satisfy(
@@ -160,17 +171,19 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
       ),
     );
     const r = sequence(
-      literal('move a counter from '),
+      choice(literal('move a counter from '), literal('move any number of counters from ')),
       first,
       literal(' onto '),
       second,
       pattern(/(?=\.|$)/u),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, from, , to] = r.value;
+    const [lead, from, , to] = r.value;
+    // CR 122.5, 608.2d: "any number of" lets the controller move none, one or more, one at a time.
+    const verb = lead === 'move a counter from ' ? 'moveCounter' : 'moveAnyNumberOfCounters';
     return {
       ok: true,
-      value: [makeClause(MOVE_ID, 'moveCounter', { from, to }, { start: pos, end: r.pos })],
+      value: [makeClause(MOVE_ID, verb, { from, to }, { start: pos, end: r.pos })],
       pos: r.pos,
     };
   },

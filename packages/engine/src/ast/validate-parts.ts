@@ -3071,8 +3071,12 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not counters');
     }
     const counter = (a as { counter?: unknown }).counter;
-    if (typeof counter !== 'string' || counter.length === 0) {
-      issue(out, `${path}.counter`, 'countersOnSource names the kind of counter');
+    if (counter !== undefined && (typeof counter !== 'string' || counter.length === 0)) {
+      issue(
+        out,
+        `${path}.counter`,
+        'countersOnSource names a kind of counter, or none for every kind',
+      );
     }
     return;
   }
@@ -6802,6 +6806,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
       checkRef(e.from, 'object', `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
+      if (e.anyNumber !== undefined && e.anyNumber !== true) {
+        issue(out, `${path}.anyNumber`, 'anyNumber must be true');
+      }
       break;
     case 'removeChosenCounters':
       // CR 122.1, 608.2d: the permanents the counters may come off, and at most `upTo` of them.
@@ -6818,11 +6825,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putCountersOf':
       // CR 122.1, 113.7a (Zack Fair): the permanent whose counters are copied is `this` or the permanent the cost sacrificed, last-known information once it is gone.
       if (kindOf(e.from) === 'sacrificedCost') checkSacrificedCost(`${path}.from`, scope, out);
-      else if (kindOf(e.from) !== 'this') {
+      else if (kindOf(e.from) === 'triggerSubject') {
+        // CR 603.10a, 113.7a (Resourceful Defense): the permanent a leaves-the-battlefield trigger is about, as it last was.
+        checkSubjectRef(e.from, 'permanent', `${path}.from`, scope, out);
+      } else if (kindOf(e.from) !== 'this') {
         issue(
           out,
           `${path}.from`,
-          "putCountersOf takes the counters of 'this' or 'sacrificedCost'",
+          "putCountersOf takes the counters of 'this', 'sacrificedCost' or 'triggerSubject'",
         );
       }
       checkRef(e.to, 'object', `${path}.to`, scope, out);

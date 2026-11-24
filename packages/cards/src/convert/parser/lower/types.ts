@@ -189,6 +189,11 @@ export interface LowerContext {
    */
   deathOfOther: boolean;
   /**
+   * True in the body of "Whenever a permanent you control leaves the battlefield, if it had counters on it, ..." (Resourceful Defense, CR 603.10a, 122.1): the trigger is about another
+   * permanent that had a counter of some kind, which `foldHadCounters` made a part of the trigger's filter; "those counters" are the counters that permanent had as it last was.
+   */
+  hadCountersTrigger: boolean;
+  /**
    * The player the last instruction lowered was said of (a `player` of the effect): "each other player" is every player but that one ("its owner draws that many cards and each
    * other player loses that much life"). Null before the first instruction and after one that names no player.
    */
@@ -503,6 +508,7 @@ export function newContext(
     text: '',
     interveningCondition: false,
     deathOfOther: false,
+    hadCountersTrigger: false,
     lastPlayer: null,
     meldPartner: null,
     exiledWithCondition: false,

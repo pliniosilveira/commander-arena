@@ -2190,14 +2190,15 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
   /**
-   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` on the permanent with
-   * the ability (the engine's `countersOnSource`).
+   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` (any kind when left out) on
+   * the permanent with the ability (the engine's `countersOnSource`).
    */
   | {
       readonly kind: 'ptCountersOnSource';
       readonly power: boolean;
       readonly toughness: boolean;
-      readonly counter: string;
+      /** The kind of counter; left out for "for each counter on ~" (every kind added together, Gavel of the Righteous). */
+      readonly counter?: string;
     }
   /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end

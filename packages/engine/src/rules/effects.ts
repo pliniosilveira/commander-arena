@@ -3711,7 +3711,7 @@ function runEffect(
     }
 
     case 'moveCounter': {
-      // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
+      // CR 122.5: one counter (or, with `anyNumber`, as many as the controller likes), of a kind they choose, from the first permanent to the second (rules/counter-pick.ts).
       const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
       const toId = resolveObjects(state, effect.to, ctx, targets)[0];
       if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
@@ -3724,9 +3724,10 @@ function runEffect(
             mode: 'move',
             objects: [fromId],
             to: toId,
-            left: 1,
+            left: effect.anyNumber === true ? null : 1,
             removed: 0,
             chosen: null,
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
           },
         ],
       );
