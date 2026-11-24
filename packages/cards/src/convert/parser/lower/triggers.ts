@@ -1408,6 +1408,7 @@ function lowerTriggeredAbility(
   ctx.triggeredBody = true;
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
+  ctx.hadCountersTrigger = false;
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   ctx.graveyardBatchTrigger =
     triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.batch === true);
@@ -1452,6 +1453,8 @@ function lowerTriggeredAbility(
     if (folded !== null) {
       triggers[0] = folded;
       foldedCounters = true;
+      // Resourceful Defense: "those counters" of the body are every counter the permanent had, which only an unnamed kind of counter makes of the text.
+      ctx.hadCountersTrigger = ifWritten.test.counter === undefined;
     } else {
       // "When ~ dies, if it had one or more -1/-1 counters on it, ..." (Oft-Nabbed Goat, CR 603.10a, 122.1): the permanent itself, as it last was, had a counter of the kind the text names
       // (the engine's `sourceHasCounter`, which Persist and Undying read). "That many" of the body is the number of those counters.

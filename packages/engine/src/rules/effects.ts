@@ -148,6 +148,7 @@ import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
+import { proliferateTimes } from './proliferate-replacement';
 import {
   givesProtectionOfCardTypeChoice,
   givesProtectionOfChoice,
@@ -3735,7 +3736,7 @@ function runEffect(
     }
 
     case 'moveCounter': {
-      // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
+      // CR 122.5: one counter (or, with `anyNumber`, as many as the controller likes), of a kind they choose, from the first permanent to the second (rules/counter-pick.ts).
       const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
       const toId = resolveObjects(state, effect.to, ctx, targets)[0];
       if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
@@ -3748,9 +3749,10 @@ function runEffect(
             mode: 'move',
             objects: [fromId],
             to: toId,
-            left: 1,
+            left: effect.anyNumber === true ? null : 1,
             removed: 0,
             chosen: null,
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
           },
         ],
       );
@@ -3854,11 +3856,18 @@ function runEffect(
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
       // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      // CR 701.34a, 614.1a, 614.5 (Tekuthal): each `proliferateDouble` replacement of the controller doubles how many times.
       return done(
         state,
         [],
         Array.from(
-          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          {
+            length: proliferateTimes(
+              state,
+              ctx.controller,
+              effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets),
+            ),
+          },
           () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
         ),
       );

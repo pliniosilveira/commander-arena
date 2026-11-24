@@ -166,6 +166,34 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."
       checkCosts(k.cost, `${path}.cost`, out);
+      // Gavel of the Righteous: "Equip—Pay {3} or remove a counter from ~": the other way to pay, the one cost of removing a counter from the Equipment itself.
+      if (k.orCost !== undefined) {
+        checkCosts(k.orCost, `${path}.orCost`, out);
+        if (
+          !Array.isArray(k.orCost) ||
+          k.orCost.length !== 1 ||
+          k.orCost.some(
+            (c) =>
+              c?.kind !== 'removeCounters' ||
+              c.among !== undefined ||
+              c.countX !== undefined ||
+              c.fromOne !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'the other way to pay an equip ability is the removal of counters from the Equipment itself',
+          );
+        }
+        if (k.costReducedIf !== undefined) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'an equip ability with another way to pay has no cost reduction',
+          );
+        }
+      }
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
@@ -1914,6 +1942,8 @@ function hasXCost(
       (c.kind === 'discard' && (c as { countX?: unknown }).countX === true) ||
       // D-488: "Sacrifice X creatures" announces X as the ability is activated.
       (c.kind === 'sacrifice' && (c as { countX?: unknown }).countX === true) ||
+      // Moxite Refinery: "Remove X counters from an artifact or creature you control" announces X as the ability is activated.
+      (c.kind === 'removeCounters' && (c as { countX?: unknown }).countX === true) ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),

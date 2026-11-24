@@ -98,6 +98,8 @@ const atStep = permanent((e) => `At ${e}, you gain 1 life.`);
 
 const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.life-gain-double': asIs,
+  // Counter Intelligence deck, group 2 (Tekuthal).
+  'replacement.proliferate-twice': asIs,
   'keyword.line': asIs,
   'replacement.enters-tapped': asIs,
   'replacement.enters-with-counters': asIs,
@@ -132,6 +134,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
+  'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
   'keyword.multikicker': asIs,
@@ -1427,6 +1430,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
   // Federation Fleet deck, group D: the cost of Ensign Harry Kim, the intervening "if" of his trigger and the second sentence of Guinan.
   'cost.remove-counters-among': permanent((e) => `{2}, ${e}: Draw a card.`),
+  // Counter Intelligence deck, group 2: counters of any kind, from ~, from among permanents, or from one.
+  'cost.remove-any-counters': permanent((e) => `{2}, ${e}: Draw a card.`),
   'condition.it-has-greater-power': permanent(
     (e) => `Whenever another creature you control enters, if ${e}, put a +1/+1 counter on ~.`,
   ),

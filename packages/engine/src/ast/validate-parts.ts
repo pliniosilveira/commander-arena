@@ -3071,8 +3071,12 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not counters');
     }
     const counter = (a as { counter?: unknown }).counter;
-    if (typeof counter !== 'string' || counter.length === 0) {
-      issue(out, `${path}.counter`, 'countersOnSource names the kind of counter');
+    if (counter !== undefined && (typeof counter !== 'string' || counter.length === 0)) {
+      issue(
+        out,
+        `${path}.counter`,
+        'countersOnSource names a kind of counter, or none for every kind',
+      );
     }
     return;
   }
@@ -3461,11 +3465,26 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'removeCounters':
     case 'putCounters':
-      if (typeof cost.counter !== 'string' || cost.counter === '') {
+      // Gavel of the Righteous, Moxite Refinery: a cost that removes counters may name no kind (counters of any kind, chosen by the player).
+      if (
+        (typeof cost.counter !== 'string' || cost.counter === '') &&
+        !(cost.kind === 'removeCounters' && cost.counter === undefined)
+      ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
+      }
+      if (cost.kind === 'removeCounters' && cost.countX !== undefined) {
+        // Moxite Refinery (CR 107.3a, 602.2b): "Remove X counters": the number is the X announced, so the cost counts one.
+        if (cost.countX !== true || cost.count !== 1) {
+          issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
+        }
+      }
+      if (cost.kind === 'removeCounters' && cost.fromOne !== undefined) {
+        if (cost.fromOne !== true || cost.among === undefined) {
+          issue(out, `${path}.fromOne`, 'fromOne must be true, with among naming the permanents');
+        }
       }
       if (cost.kind === 'removeCounters' && cost.among !== undefined) {
         // Federation Fleet group D (CR 118.3, 122.1): "Remove two +1/+1 counters from among creatures you control": permanents the player controls, on the battlefield.
@@ -6819,6 +6838,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
       checkRef(e.from, 'object', `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
+      if (e.anyNumber !== undefined && e.anyNumber !== true) {
+        issue(out, `${path}.anyNumber`, 'anyNumber must be true');
+      }
       break;
     case 'removeChosenCounters':
       // CR 122.1, 608.2d: the permanents the counters may come off, and at most `upTo` of them.
@@ -6835,11 +6857,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putCountersOf':
       // CR 122.1, 113.7a (Zack Fair): the permanent whose counters are copied is `this` or the permanent the cost sacrificed, last-known information once it is gone.
       if (kindOf(e.from) === 'sacrificedCost') checkSacrificedCost(`${path}.from`, scope, out);
-      else if (kindOf(e.from) !== 'this') {
+      else if (kindOf(e.from) === 'triggerSubject') {
+        // CR 603.10a, 113.7a (Resourceful Defense): the permanent a leaves-the-battlefield trigger is about, as it last was.
+        checkSubjectRef(e.from, 'permanent', `${path}.from`, scope, out);
+      } else if (kindOf(e.from) !== 'this') {
         issue(
           out,
           `${path}.from`,
-          "putCountersOf takes the counters of 'this' or 'sacrificedCost'",
+          "putCountersOf takes the counters of 'this', 'sacrificedCost' or 'triggerSubject'",
         );
       }
       checkRef(e.to, 'object', `${path}.to`, scope, out);

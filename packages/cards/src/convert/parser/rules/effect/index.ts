@@ -59,6 +59,7 @@ import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
+import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -1381,6 +1382,8 @@ export const EFFECT_RULES = [
   // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
   // Limit Break deck, group 1 (Zack Fair): "Put ~'s counters on that creature", "attach an Equipment that was attached to ~ to that creature".
   ...LIMIT_BREAK_G1_EFFECT_RULES,
+  // Counter Intelligence deck, group 2: "Put those counters on target permanent you control".
+  ...COUNTER_INTELLIGENCE_G2_EFFECT_RULES,
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,

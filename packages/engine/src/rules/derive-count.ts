@@ -23,6 +23,7 @@ import type { GameObject, GameState } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
+import { countersOfKind } from './counters-of-kind';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
 import { effectsOn } from './effects-on';
@@ -250,7 +251,8 @@ export function staticAmountOf(
   if (amount.kind === 'unspentMana')
     return getSeat(state, controllerOf(state, source)).manaPool.length;
   // CR 122.1, 613.4c (Call for Unity): the counters of the kind on the permanent that has the ability.
-  if (amount.kind === 'countersOnSource') return source.counters[amount.counter] ?? 0;
+  // Gavel of the Righteous: with no kind named, the counters of every kind on it added together.
+  if (amount.kind === 'countersOnSource') return countersOfKind(source.counters, amount.counter);
   if (amount.kind === 'commanderManaValue')
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')

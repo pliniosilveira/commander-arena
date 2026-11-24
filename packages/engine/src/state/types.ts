@@ -1141,6 +1141,8 @@ export interface ActivationContext {
    * is still owed. Absent when the cost has no such part.
    */
   readonly countersLeft?: number;
+  /** The one permanent a cost "Remove X counters from an artifact or creature you control" takes all its counters from (`fromOne`): left out until the first counter has been picked. */
+  readonly removedFrom?: ObjectId;
 }
 
 export type Instruction =
@@ -1381,6 +1383,8 @@ export type Instruction =
       readonly left: number | null;
       readonly removed: number;
       readonly chosen: string | null;
+      /** A move that takes "any number of counters": the player may stop (`left` is null), as a removal may (Resourceful Defense). */
+      readonly anyNumber?: true;
     }
   | {
       readonly kind: 'moveCounters';

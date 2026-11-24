@@ -219,8 +219,8 @@ export type Amount =
   /**
    * "For each +1/+1 counter on it" (D-131): how many counters of the kind the object a reference names has, as it is
    * now or from last-known information if it left (CR 113.7a). `counter` is the counter's name as the engine writes
-   * it ("+1/+1", "-1/-1", "stun", "page", ...). Left out (Puca's Covenant, "the number of counters on that creature"): the counters of every kind added together (not in a static ability's
-   * condition, which names the kind: `validateCard`).
+   * it ("+1/+1", "-1/-1", "stun", "page", ...). Left out (Puca's Covenant, "the number of counters on that creature"): the counters of every kind added together (in a static ability's
+   * condition too, of the permanent itself: "as long as this Equipment has four or more counters on it", Gavel of the Righteous; counters belong to no layer, CR 613.8).
    */
   | { readonly kind: 'countersOn'; readonly of: ObjectRef; readonly counter?: string }
   /**
@@ -648,9 +648,10 @@ export type StaticPtAmount =
   | { readonly kind: 'unspentMana' }
   /**
    * "Creatures you control get +1/+1 for each unity counter on this enchantment" (CR 122.1, 613.4c, 611.3a): the counters of the kind `counter` on the permanent that has the
-   * static ability (not on the permanent it affects), read each time the characteristics are worked out. Plain (+N/+N) only, in a `modifyPt` of any subject.
+   * static ability (not on the permanent it affects), read each time the characteristics are worked out. Left out ("Equipped creature gets +1/+1 for each counter on this Equipment",
+   * Gavel of the Righteous): the counters of every kind on it added together. Plain (+N/+N) only, in a `modifyPt` of any subject.
    */
-  | { readonly kind: 'countersOnSource'; readonly counter: string }
+  | { readonly kind: 'countersOnSource'; readonly counter?: string }
   | CountAmount
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
@@ -1783,8 +1784,25 @@ export type Cost =
     }
   | {
       readonly kind: 'removeCounters';
-      readonly counter: string;
+      /**
+       * The kind of counter. Left out ("Remove a counter from this Equipment", "Remove three counters from among other artifacts, creatures, and planeswalkers you control", "Remove X
+       * counters from an artifact or creature you control"; CR 118.3, 122.1, 602.2b): counters of any kind, the player choosing the permanent and the kind of each (a `chooseOption` decision
+       * of purpose `counterPick` and `forCost`, asked while more than one counter could be the next; with no choice the engine removes them and says so). Only the cost of an ordinary
+       * activated ability or of a keyword's activated ability (Equip): `validateCard` refuses it in a mana ability.
+       */
+      readonly counter?: string;
       readonly count: number;
+      /**
+       * "Remove X counters from an artifact or creature you control" (Moxite Refinery; CR 107.3a, 602.2b): the number of counters is the X announced for the ability (none for X = 0, and no
+       * permanent is asked for then). `count` is 1. The ability has no {X} in its mana cost: this is the X it announces (the most is the most counters one permanent that matches has, or
+       * all that match have without `fromOne`).
+       */
+      readonly countX?: true;
+      /**
+       * "Remove X counters from an artifact or creature you control" (CR 118.3, 122.1): all the counters come off the one permanent `among` matches that the player chooses (the first
+       * counter they pick decides it), which must have at least as many as the cost asks. Needs `among`.
+       */
+      readonly fromOne?: true;
       /**
        * "Remove two +1/+1 counters from among creatures you control" (Federation Fleet deck, group D, CR 118.3, 122.1, 602.2b): the counters come off the permanents on the battlefield the filter
        * matches (the player's own: `controller` is `you` or left out), the player choosing the permanent for each counter (a `choosePermanent` decision of purpose `removeCountersCost`
@@ -3857,17 +3875,24 @@ export type Effect =
   /**
    * "Put ~'s counters on that creature" (Zack Fair, CR 122.1, 122.6, 113.7a, 608.2h): every counter, of every kind, that the permanent `from` named had on the battlefield (as it is,
    * or as it last was when it has left: the sacrificed permanent of the cost) is put onto the permanent `to` names, one `counterAdded` event for each kind, as any counters put on a
-   * permanent are (a replacement effect or a prevention of counters applies). They are not taken off `from`. Nothing when `to` is gone. `from` is `this` or `sacrificedCost`, the latter
-   * only in an activated ability whose cost sacrifices something (`validateCard`).
+   * permanent are (a replacement effect or a prevention of counters applies). They are not taken off `from`. Nothing when `to` is gone. `from` is `this`, `sacrificedCost` (only in an activated ability
+   * whose cost sacrifices something) or `triggerSubject` (Resourceful Defense, CR 603.10a: "Whenever a permanent you control leaves the battlefield, if it had counters on it, put those
+   * counters on target permanent you control": the permanent a trigger about a permanent is about, as it last was); `validateCard` checks each.
    */
   | { readonly kind: 'putCountersOf'; readonly from: ObjectRef; readonly to: ObjectRef }
   /**
    * "Move a counter from target permanent you control onto a second target permanent" (CR 122.5, 122.1, 608.2d; Nesting Grounds): exactly one counter comes off the permanent `from`
    * names and is put on the one `to` names; the controller chooses its kind (a `chooseOption` decision of purpose `counterPick`, not asked when only one kind can go). A kind the second
    * permanent can't have (CR 122.6) can't be chosen. Nothing is moved when the two are the same permanent, the first has no counter the second can have, or either is no longer on the
-   * battlefield as the effect runs (CR 122.5).
+   * battlefield as the effect runs (CR 122.5). With `anyNumber` ("Move any number of counters from target permanent you control onto a second target permanent you control", Resourceful
+   * Defense): the controller moves as many counters as they like, one at a time, and chooses to stop (the last option of the `counterPick` decision, `Done`), so a move may be none.
    */
-  | { readonly kind: 'moveCounter'; readonly from: ObjectRef; readonly to: ObjectRef }
+  | {
+      readonly kind: 'moveCounter';
+      readonly from: ObjectRef;
+      readonly to: ObjectRef;
+      readonly anyNumber?: true;
+    }
   /**
    * "Remove any number of counters from among permanents on the battlefield" and "Remove up to three counters from target permanent" (CR 122.1, 608.2d; Eventide's Shadow, Glissa
    * Sunslayer): the controller takes counters of any kind off the permanents `objects` names, one at a time, choosing the permanent and the kind each time (a `chooseOption` decision of
@@ -5969,6 +5994,13 @@ export type Keyword =
       readonly kind: 'equip';
       readonly cost: readonly Cost[];
       /**
+       * "Equip—Pay {3} or remove a counter from this Equipment." (Gavel of the Righteous; CR 702.6a, 702.6d, 118.3): the player may activate the equip ability by paying `cost` or by paying
+       * this cost instead. The engine expands the keyword into two equip abilities, one for each way to pay, which the player chooses between by activating one: the same ability with the same
+       * effect and the same restriction, so abilities that look for an equip ability being activated see one either way. Only the cost of removing a counter from the permanent itself
+       * (a `removeCounters` with no `among`, `countX` or `fromOne`), alone, besides mana and life.
+       */
+      readonly orCost?: readonly Cost[];
+      /**
        * "Equip Wizard {1}" (CR 702.6c, D-220): the equip ability attaches only to a creature this filter also matches (a creature you control as always): a creature
        * type here. The permanent may have other equip abilities, each with its own cost and restriction. "Equip commander {3}" (D-259) is `{ commander: true }`:
        * a creature that is a card a player designated as a commander (CR 903.3); it is still a creature the activating player controls (CR 702.6c).
@@ -7419,6 +7451,12 @@ export type Replacement =
   /** "If you would gain life, you gain twice that much life instead" (CR 614.1a): applies once to a life-gain event. */
   | { readonly kind: 'lifeGainDouble' }
   /**
+   * "If you would proliferate, proliferate twice instead." (Tekuthal, Inquiry Dominus; CR 701.34a, 614.1a, 614.5): a replacement effect of a permanent on the battlefield: each time its
+   * controller would proliferate (the `proliferate` effect, with its `times`) they proliferate twice, each its own choice. Each such effect applies once (CR 614.5), so two make four.
+   * It is the ability of the permanent (lost with "loses all abilities") and applies to its controller only.
+   */
+  | { readonly kind: 'proliferateDouble' }
+  /**
    * "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (CR 614.1a, 122.6,
    * 616.1): a replacement effect of a permanent on the battlefield for every putting of counters of the kind `counter` on a permanent that `what` matches
    * (`controller: 'you'` is the controller of the permanent with the ability, `other` leaves that permanent out; what is read is the permanent as it is, or as it would
@@ -8598,6 +8636,13 @@ export interface ManaAbility {
    */
   readonly cost: readonly Cost[];
   readonly production: ManaProduction;
+  /**
+   * "{T}: Put a charge counter on this artifact. Add X mana of any one color, where X is the number of charge counters on this artifact." (Empowered Autogenerator; CR 605.1a, 605.3b,
+   * 122.6): `count` counters of the kind are put on the permanent the ability belongs to as the first thing it does, before the mana is added, so the amount of the production
+   * (`anyColorAmount`, `anyCombinationAmount`, `fixed` with `times`) counts after them. The placement is the one any effect has: a permanent that can't have the counters gets none
+   * (CR 122.6) and an effect that adds to the number put on applies (`countersPlus`, CR 614.1a). Only an ordinary mana ability of a permanent on the battlefield (`validateCard`).
+   */
+  readonly putCounter?: { readonly counter: string; readonly count: number };
   /**
    * Other effects of the same ability (CR 605.1a allows them): "~ deals 1 damage to you." They
    * run right after the mana is added, in the same resolution (CR 605.3b). Only effects with

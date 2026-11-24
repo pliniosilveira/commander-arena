@@ -128,6 +128,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyFromGraveyard',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
+    // Empowered Autogenerator: "Put a charge counter on this artifact. Add X mana ..." (`ManaAbility.putCounter`).
+    'manaPutCounter',
+    // Moxite Refinery: "Remove X counters from an artifact or creature you control" (`removeCounters` cost with `countX`).
+    'removeCountersX',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
@@ -849,6 +853,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // additional +1/+1 counter on it".
     'lifeGainBonus',
     'lifeGainDouble',
+    // "If you would proliferate, proliferate twice instead" (Tekuthal, CR 614.1a).
+    'proliferateDouble',
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead".
     'countersPlus',
     'othersEnterWithCounters',
@@ -1922,6 +1928,10 @@ export const ABILITY_FEATURES = [
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
   'manaCountOwnCounters',
+  /** "{T}: Put a charge counter on this artifact. Add X mana of any one color, where X is the number of charge counters on it" (CR 605.3b, 122.6): `ManaAbility.putCounter`, the counters put first, the amount counted after. */
+  'manaPutCounter',
+  /** "Remove X counters from an artifact or creature you control" (CR 107.3a, 602.2b): the `removeCounters` cost with `countX`, the X announced as the ability is activated. */
+  'removeCountersX',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
@@ -2977,6 +2987,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyFromGraveyard: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
+  manaPutCounter: true,
+  removeCountersX: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
@@ -3426,6 +3438,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   exileInsteadOfOpponentGraveyard: true,
   lifeGainBonus: true,
   lifeGainDouble: true,
+  proliferateDouble: true,
   countersPlus: true,
   othersEnterWithCounters: true,
   tokensInstead: true,

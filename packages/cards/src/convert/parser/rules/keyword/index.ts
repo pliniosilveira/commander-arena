@@ -9,6 +9,7 @@ import { CASTING_KEYWORD_RULES } from './casting';
 import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COMPANION_KEYWORD_RULES } from './companion';
 import { COPY_KEYWORD_RULES } from './copies';
+import { COUNTER_INTELLIGENCE_G2_KEYWORD_RULES } from './counter-intelligence-g2';
 import { DECK_LIMIT_KEYWORD_RULES } from './deck-limit';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
 import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
@@ -421,6 +422,8 @@ export const KEYWORD_RULES = [
   // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "Equip {2}. This ability costs {2} less to activate if ..." starts like the plain equip, which reads a prefix of it: tried first.
   ...AHOY_G10_KEYWORD_RULES,
   ...ATTACHMENT_KEYWORD_RULES,
+  // Counter Intelligence deck, group 2: "Equip—Pay {3} or remove a counter from ~."
+  ...COUNTER_INTELLIGENCE_G2_KEYWORD_RULES,
   ...CASTING_KEYWORD_RULES,
   ...ALT_COST_KEYWORD_RULES,
   ...UPKEEP_KEYWORD_RULES,
