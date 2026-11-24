@@ -1,11 +1,7 @@
 // A decklist that names the printings of its cards: the board draws those printings. Every Scryfall answer here is SYNTHETIC.
 import { expect, test } from 'vitest';
 import { createPrintingLookup } from '../src/ui/board/commander-art';
-import {
-  commanderPrintingOf,
-  printingOf,
-  registerDeckPrintings,
-} from '../src/ui/board/deck-printings';
+import { commanderPrintingOf, printingOf, setGamePrintings } from '../src/ui/board/deck-printings';
 
 const IMG = {
   small: 'https://cards.scryfall.io/small/front/p.jpg',
@@ -23,7 +19,7 @@ test('the commander line that names a printing gives its set and collector numbe
 });
 
 test('a registered printing is found by the commander name, without case or back face', () => {
-  registerDeckPrintings('Commander\n1x Two Faced (abc) 9\n');
+  setGamePrintings(['Commander\n1x Two Faced (abc) 9\n']);
   expect(printingOf('TWO FACED // Other Side')).toEqual({
     set: 'abc',
     collector: '9',
@@ -32,13 +28,27 @@ test('a registered printing is found by the commander name, without case or back
 });
 
 test('every card of the commander and main deck that names a printing is registered, and no other', () => {
-  registerDeckPrintings(
+  setGamePrintings([
     'Commander\n1x Lead Card (abc) 1\n\nMainboard\n1x Main Card (abc) 2\n1x Plain Card\n\nSideboard\n1x Side Card (abc) 3',
-  );
+  ]);
   expect(printingOf('Lead Card')).toEqual({ set: 'abc', collector: '1' });
   expect(printingOf('Main Card')).toEqual({ set: 'abc', collector: '2' });
   expect(printingOf('Plain Card')).toBeNull();
   expect(printingOf('Side Card')).toBeNull();
+});
+
+test('on a card both decks name, a basic land above all, the last list is the one drawn, and a game leaves nothing for the next', () => {
+  const opponent =
+    'Commander\n1x Opp Leader (abc) 1\n\nMainboard\n30x Plains (old) 5\n1x Opp Only (old) 7';
+  const mine = 'Commander\n1x My Leader (abc) 2\n\nMainboard\n30x Plains (bbb) 2 ^Chosen printing^';
+  setGamePrintings([opponent, mine]);
+  expect(printingOf('Plains')).toEqual({ set: 'bbb', collector: '2' });
+  expect(printingOf('Opp Only')).toEqual({ set: 'old', collector: '7' });
+  // The next game starts from nothing: the opponent's printing of a card the new decks do not name is gone.
+  setGamePrintings([mine]);
+  expect(printingOf('Opp Only')).toBeNull();
+  setGamePrintings([]);
+  expect(printingOf('Plains')).toBeNull();
 });
 
 const queueOf = (json: unknown, urls: string[] = []) => ({
