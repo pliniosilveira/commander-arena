@@ -661,7 +661,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
                       options.may === 'afterTest'
                         ? pattern(
                             condition === undefined
-                              ? /(?=you may search )/iu
+                              ? /(?=you may (?:search |return that card to the battlefield ))/iu
                               : /(?=you may (?:add|search ))/iu,
                           )(c, p)
                         : undefined;

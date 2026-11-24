@@ -1163,6 +1163,16 @@ export type AttachedTo =
  */
 export type PlayerFilter = 'any' | 'opponent' | 'opponentWhoseTurn';
 
+/**
+ * The counters a permanent enters the battlefield with (`moveToZone.withCounters`, CR 122.6, 614.1c): `count` counters of the kind `counter`, and `also` more kinds ("with a vigilance counter
+ * and a lifelink counter on it", Gilraen), all put on as it enters.
+ */
+export interface EnteringCounters {
+  readonly counter: string;
+  readonly count: number;
+  readonly also?: readonly { readonly counter: string; readonly count: number }[];
+}
+
 /** A reference to one or more objects or players, resolved by the interpreter. */
 export type ObjectRef =
   | { readonly kind: 'this' }
@@ -3641,7 +3651,7 @@ export type Effect =
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
        * and 614.1c: a replacement effect), so they are there when anything triggers from the entering.
        */
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /**
        * "Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less" (CR 303.4f, 303.4g,
        * D-207): the Aura card enters the battlefield already attached to the target the effect names, which is not a choice of its controller. Only
