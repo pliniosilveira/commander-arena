@@ -144,7 +144,72 @@ export const TRIGGER_ACTIVATE_ABILITY_OF_KIND = defineRule<IrTrigger>({
   },
 });
 
+const KIND = '(?:artifact|creature|land|enchantment|planeswalker)';
+
+/**
+ * `trigger.activate-ability-of-kinds`: "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability" (CR 602.2, 603.2, 603.4, 605.1a;
+ * Harsh Mentor): the same event with the permanent whose ability it is restricted to any of several kinds, whoever controls it (the engine's `ofSource` with an `anyOf`). The intervening "if it isn't a
+ * mana ability" is the whole reading of the engine's trigger, which only ever sees an ability that uses the stack, so it is part of this rule. Not read: one kind (the other rule), a controller, a missing
+ * "on the battlefield" or "if it isn't a mana ability", the past tense, a mana ability, a plural.
+ */
+export const TRIGGER_ACTIVATE_ABILITY_OF_KINDS = defineRule<IrTrigger>({
+  id: 'trigger.activate-ability-of-kinds',
+  family: 'trigger',
+  leading: ['you', 'an', 'a'],
+  cites: [
+    'CR 602.2 (Activating Activated Abilities)',
+    'CR 603.4 (Handling Triggered Abilities)',
+    'CR 605.1a (Activated Mana Abilities)',
+  ],
+  examples: [
+    "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability",
+    "a player activates an ability of an artifact or creature on the battlefield, if it isn't a mana ability",
+    "you activate an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability",
+  ],
+  rejects: [
+    "an opponent activates an ability of an artifact on the battlefield, if it isn't a mana ability",
+    "an opponent activates an ability of an artifact, creature, or land, if it isn't a mana ability",
+    'an opponent activates an ability of an artifact, creature, or land on the battlefield',
+    "an opponent activated an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability",
+    "an opponent activates an ability of an artifact, creature, or land you control on the battlefield, if it isn't a mana ability",
+    "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability or",
+    "an opponent activates an ability of artifacts, creatures, or lands on the battlefield, if it isn't a mana ability",
+    "an opponent activates an ability of an artifact, creature, or land on the battlefield, if it is a mana ability",
+    "each opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      new RegExp(
+        `(you activate|an opponent activates|a player activates) an ability of an? (${KIND}(?:, ${KIND})*,? or ${KIND}|${KIND} or ${KIND}) on the battlefield, if it (?:isn['’]t|is not) a mana ability${NOT_IN_WORD}(?!\\s+(?:or|and)${NOT_IN_WORD})`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const words = (r.value[1] ?? '').replace(/ activates?$/iu, '');
+    const kinds = (r.value[2] ?? '').toLowerCase().split(/,\s*(?:or\s+)?|\s+or\s+/u);
+    const span: Span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'activatesAbility',
+        actor: actorNoun(words, pos),
+        args: {
+          ofSource: makeNoun('trigger.activate-ability-of-kinds', span, 'a', {
+            anyOf: kinds.map((type) => ({ types: [type] })),
+            raw: (r.value[2] ?? '').toLowerCase(),
+          }),
+        },
+        span,
+        rule: 'trigger.activate-ability-of-kinds',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const ACTIVATES_ABILITY_TRIGGER_RULES = [
   TRIGGER_ACTIVATE_ABILITY,
   TRIGGER_ACTIVATE_ABILITY_OF_KIND,
+  TRIGGER_ACTIVATE_ABILITY_OF_KINDS,
 ].map(quietly);

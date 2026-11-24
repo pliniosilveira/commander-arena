@@ -2,7 +2,7 @@
 // Selfless Squire and Visions of Glory (the Scryfall data of the deck support issue, in the golden corpus) goes through the grammar as a card with no override, is defined in an engine
 // scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs.
 import { readFileSync } from 'node:fs';
-import { type CardDefinition, validateCard } from '@commander-arena/engine';
+import { type CardDefinition, syntheticCard, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
@@ -29,9 +29,10 @@ const ELVES = 'Llanowar Elves';
 const anthem = real("Marshal's Anthem");
 const greyHost = real('Grey Host Reinforcements');
 const squire = real('Selfless Squire');
+const mentor = real('Harsh Mentor');
 
 describe('the real cards are valid', () => {
-  test.each([anthem, greyHost, squire])('$name', (card) => {
+  test.each([anthem, greyHost, squire, mentor])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 });
@@ -203,5 +204,84 @@ describe('Selfless Squire', () => {
     g.act(0).cast(squire.name, { pay: true });
     g.passAll();
     g.expect.counters(squire.name, {});
+  });
+});
+
+describe('Harsh Mentor', () => {
+  const NEEDLE = 'SYNTHETIC Needle Rogue'; // {T}: 1 damage to target creature
+  const start = () =>
+    scenario({ seats: 3 })
+      .define(mentor)
+      .define(syntheticCard(NEEDLE))
+      .seat(0)
+      .battlefield(mentor.name)
+      .battlefield(NEEDLE, { label: 'myNeedle' })
+      .battlefield(BEARS, { label: 'bears' })
+      .library(...FILLER)
+      .seat(1)
+      .battlefield(NEEDLE, { label: 'needle1' })
+      .battlefield(ELVES, { label: 'elves1' })
+      .library(...FILLER)
+      .seat(2)
+      .battlefield(NEEDLE, { label: 'needle2' })
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 3 })
+      .build();
+
+  test('an opponent activating an ability of a creature takes 2 damage (CR 602.2, 603.2)', () => {
+    const g = start();
+    g.act(1).activate('needle1', { targets: ['bears'] });
+    g.passAll();
+    g.expect.life(1, 38);
+    g.expect.life(2, 40);
+    g.expect.life(0, 40);
+  });
+
+  test('the damage goes to the player who activated, whichever opponent it is', () => {
+    const g = scenario({ seats: 3 })
+      .define(mentor)
+      .define(syntheticCard(NEEDLE))
+      .seat(0)
+      .battlefield(mentor.name)
+      .battlefield(BEARS, { label: 'bears' })
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .seat(2)
+      .battlefield(NEEDLE, { label: 'needle2' })
+      .library(...FILLER)
+      .at('precombatMain', { active: 2, turn: 3 })
+      .build();
+    g.act(2).activate('needle2', { targets: ['bears'] });
+    g.passAll();
+    g.expect.life(2, 38);
+    g.expect.life(1, 40);
+  });
+
+  test('a mana ability does not trigger it (CR 605.1a)', () => {
+    const g = start();
+    g.act(1).tapForMana('elves1');
+    g.passAll();
+    g.expect.life(1, 40);
+  });
+
+  test('its controller activating an ability is not an opponent', () => {
+    const g = scenario({ seats: 3 })
+      .define(mentor)
+      .define(syntheticCard(NEEDLE))
+      .seat(0)
+      .battlefield(mentor.name)
+      .battlefield(NEEDLE, { label: 'myNeedle' })
+      .battlefield(BEARS, { label: 'bears' })
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .seat(2)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate('myNeedle', { targets: ['bears'] });
+    g.passAll();
+    g.expect.life(0, 40);
   });
 });
