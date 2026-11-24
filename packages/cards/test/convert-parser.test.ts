@@ -869,6 +869,8 @@ describe('unmatched abilities', () => {
       'effect.no-max-hand-size-game',
       'effect.require-attack-source',
       'effect.reveal-top-duel',
+      'effect.opponents-reveal-share-type',
+      'effect.reveal-any-permanents-x',
       'effect.lose-hexproof-shroud',
       'effect.remove-from-combat',
       'effect.explore',

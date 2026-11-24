@@ -3396,7 +3396,8 @@ function runEffect(
             seat: res.controller,
             count,
             filter: effect.take.filter,
-            max: effect.take.max,
+            // CR 701.20, 608.2c: "any number of ... cards from among them": up to every card looked at, a number known only now.
+            max: effect.take.any === true ? count : effect.take.max,
             ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),

@@ -788,6 +788,24 @@ const PUT_HAND_REST_GRAVEYARD =
   /^put one of them into your hand and the rest into your graveyard\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
 /**
+ * "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield. Then put all cards revealed this
+ * way that weren't put onto the battlefield into your graveyard." (Genesis Wave, CR 701.20a): three sentences that are one instruction, kept together for
+ * `effect.reveal-any-permanents-x`. Only all three in a row.
+ */
+const MAY_PUT_ANY_PERMANENTS_X =
+  /^you may put any number of permanent cards with mana value X or less from among them onto the battlefield\.$/i;
+const THEN_PUT_REST_GRAVEYARD =
+  /^then put all cards revealed this way that weren['’]t put onto the battlefield into your graveyard\.$/i;
+/**
+ * "Each opponent reveals the top card of their library. If any of those cards shares a card type with that spell, copy that spell, you may choose new targets for the copy, and each
+ * opponent draws a card. Otherwise, you draw a card." (Gandalf, Westward Voyager, CR 701.20a, 608.2c): three sentences that are one instruction (the first may follow the comma of a
+ * trigger), kept together for `effect.opponents-reveal-share-type`. Only all three in a row.
+ */
+const EACH_OPPONENT_REVEALS_TOP = /(?:^|, )each opponent reveals the top card of their library\.$/i;
+const IF_ANY_SHARES_TYPE_COPY =
+  /^if any of those cards shares a card type with that spell, copy that spell, you may choose new targets for the copy, and each opponent draws a card\.$/i;
+const OTHERWISE_YOU_DRAW = /^otherwise, you draw a card\.$/i;
+/**
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
@@ -951,6 +969,30 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    // Genesis Wave: the reveal, the take of any number of permanents and the rest into the graveyard (`effect.reveal-any-permanents-x`).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_THE_TOP) &&
+      said(b, MAY_PUT_ANY_PERMANENTS_X) &&
+      said(c, THEN_PUT_REST_GRAVEYARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
+    // Gandalf, Westward Voyager: the reveal of each opponent, the copy or the draw it decides and the otherwise (`effect.opponents-reveal-share-type`).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EACH_OPPONENT_REVEALS_TOP) &&
+      said(b, IF_ANY_SHARES_TYPE_COPY) &&
+      said(c, OTHERWISE_YOU_DRAW)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
     // Issue 81 (Jhoira, Weatherlight Corsair): "Target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that card onto the battlefield
     // under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a random order.": one
     // instruction (`effect.player-reveals-until-you-put`).

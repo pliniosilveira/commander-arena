@@ -80,6 +80,7 @@ import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { ELVEN_COUNCIL_REVEAL_LOWERINGS } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
@@ -2834,6 +2835,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
+  ...ELVEN_COUNCIL_REVEAL_LOWERINGS,
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
   ...LIMIT_BREAK_G1_LOWERINGS,

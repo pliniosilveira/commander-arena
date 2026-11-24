@@ -336,7 +336,12 @@ export function evaluateCondition(
             state,
             named,
             { ...condition.filter, zone: named.zone },
-            { controller: ctx.controller, source: ctx.source },
+            {
+              controller: ctx.controller,
+              source: ctx.source,
+              // CR 205.2a: "shares a card type with that spell" reads the spell the trigger is about.
+              ...(ctx.triggerSubject === undefined ? {} : { triggerSubject: ctx.triggerSubject }),
+            },
           )
         );
       });

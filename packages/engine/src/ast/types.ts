@@ -3060,8 +3060,8 @@ export type Effect =
   /**
    * "Scry 3, then reveal the top card of your library. Draw cards equal to that card's mana value." (CR 701.20a Reveal, 400.7j, 202.3, 608.2c): each player `player` names reveals
    * the top card of their own library (a `cardsRevealed` event; nothing for an empty library) and the card stays on top. The card revealed is what `moved` names for the effects after
-   * it in the same sequence ("that card's mana value"); `moved` is empty when no card was revealed, so an amount read from it is 0. With several players, `moved` is the card of the last
-   * seat named that had one.
+   * it in the same sequence ("that card's mana value"); `moved` is empty when no card was revealed, so an amount read from it is 0. With several players, `moved` is every card revealed,
+   * in the order of the players (Gandalf, Westward Voyager: "each opponent reveals the top card of their library. If any of those cards shares a card type with that spell").
    */
   | { readonly kind: 'revealTopCard'; readonly player: PlayerSelector }
   /**
@@ -4608,6 +4608,12 @@ export type Effect =
          * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'` or `'hand'` ("Put all land cards revealed this way into your hand", Mulch).
          */
         readonly all?: true;
+        /**
+         * "You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (Genesis Wave, CR 701.20, 608.2c, 202.3): the player may take any
+         * number of the cards that match, up to every card looked at, whose number is not known until the effect runs (`count` may be X); `max` is 1 and unread. Only with `revealAll` and
+         * `to: 'battlefield'`, with no `all`, `min`, `totalManaValue`, `hidden` or `elseAnyToHand`.
+         */
+        readonly any?: true;
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
@@ -6801,7 +6807,8 @@ export type Condition =
       readonly inZone?: 'hand' | 'exile';
       /**
        * "If at least one Zombie card is milled this way" (issue 159, CR 608.2c, 400.7j): with `of: moved`, true when any of the objects the instruction before it
-       * moved matches the filter, not only the first. Only with the `moved` reference.
+       * moved matches the filter, not only the first. Only with the `moved` reference. The filter may say `sharesCardTypeWith: 'triggerSubject'` in the effect of a trigger about a cast
+       * spell ("if any of those cards shares a card type with that spell", CR 205.2a, 608.2c).
        */
       readonly any?: true;
     }
