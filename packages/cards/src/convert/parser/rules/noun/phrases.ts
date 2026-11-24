@@ -837,11 +837,44 @@ export function permanentPhrase(
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
+  // Planeswalker Party deck (Mobilized District; CR 205.4, 205.2a): "legendary creature and planeswalker" is the legendary permanents that are creatures and/or planeswalkers (the ruling:
+  // a legendary planeswalker that is also a creature counts once), the supertype of both words.
+  const legendaryCreatureAndPlaneswalker: Parser<IrFilter> = (ctx, pos) => {
+    const r = sequence(
+      literal('legendary creature and planeswalker'),
+      optional(CONTROL_SUFFIX, undefined),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const base = toFilter(
+      'battlefield',
+      { ...NO_PARTS, controller: r.value[1] },
+      ctx.text.slice(pos, r.pos),
+    );
+    return {
+      ok: true,
+      value: {
+        ...base,
+        supertypes: ['legendary'],
+        anyOf: [
+          { types: ['creature'], raw: 'creature' },
+          { types: ['planeswalker'], raw: 'planeswalker' },
+        ],
+      },
+      pos: r.pos,
+    };
+  };
   // A choice of types is read for one object ("target artifact or enchantment"); plurals ("all
   // artifacts and enchantments") join with "and" and are not read.
   const phrase: Parser<IrFilter> = plural
     ? choice(quiet(pluralAndOr), single)
-    : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
+    : choice(
+        quiet(legendaryCreatureAndPlaneswalker),
+        choose,
+        quiet(modifiedChoice),
+        quiet(typeOrSubtype),
+        quiet(subtypeChoice),
+        single,
+      );
   // "target artifact or enchantment with mana value X or less" (D2 group, Kinetic Ooze, CR 202.3): the mana value is at most the X a "where X is ..." defines, or the X of the spell
   // the permanent came from; the lowering says which, and refuses a text with neither.
   return (ctx, pos) => {
