@@ -1285,6 +1285,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
       }
       break;
+    case 'votingFinished':
+      // CR 701.38a: "whenever players finish voting": no parameter, any vote of any spell or ability.
+      break;
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'activatesAbility':
@@ -2272,6 +2275,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           ? { triggerSources: true }
           : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
+        // CR 701.38a (Erestor of the Council): the ability reads who voted for what in the vote that finished.
+        ...(a.trigger.kind === 'votingFinished' ? { voteTrigger: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
           ? { triggerDamagedPlayerCount: true, triggerDamagedPlayers: true }
@@ -2443,6 +2448,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'attackersAtYouAtLeast reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
+          );
+        }
+        // CR 603.4, 508.1b (Mirkwood Trapper): the declaration is what `attackersAttackedYou` reads.
+        if (
+          conditionHas(a.interveningIf, 'attackersAttackedYou') &&
+          a.trigger?.kind !== 'attackBatch'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackersAttackedYou reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
           );
         }
         if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {

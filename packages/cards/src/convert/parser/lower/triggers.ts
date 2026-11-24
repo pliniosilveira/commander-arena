@@ -286,6 +286,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:rollsHighest']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'rollsHighest', who });
     }
+    case 'votingFinished': {
+      // "Whenever players finish voting" (Erestor of the Council, CR 701.38a): any vote of any spell or ability; the record of the votes goes to the ability.
+      const blocked = missingFeatures(['trigger:votingFinished']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'votingFinished' });
+    }
     case 'winsCoinFlip': {
       // "Whenever you win a coin flip" (Setzer, CR 705.2): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
@@ -1501,6 +1506,9 @@ function lowerTriggeredAbility(
   ctx.enchantedPlayerTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
+  ctx.attachedTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.triggeredBody = true;
@@ -2177,6 +2185,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:surveils',
   'trigger:rollsHighest',
   'trigger:winsCoinFlip',
+  'trigger:votingFinished',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

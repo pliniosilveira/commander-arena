@@ -112,6 +112,10 @@ export interface Scope {
   readonly thisWay?: readonly ThisWayKind[];
   /** The options of the latest `vote` earlier in the same sequence: the amount `votesFor` reads a tally of one of them (CR 701.38a, D-194). */
   readonly voteOptions?: readonly string[];
+  /** What the latest vote earlier in the same sequence is for (CR 701.38b): `players` or `objects` for a `voteFor`, `words` for a `vote`. The votes of players and of permanents are read only after the matching one. */
+  readonly voteChoices?: 'words' | 'players' | 'objects';
+  /** True in an ability whose trigger is `votingFinished`: it reads the record of the vote that finished (CR 701.38a), whatever the vote was for. */
+  readonly voteTrigger?: boolean;
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
   readonly selfCast?: boolean;
   /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
@@ -1609,6 +1613,22 @@ export function checkRef(
         issue(out, path, "'attached' is only valid in abilities of an Aura or an Equipment");
       }
       break;
+    case 'votedObjects':
+      // CR 701.38a, 701.38b (Trap the Trespassers): the permanents with votes, after a vote for permanents (or in the ability a vote triggered).
+      if (expect === 'player')
+        issue(out, path, "'votedObjects' is a set of permanents, not a player");
+      else if (scope.voteChoices !== 'objects' && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          "'votedObjects' needs a vote for permanents before it in the same sequence",
+        );
+      }
+      break;
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
+      if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");
+      break;
     case 'putWithThis':
       // CR 400.7 (Animate Dead): "that creature", what the permanent put onto the battlefield with `moveToZone.putWithSource`: the permanent's own, so an ability's.
       if (scope.owner === 'spell') {
@@ -1749,6 +1769,8 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'combatDamagedThisTurn':
     case 'discardedThisWay':
     case 'opponentsAttackingTriggerPlayer':
+    case 'eachPlayerWithoutVotes':
+    case 'eachOpponentWhoVoted':
     case 'all':
       return true;
     default:
@@ -1907,6 +1929,29 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerWithoutVotes':
+      // CR 701.38a (Círdan the Shipwright): "each player who received no votes": a vote for players before it in the same sequence, or the vote that triggered the ability.
+      if (scope.voteChoices !== 'players' && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          "'eachPlayerWithoutVotes' needs a vote for players before it in the same sequence",
+        );
+      }
+      break;
+    case 'eachOpponentWhoVoted':
+      // CR 701.38a (Erestor of the Council): who voted for what, in a vote earlier in the same sequence or the one that triggered the ability.
+      if (scope.voteChoices === undefined && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          "'eachOpponentWhoVoted' needs a vote before it in the same sequence or a votingFinished ability",
+        );
+      }
+      if (sel.choice !== 'same' && sel.choice !== 'different') {
+        issue(out, `${path}.choice`, "'eachOpponentWhoVoted' reads 'same' or 'different'");
+      }
+      break;
     case 'couldntSacrificeThisWay':
       // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('sacrificed')) {
@@ -1979,6 +2024,8 @@ export const PLAYER_ONLY = [
   'lostLifeThisTurn',
   'combatDamagedThisTurn',
   'discardedThisWay',
+  'eachPlayerWithoutVotes',
+  'eachOpponentWhoVoted',
 ];
 
 export function checkDamageRecipient(
@@ -2111,6 +2158,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
+  // CR 608.2c (Travel Through Caradhras): "For each Redhorn Pass vote, search ...": what the repeated effect does is counted each time it is done (0 for a number of 0).
+  if (e?.kind === 'repeat') return thisWayProduced(e.effect);
   // "You may discard all the cards in your hand. If you do, draw that many cards": a declined offer counts 0.
   if (e?.kind === 'may') return thisWayProduced(e.effect);
   return [];
@@ -2835,6 +2884,23 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           `"${a.option}" is not an option of the vote (${scope.voteOptions.join(', ')})`,
         );
       }
+      break;
+    case 'votesReceived':
+      // CR 701.38a, 701.38b (Círdan the Shipwright): the votes for the player who is "you" here, in a vote for players earlier in the sequence or the vote that triggered the ability.
+      if (scope.voteChoices !== 'players' && scope.voteTrigger !== true) {
+        issue(out, path, 'votesReceived needs a vote for players before it in the same sequence');
+      }
+      break;
+    case 'votesForObject':
+      // CR 701.38a, 701.38b (Trap the Trespassers): the votes for one permanent, in a vote for permanents earlier in the sequence or the vote that triggered the ability.
+      if (scope.voteChoices !== 'objects' && scope.voteTrigger !== true) {
+        issue(
+          out,
+          path,
+          'votesForObject needs a vote for permanents before it in the same sequence',
+        );
+      }
+      checkAmountObject(a.of, `${path}.of`, scope, out);
       break;
     case 'triggerDamage':
       // D-133: "that much": the damage that caused the trigger.
@@ -3840,12 +3906,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'attackersAttackedYou':
-      // D-149: read from the declaration of the attack event, so only a conditional effect of an attackBatch trigger.
-      issue(
-        out,
-        path,
-        'attackersAttackedYou is only valid in a conditional effect of an attackBatch trigger (D-149)',
-      );
+      // D-149: read from the declaration of the attack event. Only a conditional effect of an attackBatch trigger has it (the conditional effect check below), or, CR 603.4 (Mirkwood
+      // Trapper: "if they aren't attacking you"), the intervening "if" of one, which `validateCard` checks with the trigger (validate.ts).
+      if (!path.endsWith('interveningIf') && !path.includes('interveningIf.')) {
+        issue(
+          out,
+          path,
+          'attackersAttackedYou is only valid in a conditional effect or the intervening "if" of an attackBatch trigger (D-149)',
+        );
+      }
       break;
     case 'didPrevious':
     case 'thisWayAtLeast':
@@ -4177,6 +4246,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         out,
         path,
         'clashWon reads the clash earlier in the same resolution: it is only valid in a conditional effect after a clash of the same sequence',
+      );
+      break;
+    case 'voteMost':
+    case 'voteTied':
+      // CR 701.38a: the tally of a vote is read in the `conditional` effect after the vote (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        `${c.kind} reads the vote earlier in the same resolution: it is only valid in a conditional effect after a vote of the same sequence`,
       );
       break;
     case 'dieResult':
@@ -5610,6 +5688,26 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, path, 'clashWon needs a clash before it in the same sequence');
       }
       break;
+    case 'voteMost':
+      // CR 701.38a: "If time gets more votes": an option of the vote earlier in the same sequence.
+      if (typeof c.option !== 'string' || c.option.trim() === '') {
+        issue(out, `${path}.option`, 'voteMost names the option that gets more votes');
+      } else if (scope.voteOptions === undefined) {
+        issue(out, path, 'voteMost needs a vote effect before it in the same sequence');
+      } else if (!scope.voteOptions.includes(c.option)) {
+        issue(
+          out,
+          `${path}.option`,
+          `"${c.option}" is not an option of the vote (${scope.voteOptions.join(', ')})`,
+        );
+      }
+      break;
+    case 'voteTied':
+      // CR 701.38a: "If the vote is tied": the vote earlier in the same sequence.
+      if (scope.voteOptions === undefined) {
+        issue(out, path, 'voteTied needs a vote effect before it in the same sequence');
+      }
+      break;
     case 'dieResult': {
       // D-271, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
       const sides = scope.dieSides;
@@ -5803,10 +5901,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
+      // CR 608.2d (Mirkwood Trapper): "that player chooses": a player other than the controller makes the choice; the permanents are not limited to the controller's.
+      if (e.chooser !== undefined) checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
       // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
       // controller's own permanents.
       // Zack Fair (CR 113.7a): "attach an Equipment that was attached to ~" is a forced choice among the objects that were attached to the sacrificed permanent, whoever controls them.
       if (
+        e.chooser === undefined &&
         e.filter.controller !== 'you' &&
         !(e.filter.controller === undefined && e.exactly !== true) &&
         !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
@@ -5818,6 +5919,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
+      // CR 701.38a (Elrond of the White Council): "for each fellowship vote, the voter chooses": a vote for that option before it in the same sequence or the one that triggered the ability.
+      if (e.perVote !== undefined) {
+        if (e.chooser !== undefined) {
+          issue(out, `${path}.perVote`, 'each voter chooses: no chooser of its own');
+        }
+        if (typeof e.perVote !== 'string' || e.perVote.trim() === '') {
+          issue(out, `${path}.perVote`, 'perVote names the option whose voters choose');
+        } else if (scope.voteTrigger !== true) {
+          if (scope.voteOptions === undefined) {
+            issue(out, `${path}.perVote`, 'perVote needs a vote before it in the same sequence');
+          } else if (!scope.voteOptions.includes(e.perVote)) {
+            issue(
+              out,
+              `${path}.perVote`,
+              `"${e.perVote}" is not an option of the vote (${scope.voteOptions.join(', ')})`,
+            );
+          }
+        }
+      }
       break;
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
@@ -5898,7 +6018,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           if (child?.kind === 'clash') after = { ...after, clashed: true };
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
-            after = { ...after, voteOptions: child.options };
+            after = { ...after, voteOptions: child.options, voteChoices: 'words' };
+          }
+          // CR 701.38b: after a vote for players or permanents, the votes for each can be read; no option word is named.
+          if (child?.kind === 'voteFor') {
+            after = {
+              ...after,
+              voteOptions: [],
+              voteChoices: child.choices?.kind === 'objects' ? 'objects' : 'players',
+            };
           }
           // D-131: after a sacrifice, a destroy or a draw, "for each ... this way" can be read.
           const produced = thisWayProduced(child).filter((k) => !(after.thisWay ?? []).includes(k));
@@ -6338,7 +6466,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       const named = kindOf(e.objects);
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
-      else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      else if (named === 'target' || named === 'chosen')
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       else if (named === 'each') {
         // CR 613.1b, 611.2c: "gain control of all artifacts that player controls": the group is fixed as the effect begins.
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -6349,7 +6478,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target, a group, the permanent that caused the trigger, or the permanent with the ability',
+          'gainControl names a target, the permanents chosen earlier, a group, the permanent that caused the trigger, or the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6611,6 +6740,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'forEachPlayer':
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.runsAs !== undefined && e.runsAs !== 'each') {
+        issue(out, `${path}.runsAs`, "runsAs is 'each' when present");
+      }
+      checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    case 'repeat':
+      // CR 608.2c, 701.38b: the number is read as the effect runs, in the scope of the effects before it (a `votesFor` reads the vote earlier in the sequence).
+      checkAmount(e.times, `${path}.times`, scope, out);
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     case 'exileUntilFound':
@@ -7544,6 +7681,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
           checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else if (typeof limit === 'object' && limit?.kind === 'x') {
+          // CR 107.3a, 202.3 (Genesis Wave): "mana value X or less", the X announced for the spell.
+          checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);
         } else {
           checkStateAmount(limit, `${path}.take.manaValueAtMost`, out, 'a mana value limit');
         }
@@ -7586,6 +7726,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.take.elseAnyToHand`,
           'elseAnyToHand is true, for one optional card taken onto the battlefield unrevealed (to battlefield, hidden, max 1, no min or totalManaValue)',
+        );
+      }
+      // CR 701.20, 608.2c: "any number of permanent cards from among them onto the battlefield": the cards revealed, a number the player chooses up to all of them.
+      if (
+        e.take?.any !== undefined &&
+        (e.take.any !== true ||
+          e.revealAll !== true ||
+          e.take.to !== 'battlefield' ||
+          e.take.max !== 1 ||
+          e.take.all !== undefined ||
+          e.take.min !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.elseAnyToHand !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take.any`,
+          'any is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield, with max 1 and no all, min, totalManaValue, hidden or elseAnyToHand',
         );
       }
       // D-396 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
@@ -8671,6 +8830,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       });
       if (e.startingWith !== 'you') {
         issue(out, `${path}.startingWith`, 'a vote starts with "you", the controller (CR 701.38a)');
+      }
+      if (e.secret !== undefined && e.secret !== true) {
+        issue(out, `${path}.secret`, 'secret must be true when present');
+      }
+      break;
+    }
+    case 'voteFor': {
+      // CR 701.38a, 701.38b: the choices are the players or the permanents a filter names; the voting starts with the controller.
+      const choices = e.choices;
+      if (choices?.kind === 'objects') {
+        checkFilter(choices.filter, `${path}.choices.filter`, out, scope);
+        if (choices.filter.zone !== undefined && choices.filter.zone !== 'battlefield') {
+          issue(
+            out,
+            `${path}.choices.filter.zone`,
+            'a vote for permanents is among the battlefield',
+          );
+        }
+      } else if (choices?.kind !== 'players') {
+        issue(out, `${path}.choices`, 'a vote is for players or for permanents a filter names');
+      }
+      if (e.startingWith !== 'you') {
+        issue(out, `${path}.startingWith`, 'a vote starts with "you", the controller (CR 701.38a)');
+      }
+      if (e.secret !== undefined && e.secret !== true) {
+        issue(out, `${path}.secret`, 'secret must be true when present');
       }
       break;
     }

@@ -230,6 +230,13 @@ export function describeEvent(
   };
   const seatCount = seatsOf(after);
   const who = (seat: SeatId) => seatName(seat, viewer, seatCount);
+  /** What a vote was for (CR 701.38b): the word of the card, a player ("seat:1": "you", "Opponent") or a permanent ("object:o5": its name). */
+  const voteChoiceText = (option: string): string => {
+    const seatMatch = /^seat:(\d+)$/u.exec(option);
+    if (seatMatch !== null) return who(Number(seatMatch[1]));
+    const objectMatch = /^object:(o\d+)$/u.exec(option);
+    return objectMatch === null ? option : name(objectMatch[1] as ObjectId);
+  };
   const verb = (seat: SeatId, you: string, they: string) => (seat === viewer ? you : they);
   const line = (
     level: LogLevel,
@@ -1162,7 +1169,7 @@ export function describeEvent(
       if (event.purpose === 'vote') {
         return line(
           'major',
-          `${who(event.seat)} ${verb(event.seat, 'vote', 'votes')} for ${event.option} (${label(event.source)}).`,
+          `${who(event.seat)} ${verb(event.seat, 'vote', 'votes')} for ${voteChoiceText(event.option)} (${label(event.source)}).`,
           event.seat,
           [],
           'CR 701.38a',
@@ -1805,6 +1812,19 @@ export function describeEvent(
         [event.object],
         'CR 702.139a',
       );
+    case 'votesRevealed': {
+      // CR 701.38a ("secretly"): nothing was shown while the votes were cast; now they are all revealed together. A public vote was logged vote by vote already.
+      if (!event.secret) return null;
+      return line(
+        'major',
+        `The votes are revealed (${label(event.source)}): ${event.cast
+          .map((c) => `${who(c.seat)} voted for ${voteChoiceText(c.option)}`)
+          .join(', ')}.`,
+        null,
+        [],
+        'CR 701.38a',
+      );
+    }
     default: {
       const unreachable: never = event;
       return unreachable;

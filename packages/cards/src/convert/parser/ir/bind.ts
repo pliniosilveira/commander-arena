@@ -779,6 +779,24 @@ class Binder {
         },
       });
     }
+    // CR 608.2d, 102.2 (Sylvan Offering): "Choose an opponent. You and that player each create ...": the player the controller chose is what "that player" of the sentences after the
+    // choice means, which the engine names `chosenPlayer`. Each new choice replaces the one before it.
+    if (clause.verb === 'chooseOpponent' || clause.verb === 'choosePlayer') {
+      this.antecedents.push({
+        kind: 'player',
+        noun: {
+          kind: 'noun',
+          det: 'anaphor',
+          filter: { raw: 'chosen player' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'chosen',
+        },
+      });
+    }
     // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": "that card" is the card the exile moved, which the engine
     // names `moved`. Pushed after the clause's own noun, so that it is the most recent object of the text.
     if (clause.verb === 'exileChosenCard') {

@@ -60,7 +60,7 @@ export const PUMP: Lowering<IrClause, Effects> = {
 
 /**
  * "Search your library for ..." (CR 701.23): the searcher is you, or the player the clause names
- * ("Its controller may search their library ...": `player` and a `may` flag, CR 701.23a, 608.2d),
+ * ("Its controller may search their library ...": `player` and a `may` flag, CR 701.23a, 608.2d; "Each player searches their library ..." has the flag false),
  * the filter is the noun
  * without its zone (the engine looks in the searcher's own library), and the cards found go to the
  * destinations in the order they were chosen. The counts must add up to the most cards that can

@@ -156,7 +156,7 @@ export const AMOUNT_FOR_EACH_COUNTER_KIND = defineRule<IrAmount>({
 
 /** "the number of Zombies you control": a count of the objects a filter matches (CR 608.2c). */
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
-  countAmount(rule, literal('the number of '), true);
+  countAmount(rule, choice(literal('the number of '), literal('the total number of ')), true);
 
 /** "the number of +1/+1 counters on ~". Exported for the rules of effects that read it as a limit (Galadriel deck, group 1: "mana value less than or equal to the number of loyalty counters on ~"). */
 export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
@@ -994,6 +994,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is half the number of Zombies you control, rounded down',
     // Issue 25 (D-321, CR 107.1b): a number taken away, a negative result counting as 0.
     'where X is the number of cards in your hand minus 4',
+    // Realm Seekers (CR 402.1): the cards in the hands of every player.
+    "where X is the total number of cards in all players' hands",
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     // A card the text names by a person's pronoun (Kes, Evolving Telepath).

@@ -177,8 +177,8 @@ describe('Ever-Watching Threshold: "Whenever an opponent attacks, if they attack
     'Whenever an opponent attacks, if they attacked you and/or planeswalkers you control, draw a card.',
     'Whenever an opponent attacks, if they attacked you and/or a planeswalker, draw a card.',
     'Whenever you attack, if they attacked you and/or a planeswalker you control, draw a card.',
-    'Whenever a player attacks, if they attacked you and/or a planeswalker you control, draw a card.',
-    'Whenever a player attacks you, if they attacked you and/or a planeswalker you control, draw a card.',
+    'Whenever a player attacks you, if they attacked a planeswalker you control, draw a card.',
+    'Whenever each opponent attacks you, if they attacked you and/or a planeswalker you control, draw a card.',
   ])('is dropped, never half read (SYNTHETIC): %s', (text) => {
     expect(droppedEnchantment(text)).toBe(text);
   });

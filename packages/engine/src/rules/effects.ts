@@ -279,6 +279,11 @@ export function runInstruction(
   }
   if (instruction.kind === 'chooseObjects') {
     if (instruction.chosen !== null) return done(state);
+    // CR 701.38a (`perVote`): the filter is read for the voter, who is "you" in it.
+    const readFor =
+      instruction.asVoter === undefined
+        ? contextOf(state, res)
+        : { ...contextOf(state, res), controller: instruction.seat ?? res.controller };
     // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
     const among =
       instruction.fromMoved === true
@@ -287,7 +292,7 @@ export function runInstruction(
     const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter(
       (id) =>
         (among === null || among.has(id)) &&
-        matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+        matchesFilter(state, getObject(state, id), instruction.filter, readFor),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
     const max =
@@ -300,7 +305,7 @@ export function runInstruction(
       front: [],
       needs: {
         kind: 'choosePermanent',
-        seat: res.controller,
+        seat: instruction.seat ?? res.controller,
         source: res.object,
         purpose: 'effect',
         min: instruction.exactly === true ? max : 0,
@@ -775,15 +780,28 @@ export function runInstruction(
     return {
       ...out,
       front: out.front.map((next) =>
-        next.kind === 'effect'
+        // CR 608.2d: the cards a player chooses to move as "you" are chosen from their own zone and by them (`seat` names the chooser, `res.controller` is the controller of the ability).
+        as !== undefined && next.kind === 'chooseMove' && next.seat === undefined
           ? {
               ...next,
-              ...(as === undefined || next.as !== undefined ? {} : { as }),
-              ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
-                ? {}
-                : { declinedBy: instruction.declinedBy }),
+              seat: as,
+              // CR 110.2a (Círdan the Shipwright: "each player who received no votes may put a permanent card from their hand onto the battlefield"): a player who puts a card they own
+              // onto the battlefield controls it, not the controller of the ability.
+              ...(next.to === 'battlefield' &&
+              next.controller === 'you' &&
+              next.filter.zone === 'hand'
+                ? { controller: 'owner' as const }
+                : {}),
             }
-          : next,
+          : next.kind === 'effect'
+            ? {
+                ...next,
+                ...(as === undefined || next.as !== undefined ? {} : { as }),
+                ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
+                  ? {}
+                  : { declinedBy: instruction.declinedBy }),
+              }
+            : next,
       ),
     };
   }
@@ -895,6 +913,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
+    ...(res.voteCast === undefined ? {} : { voteCast: res.voteCast }),
     ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
   };
 }
@@ -939,7 +958,32 @@ function runEffect(
   let next = state;
 
   switch (effect.kind) {
-    case 'chooseObjects':
+    case 'chooseObjects': {
+      // CR 701.38a, 608.2d (Elrond of the White Council): "for each fellowship vote, the voter chooses a creature they control": one choice for each vote for the option, by the player who cast it,
+      // in the order the votes were cast; the filter is read for that voter as "you" and every choice is remembered under the one id.
+      if (effect.perVote !== undefined) {
+        const votes = (ctx.voteCast ?? []).filter((c) => c.option === effect.perVote);
+        return done(
+          state,
+          [],
+          votes.map((c, i) => ({
+            kind: 'chooseObjects' as const,
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
+            seat: c.seat,
+            asVoter: { first: i === 0 },
+            chosen: null,
+          })),
+        );
+      }
+      // CR 608.2d (Mirkwood Trapper): "that player chooses": a player the effect names makes the choice; with none left in the game nothing is chosen.
+      let chooser: SeatId | undefined;
+      if (effect.chooser !== undefined) {
+        [chooser] = resolvePlayers(state, effect.chooser, ctx, targets);
+        if (chooser === undefined) return done(state);
+      }
       return done(
         state,
         [],
@@ -950,12 +994,14 @@ function runEffect(
             filter: effect.filter,
             count: effect.count,
             ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ...(chooser === undefined ? {} : { seat: chooser }),
             ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
             ...(effect.fromMoved === true ? { fromMoved: true as const } : {}),
             chosen: null,
           },
         ],
       );
+    }
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
       return done(
@@ -1726,11 +1772,25 @@ function runEffect(
       return done(
         state,
         [],
-        resolvePlayers(state, effect.players, ctx, targets).map(() => ({
+        resolvePlayers(state, effect.players, ctx, targets).map((seat) => ({
+          kind: 'effect' as const,
+          effect: effect.effect,
+          // CR 101.4, 608.2d ("Each player returns ..."): each player does it as themselves, in APNAP order: they are "you" in it.
+          ...(effect.runsAs === 'each' ? { as: seat } : {}),
+        })),
+      );
+    case 'repeat': {
+      // CR 608.2c, 701.38b ("For each Redhorn Pass vote, search ..."): the number is read as this instruction comes up, then the effect is done that many times, one after the other.
+      const times = amountOf(state, effect.times, ctx, targets);
+      return done(
+        state,
+        [],
+        Array.from({ length: Math.max(0, times) }, () => ({
           kind: 'effect' as const,
           effect: effect.effect,
         })),
       );
+    }
     case 'copyCardAndCast': {
       // CR 707.12 (D-654): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
       // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
@@ -2390,7 +2450,34 @@ function runEffect(
 
     case 'vote':
       // CR 701.38a (D-194): each player votes in turn order from the controller (rules/vote.ts).
-      return done(state, [], [{ kind: 'vote', options: effect.options, cast: [] }]);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: effect.options,
+            cast: [],
+            ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
+
+    case 'voteFor':
+      // CR 701.38a, 701.38b: the same, for the players or the permanents of a filter as the choices.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: [],
+            cast: [],
+            choices: effect.choices,
+            ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
 
     case 'reflexive':
       // CR 603.12 (D-135): "When you do, ...": a triggered ability, if the `may` before it was done (rules/may-effects.ts).
@@ -3550,7 +3637,8 @@ function runEffect(
             seat: res.controller,
             count,
             filter: effect.take.filter,
-            max: effect.take.max,
+            // CR 701.20, 608.2c: "any number of ... cards from among them": up to every card looked at, a number known only now.
+            max: effect.take.any === true ? count : effect.take.max,
             ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),

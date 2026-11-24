@@ -66,6 +66,7 @@ import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { COUNCIL_VOTES_LOWERINGS } from './council-votes';
 import { COUNTER_BLITZ_C_LOWERINGS } from './counter-blitz-c';
 import { COUNTER_BLITZ_E_LOWERINGS } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_LOWERINGS } from './counter-blitz-g';
@@ -86,6 +87,8 @@ import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
+import { ELVEN_COUNCIL_REVEAL_LOWERINGS } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
@@ -155,6 +158,7 @@ import {
 import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { PLAYER_CHOOSES_ATTACKER_LOWERINGS } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
@@ -179,6 +183,7 @@ import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { RIDERS_B_LOWERINGS } from './riders-b';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -430,10 +435,14 @@ const DAMAGE: Lowering<IrClause, Effects> = {
         if (blocked.length > 0) return failure(clause, blocked);
         const ref = objectRefOf(source, ctx, { triggerSubject: true });
         if (!ref.ok) return ref;
-        if (ref.value.kind !== 'target' && ref.value.kind !== 'triggerSubject') {
+        // Lothlórien Blade (CR 603.2, 113.7a): "Whenever equipped creature attacks, it deals damage equal to its power ...": the creature whose attack it was, the trigger's subject.
+        if (ref.value.kind === 'attached' && ctx.attachedTrigger) {
+          from = { kind: 'triggerSubject' };
+        } else if (ref.value.kind !== 'target' && ref.value.kind !== 'triggerSubject') {
           return failure(clause);
+        } else {
+          from = ref.value;
         }
-        from = ref.value;
       }
     }
     const amount = amountArg(clause, 'amount', ctx);
@@ -2978,11 +2987,14 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...COUNCIL_VOTES_LOWERINGS,
+  ...SECRET_VOTES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
+  ...ELVEN_COUNCIL_REVEAL_LOWERINGS,
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
   ...LIMIT_BREAK_G1_LOWERINGS,
@@ -2992,6 +3004,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...COUNTER_INTELLIGENCE_G3_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
+  ...ELVEN_COUNCIL_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
   ...EXILE_UNTIL_CAST_LOWERINGS,
@@ -3039,6 +3052,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
   ...SLIVER_D_LOWERINGS,
+  // Mirkwood Trapper: "that player chooses an attacking creature".
+  ...PLAYER_CHOOSES_ATTACKER_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
@@ -3165,5 +3180,19 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
   }
   // A permission ("you may play that card") is no choice the engine asks about: the clause is read with or without the words.
   if (clause.optional && lowering.acceptsOptional !== true) return failure(clause);
-  return lowering.lower(clause, ctx);
+  const times = clause.args.repeatFor;
+  if (times === undefined) return lowering.lower(clause, ctx);
+  // "For each Redhorn Pass vote, search ..." (issue 17, CR 608.2c, 701.38b): the instruction is done as many times as there are votes for the option, one after the other.
+  const blocked = missingFeatures(['effect:repeat']);
+  if (blocked.length > 0) return failure(clause, blocked);
+  if (times.kind !== 'votesFor') return failure(clause);
+  const count = lowerAmount(times, ctx, clause.rule);
+  if (!count.ok) return count;
+  const { repeatFor: _repeated, ...args } = clause.args;
+  const once = lowering.lower({ ...clause, args }, ctx);
+  if (!once.ok) return once;
+  if (once.value.length !== 1) return failure(clause);
+  const [effect] = once.value;
+  if (effect === undefined) return failure(clause);
+  return { ok: true, value: [{ kind: 'repeat', times: count.value, effect }], rule: clause.rule };
 }

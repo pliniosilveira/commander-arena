@@ -1781,6 +1781,11 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       ) {
         return ok({ kind: 'declinedPlayer' });
       }
+      // CR 608.2d (Sylvan Offering): "that player" after "Choose an opponent": the player the `choosePlayer` before it chose.
+      if (noun.ref === 'chosen') {
+        if (!ctx.choseAPlayer) return failure(noun, []);
+        return gate(noun, ['selector:chosenPlayer']) ?? ok({ kind: 'chosenPlayer' });
+      }
       // D-648: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
       if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
         return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);

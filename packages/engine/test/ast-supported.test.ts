@@ -78,6 +78,7 @@ const EXECUTABLE_KEYWORDS = [
   'flanking', // ast-abzan-armor-validate
   'extort', // scenario-xx-keywords2-extort
   'affinity', // scenario-xx-keywords2-affinity
+  'undaunted', // scenario-xx-undaunted
   'convoke', // scenario-xx-pay-options
   'improvise', // scenario-xx-pay-options
   'delve', // scenario-xx-pay-options
@@ -207,6 +208,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   flanking: { kind: 'flanking' },
   extort: { kind: 'extort' },
   affinity: { kind: 'affinity', filter: { types: ['artifact'] } },
+  undaunted: { kind: 'undaunted' },
   convoke: { kind: 'convoke' },
   improvise: { kind: 'improvise' },
   delve: { kind: 'delve' },
@@ -414,6 +416,7 @@ describe('supported feature gate', () => {
         'playsCard',
         'unblockedAttackBatch',
         'upkeep',
+        'votingFinished',
         'winsCoinFlip',
       ].sort(),
     );

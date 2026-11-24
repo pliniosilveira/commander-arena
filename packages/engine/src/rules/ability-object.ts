@@ -6,6 +6,7 @@
  */
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from '../state/chosen';
+import type { VoteCast } from '../state/decisions';
 import { addToZone, allocateObjectId, allocateTimestamp, setObject } from '../state/ops';
 import type {
   GameObject,
@@ -52,6 +53,8 @@ export interface AbilityObjectRequest {
   readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` ability (D-232): the cards that left the graveyard. */
   readonly cards?: readonly ObjectId[];
+  /** For a `votingFinished` ability (CR 701.38a): who voted for what in the vote that finished. */
+  readonly votes?: readonly VoteCast[];
   /** For a Saga's chapter ability: the chapter number reached (CR 714.2). */
   readonly chapter?: number;
   /** The targets already chosen for it (a triggered ability whose choice was forced, CR 603.3d). */
@@ -109,6 +112,7 @@ export function pushAbilityObject(
       ...(request.thisWayBefore === undefined ? {} : { thisWayBefore: request.thisWayBefore }),
       ...(request.movedBefore === undefined ? {} : { movedBefore: request.movedBefore }),
       ...(request.cards === undefined ? {} : { triggerCards: request.cards }),
+      ...(request.votes === undefined ? {} : { triggerVotes: request.votes }),
       ...(request.chapter === undefined ? {} : { chapter: request.chapter }),
     },
   };

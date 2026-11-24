@@ -63,6 +63,7 @@ import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
+import { PLAYER_ATTACKS_TRIGGER_RULES } from './player-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
@@ -81,6 +82,7 @@ import {
 import { TROYAN2_TRIGGER_RULES } from './troyan2';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
+import { VOTING_TRIGGER_RULES } from './voting';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -1402,6 +1404,8 @@ export const TRIGGER_RULES = [
   ...ATTACK_A_PLAYER_TRIGGER_RULES,
   // Issue 160 (D-629): "Whenever enchanted player is attacked".
   ...ENCHANTED_PLAYER_TRIGGER_RULES,
+  // Mirkwood Trapper: "a player attacks you" and "a player attacks".
+  ...PLAYER_ATTACKS_TRIGGER_RULES,
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
@@ -1469,6 +1473,7 @@ export const TRIGGER_RULES = [
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
   ...COIN_FLIP_TRIGGER_RULES,
+  ...VOTING_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".

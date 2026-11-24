@@ -217,8 +217,13 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     'Enchanted creature is a Dragon with base power and toughness 4/2 and is goaded.',
     // Issue 89 (D-642): what the effect gives is kept, everything else is lost.
     'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types.',
+    // Lignify: the loss of abilities written after what the creature is.
+    'Enchanted creature is a Treefolk with base power and toughness 0/4 and loses all abilities.',
   ],
   rejects: [
+    'Enchanted creature is a Treefolk with base power and toughness 0/4 and loses all abilities',
+    'Enchanted creature is a Treefolk with base power and toughness 0/4 and loses flying.',
+    'Enchanted creature is a Treefolk with base power and toughness 0/4 and loses all abilities and has flying.',
     'Enchanted creature is a black Dragon with base power and toughness 4/2, has flying and deathtouch, and is goaded',
     'Enchanted creature is a black Dragon with base power and toughness 4/2, has flying and flying.',
     'Enchanted creature is a black Dragon with base power and toughness 4/2 and has flying.',
@@ -283,7 +288,17 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     // everything else is lost, so the abilities are lost first and then the keywords given, in the order written (the layers keep that order for one permanent).
     let given: readonly string[] = [];
     let loseOthers = false;
+    // Lignify (CR 613.1f, 613.4b): "is a Treefolk with base power and toughness 0/4 and loses all abilities." The loss of abilities is written after what
+    // the permanent is; it is the same layer 6 effect as the one written first, and the types and the numbers stay in their own layers.
+    let loseAfter = false;
     if (what !== null && !lose.ok) {
+      const after = pattern(/ and loses all abilities(?![\p{L}\p{N}])/iu)(ctx, end);
+      if (after.ok) {
+        loseAfter = true;
+        end = after.pos;
+      }
+    }
+    if (what !== null && !lose.ok && !loseAfter) {
       const tail = sequence(
         literal(' and has '),
         KEYWORD_WORDS,
@@ -298,7 +313,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     // Eye of Nidhogg (CR 613.1f, 701.15b): "..., has flying and deathtouch, and is goaded.": what the permanent has besides what it is, and that it is
     // goaded by the controller of the Aura (the `goaded` restriction of an attached permanent).
     let goaded = false;
-    if (what !== null && !lose.ok && !loseOthers) {
+    if (what !== null && !lose.ok && !loseOthers && !loseAfter) {
       const has = sequence(literal(', has '), KEYWORD_WORDS)(ctx, end);
       if (has.ok) {
         given = has.value[1];
@@ -313,7 +328,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     const finish = PERIOD(ctx, end);
     if (!finish.ok) return finish;
     const effects: IrStaticEffect[] = [];
-    if (lose.ok || loseOthers) effects.push({ kind: 'loseAllAbilities' });
+    if (lose.ok || loseOthers || loseAfter) effects.push({ kind: 'loseAllAbilities' });
     if (what !== null) {
       effects.push({ kind: 'replaceTypes', cardTypes: what.cardTypes, subtypes: what.subtypes });
       for (const keyword of given) effects.push({ kind: 'grantKeyword', keyword });

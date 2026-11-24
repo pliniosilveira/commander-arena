@@ -491,6 +491,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'surveils':
       // CR 701.25 (Galadriel group 1): once each time the player surveils.
       return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
+    case 'votingFinished':
+      // CR 701.38a (Erestor of the Council): once each time every player has voted in a vote.
+      return 'Whenever players finish voting';
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): once each time the player wins a coin flip.
       return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;
@@ -734,11 +737,13 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
           : null;
       }
-      // CR 508.1b (Lulu, Stern Guardian): "Whenever an opponent attacks you".
+      // CR 508.1b (Lulu, Stern Guardian; Mirkwood Trapper): "Whenever an opponent attacks you", "Whenever a player attacks you".
       if (trigger.attackedYou === true) {
-        return trigger.who === 'opponent' && trigger.atLeast === 1 && trigger.what === undefined
-          ? 'Whenever an opponent attacks you'
-          : null;
+        if (trigger.atLeast === 1 && trigger.what === undefined) {
+          if (trigger.who === 'opponent') return 'Whenever an opponent attacks you';
+          if (trigger.who === 'any') return 'Whenever a player attacks you';
+        }
+        return null;
       }
       // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
       if (trigger.includesSource === true) {

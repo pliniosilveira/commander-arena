@@ -387,7 +387,11 @@ function counted(pt: Parser<IrPtChange>): Parser<[IrPtChange, IrAmount | null]> 
   );
 }
 
-function leadParser(rule: string, subjects: readonly string[], plural: boolean): Parser<Clauses> {
+export function leadParser(
+  rule: string,
+  subjects: readonly string[],
+  plural: boolean,
+): Parser<Clauses> {
   const keywords = (verb: RegExp) =>
     spanned(map(sequence(pattern(verb), KEYWORD_WORDS), ([, words]): readonly string[] => words));
   const gets = plural ? / get / : / gets /;

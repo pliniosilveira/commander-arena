@@ -76,6 +76,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
   affinity: ['Aff', 'Affinity'],
+  undaunted: ['Und', 'Undaunted'],
   convoke: ['Cvk', 'Convoke'],
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],

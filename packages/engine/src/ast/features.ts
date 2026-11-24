@@ -186,6 +186,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copyEntersFromGraveyard',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
+    // "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (`lookAtTop` with `take.any`, CR 701.20, 202.3).
+    'lookTakeAny',
+    // "If any of those cards shares a card type with that spell" (`objectMatches` of `moved` with `any` and `sharesCardTypeWith`, CR 205.2a, 608.2c).
+    'movedSharesTypeWithSpell',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
     'delayedReturnToCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "Return that creature to its owner's hand at the beginning of the next end step" (a delayed `moveToZone` to the hand of the `moved` objects).
@@ -461,6 +465,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Together Forever (CR 603.7, 603.7c): "When that creature dies this turn, return that card to its owner's hand."
     'delayedDies',
     'forEachPlayer',
+    // CR 608.2c, 701.38b: "For each Redhorn Pass vote, search your library ..." (the effect repeated a number of times).
+    'repeat',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
     // CR 702.44a, 702.44d: "it gains sunburst" (a spell on the stack gains the keyword whose counters its permanent enters with).
@@ -492,6 +498,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseOne',
     // D-194: "starting with you, each player votes for profit or security" (CR 701.38a).
     'vote',
+    // CR 701.38a, 701.38b: "each player votes for a player", "secretly votes for a creature you don't control" (Círdan the Shipwright, Trap the Trespassers).
+    'voteFor',
     // D-196: "The Ring tempts you" (CR 701.54a), and the engine's own sacrifice at end of combat of the Ring's third ability.
     'ringTempts',
     // D-286: "you may pair this creature with another unpaired creature you control" (CR 702.95a): the engine's effect of the two abilities soulbond stands for.
@@ -670,6 +678,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'rollsHighest',
     // CR 705.2 (Setzer): "Whenever you win a coin flip".
     'winsCoinFlip',
+    // CR 701.38a (Erestor of the Council): "Whenever players finish voting".
+    'votingFinished',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -807,6 +817,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'flanking',
     'extort',
     'affinity',
+    // CR 702.125a: Undaunted.
+    'undaunted',
     'convoke',
     'improvise',
     'delve',
@@ -1195,6 +1207,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenCardType',
     // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
     'chooseCreatureTypePlayers',
+    // CR 608.2d (Mirkwood Trapper): `chooseObjects.chooser`, "that player chooses an attacking creature".
+    'chooseObjectsChooser',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
     // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
@@ -1271,6 +1285,13 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificed',
     // CR 608.2c (Canopy Gargantuan): "that creature" in the count of counters put on each creature (`ObjectRef` `eachObject`, `addCounters.perObject`).
     'eachObject',
+    // CR 701.38a, 701.38b: "each creature with one or more votes" (Trap the Trespassers), "each player who received no votes" (Círdan the Shipwright), "each opponent who voted for a
+    // choice you voted for" (Erestor of the Council).
+    'votedObjects',
+    'eachPlayerWithoutVotes',
+    'eachOpponentWhoVoted',
+    // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
+    'ringBearer',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
     // greatest power among creatures they control" (`ChooseSelector.anyNumber` and `greatest`), "the chosen player" of a gift.
     'notSupertypes',
@@ -1465,6 +1486,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dieResult',
     // CR 701.30d: "If you win" after a clash.
     'clashWon',
+    // CR 701.38a: "If time gets more votes", "if the vote is tied" after a vote.
+    'voteMost',
+    'voteTied',
     // "If X is 10 or more" (CR 107.3, 608.2c).
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
@@ -1586,6 +1610,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerHexproof',
     'cantLoseGame',
     'opponentsCantWin',
+    // CR 508.1a (Elrond of the White Council): "This creature can't attack its owner."
+    'cantAttackItsOwner',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
     // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
@@ -1750,6 +1776,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
+    // CR 701.38a, 701.38b: "for each vote they received" (Círdan the Shipwright), "put that many stun counters on it" (Trap the Trespassers).
+    'votesReceived',
+    'votesForObject',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
     // CR 122.1: "the number of experience counters you have".
@@ -2048,6 +2077,10 @@ export const ABILITY_FEATURES = [
   'copyEntersFromGraveyard',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
+  /** "You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (CR 701.20, 202.3): the engine's `lookAtTop` with `take.any`. */
+  'lookTakeAny',
+  /** "If any of those cards shares a card type with that spell" (CR 205.2a, 608.2c): the engine's `objectMatches` of `moved` with `any`, its filter reading `sharesCardTypeWith` of the spell the trigger is about. */
+  'movedSharesTypeWithSpell',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
   'delayedReturnToCommandZone',
   /** "Return that creature to its owner's hand at the beginning of the next end step" (Zara, CR 603.7c, 108.3): a `delayedTrigger` of a `moveToZone` to the hand of the `moved` objects. */
@@ -2318,6 +2351,8 @@ export const SELECTOR_KINDS = [
   'chosenCardType',
   /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
   'chooseCreatureTypePlayers',
+  /** "That player chooses an attacking creature" (CR 608.2d, Mirkwood Trapper): the engine's `chooseObjects.chooser`. */
+  'chooseObjectsChooser',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
   /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */
@@ -2405,6 +2440,14 @@ export const SELECTOR_KINDS = [
   'sacrificed',
   /** "Put a number of +1/+1 counters on each creature equal to that creature's toughness" (CR 608.2c, Canopy Gargantuan): the engine's `ObjectRef` `eachObject` and `addCounters.perObject`. */
   'eachObject',
+  /** "Each creature with one or more votes" (CR 701.38a, Trap the Trespassers): the engine's `ObjectRef` `votedObjects`. */
+  'votedObjects',
+  /** "Each player who received no votes" (CR 701.38a, Círdan the Shipwright): the engine's `eachPlayerWithoutVotes`. */
+  'eachPlayerWithoutVotes',
+  /** "Each opponent who voted for a choice you voted for" (CR 701.38a, Erestor of the Council): the engine's `eachOpponentWhoVoted`. */
+  'eachOpponentWhoVoted',
+  /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
+  'ringBearer',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
   'notSupertypes',
   /** "Sacrifice any number of other permanents" (D-135): the engine's `ChooseSelector.anyNumber`. */
@@ -2619,6 +2662,10 @@ export const CONDITION_KINDS = [
   'dieResult',
   /** "If you win" after a clash (CR 701.30d): the engine's `clashWon`. */
   'clashWon',
+  /** "If time gets more votes" after a vote (CR 701.38a): the engine's `voteMost`. */
+  'voteMost',
+  /** "If the vote is tied" after a vote (CR 701.38a): the engine's `voteTied`. */
+  'voteTied',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
   /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
@@ -2765,6 +2812,8 @@ export const STATIC_KINDS = [
   /** "You can't lose the game" and "your opponents can't win the game" (CR 104.2, 104.3, D-149): `cantLoseGame` and `opponentsCantWin`. */
   'cantLoseGame',
   'opponentsCantWin',
+  /** "This creature can't attack its owner." (CR 508.1a, Elrond of the White Council): the engine's `cantAttackItsOwner`. */
+  'cantAttackItsOwner',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
   /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
@@ -2968,6 +3017,10 @@ export const AMOUNT_KINDS = [
   'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
+  /** "For each vote they received" (CR 701.38a, Círdan the Shipwright): the engine's `votesReceived`. */
+  'votesReceived',
+  /** "That many stun counters" for the votes for a creature (CR 701.38a, Trap the Trespassers): the engine's `votesForObject`. */
+  'votesForObject',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
   /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
@@ -3120,6 +3173,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   copyEntersAddsTypes: true,
   copyEntersFromGraveyard: true,
   lookTakeAll: true,
+  lookTakeAny: true,
+  movedSharesTypeWithSpell: true,
   delayedReturnToCommandZone: true,
   delayedReturnToHand: true,
   modeCost: true,
@@ -3294,6 +3349,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamage: true,
   delayedDies: true,
   forEachPlayer: true,
+  repeat: true,
   delayedCast: true,
   spellGainsKeyword: true,
   removeTimeCounter: true,
@@ -3325,6 +3381,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseCreatureType: true,
   chooseNumber: true,
   vote: true,
+  voteFor: true,
   ringTempts: true,
   pair: true,
   empowerJace: true,
@@ -3438,6 +3495,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  votingFinished: true,
   stepMonarch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
@@ -3511,6 +3569,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flanking: true,
   extort: true,
   affinity: true,
+  undaunted: true,
   convoke: true,
   improvise: true,
   delve: true,

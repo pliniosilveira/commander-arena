@@ -58,6 +58,7 @@ import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
+import { COUNCIL_VOTES_EFFECT_RULES } from './council-votes';
 import { COUNTER_BLITZ_C_EFFECT_RULES } from './counter-blitz-c';
 import { COUNTER_BLITZ_E_EFFECT_RULES } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_EFFECT_RULES } from './counter-blitz-g';
@@ -86,6 +87,8 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
+import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
@@ -125,6 +128,7 @@ import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
+import { HALDIR_EFFECT_RULES } from './haldir';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -202,6 +206,7 @@ import {
   EFFECT_PLAYER_PROTECTION,
   EFFECT_SHUFFLE,
 } from './player';
+import { PLAYER_CHOOSES_ATTACKER_EFFECT_RULES } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
@@ -242,6 +247,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SECRET_VOTES_EFFECT_RULES } from './secret-votes';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
@@ -1402,6 +1408,8 @@ export const EFFECT_RULES = [
   ...GIDEON_EFFECT_RULES,
   // CR 701.20a, 119.3: 'you and target opponent each reveal the top card of your library. You each lose life ...' starts like the plain player rules, so it is tried first.
   ...REVEAL_TOP_DUEL_EFFECT_RULES,
+  // Elven Council deck: 'each opponent reveals the top card of their library. If any of those cards shares a card type ...' starts like the plain player rules, so it is tried first.
+  ...ELVEN_COUNCIL_REVEAL_EFFECT_RULES,
   ...HEXPROOF_LOSS_EFFECT_RULES,
   ...GOAD_EFFECT_RULES,
   // Riders of Rohan deck, group B (Taunt from the Rampart, Call for Aid): the sentences about the group the sentence before named.
@@ -1420,6 +1428,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,
+  // Elven Council deck: "target player shuffles their graveyard into their library", "each player searches their library for a basic land card, puts it onto the battlefield, then shuffles".
+  ...ELVEN_COUNCIL_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
   // Hatsune Miku deck (issue 145): "You win the game."
@@ -1471,6 +1481,10 @@ export const EFFECT_RULES = [
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,
+  // Issue 17 (Elven Council): "for each Redhorn Pass vote, ...", "each player returns up to two cards ...".
+  ...COUNCIL_VOTES_EFFECT_RULES,
+  // Secret council (Círdan the Shipwright, Elrond of the White Council, Trap the Trespassers, Erestor of the Council, Model of Unity): secret votes and what the votes came to.
+  ...SECRET_VOTES_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
   ...PLANESWALKER_EFFECT_RULES,
@@ -1547,12 +1561,16 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Elven Council deck (issue 98): "Until end of turn, other Elves you control gain vigilance and get +1/+1 for each +1/+1 counter on ~."
+  ...HALDIR_EFFECT_RULES,
   // Ashling, the Limitless: "The token gains haste until end of turn."
   ...THE_TOKEN_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."
   ...PUMP_THOSE_EFFECT_RULES,
   ...PUMP_UNBLOCKABLE_EFFECT_RULES,
   ...COPY_CHOSEN_TOKEN_EFFECT_RULES,
+  // Mirkwood Trapper: "that player chooses an attacking creature".
+  ...PLAYER_CHOOSES_ATTACKER_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".

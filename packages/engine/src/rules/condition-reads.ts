@@ -148,6 +148,7 @@ export function enteredThisTurnHolds(
   let n = 0;
   for (const e of state.turnLog.entered) {
     if (e.controller !== seat) continue;
+    // "Another Elf entered ...": the permanent the condition belongs to does not count (a permanent that left and came back is a new object, CR 400.7).
     if (condition.other === true && e.object === source) continue;
     if (condition.types?.some((t) => !e.types.includes(t))) continue;
     if (condition.notTypes?.some((t) => e.types.includes(t))) continue;

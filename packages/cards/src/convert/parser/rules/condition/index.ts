@@ -84,9 +84,11 @@ import {
 } from './that-object-power';
 import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
+import { THEY_ARENT_ATTACKING_YOU_CONDITION_RULES } from './they-arent-attacking-you';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
 import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
+import { VOTE_RESULT_CONDITION_RULES } from './vote-results';
 import { VRASKA_CONDITION_RULES } from './vraska';
 import { CONDITION_X_AT_LEAST } from './x-at-least';
 
@@ -556,6 +558,7 @@ export const CONDITION_RULES = [
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
   ...THEY_ATTACKED_YOU_CONDITION_RULES,
+  ...THEY_ARENT_ATTACKING_YOU_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
   // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
   ...MELD_CONDITION_RULES,
@@ -652,6 +655,8 @@ export const CONDITION_RULES = [
   ...HYLDA_G2_CONDITION_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
   ...LOREHOLD_G1_CONDITION_RULES,
+  // Issue 17 (Elven Council): "if time gets more votes", "if the vote is tied".
+  ...VOTE_RESULT_CONDITION_RULES,
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
   ...LOREHOLD_G3_CONDITION_RULES,
   // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "you have one or fewer cards in hand".

@@ -29,6 +29,7 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+import { objectOption, seatOption } from './vote-options';
 
 export { devotionCostOf, devotionOf, devotionSymbols } from './devotion';
 
@@ -378,6 +379,13 @@ export function amountOf(
   if (amount.kind === 'cardsInHandOfAffected') return 0;
   // D-194: "the number of profit votes": the players who voted for that option in the vote of this resolution (CR 701.38a).
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
+  // CR 701.38a, 701.38b (Círdan the Shipwright): the votes for the player who is "you" here (each player, in a `forEachPlayer` that runs as each).
+  if (amount.kind === 'votesReceived') return ctx.votes?.[seatOption(ctx.controller)] ?? 0;
+  // CR 701.38a, 701.38b (Trap the Trespassers): the votes for the permanent `of` names (as it is now).
+  if (amount.kind === 'votesForObject') {
+    const id = resolveObjects(state, amount.of, ctx, targets)[0];
+    return id === undefined ? 0 : (ctx.votes?.[objectOption(id)] ?? 0);
+  }
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
   if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;

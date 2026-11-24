@@ -253,6 +253,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
+  // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
+  'amount.for-each-scried': permanent(
+    (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.number-of': spell((e) => `You gain life ${e}.`),
   'cost.tap': { face: 'permanent', line: (e) => `${e}: Add {G}.` },
   'cost.mana': permanent((e) => `${e}, {T}: Add {G}.`),
@@ -670,6 +674,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
+  'static.others-enter-with-counters-equal-to': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
@@ -992,6 +997,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.roll-highest': whenever,
   // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
   'trigger.win-coin-flip': whenever,
+  // Secret council (Erestor of the Council, Model of Unity): "players finish voting" follows "Whenever"; the sentences read the record of the vote that finished.
+  'trigger.players-finish-voting': whenever,
+  'effect.secret-vote': spell((e) => `${cap(e)}.`),
+  'effect.each-player-draws-per-vote': spell((e) => `${cap(e)}.`),
+  'effect.each-player-without-votes-may-put': spell((e) => `${cap(e)}.`),
+  'effect.stun-voted-creatures': spell((e) => `${cap(e)}.`),
+  'effect.voter-chooses-per-vote': spell((e) => `${cap(e)}.`),
+  'effect.gain-control-chosen-cant-attack-owner': spell((e) => `${cap(e)}.`),
+  'effect.then-for-each-vote-counters': spell((e) => `${cap(e)}.`),
+  'effect.voters-create-treasure': spell((e) => `${cap(e)}.`),
+  'effect.scry-opponents-who-voted-differently': spell((e) => `${cap(e)}.`),
+  'effect.you-and-voters-may-scry': spell((e) => `${cap(e)}.`),
   'effect.flip-coin': spell((e) => `${cap(e)}.`),
   // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
   'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
@@ -1136,6 +1153,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
+  'trigger.player-attacks-you': whenever,
+  'trigger.player-attacks-bare': whenever,
+  'condition.they-arent-attacking-you': permanent(
+    (e) => `Whenever a player attacks, if ${e}, draw a card.`,
+  ),
+  'effect.that-player-chooses-attacking-creature': permanent(
+    (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
+  ),
   'trigger.opponent-attacks-you': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
@@ -1494,6 +1519,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
+  ),
+  // Elven Council deck (issue 17): what a vote came to.
+  'condition.vote-result': permanent(
+    (e) =>
+      `When ~ enters, starting with you, each player votes for time or knowledge. If ${e}, draw a card.`,
   ),
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
   'condition.a-player-cards-in-hand': permanent(

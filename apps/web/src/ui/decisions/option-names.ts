@@ -155,8 +155,16 @@ export function votePrompt(
   vote: ChooseOptionDecision['vote'],
   seat?: number,
 ): string {
-  const question = `Vote for ${optionList(options)}.`;
+  // CR 701.38b: a vote for players or permanents has no words to list; CR 701.38a ("secretly"): nobody sees the votes until all are cast.
+  const question =
+    vote?.choices === undefined
+      ? `Vote for ${optionList(options)}.`
+      : vote.choices.some((c) => c.kind === 'object')
+        ? 'Vote for a creature.'
+        : 'Vote for a player.';
+  const secret = vote?.secret === true ? ' The votes are secret until everyone has voted.' : '';
   const cast = vote?.cast ?? [];
+  if (secret !== '') return `${question}${secret}`;
   if (cast.length === 0) return question;
   const who = (voter: number) => (voter === seat ? 'You' : 'Opponent');
   return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
@@ -259,8 +267,25 @@ export interface NamedOptionRow {
 
 /** The buttons, in the engine's order: "Chapter II" with its text for a Saga, the name itself for any other choice. */
 export function namedOptionRows(
-  d: Pick<ChooseOptionDecision, 'purpose' | 'options' | 'sourceOracleText' | 'replacement'>,
+  d: Pick<ChooseOptionDecision, 'purpose' | 'options' | 'sourceOracleText' | 'replacement'> &
+    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat'>>,
 ): readonly NamedOptionRow[] {
+  // CR 701.38b: a vote for players or for permanents: one button for each, "You" or "Player 2", or the name of the permanent and who controls it.
+  const choices = d.vote?.choices;
+  if (isVoteChoice(d) && choices !== undefined) {
+    const seatWord = (seat: number) => (seat === d.seat ? 'You' : `Player ${seat + 1}`);
+    return d.options.map((option, i) => {
+      const choice = choices[i];
+      if (choice === undefined) return { option, label: option, detail: null };
+      return choice.kind === 'player'
+        ? { option, label: seatWord(choice.seat), detail: null }
+        : {
+            option,
+            label: choice.name,
+            detail: `Controlled by ${choice.controller === d.seat ? 'you' : seatWord(choice.controller)}`,
+          };
+    });
+  }
   if (isReplacementChoice(d)) {
     // One button for each effect, the words of the effect and, under them, what it leads to (the engine's `outcome`).
     return d.options.map((option) => {

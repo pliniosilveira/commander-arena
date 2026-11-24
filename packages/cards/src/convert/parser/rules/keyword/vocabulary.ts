@@ -45,6 +45,7 @@ export type SimpleKeyword = Extract<
   | 'convoke'
   | 'improvise'
   | 'delve'
+  | 'undaunted'
   | 'cascade'
   | 'compleated'
   | 'demonstrate'
@@ -128,6 +129,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['convoke', 'convoke'],
   ['improvise', 'improvise'],
   ['delve', 'delve'],
+  // CR 702.125a (Undaunted): a printed ability of a spell with no parameter, never granted.
+  ['undaunted', 'undaunted'],
   ['cascade', 'cascade'],
   // CR 702.150a (Compleated): a printed ability on a planeswalker, never granted; the engine reads the life paid for its Phyrexian mana as it enters.
   ['compleated', 'compleated'],
