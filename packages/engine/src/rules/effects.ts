@@ -173,6 +173,7 @@ import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
+import { runEachPlayerRollsBarHighest } from './roll-off';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
@@ -3042,6 +3043,10 @@ function runEffect(
       const rolled = rollDie(next, res.controller, effect.sides);
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
     }
+
+    case 'eachPlayerRollsBarHighest':
+      // CR 706.1, 706.2, 508.1a (`rules/roll-off.ts`): everyone rolls; the creature can't attack the opponents with the highest result this combat.
+      return runEachPlayerRollsBarHighest(next, effect, ctx.source, res.controller);
 
     case 'repeatWhile': {
       // CR 608.2c (Grist, the Hunger Tide): the effects, then the test as an instruction of its own (read after them, so `moved` is what the last of them moved); when it holds

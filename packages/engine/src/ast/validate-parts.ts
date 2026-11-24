@@ -8783,6 +8783,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
       }
       break;
+    case 'eachPlayerRollsBarHighest':
+      // CR 706.1a, 508.1a: a die of N sides; the creature of the ability, which is a permanent.
+      if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
+        issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
+      if (e.creature.kind !== 'this') {
+        issue(
+          out,
+          `${path}.creature`,
+          "'eachPlayerRollsBarHighest' names the creature of the ability ('this')",
+        );
+      }
+      if (scope.owner !== 'ability') {
+        issue(
+          out,
+          path,
+          "'eachPlayerRollsBarHighest' needs an ability of a permanent, not a spell",
+        );
+      }
+      break;
     case 'eachPlayerChoosesDestroy':
       // CR 101.4, 608.2d (issue 105): the permanents the players may choose are a filter of the battlefield, read from the controller of the effect.
       checkFilter(e.filter, `${path}.filter`, out);
