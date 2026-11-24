@@ -1,5 +1,5 @@
 {
-  "parserVersion": 206,
+  "parserVersion": 207,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -453,6 +453,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8adbffee"
+    },
+    "06cf7b77-ffd7-4192-903e-19bd06887ba1": {
+      "name": "Bothersome Quasit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5e2b43b3"
     },
     "06d219ff-0083-4c2a-b5b3-2b84bb58f57e": {
       "name": "Skrelv's Hive",
@@ -1779,6 +1787,14 @@
       "reasons": [],
       "ast": "e14dcceb"
     },
+    "20dbfc9a-172e-4065-bfde-d40de3131787": {
+      "name": "Will Kenrith",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3ea892c0"
+    },
     "20e94d0f-6887-45f8-a137-877011d786c6": {
       "name": "Gisa and Geralf",
       "group": "acceptance",
@@ -2822,6 +2838,14 @@
       "reasons": [],
       "ast": "8cbf83ec"
     },
+    "33b401b1-cf94-4c7a-8a8a-426ac3d87bd0": {
+      "name": "Baeloth Barrityl, Entertainer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8be4aebc"
+    },
     "33e3793c-098f-4897-88f3-9f9ce9081e0f": {
       "name": "Pompous Battlemage // Improvised Act",
       "group": "acceptance",
@@ -2917,6 +2941,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "35b6e209"
+    },
+    "35426427-4268-4c8f-9fe1-270f2ce43d97": {
+      "name": "Dissipation Field",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2e708b89"
     },
     "354affb3-1be7-4a9e-91da-2989eb54f62d": {
       "name": "Hyena Umbra",
@@ -3330,6 +3362,14 @@
       "reasons": [],
       "ast": "ee8bc203"
     },
+    "3b8eb602-01e8-432e-8dfc-8fdb62c3aa43": {
+      "name": "Mocking Doppelganger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1ee3e6b2"
+    },
     "3b943c3e-1f18-4997-b6d0-28ef75aed88e": {
       "name": "Bloodthirsty Adversary",
       "group": "acceptance",
@@ -3577,6 +3617,30 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c35ee33b"
+    },
+    "42410e81-f4a6-4501-82e4-6e745934976c": {
+      "name": "Death Kiss",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever a creature an opponent controls attacks one of your opponents, double its power until end of turn.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.attacks"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "When ~ becomes monstrous, goad up to X target creatures your opponents control.",
+          "reason": "notRunnable",
+          "closestRule": "noun.target-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "c4b0a720"
     },
     "4262a726-d1da-4bdc-ab14-73212aa83f9c": {
       "name": "Tune the Narrative",
@@ -3874,6 +3938,14 @@
       "reasons": [],
       "ast": "a812f857"
     },
+    "47214acc-08c4-4dcb-9a8b-09196ce41045": {
+      "name": "Psychic Impetus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c0767c68"
+    },
     "473da1b6-232b-4428-a66d-30262246b47a": {
       "name": "Emeria Shepherd",
       "group": "training",
@@ -3977,6 +4049,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7f6775ef"
+    },
+    "499dceab-1890-49c8-b35d-b059a1dc950f": {
+      "name": "Stuffy Doll",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7926bde4"
     },
     "49aa87c7-034b-409d-b37f-50db6a42e533": {
       "name": "You See a Guard Approach",
@@ -5978,6 +6058,22 @@
       "reasons": [],
       "ast": "9aa1a0df"
     },
+    "6dccf583-1045-4058-86cc-ebbcc8de080e": {
+      "name": "Artificer Class",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "26dc8168"
+    },
+    "6de2d53c-06e3-4c56-a5cf-c9cb2db42527": {
+      "name": "Pursued Whale",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "81aa5831"
+    },
     "6df03db9-e4b3-4931-94e3-c582d2b04110": {
       "name": "Hildibrand Manderville // Gentleman's Rise",
       "group": "acceptance",
@@ -6009,6 +6105,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "37d475f9"
+    },
+    "6ebd4b3f-246e-475f-8cec-838eaaf597e2": {
+      "name": "Clan Crafter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "528b5174"
     },
     "6ec2a242-9068-4ee2-8ac8-8341cc570f56": {
       "name": "Emeria's Call // Emeria, Shattered Skyclave",
@@ -6298,6 +6402,14 @@
       "reasons": [],
       "ast": "c83786e7"
     },
+    "741c51f1-cfbe-4c29-ac8f-ca6bcd2652f9": {
+      "name": "Wandering Fumarole",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c9d90a7"
+    },
     "744b7e93-c893-4770-a3bb-6a45b7f8e4f7": {
       "name": "Expel the Interlopers",
       "group": "acceptance",
@@ -6313,6 +6425,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "52c23e37"
+    },
+    "746d4445-f28d-41af-827a-2b613b9b84ee": {
+      "name": "Warmonger Hellkite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "23d93cd0"
     },
     "74a62c7b-4753-4af2-b7a1-9a4ae8988801": {
       "name": "Puresteel Paladin",
@@ -6731,6 +6851,39 @@
       "reasons": [],
       "ast": "c26d86e5"
     },
+    "7c885698-69f2-44b5-abfe-9a2833822794": {
+      "name": "Loot Dispute",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, you take the initiative and create a Treasure token.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you attack the player who has the initiative, create a Treasure token.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.you-attack"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Loud Ruckus — Whenever you complete a dungeon, create a 5/5 red Dragon creature token with flying.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "4eb279ce"
+    },
     "7ca584e7-4621-4b4e-a381-a0051acbf66a": {
       "name": "Urianger Augurelt",
       "group": "acceptance",
@@ -7055,6 +7208,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d4730e31"
+    },
+    "81dad7c5-5950-4c45-adb0-cf1a15a74250": {
+      "name": "Firkraag, Cunning Instigator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a0afabeb"
     },
     "82004860-e589-4e38-8d61-8c0210e4ea39": {
       "name": "Demonic Tutor",
@@ -7539,6 +7700,14 @@
       "reasons": [],
       "ast": "2035ebb0"
     },
+    "8c0b9596-c44f-44fb-89c9-056da0db33d3": {
+      "name": "The Akroan War",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e08406c0"
+    },
     "8c1fda45-09f1-4b58-a487-e11c868e1357": {
       "name": "Ainok Strike Leader",
       "group": "acceptance",
@@ -7546,6 +7715,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "40091da4"
+    },
+    "8c2dd8dc-8623-4518-b3fd-dcb9f647fa98": {
+      "name": "Sly Instigator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fcf24b75"
     },
     "8c31fec9-e4b3-4761-990e-7be38eb05604": {
       "name": "Karmic Guide",
@@ -8044,6 +8221,14 @@
       "reasons": [],
       "ast": "1b84d472"
     },
+    "96381388-1e82-411c-8290-1f3e909d3b5f": {
+      "name": "Reins of Power",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c3727953"
+    },
     "969fa9b9-161f-461e-8878-9ebcff5a2669": {
       "name": "Lulu, Stern Guardian",
       "group": "acceptance",
@@ -8267,6 +8452,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "aa63ce9e"
+    },
+    "9b084cd4-cc21-4f3a-9ac5-1e1160a31aa6": {
+      "name": "Disrupt Decorum",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c6b3562e"
     },
     "9b0b8f00-6367-4dc9-b33e-680470b3a36c": {
       "name": "The Mending of Dominaria",
@@ -8644,6 +8837,14 @@
       "reasons": [],
       "ast": "523d3684"
     },
+    "a04f46b4-b0b0-4aef-907f-1df1a2e261de": {
+      "name": "Chaos Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bb502040"
+    },
     "a07483b4-c04f-42a4-b979-8b77c11fa8f5": {
       "name": "Slate of Ancestry",
       "group": "acceptance",
@@ -8739,6 +8940,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "36415012"
+    },
+    "a20e2e1a-90d8-4073-96e9-efce86f0178e": {
+      "name": "Astral Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0e3e7cea"
     },
     "a2249af3-2e3e-484b-a31a-26432edd13ae": {
       "name": "Worf, Son of Mogh",
@@ -9125,6 +9334,14 @@
       "reasons": [],
       "ast": "7c612f3c"
     },
+    "a949c96c-362c-45a3-bd5c-ce5ce153ee9e": {
+      "name": "Terrain Generator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "99d6767f"
+    },
     "a95309ac-f920-474d-81b5-0f68c8a54f34": {
       "name": "Towering Titan",
       "group": "acceptance",
@@ -9308,6 +9525,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "87b253a7"
+    },
+    "abe377f8-35f0-4dea-a681-91d31a36815c": {
+      "name": "Agitator Ant",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your end step, each player may put two +1/+1 counters on a creature they control. Goad each creature that had counters put on it this way.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.a-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "b83ac4ed"
     },
     "abf4dcd8-5176-4f4a-b7c1-5ce24ff181bf": {
       "name": "Diviner of Mist",
@@ -9721,6 +9955,14 @@
       "reasons": [],
       "ast": "1da175e3"
     },
+    "b2747459-05ec-42a6-81be-e97e182bc778": {
+      "name": "Bloodthirsty Blade",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "386c40d3"
+    },
     "b349f018-c20b-48b0-9e65-d5fd56b24b88": {
       "name": "Entreat the Angels",
       "group": "acceptance",
@@ -9888,6 +10130,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c7c592b1"
+    },
+    "b6f61b77-d571-4508-a5e8-435b4e097f3a": {
+      "name": "Spectacular Showdown",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fb4f7bdb"
     },
     "b75c3902-633e-4d24-acde-d7a9cc8f466e": {
       "name": "Glorybringer",
@@ -10625,6 +10875,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "36b892f4"
+    },
+    "c6f76fa7-095e-4bfe-a38c-5c4531880880": {
+      "name": "Curse of Verbosity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cca1751d"
     },
     "c736935a-e006-4a67-b942-e8ccf1cd9abb": {
       "name": "Sharae of Numbing Depths",
@@ -12021,6 +12279,14 @@
       "reasons": [],
       "ast": "90b0e9dd"
     },
+    "e191976c-6ab1-4a23-aeb8-8a88bd4bd203": {
+      "name": "Rowan Kenrith",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f7e805e0"
+    },
     "e1c9783a-1d1b-40d7-872e-0ca11b229ce6": {
       "name": "Uthros Research Craft",
       "group": "acceptance",
@@ -12476,6 +12742,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cdf264fa"
+    },
+    "ec08df88-3c13-4940-a090-0c502b9b12f1": {
+      "name": "Goblin Spymaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1668c56c"
     },
     "ec1e69b1-f664-494b-8da2-c7199872b08b": {
       "name": "Canopy Gargantuan",
@@ -13297,6 +13571,14 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
+    "f8bf3d91-cb50-48ce-88c6-cdcb37b64b57": {
+      "name": "Kazuul, Tyrant of the Cliffs",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "39e03f50"
+    },
     "f8dab16e-1d50-443e-9431-8b6f1cf61c9c": {
       "name": "Notion Thief",
       "group": "acceptance",
@@ -13661,8 +13943,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1397,
-      "total": 1416
+      "supported": 1423,
+      "total": 1445
     }
   }
 }
