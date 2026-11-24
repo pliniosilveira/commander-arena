@@ -431,3 +431,94 @@ describe('Magus of the Balance ({4}{W}, {T}, Sacrifice this creature: Each playe
     expect(g.state.pending?.kind).toBe('priority');
   });
 });
+
+describe("Deep Gnome Terramancer (Whenever one or more lands enter under an opponent's control without being played, you may search your library for a Plains card, put it onto the battlefield tapped, then shuffle. Do this only once each turn.)", () => {
+  const GNOME = real('Deep Gnome Terramancer');
+  const RAMP = parsed(
+    'SYNTHETIC Ramp',
+    'Sorcery',
+    'Put a land card from your hand onto the battlefield.',
+    { manaCost: '{1}' },
+  );
+  const board = () =>
+    scenario()
+      .define(GNOME)
+      .define(RAMP)
+      .seat(0)
+      .battlefield(GNOME.name)
+      .library('Plains', 'Plains', ...FILLER)
+      .seat(1)
+      .hand(RAMP.name, 'Forest', 'Forest', 'Forest')
+      .battlefield('Island', { count: 2 })
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 1 })
+      .build();
+
+  test('a land an opponent puts onto the battlefield with an effect triggers the search (CR 305.1, 603.2c)', () => {
+    const g = board();
+    g.act(1).cast(RAMP.name, { pay: true });
+    g.passAll();
+    g.act(1).chooseCards('Forest[0]');
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).chooseCards('Plains[0]');
+    const plains = g.state.battlefield
+      .map((id) => g.state.objects[id])
+      .find((o) => o?.owner === 0 && o.card !== null && o.tapped && o.zone === 'battlefield');
+    expect(plains).toBeDefined();
+    expect(g.state.seats[0]?.library).toHaveLength(FILLER.length + 1);
+  });
+
+  test('"Do this only once each turn": a second land put onto the battlefield in the same turn searches no more (CR 603.2h)', () => {
+    const g = scenario()
+      .define(GNOME)
+      .define(RAMP)
+      .seat(0)
+      .battlefield(GNOME.name)
+      .library('Plains', 'Plains', ...FILLER)
+      .seat(1)
+      .hand(RAMP.name, RAMP.name, 'Forest', 'Forest')
+      .battlefield('Island', { count: 2 })
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 1 })
+      .build();
+    g.act(1).cast(`${RAMP.name}[0]`, { pay: true });
+    g.passAll();
+    g.act(1).chooseCards('Forest[0]');
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).chooseCards('Plains[0]');
+    g.act(1).cast(RAMP.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    expect(g.state.pending?.kind).toBe('priority');
+    expect(g.state.seats[0]?.library).toHaveLength(FILLER.length + 1);
+  });
+
+  test('a land the opponent plays does not', () => {
+    const g = board();
+    g.act(1).playLand('Forest[0]');
+    g.passAll();
+    expect(g.state.pending?.kind).toBe('priority');
+    g.expect.zone('Plains', 'library', { seat: 0 });
+  });
+
+  test("your own land put onto the battlefield does not trigger it (the lands are an opponent's)", () => {
+    const g = scenario()
+      .define(GNOME)
+      .define(RAMP)
+      .seat(0)
+      .battlefield(GNOME.name)
+      .battlefield('Island', { count: 2 })
+      .hand(RAMP.name, 'Forest')
+      .library('Plains', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(RAMP.name, { pay: true });
+    g.passAll();
+    expect(g.state.pending?.kind).toBe('priority');
+    g.expect.zone('Plains', 'library', { seat: 0 });
+  });
+});

@@ -1111,6 +1111,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.enchanted-by-you-attack': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
+  'trigger.lands-enter-opponent-not-played': whenever,
   'trigger.cast-or-copy': whenever,
   // D-650: "each other creature that's attacking one of your opponents".
   'noun.each-other-attacking-opponent': permanent(

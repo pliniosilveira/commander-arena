@@ -5315,7 +5315,16 @@ export type Trigger =
    * graveyard, is part of the batch (the zone each came from is read as the event happens, so the others do not count, and a batch with none of them does not trigger). The ability's
    * `triggerCards` are the permanents of the batch that the trigger names, in the order they entered.
    */
-  | { readonly kind: 'entersBatch'; readonly what: ObjectFilter; readonly fromGraveyard?: true }
+  | {
+      readonly kind: 'entersBatch';
+      readonly what: ObjectFilter;
+      readonly fromGraveyard?: true;
+      /**
+       * "Whenever one or more lands enter under an opponent's control without being played" (Deep Gnome Terramancer, CR 305.1, 603.2c): a land put onto the battlefield by an effect,
+       * not played (no `landPlayed` event for it in the events being looked at), is part of the batch; a played land is not.
+       */
+      readonly notPlayed?: true;
+    }
   /**
    * "Whenever [a creature] blocks" (CR 509.1g, 702.45a, D-120): once for each creature declared as a blocker
    * in the declare blockers step, the blocker being the subject. A creature that blocks two attackers

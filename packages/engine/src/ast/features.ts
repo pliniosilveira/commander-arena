@@ -132,6 +132,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
     'doOnlyOnceEachTurn',
+    // CR 305.1, 603.2c (Deep Gnome Terramancer): "Whenever one or more lands enter under an opponent's control without being played" (`entersBatch.notPlayed`).
+    'entersNotPlayed',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
     // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
@@ -1932,6 +1934,8 @@ export const ABILITY_FEATURES = [
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
   'doOnlyOnceEachTurn',
+  /** "Whenever one or more lands enter under an opponent's control without being played" (Deep Gnome Terramancer, CR 305.1, 603.2c): the engine's `entersBatch` with `notPlayed`. */
+  'entersNotPlayed',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
   /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
@@ -2993,6 +2997,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
+  entersNotPlayed: true,
   manaSpentRider: true,
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
