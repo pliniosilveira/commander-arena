@@ -488,6 +488,71 @@ export const EFFECT_CHOOSE_DIRECTION_ATTACK_NEAREST = defineRule<Clauses>({
   },
 });
 
+const SEMESTER_ID = 'effect.exile-return-next-end-step-with-counters';
+
+/**
+ * `effect.exile-return-next-end-step-with-counters`: "Exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them to
+ * the battlefield under its owner's control. Each of them enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker."
+ * (Semester's End; CR 701.13, 603.7, 603.7c, 400.7, 122.6, 614.1c): the targets are exiled, and a delayed ability returns the objects exiled, each as a new object, with a counter more for
+ * each of the two kinds it is as it enters. Three sentences that `splitSentences` keeps together. The engine's `exile` and a `delayedTrigger` of a `moveToZone` of `moved` with
+ * `withCounters` by type. Not read: another group of targets, another step, a different counter, "tapped", the controller's control, one sentence of the three left out.
+ */
+export const EFFECT_EXILE_RETURN_NEXT_END_STEP_WITH_COUNTERS = defineRule<Clauses>({
+  id: SEMESTER_ID,
+  family: 'effect',
+  leading: ['exile'],
+  cites: [
+    'CR 701.13 (Exile)',
+    'CR 603.7 (Delayed Triggered Abilities)',
+    'CR 603.7c (Delayed Triggered Abilities)',
+    'CR 400.7 (General)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: [
+    "exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them to the battlefield under its owner's control. Each of them enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker",
+  ],
+  rejects: [
+    "exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them to the battlefield under its owner's control",
+    "exile any number of target creatures you control. At the beginning of the next end step, return each of them to the battlefield under its owner's control. Each of them enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker",
+    "exile any number of target creatures and/or planeswalkers you control. At the beginning of your next end step, return each of them to the battlefield under its owner's control. Each of them enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker",
+    "exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them to the battlefield under your control. Each of them enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker",
+    "exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them to the battlefield under its owner's control. Each of them enters with two additional +1/+1 counters on it if it's a creature and an additional loyalty counter on it if it's a planeswalker",
+    "exile target creature or planeswalker you control. At the beginning of the next end step, return it to the battlefield under its owner's control. It enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('exile '),
+      satisfy(family<IrNoun>('noun', { only: ['noun.any-number-targets'] }), (n) => {
+        const kinds = (n.filter.anyOf ?? []).flatMap((m) => m.types ?? []);
+        return (
+          n.filter.controller === 'you' &&
+          kinds.length === 2 &&
+          kinds.includes('creature') &&
+          kinds.includes('planeswalker') &&
+          !n.other
+        );
+      }),
+      pattern(
+        /\. at the beginning of the next end step, return each of them to the battlefield under its owner['’]s control\. each of them enters with an additional \+1\/\+1 counter on it if it['’]s a creature and an additional loyalty counter on it if it['’]s a planeswalker(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, objects] = r.value;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          SEMESTER_ID,
+          'exileReturnNextEndStepCounters',
+          { objects },
+          { start: pos, end: r.pos },
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -549,6 +614,7 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_EXILE_RETURN_NEXT_END_STEP_WITH_COUNTERS),
   quietly(EFFECT_CHOOSE_DIRECTION_ATTACK_NEAREST),
   quietly(EFFECT_REMOVE_COUNTER_FROM_EACH_CHOSEN),
   quietly(EFFECT_EXILE_THAT_MANY_TOP),

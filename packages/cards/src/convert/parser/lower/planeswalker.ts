@@ -7,7 +7,7 @@
 import type { Ability, Effect } from '@commander-arena/engine';
 import { bind } from '../ir/bind';
 import type { IrClause, IrQuotedAbility } from '../ir/types';
-import { amountArg, arg, type Effects, failure } from './clauses';
+import { amountArg, arg, type Effects, eachObject, failure } from './clauses';
 import type { FeatureRef } from './features';
 import { lateLowerers } from './late';
 import { lowerFilter, objectSelectorOf, playerSelectorOf } from './nouns';
@@ -335,12 +335,52 @@ const CHOOSE_DIRECTION_ATTACK_NEAREST: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them ... with an additional counter" (Semester's End; CR
+ * 701.13, 603.7c, 122.6): the engine's `exile` of the targets and a `delayedTrigger` at the next end step whose `moveToZone` of `moved` puts them back under their owner's control with
+ * a +1/+1 counter if the card is a creature and a loyalty counter if it is a planeswalker.
+ */
+const EXILE_RETURN_NEXT_END_STEP_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'exileReturnNextEndStepCounters',
+  id: 'lower.exile-return-next-end-step-counters',
+  needs: ['effect:exile', 'effect:delayedTrigger', 'effect:moveToZone', 'selector:moved'],
+  lower(clause, ctx) {
+    const lowered = eachObject(clause, ctx, (objects) => ({ kind: 'exile', objects }));
+    if (!lowered.ok) return lowered;
+    if (lowered.value.length !== 1) return failure(clause);
+    return {
+      ok: true,
+      value: [
+        ...lowered.value,
+        {
+          kind: 'delayedTrigger',
+          at: { step: 'endStep', whose: 'each' },
+          effect: {
+            kind: 'moveToZone',
+            objects: { kind: 'moved' },
+            to: 'battlefield',
+            controller: 'owner',
+            withCounters: [
+              { counter: '+1/+1', count: 1, ifType: 'creature' },
+              { counter: 'loyalty', count: 1, ifType: 'planeswalker' },
+            ],
+          },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
   'effect:castCard',
+  'effect:exile',
+  'effect:delayedTrigger',
+  'effect:moveToZone',
   'effect:chooseOne',
   'effect:attackOnlyNearestOpponent',
   'effect:chooseObjects',
@@ -361,6 +401,7 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DEAL_DAMAGE_FROM_EACH,
   MAY_CAST_KIND_FROM_MOVED_FREE,
   CAST_MOVED_NOW,
+  EXILE_RETURN_NEXT_END_STEP_COUNTERS,
   CHOOSE_DIRECTION_ATTACK_NEAREST,
   REMOVE_COUNTER_FROM_EACH_CHOSEN,
   EXILE_TOP_THAT_MANY,

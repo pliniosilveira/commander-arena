@@ -6997,16 +6997,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkObjectSelector(e.objects as ObjectSelector, `${path}.objects`, scope, out);
       }
       if (e.withCounters !== undefined) {
-        const w = e.withCounters;
         if (e.to !== 'battlefield') {
           issue(out, `${path}.withCounters`, 'counters on entering are only for the battlefield');
         }
-        if (typeof w?.counter !== 'string' || w.counter === '') {
-          issue(out, `${path}.withCounters.counter`, 'counter name must be non-empty');
-        }
-        if (!isCount(w?.count) || w.count < 1) {
-          issue(out, `${path}.withCounters.count`, 'counter count must be a positive integer');
-        }
+        const list = Array.isArray(e.withCounters) ? e.withCounters : [e.withCounters];
+        if (list.length === 0) issue(out, `${path}.withCounters`, 'at least one kind of counter');
+        list.forEach((w, i) => {
+          const at = Array.isArray(e.withCounters)
+            ? `${path}.withCounters[${i}]`
+            : `${path}.withCounters`;
+          if (typeof w?.counter !== 'string' || w.counter === '') {
+            issue(out, `${at}.counter`, 'counter name must be non-empty');
+          }
+          if (!isCount(w?.count) || w.count < 1) {
+            issue(out, `${at}.count`, 'counter count must be a positive integer');
+          }
+          if (w?.ifType !== undefined && !isOneOf(w.ifType, ['creature', 'planeswalker'])) {
+            issue(out, `${at}.ifType`, 'ifType is creature or planeswalker');
+          }
+        });
       }
       if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
         // Issue 103: 'command' is the return of a delayed trigger (`checkDelayedTrigger`), never a move of its own.

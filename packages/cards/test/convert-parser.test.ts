@@ -818,6 +818,7 @@ describe('unmatched abilities', () => {
       'effect.put-permanent-from-among-exiled',
       'effect.damage-exile-if-dies',
       'effect.move-counter-from-self',
+      'effect.exile-return-next-end-step-with-counters',
       'effect.choose-direction-attack-nearest',
       'effect.remove-counter-from-each-chosen',
       'effect.exile-that-many-top',

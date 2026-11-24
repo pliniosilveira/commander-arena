@@ -2,7 +2,7 @@
  * Helpers of the effect interpreter (`effects.ts`): amounts, drawing, life changes, the move
  * instructions a moving effect queues, and the token definition of a `createToken` effect.
  */
-import type { Effect, PtAmount, TokenDefinition } from '../ast/types';
+import type { Effect, EntryCounter, PtAmount, TokenDefinition } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
@@ -191,7 +191,7 @@ export function moveInstructions(
   position: 'top' | 'bottom' | number = 'top',
   tapped = false,
   controller?: 'owner' | 'you',
-  withCounters?: { readonly counter: string; readonly count: number },
+  withCounters?: EntryCounter | readonly EntryCounter[],
 ): Instruction[] {
   return ids.map((object) => ({
     kind: 'move' as const,

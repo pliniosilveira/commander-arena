@@ -2325,6 +2325,16 @@ export interface SearchDestination {
   readonly count: number | 'rest';
 }
 
+/**
+ * Counters a permanent enters the battlefield with (CR 122.6, 614.1c): `count` of the kind, and with `ifType` only when the permanent has that card type as it enters (Semester's End: "an
+ * additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker", the characteristics of each permanent as it returns).
+ */
+export interface EntryCounter {
+  readonly counter: string;
+  readonly count: number;
+  readonly ifType?: 'creature' | 'planeswalker';
+}
+
 /** Which damage a prevention effect covers (CR 615.1): all of it, or only combat or noncombat damage (CR 120.2). */
 export type PreventScope = 'all' | 'combat' | 'noncombat';
 
@@ -3648,7 +3658,7 @@ export type Effect =
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
        * and 614.1c: a replacement effect), so they are there when anything triggers from the entering.
        */
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /**
        * "Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less" (CR 303.4f, 303.4g,
        * D-207): the Aura card enters the battlefield already attached to the target the effect names, which is not a choice of its controller. Only

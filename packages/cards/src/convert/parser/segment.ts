@@ -347,6 +347,13 @@ const PUT_UP_TO_FROM_AMONG =
 const CHOOSE_LEFT_OR_RIGHT = /^choose left or right\.$/i;
 const ATTACK_ONLY_NEAREST =
   /^until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent\.$/i;
+/** Semester's End: the exile of any number of targets, its delayed return and the counters they enter with, one instruction. */
+const EXILE_ANY_NUMBER_OWN =
+  /^exile any number of target creatures and\/or planeswalkers you control\.$/i;
+const RETURN_EACH_OF_THEM_NEXT_END =
+  /^at the beginning of the next end step, return each of them to the battlefield under its owner['’]s control\.$/i;
+const EACH_OF_THEM_ENTERS_WITH =
+  /^each of them enters with an additional \+1\/\+1 counter on it if it['’]s a creature and an additional loyalty counter on it if it['’]s a planeswalker\.$/i;
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
@@ -1290,6 +1297,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EXILE_ANY_NUMBER_OWN) &&
+      said(b, RETURN_EACH_OF_THEM_NEXT_END) &&
+      said(c, EACH_OF_THEM_ENTERS_WITH)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

@@ -19,7 +19,7 @@
  *   enters, whatever put it there (a resolving spell, an effect, a land played from the hand); the
  *   caller asks and calls again with `entersChosen` set, and the answer is stored on the new object.
  */
-import type { Ability, Zone } from '../ast/types';
+import type { Ability, EntryCounter, Zone } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type {
@@ -160,7 +160,7 @@ export interface MoveRequest {
    * The permanent enters with counters on it (CR 122.6, 614.1c): "return it to the battlefield with a -1/-1
    * counter on it" (Persist). Only for a move to the battlefield; the counters are on it as it enters.
    */
-  readonly withCounters?: { readonly counter: string; readonly count: number };
+  readonly withCounters?: EntryCounter | readonly EntryCounter[];
   /**
    * The face the new object has up, when it is not simply carried over: the face being cast when a
    * card moves to the stack (CR 709.3, 712.11b, 715.3), the face of a modal double-faced card played
@@ -868,8 +868,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       request.entersChosen ?? null,
     );
     if (request.withCounters !== undefined) {
-      const { counter, count } = request.withCounters;
-      counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
+      // Semester's End: an entry with `ifType` counts only when the permanent has the type as it enters (its card's types: a copy or an effect is not on it yet).
+      const entering = definitionOf(state, old.card ?? ('' as never)).faces[faceIndex];
+      const arrived = new Set(entering?.types ?? []);
+      for (const entry of Array.isArray(request.withCounters)
+        ? request.withCounters
+        : [request.withCounters as EntryCounter]) {
+        if (entry.ifType !== undefined && !arrived.has(entry.ifType)) continue;
+        counters = { ...counters, [entry.counter]: (counters[entry.counter] ?? 0) + entry.count };
+      }
     }
     // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
     // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
