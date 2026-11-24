@@ -83,6 +83,7 @@ import { UNEARTH_EXILE_ABILITY } from './derive-alt';
 import { settleDestruction } from './destroy-replacement';
 import { runDraw } from './draw';
 import { runDrawUpTo } from './draw-up-to';
+import { runVenture } from './dungeon';
 import {
   amountOf,
   gainLifeOf,
@@ -112,6 +113,7 @@ import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
+import { takeInitiative } from './initiative';
 import { costWithHandSizeX, lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
@@ -131,8 +133,6 @@ import { runMeld } from './meld';
 import { successorsOf } from './melded';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
-import { runVenture } from './dungeon';
-import { takeInitiative } from './initiative';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';

@@ -494,7 +494,10 @@ export interface DungeonView {
   readonly bottom: boolean;
 }
 
-function dungeonViewOf(d: { readonly dungeon: DungeonId; readonly room: UndercityRoom }): DungeonView {
+function dungeonViewOf(d: {
+  readonly dungeon: DungeonId;
+  readonly room: UndercityRoom;
+}): DungeonView {
   const card = DUNGEONS[d.dungeon];
   const room = card.rooms[d.room];
   return {

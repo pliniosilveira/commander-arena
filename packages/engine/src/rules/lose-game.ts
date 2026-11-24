@@ -10,8 +10,8 @@ import type { SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchSeat } from '../state/ops';
 import type { GameState } from '../state/types';
-import { leaveGame } from './leave-game';
 import { initiativeAfterLoss } from './initiative';
+import { leaveGame } from './leave-game';
 import { monarchAfterLoss } from './monarch';
 import { cannotLoseGame } from './player-protection';
 

@@ -7749,17 +7749,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.take?.withCounters !== undefined) {
         const w = e.take.withCounters;
         if (e.take.to !== 'battlefield') {
-          issue(out, `${path}.take.withCounters`, 'counters on entering are only for the battlefield');
+          issue(
+            out,
+            `${path}.take.withCounters`,
+            'counters on entering are only for the battlefield',
+          );
         }
         if (typeof w?.counter !== 'string' || w.counter === '') {
           issue(out, `${path}.take.withCounters.counter`, 'counter name must be non-empty');
         }
         if (!isCount(w?.count) || w.count < 1) {
-          issue(
-            out,
-            `${path}.take.withCounters.count`,
-            'counter count must be a positive integer',
-          );
+          issue(out, `${path}.take.withCounters.count`, 'counter count must be a positive integer');
         }
         if (w?.also !== undefined) {
           issue(out, `${path}.take.withCounters.also`, 'one kind of counter is put on');

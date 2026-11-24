@@ -85,6 +85,7 @@ import {
   riderOf,
   slotOf,
 } from './rules/graveyard-play';
+import { initiativeAfterLoss } from './rules/initiative';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
@@ -92,7 +93,6 @@ import { activateManaAbility } from './rules/mana-engine';
 import { sameCombination } from './rules/mana-outcomes';
 import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
-import { initiativeAfterLoss } from './rules/initiative';
 import { monarchAfterLoss } from './rules/monarch';
 import { answerResolutionPile } from './rules/pile-answer';
 import { grantPriority } from './rules/priority';
@@ -117,8 +117,8 @@ import {
   answerResolutionCounterPick,
   answerResolutionCreatureType,
   answerResolutionDevour,
-  answerResolutionDungeonRoom,
   answerResolutionDredge,
+  answerResolutionDungeonRoom,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,

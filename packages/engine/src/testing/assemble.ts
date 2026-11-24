@@ -356,7 +356,9 @@ export function assemble(
         : {}),
       ...(s.citysBlessing ? { citysBlessing: true as const } : {}),
       ...(s.speed === null ? {} : { speed: s.speed }),
-      ...(s.dungeon === null ? {} : { dungeon: { dungeon: 'undercity' as const, room: s.dungeon } }),
+      ...(s.dungeon === null
+        ? {}
+        : { dungeon: { dungeon: 'undercity' as const, room: s.dungeon } }),
     };
   });
 

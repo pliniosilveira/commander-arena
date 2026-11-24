@@ -6,9 +6,16 @@
 // designation, the venture triggers), 603.3 (triggers use the stack), 510.2 and 120.2 (combat damage), 101.4 (APNAP), 800.4 (a player leaving).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-initiative.ts) or real fixtures. The venture itself is tested in scenario-xx-undercity.test.ts.
 import { describe, expect, test } from 'vitest';
-import { type GameEvent, getView, isFeatureSupported, syntheticCard, validateCard } from '../src/index';
+import {
+  type GameEvent,
+  getView,
+  isFeatureSupported,
+  syntheticCard,
+  validateCard,
+} from '../src/index';
 import { findInitiativeTriggers } from '../src/rules/initiative';
 import { createDriver, type ScenarioGame, scenario } from '../src/testing/index';
+import { settle } from './dungeon-helpers';
 
 const HERALD = 'SYNTHETIC Initiative Herald'; // {2}{W} 2/2: when it enters, you take the initiative
 const FLASH = 'SYNTHETIC Initiative Flash'; // {1}{W} instant: you take the initiative
@@ -21,34 +28,19 @@ type Builder = ReturnType<typeof scenario>;
 
 /** `seats` players, each with a library of Plains (so Secret Entrance has a basic land to find). */
 function table(seats: 2 | 3 | 4, build: (b: Builder) => Builder = (b) => b): Builder {
-  let b = scenario({ seats }).seat(0).life(20).library(...FILLER);
-  for (let seat = 1; seat < seats; seat += 1) b = b.seat(seat).life(20).library(...FILLER);
+  let b = scenario({ seats })
+    .seat(0)
+    .life(20)
+    .library(...FILLER);
+  for (let seat = 1; seat < seats; seat += 1)
+    b = b
+      .seat(seat)
+      .life(20)
+      .library(...FILLER);
   return build(b);
 }
 
-/** Passes priority until the stack is empty again. A room question is answered with the first room offered. */
-function resolveAll(g: ScenarioGame): void {
-  for (let i = 0; i < 40; i += 1) {
-    const d = g.state.pending;
-    if (d?.kind === 'chooseOption' && d.purpose === 'dungeonRoom') {
-      g.act(d.seat).chooseOption(d.options[0] ?? '');
-      continue;
-    }
-    if (d?.kind === 'chooseCards') {
-      g.act(d.seat).chooseCards(...d.legal.slice(0, d.min).map((id) => ({ id })));
-      continue;
-    }
-    if (d?.kind === 'targets') {
-      const first = d.specs[0]?.legal[0];
-      if (first === undefined) throw new Error('no legal target');
-      g.act(d.seat).chooseTargets(first.kind === 'player' ? { player: first.seat } : { id: first.id });
-      continue;
-    }
-    if (g.state.stack.length === 0 && d?.kind === 'priority') return;
-    g.pass();
-  }
-  throw new Error('the stack did not settle');
-}
+const resolveAll = (g: ScenarioGame): void => void settle(g);
 
 describe('taking the initiative (CR 726.1, 726.3, 726.5)', () => {
   test('there is no initiative until an effect makes a player take it', () => {
@@ -73,7 +65,9 @@ describe('taking the initiative (CR 726.1, 726.3, 726.5)', () => {
     const top = getView(g.state, 1).stack[0];
     expect(top?.name).toBe('The initiative');
     expect(top?.abilitySource).toBeUndefined();
-    expect(top?.oracleText).toBe('Whenever a player takes the initiative, that player ventures into Undercity.');
+    expect(top?.oracleText).toBe(
+      'Whenever a player takes the initiative, that player ventures into Undercity.',
+    );
     expect(top?.controller).toBe(0);
     expect(getView(g.state, 1).initiative).toBe(0);
     resolveAll(g);
@@ -95,7 +89,9 @@ describe('taking the initiative (CR 726.1, 726.3, 726.5)', () => {
   });
 
   test('taking it while already holding it changes nothing but still ventures (CR 726.5)', () => {
-    const g = table(2, (b) => b.seat(0).hand(FLASH).battlefield('Plains', { count: 2 }).dungeon('forge'))
+    const g = table(2, (b) =>
+      b.seat(0).hand(FLASH).battlefield('Plains', { count: 2 }).dungeon('forge'),
+    )
       .at('precombatMain', { initiative: 0 })
       .build();
     g.act(0).cast(FLASH, { pay: true });
@@ -297,7 +293,9 @@ describe('creatures deal combat damage to the player who has the initiative (CR 
   });
 
   test('creatures of two players deal damage to the holder together: one trigger for each player, the holder orders them and the last to resolve keeps it', () => {
-    const g = table(3, (b) => b.seat(0).battlefield(BEARS).battlefield(ELVES).seat(2).battlefield('Giant Spider'))
+    const g = table(3, (b) =>
+      b.seat(0).battlefield(BEARS).battlefield(ELVES).seat(2).battlefield('Giant Spider'),
+    )
       .at('precombatMain', { initiative: 1, active: 0, turn: 3 })
       .build();
     const damage = (label: string, seat: number): GameEvent => ({
@@ -363,7 +361,9 @@ describe('the holder leaves the game (CR 726.4)', () => {
   });
 
   test('the next player in turn order skips a player who has left already (four seats)', () => {
-    const g = table(4).at('precombatMain', { initiative: 1, active: 1, turn: 2, priority: 2 }).build();
+    const g = table(4)
+      .at('precombatMain', { initiative: 1, active: 1, turn: 2, priority: 2 })
+      .build();
     g.act(2).concede();
     g.expect.initiative(1);
     concedeAs(g, 1);
@@ -381,7 +381,9 @@ describe('the holder leaves the game (CR 726.4)', () => {
   });
 
   test('a holder who loses the game by an effect (life 0) hands it on as well', () => {
-    const g = table(3, (b) => b.seat(1).life(0)).at('precombatMain', { initiative: 1, active: 0 }).build();
+    const g = table(3, (b) => b.seat(1).life(0))
+      .at('precombatMain', { initiative: 1, active: 0 })
+      .build();
     g.pass();
     g.expect.hasLost(1, true);
     g.expect.initiative(0);
