@@ -1014,6 +1014,8 @@ export interface IrCondition extends IrNode {
     // Stage P33 (D-150): "none of those creatures attacked you" is `not` of this (CR 508.1b): at least one creature of the attackers that
     // triggered the ability was declared as attacking its controller as a player
     | { readonly kind: 'attackersAttackedYou' }
+    // Firkraag (CR 508.1d, 701.15b): "that creature had to attack this combat", the intervening "if" of a trigger about a creature
+    | { readonly kind: 'subjectHadToAttack' }
     // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control": at least that many of the attackers that triggered the ability were
     // declared attacking its controller or a planeswalker its controller controlled
     | { readonly kind: 'attackersAtYou'; readonly atLeast: number }
@@ -1779,6 +1781,8 @@ export interface IrTrigger extends IrNode {
   readonly each?: true;
   /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */
   readonly eachAttackedPlayer?: true;
+  /** 'attackBatch' "Whenever one or more Dragons you control attack an opponent" (Firkraag, CR 508.1b, 508.6): once for each opponent attacked, "that player" being that opponent. */
+  readonly eachAttackedOpponent?: true;
 }
 
 export interface IrRestriction extends IrNode {

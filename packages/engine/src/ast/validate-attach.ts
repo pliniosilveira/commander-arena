@@ -48,6 +48,7 @@ export function checkStaticSubject(
   keywords = false,
   allowPair = false,
   allowGoaded = false,
+  allowSourcePower = false,
 ): void {
   switch (s?.kind) {
     case 'this':
@@ -81,7 +82,15 @@ export function checkStaticSubject(
         filterSome(s.filter, (f) => {
           // `modified` (issue 345, CR 700.9) is read from the counters and attachments, which no layer changes. `goaded` (CR 701.15b) is read after the layers by a restriction
           // (`derive-statics.ts` applies it once every goad of a static ability has been), never by an ability that changes characteristics.
-          const { attacking: _attacking, modified: _modified, goaded, ...rest } = f;
+          const {
+            attacking: _attacking,
+            modified: _modified,
+            goaded,
+            powerLessThanSource,
+            ...rest
+          } = f;
+          // CR 701.15a (Baeloth Barrityl): only the group a static ability goads may compare power with its source: `derive` reads the source's power before the goad pass.
+          if (powerLessThanSource !== undefined && !allowSourcePower) return true;
           return (
             readsCombatOrSourceBesidesCommander(rest) || (goaded !== undefined && !allowGoaded)
           );

@@ -98,6 +98,22 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'eachAttackedPlayer does not go with attackedEnchantedPlayer',
         );
       }
+      if (t.eachAttackedOpponent !== undefined && t.eachAttackedOpponent !== true) {
+        issue(out, `${path}.eachAttackedOpponent`, 'eachAttackedOpponent is true when present');
+      }
+      if (
+        t.eachAttackedOpponent === true &&
+        (t.eachAttackedPlayer === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackingYourOpponents === true ||
+          t.who !== 'you')
+      ) {
+        issue(
+          out,
+          `${path}.eachAttackedOpponent`,
+          "eachAttackedOpponent is about the creatures of 'you' and does not go with eachAttackedPlayer, attackedEnchantedPlayer or attackingYourOpponents",
+        );
+      }
       if (t.includesSource !== undefined && t.includesSource !== true) {
         issue(out, `${path}.includesSource`, 'includesSource is true when present');
       }

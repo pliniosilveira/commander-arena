@@ -707,6 +707,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
+        ...(t.eachAttackedOpponent === true ? { eachAttackedOpponent: true as const } : {}),
         ...(t.includesSource === true ? { includesSource: true as const } : {}),
         ...(t.attackingYourOpponents === true ? { attackingYourOpponents: true as const } : {}),
       });
@@ -881,6 +882,10 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       selector: { kind: 'controllerOf', of: { kind: 'triggerSubject' } },
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
+  }
+  // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked, which the engine gives as the trigger player.
+  if (only.event === 'attackBatch' && only.eachAttackedOpponent === true) {
+    return { selector: { kind: 'triggerPlayer' }, needs: ['selector:triggerPlayer'] };
   }
   if (only.actor?.det === 'you') {
     return { selector: { kind: 'you' }, needs: ['selector:you'] };
@@ -1669,6 +1674,7 @@ function lowerTriggeredAbility(
         t.who === 'you' &&
         t.attackedEnchantedPlayer !== true &&
         t.eachAttackedPlayer !== true &&
+        t.eachAttackedOpponent !== true &&
         (t.what === undefined ||
           JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
     );

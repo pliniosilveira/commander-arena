@@ -2409,6 +2409,11 @@ export interface AttackerState {
    * deals no combat damage) once the permanent leaves, changes controller or protector, or stops being a planeswalker or battle (CR 506.4).
    */
   readonly defender?: SeatId;
+  /**
+   * The creature was required to attack as the attackers were declared (CR 508.1d, 701.15b): an effect or a requirement ("attacks each combat if able", goad) applied to it
+   * and it was able to attack. Read by "if that creature had to attack this combat".
+   */
+  readonly hadToAttack?: true;
   /** The attacked planeswalker or battle was removed from combat (CR 506.4): the creature attacks no player, planeswalker or battle any more (CR 506.4c). */
   readonly targetGone?: true;
 }

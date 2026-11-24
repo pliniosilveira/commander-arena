@@ -716,7 +716,11 @@ function occurrences(
     }
     case 'attackBatch':
       // CR 508.1b, 508.6, 603.2c (Demonic Covenant): "attack a player": one occurrence for each player attacked as a player, with the creatures that attack that player.
-      if (event.kind === 'attackersDeclared' && trigger.eachAttackedPlayer === true) {
+      // "attack an opponent" (Firkraag): the same, and "that player" is the player attacked.
+      if (
+        event.kind === 'attackersDeclared' &&
+        (trigger.eachAttackedPlayer === true || trigger.eachAttackedOpponent === true)
+      ) {
         const players = [
           ...new Set(
             event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
@@ -725,7 +729,7 @@ function occurrences(
         return players.map((player) => ({
           subject: null,
           seat: event.seat,
-          player: event.seat,
+          player: trigger.eachAttackedOpponent === true ? player : event.seat,
           attackers: event.attackers
             .filter((a) => a.target.kind === 'player' && a.target.seat === player)
             .map((a) => a.object),
@@ -1086,6 +1090,10 @@ function matches(
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 508.6 (Firkraag): "attack an opponent": the player attacked is an opponent of the controller of this ability.
+      if (trigger.eachAttackedOpponent === true && occ.attacked?.[0] === candidate.controller) {
+        return false;
+      }
       // D-629 (CR 303.4m, 508.1b): "Whenever enchanted player is attacked": the Aura's player was declared as attacked, as a player and not through a planeswalker.
       if (
         trigger.attackedEnchantedPlayer === true &&

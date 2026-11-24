@@ -3909,6 +3909,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'subjectControlledByYou':
+    case 'subjectHadToAttack':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
       break;
     case 'subjectStat':
@@ -5380,6 +5381,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectHadToAttack':
     case 'subjectStat':
     case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
