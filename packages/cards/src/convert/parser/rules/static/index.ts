@@ -33,6 +33,7 @@ import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRANT_STATIC_RULES } from './grants';
+import { GROUP_LOSES_STATIC_RULES } from './group-loses';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
 import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
@@ -159,6 +160,8 @@ export const STATIC_RULES = [
   ...HASHATON_G2_STATIC_RULES,
   // Everlasting Torment: "Players can't gain life.", "Damage can't be prevented.", "All damage is dealt as though its source had wither."
   ...WORLD_RULES_STATIC_RULES,
+  // Sludge Monster: "Non-Horror creatures with slime counters on them lose all abilities and have base power and toughness 2/2."
+  ...GROUP_LOSES_STATIC_RULES,
   // Hashaton deck, group 6 (D-377): "You and creatures you control have protection from the chosen card type."
   ...HASHATON_G6_STATIC_RULES,
   ...SHALAI_STATIC_RULES,
