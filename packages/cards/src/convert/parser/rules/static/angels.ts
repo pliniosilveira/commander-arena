@@ -313,6 +313,61 @@ export const STATIC_PREVENT_DAMAGE_AROUND = defineRule<IrStatic>({
 });
 
 /**
+ * `static.draw-limit`: "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils; CR 121.2b, 604.1): the opponents of the controller draw at most that many cards
+ * in a turn. The engine's `drawLimit`. Only "each opponent" or "your opponents" and a number of cards written as a word or a digit; "each player" is `players`. Not read: "more than one card
+ * each turn" with another span ("each combat"), "you can't draw", "can't draw cards", a condition, "unless".
+ */
+export const STATIC_DRAW_LIMIT = defineRule<IrStatic>({
+  id: 'static.draw-limit',
+  family: 'static',
+  leading: ['each', 'your', 'players'],
+  cites: ['CR 121.2b (Drawing a Card)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    "Each opponent can't draw more than one card each turn.",
+    'Each opponent can’t draw more than one card each turn.',
+    "Your opponents can't draw more than one card each turn.",
+    "Each player can't draw more than two cards each turn.",
+  ],
+  rejects: [
+    "Each opponent can't draw more than one card each turn",
+    "Each opponent can't draw more than one card each combat.",
+    "Each opponent can't draw more than one card.",
+    "Each opponent can't draw more than zero cards each turn.",
+    "You can't draw more than one card each turn.",
+    "Each opponent can't draw more than one card each turn unless you control a Wizard.",
+    "Each opponent can't draw more than one cards each turn.",
+    "Each opponent can't draw cards each turn.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(pattern(/(each opponent|your opponents|each player)(?![\p{L}\p{N}])/iu)),
+      pattern(
+        /\s+can['’]t draw more than (one|two|three|1|2|3) (card|cards) each turn(?![\p{L}\p{N}])/iu,
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [who, tail] = r.value;
+    const word = (tail[1] ?? '').toLowerCase();
+    const max = word === 'one' || word === '1' ? 1 : word === 'two' || word === '2' ? 2 : 3;
+    // "one card" and "N cards" agree (CR 121.2b is about the number of cards).
+    if ((max === 1) !== ((tail[2] ?? '').toLowerCase() === 'card')) return fail(ctx, pos);
+    const group = (who.value[1] ?? '').toLowerCase() === 'each player' ? 'players' : 'opponents';
+    return {
+      ok: true,
+      value: staticOf(
+        'static.draw-limit',
+        subjectNoun('self', '~', who.span, 'static.draw-limit'),
+        [{ kind: 'drawLimit', who: group, max }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `static.prevent-damage-to-self-remove-counter`: "If ~ would be dealt damage, prevent that damage and remove a +1/+1 counter from it."
  * (issue 159, Unbreathing Horde; CR 615.1, 615.6, 122.1): a static ability of the permanent that prevents all the damage dealt to it and
  * removes one counter for each damage event it prevents. Only a power and toughness counter, one of them, from the permanent itself.
@@ -463,6 +518,7 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_CANT_LOSE_WIN,
   STATIC_PREVENT_DAMAGE_TO_SELF,
   STATIC_PREVENT_DAMAGE_AROUND,
+  STATIC_DRAW_LIMIT,
   STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
 ].map(quietly);

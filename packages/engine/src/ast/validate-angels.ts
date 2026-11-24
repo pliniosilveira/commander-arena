@@ -319,6 +319,19 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         );
       }
       return true;
+    case 'drawLimit':
+      // CR 121.2b: the opponents of the controller, or every player, and a whole number of cards of at least 1.
+      if (s.who !== 'opponents' && s.who !== 'players') {
+        issue(
+          out,
+          `${path}.who`,
+          'drawLimit is said of the opponents of the controller or of the players',
+        );
+      }
+      if (!isCount(s.max) || s.max < 1) {
+        issue(out, `${path}.max`, 'the most cards drawn in a turn is a whole number of at least 1');
+      }
+      return true;
     case 'cantGainLife':
       // CR 119.7 (D-363): the opponents of the controller, or every player.
       if (s.who !== 'opponents' && s.who !== 'players') {

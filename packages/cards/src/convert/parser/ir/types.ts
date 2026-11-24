@@ -2142,6 +2142,10 @@ export type IrStaticEffect =
       readonly events: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
     }
   /**
+   * "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils, CR 121.2b): the engine's `drawLimit`. The subject is `~`.
+   */
+  | { readonly kind: 'drawLimit'; readonly who: 'opponents' | 'players'; readonly max: number }
+  /**
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.
    */

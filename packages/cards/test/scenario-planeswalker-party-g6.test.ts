@@ -49,6 +49,11 @@ describe('Mobilized District', () => {
 
   test("a nonlegendary creature and an opponent's legendary creature take nothing off", () => {
     const g = build([BEARS], 2);
-    expect(g.act(0).try.activate(DISTRICT.name, { ability: 1, pay: true }).ok).toBe(false);
+    const id = g.id(DISTRICT.name);
+    expect(
+      g
+        .legalActions(0)
+        .some((a) => a.kind === 'activate' && a.object === id && a.abilityIndex === 1),
+    ).toBe(false);
   });
 });

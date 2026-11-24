@@ -1450,6 +1450,7 @@ describe('unmatched abilities', () => {
       'static.cant-lose-win',
       'static.prevent-damage-to-self',
       'static.prevent-damage-around',
+      'static.draw-limit',
       'static.prevent-damage-to-self-remove-counter',
       'static.cant-cast-early',
       'static.block-tax',

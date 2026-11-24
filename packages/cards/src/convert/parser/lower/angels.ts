@@ -67,6 +67,7 @@ export type AngelStaticEffect = Extract<
       | 'damageAsThoughWither'
       | 'preventDamageToThis'
       | 'preventDamageAround'
+      | 'drawLimit'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
   }
@@ -82,6 +83,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'damageAsThoughWither' ||
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'preventDamageAround' ||
+    effect.kind === 'drawLimit' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
   );
@@ -210,6 +212,16 @@ export function lowerAngelStatic(
         });
         break;
       }
+      case 'drawLimit': {
+        if (subject.det !== 'self') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:drawLimit']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'drawLimit', who: effect.who, max: effect.max },
+        });
+        break;
+      }
       case 'preventDamageAround': {
         if (subject.det !== 'self') return failure(ability);
         const blocked = missingFeatures(['ability:static', 'static:preventDamageAround']);
@@ -255,6 +267,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:damageAsThoughWither',
   'static:preventDamageToThis',
   'static:preventDamageAround',
+  'static:drawLimit',
   'static:cantCastThis',
   'condition:ownTurnNumber',
   'replacement:othersEnterWithCounters',

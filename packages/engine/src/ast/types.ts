@@ -8168,6 +8168,13 @@ export type StaticEffect =
    */
   | { readonly kind: 'cantGainLife'; readonly who: 'opponents' | 'players' }
   /**
+   * "Each opponent can't draw more than one card each turn." (CR 121.2b, 604.1; Narset, Parter of Veils): while the permanent has the ability, no player `who` names (the opponents of its
+   * controller, or every player) draws more than `max` cards in a turn. It applies to individual card draws, so an instruction to draw several cards draws up to the limit and the
+   * draws past it do not happen (no card moves, no `cardDrawn` event, no loss for an empty library). The draws counted are those the player made this turn, including the ones made before the
+   * permanent entered (`SeatState.cardsDrawnThisTurn`). Read from the abilities of the permanents on the battlefield after the layers; a permanent that lost its abilities limits nobody.
+   */
+  | { readonly kind: 'drawLimit'; readonly who: 'opponents' | 'players'; readonly max: number }
+  /**
    * "Damage can't be prevented." (CR 615.12, 101.2, 604.1; Everlasting Torment): while the permanent has the ability, no damage is prevented, whoever deals it and
    * whoever or whatever it is dealt to. The prevention effects still apply to the damage event, once each (CR 615.12a), and prevent nothing, but their additional
    * effects take place (a counter a static prevention removes); a shield is not reduced and none is reported as `damagePrevented`. Read from the abilities of the
