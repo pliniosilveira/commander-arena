@@ -1793,6 +1793,13 @@ export type Cost =
        * the filter names no zone, owner or stack kind.
        */
       readonly among?: ObjectFilter;
+      /**
+       * "Remove a counter from a nonland permanent you control" (O'aka, Traveling Merchant; Scholar of New Horizons; CR 118.3, 122.1, 602.2b): with `among`, one counter of any kind
+       * comes off one permanent the filter matches (the player's own); the player chooses the permanent and the kind together (a `chooseOption` decision of purpose `counterPick` and
+       * `forCost`, not asked when only one counter could be taken). `counter` is the empty string and `count` is 1. The cost can't be paid when none of those permanents has a counter.
+       * The same limits as `among` hold (an ordinary activated ability, one such cost).
+       */
+      readonly anyKind?: true;
     }
   /**
    * The loyalty symbol of a loyalty ability (CR 606.2, 606.4, 606.5, D-200): `change` is the number of loyalty counters the permanent
@@ -3855,7 +3862,17 @@ export type Effect =
    * permanent can't have (CR 122.6) can't be chosen. Nothing is moved when the two are the same permanent, the first has no counter the second can have, or either is no longer on the
    * battlefield as the effect runs (CR 122.5).
    */
-  | { readonly kind: 'moveCounter'; readonly from: ObjectRef; readonly to: ObjectRef }
+  | {
+      readonly kind: 'moveCounter';
+      readonly from: ObjectRef;
+      readonly to: ObjectRef;
+      /**
+       * "Move any number of counters from target permanent you control onto a second target permanent you control" (Resourceful Defense; CR 122.5, 608.2d): the controller moves
+       * counters one at a time, choosing the kind each time and when to stop (a last option "Done" of the same `counterPick` decision), as many as the first permanent has and the
+       * second can have, none included. Without it exactly one counter moves.
+       */
+      readonly anyNumber?: true;
+    }
   /**
    * "Remove any number of counters from among permanents on the battlefield" and "Remove up to three counters from target permanent" (CR 122.1, 608.2d; Eventide's Shadow, Glissa
    * Sunslayer): the controller takes counters of any kind off the permanents `objects` names, one at a time, choosing the permanent and the kind each time (a `chooseOption` decision of
@@ -5124,6 +5141,11 @@ export type ManaProduction =
       readonly kind: 'couldProduce';
       readonly lands: ObjectFilter;
       readonly anyType?: boolean;
+      /**
+       * "If this creature has a +1/+1 counter on it, add three mana of that type instead" (Incubation Druid; CR 106.7, 605.3b): this many mana (2 or more), all of the one type the
+       * player chooses; one mana when left out. Written as the production an `instead` gives.
+       */
+      readonly count?: number;
     }
   /**
    * "Add {R}{R}, {R}{W}, or {W}{W}." (a filter land, D-099): exactly one of the listed combinations
@@ -5777,6 +5799,12 @@ export type Trigger =
        * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
        */
       readonly attackedEnchantedPlayer?: true;
+      /**
+       * "Whenever an opponent attacks you" (CR 508.1b, 603.2; Lulu, Stern Guardian): only when at least one creature of the declaration was declared as attacking the controller of this
+       * ability as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the
+       * attacking player.
+       */
+      readonly attackedYou?: true;
       /**
        * "Whenever one or more Demons you control attack a player" (CR 508.1b, 508.6, 603.2c, Demonic Covenant): one occurrence for each player the declaration attacks (as a player: an
        * attack on a planeswalker or a battle is not an attack on its controller or protector), counting only the creatures declared as attacking that player: the ability triggers once for

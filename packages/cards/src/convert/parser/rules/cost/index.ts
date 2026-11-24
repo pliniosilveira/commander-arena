@@ -19,6 +19,7 @@ import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
 import { PAY_ENERGY_COST_RULES } from './pay-energy';
+import { REMOVE_ANY_COUNTER_COST_RULES } from './remove-any-counter';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -962,4 +963,5 @@ export const COST_RULES = [
   ...UNTAP_PERMANENTS_COST_RULES,
   // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
   ...FEDERATION_D_COST_RULES,
+  ...REMOVE_ANY_COUNTER_COST_RULES,
 ];

@@ -51,12 +51,32 @@ describe('effect.add-mana: one mana that a land could produce (CR 106.7)', () =>
     ).toEqual([manaAbility([TAP], { kind: 'couldProduce', lands: LANDS_YOU })]);
   });
 
+  test('"If ~ has a +1/+1 counter on it, add three mana of that type instead" (Incubation Druid, CR 106.7, 608.2c) is the engine\'s `instead` with a counted "could produce"', () => {
+    expect(
+      abilities(
+        '{T}: Add one mana of any type that a land you control could produce. If ~ has a +1/+1 counter on it, add three mana of that type instead.',
+      ),
+    ).toMatchObject([
+      {
+        kind: 'mana',
+        production: { kind: 'couldProduce', lands: LANDS_YOU, anyType: true },
+        instead: {
+          condition: { kind: 'thisMatches', filter: { hasCounter: '+1/+1' } },
+          production: { kind: 'couldProduce', lands: LANDS_YOU, anyType: true, count: 3 },
+        },
+      },
+    ]);
+  });
+
+  // "that type" counts only after a "could produce" sentence; on its own it is another thing.
   test.each([
-    // The rider of Fellwar Stone's cousin: the engine has no "if it has a counter, add more instead".
-    [
-      '{T}: Add one mana of any type that a land you control could produce. If ~ has a +1/+1 counter on it, add three mana of that type instead.',
-      'If ~ has a +1/+1 counter on it, add three mana of that type instead.',
-    ],
+    '{T}: Add one mana of any color. If ~ has a +1/+1 counter on it, add three mana of that type instead.',
+    '{T}: Add {G}. If ~ has a +1/+1 counter on it, add three mana of that type instead.',
+  ])('%s stays unread', (text) => {
+    expect(dropped(text, 'artifact')).toBeDefined();
+  });
+
+  test.each([
     [
       '{T}: Add one mana of any color that a creature you control could produce.',
       'that a creature you control could produce.',

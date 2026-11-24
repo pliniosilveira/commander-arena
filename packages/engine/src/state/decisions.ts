@@ -898,6 +898,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'chooseOpponent'
     // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
     | 'protector';
+  /** For purpose `'counterPick'` that pays a cost ("Remove a counter from a nonland permanent you control", CR 118.3, 122.1): the activation can be taken back with `cancel` (CR 733). */
+  readonly forCost?: true;
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second

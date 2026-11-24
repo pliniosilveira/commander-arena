@@ -1097,6 +1097,8 @@ export type IrCost = IrNode &
         readonly counter: string;
         readonly count: number;
         readonly what: IrNoun;
+        /** "Remove a counter from a nonland permanent you control" (CR 118.3, 122.1): a counter of any kind; `counter` is empty and `count` 1. */
+        readonly anyKind?: true;
       }
     | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
@@ -1205,7 +1207,12 @@ export interface IrManaSpec extends IrNode {
         readonly kind: 'couldProduce';
         readonly whose: 'you' | 'opponent';
         readonly anyType: boolean;
-      };
+      }
+    /**
+     * "three mana of that type" (Incubation Druid, CR 106.7, 605.3b): `count` mana of the one type the sentence before chose ("one mana of any type that a land you control could
+     * produce"); lowered only as the second sentence of a mana ability that says "instead", where it gives that ability's production a `count`.
+     */
+    | { readonly kind: 'couldProduceThatType'; readonly count: number };
 }
 
 /**
@@ -1687,6 +1694,8 @@ export interface IrTrigger extends IrNode {
   readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
+  /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
+  readonly attackedYou?: true;
   /**
    * 'lifeGained' and 'lifeLost': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.

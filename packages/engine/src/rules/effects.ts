@@ -3724,7 +3724,8 @@ function runEffect(
             mode: 'move',
             objects: [fromId],
             to: toId,
-            left: 1,
+            // "Move any number of counters" (Resourceful Defense): no limit, and the controller may stop.
+            left: effect.anyNumber === true ? null : 1,
             removed: 0,
             chosen: null,
           },

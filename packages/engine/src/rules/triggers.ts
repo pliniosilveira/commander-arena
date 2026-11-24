@@ -1065,6 +1065,10 @@ function matches(
       ) {
         return false;
       }
+      // CR 508.1b: "Whenever an opponent attacks you": the controller of the ability was declared as attacked, as a player.
+      if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
+        return false;
+      }
       return attackBatchCount(state, trigger, occ.attackers ?? [], ctx) >= trigger.atLeast;
     }
     case 'chapter':

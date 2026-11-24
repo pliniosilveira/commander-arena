@@ -605,7 +605,13 @@ function lowerManaInstead(
   if (mana?.kind !== 'mana') return failure(ability);
   const condition = lowerCondition(second.condition, false, newContext('ability', faceTypes));
   if (!condition.ok) return condition;
-  const production = lowerMana(spec);
+  // "add three mana of that type instead" (Incubation Druid, CR 106.7, 605.3b): the first sentence's "could produce" production, with all `count` mana of the type chosen.
+  const production =
+    spec.what.kind === 'couldProduceThatType'
+      ? mana.production.kind === 'couldProduce' && mana.production.count === undefined
+        ? { ...mana.production, count: spec.what.count }
+        : null
+      : lowerMana(spec);
   if (production === null) return failure(ability);
   const blocked = gate(ability, [
     'ability:manaInstead',

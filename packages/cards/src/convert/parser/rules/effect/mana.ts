@@ -137,6 +137,7 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add one mana of any color among creature cards in your graveyard',
     'add one mana of any color that a land an opponent controls could produce',
     'add one mana of any type that a land you control could produce',
+    'add three mana of that type',
     // Stage P33 (D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered.
     'add one mana of the chosen color',
     // Stage P34 (D-152, CR 106.1b, 605.3b): two mana each of a color chosen on its own; the fixed mana once for each of a count (CR 106.1).
@@ -185,6 +186,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {2}',
     'add one mana of any type that a land an opponent controls could produce, then draw a card',
     'add one mana of any color that lands you control could produce',
+    'add one mana of that type',
+    'add five mana of that type',
+    'add three mana of that types',
     'add one mana of any color that a creature you control could produce',
     'add one mana of any color that a land you could produce',
     'add one mana in any combination of colors',
@@ -234,6 +238,11 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
             })),
             // Before "any color": the same words start it.
             COULD_PRODUCE,
+            // Incubation Druid (CR 106.7, 605.3b): after that sentence, "three mana of that type instead": all of the one type chosen.
+            map(pattern(/(two|three|four) mana of that type(?![\p{L}\p{N}])/iu), (m) => ({
+              kind: 'couldProduceThatType' as const,
+              count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
+            })),
             // Stage P32 (D-147, CR 106.1b): "two mana of any one color" is two mana of one color the player chooses.
             map(pattern(/(two|three) mana of any one color(?![\p{L}\p{N}])/iu), (m) => ({
               kind: 'anyColor' as const,

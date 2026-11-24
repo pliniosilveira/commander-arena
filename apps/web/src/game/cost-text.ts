@@ -221,6 +221,8 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'removeCounters':
       // CR 118.3, 122.1: "Remove two +1/+1 counters from among creatures you control".
       if (cost.among !== undefined) {
+        // O'aka, Traveling Merchant: "Remove a counter from a nonland permanent you control".
+        if (cost.anyKind === true) return `Remove a counter from among ${amongWhat(cost.among)}`;
         return `Remove ${countersTaken(cost.counter, cost.count, true)} from among ${amongWhat(cost.among)}`;
       }
       return `Remove ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)}`;
