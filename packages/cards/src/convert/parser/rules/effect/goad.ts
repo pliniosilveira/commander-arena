@@ -52,6 +52,7 @@ export const EFFECT_GOAD = defineRule<Clauses>({
           'noun.target-permanent',
           'noun.it',
           'noun.each-permanent-of-target-player',
+          'noun.all-permanents-of-target-player',
           // Riders of Rohan deck, group B (Taunt from the Rampart): "goad all creatures your opponents control".
           'noun.all-permanents',
           'noun.each-permanent',

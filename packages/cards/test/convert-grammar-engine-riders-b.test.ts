@@ -6,17 +6,10 @@ import { describe, expect, test } from 'vitest';
 import { real } from './agatha-helpers';
 import { parsed } from './convert-grammar-helpers';
 
-const BEARS = 'Grizzly Bears';
 const FILLER = Array.from({ length: 14 }, () => 'Island');
 
 const DEFECTOR = real('Humble Defector');
 const FIELD = real('Field of Ruin');
-const TAUNT = real('Taunt from the Rampart');
-const VIGILANT = parsed('SYNTHETIC Vigilant Guard', 'Creature — Human Soldier', 'Vigilance', {
-  manaCost: '{1}',
-  power: '2',
-  toughness: '2',
-});
 // SYNTHETIC nonbasic lands: a Plains-less "Tower" with an ability, and a basic-typed land that is not basic.
 const TOWER = parsed('SYNTHETIC Tower', 'Land', '{T}: Add {C}.');
 const SNOW_TOWER = parsed('SYNTHETIC Snow Tower', 'Snow Land — Forest', '{T}: Add {G}.');

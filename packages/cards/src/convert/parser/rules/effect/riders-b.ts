@@ -7,13 +7,13 @@ import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
 /**
- * `effect.restrict-those`: "until your next turn, those creatures can't block" (Taunt from the Rampart: "Goad all creatures your opponents control. Until your next turn, those
+ * `effect.restrict-those-until-next-turn`: "until your next turn, those creatures can't block" (Taunt from the Rampart: "Goad all creatures your opponents control. Until your next turn, those
  * creatures can't block."; CR 611.2a, 611.2c, 500.1, 509.1b). The creatures are the group the sentence before it named, as that sentence left them (the lowering reads it from there
  * and refuses the sentence after any other); they can't block until the next turn of the controller of the effect begins. Not read: another restriction, another duration, "this turn",
  * another subject ("they", "those creatures you control", "target creatures"), a singular.
  */
 export const EFFECT_RESTRICT_THOSE = defineRule<Clauses>({
-  id: 'effect.restrict-those',
+  id: 'effect.restrict-those-until-next-turn',
   family: 'effect',
   leading: ['until'],
   cites: [
@@ -40,20 +40,20 @@ export const EFFECT_RESTRICT_THOSE = defineRule<Clauses>({
     "until the end of your next turn, those creatures can't block",
   ],
   parse: single(
-    'effect.restrict-those',
+    'effect.restrict-those-until-next-turn',
     spanned(pattern(/until your next turn, those creatures can['’]t block(?![\p{L}\p{N}])/iu)),
     (found) => {
       const kind: IrArg = {
         kind: 'restrictionKind',
         restriction: 'cantBlock',
         span: found.span,
-        rule: 'effect.restrict-those',
+        rule: 'effect.restrict-those-until-next-turn',
       };
       const duration: IrDuration = {
         kind: 'duration',
         scope: 'untilYourNextTurn',
         span: found.span,
-        rule: 'effect.restrict-those',
+        rule: 'effect.restrict-those-until-next-turn',
       };
       return { verb: 'restrictThose', args: { restriction: kind }, duration };
     },
