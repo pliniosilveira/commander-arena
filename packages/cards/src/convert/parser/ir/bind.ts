@@ -411,6 +411,8 @@ class Binder {
   ): IrCondition | undefined {
     const test = condition?.test;
     if (condition === undefined || test?.kind !== 'objectMatches') return condition;
+    // "When ~ dies, if it was a creature, ..." (Enduring Tenacity): "it" is the card itself, which the lowering reads as `thisMatches`, not a permanent the event is about.
+    if (trigger.subject?.det === 'self') return condition;
     const who = this.noun(test.who);
     const hostLeft =
       (trigger.event === 'dies' || trigger.event === 'leavesBattlefield') &&
