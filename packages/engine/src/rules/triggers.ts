@@ -228,6 +228,14 @@ function occurrences(
         ) {
           return [];
         }
+        // CR 603.6a, 400.7, 406.1 (Faldorn): "enters from exile": the zone the permanent moved from.
+        if (
+          trigger.kind === 'entersBattlefield' &&
+          trigger.fromExile === true &&
+          event.fromZone !== 'exile'
+        ) {
+          return [];
+        }
         const entered = state.objects[event.to];
         return [
           {
@@ -239,7 +247,10 @@ function occurrences(
       }
       // A token was never in a graveyard (issue 102).
       return event.kind === 'tokenCreated' &&
-        !(trigger.kind === 'entersBattlefield' && trigger.fromGraveyard === true)
+        !(
+          trigger.kind === 'entersBattlefield' &&
+          (trigger.fromGraveyard === true || trigger.fromExile === true)
+        )
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
     case 'entersBatch':

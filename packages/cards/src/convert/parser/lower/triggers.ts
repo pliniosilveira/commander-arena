@@ -197,12 +197,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ]);
         if (blocked.length > 0) return failure(t, blocked);
       }
+      if (t.fromExile === true) {
+        const blocked = missingFeatures(['trigger:entersBattlefieldFromExile']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
       return ok({
         kind: 'entersBattlefield',
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
         ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
+        ...(t.fromExile === true ? { fromExile: true as const } : {}),
         ...(t.fromGraveyard === true && t.yourGraveyard === true
           ? { graveyardOwner: 'you' as const }
           : {}),

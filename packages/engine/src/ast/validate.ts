@@ -1123,6 +1123,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       ) {
         issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
       }
+      // Exit from Exile deck (Faldorn): "enters from exile" belongs to the enters trigger and excludes "from a graveyard".
+      if (t.kind === 'entersBattlefield' && t.fromExile !== undefined) {
+        if (t.fromExile !== true)
+          issue(out, `${path}.fromExile`, 'fromExile must be true when present');
+        if (t.fromGraveyard === true) {
+          issue(out, `${path}.fromExile`, 'fromExile and fromGraveyard name two different zones');
+        }
+      }
       // D-110: "attacks alone" (CR 506.5) is a flag of the attacks trigger.
       if (t.kind === 'attacks' && t.alone !== undefined && t.alone !== true) {
         issue(out, `${path}.alone`, 'alone must be true when present');

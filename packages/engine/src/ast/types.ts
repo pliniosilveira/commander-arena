@@ -5203,6 +5203,11 @@ export type Trigger =
        * this ability, that is, the permanent is owned by that player. Only with `fromGraveyard`.
        */
       readonly graveyardOwner?: 'you';
+      /**
+       * "Whenever a land you control enters from exile" (Exit from Exile deck, Faldorn; CR 603.6a, 400.7, 406.1): only a permanent that came onto the battlefield from exile (the zone it
+       * moved from, read as the event happens), never a token. Not with `fromGraveyard`.
+       */
+      readonly fromExile?: true;
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**

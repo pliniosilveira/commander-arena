@@ -666,6 +666,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersBattlefieldFromGraveyard',
     // Revival Trance (Flayer of the Hatebound): "enters from your graveyard" (`entersBattlefield` with `fromGraveyard` and `graveyardOwner`).
     'entersBattlefieldFromYourGraveyard',
+    // Exit from Exile deck (Faldorn): "a land you control enters from exile" (`entersBattlefield` with `fromExile`).
+    'entersBattlefieldFromExile',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -2040,6 +2042,8 @@ export const TRIGGER_FEATURES = [
   'entersBattlefieldFromGraveyard',
   /** "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 404.1): `entersBattlefield` with `fromGraveyard` and `graveyardOwner: 'you'`. */
   'entersBattlefieldFromYourGraveyard',
+  /** "Whenever a land you control enters from exile" (CR 603.6a, 406.1): `entersBattlefield` with `fromExile`. */
+  'entersBattlefieldFromExile',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -3300,6 +3304,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leftGraveyardDuringYourTurn: true,
   entersBattlefieldFromGraveyard: true,
   entersBattlefieldFromYourGraveyard: true,
+  entersBattlefieldFromExile: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
