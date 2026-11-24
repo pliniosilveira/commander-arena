@@ -36,6 +36,7 @@ import { commanderCardOf, successorsOf } from './melded';
 import { isModified } from './modified';
 import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
+import { ringBearerOf } from './ring-bearer';
 import { objectOrLki } from './source-info';
 
 export interface SelectContext {
@@ -882,6 +883,11 @@ export function resolveObjects(
           : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
       const host = source?.attachedTo ?? null;
       return host !== null && state.objects[host] !== undefined ? [host] : [];
+    }
+    case 'ringBearer': {
+      // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer", the creature that has the designation of the controller and is under their control now.
+      const bearer = ringBearerOf(state, ctx.controller);
+      return bearer === null ? [] : [bearer.id];
     }
     case 'putWithThis': {
       // CR 400.7, 603.10a (Animate Dead): the permanents on the battlefield that were put there with the object the ability belongs to, which may have left already (its id is what they remember).

@@ -750,15 +750,18 @@ export function runInstruction(
     return {
       ...out,
       front: out.front.map((next) =>
-        next.kind === 'effect'
-          ? {
-              ...next,
-              ...(as === undefined || next.as !== undefined ? {} : { as }),
-              ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
-                ? {}
-                : { declinedBy: instruction.declinedBy }),
-            }
-          : next,
+        // CR 608.2d: the cards a player chooses to move as "you" are chosen from their own zone and by them (`seat` names the chooser, `res.controller` is the controller of the ability).
+        as !== undefined && next.kind === 'chooseMove' && next.seat === undefined
+          ? { ...next, seat: as }
+          : next.kind === 'effect'
+            ? {
+                ...next,
+                ...(as === undefined || next.as !== undefined ? {} : { as }),
+                ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
+                  ? {}
+                  : { declinedBy: instruction.declinedBy }),
+              }
+            : next,
       ),
     };
   }
@@ -1667,11 +1670,25 @@ function runEffect(
       return done(
         state,
         [],
-        resolvePlayers(state, effect.players, ctx, targets).map(() => ({
+        resolvePlayers(state, effect.players, ctx, targets).map((seat) => ({
+          kind: 'effect' as const,
+          effect: effect.effect,
+          // CR 101.4, 608.2d ("Each player returns ..."): each player does it as themselves, in APNAP order: they are "you" in it.
+          ...(effect.runsAs === 'each' ? { as: seat } : {}),
+        })),
+      );
+    case 'repeat': {
+      // CR 608.2c, 701.38b ("For each Redhorn Pass vote, search ..."): the number is read as this instruction comes up, then the effect is done that many times, one after the other.
+      const times = amountOf(state, effect.times, ctx, targets);
+      return done(
+        state,
+        [],
+        Array.from({ length: Math.max(0, times) }, () => ({
           kind: 'effect' as const,
           effect: effect.effect,
         })),
       );
+    }
     case 'copyCardAndCast': {
       // CR 707.12 (D-654): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
       // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
