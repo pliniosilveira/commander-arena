@@ -705,6 +705,26 @@ const RETURN: Lowering<IrClause, Effects> = {
       /^(?:that|the chosen) /iu.test(chosen.filter.raw)
     ) {
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
+      // Gilraen, Dúnedain Protector (CR 400.7j, 608.2c): "Exile another target creature you control. You may return that card to the battlefield": the card the exile before it moved.
+      const exiledBefore = chosen.ref !== undefined && ctx.exiledRef === chosen.ref;
+      if (exiledBefore && zone === 'battlefield') {
+        const blocked = missingFeatures(['selector:moved']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        return {
+          ok: true,
+          value: [
+            {
+              kind: 'moveToZone',
+              objects: { kind: 'moved' },
+              to: 'battlefield',
+              controller: to.whose ?? 'you',
+              ...(to.tapped === true ? { tapped: true } : {}),
+              ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+            },
+          ],
+          rule: clause.rule,
+        };
+      }
       if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
         return failure(clause);
       }

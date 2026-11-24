@@ -81,3 +81,36 @@ describe('the player bans of Call for Aid', () => {
     expect(issues(effect).join('|')).toContain('lasts until end of turn');
   });
 });
+
+describe('moveToZone entering with several kinds of counter (CR 122.6)', () => {
+  const back = (withCounters: unknown): Effect =>
+    ({
+      kind: 'sequence',
+      effects: [
+        { kind: 'exile', objects: EACH },
+        { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'battlefield', withCounters },
+      ],
+    }) as unknown as Effect;
+
+  test('a second kind is valid', () => {
+    expect(
+      issues(back({ counter: 'vigilance', count: 1, also: [{ counter: 'lifelink', count: 1 }] })),
+    ).toEqual([]);
+  });
+
+  test('a kind named twice, or with no name or a bad count, is refused', () => {
+    expect(
+      issues(
+        back({ counter: 'vigilance', count: 1, also: [{ counter: 'vigilance', count: 1 }] }),
+      ).join('|'),
+    ).toContain('named once');
+    expect(
+      issues(back({ counter: 'vigilance', count: 1, also: [{ counter: '', count: 1 }] })).join('|'),
+    ).toContain('non-empty');
+    expect(
+      issues(
+        back({ counter: 'vigilance', count: 1, also: [{ counter: 'lifelink', count: 0 }] }),
+      ).join('|'),
+    ).toContain('positive integer');
+  });
+});

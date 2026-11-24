@@ -749,9 +749,15 @@ const WITH_A_COUNTER = map(
   sequence(
     literal(' with a '),
     pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
+    // Gilraen (CR 122.6): "with a vigilance counter and a lifelink counter on it": a second kind, said in the same breath.
+    optional(sequence(pattern(/ counter and a /iu), pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)), null),
     pattern(/ counter on it(?![\p{L}\p{N}])/iu),
   ),
-  ([, name]) => ({ count: 1, counter: name[0].toLowerCase() }),
+  ([, name, second]) => ({
+    count: 1,
+    counter: name[0].toLowerCase(),
+    ...(second === null ? {} : { also: [{ count: 1, counter: second[1][0].toLowerCase() }] }),
+  }),
 );
 
 /** " to the battlefield", then "tapped" and the control when the text says them, in that order, then the counter it enters with. */
@@ -972,6 +978,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
     "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
+    // Gilraen, Dúnedain Protector (CR 122.6): two kinds of counter it enters with.
+    "return it to the battlefield under its owner's control with a vigilance counter and a lifelink counter on it",
     // Echoing Return (CR 201.2, 608.2c): the target card and every card of your graveyard with its name.
     'return target creature card and all other cards with the same name as that card from your graveyard to your hand',
     // Persist (CR 205.4, 122.6, 614.1c): a nonlegendary card of your graveyard, entering with a -1/-1 counter.

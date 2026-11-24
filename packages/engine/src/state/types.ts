@@ -10,6 +10,7 @@ import type {
   Cost,
   DoorValues,
   Effect,
+  EnteringCounters,
   InlineChoice,
   Keyword,
   NamedAlternativeKind,
@@ -1513,7 +1514,7 @@ export type Instruction =
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
@@ -1746,7 +1747,7 @@ export type Instruction =
       readonly object: ObjectId;
       readonly tapped: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2094,7 +2095,7 @@ export type Instruction =
       /** Enter the battlefield under the owner's control or the resolving ability's controller's. */
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */

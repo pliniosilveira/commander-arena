@@ -1630,6 +1630,100 @@ function lowerMayElse(
 }
 
 /**
+ * "Exile another target creature you control. You may return that card to the battlefield under its owner's control. If you don't, at the beginning of the next end step, return that card
+ * to the battlefield under its owner's control with a vigilance counter and a lifelink counter on it." (Gilraen, Dúnedain Protector; CR 608.2c, 608.2d, 603.7c, 400.7, 122.6): the offer
+ * is the engine's `may` of the return of the card the exile before it moved; the sentence after it, for the player who did not (declined, or the card could not come back), is a
+ * `conditional` on "not `didPrevious`" of a delayed return of the same card, which the exile moved and the declined offer left as it was (`moved` is the exiled card, bound as the delayed
+ * ability is made). Null when the sentence is not such an offer; a pair of another shape is refused, never guessed.
+ */
+function lowerOfferedReturnElse(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: readonly Step[],
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const next = sentences[i + 1];
+  const [offer, ...more] = sentence.clauses;
+  if (
+    next?.condition?.test.kind !== 'youDont' ||
+    offer?.verb !== 'return' ||
+    !offer.optional ||
+    next.delayed === undefined
+  ) {
+    return null;
+  }
+  const [other, ...moreOther] = next.clauses;
+  const exiled = steps[steps.length - 1]?.effects.some((e) => e.kind === 'exile');
+  if (
+    more.length > 0 ||
+    other === undefined ||
+    moreOther.length > 0 ||
+    other.optional ||
+    other.verb !== 'return' ||
+    exiled !== true ||
+    offer.condition !== undefined ||
+    other.condition !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.mayBy !== undefined ||
+    next.delayed.step !== 'endStep'
+  ) {
+    return refuse(next);
+  }
+  const blocked = missingFeatures([
+    'effect:may',
+    'effect:conditional',
+    'effect:delayedTrigger',
+    'condition:didPrevious',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(next), needs: blocked };
+  // Both sentences name the card the one exile moved: the offer must not make the second forget it.
+  const exiledRef = ctx.exiledRef;
+  const offered = lowerClauses([{ ...offer, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  ctx.exiledRef = exiledRef;
+  const later = lowerClauses([other], ctx);
+  if (!later.ok) return later;
+  const [move, ...rest] = offered.value;
+  const [back, ...restBack] = later.value;
+  if (
+    move?.kind !== 'moveToZone' ||
+    move.objects.kind !== 'moved' ||
+    rest.length > 0 ||
+    back?.kind !== 'moveToZone' ||
+    back.objects.kind !== 'moved' ||
+    restBack.length > 0
+  ) {
+    return refuse(next);
+  }
+  return {
+    ok: true,
+    value: [
+      { kind: 'may', effect: move },
+      {
+        kind: 'conditional',
+        condition: { kind: 'not', term: { kind: 'didPrevious' } },
+        effect: {
+          kind: 'delayedTrigger',
+          at: { step: next.delayed.step, whose: next.delayed.whose },
+          effect: back,
+        },
+      },
+    ],
+    rule: offer.rule,
+  };
+}
+
+/**
  * "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain; D-411, CR 608.2c,
  * 608.2d): the sentence after a choice from among the cards a mill moved says what is done when no card was put into the hand: the player declined, no card matched or nothing was
  * milled. The choice is the offer itself (it starts what "if you do" reads again, `rules/move-choice.ts`), so the second sentence is a `conditional` on "not `didPrevious`". Null
@@ -2829,6 +2923,13 @@ function lowerStep(
     return { last: asking.last };
   }
   if (sentence.condition?.test.kind === 'declined') return stop(refuse(sentence));
+  // "You may return that card to the battlefield under its owner's control. If you don't, at the beginning of the next end step, return that card ..." (Gilraen, CR 608.2c, 603.7c).
+  const returnOrLater = lowerOfferedReturnElse(sentence, sentences, i, steps, ctx);
+  if (returnOrLater !== null) {
+    if (!returnOrLater.ok) return stop(returnOrLater);
+    steps.push({ effects: returnOrLater.value, replaceable: false });
+    return { last: i + 1 };
+  }
   // "If it has mana value 3 or less, you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." (D-403, CR 608.2c, 608.2d).
   const putOrElse = lowerMayElse(sentence, sentences, i, ctx);
   if (putOrElse !== null) {

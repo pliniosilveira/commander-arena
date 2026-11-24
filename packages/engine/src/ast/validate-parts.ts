@@ -7008,6 +7008,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (!isCount(w?.count) || w.count < 1) {
           issue(out, `${path}.withCounters.count`, 'counter count must be a positive integer');
         }
+        // Gilraen (CR 122.6): more kinds of counter it enters with, each named once and not the first kind.
+        const names = [w?.counter, ...(w?.also ?? []).map((a) => a?.counter)];
+        (w?.also ?? []).forEach((a, i) => {
+          if (typeof a?.counter !== 'string' || a.counter === '') {
+            issue(out, `${path}.withCounters.also[${i}].counter`, 'counter name must be non-empty');
+          }
+          if (!isCount(a?.count) || a.count < 1) {
+            issue(
+              out,
+              `${path}.withCounters.also[${i}].count`,
+              'counter count must be a positive integer',
+            );
+          }
+        });
+        if (new Set(names).size !== names.length) {
+          issue(out, `${path}.withCounters.also`, 'each kind of counter is named once');
+        }
       }
       if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
         // Issue 103: 'command' is the return of a delayed trigger (`checkDelayedTrigger`), never a move of its own.

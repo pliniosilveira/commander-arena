@@ -1251,7 +1251,12 @@ export interface IrZoneSpec extends IrNode {
    */
   readonly from?: 'graveyard';
   /** "with a +1/+1 counter on it" (stage P30, CR 122.6): the card enters the battlefield with these counters. */
-  readonly counters?: { readonly counter: string; readonly count: number };
+  readonly counters?: {
+    readonly counter: string;
+    readonly count: number;
+    /** "with a vigilance counter and a lifelink counter on it" (Gilraen, CR 122.6): the further kinds of counter it enters with. */
+    readonly also?: readonly { readonly counter: string; readonly count: number }[];
+  };
   /**
    * Whose zone, when the text says: "your hand", "its owner's hand". For the battlefield, who
    * controls what enters: "under your control", "under its owner's control" (CR 110.2a); absent when
