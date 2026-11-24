@@ -449,6 +449,17 @@ export type Amount =
    */
   | { readonly kind: 'votesFor'; readonly option: string }
   /**
+   * "Each player draws a card for each vote they received" (CR 701.38a, 701.38b, Círdan the Shipwright): the number of votes of the latest vote of this resolution (or, in a `votingFinished`
+   * trigger, of the vote that finished) that were for the player who is "you" where the amount is read (the controller, or each player in a `forEachPlayer` that runs as each). Valid
+   * only after a `voteFor` of players in the same sequence, or in a `votingFinished` ability.
+   */
+  | { readonly kind: 'votesReceived' }
+  /**
+   * "Put that many stun counters on it" (CR 701.38b, Trap the Trespassers): the number of votes for the object `of` names (a permanent, usually `eachObject`) in the latest vote of this
+   * resolution. Valid only after a `voteFor` of objects in the same sequence.
+   */
+  | { readonly kind: 'votesForObject'; readonly of: ObjectRef }
+  /**
    * "For each card you've drawn this turn" (CR 121.1, 608.2h; D-450, the Feather deck's Fists of Flame): the number of cards the controller of the spell or
    * ability has drawn this turn (`SeatState.cardsDrawnThisTurn`), counted as the instruction runs, so a card drawn by an earlier instruction of the same
    * resolution counts. A draw that was replaced (the commander going to the command zone instead, CR 903.9b) is not a card drawn. Not valid in a static
@@ -1224,6 +1235,11 @@ export type ObjectRef =
    */
   | { readonly kind: 'eachObject' }
   /**
+   * "Each creature with one or more votes" (CR 701.38a, 701.38b, Trap the Trespassers): the permanents on the battlefield that got at least one vote in the latest `voteFor` of objects of this
+   * resolution, in the order they were first voted for. Valid only after such a `voteFor` in the same sequence (`validateCard`).
+   */
+  | { readonly kind: 'votedObjects' }
+  /**
    * The engine's own form of `moved` inside a delayed triggered ability (D-639, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
    * and a card that left and came back is a new object with a new id). Never written in a card (`validateCard`): the engine writes it when it creates the delayed ability.
@@ -1325,6 +1341,18 @@ export type PlayerSelector =
    * creation, and in which each makes a choice. Usable wherever an effect takes a `player`.
    */
   | { readonly kind: 'all'; readonly of: readonly PlayerSelector[] }
+  /**
+   * "Each player who received no votes" (CR 701.38a, 101.4, Círdan the Shipwright): the players still in the game that no vote of the latest `voteFor` of players of this resolution was
+   * for, in the order of CR 101.4. Valid only after such a `voteFor` in the same sequence (`validateCard`).
+   */
+  | { readonly kind: 'eachPlayerWithoutVotes' }
+  /**
+   * "Each opponent who voted for a choice you voted for" / "who voted for a choice you didn't vote for" (CR 701.38a, 701.38d, Erestor of the Council, Model of Unity): the opponents of the
+   * controller still in the game who, in the vote of this resolution or the vote that triggered this ability (the record of who voted for what), voted for at least one choice the
+   * controller voted for (`same`) or for at least one the controller did not vote for (`different`); with several votes a player may be both. In the order of CR 101.4. Valid only
+   * in a `votingFinished` ability (`validateCard`).
+   */
+  | { readonly kind: 'eachOpponentWhoVoted'; readonly choice: 'same' | 'different' }
   | { readonly kind: 'controllerOf'; readonly of: ObjectRef }
   | { readonly kind: 'ownerOf'; readonly of: ObjectRef }
   | { readonly kind: 'target'; readonly id: string }
@@ -2355,6 +2383,13 @@ export type Effect =
        * controller of the ability, among the permanents the filter matches whoever controls them. Nothing is asked when that player is no longer in the game.
        */
       readonly chooser?: PlayerSelector;
+      /**
+       * "For each fellowship vote, the voter chooses a creature they control" (CR 701.38a, 608.2d, Elrond of the White Council): one choice of up to `count` permanents for each vote for the option
+       * `perVote` of the latest vote of this resolution (or of the vote that triggered the ability), made by the player who cast it, in the order the votes were cast, with the filter
+       * read for that voter as "you". The choices are all remembered under `id` (a permanent chosen for several votes once). Valid only after a vote offering the option, or in a `votingFinished`
+       * ability; with `exactly` the voter must choose; not with `chooser`.
+       */
+      readonly perVote?: string;
     }
   /**
    * "Choose a creature type" as the effect resolves (CR 205.3m, 608.2d): the controller chooses. With `players` (Harsh Mercy: "Each player chooses a creature type", CR 101.4): each player the
@@ -2637,6 +2672,27 @@ export type Effect =
       readonly kind: 'vote';
       readonly options: readonly string[];
       readonly startingWith: 'you';
+      /**
+       * "Each player secretly votes for fellowship or aid, then those votes are revealed" (CR 701.38a, Elrond of the White Council): no voter sees the votes of the players before them: the
+       * decision carries no votes, the log says nothing until every player has voted, then one `votesRevealed` event shows them all together, and the agents decide without
+       * knowing them.
+       */
+      readonly secret?: true;
+    }
+  /**
+   * "Each player votes for a player" / "each player secretly votes for a creature you don't control" (CR 701.38a, 701.38b, Círdan the Shipwright, Trap the Trespassers): a vote whose choices
+   * are players (every player still in the game) or the permanents on the battlefield a filter names (read for the controller of the effect), not words. Each voter is asked in turn
+   * order from the controller with a `chooseOption` decision of purpose 'vote' (an option is `seat:<n>` or `object:<id>`). One vote for each player (CR 701.38d is not supported). A voter
+   * with no choice to vote for (no permanent matches) does not vote. The tally (votes for each player or object), the record (who voted for what) and `secret` are kept as for `vote`.
+   * The amounts `votesReceived` and `votesForObject`, the object `votedObjects` and the player selectors `eachPlayerWithoutVotes` and `eachOpponentWhoVoted` read what was voted.
+   */
+  | {
+      readonly kind: 'voteFor';
+      readonly choices:
+        | { readonly kind: 'players' }
+        | { readonly kind: 'objects'; readonly filter: ObjectFilter };
+      readonly startingWith: 'you';
+      readonly secret?: true;
     }
   /**
    * A reflexive triggered ability (CR 603.12, D-135): "When you do, [effect]" after a `may` effect of the same
@@ -5565,6 +5621,12 @@ export type Trigger =
    */
   | { readonly kind: 'winsCoinFlip'; readonly who: 'you' | 'opponent' | 'any' }
   /**
+   * "Whenever players finish voting" (CR 701.38a, 603.2, Erestor of the Council, Model of Unity): once each time every player has voted in a vote (the event `votesRevealed`, for a vote of any
+   * spell or ability and of any controller), after the spell or ability that made them vote has finished resolving. The votes are the record the ability reads (`eachOpponentWhoVoted`,
+   * `perVote`, `votesReceived`): who voted for what, as the vote ended.
+   */
+  | { readonly kind: 'votingFinished' }
+  /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
    */
@@ -8212,6 +8274,11 @@ export type StaticEffect =
    * state-based action then finds the condition still true. It does not stop a player from conceding (CR 104.3a).
    */
   | { readonly kind: 'cantLoseGame' }
+  /**
+   * "This creature can't attack its owner." (CR 508.1a, 113.1, 113.6; Elrond of the White Council gives it to the creatures it takes): the creature can't be declared as attacking its owner (the
+   * player, not planeswalkers or battles they control or protect). Read from the abilities the creature has after the layers, where attackers are declared; given for good by `grantAbility`.
+   */
+  | { readonly kind: 'cantAttackItsOwner' }
   /**
    * "Your opponents can't win the game" (CR 104.2, D-149): while the permanent has the ability, no effect makes the opponents of its controller
    * win the game. The engine has no effect that says a player wins; a player who is the last one in the game wins by CR 104.2a, which

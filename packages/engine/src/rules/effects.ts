@@ -275,8 +275,13 @@ export function runInstruction(
   }
   if (instruction.kind === 'chooseObjects') {
     if (instruction.chosen !== null) return done(state);
+    // CR 701.38a (`perVote`): the filter is read for the voter, who is "you" in it.
+    const readFor =
+      instruction.asVoter === undefined
+        ? contextOf(state, res)
+        : { ...contextOf(state, res), controller: instruction.seat ?? res.controller };
     const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter((id) =>
-      matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+      matchesFilter(state, getObject(state, id), instruction.filter, readFor),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
     const max = Math.min(instruction.count, candidates.length);
@@ -752,7 +757,17 @@ export function runInstruction(
       front: out.front.map((next) =>
         // CR 608.2d: the cards a player chooses to move as "you" are chosen from their own zone and by them (`seat` names the chooser, `res.controller` is the controller of the ability).
         as !== undefined && next.kind === 'chooseMove' && next.seat === undefined
-          ? { ...next, seat: as }
+          ? {
+              ...next,
+              seat: as,
+              // CR 110.2a (Círdan the Shipwright: "each player who received no votes may put a permanent card from their hand onto the battlefield"): a player who puts a card they own
+              // onto the battlefield controls it, not the controller of the ability.
+              ...(next.to === 'battlefield' &&
+              next.controller === 'you' &&
+              next.filter.zone === 'hand'
+                ? { controller: 'owner' as const }
+                : {}),
+            }
           : next.kind === 'effect'
             ? {
                 ...next,
@@ -872,6 +887,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
+    ...(res.voteCast === undefined ? {} : { voteCast: res.voteCast }),
     ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
   };
 }
@@ -917,6 +933,25 @@ function runEffect(
 
   switch (effect.kind) {
     case 'chooseObjects': {
+      // CR 701.38a, 608.2d (Elrond of the White Council): "for each fellowship vote, the voter chooses a creature they control": one choice for each vote for the option, by the player who cast it,
+      // in the order the votes were cast; the filter is read for that voter as "you" and every choice is remembered under the one id.
+      if (effect.perVote !== undefined) {
+        const votes = (ctx.voteCast ?? []).filter((c) => c.option === effect.perVote);
+        return done(
+          state,
+          [],
+          votes.map((c, i) => ({
+            kind: 'chooseObjects' as const,
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
+            seat: c.seat,
+            asVoter: { first: i === 0 },
+            chosen: null,
+          })),
+        );
+      }
       // CR 608.2d (Mirkwood Trapper): "that player chooses": a player the effect names makes the choice; with none left in the game nothing is chosen.
       let chooser: SeatId | undefined;
       if (effect.chooser !== undefined) {
@@ -2265,7 +2300,34 @@ function runEffect(
 
     case 'vote':
       // CR 701.38a (D-194): each player votes in turn order from the controller (rules/vote.ts).
-      return done(state, [], [{ kind: 'vote', options: effect.options, cast: [] }]);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: effect.options,
+            cast: [],
+            ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
+
+    case 'voteFor':
+      // CR 701.38a, 701.38b: the same, for the players or the permanents of a filter as the choices.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: [],
+            cast: [],
+            choices: effect.choices,
+            ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
 
     case 'reflexive':
       // CR 603.12 (D-135): "When you do, ...": a triggered ability, if the `may` before it was done (rules/may-effects.ts).

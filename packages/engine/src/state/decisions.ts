@@ -1088,8 +1088,21 @@ export interface VoteCast {
 /** The question of a `'vote'` choice (CR 701.38a, D-194): who controls the effect, and the votes already cast in it. */
 export interface VoteQuestion {
   readonly controller: SeatId;
+  /** The votes already cast; empty for a secret vote (CR 701.38a: nobody sees them until all are in). */
   readonly cast: readonly VoteCast[];
+  /** A secret vote: `cast` is left empty on purpose. */
+  readonly secret?: true;
+  /**
+   * For a vote for players or permanents (`voteFor`, CR 701.38b): what each of `options` (`seat:<n>`, `object:<id>`) stands for, in the same order, so a player can be shown who or
+   * what it is. Absent for a vote with words.
+   */
+  readonly choices?: readonly VoteChoice[];
 }
+
+/** One choice of a vote for players or permanents (CR 701.38b): a player, or a permanent with the name it has now. */
+export type VoteChoice =
+  | { readonly kind: 'player'; readonly seat: SeatId }
+  | { readonly kind: 'object'; readonly object: ObjectId; readonly name: string };
 
 /** The question of a `'replacement'` choice: the damage event as it is now and the effects that can be applied first (CR 616.1, D-191). */
 export interface DamageReplacementQuestion {

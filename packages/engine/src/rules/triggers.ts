@@ -31,6 +31,7 @@ import { LOOK_BACK_TRIGGER_KINDS } from '../ast/features';
 import type { Ability, Trigger, TriggerStep, TriggerSubject, Zone } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageRecipient } from '../state/combat-types';
+import type { VoteCast } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type {
@@ -124,6 +125,8 @@ interface Occurrence {
   readonly blocker?: ObjectId;
   /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
+  /** For `votingFinished` (CR 701.38a): who voted for what in the vote that finished. */
+  readonly votes?: readonly VoteCast[];
 }
 
 /** The controller of a damage source, as it is or as it last was (CR 113.7a); null when unknown. */
@@ -762,6 +765,11 @@ function occurrences(
       return event.kind === 'classLevelReached' && event.level === trigger.level
         ? [{ subject: event.object, seat: null }]
         : [];
+    case 'votingFinished':
+      // CR 701.38a (Erestor of the Council): every player has voted in a vote of any spell or ability; the record of the votes goes to the ability.
+      return event.kind === 'votesRevealed'
+        ? [{ subject: null, seat: null, votes: event.cast }]
+        : [];
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -1236,6 +1244,8 @@ function matches(
         matchesWhat(state, trigger.what, objectOrLki(state, earlier), candidate),
       );
     }
+    case 'votingFinished':
+      return true;
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -1283,6 +1293,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'doorUnlocked': // CR 709.5h
     case 'ringTempted':
     case 'classLevelReached':
+    case 'votesRevealed': // CR 701.38a: "whenever players finish voting"
       return true;
     case 'counterAdded':
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
@@ -1666,6 +1677,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               ? {}
               : { attackers: occ.attackers }),
             ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
+            ...(occ.votes === undefined ? {} : { votes: occ.votes }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'
               ? {

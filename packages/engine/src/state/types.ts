@@ -665,6 +665,8 @@ export interface StackData {
   readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` ability (D-232): the cards that left the graveyard, as the objects they are now (`PendingTrigger.cards`). */
   readonly triggerCards?: readonly ObjectId[];
+  /** For a `votingFinished` ability (CR 701.38a): who voted for what in the vote that finished (the `votesRevealed` event), read by the amounts, selectors and `chooseObjects.perVote` that read a vote. */
+  readonly triggerVotes?: readonly VoteCast[];
   /**
    * For a chapter ability of a Saga on the stack (CR 714.2): the chapter number that was reached,
    * so "Chapter II" can be shown even for an ability that covers several (CR 714.2c). Absent for
@@ -929,6 +931,8 @@ export interface PendingTrigger {
   readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` trigger (D-232): the cards that left the graveyard in the events that triggered it, as the objects they became. */
   readonly cards?: readonly ObjectId[];
+  /** For a `votingFinished` trigger (CR 701.38a): who voted for what in the vote that finished (`StackData.triggerVotes`). */
+  readonly votes?: readonly VoteCast[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
   readonly attacked?: readonly SeatId[];
   /** For an `attackBatch` trigger that reads `attackersGreatestPower`: the creatures declared as attackers, in the order declared. */
@@ -1147,6 +1151,8 @@ export type Instruction =
       readonly exactly?: true;
       /** The player who chooses (`chooseObjects.chooser`): the controller of the effect when absent. */
       readonly seat?: SeatId;
+      /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
+      readonly asVoter?: { readonly first: boolean };
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2046,6 +2052,12 @@ export type Instruction =
       readonly kind: 'vote';
       readonly options: readonly string[];
       readonly cast: readonly VoteCast[];
+      /** `voteFor` (CR 701.38b): the choices are players or permanents, not `options` (which is then empty). */
+      readonly choices?:
+        | { readonly kind: 'players' }
+        | { readonly kind: 'objects'; readonly filter: ObjectFilter };
+      /** "Secretly" (CR 701.38a): the votes are not shown until all are cast (`VoteQuestion.secret`). */
+      readonly secret?: true;
     }
   /**
    * CR 702.94a (Miracle, D-274): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
@@ -2268,6 +2280,8 @@ export interface ResolutionContext {
   readonly costExiled?: readonly ObjectId[];
   /** The cards that left the graveyard and triggered this ability (D-232, `StackData.triggerCards`). */
   readonly triggerCards?: readonly ObjectId[];
+  /** Who voted for what in the vote that triggered this ability (CR 701.38a, `StackData.triggerVotes`), or in the latest vote of this resolution: what the vote amounts and selectors read. */
+  readonly voteCast?: readonly VoteCast[];
   /**
    * What `sacrificed` means (D-177): the ids the permanents had when the `sacrifice` instructions of this resolution sacrificed them, in order, or,
    * for a reflexive ability, those of the resolution that created it (`StackData.sacrificedBefore`).

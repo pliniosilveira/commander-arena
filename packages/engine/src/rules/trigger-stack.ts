@@ -96,7 +96,9 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       (t.sacrificedBefore === undefined ? '' : `s${t.sacrificedBefore.join(',')}#`) +
       (t.thisWayBefore === undefined ? '' : `w${JSON.stringify(t.thisWayBefore)}#`) +
       (t.movedBefore === undefined ? '' : `m${t.movedBefore.join(',')}#`) +
-      (t.cards === undefined ? '' : `c${t.cards.join(',')}#`);
+      (t.cards === undefined ? '' : `c${t.cards.join(',')}#`) +
+      // CR 701.38a: a `votingFinished` ability reads the record of the vote that finished.
+      (t.votes === undefined ? '' : `v${JSON.stringify(t.votes)}#`);
     // Exalted (D-110) reads only the attacking creature, never the permanent with the keyword, and Extort
     // (D-120) only its controller: triggers of different permanents for one event are interchangeable (A18).
     const written = JSON.stringify(t.ability);
@@ -151,6 +153,7 @@ function pushTrigger(
     ...(trigger.thisWayBefore === undefined ? {} : { thisWayBefore: trigger.thisWayBefore }),
     ...(trigger.movedBefore === undefined ? {} : { movedBefore: trigger.movedBefore }),
     ...(trigger.cards === undefined ? {} : { cards: trigger.cards }),
+    ...(trigger.votes === undefined ? {} : { votes: trigger.votes }),
     ...(targets.length === 0 ? {} : { targets }),
     ...(modes.length === 0 ? {} : { modes }),
   });

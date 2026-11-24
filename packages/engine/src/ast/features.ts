@@ -471,6 +471,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseOne',
     // D-194: "starting with you, each player votes for profit or security" (CR 701.38a).
     'vote',
+    // CR 701.38a, 701.38b: "each player votes for a player", "secretly votes for a creature you don't control" (Círdan the Shipwright, Trap the Trespassers).
+    'voteFor',
     // D-196: "The Ring tempts you" (CR 701.54a), and the engine's own sacrifice at end of combat of the Ring's third ability.
     'ringTempts',
     // D-286: "you may pair this creature with another unpaired creature you control" (CR 702.95a): the engine's effect of the two abilities soulbond stands for.
@@ -645,6 +647,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'rollsHighest',
     // CR 705.2 (Setzer): "Whenever you win a coin flip".
     'winsCoinFlip',
+    // CR 701.38a (Erestor of the Council): "Whenever players finish voting".
+    'votingFinished',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -1228,6 +1232,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificed',
     // CR 608.2c (Canopy Gargantuan): "that creature" in the count of counters put on each creature (`ObjectRef` `eachObject`, `addCounters.perObject`).
     'eachObject',
+    // CR 701.38a, 701.38b: "each creature with one or more votes" (Trap the Trespassers), "each player who received no votes" (Círdan the Shipwright), "each opponent who voted for a
+    // choice you voted for" (Erestor of the Council).
+    'votedObjects',
+    'eachPlayerWithoutVotes',
+    'eachOpponentWhoVoted',
     // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
     'ringBearer',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
@@ -1537,6 +1546,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerHexproof',
     'cantLoseGame',
     'opponentsCantWin',
+    // CR 508.1a (Elrond of the White Council): "This creature can't attack its owner."
+    'cantAttackItsOwner',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
     // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
@@ -1697,6 +1708,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
+    // CR 701.38a, 701.38b: "for each vote they received" (Círdan the Shipwright), "put that many stun counters on it" (Trap the Trespassers).
+    'votesReceived',
+    'votesForObject',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
     // CR 122.1: "the number of experience counters you have".
@@ -2324,6 +2338,12 @@ export const SELECTOR_KINDS = [
   'sacrificed',
   /** "Put a number of +1/+1 counters on each creature equal to that creature's toughness" (CR 608.2c, Canopy Gargantuan): the engine's `ObjectRef` `eachObject` and `addCounters.perObject`. */
   'eachObject',
+  /** "Each creature with one or more votes" (CR 701.38a, Trap the Trespassers): the engine's `ObjectRef` `votedObjects`. */
+  'votedObjects',
+  /** "Each player who received no votes" (CR 701.38a, Círdan the Shipwright): the engine's `eachPlayerWithoutVotes`. */
+  'eachPlayerWithoutVotes',
+  /** "Each opponent who voted for a choice you voted for" (CR 701.38a, Erestor of the Council): the engine's `eachOpponentWhoVoted`. */
+  'eachOpponentWhoVoted',
   /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
   'ringBearer',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
@@ -2678,6 +2698,8 @@ export const STATIC_KINDS = [
   /** "You can't lose the game" and "your opponents can't win the game" (CR 104.2, 104.3, D-149): `cantLoseGame` and `opponentsCantWin`. */
   'cantLoseGame',
   'opponentsCantWin',
+  /** "This creature can't attack its owner." (CR 508.1a, Elrond of the White Council): the engine's `cantAttackItsOwner`. */
+  'cantAttackItsOwner',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
   /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
@@ -2877,6 +2899,10 @@ export const AMOUNT_KINDS = [
   'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
+  /** "For each vote they received" (CR 701.38a, Círdan the Shipwright): the engine's `votesReceived`. */
+  'votesReceived',
+  /** "That many stun counters" for the votes for a creature (CR 701.38a, Trap the Trespassers): the engine's `votesForObject`. */
+  'votesForObject',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
   /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
@@ -3223,6 +3249,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseCreatureType: true,
   chooseNumber: true,
   vote: true,
+  voteFor: true,
   ringTempts: true,
   pair: true,
   empowerJace: true,
@@ -3334,6 +3361,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  votingFinished: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

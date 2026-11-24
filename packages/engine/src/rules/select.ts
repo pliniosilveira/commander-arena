@@ -22,6 +22,7 @@ import {
   playerToRightOf,
   seatsInOrder,
 } from '../state/ops';
+import type { VoteCast } from '../state/decisions';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
@@ -38,6 +39,7 @@ import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { ringBearerOf } from './ring-bearer';
 import { objectOrLki } from './source-info';
+import { objectOfOption, seatOfOption } from './vote-options';
 
 export interface SelectContext {
   readonly controller: SeatId;
@@ -110,6 +112,8 @@ export interface SelectContext {
   readonly thisWay?: ThisWayCounts;
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /** Who voted for what in the latest vote of this resolution, or in the vote that triggered the ability (CR 701.38a): what `votesReceived`, `votedObjects`, `eachOpponentWhoVoted` and `perVote` read. */
+  readonly voteCast?: readonly VoteCast[];
   /** The natural result of the latest die the resolution rolled, for the amount `dieResult` (CR 706.2, Galadriel group 3). Absent where none was rolled: the amount is 0. */
   readonly dieResult?: number;
   /**
@@ -871,6 +875,17 @@ export function resolveObjects(
       return [...(ctx.sacrificed ?? [])];
     case 'eachObject':
       return ctx.eachObject === undefined ? [] : [ctx.eachObject];
+    case 'votedObjects': {
+      // CR 701.38a, 701.38b (Trap the Trespassers): the permanents on the battlefield with one or more votes, in the order they were first voted for.
+      const ids: ObjectId[] = [];
+      for (const c of ctx.voteCast ?? []) {
+        const id = objectOfOption(c.option);
+        if (id !== null && !ids.includes(id) && state.objects[id]?.zone === 'battlefield') {
+          ids.push(id);
+        }
+      }
+      return ids;
+    }
     case 'sacrificedCost':
       // D-133, CR 602.2c: the permanents sacrificed as the cost of the ability that is resolving (gone now: last-known
       // information is read through their old ids).
@@ -1139,6 +1154,30 @@ export function resolvePlayers(
           : (ctx.thisWay?.discardedBy ?? [])
         ).filter(
           (seat) => !getSeat(state, seat).hasLost && (named === undefined || named.includes(seat)),
+        ),
+      );
+    }
+    case 'eachPlayerWithoutVotes': {
+      // CR 701.38a, 101.4 (Círdan the Shipwright): "each player who received no votes": no vote of the record was for them.
+      const cast = ctx.voteCast ?? [];
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) => !cast.some((c) => seatOfOption(c.option) === seat),
+        ),
+      );
+    }
+    case 'eachOpponentWhoVoted': {
+      // CR 701.38a, 701.38d, 101.4 (Erestor of the Council): an opponent who voted for a choice the controller voted for (`same`), or for one the controller did not vote for
+      // (`different`); with several votes one player may be both.
+      const cast = ctx.voteCast ?? [];
+      const mine = cast.filter((c) => c.seat === ctx.controller).map((c) => c.option);
+      return apnapOrder(
+        state,
+        opponentsOf(state, ctx.controller).filter((seat) =>
+          cast.some(
+            (c) => c.seat === seat && mine.includes(c.option) === (selector.choice === 'same'),
+          ),
         ),
       );
     }
