@@ -9441,7 +9441,7 @@
           "text": "−2: Look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
           "reason": "unrecognised",
           "slot": "effect",
-          "closestRule": "effect.look-take-kinds"
+          "closestRule": "effect.look-take"
         }
       ],
       "reasons": [],
@@ -9697,8 +9697,8 @@
           "ability": 1,
           "text": "You may choose new targets for target spell or ability.",
           "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.exile-any-number-until-leaves"
+          "slot": "noun",
+          "closestRule": "effect.player"
         }
       ],
       "reasons": [],
