@@ -140,10 +140,9 @@ export const AMOUNT_FOR_EACH_COUNTER_KIND = defineRule<IrAmount>({
   ],
   // Quiet: a "for each" this rule does not read stops where `amount.for-each` stops.
   parse: quiet((ctx, pos) => {
-    const r = spanned(sequence(literal('for each kind of counter on '), selfOrIt('amount.for-each-counter-kind')))(
-      ctx,
-      pos,
-    );
+    const r = spanned(
+      sequence(literal('for each kind of counter on '), selfOrIt('amount.for-each-counter-kind')),
+    )(ctx, pos);
     if (!r.ok) return r;
     const [, of] = r.value.value;
     return {

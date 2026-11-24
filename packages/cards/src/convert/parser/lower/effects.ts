@@ -121,6 +121,7 @@ import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KEFKA_LOWERINGS } from './kefka';
+import { KIMAHRI_LOWERINGS } from './kimahri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
@@ -152,7 +153,6 @@ import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
 import { PRIMORDIAL_LOWERINGS } from './primordial';
-import { KIMAHRI_LOWERINGS } from './kimahri';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
@@ -1186,7 +1186,11 @@ const PREVENT_DAMAGE_COUNTERS: Lowering<IrClause, Effects> = {
     const shield = PREVENT_DAMAGE.lower({ ...clause, verb: 'preventDamage', args: rest }, ctx);
     if (!shield.ok) return shield;
     const [prevented, ...others] = shield.value;
-    if (prevented?.kind !== 'preventDamage' || others.length > 0 || prevented.to.kind !== 'target') {
+    if (
+      prevented?.kind !== 'preventDamage' ||
+      others.length > 0 ||
+      prevented.to.kind !== 'target'
+    ) {
       return failure(clause);
     }
     return {

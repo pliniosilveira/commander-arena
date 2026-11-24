@@ -2294,7 +2294,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
-      if (a.kind === 'countersOn' && a.kinds !== undefined && (a.kinds !== true || a.counter !== undefined)) {
+      if (
+        a.kind === 'countersOn' &&
+        a.kinds !== undefined &&
+        (a.kinds !== true || a.counter !== undefined)
+      ) {
         issue(out, `${path}.kinds`, 'kinds is true and goes without a counter kind');
       }
       break;
@@ -6199,9 +6203,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // CR 707.9b (Kimahri, Valiant Guardian): "... and this ability": the ability that resolves is one of the copy's.
       if (e.withThisAbility !== undefined) {
-        if (e.withThisAbility !== true) issue(out, `${path}.withThisAbility`, 'withThisAbility is true when present');
+        if (e.withThisAbility !== true)
+          issue(out, `${path}.withThisAbility`, 'withThisAbility is true when present');
         if (scope.owner !== 'ability') {
-          issue(out, `${path}.withThisAbility`, 'the ability a copy keeps is the one that resolves: an ability of a permanent');
+          issue(
+            out,
+            `${path}.withThisAbility`,
+            'the ability a copy keeps is the one that resolves: an ability of a permanent',
+          );
         }
       }
       // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.

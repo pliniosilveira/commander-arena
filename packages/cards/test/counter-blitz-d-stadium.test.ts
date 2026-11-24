@@ -40,7 +40,10 @@ describe('Blitzball Stadium: Go for the Goal!', () => {
               {
                 kind: 'triggered',
                 trigger: { kind: 'dealsCombatDamage', to: 'player' },
-                effect: { kind: 'draw', count: { kind: 'countersOn', of: { kind: 'this' }, kinds: true } },
+                effect: {
+                  kind: 'draw',
+                  count: { kind: 'countersOn', of: { kind: 'this' }, kinds: true },
+                },
               },
             ],
             duration: 'untilEndOfTurn',

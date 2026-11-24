@@ -176,7 +176,11 @@ export const EFFECT_SPELL_ENTERS_WITH_COUNTERS = defineRule<Clauses>({
   id: ENTERS_COUNTERS_RULE,
   family: 'effect',
   leading: ['that'],
-  cites: ['CR 614.1c (Replacement Effects)', 'CR 122.6 (Counters)', 'CR 603.7 (Delayed Triggered Abilities)'],
+  cites: [
+    'CR 614.1c (Replacement Effects)',
+    'CR 122.6 (Counters)',
+    'CR 603.7 (Delayed Triggered Abilities)',
+  ],
   examples: [
     'that creature enters with two additional +1/+1 counters on it',
     'that creature enters with an additional +1/+1 counter on it',
@@ -213,7 +217,11 @@ export const EFFECT_SPELL_ENTERS_WITH_COUNTERS = defineRule<Clauses>({
           'spellEntersWithCounters',
           {
             counter: spec,
-            count: { kind: 'number', value: count.value, span: { start: head.pos, end: count.pos } },
+            count: {
+              kind: 'number',
+              value: count.value,
+              span: { start: head.pos, end: count.pos },
+            },
           },
           span,
         ),

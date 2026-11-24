@@ -2679,7 +2679,8 @@ function lowerStep(
   // "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability of the exile of the top card before it.
   if (sentence.afterExile === true) return lowerAfterExile(sentence, sentences, i, steps, ctx);
   // "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12): the reflexive ability of the reveal before it.
-  if (sentence.afterReveal !== undefined) return lowerAfterReveal(sentence, sentences, i, steps, ctx);
+  if (sentence.afterReveal !== undefined)
+    return lowerAfterReveal(sentence, sentences, i, steps, ctx);
   // "Then you may have ~ become a copy of that creature, except its name is ~ and it has vigilance and this ability." (Kimahri, Valiant Guardian, CR 707.9b): one offered copy, the engine's
   // `may` of the `becomeCopy` the lowering makes, after the instructions before it.
   if (first.verb === 'becomeCopyKeepingAbility') {

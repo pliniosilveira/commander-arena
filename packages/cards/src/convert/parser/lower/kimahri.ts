@@ -42,7 +42,11 @@ const BECOME_COPY_KEEPING_ABILITY: Lowering<IrClause, Effects> = {
       abilities: [{ kind: 'keyword', keyword: plainKeyword(kind) }],
       withThisAbility: true,
     };
-    return { ok: true, value: [clause.optional ? { kind: 'may', effect: copy } : copy], rule: clause.rule };
+    return {
+      ok: true,
+      value: [clause.optional ? { kind: 'may', effect: copy } : copy],
+      rule: clause.rule,
+    };
   },
 };
 

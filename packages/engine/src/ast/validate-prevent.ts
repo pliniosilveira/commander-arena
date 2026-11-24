@@ -94,13 +94,25 @@ export function checkPreventDamage(
       issue(out, `${path}.countersPrevented`, 'countersPrevented names a kind of counter');
     }
     if (e.amount !== 'all') {
-      issue(out, `${path}.countersPrevented`, 'counters for prevented damage go with a shield that prevents all of it');
+      issue(
+        out,
+        `${path}.countersPrevented`,
+        'counters for prevented damage go with a shield that prevents all of it',
+      );
     }
     if (e.perPrevented !== undefined) {
-      issue(out, `${path}.countersPrevented`, 'name tokens or counters for the prevented damage, not both');
+      issue(
+        out,
+        `${path}.countersPrevented`,
+        'name tokens or counters for the prevented damage, not both',
+      );
     }
     if (e.to?.kind !== 'target' && e.to?.kind !== 'this' && e.to?.kind !== 'each') {
-      issue(out, `${path}.countersPrevented`, 'counters are put on a permanent: the recipient is this, a target or each permanent');
+      issue(
+        out,
+        `${path}.countersPrevented`,
+        'counters are put on a permanent: the recipient is this, a target or each permanent',
+      );
     }
   }
   // CR 615.5: "for each 1 damage prevented this way, create a token": a predefined or a described token, made as the damage is prevented (no question can be asked).

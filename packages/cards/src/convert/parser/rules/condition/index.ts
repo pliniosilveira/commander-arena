@@ -46,7 +46,6 @@ import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
-import { MANA_VALUE_AT_LEAST_CONDITION_RULES } from './mana-value-at-least';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
 import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
@@ -64,6 +63,7 @@ import { LIBRARY_CONDITION_RULES } from './library';
 import { LIMIT_BREAK_G4_CONDITION_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
+import { MANA_VALUE_AT_LEAST_CONDITION_RULES } from './mana-value-at-least';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';

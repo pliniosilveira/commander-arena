@@ -45,7 +45,10 @@ export function runReflexive(
     // CR 603.12 (Cait Sith, Espers to Magicite): "When you exile a card this way", "When you do" after an exile: created when the instruction before it moved a card.
     if ((res.lastMoved ?? []).length === 0) return done(state);
     // CR 603.12, 701.20 (Yuna's Whistle): "When you reveal a creature card this way": only the cards that moved and match the filter make it, and it carries them.
-    if (effect.ifMovedMatches !== undefined && matchedMoved(state, res, effect.ifMovedMatches).length === 0) {
+    if (
+      effect.ifMovedMatches !== undefined &&
+      matchedMoved(state, res, effect.ifMovedMatches).length === 0
+    ) {
       return done(state);
     }
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
@@ -105,7 +108,12 @@ function matchedMoved(
     const card = state.objects[id];
     return (
       card !== undefined &&
-      matchesFilter(state, card, { ...filter, zone: card.zone }, { controller: res.controller, source: res.source })
+      matchesFilter(
+        state,
+        card,
+        { ...filter, zone: card.zone },
+        { controller: res.controller, source: res.source },
+      )
     );
   });
 }

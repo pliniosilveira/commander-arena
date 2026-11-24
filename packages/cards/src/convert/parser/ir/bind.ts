@@ -832,7 +832,7 @@ class Binder {
             test?.kind === 'diesThisWay' ||
             test?.kind === 'controlsThat' ||
             test?.kind === 'manaValueAtMostAmount' ||
-        test?.kind === 'manaValueAtLeastAmount')
+            test?.kind === 'manaValueAtLeastAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
             : // "Then if she has nine or more time counters on her, ..." (Kes, CR 122.1): the pronoun of the count is the permanent the sentences before it named.
               s.condition !== undefined &&

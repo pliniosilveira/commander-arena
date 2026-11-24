@@ -25,7 +25,7 @@ export const CONDITION_EXILED_MANA_VALUE_AT_LEAST = defineRule<IrCondition>({
     "the exiled card's mana value was 4 or greater",
     "the discarded card's mana value is 4 or greater",
     "that card's mana value is 4 or greater",
-    "its mana value is 4 or greater",
+    'its mana value is 4 or greater',
     "the exiled card's power is 4 or greater",
     "the exiled card's mana value is or greater",
   ],
