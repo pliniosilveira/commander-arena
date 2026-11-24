@@ -27,6 +27,7 @@ import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { designationHolders, hasMaxSpeed } from './designations';
 import { manaSpentOf } from './mana-spent';
+import { manaValueOfCost } from './mana-value';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
 import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
@@ -277,6 +278,7 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
       return total === condition.compare.value;
     }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c, 608.2h (Meren of Clan Nel Toth): the mana value of the object the reference names (an {X} is 0 off the stack, CR 202.3e) against a state amount read now.
       const [id] = resolveObjects(
@@ -291,12 +293,20 @@ export function evaluateCondition(
         ctx.targets ?? [],
       );
       if (id === undefined) return false;
-      const value = statOf(state, id, 'manaValue');
+      // CR 608.2h: an object that has since moved (the card exiled earlier in this resolution) is read as it last was.
+      const last = state.lki[id];
+      const value =
+        state.objects[id] === undefined && last !== undefined
+          ? manaValueOfCost(last.characteristics.manaCost, last.object)
+          : statOf(state, id, 'manaValue');
       if (value === null || value === undefined) return false;
-      return (
-        value <=
-        amountOf(state, condition.amount, { controller: ctx.controller, source: ctx.source }, [])
+      const limit = amountOf(
+        state,
+        condition.amount,
+        { controller: ctx.controller, source: ctx.source },
+        [],
       );
+      return condition.kind === 'manaValueAtLeastAmount' ? value >= limit : value <= limit;
     }
     case 'movedShareAllCardTypes': {
       // CR 205.2a, 608.2c (Demonic Covenant): two of the cards an earlier instruction moved have exactly the same card types, as they are (or last were).

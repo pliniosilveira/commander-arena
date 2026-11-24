@@ -519,6 +519,11 @@ export interface StackData {
    */
   readonly commanderCastCounters?: number;
   /**
+   * The counters the permanent this spell becomes enters with, from `nextSpellModifier` effects used up as the spell was cast (Yuna, Grand Summoner: "that creature enters with two additional +1/+1
+   * counters on it", CR 614.1c, 122.6). Absent when none.
+   */
+  readonly entersWithCounters?: Readonly<Record<string, number>>;
+  /**
    * A spell cast from the graveyard with the permission of a permanent (`playFromGraveyardOnceEachTurn`, D-232): that permanent, and what the permanent the spell becomes
    * does or has because of it (enters tapped; gains an ability). Applied as the spell enters the battlefield (`rules/zones.ts`).
    */
@@ -2718,6 +2723,8 @@ export type ContinuousChange =
       readonly sourceFilter?: { readonly filter: ObjectFilter; readonly controller: SeatId };
       /** "For each 1 damage prevented this way, create a token" (CR 615.5): the token `controller` (the controller of the effect) creates for each point this shield prevents. */
       readonly perPrevented?: { readonly definition: TokenDefinition; readonly controller: SeatId };
+      /** "Prevent that damage and put that many +1/+1 counters on it" (CR 615.5): the counters `controller` puts on the permanent that would have been damaged, as many as this shield prevents. */
+      readonly countersPrevented?: { readonly counter: string; readonly controller: SeatId };
     };
 
 /**

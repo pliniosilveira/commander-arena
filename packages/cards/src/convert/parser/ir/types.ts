@@ -614,6 +614,8 @@ export type IrAmount =
       readonly of: IrNoun;
       /** The kind of counter; left out for "the number of counters on that creature" (every kind added together). */
       readonly counter?: string;
+      /** "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter, not of counters. Never with `counter`. */
+      readonly kinds?: true;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"
@@ -939,6 +941,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
     // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
     | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
+    // "the exiled card's mana value is 4 or greater" (Summoner's Sending, CR 202.3, 608.2c): the same object, against an amount it must reach
+    | { readonly kind: 'manaValueAtLeastAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
@@ -1576,6 +1580,11 @@ export interface IrSentence extends IrNode {
    * exiled a card. Not `reflexive` ("When you do" asks whether a "you may" offer was taken): the lowering reads it alone, and refuses it where no exile of the top card came before.
    */
   readonly afterExile?: true;
+  /**
+   * "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12, 701.20): a reflexive triggered ability created when the "reveal cards until" instruction before it found a card of
+   * the card type the words name (kept here in lower case). Not `reflexive`: the lowering reads it alone, and refuses it where no such reveal came before.
+   */
+  readonly afterReveal?: string;
   /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are

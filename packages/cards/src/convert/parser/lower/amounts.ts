@@ -163,6 +163,7 @@ export function lowerAmount(
           kind: 'countersOn',
           of: of.value,
           ...(amount.counter === undefined ? {} : { counter: amount.counter }),
+          ...(amount.kinds === true ? { kinds: true as const } : {}),
         },
         rule,
       };

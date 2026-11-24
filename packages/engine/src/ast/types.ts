@@ -222,7 +222,16 @@ export type Amount =
    * it ("+1/+1", "-1/-1", "stun", "page", ...). Left out (Puca's Covenant, "the number of counters on that creature"): the counters of every kind added together (not in a static ability's
    * condition, which names the kind: `validateCard`).
    */
-  | { readonly kind: 'countersOn'; readonly of: ObjectRef; readonly counter?: string }
+  | {
+      readonly kind: 'countersOn';
+      readonly of: ObjectRef;
+      readonly counter?: string;
+      /**
+       * "Draw a card for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter the object has (as it is, or as it last was), not the number of
+       * counters. Never with `counter`.
+       */
+      readonly kinds?: true;
+    }
   /**
    * "The greatest power among creatures you control", "the total power of creatures you control", "the greatest
    * mana value among artifacts you control" (D-131): over the objects `filter` matches (in its zone, the battlefield
@@ -2433,6 +2442,12 @@ export type Effect =
       readonly perPrevented?: {
         readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
       };
+      /**
+       * "If damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it" (Gatta and Luzzu, CR 615.5, 122.6): the additional effect of the
+       * prevention, which happens as the damage is prevented: the controller of the effect puts as many counters of this kind on the permanent the damage would have been dealt to as this
+       * shield prevents. Only for a recipient that is a permanent, and with `amount: 'all'`. Not with `perPrevented`.
+       */
+      readonly countersPrevented?: string;
       /** `forAsLongAsThisRemains` (D-207, CR 611.2b, 615): the shield ends when the permanent with the ability leaves the battlefield; only in an ability of a permanent. */
       readonly duration: 'untilEndOfTurn' | 'forAsLongAsThisRemains';
     }
@@ -2652,6 +2667,12 @@ export type Effect =
        * something. Always with `carriesMoved`: the card is what `moved` names in the ability. An exile of the top card of an empty library moves nothing and creates none.
        */
       readonly ifMoved?: true;
+      /**
+       * "Reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library. When you reveal a
+       * creature card this way, ..." (Yuna's Whistle; CR 603.12, 701.20): with `ifMoved`, the ability is created only when one of the objects the effects before it moved matches this
+       * filter (a card of that kind, wherever it went: the filter names no zone), and carries just the ones that match, which are what `moved` names in it.
+       */
+      readonly ifMovedMatches?: ObjectFilter;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -3464,6 +3485,12 @@ export type Effect =
        */
       readonly repeat?: true;
     }
+  /**
+   * "That creature enters with two additional +1/+1 counters on it" (Yuna, Grand Summoner, CR 614.1c, 122.6, 603.7): only in the effect of a `delayedCast` whose filter names creature spells: the spell
+   * that was cast (the `triggerSubject`) remembers that the permanent it becomes enters with `count` counters of the kind `counter` on it, with those it already enters with. Does nothing when
+   * the spell has left the stack as the ability resolves.
+   */
+  | { readonly kind: 'spellEntersWithCounters'; readonly counter: string; readonly count: number }
   /**
    * CR 702.62a (Suspend, D-128): "remove a time counter from it", where "it" is the source: a card in exile that is
    * suspended (it has a time counter). Does nothing if the source is no longer that card in exile (CR 603.4: the
@@ -4477,6 +4504,11 @@ export type Effect =
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
        */
       readonly abilities?: readonly Ability[];
+      /**
+       * "..., except its name is Kimahri, Valiant Guardian and it has vigilance and this ability" (Kimahri, Valiant Guardian, CR 707.9b): the copy also has the triggered or activated ability that
+       * is resolving, as part of the copiable values the effect gives (after the ones it copies and those of `abilities`). Only in a triggered or an activated ability.
+       */
+      readonly withThisAbility?: true;
     }
   /**
    * CR 701.27 (Transform): each permanent `objects` names that is represented by a double-faced
@@ -6877,6 +6909,11 @@ export type Condition =
    * the stack, CR 202.3e) is at most `amount`, a state amount read now. False when `of` names nothing. Only in a `conditional` effect.
    */
   | { readonly kind: 'manaValueAtMostAmount'; readonly of: ObjectRef; readonly amount: Amount }
+  /**
+   * "Put a +1/+1 counter on it if the exiled card's mana value is 4 or greater" (CR 202.3, 608.2c, 608.2h, Summoner's Sending): the mana value of the object `of` names (read as
+   * `manaValueAtMostAmount` reads it, from last-known information when it has moved) is at least `amount`, a state amount read now. False when `of` names nothing. Only in a `conditional` effect.
+   */
+  | { readonly kind: 'manaValueAtLeastAmount'; readonly of: ObjectRef; readonly amount: Amount }
   /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).

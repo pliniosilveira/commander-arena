@@ -491,6 +491,10 @@ export function stateAmountOf(
       if (id === undefined) return 0;
       // CR 113.7a: an object that left the battlefield is read as it last existed.
       const obj = state.objects[id] ?? state.lki[id]?.object;
+      // CR 122.1: "for each kind of counter on it" counts the kinds the object has at least one counter of.
+      if (amount.kinds === true) {
+        return Object.values(obj?.counters ?? {}).filter((n) => n > 0).length;
+      }
       return countersOfKind(obj?.counters, amount.counter);
     }
     case 'aggregate': {

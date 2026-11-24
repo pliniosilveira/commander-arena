@@ -63,6 +63,7 @@ import { LIBRARY_CONDITION_RULES } from './library';
 import { LIMIT_BREAK_G4_CONDITION_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
+import { MANA_VALUE_AT_LEAST_CONDITION_RULES } from './mana-value-at-least';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
@@ -665,6 +666,7 @@ export const CONDITION_RULES = [
   CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
   ...EXPERIENCE_CONDITION_RULES,
+  ...MANA_VALUE_AT_LEAST_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

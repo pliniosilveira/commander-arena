@@ -135,6 +135,7 @@ import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
+import { KIMAHRI_EFFECT_RULES } from './kimahri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
@@ -1256,6 +1257,8 @@ export const EFFECT_RULES = [
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
   // choose and gain rules, and are tried first.
   ...PRISMARI_G1_EFFECT_RULES,
+  // Kimahri, Valiant Guardian (CR 707.9b): "have ~ become a copy of that creature, except its name is ~ and it has vigilance and this ability".
+  ...KIMAHRI_EFFECT_RULES,
   // Prismari deck, group 2 (issue 87, D-647 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.

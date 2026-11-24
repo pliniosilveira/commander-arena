@@ -18,7 +18,7 @@ import type {
   TokenDefinition,
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
-import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { keywordKind, landwalkOf, plainKeyword } from '../rules/keyword/vocabulary';
 import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
@@ -121,6 +121,7 @@ import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KEFKA_LOWERINGS } from './kefka';
+import { KIMAHRI_LOWERINGS } from './kimahri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
@@ -325,7 +326,10 @@ function simple(
             { thisCard: true, triggerSubject: true, moved: true }
           : verb === 'tap' || verb === 'untap'
             ? { moved: true }
-            : {},
+            : verb === 'explore'
+              ? // "Whenever a creature you control enters, it explores." (Path of Discovery, CR 701.44a): the creature whose entering caused the trigger.
+                { triggerSubject: true }
+              : {},
       ),
   };
 }
@@ -623,7 +627,8 @@ const RETURN: Lowering<IrClause, Effects> = {
       zone === 'battlefield' &&
       chosen?.kind === 'noun' &&
       /^it$/iu.test(chosen.filter.raw.trim()) &&
-      !ctx.itIsCard
+      !ctx.itIsCard &&
+      !ctx.diesTrigger
     ) {
       // Meren of Clan Nel Toth: "Choose target creature card in your graveyard. ... return it to the battlefield": "it" is the card the earlier instruction chose from a graveyard (CR 608.2c).
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
@@ -648,7 +653,9 @@ const RETURN: Lowering<IrClause, Effects> = {
       chosen?.kind === 'noun' &&
       zone === 'battlefield' &&
       chosen.det === 'triggerSubject' &&
-      /^that card/iu.test(chosen.filter.raw)
+      // "Whenever a creature you control without flying dies, return it to the battlefield ..." (Luminous Broodmoth): "it" of a dies trigger is the card too (CR 603.10a).
+      (/^that card/iu.test(chosen.filter.raw) ||
+        (ctx.diesTrigger && /^it$/iu.test(chosen.filter.raw.trim())))
     ) {
       const blocked = missingFeatures(['selector:triggerCard', 'selector:triggerSubject']);
       if (blocked.length > 0) return failure(clause, blocked);
@@ -1159,6 +1166,36 @@ const PREVENT_DAMAGE_PER_PREVENTED: Lowering<IrClause, Effects> = {
     return {
       ok: true,
       value: [{ ...prevented, perPrevented: { token: created.token } }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "If damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it." (Gatta and Luzzu, CR 615.5, 122.6): the shield `lower.prevent-damage` makes
+ * for the creature, and the counters the engine puts on it for the damage it prevents (`preventDamage.countersPrevented`). Only +1/+1 counters.
+ */
+const PREVENT_DAMAGE_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'preventDamageCounters',
+  id: 'lower.prevent-damage-counters',
+  needs: ['effect:preventDamage', 'duration:untilEndOfTurn', 'selector:countersPerPrevented'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const { counter, ...rest } = clause.args;
+    if (counter?.kind !== 'counterSpec' || counter.name !== '+1/+1') return failure(clause);
+    const shield = PREVENT_DAMAGE.lower({ ...clause, verb: 'preventDamage', args: rest }, ctx);
+    if (!shield.ok) return shield;
+    const [prevented, ...others] = shield.value;
+    if (
+      prevented?.kind !== 'preventDamage' ||
+      others.length > 0 ||
+      prevented.to.kind !== 'target'
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ ...prevented, countersPrevented: counter.name }],
       rule: clause.rule,
     };
   },
@@ -2403,6 +2440,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       abilities.push({ kind: 'keyword', keyword: { kind: 'toxic', count: Number(toxic[1]) } });
       continue;
     }
+    // "with islandwalk" (Chasm Skulker, CR 702.14a): a landwalk of the token itself, with its land type.
+    const landType = landwalkOf(word);
+    if (landType !== undefined) {
+      const unsupportedWalk = missingFeatures(['ability:keyword', 'keyword:landwalk']);
+      if (unsupportedWalk.length > 0) return { ok: false, needs: unsupportedWalk, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'landwalk', landType } });
+      continue;
+    }
     const kind = keywordKind(word);
     if (kind === undefined) return { ok: false, needs: [], ...at };
     const unsupported = missingFeatures(['ability:keyword', `keyword:${kind}`]);
@@ -2750,6 +2795,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SEARCH,
   PREVENT_DAMAGE,
   PREVENT_DAMAGE_PER_PREVENTED,
+  PREVENT_DAMAGE_COUNTERS,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
@@ -2802,6 +2848,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...KIMAHRI_LOWERINGS,
   ...COPY_CHOSEN_TOKEN_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.

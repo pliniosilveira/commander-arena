@@ -120,6 +120,39 @@ export const NUMBER_OF_ANY_COUNTERS = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * `amount.for-each-counter-kind`: "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter an object has, now. After a quantity ("draw a card
+ * for each ..."): the quantity is the count, as for `amount.for-each`.
+ */
+export const AMOUNT_FOR_EACH_COUNTER_KIND = defineRule<IrAmount>({
+  id: 'amount.for-each-counter-kind',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 122.1 (Counters)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['for each kind of counter on it', 'for each kind of counter on ~'],
+  rejects: [
+    'for each kind of counter',
+    'for each kind of counters on it',
+    'for each counter on it',
+    'for each kind of counter on target creature',
+    'for each type of counter on it',
+    'for each kind of counter on it you control',
+  ],
+  // Quiet: a "for each" this rule does not read stops where `amount.for-each` stops.
+  parse: quiet((ctx, pos) => {
+    const r = spanned(
+      sequence(literal('for each kind of counter on '), selfOrIt('amount.for-each-counter-kind')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, of] = r.value.value;
+    return {
+      ok: true,
+      value: { kind: 'countersOn', of, kinds: true, span: r.value.span },
+      pos: r.pos,
+    };
+  }),
+});
+
 /** "the number of Zombies you control": a count of the objects a filter matches (CR 608.2c). */
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
   countAmount(rule, literal('the number of '), true);
@@ -429,6 +462,22 @@ const MANA_VALUE_OF =
         ok: true,
         value: { kind: 'manaValueOf', of, span: { start: pos, end: lead.pos } },
         pos: lead.pos,
+      };
+    }
+    // "the mana value of that card" (Yuna's Whistle, CR 202.3, 608.2h): the possessive written the other way round.
+    const ofThat = pattern(
+      /the mana value of (that (?:creature|permanent|card))(?![\p{L}\p{N}'’])/iu,
+    )(ctx, pos);
+    if (ofThat.ok) {
+      const of = possessedNoun(
+        rule,
+        `${ofThat.value[1] ?? ''}'s`,
+        pos + 'the mana value of '.length,
+      );
+      return {
+        ok: true,
+        value: { kind: 'manaValueOf', of, span: { start: pos, end: ofThat.pos } },
+        pos: ofThat.pos,
       };
     }
     const m = pattern(MANA_VALUE_OF_HEAD)(ctx, pos);
@@ -844,6 +893,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of time counters on her',
     'where X is the number of +1/+1 counters on him',
     'where X is that card’s mana value',
+    'where X is the mana value of that card',
     // Prismari deck, group 2 (D-646, CR 202.3): the spell that caused a cast trigger.
     "where X is that spell's mana value",
     'where X is the amount of mana spent to cast that spell',
@@ -1162,6 +1212,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
 export const VALUE_AMOUNT_RULES = [AMOUNT_EQUAL_TO, AMOUNT_WHERE_X];
 export const FOR_EACH_VALUE_RULES = [
   AMOUNT_FOR_EACH_COUNTER,
+  AMOUNT_FOR_EACH_COUNTER_KIND,
   AMOUNT_FOR_EACH_OPPONENT,
   AMOUNT_FOR_EACH_THIS_WAY,
 ];

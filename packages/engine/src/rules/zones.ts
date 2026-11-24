@@ -850,6 +850,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
             : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
+    // CR 614.1c, 122.6 (Yuna, Grand Summoner): "that creature enters with two additional +1/+1 counters on it", from the effect the spell used up as it was cast.
+    if (old.zone === 'stack' && old.stack?.entersWithCounters !== undefined) {
+      counters = addCounterMaps(counters, old.stack.entersWithCounters);
+    }
     // CR 714.3a: a Saga enters with a lore counter.
     counters = entersAsSaga(
       face?.subtypes ?? [],

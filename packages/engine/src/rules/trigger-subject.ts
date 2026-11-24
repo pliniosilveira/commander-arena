@@ -27,6 +27,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
     return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
   if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;
+  // CR 614.1c, 122.6 (Yuna, Grand Summoner): "that creature enters with two additional +1/+1 counters" is about the spell that was cast.
+  if (effects.includes('"spellEntersWithCounters"')) return true;
   // CR 107.3, 113.7a (Quandrix Unlimited group E): "put X +1/+1 counters" of a cast trigger reads the X of the spell that was cast, as the ability resolves.
   if (effects.includes('"triggerSpellX"')) return true;
   // CR 601.2h, 608.2c: "If five or more mana was spent to cast that spell, ... instead" is a condition of the effect, read as the effect resolves from the spell that

@@ -537,6 +537,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'nextSpellModifier',
     // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b).
     'nextSpellPayLife',
+    // Yuna, Grand Summoner: "that creature enters with two additional +1/+1 counters on it" (CR 614.1c, 122.6), the body of a delayed cast trigger.
+    'spellEntersWithCounters',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -1133,6 +1135,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaStaysThroughCombat',
     // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
     'tokensPerPrevented',
+    // CR 615.5, 122.6: "prevent that damage and put that many +1/+1 counters on it" (`preventDamage.countersPrevented`).
+    'countersPerPrevented',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -1341,6 +1345,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'movedShareAllCardTypes',
     // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have" (`manaValueAtMostAmount`).
     'manaValueAtMostAmount',
+    // CR 202.3, 608.2c: "if the exiled card's mana value is 4 or greater" (`manaValueAtLeastAmount`).
+    'manaValueAtLeastAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
@@ -2188,6 +2194,8 @@ export const SELECTOR_KINDS = [
   'manaStaysThroughCombat',
   /** "For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the engine's `preventDamage.perPrevented`. */
   'tokensPerPrevented',
+  /** "Prevent that damage and put that many +1/+1 counters on it" (CR 615.5, 122.6): the engine's `preventDamage.countersPrevented`. */
+  'countersPerPrevented',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "with one or more targets" on a cast trigger (D-574). */
@@ -2441,6 +2449,8 @@ export const CONDITION_KINDS = [
   'movedShareAllCardTypes',
   /** "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c): the engine's `manaValueAtMostAmount`. */
   'manaValueAtMostAmount',
+  /** "If the exiled card's mana value is 4 or greater" (CR 202.3, 608.2c): the engine's `manaValueAtLeastAmount`. */
+  'manaValueAtLeastAmount',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -3218,6 +3228,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCastEachType: true,
   nextSpellModifier: true,
   nextSpellPayLife: true,
+  spellEntersWithCounters: true,
   revealTop: true,
   revealTopDuel: true,
   revealTopCard: true,

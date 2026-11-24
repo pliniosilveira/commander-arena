@@ -2294,6 +2294,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
+      if (
+        a.kind === 'countersOn' &&
+        a.kinds !== undefined &&
+        (a.kinds !== true || a.counter !== undefined)
+      ) {
+        issue(out, `${path}.kinds`, 'kinds is true and goes without a counter kind');
+      }
       break;
     case 'aggregate':
       // D-131: the greatest or the total of a stat over the objects a filter matches.
@@ -3715,6 +3722,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'movedTotalManaValue':
     case 'movedShareAllCardTypes':
     case 'manaValueAtMostAmount':
+    case 'manaValueAtLeastAmount':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -5283,6 +5291,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
       break;
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of a target, the object that was moved or the one that caused the trigger, against an amount read now.
       const ofKind = kindOf(c.of);
@@ -5290,7 +5299,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(
           out,
           `${path}.of`,
-          'manaValueAtMostAmount reads a target, the object that was moved or the object that caused the trigger',
+          `${c.kind} reads a target, the object that was moved or the object that caused the trigger`,
         );
       } else if (ofKind === 'triggerSubject') {
         if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {
@@ -5471,6 +5480,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
 function isDelayedCastBody(e: Effect | undefined): boolean {
   if (e === undefined || e === null) return false;
   if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
+  // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast enters with counters.
+  if (e.kind === 'spellEntersWithCounters') return true;
   if (e.kind === 'draw') return kindOf(e.player) === 'you';
   if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): "create a token that's a copy of a non-Saga token you control": the permanent is chosen as the ability resolves, then copied.
@@ -5619,7 +5630,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // CR 608.2c, 608.2g: "you may cast that card. If you do, ...": the card was cast when the question of `castCard` was accepted (`performed`).
               child?.kind === 'castCard' ||
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
-              child?.kind === 'createToken') &&
+              child?.kind === 'createToken' ||
+              // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done (`performed`).
+              child?.kind === 'addCounters') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -6186,6 +6199,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
         } else {
           checkEnumList(out, `${path}.addSupertypes`, e.addSupertypes, SUPERTYPES, 'supertype');
+        }
+      }
+      // CR 707.9b (Kimahri, Valiant Guardian): "... and this ability": the ability that resolves is one of the copy's.
+      if (e.withThisAbility !== undefined) {
+        if (e.withThisAbility !== true)
+          issue(out, `${path}.withThisAbility`, 'withThisAbility is true when present');
+        if (scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.withThisAbility`,
+            'the ability a copy keeps is the one that resolves: an ability of a permanent',
+          );
         }
       }
       // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
@@ -8272,6 +8297,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'reflexive': {
       // CR 603.12 (D-135): a triggered ability of its own: its targets are its own, and it knows nothing of what the
       // resolution that created it chose or moved (the source is the same, "it" the card the source became).
+      if (e.ifMovedMatches !== undefined && e.ifMoved !== true) {
+        issue(out, `${path}.ifMovedMatches`, 'ifMovedMatches goes with ifMoved');
+      }
       if (e.afterPayment !== undefined) {
         // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
         if (e.afterPayment !== true)
@@ -8298,6 +8326,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (e.ifThisWay !== undefined) {
           issue(out, `${path}.ifMoved`, 'what triggers it is the move: no ifThisWay');
+        }
+        if (e.ifMovedMatches !== undefined) {
+          checkFilter(e.ifMovedMatches, `${path}.ifMovedMatches`, out);
         }
       } else if (scope.mayAvailable !== true) {
         issue(
@@ -8659,9 +8690,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 108.3 (issue 81): the permanents named are put into their owners' libraries; they are a selector of permanents.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
+    case 'spellEntersWithCounters':
+      // CR 614.1c, 122.6 (Yuna, Grand Summoner): a counter kind and a positive whole number; the effect is only the body of a delayed cast trigger (`isDelayedCastBody`).
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      if (!Number.isInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'count must be a positive whole number');
+      }
+      if (scope.triggerSubject !== 'stack') {
+        issue(out, path, 'spellEntersWithCounters names the spell a cast trigger is about');
+      }
+      break;
     case 'explore':
-      // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents.
-      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents, or the permanent a trigger is about ("it explores").
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
       break;
     case 'scry':
     case 'surveil':
