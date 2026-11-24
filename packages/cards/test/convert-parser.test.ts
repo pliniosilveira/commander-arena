@@ -1478,6 +1478,7 @@ describe('unmatched abilities', () => {
       'static.players-cant-gain-life',
       'static.damage-cant-be-prevented',
       'static.all-damage-as-though-wither',
+      'static.activated-abilities-of-chosen-name',
       'static.you-and-creatures-protection-chosen-type',
       'static.you-planeswalkers-creatures-hexproof',
       'static.cant-have-counters',

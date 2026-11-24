@@ -341,6 +341,7 @@ export function checkFilter(
       'triggerPlayer',
       'defendingPlayer',
       'monarch',
+      'chosenPlayer',
     ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);

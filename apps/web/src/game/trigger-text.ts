@@ -652,6 +652,8 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
+      // CR 607.2d (Sewer Nemesis): "the chosen player" is a choice the card made as it entered; the card's own text says it.
+      if (trigger.by === 'chosenPlayer') return null;
       // Quandrix Unlimited group E (CR 601.2i): "your first spell with {X} in its mana cost each turn" says nothing else about the spell; with more words it cannot be said here.
       if (trigger.filter.firstXSpellThisTurn === true) {
         const { firstXSpellThisTurn: _first, ...rest } = trigger.filter;

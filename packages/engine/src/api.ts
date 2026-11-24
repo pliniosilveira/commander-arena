@@ -633,7 +633,10 @@ function answerChooseOption(
     return ok(played.state, [answered, ...played.events]);
   }
   const chosen = chosenFromOption(d.purpose, option, d.options);
-  if (chosen === null || !d.options.includes(option)) return fail('That is not one of the options');
+  // CR 201.2: a card name is typed, so the options of that question are only suggestions; every other choice is one of the options.
+  if (chosen === null || (d.purpose !== 'cardName' && !d.options.includes(option))) {
+    return fail('That is not one of the options');
+  }
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }

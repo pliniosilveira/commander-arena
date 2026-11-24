@@ -198,6 +198,7 @@ export function runEnterToken(
         entersOptions(definition.abilities),
         entersColorExcept(definition.abilities),
         lifeTotalIsLocked(state, seat) ? 0 : getSeat(state, seat).life,
+        { state, seat },
       ),
       // Nothing exists yet: the question is about the token that the resolving spell or ability makes.
       source: res.object,

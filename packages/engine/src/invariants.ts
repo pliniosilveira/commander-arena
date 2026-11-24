@@ -371,7 +371,8 @@ export function checkInvariants(state: GameState): string[] {
     // CR 614.12a, 400.7 (D-100): a choice made as a permanent entered belongs to a permanent whose card
     // or token asks that question, and is one of its options; it is gone when the permanent leaves.
     if (obj.chosen !== undefined) {
-      const { creatureType, color, cardType, planeswalkerType, lifePaid } = obj.chosen;
+      const { creatureType, color, cardType, planeswalkerType, lifePaid, player, cardName } =
+        obj.chosen;
       const kinds = new Set(
         (obj.token === null ? faces.map((f) => f.abilities) : [obj.token.abilities]).map(
           entersChoice,
@@ -406,6 +407,19 @@ export function checkInvariants(state: GameState): string[] {
         (!Number.isInteger(lifePaid) || lifePaid < 0 || !kinds.has('lifePaid'))
       ) {
         problems.push(`${id} paid ${lifePaid} life as it entered, which it cannot have`);
+      }
+      // CR 614.12a: a chosen player is a seat of the game, and a chosen name is a one-line text; only a card that asks for them has one.
+      if (
+        player !== undefined &&
+        (!Number.isInteger(player) ||
+          player < 0 ||
+          player >= state.seats.length ||
+          !kinds.has('player'))
+      ) {
+        problems.push(`${id} chose player ${player}, which it cannot have`);
+      }
+      if (cardName !== undefined && (cardName.trim() === '' || !kinds.has('cardName'))) {
+        problems.push(`${id} chose card name "${cardName}", which it cannot have`);
       }
       // D-151: a named option is one of those its card offers.
       const { option } = obj.chosen;

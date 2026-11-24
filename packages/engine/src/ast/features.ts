@@ -1185,6 +1185,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerGreaterThanSource',
     // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
     'monarchController',
+    // CR 607.2d (Sewer Nemesis): `ObjectFilter.controller` 'chosenPlayer', "cards in the chosen player's graveyard", and the cast trigger's `by: 'chosenPlayer'`.
+    'chosenPlayerController',
+    'castByChosenPlayer',
     'restrictBlockers',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
@@ -1523,6 +1526,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // abilities and is a green Elk creature" (`loseAllAbilities`, `setColors`, `setTypes` without `additive`).
     'restrictionUnless',
     'loseAllAbilities',
+    // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated" (`cantActivateChosenName`).
+    'cantActivateChosenName',
     'setColors',
     // D-149: "Prevent all combat damage that would be dealt to this creature", "You have hexproof", "You can't lose the game and your
     // opponents can't win the game" (`cantLoseGame`, `opponentsCantWin`), "You can't cast ~ during your first, second, or third turns".
@@ -1807,6 +1812,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'myriad',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
+  // CR 702.93a (Undying): "it and other creatures you control ... gain undying until end of turn"; `derive` gives the creature the triggered ability the keyword stands for (once, like decayed's).
+  'undying',
 ];
 
 /** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
@@ -2268,6 +2275,10 @@ export const SELECTOR_KINDS = [
   'powerGreaterThanSource',
   /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
   'monarchController',
+  /** "Cards in the chosen player's graveyard" (CR 607.2d, Sewer Nemesis): the engine's `ObjectFilter.controller` 'chosenPlayer'. */
+  'chosenPlayerController',
+  /** "Whenever the chosen player casts a spell" (CR 607.2d, 603.2): the engine's `castSpell` trigger with `by: 'chosenPlayer'`. */
+  'castByChosenPlayer',
   /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
   'restrictBlockers',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
@@ -2654,6 +2665,8 @@ export const STATIC_KINDS = [
   'restrictionUnless',
   /** "Enchanted creature loses all abilities" (CR 613.1f, D-145): the engine's static `loseAllAbilities`. */
   'loseAllAbilities',
+  /** "Activated abilities of sources with the chosen name can't be activated" (CR 602.5, 607.2d): the engine's static `cantActivateChosenName`. */
+  'cantActivateChosenName',
   /** "Enchanted creature is a green Elk creature" (CR 613.1e, D-145): the engine's static `setColors`. */
   'setColors',
   /** "Prevent all combat damage that would be dealt to this creature" (CR 615.1, D-149): the engine's `preventDamageToThis`. */

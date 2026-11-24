@@ -279,6 +279,8 @@ export interface IrFilter {
     | 'defendingPlayer'
     // "creatures the monarch controls" (CR 725.1): only the blockers of "can't be blocked by creatures the monarch controls"
     | 'monarch'
+    // "cards in the chosen player's graveyard" (Sewer Nemesis, CR 607.2d): the player the permanent chose as it entered, as owner of the cards
+    | 'chosenPlayer'
     // `orPlaneswalkerController`: "that player or that planeswalker's controller controls" (stage P47, D-200): the controller of the planeswalker the target is, too
     | { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
   readonly zone?: 'battlefield' | 'graveyard' | 'library' | 'hand' | 'exile' | 'stack';
@@ -418,6 +420,8 @@ export interface IrFilter {
   readonly anyOf?: readonly IrFilter[];
   /** The noun names a player, not an object: "target player", "target opponent". */
   readonly player?: 'any' | 'opponent' | 'opponentWhoseTurn';
+  /** "the chosen player casts a spell" (Sewer Nemesis, CR 607.2d): the player noun of a cast trigger is the player the permanent chose as it entered (the engine's `by: 'chosenPlayer'`). */
+  readonly chosenPlayer?: true;
   /**
    * "target player or planeswalker" (stage P37, D-180, CR 306.1; stage P47, D-200): the words "or planeswalker" of a player noun, which the engine's
    * target `playerOrObject` reads: a player, or a planeswalker (`noun.player-or-planeswalker`).
@@ -1456,7 +1460,16 @@ export interface IrRestrictionArg extends IrNode {
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
   /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
-  readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'planeswalkerType' | 'lifePaid';
+  readonly what:
+    | 'creatureType'
+    | 'color'
+    | 'option'
+    | 'cardType'
+    | 'planeswalkerType'
+    | 'lifePaid'
+    // CR 614.12a, 607.2d (Sewer Nemesis, Phyrexian Revoker): "As this creature enters, choose a player" and "choose a nonland card name".
+    | 'player'
+    | 'cardName';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
   /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */
@@ -2116,6 +2129,8 @@ export type IrStaticEffect =
   | { readonly kind: 'damageCantBePrevented' }
   /** "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d): the permanent changes a rule of the game. */
   | { readonly kind: 'damageAsThoughWither' }
+  /** "Activated abilities of sources with the chosen name can't be activated." (Phyrexian Revoker, CR 602.5, 607.2d): the permanent changes a rule of the game, for the name it chose as it entered. */
+  | { readonly kind: 'cantActivateChosenName' }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
    * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.

@@ -330,6 +330,10 @@ export interface ChosenValues {
   readonly cardType?: CardType;
   /** A planeswalker type of CR 205.3j, spelled as `PLANESWALKER_TYPES` lists it: "choose a planeswalker type" (Deification). */
   readonly planeswalkerType?: Subtype;
+  /** The player "As this enters, choose a player" chose (CR 614.12a, 607.2d), a seat of the game. */
+  readonly player?: SeatId;
+  /** The card name "As this enters, choose a nonland card name" chose (CR 201.2): any non-empty text, as the engine has no list of every card. */
+  readonly cardName?: string;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
   /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */

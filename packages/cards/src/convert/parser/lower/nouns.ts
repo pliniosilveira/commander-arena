@@ -308,6 +308,8 @@ function lowerFilterAt(
   if (filter.powerGreaterThanSource === true) parts.push('selector:powerGreaterThanSource');
   // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
   if (filter.controller === 'monarch') parts.push('selector:monarchController');
+  // CR 607.2d (Sewer Nemesis): "cards in the chosen player's graveyard", read from what the permanent chose as it entered.
+  if (filter.controller === 'chosenPlayer') parts.push('selector:chosenPlayerController');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.

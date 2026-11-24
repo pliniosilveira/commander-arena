@@ -115,6 +115,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters the battlefield, choose a card type.',
     // Issue 184 (Thriving Isle): a color other than one.
     'As ~ enters, choose a color other than blue.',
+    // Sewer Nemesis and Phyrexian Revoker (CR 614.12a, 607.2d): a player, a nonland card name.
+    'As ~ enters, choose a player.',
+    'As ~ enters, choose a nonland card name.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -130,7 +133,12 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose two colors.',
     'As ~ enters, choose a basic land type.',
     'As ~ enters, choose a card name.',
+    'As ~ enters, choose a land card name.',
     'As ~ enters, choose a number.',
+    'As ~ enters, choose a player',
+    'As ~ enters, choose two players.',
+    'As ~ enters, choose a nonland card name',
+    'As ~ enters, choose a nonland card.',
     'As ~ enters, choose an opponent.',
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
@@ -153,7 +161,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(ENTERS, literal('it enters the battlefield'), literal('it enters')),
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
-        pattern(/, choose a (creature type|color|card type|planeswalker type)\./i),
+        pattern(
+          /, choose a (creature type|color|card type|planeswalker type|player|nonland card name)\./i,
+        ),
         // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
         pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
@@ -169,7 +179,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       kind === 'color' ||
       kind === 'creature type' ||
       kind === 'card type' ||
-      kind === 'planeswalker type';
+      kind === 'planeswalker type' ||
+      kind === 'player' ||
+      kind === 'nonland card name';
     const names = plain ? null : optionNames(tail[1] ?? '');
     if (!plain && names === null) return fail(ctx, pos);
     const excluded = EXCLUDED_COLORS[(tail[2] ?? '').toLowerCase()];
@@ -184,7 +196,11 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
                   ? 'cardType'
                   : kind === 'planeswalker type'
                     ? 'planeswalkerType'
-                    : 'creatureType',
+                    : kind === 'player'
+                      ? 'player'
+                      : kind === 'nonland card name'
+                        ? 'cardName'
+                        : 'creatureType',
             ...(excluded === undefined ? {} : { except: excluded }),
             span,
             rule: id,

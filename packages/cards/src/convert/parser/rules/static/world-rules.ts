@@ -140,8 +140,61 @@ export const STATIC_ALL_DAMAGE_AS_THOUGH_WITHER = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.activated-abilities-of-chosen-name`: "Activated abilities of sources with the chosen name can't be activated." (Phyrexian Revoker; CR 602.5, 605.1a, 607.2d, 604.1): no
+ * activated ability of an object with the name this permanent chose as it entered, mana abilities included. The engine's `cantActivateChosenName`; the card must also choose a name as it
+ * enters (`asEntersChoose` of `cardName`, which `validateCard` checks). Not read: "unless they're mana abilities" (Pithing Needle, another rule), a name the text gives, a duration or a
+ * condition, and more words after it.
+ */
+export const STATIC_ACTIVATED_ABILITIES_OF_CHOSEN_NAME = defineRule<IrStatic>({
+  id: 'static.activated-abilities-of-chosen-name',
+  family: 'static',
+  leading: ['activated'],
+  cites: [
+    'CR 602.5 (Activating Activated Abilities)',
+    'CR 605.1a (Mana Abilities)',
+    'CR 607.2d (Linked Abilities)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "Activated abilities of sources with the chosen name can't be activated.",
+    'Activated abilities of sources with the chosen name can’t be activated.',
+  ],
+  rejects: [
+    "Activated abilities of sources with the chosen name can't be activated",
+    "Activated abilities of sources with the chosen name can't be activated unless they're mana abilities.",
+    "Activated abilities of sources with the chosen name can't be activated this turn.",
+    "Activated abilities of sources with the chosen name can't be activated and you draw a card.",
+    "Activated abilities of sources named Sol Ring can't be activated.",
+    "Activated abilities of creatures with the chosen name can't be activated.",
+    "Triggered abilities of sources with the chosen name can't be activated.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(pattern(/activated abilities of sources with the chosen name/iu)),
+      pattern(/ can['’]t be activated/iu),
+      literal('.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [read] = r.value;
+    const id = 'static.activated-abilities-of-chosen-name';
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        damageNoun(read.span, id),
+        [{ kind: 'cantActivateChosenName' }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const WORLD_RULES_STATIC_RULES = [
   STATIC_PLAYERS_CANT_GAIN_LIFE,
   STATIC_DAMAGE_CANT_BE_PREVENTED,
   STATIC_ALL_DAMAGE_AS_THOUGH_WITHER,
+  STATIC_ACTIVATED_ABILITIES_OF_CHOSEN_NAME,
 ].map(quietly);

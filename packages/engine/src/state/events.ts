@@ -647,6 +647,8 @@ export type GameEvent =
         | 'cardType'
         | 'planeswalkerType'
         | 'lifePaid'
+        | 'player'
+        | 'cardName'
         | 'option'
         | 'attackTarget'
         | 'assignOpponent'

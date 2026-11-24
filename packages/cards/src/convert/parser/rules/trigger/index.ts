@@ -830,7 +830,7 @@ function aimedFilter(aimed: Aimed): IrFilter {
 export const TRIGGER_CAST = defineRule<IrTrigger>({
   id: 'trigger.cast',
   family: 'trigger',
-  leading: ['you', 'a', 'an'],
+  leading: ['you', 'a', 'an', 'the'],
   cites: [
     'CR 601.2i (Casting Spells)',
     'CR 603.2 (Handling Triggered Abilities)',
@@ -838,6 +838,9 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
   ],
   examples: [
     'you cast a spell',
+    // Sewer Nemesis (CR 603.2, 607.2d): the player this permanent chose as it entered.
+    'the chosen player casts a spell',
+    'the chosen player casts a creature spell',
     'you cast a creature spell',
     'you cast a noncreature spell',
     'you cast an instant or sorcery spell',
@@ -875,6 +878,10 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast a spell you don’t own',
   ],
   rejects: [
+    'the chosen player cast a spell',
+    'the chosen players casts a spell',
+    'the chosen opponent casts a spell',
+    'the chosen player casts spells',
     "you cast a noncreature spell you don't own that targets a creature",
     "you cast a spell you don't own or",
     "you cast a spell you don't owns",
@@ -923,6 +930,15 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
             {
               raw: 'a player',
             },
+          ),
+        ),
+        // Sewer Nemesis (CR 603.2, 607.2d): the engine's `by: 'chosenPlayer'`, the player the permanent chose as it entered.
+        map(spanned(literal('the chosen player casts ')), ({ span }) =>
+          makeNoun(
+            'trigger.cast',
+            { start: span.start, end: span.start + 'the chosen player'.length },
+            'eachPlayer',
+            { raw: 'the chosen player', chosenPlayer: true },
           ),
         ),
         // D-111: the engine's `by: 'opponent'`, a player the controller of the ability does not control.

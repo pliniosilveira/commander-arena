@@ -9,6 +9,7 @@
  */
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { chooseCardType } from './casual-card-type';
+import { chooseCardNameOption, choosePlayerOption } from './casual-chosen-subject';
 import { chooseCounterPick } from './casual-counter-pick';
 import { chooseNamedOption } from './casual-dragons';
 import { chooseRiot } from './casual-keywords';
@@ -162,6 +163,9 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'cardType') return chooseCardType(view, d);
   // CR 614.12a, 205.3j: "choose a planeswalker type", the type of the planeswalkers it controls (casual-walker-type.ts).
   if (d.purpose === 'planeswalkerType') return chooseWalkerType(view, d);
+  // CR 614.12a, 607.2d: "choose a player" and "choose a nonland card name" as it enters (casual-chosen-subject.ts).
+  if (d.purpose === 'player') return choosePlayerOption(view, d);
+  if (d.purpose === 'cardName') return chooseCardNameOption(view, d);
   // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice", the color that threatens the protected permanents (casual-protection.ts).
   if (d.purpose === 'protectionColor') return chooseProtectionColor(view, d);
   // D-514 (CR 702.16a, 608.2d): "gains protection from the card type of your choice", the card type that threatens the protected permanents (casual-protection.ts).
