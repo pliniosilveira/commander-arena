@@ -248,6 +248,15 @@ const tokenWith = (
       ),
       ([keywords, one]) => ({ keywords, abilities: one === null ? [] : [one] }),
     ),
+    // Pursued Whale (CR 111.4, 113.1): "with \"~ can't block\" and \"Creatures you control attack each combat if able.\"": two static abilities in quotes, no two alike.
+    map(
+      satisfy(
+        sequence(quoted, literal(' and '), quoted),
+        ([a, , b]) =>
+          a.ability.kind === 'static' && b.ability.kind === 'static' && a.text !== b.text,
+      ),
+      ([a, , b]) => ({ keywords: [] as string[], abilities: [a, b] }),
+    ),
     map(quoted, (one) => ({ keywords: [] as string[], abilities: [one] })),
   );
 
@@ -465,6 +474,9 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 2/2 blue Shapeshifter creature token with changeling',
     'a 1/1 white Soldier creature token with changeling and flying',
     'a 1/1 white Soldier creature token with flying, changeling, and "{T}: You gain 1 life."',
+    // CR 111.4, 113.1, 508.1d (Goblin Spymaster, Pursued Whale): static abilities in quotes, the second after "and".
+    'a 1/1 red Goblin creature token with "Creatures you control attack each combat if able."',
+    'a 1/1 red Pirate creature token with "~ can\'t block" and "Creatures you control attack each combat if able."',
     // CR 508.4, 110.5b: a token that enters tapped and attacking (after an attack batch trigger the lowering names the player).
     "a 1/1 red Goblin creature token that's tapped and attacking",
     'a 1/1 red Goblin creature token that’s tapped and attacking',
@@ -502,6 +514,8 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token with flying and "Sacrifice ~: Draw a card"',
     'a 1/1 white Soldier creature token with "Flying" and "{T}: You gain 1 life."',
     'a 1/1 white Soldier creature token with "{T}: You gain 1 life." and "{T}: You gain 1 life."',
+    'a 1/1 red Pirate creature token with "~ can\'t block" and "~ can\'t block"',
+    'a 1/1 red Pirate creature token with "~ can\'t block" and "{T}: You gain 1 life."',
     'a 1/1 white Soldier creature token tapped',
     'a 1/1 Soldier creature token',
     'a white Soldier creature token',
