@@ -7,6 +7,7 @@
  */
 import type { Effect } from '../ast/types';
 import type { ObjectId } from '../ids';
+import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type { ChosenTarget, GameState, ResolutionContext } from '../state/types';
@@ -24,7 +25,9 @@ export function runExileUntilFound(
   let next = state;
   const events: GameEvent[] = [];
   const exiled: ObjectId[] = [];
+  const found: ObjectId[] = [];
   for (const seat of apnapOrder(state, resolvePlayers(state, effect.players, ctx, targets))) {
+    const rest: ObjectId[] = [];
     for (;;) {
       const top = getSeat(next, seat).library[0];
       const card = top === undefined ? undefined : next.objects[top];
@@ -42,8 +45,23 @@ export function runExileUntilFound(
       next = moved.state;
       events.push(...moved.events);
       if (moved.newObject !== null) exiled.push(moved.newObject);
-      if (match) break;
+      if (match) {
+        found.push(...(moved.newObject === null ? [] : [moved.newObject]));
+        break;
+      }
+      rest.push(...(moved.newObject === null ? [] : [moved.newObject]));
+    }
+    // CR 401.4 (Guff Rewrites History): "then puts the rest on the bottom of their library in a random order": the order is the seeded generator's, nobody sees or chooses it.
+    if (effect.restToBottom === true && rest.length > 0) {
+      const [order, rng] = shuffle(rest, next.rng);
+      next = { ...next, rng };
+      for (const card of order) {
+        const back = moveObject(next, { object: card, to: 'library', position: 'bottom' });
+        if (back.kind !== 'done') continue;
+        next = back.state;
+        events.push(...back.events);
+      }
     }
   }
-  return { ...done(next, events), lastMoved: exiled };
+  return { ...done(next, events), lastMoved: effect.restToBottom === true ? found : exiled };
 }

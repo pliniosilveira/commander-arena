@@ -2966,7 +2966,8 @@ function runEffect(
 
     case 'shuffle': {
       let shuffled = 0;
-      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+      // CR 701.24: a player named twice (the owner of two targets) shuffles once.
+      for (const seat of new Set(resolvePlayers(state, effect.player, ctx, targets))) {
         const r = shuffleLibrary(next, seat);
         next = r.state;
         events.push(...r.events);
@@ -3523,8 +3524,10 @@ function runEffect(
       // CR 608.2g, 101.4 (issue 81, The Ur-Sphinx): "For each player, you may cast a card that player milled this way": one question for each owner of the cards just
       // moved, in turn order from the active player, over the cards that owner has among them (those in a graveyard now).
       if (effect.perOwner === true) {
+        // Guff Rewrites History: with `byOwner` the cards are in exile and each owner casts their own.
+        const zone: 'exile' | 'graveyard' = effect.byOwner === true ? 'exile' : 'graveyard';
         const moved = resolveObjects(state, effect.objects as ObjectRef, ctx, targets).filter(
-          (id) => state.objects[id]?.zone === 'graveyard',
+          (id) => state.objects[id]?.zone === zone,
         );
         const asks = seatsInOrder(state, state.turn.activeSeat).flatMap((owner) => {
           const cards = moved.filter((id) => state.objects[id]?.owner === owner);
@@ -3536,7 +3539,8 @@ function runEffect(
                   objects: effect.objects,
                   play: false,
                   cards,
-                  cardsZone: 'graveyard' as const,
+                  cardsZone: zone,
+                  ...(effect.byOwner === true ? { seat: owner } : {}),
                   chosen: null,
                 },
               ];

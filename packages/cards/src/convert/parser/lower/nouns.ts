@@ -115,6 +115,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyNumber',
   // Hylda group 3: "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
   'selector:differentControllers',
+  // Guff Rewrites History: "for each player, choose target ... that player controls" (`TargetSpec.everyController`).
+  'selector:everyController',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
@@ -1066,6 +1068,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           return failure(noun, []);
         }
       }
+      if (noun.everyController === true) {
+        const blocked = missingFeatures(['selector:everyController']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        if (!anyNumberTarget || noun.differentControllers !== true) return failure(noun, []);
+      }
       let upToAmount: Amount | undefined;
       if (upToDefinedX) {
         const blocked = missingFeatures(['selector:upToAmount']);
@@ -1098,6 +1105,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               ...(noun.differentControllers === true
                 ? { differentControllers: true as const }
                 : {}),
+              ...(noun.everyController === true ? { everyController: true as const } : {}),
             }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }

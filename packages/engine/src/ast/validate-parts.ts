@@ -1388,6 +1388,15 @@ export function declareTargets(
         );
       }
     }
+    if (spec.everyController !== undefined) {
+      // CR 115.1, 601.2c (Guff Rewrites History): "for each player, choose target ... that player controls".
+      if (spec.everyController !== true) {
+        issue(out, `${p}.everyController`, 'everyController must be true when present');
+      }
+      if (spec.differentControllers !== true || spec.anyNumber !== true) {
+        issue(out, p, 'everyController goes with differentControllers and anyNumber');
+      }
+    }
     if (spec.differentFrom !== undefined) {
       // CR 115.3 (D-151): "other targets": an earlier slot of the ability, not this one.
       if (typeof spec.differentFrom !== 'string' || !declared.has(spec.differentFrom)) {
@@ -7372,6 +7381,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             "perOwner is true, on the cards an effect before moved ('moved'), with no play, max, filter or player",
           );
         }
+      }
+      if (e.byOwner !== undefined && (e.byOwner !== true || e.perOwner !== true)) {
+        issue(out, `${path}.byOwner`, 'byOwner is true, only with perOwner');
       }
       const objects = e.objects as ChooseSelector | ObjectRef;
       // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.

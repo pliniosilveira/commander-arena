@@ -1540,6 +1540,12 @@ export interface TargetSpec {
    */
   readonly differentControllers?: true;
   /**
+   * "For each player, choose target nonenchantment, nonland permanent that player controls" (CR 115.1, 601.2c, 603.3d, Guff Rewrites History): with `differentControllers`, the slot must take
+   * a target for each player who controls a legal one, not just any number of them (so exactly one for every player who has a choice, and none for a player who has none). The spell or
+   * ability is still put on the stack when no player has a legal target. Only with `differentControllers` and `anyNumber`.
+   */
+  readonly everyController?: true;
+  /**
    * "Return any number of target creature cards with total power 10 or less from your graveyard to the battlefield" (Reunion of the House, CR 115.1, 601.2c, 208.1): the
    * targets of this slot (`anyNumber`, objects) have total power of at most this number, each read as the creature or card it is now (a card in a graveyard has its printed
    * power, a characteristic-defining ability's value included, CR 604.3; a negative power subtracts). As the spell or ability resolves the total is read again: if it is more
@@ -3266,6 +3272,11 @@ export type Effect =
       readonly kind: 'exileUntilFound';
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
+      /**
+       * "... until they exile a nonland card, then puts the rest on the bottom of their library in a random order" (CR 701.13, 401.4, Guff Rewrites History): the cards each player exiled
+       * other than the one the filter matched go to the bottom of that player's library in an order the seeded generator makes, and only the matching cards are what `moved` names afterwards.
+       */
+      readonly restToBottom?: true;
     }
   /**
    * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-660, Plargg and Nassari): an opponent of the controller (the first one in turn order who is still in
@@ -4756,6 +4767,11 @@ export type Effect =
        * graveyard it is in. Only with `moved`, and with neither `play`, `max` nor `filter`.
        */
       readonly perOwner?: true;
+      /**
+       * "Each player may cast the nonland card they exiled without paying its mana cost" (CR 608.2g, 101.4, 118.9, Guff Rewrites History): with `perOwner`, the cards are in exile and each
+       * owner is the one who is asked and casts (not the controller of the effect), in turn order from the active player. Only with `perOwner`.
+       */
+      readonly byOwner?: true;
       /**
        * "You may cast an Aura spell from among them without paying its mana cost" (D-655, CR 608.2g): only the cards of `objects` this filter matches are offered, read for the
        * card as it is in exile (card types, subtypes, mana value, colors). With `objects` a `choose` selector the selector's own filter says it, so this is for `moved` and `linkedExile`.

@@ -191,6 +191,8 @@ export interface IrNoun extends IrNode {
   readonly anyNumber?: true;
   /** "any number of target tapped creatures with different controllers" (Hylda group 3, CR 115.1, 601.2c): with `anyNumber` on a target, no two of them have the same controller. */
   readonly differentControllers?: true;
+  /** "For each player, choose target nonland permanent that player controls" (Guff Rewrites History, CR 115.1, 601.2c): with `differentControllers`, a target for each player who has a legal one. */
+  readonly everyController?: true;
   /** "one or more Treasures" (stage P41, D-188, CR 701.21): with `anyNumber`, the player chooses at least one of them. */
   readonly atLeastOne?: true;
   /**

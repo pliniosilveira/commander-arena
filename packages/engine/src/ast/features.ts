@@ -1244,6 +1244,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
     'differentControllers',
+    // Guff Rewrites History (CR 115.1, 601.2c): "for each player, choose target ... that player controls" (`TargetSpec.everyController`).
+    'everyController',
     // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less" (`TargetSpec.totalPowerAtMost`).
     'totalPowerAtMost',
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
@@ -2340,6 +2342,8 @@ export const SELECTOR_KINDS = [
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
   'differentControllers',
+  /** "For each player, choose target nonland permanent that player controls" (CR 115.1, 601.2c, Guff Rewrites History): the engine's `TargetSpec.everyController`, a target for each player who has a legal one. */
+  'everyController',
   /** "Any number of target creature cards with total power 10 or less" (CR 115.1, 208.1, Reunion of the House): the engine's `TargetSpec.totalPowerAtMost`. */
   'totalPowerAtMost',
   /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
