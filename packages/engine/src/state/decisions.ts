@@ -802,7 +802,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'buyback'
     | 'exileMore'
     | 'exert'
-    | 'clash';
+    | 'clash'
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield": `source` is the card in `seat`'s hand; accepting puts it onto the battlefield.
+    | 'openingHand';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.
@@ -840,6 +842,12 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * could be paid. `cancel` is a legal answer and rewinds the cast (CR 733).
    */
   readonly otherCost?: readonly Cost[];
+  /**
+   * For purpose `'costChoice'` with three ways ("sacrifice a creature, discard a card, or pay 4 life", D-181): `cost` is the first, `otherCost` the second and `moreCost` the third; declining the
+   * first asks again between the second and the third. `costWays` are the indexes of the ways in the face's `additionalCostChoice` that the question is about (two or three).
+   */
+  readonly moreCost?: readonly Cost[];
+  readonly costWays?: readonly number[];
   /**
    * For purpose `'unlessPays'` when the question is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a) or
    * `'cumulativeUpkeep'` (CR 702.24a; `cost` is the whole payment, the cost of the keyword for each age counter

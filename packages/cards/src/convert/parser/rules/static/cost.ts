@@ -726,13 +726,13 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
  * card.", "... sacrifice an artifact or creature.", "... sacrifice a land.", "... pay 3 life.", "...
  * pay {1}.", "... pay X life." (stage P16, D-103: X is announced as the spell is cast, CR 107.3a), "... discard X cards." (D-386)
  * and costs joined with "and" ("sacrifice a creature and discard a card"). Since stage P38 (D-182) also a choice
- * of two ways, one cost each ("sacrifice an artifact or creature or pay {4}", "discard a card or pay 3 life"): the
+ * of two or three ways, one cost each ("sacrifice an artifact or creature or pay {4}", "discard a card or pay 3 life"): the
  * caster pays one of them (CR 118.8, 601.2b). CR 118.8: an
  * additional cost is paid with the spell's other costs as it is cast (CR 601.2b announces it, CR
  * 601.2h pays it); the player chooses what to sacrifice and discard. It is read for a spell
  * whose text it is ("this spell" is `~`); the costs are the face's `additionalCosts`, or for a choice its
  * `additionalCostChoice`. Not read: an optional cost ("you may sacrifice"), a choice of ways of more than
- * one cost each ("sacrifice a creature and discard a card or pay {2}"), a choice of three,
+ * one cost each ("sacrifice a creature and discard a card or pay {2}"), a choice of four,
  * "sacrifice another creature", "sacrifice two creatures" and any other kind of cost.
  */
 export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
@@ -770,6 +770,9 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice a creature or discard a card.',
     'As an additional cost to cast ~, discard a card or pay 3 life.',
     'As an additional cost to cast ~, behold a Jace or pay {1}.',
+    // A choice of three ways (CR 118.8, 601.2b).
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or pay 4 life.',
+    'As an additional cost to cast ~, discard a card, pay 3 life, or pay {2}.',
   ],
   rejects: [
     'As an additional cost to cast ~, sacrifice a creature',
@@ -782,6 +785,11 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, you may blight 1',
     'As an additional cost to cast ~, sacrifice a creature and discard a card or pay {2}.',
     'As an additional cost to cast ~, sacrifice a creature or discard a card or pay {2}.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or pay 4 life, or pay {2}.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card or pay 4 life.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, and pay 4 life.',
+    'As an additional cost to cast ~, you may sacrifice a creature, discard a card, or pay 4 life.',
     'As an additional cost to cast ~, sacrifice an artifact or creature or.',
     'As an additional cost to cast ~, sacrifice a creature or.',
     'As an additional cost to cast ~, discard a creature card.',
@@ -804,6 +812,30 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
       !ctx.text.startsWith('you may blight ', optionalAt)
     ) {
       return fail(ctx, optionalAt);
+    }
+    // A choice of three ways, one cost each (CR 118.8, 601.2b): "sacrifice a creature, discard a card, or pay 4 life".
+    const three = sequence(
+      literal(prefix),
+      ADDITIONAL_COST,
+      literal(', '),
+      ADDITIONAL_COST,
+      literal(', or '),
+      ADDITIONAL_COST,
+      PERIOD,
+    )(ctx, pos);
+    if (three.ok) {
+      const [, one, , two, , last] = three.value;
+      return {
+        ok: true,
+        value: statement(
+          'static.additional-cost',
+          selfNoun('static.additional-cost', pos + 'as an additional cost to cast '.length),
+          { kind: 'additionalCost' as const, costs: [one], orCosts: [two, last] },
+          pos,
+          three.pos,
+        ),
+        pos: three.pos,
+      };
     }
     const r = sequence(
       literal(prefix),

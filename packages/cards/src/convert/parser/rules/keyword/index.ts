@@ -90,6 +90,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.51a (Convoke)',
     'CR 702.126a (Improvise)',
     'CR 702.66a (Delve)',
+    'CR 702.125a (Undaunted)',
     'CR 702.85a (Cascade)',
     'CR 702.82a (Devour)',
     'CR 702.136a (Riot)',
@@ -156,6 +157,9 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Retrace, flying',
     // CR 702.133a: Jump-start (the reminder text is stripped before the line is read).
     'Jump-start',
+    // CR 702.125a: Undaunted (the reminder text is stripped before the line is read).
+    'Undaunted',
+    'Undaunted, flying',
     // CR 702.127a: Aftermath on the second half of a split card (the reminder text is stripped before the line is read).
     'Aftermath',
     'aftermath',

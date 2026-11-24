@@ -98,7 +98,7 @@ import { fail, ok, type Result } from './rules/result';
 import { matchesGroups } from './rules/sacrifice-groups';
 import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
-import { bottomCards, keepHand, takeMulligan } from './rules/setup';
+import { answerOpeningHand, bottomCards, keepHand, takeMulligan } from './rules/setup';
 import { sharesLandType } from './rules/share-type';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
@@ -426,6 +426,11 @@ function answerConfirm(
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
+  // CR 103.6: "begin the game with this card on the battlefield?", asked after the mulligans and before the first turn.
+  if (d.purpose === 'openingHand') {
+    const r = answerOpeningHand(state, accept);
+    return r === null ? fail('The card cannot begin on the battlefield') : ok(r.state, r.events);
+  }
   // CR 701.30c: "put the card you revealed on the bottom of your library?", asked of each clashing player as the clash resolves.
   if (d.purpose === 'clash') return finishResolutionAnswer(answerResolutionClash(state, accept));
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the

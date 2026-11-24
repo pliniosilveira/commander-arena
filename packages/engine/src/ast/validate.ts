@@ -723,6 +723,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'noMaximumHandSize':
+    case 'beginGameOnBattlefield':
       break;
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':

@@ -85,6 +85,7 @@ const EXECUTABLE_KEYWORDS = [
   'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'jumpStart', // scenario-xx-jump-start
+  'undaunted', // scenario-undaunted
   'plot', // scenario-xx-plot
   'compleated', // convert-grammar-engine-blight-curse-oneoffs-b
   'aftermath', // scenario-xx-aftermath
@@ -213,6 +214,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   demonstrate: { kind: 'demonstrate' },
   retrace: { kind: 'retrace' },
   jumpStart: { kind: 'jumpStart' },
+  undaunted: { kind: 'undaunted' },
   plot: { kind: 'plot', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   compleated: { kind: 'compleated' },
   aftermath: { kind: 'aftermath' },

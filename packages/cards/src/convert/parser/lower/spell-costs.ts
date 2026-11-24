@@ -55,10 +55,10 @@ function additional(cost: IrCost): LowerResult<Cost> {
 function lowerChoice(
   ability: Static,
   first: readonly IrCost[],
-  second: readonly IrCost[],
+  others: readonly (readonly IrCost[])[],
 ): LowerResult<FaceCosts> {
   const options: Cost[][] = [];
-  for (const way of [first, second]) {
+  for (const way of [first, ...others]) {
     const lowered: Cost[] = [];
     for (const ir of way) {
       const cost = additional(ir);
@@ -68,8 +68,8 @@ function lowerChoice(
     options.push(lowered);
   }
   const [one, other] = options;
-  if (one === undefined || other === undefined) return failure(ability);
-  const costs = [...one, ...other];
+  if (one === undefined || other === undefined || options.length > 3) return failure(ability);
+  const costs = options.flat();
   if (costs.some((c) => c.kind === 'payXLife' || c.kind === 'discardX')) return failure(ability);
   const missing = missingFeatures([
     ...costs.filter((c) => c.kind !== 'behold').map((c): FeatureRef => `cost:${c.kind}`),
@@ -77,12 +77,13 @@ function lowerChoice(
   ]);
   if (missing.length > 0) return failure(ability, missing);
   // Two ways that are the same kind of cost ("sacrifice a creature or sacrifice an artifact") are one cost of a wider description, not a choice.
-  if (one.length === 1 && other.length === 1 && one[0]?.kind === other[0]?.kind) {
+  const kinds = options.map((way) => (way.length === 1 ? way[0]?.kind : undefined));
+  if (kinds.every((k) => k !== undefined) && new Set(kinds).size !== kinds.length) {
     return failure(ability);
   }
   return {
     ok: true,
-    value: { ...NONE, additionalCostChoice: [one, other] },
+    value: { ...NONE, additionalCostChoice: options },
     rule: ability.rule,
   };
 }
@@ -111,7 +112,12 @@ function lowerAdditional(
       ? failure(ability, blocked)
       : { ok: true, value: { ...NONE, additionalCosts: [cost.value] }, rule: ability.rule };
   }
-  if (orCosts !== undefined) return lowerChoice(ability, costs, orCosts);
+  if (orCosts !== undefined)
+    return lowerChoice(
+      ability,
+      costs,
+      orCosts.map((c) => [c]),
+    );
   const lowered: Cost[] = [];
   for (const ir of costs) {
     const cost = additional(ir);

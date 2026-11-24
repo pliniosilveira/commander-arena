@@ -597,7 +597,7 @@ export interface FaceCosts {
   readonly additionalCosts: readonly Cost[];
   readonly alternativeCosts: readonly AlternativeCost[];
   /** "Sacrifice an artifact or creature or pay {4}" (stage P38, D-182): the face's `additionalCostChoice`. */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /** The abilities the line makes besides the cost (D-492): "When you do, copy ~ for each creature sacrificed this way" is a "When you cast this spell" ability of the card. */
   readonly abilities?: readonly Ability[];
 }

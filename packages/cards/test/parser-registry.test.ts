@@ -912,6 +912,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.defined-pt': spell((e) => `Create ${e}.`),
   'token.noncreature-named': spell((e) => `Create ${e}.`),
   'static.creature-off-battlefield': asIs,
+  'static.begin-game-on-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),

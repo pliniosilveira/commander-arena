@@ -566,11 +566,30 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: false,
     };
   }
+  if (d.purpose === 'openingHand') {
+    // CR 103.6: asked after the mulligans, before the first turn; nothing is rewound by declining.
+    return {
+      prompt: `${d.sourceName}: begin the game with it on the battlefield?`,
+      yes: 'Begin on the battlefield',
+      no: 'Keep in hand',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'costChoice') {
     // "Sacrifice an artifact or creature or pay {4}" (CR 118.8, 601.2b, D-181): asked as the spell is cast, each button is one way to pay;
     // Cancel rewinds the cast (CR 733).
     const first = additionalWayText(d.cost ?? []);
     const second = additionalWayText(d.otherCost ?? []);
+    if (d.moreCost !== undefined) {
+      // Three ways: the first button takes the first way, the second goes on to the choice between the other two (declining asks again).
+      const third = additionalWayText(d.moreCost);
+      return {
+        prompt: `${d.sourceName}: ${first}, ${second}, or ${third}, as an additional cost?`,
+        yes: first.replace(/^./, (c) => c.toUpperCase()),
+        no: `Another way: ${second} or ${third}`,
+        cancellable: true,
+      };
+    }
     return {
       prompt: `${d.sourceName}: ${first}, or ${second}, as an additional cost?`,
       yes: first.replace(/^./, (c) => c.toUpperCase()),

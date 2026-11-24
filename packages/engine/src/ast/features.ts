@@ -787,6 +787,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'retrace',
     // CR 702.133a: Jump-start, cast from the graveyard by discarding a card, then exiled.
     'jumpStart',
+    'undaunted',
     // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
     'aftermath',
     // D-124: Unearth (CR 702.84a).
@@ -1514,6 +1515,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 102 (Steward of the Harvest): "Creatures you control have all activated abilities of all land cards exiled with ~".
     'grantActivatedAbilitiesOfLinkedExile',
     'castAsThoughFlash',
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield." (`beginGameOnBattlefield`).
+    'beginGameOnBattlefield',
     // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
     'creatureOffBattlefield',
     // D-145: "can't attack or block unless you control another creature with power 4 or greater"; "Enchanted creature loses all
@@ -2643,6 +2646,8 @@ export const STATIC_KINDS = [
   'grantActivatedAbilitiesOfLinkedExile',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
+  /** "If this card is in your opening hand, you may begin the game with it on the battlefield" (CR 103.6): the engine's `beginGameOnBattlefield`. */
+  'beginGameOnBattlefield',
   /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */
   'creatureOffBattlefield',
   /** "Can't attack or block unless you control another creature with power 4 or greater" (CR 508.1a, D-145): the engine's `restrictionUnless`. */
@@ -3392,6 +3397,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   demonstrate: true,
   retrace: true,
   jumpStart: true,
+  undaunted: true,
   aftermath: true,
   unearth: true,
   encore: true,
