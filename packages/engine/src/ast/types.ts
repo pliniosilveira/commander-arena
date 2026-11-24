@@ -6309,6 +6309,11 @@ export type Keyword =
    */
   | { readonly kind: 'affinity'; readonly filter: ObjectFilter }
   /**
+   * CR 702.125a (Undaunted): "This spell costs {1} less to cast for each opponent you have." A static ability that functions on the stack: the cost reduction of
+   * `rules/cast-cost.ts` by the number of opponents the caster has still in the game (CR 702.125b). Every instance applies (CR 702.125c).
+   */
+  | { readonly kind: 'undaunted' }
+  /**
    * CR 702.51a (Convoke): while the spell is being cast, the caster may tap untapped creatures they control
    * for the colored and generic mana of the total cost (CR 601.2f-h). Not an additional or alternative cost
    * (CR 702.51b). Multiple instances are redundant (CR 702.51d). See the `payOptions` stage of casting.

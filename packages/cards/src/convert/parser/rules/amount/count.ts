@@ -178,9 +178,9 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (filter.controller !== undefined) return fail(ctx, end);
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
-    } else if (filter.attacking === true && other.value && filter.controller === undefined) {
-      // CR 508.1k (Ghalta and Mavren): "other attacking creatures" names the objects by what they do, whoever controls them, and needs no "on the battlefield".
-      // Only with "other": the creatures attacking besides the source.
+    } else if (filter.attacking === true && filter.controller === undefined) {
+      // CR 508.1k (Ghalta and Mavren, Galadhrim Ambush): "other attacking creatures" and "attacking creatures" name the objects by what they do, whoever controls them, and need no
+      // "on the battlefield". With "other": the creatures attacking besides the source.
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
       const itsController = targeted.ok ? null : ITS_CONTROLLER_CONTROLS(ctx, end);
@@ -334,6 +334,8 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'you' as const,
     })),
     map(literal(' in all graveyards'), () => ({ zone: 'graveyard' as const })),
+    // Realm Seekers (CR 108.3, 402.1): "the total number of cards in all players' hands", the hands of every player, each card its owner's.
+    map(pattern(/ in all players['’] hands/), () => ({ zone: 'hand' as const })),
     // "for each creature card in your opponents' graveyards": a singular card, the graveyards of all the opponents.
     map(pattern(/ in your opponents['’] graveyards/), () => ({
       zone: 'graveyard' as const,
@@ -578,6 +580,9 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of lands you control',
     'equal to the number of creatures on the battlefield',
     'equal to the number of cards in your hand',
+    // Realm Seekers (CR 402.1): the hands of all players.
+    'the total number of cards in all players’ hands',
+    'equal to the number of cards in all players’ hands',
     'equal to the number of creature cards in your graveyard',
     'equal to the number of other creatures you control',
     'equal to the number of artifacts you control',
@@ -587,6 +592,8 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of creatures you control of that type',
     'equal to the number of creature cards in your opponents’ graveyards',
     'equal to the number of creatures attacking you',
+    // Galadhrim Ambush (CR 508.1k): every attacking creature, whoever controls it.
+    'equal to the number of attacking creatures',
     'equal to the number of creatures with flying you control',
     'equal to the number of Zombies you control',
     'equal to the number of nontoken creatures you control',
@@ -599,6 +606,8 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of',
     'equal to the number of creatures',
     'equal to the number of creature you control',
+    'equal to the number of cards in all players’ hand',
+    'the total number of',
     'equal to the number of colors in your commanders’ color identity',
     'equal to the number of cards in target opponents’ hand',
     'equal to its power',
@@ -606,7 +615,12 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
   ],
   parse: countAmount(
     'amount.number-of',
-    choice(literal('equal to the number of '), literal('the number of ')),
+    choice(
+      literal('equal to the number of '),
+      literal('the number of '),
+      // Realm Seekers: "the total number of cards in all players' hands" counts as "the number of" does.
+      literal('the total number of '),
+    ),
     true,
   ),
 });

@@ -81,6 +81,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
+import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
@@ -1384,6 +1385,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,
+  // Elven Council deck: "target player shuffles their graveyard into their library", "each player searches their library for a basic land card, puts it onto the battlefield, then shuffles".
+  ...ELVEN_COUNCIL_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
   // Hatsune Miku deck (issue 145): "You win the game."

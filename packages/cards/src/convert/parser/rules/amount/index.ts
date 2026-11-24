@@ -460,7 +460,7 @@ export const AMOUNT_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
 
 /**
  * `amount.excess-damage-dealt-this-way`: "equal to the amount of excess damage dealt to that creature this way" (CR 120.10 Excess Damage, 608.2c; Goblin Negotiation): what the
- * `dealDamage` before it dealt to the creature beyond lethal damage. Only "that creature" or "that permanent", the object the damage was dealt to, and only after a damage
+ * `dealDamage` before it dealt to the creature beyond lethal damage. Only "that creature", "that permanent" or no object at all ("dealt this way"), and only after a damage
  * instruction; "excess damage dealt this turn" and the other recipients are not read.
  */
 export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
@@ -471,6 +471,8 @@ export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
   examples: [
     'equal to the amount of excess damage dealt to that creature this way',
     'equal to the amount of excess damage dealt to that permanent this way',
+    // Windswift Slice: the one creature the damage before it was dealt to.
+    'equal to the amount of excess damage dealt this way',
   ],
   rejects: [
     'equal to the amount of excess damage dealt to that creature',
@@ -483,7 +485,7 @@ export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
   parse: (ctx, pos) => {
     const r = spanned(
       pattern(
-        /equal to the amount of excess damage dealt to that (?:creature|permanent) this way(?![\p{L}\p{N}])/iu,
+        /equal to the amount of excess damage dealt (?:to that (?:creature|permanent) )?this way(?![\p{L}\p{N}])/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
