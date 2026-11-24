@@ -240,11 +240,28 @@ const MAY_CAST_KIND_FROM_MOVED_FREE: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "You may cast that card" (Chandra, Torch of Defiance; CR 608.2g): the engine's `castCard` of the card an earlier effect exiled (`moved`), asked as the effect resolves. */
+const CAST_MOVED_NOW: Lowering<IrClause, Effects> = {
+  head: 'castMovedNow',
+  id: 'lower.cast-moved-now',
+  needs: ['effect:castCard'],
+  // The "you may" is the question `castCard` asks itself.
+  acceptsOptional: true,
+  lower(clause) {
+    return {
+      ok: true,
+      value: [{ kind: 'castCard', object: { kind: 'moved' } }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
+  'effect:castCard',
   'effect:dealDamageFromEach',
   'effect:setLifeTotal',
   'effect:exchangeLifeWithPt',
@@ -259,6 +276,7 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   MOVE_COUNTER_FROM_SELF,
   DEAL_DAMAGE_FROM_EACH,
   MAY_CAST_KIND_FROM_MOVED_FREE,
+  CAST_MOVED_NOW,
   SET_LIFE_TOTAL,
   EXCHANGE_LIFE_PT,
 ];

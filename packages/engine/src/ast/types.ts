@@ -4784,7 +4784,7 @@ export type Effect =
        * A target, or `this` (Sproutback Trudge: "At the beginning of your end step, if you gained life this turn, you may cast this creature from your graveyard", CR 113.6b,
        * 608.2g): the card with the ability, in the graveyard it works from (only in a triggered ability with `functionsIn: 'graveyard'`).
        */
-      readonly object: Extract<ObjectRef, { readonly kind: 'target' | 'this' }>;
+      readonly object: Extract<ObjectRef, { readonly kind: 'target' | 'this' | 'moved' }>;
       readonly anyManaType?: true;
       readonly exileInstead?: true;
       /**

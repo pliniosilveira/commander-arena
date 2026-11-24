@@ -1627,8 +1627,11 @@ function lowerYouDont(
   // again, `rules/cast-free.ts`), and "you don't" is that no spell was cast: declined, or none could be.
   const afterFreeCast =
     previous?.effects.length === 1 && last?.kind === 'castFree' && last.max === undefined;
+  // Chandra, Torch of Defiance (CR 608.2c, 608.2g): "You may cast that card. If you don't, ...": the cast of the exiled card is the offer, and "you don't" is that no spell was cast (declined, or it
+  // could not be cast: a land, nothing to pay with).
+  const afterCastCard = previous?.effects.length === 1 && last?.kind === 'castCard';
   if (
-    !(afterChoice || afterFreeCast) ||
+    !(afterChoice || afterFreeCast || afterCastCard) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||

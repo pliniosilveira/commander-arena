@@ -7511,8 +7511,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (scope.owner !== 'ability') {
           issue(out, `${path}.object`, 'casting this card is the effect of an ability');
         }
+      } else if (kindOf(e.object) === 'moved') {
+        // CR 608.2g (Chandra, Torch of Defiance): "Exile the top card of your library. You may cast that card": the card an earlier effect of the sequence exiled, cast as the effect resolves.
+        checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       } else if (kindOf(e.object) !== 'target') {
-        issue(out, `${path}.object`, 'the card to cast is a target or this card');
+        issue(
+          out,
+          `${path}.object`,
+          'the card to cast is a target, this card or the card an earlier effect moved',
+        );
       } else {
         checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       }

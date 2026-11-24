@@ -3477,20 +3477,24 @@ function runEffect(
       // CR 608.2g, 608.2b (D-350): "you may cast target [card] from a graveyard": the target, if it is still a legal one (rules/cast-card.ts).
       // A slot of several targets (one for each opponent) is asked about card by card, in the order the targets were chosen (CR 608.2g).
       const cards = resolveObjects(state, effect.object, ctx, targets);
-      if (cards.length === 0) return done(state);
-      return done(
-        state,
-        [],
-        cards.map((card) => ({
-          kind: 'castCard' as const,
-          stage: 'start' as const,
-          card,
-          anyManaType: effect.anyManaType === true,
-          exileInstead: effect.exileInstead === true,
-          ...(effect.free === true ? { free: true } : {}),
-          ...(effect.remember === true ? { remember: true } : {}),
-        })),
-      );
+      if (cards.length === 0) return { ...done(state), resetPerformed: true };
+      // CR 608.2c: "If you don't" reads whether a spell was cast by this instruction, not what an effect before it did.
+      return {
+        ...done(
+          state,
+          [],
+          cards.map((card) => ({
+            kind: 'castCard' as const,
+            stage: 'start' as const,
+            card,
+            anyManaType: effect.anyManaType === true,
+            exileInstead: effect.exileInstead === true,
+            ...(effect.free === true ? { free: true } : {}),
+            ...(effect.remember === true ? { remember: true } : {}),
+          })),
+        ),
+        resetPerformed: true,
+      };
     }
 
     case 'castFree': {
