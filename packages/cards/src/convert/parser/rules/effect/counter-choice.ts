@@ -180,7 +180,8 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     if (!r.ok) return r;
     const [lead, from, , to] = r.value;
     // CR 122.5, 608.2d: "any number of" lets the controller move none, one or more, one at a time.
-    const verb = lead === 'move a counter from ' ? 'moveCounter' : 'moveAnyNumberOfCounters';
+    const verb =
+      lead.toLowerCase() === 'move a counter from ' ? 'moveCounter' : 'moveAnyNumberOfCounters';
     return {
       ok: true,
       value: [makeClause(MOVE_ID, verb, { from, to }, { start: pos, end: r.pos })],

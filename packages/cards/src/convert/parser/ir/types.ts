@@ -2313,6 +2313,8 @@ export interface IrKeyword extends IrNode {
   readonly gift?: 'card' | 'tappedFish';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
+  /** "Equip—Pay {3} or remove a counter from ~" (Gavel of the Righteous, CR 702.6a, 118.3): the other way to pay the equip ability, which `cost` is the first of. */
+  readonly orCost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */
   readonly quality?: string;
   /** "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */

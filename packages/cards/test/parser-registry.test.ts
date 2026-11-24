@@ -134,6 +134,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
+  'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
   'keyword.multikicker': asIs,

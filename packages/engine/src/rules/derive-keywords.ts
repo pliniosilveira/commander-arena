@@ -902,6 +902,10 @@ export function expansionOf(ability: Ability): Ability[] {
           ability.keyword.restriction,
           ability.keyword.costReducedIf,
         ),
+        // CR 702.6a, 702.6d (Gavel of the Righteous): "Equip—Pay {3} or remove a counter from ~": the other way to pay is another equip ability, the player picks by activating it.
+        ...(ability.keyword.orCost === undefined
+          ? []
+          : [equipAbility(ability.keyword.orCost, ability.keyword.restriction)]),
       ];
     case 'reconfigure':
       return reconfigureAbilities(ability.keyword.cost);

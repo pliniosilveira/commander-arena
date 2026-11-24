@@ -175,6 +175,45 @@ function lowerCostedKeyword(
   name: CostedKeyword,
 ): LowerResult<readonly Ability[]> {
   const [only, ...more] = ability.cost ?? [];
+  // "Equip—Pay {3} or remove a counter from ~." (Gavel of the Righteous, CR 702.6a, 702.6d, 118.3): a mana cost, or the removal of a counter from the Equipment itself.
+  if (ability.orCost !== undefined) {
+    const [other, ...extra] = ability.orCost;
+    if (
+      name !== 'equip' ||
+      only?.kind !== 'mana' ||
+      more.length > 0 ||
+      extra.length > 0 ||
+      other?.kind !== 'removeAnyCounters' ||
+      ability.params.length > 0 ||
+      ability.quality !== undefined ||
+      ability.commanderOnly === true ||
+      ability.legendaryOnly === true ||
+      ability.costReducedIf !== undefined
+    ) {
+      return failure(ability);
+    }
+    const mana = lowerCost(only);
+    if (!mana.ok) return mana;
+    const removal = lowerCost(other);
+    if (!removal.ok) return removal;
+    const blocked = gate(ability, [
+      'ability:keyword',
+      'keyword:equip',
+      `cost:${mana.value.kind}` as FeatureRef,
+      `cost:${removal.value.kind}` as FeatureRef,
+    ]);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: { kind: 'equip', cost: [mana.value], orCost: [removal.value] },
+        },
+      ],
+      rule: KEYWORD_RULE.equip,
+    };
+  }
   // "Equip—{2}, Pay 2 life." (stage P35, D-176, CR 702.6a): a mana cost and a payment of life, each once.
   if (name === 'equip' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more]);

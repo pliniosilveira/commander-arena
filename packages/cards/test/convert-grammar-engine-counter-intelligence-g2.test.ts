@@ -35,6 +35,7 @@ const RING = 'Sol Ring';
 const AUTOGEN = real('Empowered Autogenerator');
 const TEKUTHAL = real('Tekuthal, Inquiry Dominus');
 const MOXITE = real('Moxite Refinery');
+const GAVEL = real('Gavel of the Righteous');
 const DOUBLER = parsed(
   'SYNTHETIC Proliferation Doubler',
   'Creature — Horror',
@@ -634,5 +635,112 @@ describe('Moxite Refinery: remove X counters from one artifact or creature, then
     const late = start({ charge: 2 }, {});
     late.advanceTo('declareAttackers');
     expect(late.act(0).try.activate(MOXITE.name).ok).toBe(false);
+  });
+});
+
+describe('Gavel of the Righteous: +1/+1 for each counter, double strike from four, and an equip that pays mana or a counter', () => {
+  test('is valid; its equip keyword has the other way to pay', () => {
+    expect(validateCard(GAVEL)).toEqual([]);
+    expect(
+      GAVEL.faces[0]?.abilities.find((a) => a.kind === 'keyword' && a.keyword.kind === 'equip'),
+    ).toMatchObject({
+      keyword: {
+        kind: 'equip',
+        cost: [{ kind: 'mana', symbols: ['3'] }],
+        orCost: [{ kind: 'removeCounters', count: 1 }],
+      },
+    });
+  });
+
+  const start = (
+    counters: Record<string, number>,
+    options: { attached?: boolean; lands?: number; seats?: number } = {},
+  ) => {
+    const seats = options.seats ?? 2;
+    const b = scenario({ seats })
+      .define(GAVEL)
+      .seat(0)
+      .library(...FILLER)
+      .battlefield(BEARS, { label: 'bears' })
+      .battlefield(GAVEL.name, {
+        ...(options.attached === true ? { attachedTo: 'bears' } : {}),
+        ...(Object.keys(counters).length === 0 ? {} : { counters }),
+      });
+    if ((options.lands ?? 0) > 0) b.battlefield('Mountain', { count: options.lands ?? 0 });
+    for (let seat = 1; seat < seats; seat += 1) {
+      b.seat(seat)
+        .library(...FILLER)
+        .battlefield(SPIDER, { label: `theirs${seat}` });
+    }
+    return b.at('precombatMain', { active: 0, turn: 3 }).build();
+  };
+
+  test('the equipped creature gets +1/+1 for each counter of any kind on the Equipment (CR 122.1, 613.4c)', () => {
+    const g = start({ charge: 2, '+1/+1': 1 }, { attached: true });
+    g.expect.pt('bears', 5, 5);
+    const none = start({}, { attached: true });
+    none.expect.pt('bears', 2, 2);
+  });
+
+  test('from four counters it has double strike, and not below (CR 611.3a)', () => {
+    const four = start({ charge: 3, '+1/+1': 1 }, { attached: true });
+    four.expect.derived('bears', { keywords: ['doubleStrike'] });
+    const three = start({ charge: 3 }, { attached: true });
+    three.expect.derived('bears', { keywords: [] });
+  });
+
+  test('at the beginning of combat on your turn it gets a charge counter, which the creature counts at once', () => {
+    const g = start({ charge: 2 }, { attached: true });
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    g.expect.counters(GAVEL.name, { charge: 3 });
+    g.expect.pt('bears', 5, 5);
+  });
+
+  test('equip by removing a counter: no mana, the one counter of its only kind comes off and the Gavel is attached (CR 702.6a, 118.3)', () => {
+    const g = start({ charge: 2 });
+    // The two equip abilities follow the printed ones (the keyword is the fourth): the mana way is 4, the counter way 5.
+    g.act(0).activate(GAVEL.name, { ability: 5, targets: ['bears'] });
+    g.passAll();
+    g.expect.counters(GAVEL.name, { charge: 1 });
+    g.expect.attached(GAVEL.name, 'bears');
+    g.expect.pt('bears', 3, 3);
+    g.expect.invariants();
+  });
+
+  test('with two kinds of counter the player picks the one to remove, and may take the activation back', () => {
+    const g = start({ charge: 1, '+1/+1': 1 });
+    g.act(0).activate(GAVEL.name, { ability: 5, targets: ['bears'] });
+    g.expect.pending('chooseOption', 0);
+    expect(pickOptions(g.state)).toEqual([
+      'charge counter on Gavel of the Righteous (yours)',
+      '+1/+1 counter on Gavel of the Righteous (yours)',
+    ]);
+    g.act(0).cancel();
+    g.expect.counters(GAVEL.name, { charge: 1, '+1/+1': 1 });
+    const again = start({ charge: 1, '+1/+1': 1 });
+    again.act(0).activate(GAVEL.name, { ability: 5, targets: ['bears'] });
+    again.act(0).chooseOption('+1/+1 counter on Gavel of the Righteous (yours)');
+    again.passAll();
+    again.expect.counters(GAVEL.name, { charge: 1 });
+  });
+
+  test('with no counter only the mana way is there: {3}', () => {
+    const g = start({}, { lands: 3 });
+    expect(g.act(0).try.activate(GAVEL.name, { ability: 5 }).ok).toBe(false);
+    g.act(0).activate(GAVEL.name, { ability: 4, targets: ['bears'], pay: true });
+    g.passAll();
+    g.expect.attached(GAVEL.name, 'bears');
+  });
+
+  test('only a creature you control, whoever the opponents are (3 and 4 seats)', () => {
+    for (const seats of [2, 3, 4]) {
+      for (let seat = 1; seat < seats; seat += 1) {
+        const g = start({ charge: 1 }, { seats });
+        expect(() =>
+          g.act(0).activate(GAVEL.name, { ability: 5, targets: [`theirs${seat}`] }),
+        ).toThrow();
+      }
+    }
   });
 });

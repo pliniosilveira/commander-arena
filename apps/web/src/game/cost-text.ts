@@ -3,7 +3,7 @@ import type { Cost } from '@commander-arena/engine';
 import { amountPhrase } from './amount-text';
 import { NUMBER_WORDS, nounsOf, plural, tappedWhat } from './cost-words';
 import { beholdQuality } from './dragons-text';
-import { amongWhat, countersTaken } from './remove-counters-cost-text';
+import { amongWhat, countersTaken, oneOfWhat } from './remove-counters-cost-text';
 import { untapWhat } from './untap-cost-text';
 
 /**
@@ -220,8 +220,18 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     }
     case 'removeCounters':
       // CR 118.3, 122.1: "Remove two +1/+1 counters from among creatures you control".
+      // Gavel of the Righteous, Tekuthal, Moxite Refinery: no kind named, an X announced, all from one permanent.
       if (cost.among !== undefined) {
-        return `Remove ${countersTaken(cost.counter, cost.count, true)} from among ${amongWhat(cost.among)}`;
+        const taken =
+          cost.countX === true ? 'X counters' : countersTaken(cost.counter, cost.count, true);
+        return cost.fromOne === true
+          ? `Remove ${taken} from ${oneOfWhat(cost.among)}`
+          : `Remove ${taken} from among ${amongWhat(cost.among)}`;
+      }
+      if (cost.counter === undefined) {
+        const taken =
+          cost.countX === true ? 'X counters' : countersTaken(undefined, cost.count, true);
+        return `Remove ${taken} from this ${self}`;
       }
       return `Remove ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)}`;
     case 'putCounters':

@@ -166,6 +166,34 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."
       checkCosts(k.cost, `${path}.cost`, out);
+      // Gavel of the Righteous: "Equip—Pay {3} or remove a counter from ~": the other way to pay, the one cost of removing a counter from the Equipment itself.
+      if (k.orCost !== undefined) {
+        checkCosts(k.orCost, `${path}.orCost`, out);
+        if (
+          !Array.isArray(k.orCost) ||
+          k.orCost.length !== 1 ||
+          k.orCost.some(
+            (c) =>
+              c?.kind !== 'removeCounters' ||
+              c.among !== undefined ||
+              c.countX !== undefined ||
+              c.fromOne !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'the other way to pay an equip ability is the removal of counters from the Equipment itself',
+          );
+        }
+        if (k.costReducedIf !== undefined) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'an equip ability with another way to pay has no cost reduction',
+          );
+        }
+      }
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
