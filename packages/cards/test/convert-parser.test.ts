@@ -814,6 +814,8 @@ describe('unmatched abilities', () => {
       'effect.have-player-lose-life',
       'effect.lead-gain-mana-ability-all',
       'effect.gain-keyword-all-next-turn',
+      'effect.restrict-unblockable-until-next-turn',
+      'effect.goad-countered',
       'effect.returned-is-named-land',
       'effect.returned-gains-mana-ability',
       'effect.put-any-number-permanents-from-hand',
