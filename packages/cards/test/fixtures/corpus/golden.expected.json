@@ -3661,27 +3661,10 @@
     "48534bbf-06b6-46a0-8a86-b14f38caee58": {
       "name": "Sin, Unending Cataclysm",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "As ~ enters, remove all counters from any number of artifacts, creatures, and enchantments. ~ enters with X +1/+1 counters on it, where X is twice the number of counters removed this way.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.as-enters-choose"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When ~ dies, put its counters on target creature you control, then shuffle this card into its owner's library.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.put-that-number-counters"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "055dfeb0"
+      "ast": "33c176b2"
     },
     "488ff0d9-a74c-4ba9-9c10-3aa88230c2bd": {
       "name": "Captain Janeway, Endgame",
@@ -12902,7 +12885,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1299,
+      "supported": 1300,
       "total": 1319
     }
   }
