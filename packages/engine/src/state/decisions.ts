@@ -780,7 +780,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
    * spell without it, and `cancel` rewinds the cast, as for the kicker. `'clash'` (CR 701.30a, 701.30c, "clash with an opponent"): `seat` is a player who clashed and revealed the card `subject` (public,
    * and still the top card of their library); accepting puts it on the bottom of their library, declining leaves it on top. `source` is the spell or ability that resolves. Asked of each clashing
-   * player in turn order, and the cards move only after the last has answered.
+   * player in turn order, and the cards move only after the last has answered. `'searchPut'` (CR 608.2d, 701.23; `search.mayPut`, "If an opponent controls more lands than you, you may put that
+   * card onto the battlefield tapped"): `seat` is the player who searched, `subject` the card they found (public: it was revealed), `source` the ability on the stack; accepting puts it onto the
+   * battlefield (tapped when the effect says so), declining puts it into the hand.
    */
   readonly purpose?:
     | 'kicker'
@@ -802,7 +804,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'buyback'
     | 'exileMore'
     | 'exert'
-    | 'clash';
+    | 'clash'
+    | 'searchPut';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.

@@ -130,6 +130,7 @@ import {
   answerResolutionReveal,
   answerResolutionRiot,
   answerResolutionSearchMay,
+  answerResolutionSearchPut,
   answerResolutionUnlessConfirm,
   answerResolutionUnlessPayment,
   continueResolution,
@@ -478,6 +479,9 @@ function answerConfirm(
   // CR 608.2d, 701.23: "may search" is answered by the player who would search.
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
+  // CR 608.2d, 701.23 (`search.mayPut`): "you may put that card onto the battlefield", else it goes into the hand.
+  if (d.purpose === 'searchPut')
+    return finishResolutionAnswer(answerResolutionSearchPut(state, accept));
   const head = state.resolution?.queue[0]?.kind;
   if (
     head === 'confirmOptional' ||

@@ -5173,6 +5173,37 @@ function checkSearch(
   for (const key of ['reveal', 'shuffle'] as const) {
     if (typeof e[key] !== 'boolean') issue(out, `${path}.${key}`, `${key} must be a boolean`);
   }
+  // CR 608.2c, 608.2d: "If <condition>, you may put that card onto the battlefield. If you don't, put it into your hand": one card found by you, which goes into the hand unless it is put.
+  if (e.mayPut !== undefined) {
+    const put = e.mayPut as { condition?: Condition; tapped?: unknown };
+    if (put.condition === undefined || typeof put.condition !== 'object') {
+      issue(out, `${path}.mayPut.condition`, 'mayPut needs a condition');
+    } else {
+      checkCondition(put.condition, `${path}.mayPut.condition`, out);
+    }
+    if (put.tapped !== undefined && put.tapped !== true) {
+      issue(out, `${path}.mayPut.tapped`, 'tapped must be true when present');
+    }
+    const only = e.destinations?.length === 1 ? e.destinations[0] : undefined;
+    if (
+      e.player?.kind !== 'you' ||
+      e.max !== 1 ||
+      e.optional !== undefined ||
+      e.sharedLandType !== undefined ||
+      e.zones !== undefined ||
+      e.maxAmount !== undefined ||
+      e.totalManaValue !== undefined ||
+      e.anyNumber !== undefined ||
+      only?.zone !== 'hand' ||
+      only.count !== 1
+    ) {
+      issue(
+        out,
+        `${path}.mayPut`,
+        'a search that may put its card onto the battlefield is yours, finds one card, has one destination, the hand, and no optional, shared land type, zones, amount, total or any-number',
+      );
+    }
+  }
   if (!Array.isArray(e.destinations) || e.destinations.length === 0) {
     issue(out, `${path}.destinations`, 'a search needs at least one destination');
     return;

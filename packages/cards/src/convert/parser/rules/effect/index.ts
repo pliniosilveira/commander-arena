@@ -59,6 +59,7 @@ import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_BLITZ_C_EFFECT_RULES } from './counter-blitz-c';
+import { COUNTER_BLITZ_E_EFFECT_RULES } from './counter-blitz-e';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_GROUP_A_EFFECT_RULES } from './counter-group-a';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
@@ -1337,6 +1338,7 @@ export const EFFECT_RULES = [
   ...EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES,
   ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
   ...COUNTER_BLITZ_C_EFFECT_RULES,
+  ...COUNTER_BLITZ_E_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,

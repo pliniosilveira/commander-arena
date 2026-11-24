@@ -20,6 +20,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
+import { evaluateCondition } from './conditions';
 import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
@@ -249,19 +250,22 @@ export function runSearch(
   const found = instruction.chosen;
   // CR 701.23a: "found" counts the cards of the library alone for the event of a library search.
   const searched = searchedLibrary(state, search, found);
-  const events: GameEvent[] = searched
-    ? [
-        {
-          kind: 'librarySearched',
-          seat,
-          found:
-            search.zones === undefined
-              ? found.length
-              : found.filter((id) => state.objects[id]?.zone === 'library').length,
-        },
-      ]
-    : [];
-  if (search.reveal && found.length > 0) {
+  // `put` is set once the search and the reveal have been done and the question of `mayPut` came after them: nothing is announced twice.
+  const announced = instruction.put !== undefined;
+  const events: GameEvent[] =
+    searched && !announced
+      ? [
+          {
+            kind: 'librarySearched',
+            seat,
+            found:
+              search.zones === undefined
+                ? found.length
+                : found.filter((id) => state.objects[id]?.zone === 'library').length,
+          },
+        ]
+      : [];
+  if (search.reveal && found.length > 0 && !announced) {
     const cards = found.flatMap((id) => {
       const obj = state.objects[id];
       return obj?.card == null ? [] : [{ card: obj.card, name: derive(state, obj).name }];
@@ -274,9 +278,46 @@ export function runSearch(
       from: 'library',
     });
   }
+  // CR 608.2c, 608.2d (`mayPut`): "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand." The condition is
+  // read after the search and the reveal, which are done first; when it holds the searching player is asked, and a "no" leaves the card to the hand of `destinations`.
+  const mayPut = search.mayPut;
+  if (mayPut !== undefined && found.length > 0 && instruction.put === undefined) {
+    const asks = evaluateCondition(state, mayPut.condition, {
+      controller: res.controller,
+      source: res.source,
+    });
+    if (asks) return done(state, events, [{ ...instruction, put: null }]);
+  }
+  if (mayPut !== undefined && found.length > 0 && instruction.put === null) {
+    const info = sourceInfo(state, res.source);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'confirmOptional',
+        seat,
+        source: res.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+        purpose: 'searchPut',
+        ...(found[0] === undefined ? {} : { subject: found[0] }),
+      },
+    };
+  }
   // CR 701.24b (D-405): "then shuffle and put that card on top": the shuffle leaves the found cards out, then they go on top (the last one first,
   // so the first found ends on top).
-  const placed = placeFound(search, found);
+  const placed = placeFound(
+    instruction.put === true && mayPut !== undefined
+      ? {
+          ...search,
+          destinations: [
+            { zone: 'battlefield', ...(mayPut.tapped === true ? { tapped: true } : {}), count: 1 },
+          ],
+        }
+      : search,
+    found,
+  );
   const shuffled: Instruction[] = search.shuffle
     ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
     : [];

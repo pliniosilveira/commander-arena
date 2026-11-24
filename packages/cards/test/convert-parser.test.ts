@@ -804,6 +804,7 @@ describe('unmatched abilities', () => {
       'effect.creatures-cant-attack-you-unless-pay',
       'effect.each-opponent-chooses-return',
       'effect.put-two-kinds-from-hand',
+      'effect.search-reveal-may-put-else-hand',
       'effect.reveal-until-chosen-type',
       'effect.pay-or-cant-attack-planeswalkers',
       'effect.player-reveals-until-you-put',

@@ -5026,6 +5026,14 @@ export type Effect =
        * `zones`, `maxAmount` or `totalManaValue`; the filter states a quality, as "any number of cards" finds one that is a card of a kind.
        */
       readonly anyNumber?: true;
+      /**
+       * "Search your library for a Plains card and reveal it. If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't put the card
+       * onto the battlefield, put it into your hand. Then shuffle." (CR 701.23, 608.2c, 608.2d; Scholar of New Horizons): once the card is found, `condition` is read as that instruction
+       * comes up, after the search and before the shuffle; when it holds the searching player is asked (`confirmOptional`, purpose `searchPut`) whether to put the card onto the battlefield
+       * (`tapped` says how it enters); a "no", or a condition that does not hold, leaves the card to `destinations`, which is the one `hand` of the card (`max` 1, no `sharedLandType`,
+       * `zones`, `maxAmount`, `totalManaValue` or `anyNumber`, `reveal` and `shuffle` as the text says).
+       */
+      readonly mayPut?: { readonly condition: Condition; readonly tapped?: true };
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

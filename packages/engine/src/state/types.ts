@@ -1552,6 +1552,8 @@ export type Instruction =
       readonly seat: SeatId;
       readonly accepted: boolean | null;
       readonly chosen: readonly ObjectId[] | null;
+      /** `search.mayPut` (CR 608.2d): the answer of the searching player to "put that card onto the battlefield?": absent until the card is found, `null` once the search and the reveal have happened and the question is pending (or being asked), the answer after it. */
+      readonly put?: boolean | null;
       /**
        * CR 701.23i, 101.4: with several players, each looks at their library, then they decide in APNAP order which cards to find, and only then do the cards move and the libraries
        * get shuffled. This instruction is the one of the first player; `later` are the players who decide after, `held` what each did so far (`accepted` false: a "may" search they
