@@ -2139,7 +2139,12 @@ export type IrStaticEffect =
   | {
       readonly kind: 'preventDamageAround';
       readonly scope: 'all' | 'combat' | 'noncombat';
-      readonly events: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
+      readonly events:
+        | 'dealtByThis'
+        | 'dealtToYouAndYourOtherPermanents'
+        | 'dealtToYouAndYourPlaneswalkers';
+      /** "Prevent all but 1 of that damage" (Ajani Steadfast's emblem): the damage left. */
+      readonly keep?: number;
     }
   /**
    * "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils, CR 121.2b): the engine's `drawLimit`. The subject is `~`.

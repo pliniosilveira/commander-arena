@@ -81,13 +81,14 @@ function modifiersFor(
 ): readonly DamageModifier[] {
   if (event.amount <= 0) return [];
   const { source, to, combat } = event;
-  const statics: DamageModifier[] = staticPreventions(state, to, combat, source).map(
-    (prevention) => ({
+  // "Prevent all but 1 of that damage" leaves damage behind, so it is applied to the event once (CR 614.5, 615.1); a prevention of all of it leaves nothing to apply it to.
+  const statics: DamageModifier[] = staticPreventions(state, to, combat, source)
+    .filter((prevention) => prevention.keep === undefined || !used.includes(staticKey(prevention)))
+    .map((prevention) => ({
       kind: 'prevent',
       key: staticKey(prevention),
       origin: { kind: 'static', prevention },
-    }),
-  );
+    }));
   const redirects = (): DamageModifier[] =>
     redirectsFor(state, to, used).map((redirect) => ({
       kind: 'redirect',
@@ -260,15 +261,19 @@ export function applyModifier(current: Settling, modifier: DamageModifier): Sett
   if (origin.kind === 'static' || origin.shield.change.amount === 'all') {
     // Issue 159 (Unbreathing Horde): "prevent that damage and remove a +1/+1 counter from it": one counter for each event the ability prevents.
     const removal = origin.kind === 'static' ? counterRemoval(current, origin.prevention) : null;
+    // "Prevent all but 1 of that damage" (Ajani Steadfast's emblem, CR 615.1): the damage that is left is dealt, what is more than it is prevented.
+    const kept =
+      origin.kind === 'static' ? Math.min(current.amount, origin.prevention.keep ?? 0) : 0;
     return {
       ...current,
       ...(removal === null
         ? {}
         : { state: removal.state, events: [...current.events, removal.event] }),
-      amount: 0,
-      prevented: current.prevented + current.amount,
+      amount: kept,
+      prevented: current.prevented + current.amount - kept,
       applied: current.applied + 1,
-      lane: lane(current.amount),
+      used: [...current.used, modifier.key],
+      lane: lane(current.amount - kept),
       riders:
         origin.kind === 'shield'
           ? withRider(current.riders, origin.shield, current.amount)

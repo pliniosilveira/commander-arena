@@ -26,6 +26,7 @@ import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { endOf } from './control-effects';
 import { derive } from './derive';
+import { emblemsOf } from './emblem';
 import { mayHaveStatic } from './printed-statics';
 import {
   isPlayerSelector,
@@ -170,7 +171,12 @@ export interface StaticPrevention {
   readonly index: number;
   readonly scope: PreventScope;
   /** Set for a `preventDamageAround` of another permanent: what it covers (the recipient is not the permanent that has it). */
-  readonly around?: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
+  readonly around?:
+    | 'dealtByThis'
+    | 'dealtToYouAndYourOtherPermanents'
+    | 'dealtToYouAndYourPlaneswalkers';
+  /** "Prevent all but N of that damage": the damage this prevention leaves (Ajani Steadfast's emblem). */
+  readonly keep?: number;
   /** The counter this prevention removes from the permanent for each damage event it prevents (issue 159). */
   readonly removeCounter?: string;
 }
@@ -230,7 +236,8 @@ function aroundPreventions(
   source: ObjectId | undefined,
 ): readonly StaticPrevention[] {
   const found: StaticPrevention[] = [];
-  for (const id of state.battlefield) {
+  // CR 114.4: the abilities of an emblem work from the command zone, so its prevention is read with those of the permanents.
+  for (const id of [...state.battlefield, ...emblemsOf(state)]) {
     const obj = state.objects[id];
     if (obj === undefined || !mayHaveStatic(state, obj, 'preventDamageAround')) continue;
     const controller = controllerOf(state, obj);
@@ -242,24 +249,30 @@ function aroundPreventions(
       ) {
         return;
       }
+      const recipient = to.kind === 'object' ? state.objects[to.id] : undefined;
       const covers =
         a.static.events === 'dealtByThis'
           ? source === obj.id
           : to.kind === 'player'
             ? to.seat === controller
-            : to.id !== obj.id &&
-              state.objects[to.id]?.zone === 'battlefield' &&
-              controllerOfId(state, to.id) === controller;
-      if (covers)
-        found.push({ object: obj.id, index, scope: a.static.scope, around: a.static.events });
+            : recipient !== undefined &&
+              recipient.zone === 'battlefield' &&
+              controllerOf(state, recipient) === controller &&
+              (a.static.events === 'dealtToYouAndYourOtherPermanents'
+                ? recipient.id !== obj.id
+                : derive(state, recipient).types.includes('planeswalker'));
+      if (covers) {
+        found.push({
+          object: obj.id,
+          index,
+          scope: a.static.scope,
+          around: a.static.events,
+          ...(a.static.keep === undefined ? {} : { keep: a.static.keep }),
+        });
+      }
     });
   }
   return found;
-}
-
-function controllerOfId(state: GameState, id: ObjectId): SeatId | null {
-  const obj = state.objects[id];
-  return obj === undefined ? null : controllerOf(state, obj);
 }
 
 /**

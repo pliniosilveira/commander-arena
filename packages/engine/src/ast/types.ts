@@ -8273,7 +8273,19 @@ export type StaticEffect =
   | {
       readonly kind: 'preventDamageAround';
       readonly scope: PreventScope;
-      readonly events: 'dealtByThis' | 'dealtToYouAndYourOtherPermanents';
+      /**
+       * `dealtToYouAndYourPlaneswalkers` ("If a source would deal damage to you or a planeswalker you control", Ajani Steadfast's emblem, CR 114.4, 120.3): the recipient is the
+       * controller or a planeswalker permanent that controller controls (this one included, which is why it is said apart from `dealtToYouAndYourOtherPermanents`).
+       */
+      readonly events:
+        | 'dealtByThis'
+        | 'dealtToYouAndYourOtherPermanents'
+        | 'dealtToYouAndYourPlaneswalkers';
+      /**
+       * "Prevent all but 1 of that damage" (CR 615.1): the damage of an event that is more than `keep` is prevented but for `keep` of it; the damage of 0 or of `keep` or less is not
+       * touched. Left out, all of it is prevented. A whole number of 1 or more.
+       */
+      readonly keep?: number;
     }
   /**
    * "Damage isn't removed from this creature during cleanup steps." (CR 514.2, 113.6, D-192): a static ability of a permanent: at the cleanup

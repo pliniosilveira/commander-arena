@@ -313,6 +313,65 @@ export const STATIC_PREVENT_DAMAGE_AROUND = defineRule<IrStatic>({
 });
 
 /**
+ * `static.prevent-all-but`: "If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage." (Ajani Steadfast's emblem; CR 615.1, 120.3, 114.4): the damage
+ * dealt to the controller or to a planeswalker they control is prevented but for one point. The engine's `preventDamageAround` with `keep`. Not read: another number, "all of that damage",
+ * another recipient, "this turn", a condition.
+ */
+export const STATIC_PREVENT_ALL_BUT = defineRule<IrStatic>({
+  id: 'static.prevent-all-but',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 120.3 (Damage)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage.',
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 2 of that damage.',
+  ],
+  rejects: [
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage',
+    'If a source would deal damage to you or a planeswalker you control, prevent all of that damage.',
+    'If a source would deal damage to you, prevent all but 1 of that damage.',
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 0 of that damage.',
+    'If a source would deal damage to you or a creature you control, prevent all but 1 of that damage.',
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(
+        pattern(
+          /if a source would deal damage to you or a planeswalker you control, prevent all but ([1-9]\d*) of that damage(?![\p{L}\p{N}])/iu,
+        ),
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [found] = r.value;
+    const keep = Number(found.value[1]);
+    return {
+      ok: true,
+      value: staticOf(
+        'static.prevent-all-but',
+        subjectNoun('self', '~', found.span, 'static.prevent-all-but'),
+        [
+          {
+            kind: 'preventDamageAround',
+            scope: 'all',
+            events: 'dealtToYouAndYourPlaneswalkers',
+            keep,
+          },
+        ],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `static.draw-limit`: "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils; CR 121.2b, 604.1): the opponents of the controller draw at most that many cards
  * in a turn. The engine's `drawLimit`. Only "each opponent" or "your opponents" and a number of cards written as a word or a digit; "each player" is `players`. Not read: "more than one card
  * each turn" with another span ("each combat"), "you can't draw", "can't draw cards", a condition, "unless".
@@ -519,6 +578,7 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_PREVENT_DAMAGE_TO_SELF,
   STATIC_PREVENT_DAMAGE_AROUND,
   STATIC_DRAW_LIMIT,
+  STATIC_PREVENT_ALL_BUT,
   STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
 ].map(quietly);

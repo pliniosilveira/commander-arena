@@ -228,7 +228,12 @@ export function lowerAngelStatic(
         if (blocked.length > 0) return failure(ability, blocked);
         abilities.push({
           kind: 'static',
-          static: { kind: 'preventDamageAround', scope: effect.scope, events: effect.events },
+          static: {
+            kind: 'preventDamageAround',
+            scope: effect.scope,
+            events: effect.events,
+            ...(effect.keep === undefined ? {} : { keep: effect.keep }),
+          },
         });
         break;
       }

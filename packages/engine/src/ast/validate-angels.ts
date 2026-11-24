@@ -297,8 +297,17 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
       }
-      if (!isOneOf(s.events, ['dealtByThis', 'dealtToYouAndYourOtherPermanents'])) {
+      if (
+        !isOneOf(s.events, [
+          'dealtByThis',
+          'dealtToYouAndYourOtherPermanents',
+          'dealtToYouAndYourPlaneswalkers',
+        ])
+      ) {
         issue(out, `${path}.events`, `unknown events ${JSON.stringify(s.events)}`);
+      }
+      if (s.keep !== undefined && (!isCount(s.keep) || s.keep < 1)) {
+        issue(out, `${path}.keep`, 'the damage left is a whole number of at least 1');
       }
       return true;
     case 'blockTax':

@@ -183,3 +183,68 @@ describe('prevent noncombat damage to you and other permanents you control', () 
     g.expect.life(1, 38);
   });
 });
+
+describe('"If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage" (an emblem)', () => {
+  const EMBLEM_SPELL = singleFace({
+    name: 'SYNTHETIC Ajani Emblem',
+    manaCost: ['1'],
+    types: ['sorcery'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'You get an emblem with "If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage."',
+    spell: {
+      targets: [],
+      effect: {
+        kind: 'createEmblem',
+        text: 'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage.',
+        abilities: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'preventDamageAround',
+              scope: 'all',
+              events: 'dealtToYouAndYourPlaneswalkers',
+              keep: 1,
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  const build = () =>
+    scenario({ seats: 3 })
+      .define(EMBLEM_SPELL)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(EMBLEM_SPELL.name, BOLT, BOLT, BOLT)
+      .battlefield('Island', 'Mountain', 'Mountain', 'Mountain')
+      .battlefield('SYNTHETIC Loyalty Walker', { label: 'jace', counters: { loyalty: 3 } })
+      .battlefield(BEARS, { label: 'bear' })
+      .seat(1)
+      .library(...LIBRARY)
+      .seat(2)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the validated card is valid', () => {
+    expect(validateCard(EMBLEM_SPELL)).toEqual([]);
+  });
+
+  test('3 damage to the emblem player, to their planeswalker: 1 is dealt; to their creature: all 3', () => {
+    const g = build();
+    g.act(0).cast(EMBLEM_SPELL.name, { pay: true });
+    g.passAll();
+    g.act(0).cast(`${BOLT}[0]`, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.expect.life(0, 39);
+    g.act(0).cast(`${BOLT}[0]`, { targets: ['jace'], pay: true });
+    g.passAll();
+    g.expect.counters('jace', { loyalty: 2 });
+    g.act(0).cast(`${BOLT}[0]`, { targets: ['bear'], pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'graveyard', { seat: 0 });
+  });
+});
