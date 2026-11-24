@@ -48,6 +48,8 @@ export type { ControlEnd } from './rules/control';
 export { faceDownLabel } from './rules/face-down';
 export { KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
+export type { PartyMember, PartySlot } from './rules/party';
+export { enumerateParties, isLegalParty } from './rules/party';
 export { distinctAssignments } from './rules/sacrifice-groups';
 export type { DeckConfig, GameConfig, StartingEmblem } from './rules/setup';
 export { createGame } from './rules/setup';
@@ -70,5 +72,3 @@ export type {
   SeatView,
 } from './view';
 export { getView } from './view';
-export type { PartyMember, PartySlot } from './rules/party';
-export { enumerateParties, isLegalParty } from './rules/party';

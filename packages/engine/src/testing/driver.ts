@@ -5,8 +5,8 @@
  */
 
 import { applyAction, getLegalActions } from '../api';
-import { stateHash } from '../hash';
 import { PARTY_TYPES } from '../characteristics';
+import { stateHash } from '../hash';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import { checkInvariants } from '../invariants';
 import { defaultDivision } from '../rules/combat-flow';

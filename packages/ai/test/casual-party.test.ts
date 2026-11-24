@@ -42,11 +42,12 @@ const PURGE = face('SYNTHETIC AI Party Purge', ['1'], ['sorcery'], [], {
   spell: { effect: { kind: 'chooseParty', players: { kind: 'eachPlayer' } } },
 });
 const HIGH_CLERIC = face('SYNTHETIC AI High Cleric', ['5'], ['creature'], ['Human', 'Cleric']);
-const CLERIC_WIZARD = face('SYNTHETIC AI Cleric Wizard', ['3'], ['creature'], [
-  'Elf',
-  'Cleric',
-  'Wizard',
-]);
+const CLERIC_WIZARD = face(
+  'SYNTHETIC AI Cleric Wizard',
+  ['3'],
+  ['creature'],
+  ['Elf', 'Cleric', 'Wizard'],
+);
 const LOW_WIZARD = face('SYNTHETIC AI Low Wizard', ['1'], ['creature'], ['Human', 'Wizard']);
 const ROGUE = face('SYNTHETIC AI Rogue', ['2'], ['creature'], ['Human', 'Rogue']);
 const BEAR = face('SYNTHETIC AI Bear', ['2'], ['creature'], ['Bear']);

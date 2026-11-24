@@ -86,11 +86,18 @@ const ALL = [
 
 type Entry = string | readonly [string, string];
 
-function start(seats: 2 | 3 | 4, active: number, boards: Readonly<Record<number, readonly Entry[]>>) {
+function start(
+  seats: 2 | 3 | 4,
+  active: number,
+  boards: Readonly<Record<number, readonly Entry[]>>,
+) {
   let b = scenario({ seats });
   for (const card of ALL) b = b.define(card);
   for (let seat = 0; seat < seats; seat += 1) {
-    const s = b.seat(seat).life(20).library(...LIB);
+    const s = b
+      .seat(seat)
+      .life(20)
+      .library(...LIB);
     if (seat === active) s.hand(TOGETHER.name).battlefield('Plains');
     for (const entry of boards[seat] ?? []) {
       if (typeof entry === 'string') s.battlefield(entry);
@@ -151,7 +158,9 @@ describe('CR 700.8d, 101.4: two seats', () => {
     expect(onBattlefield(g, 0)).toHaveLength(6);
     expect(onBattlefield(g, 1)).toHaveLength(2);
     g.act(1).chooseParty({ Cleric: CLERIC.name });
-    expect(onBattlefield(g, 0)).toEqual([CLERIC.name, ROGUE.name, WARRIOR.name, WIZARD.name].sort());
+    expect(onBattlefield(g, 0)).toEqual(
+      [CLERIC.name, ROGUE.name, WARRIOR.name, WIZARD.name].sort(),
+    );
     // The Bear of the second player is not a party type: it is sacrificed with every creature left out.
     expect(onBattlefield(g, 1)).toEqual([CLERIC.name]);
     expect(g.state.pending?.kind).toBe('priority');
@@ -238,7 +247,12 @@ describe('CR 700.8b, 700.8d: creatures with several types', () => {
 });
 
 describe('CR 101.4, 701.21a, 603.10a: sacrifice triggers', () => {
-  const board = { 0: [[MARTYR.name, 'martyr'], [CLERIC.name, 'cleric']] as readonly Entry[] };
+  const board = {
+    0: [
+      [MARTYR.name, 'martyr'],
+      [CLERIC.name, 'cleric'],
+    ] as readonly Entry[],
+  };
 
   test('a creature left out dies and its trigger fires', () => {
     const g = start(2, 0, board);

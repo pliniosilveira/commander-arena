@@ -80,7 +80,14 @@ describe('the log line', () => {
     cards[`c${id}`] = { definition: `d${id}` };
     definitions[`d${id}`] = { name };
   }
-  const state = { objects, cards, definitions, pending: null, combat: null, lki: {} } as unknown as GameState;
+  const state = {
+    objects,
+    cards,
+    definitions,
+    pending: null,
+    combat: null,
+    lki: {},
+  } as unknown as GameState;
   const text = (events: Parameters<typeof describeEvents>[0]): string[] =>
     describeEvents(events, state, state, 0).map((l) => l.text);
 

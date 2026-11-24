@@ -139,6 +139,7 @@ import { nextMainStep } from './next-main';
 import { runNextSpellModifier } from './next-spell';
 import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
+import { partyInstruction, runChooseParty } from './party-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runYouCantAttackPlayers, runYouCantSacrifice } from './player-bans';
@@ -170,7 +171,6 @@ import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
-import { runChooseParty, partyInstruction } from './party-choice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
 import {
