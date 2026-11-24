@@ -1332,6 +1332,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectControllerHasMore',
     // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
     'subjectControlledByYou',
+    // Firkraag: "if that creature had to attack this combat".
+    'subjectHadToAttack',
     'subjectStat',
     // Selvala: "if its power is greater than each other creature's power".
     'subjectGreaterThanEach',
@@ -2454,6 +2456,8 @@ export const CONDITION_KINDS = [
   'subjectControllerHasMore',
   /** "Draw a card if you control that creature" (CR 603.10a, 608.2h): the engine's `subjectControlledByYou`. */
   'subjectControlledByYou',
+  /** "If that creature had to attack this combat" (CR 508.1d, 701.15b, Firkraag): the engine's `subjectHadToAttack`. */
+  'subjectHadToAttack',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
   'subjectStat',
   /** "If its power is greater than each other creature's power" (CR 603.10a, 208.1, Selvala): the engine's `subjectGreaterThanEach`. */

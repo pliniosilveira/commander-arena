@@ -45,6 +45,7 @@ import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
 import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
+import { POWER_LESS_GOADED_STATIC_RULES } from './power-less-goaded';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
 import { PT_COUNTERS_ON_SOURCE_STATIC_RULES } from './pt-counters-on-source';
@@ -169,6 +170,8 @@ export const STATIC_RULES = [
   ...CANT_BE_SACRIFICED_STATIC_RULES,
   // Mocking Doppelganger: "Other creatures with the same name as ~ are goaded."
   ...SAME_NAME_GOADED_STATIC_RULES,
+  // Baeloth Barrityl: "Creatures your opponents control with power less than ~'s power are goaded."
+  ...POWER_LESS_GOADED_STATIC_RULES,
   // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   ...DANITHA_G3_STATIC_RULES,
   // Limit Break deck, group 4 (Professor Hojo): "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate."

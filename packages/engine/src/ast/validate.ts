@@ -882,7 +882,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'goaded':
       // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, false, false, true);
       break;
     case 'costReduction':
       checkCostReduction(s, path, out);
@@ -2237,7 +2237,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           ? { triggerAttacked: true }
           : {}),
         ...(a.trigger?.kind === 'playerAttacksOpponent' ||
-        (a.trigger?.kind === 'attackBatch' && a.trigger.eachAttackedPlayer === true)
+        (a.trigger?.kind === 'attackBatch' &&
+          (a.trigger.eachAttackedPlayer === true || a.trigger.eachAttackedOpponent === true))
           ? { triggerAttackedSingle: true }
           : {}),
         triggeredAbility: true,
@@ -2363,7 +2364,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectHadToAttack',
+          'subjectStat',
+          'subjectGreaterThanEach',
+        ]) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
               out,
@@ -2469,7 +2475,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectHadToAttack',
+          'subjectStat',
+          'subjectGreaterThanEach',
+        ]) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
           }

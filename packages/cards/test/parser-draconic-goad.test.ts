@@ -61,3 +61,72 @@ describe('"Until your next turn, target creature an opponent controls can\'t be 
     expect(dropped(text, 'creature').stoppedAt).not.toBe('');
   });
 });
+
+describe('"Creatures your opponents control with power less than ~\'s power are goaded." (CR 701.15a, 208.1)', () => {
+  test('the real line of Baeloth Barrityl is a goad of the opponents creatures with less power than the source', () => {
+    expect(
+      readAll(
+        "Creatures your opponents control with power less than ~'s power are goaded.",
+        'creature',
+      ).abilities,
+    ).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'goaded',
+          subject: {
+            kind: 'filter',
+            filter: { types: ['creature'], controller: 'opponent', powerLessThanSource: true },
+          },
+        },
+      },
+    ]);
+  });
+
+  test.each([
+    ["Creatures you control with power less than ~'s power are goaded."],
+    ["Creatures your opponents control with power greater than ~'s power are goaded."],
+    ['Creatures your opponents control with power less than 3 are goaded.'],
+    ["Creatures your opponents control with power less than ~'s power have flying."],
+  ])('another group or effect is dropped, never half read (SYNTHETIC): %s', (text) => {
+    expect(dropped(text, 'creature').stoppedAt).not.toBe('');
+  });
+});
+
+describe('Firkraag: "attack an opponent" and "had to attack this combat" (CR 508.6, 508.1d, 701.15a)', () => {
+  test('"that player" of an attack on an opponent is the opponent attacked', () => {
+    expect(
+      readAll(
+        'Whenever one or more Dragons you control attack an opponent, goad target creature that player controls.',
+        'creature',
+        ['Dragon'],
+      ).abilities,
+    ).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attackBatch', who: 'you', eachAttackedOpponent: true },
+        targets: [{ what: { filter: { controller: 'triggerPlayer' } } }],
+        effect: { kind: 'goad' },
+      },
+    ]);
+  });
+
+  test('"attack a player" does not bind "that player" to the player attacked (SYNTHETIC)', () => {
+    expect(
+      dropped(
+        'Whenever one or more Dragons you control attack a player, goad target creature that player controls.',
+        'creature',
+        ['Dragon'],
+      ).reason,
+    ).toBe('unboundReference');
+  });
+
+  test('"that creature had to attack this combat" is the intervening if of a trigger about a creature', () => {
+    expect(
+      readAll(
+        'Whenever a creature deals combat damage to one of your opponents, if that creature had to attack this combat, draw a card.',
+        'creature',
+      ).abilities,
+    ).toMatchObject([{ kind: 'triggered', interveningIf: { kind: 'subjectHadToAttack' } }]);
+  });
+});

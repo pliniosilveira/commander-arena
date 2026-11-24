@@ -5963,6 +5963,12 @@ export type Trigger =
        */
       readonly eachAttackedPlayer?: true;
       /**
+       * "Whenever one or more Dragons you control attack an opponent" (Firkraag, CR 508.1b, 508.6, 603.2c): as `eachAttackedPlayer`, but only for the players who are opponents of the
+       * controller of this ability, and `triggerPlayer` ("that player") is the opponent attacked, not the attacking player (`triggerAttackedPlayer` is the same player). Only with `who` `you`;
+       * not with `eachAttackedPlayer`, `attackedEnchantedPlayer` or `attackingYourOpponents`.
+       */
+      readonly eachAttackedOpponent?: true;
+      /**
        * "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1, 603.2c): the permanent with the ability must itself be one of the creatures the declaration
        * holds that match `what`, and `atLeast` counts it (so "and at least two other creatures" is `atLeast` 3). Only with `who` `you`: the creature is the controller's own attacker.
        */
@@ -6852,6 +6858,12 @@ export type Condition =
    * there is none.
    */
   | { readonly kind: 'subjectControlledByYou' }
+  /**
+   * "If that creature had to attack this combat" (Firkraag, Cunning Instigator; CR 508.1d, 701.15b): the creature the trigger is about was required to attack as the attackers of the
+   * combat in progress were declared (a goad, "attacks each combat if able") and was able to. False when it was not in that combat, and outside combat. Valid as the intervening "if" of
+   * a trigger about a permanent, or in a conditional effect of one.
+   */
+  | { readonly kind: 'subjectHadToAttack' }
   /**
    * "If its power is greater than each other creature's power" (Selvala, Heart of the Wilds; CR 603.10a, 113.7a, 208.1, 608.2c): the `stat` of the permanent whose event caused the trigger (as it
    * is now, or as it last was once it has left) is greater than that of every other battlefield permanent the `filter` matches, whoever controls it. The permanent itself is left

@@ -968,6 +968,19 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   if (source.event === 'attackBatch' && source.attackingYourOpponents === true) {
     binder.seedAttackers(source);
   }
+  // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked.
+  if (source.event === 'attackBatch' && source.eachAttackedOpponent === true) {
+    binder.seedControllerOfSubject({
+      kind: 'noun',
+      det: 'a',
+      filter: { raw: '' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: source.span,
+      rule: source.rule,
+    });
+  }
   const subject = binder.seed(source.subject, 'triggerSubject', aboutSelf(source));
   const actor = binder.seed(source.actor, 'triggerActor');
   // The player a creature dealt combat damage to is the antecedent of "that player" (stage P18).

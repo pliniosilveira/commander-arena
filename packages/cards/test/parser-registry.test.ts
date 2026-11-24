@@ -699,6 +699,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-that-creature': permanent(
     (e) => `Whenever one or more -1/-1 counters are put on a creature, draw a card if ${e}.`,
   ),
+  'condition.that-creature-had-to-attack': permanent(
+    (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
+  ),
   'condition.its-stat-was': permanent(
     (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
   ),
@@ -1115,6 +1118,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'static.same-name-goaded': asIs,
+  'static.power-less-goaded': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,

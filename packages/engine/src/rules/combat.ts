@@ -44,9 +44,12 @@ export function declareAttackers(
   input: GameState,
   seat: SeatId,
   attacks: readonly { attacker: ObjectId; target: AttackTarget }[],
+  hadToAttack: readonly ObjectId[] = [],
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
+  // CR 508.1d, 701.15b: the creatures that had to attack, read by the caller before the declaration taps any of them (`requiredAttackers`).
+  const required = new Set(hadToAttack);
   for (const a of attacks) {
     const obj = getObject(state, a.attacker);
     if (!hasKeyword(state, obj, 'vigilance') && !obj.tapped) {
@@ -60,6 +63,7 @@ export function declareAttackers(
       object: a.attacker,
       target: a.target,
       blocked: false,
+      ...(required.has(a.attacker) ? { hadToAttack: true as const } : {}),
       // CR 508.5 (D-200): the defending player of an attacker of a planeswalker or battle is who controls or protects it as it is declared.
       ...(a.target.kind === 'permanent' ? defenderRecord(state, a.target) : {}),
     })),
