@@ -71,6 +71,8 @@ import { COUNTER_BLITZ_E_LOWERINGS } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_LOWERINGS } from './counter-blitz-g';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { COUNTER_GROUP_A_LOWERINGS } from './counter-group-a';
+import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -176,6 +178,7 @@ import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
+import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
@@ -2764,6 +2767,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXTRA_TURN,
   DELAYED_DRAW,
   COPY_SPELL,
+  SPELL_GAINS_KEYWORD,
   EXILE_ON_RESOLVE,
   CHANGE_TARGET,
   libraryVerb('scry'),
@@ -2899,6 +2903,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...LIMIT_BREAK_G1_LOWERINGS,
   ...COUNTER_BLITZ_G_LOWERINGS,
   ...COUNTER_GROUP_A_LOWERINGS,
+  ...COUNTER_INTELLIGENCE_G2_LOWERINGS,
+  ...COUNTER_INTELLIGENCE_G3_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.

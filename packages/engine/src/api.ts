@@ -14,7 +14,7 @@ import {
   answerDiscardCost,
   answerExileCost,
   answerRemoveCounters,
-  answerRemoveCountersPick,
+  answerRemoveCountersKind,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -598,11 +598,14 @@ function answerChooseOption(
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
   }
+  if (d.purpose === 'counterPick' && d.forCost === true) {
+    // CR 118.3, 122.1, 602.2b: the counter the activating player picks to remove for the cost of an ability.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return answerRemoveCountersKind(state, option);
+  }
   if (d.purpose === 'counterPick') {
     // CR 122.1, 122.5, 608.2d: the counter the controller takes (or "Done") for "remove any number of counters" and "move a counter".
     if (!d.options.includes(option)) return fail('That is not one of the options');
-    // CR 118.3, 122.1: the counter taken off to pay "Remove a counter from a nonland permanent you control" as an ability is activated.
-    if (d.forCost === true) return answerRemoveCountersPick(state, d.options.indexOf(option));
     return finishResolutionAnswer(answerResolutionCounterPick(state, option));
   }
   if (d.purpose === 'pile') {
@@ -1212,7 +1215,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       return fail('Accept or decline');
     }
     case 'chooseOption': {
-      // CR 733: a counter chosen to pay a cost can be taken back, which rewinds the activation.
+      // CR 733: the counters removed to pay a cost can be taken back with `cancel`, which rewinds the activation.
       if (d.forCost === true && action.kind === 'cancel') return cancelCast(state);
       if (action.kind !== 'chooseOption') return fail('Choose one of the options');
       return answerChooseOption(state, seat, d, action.option);

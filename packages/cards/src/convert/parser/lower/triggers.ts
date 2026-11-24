@@ -1466,6 +1466,7 @@ function lowerTriggeredAbility(
   ctx.triggeredBody = true;
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
+  ctx.hadCountersTrigger = false;
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   ctx.graveyardBatchTrigger =
     triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.batch === true);
@@ -1500,7 +1501,6 @@ function lowerTriggeredAbility(
   const ifWritten = ability.interveningIf ?? lift.condition;
   // "..., if you gained life this turn, distribute up to that many ...": "that many" is the life gained (CR 119.3, 603.4).
   ctx.lifeGainedIf = ifWritten?.test.kind === 'lifeGainedThisTurn' && ifWritten.test.atLeast === 1;
-  ctx.hadCountersIf = false;
   if (ifWritten?.test.kind === 'hadCounters') {
     // "..., if it had counters on it, ..." (stage P33, D-150): a part of the filter of the trigger (see `foldHadCounters`).
     const [only] = triggers;
@@ -1511,8 +1511,8 @@ function lowerTriggeredAbility(
     if (folded !== null) {
       triggers[0] = folded;
       foldedCounters = true;
-      // "put those counters on ..." (Resourceful Defense) is the counters of the permanent the intervening "if" says had some.
-      ctx.hadCountersIf = ifWritten.test.counter === undefined;
+      // Resourceful Defense: "those counters" of the body are every counter the permanent had, which only an unnamed kind of counter makes of the text.
+      ctx.hadCountersTrigger = ifWritten.test.counter === undefined;
     } else {
       // "When ~ dies, if it had one or more -1/-1 counters on it, ..." (Oft-Nabbed Goat, CR 603.10a, 122.1): the permanent itself, as it last was, had a counter of the kind the text names
       // (the engine's `sourceHasCounter`, which Persist and Undying read). "That many" of the body is the number of those counters.

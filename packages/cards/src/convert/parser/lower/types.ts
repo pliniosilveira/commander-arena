@@ -65,8 +65,6 @@ export interface LowerContext {
   cycleTriggerX: boolean;
   /** The one intervening "if" of the triggered ability is "if you gained life this turn" (CR 603.4): "that many" in its body is the life gained this turn (Lathiel). */
   lifeGainedIf: boolean;
-  /** The one intervening "if" of the triggered ability is "if it had counters on it" (CR 603.10a, 122.1): "those counters" and "that number" in its body are the counters the permanent the trigger is about had (Resourceful Defense, Yuna, Grand Summoner). */
-  hadCountersIf: boolean;
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
@@ -190,6 +188,11 @@ export interface LowerContext {
    * ... card from your graveyard" is then besides the card the creature that died became (`ObjectFilter.notTriggerCard`).
    */
   deathOfOther: boolean;
+  /**
+   * True in the body of "Whenever a permanent you control leaves the battlefield, if it had counters on it, ..." (Resourceful Defense, CR 603.10a, 122.1): the trigger is about another
+   * permanent that had a counter of some kind, which `foldHadCounters` made a part of the trigger's filter; "those counters" are the counters that permanent had as it last was.
+   */
+  hadCountersTrigger: boolean;
   /**
    * The player the last instruction lowered was said of (a `player` of the effect): "each other player" is every player but that one ("its owner draws that many cards and each
    * other player loses that much life"). Null before the first instruction and after one that names no player.
@@ -373,6 +376,11 @@ export interface LowerContext {
    */
   lastCounteredGroup: ObjectSelector | null;
   /**
+   * The id of the target the instruction just lowered made a creature for good (Depthshaker Titan, CR 603.7c: "any number of target noncreature artifacts you control become 3/3
+   * artifact creatures. Sacrifice them at the beginning of the next end step."): "them" is those targets. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  becameTarget: string | null;
+  /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
@@ -441,7 +449,6 @@ export function newContext(
     castTriggerX: false,
     cycleTriggerX: false,
     lifeGainedIf: false,
-    hadCountersIf: false,
     activateTrigger: false,
     becomesTargetOf: null,
     removed: new Set(),
@@ -487,6 +494,7 @@ export function newContext(
     lastEffectKind: null,
     lastCastRemembered: false,
     lastCounteredGroup: null,
+    becameTarget: null,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,
@@ -506,6 +514,7 @@ export function newContext(
     text: '',
     interveningCondition: false,
     deathOfOther: false,
+    hadCountersTrigger: false,
     lastPlayer: null,
     meldPartner: null,
     exiledWithCondition: false,

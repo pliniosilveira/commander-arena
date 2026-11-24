@@ -79,7 +79,7 @@ describe('texts that are not Voice of the Blessed are dropped, never half run (S
   const lines = [
     'As long as ~ has four or more +1/+1 counters on it, you draw a card.',
     'As long as ~ has four +1/+1 counters on it, it has flying.',
-    'As long as ~ has four or more counters on it, it has flying.',
+    'As long as ~ has four or more counters on it, you draw a card.',
     'As long as ~ has one or more +1/+1 counters on it, it has flying.',
   ];
   for (const text of lines) {

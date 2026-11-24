@@ -21,7 +21,7 @@ import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
-import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { AMOUNT_FOR_EACH_COLOR_SPENT, AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
 import { OPPONENTS_WHO_CONTROL_AMOUNT_RULES } from './opponents-who-control';
 import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
@@ -555,6 +555,7 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_STILL_EXILED,
   AMOUNT_FOR_EACH_AURA_ATTACHED,
   AMOUNT_FOR_EACH_MANA_SPENT,
+  AMOUNT_FOR_EACH_COLOR_SPENT,
   // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
   ...LOREHOLD_G2_AMOUNT_RULES,
   // Quandrix Unlimited deck, group D2: "half X, rounded down".

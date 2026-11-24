@@ -4,7 +4,6 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameState } from '../state/types';
-import type { CounterPickOption } from './counter-pick';
 import { controlledCandidates } from './sacrifice';
 
 /**
@@ -26,21 +25,4 @@ export function removalCounters(
     0,
   );
   return { candidates, total };
-}
-
-/**
- * Every counter a cost "Remove a counter from a nonland permanent you control" may take (CR 118.3, 122.1): each kind of counter on each permanent the filter matches, in the order the
- * permanents are listed and then the order the kinds are kept. Nothing that stops counters being put on a permanent holds one back, as removing is not putting.
- */
-export function anyCounterPicks(
-  state: GameState,
-  seat: SeatId,
-  source: ObjectId | null,
-  filter: ObjectFilter,
-): CounterPickOption[] {
-  return controlledCandidates(state, seat, source, filter).flatMap((id) =>
-    Object.entries(state.objects[id]?.counters ?? {}).flatMap(([counter, count]) =>
-      count > 0 ? [{ object: id, counter, count }] : [],
-    ),
-  );
 }

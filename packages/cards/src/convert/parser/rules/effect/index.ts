@@ -63,6 +63,8 @@ import { COUNTER_BLITZ_E_EFFECT_RULES } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_EFFECT_RULES } from './counter-blitz-g';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_GROUP_A_EFFECT_RULES } from './counter-group-a';
+import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_EFFECT_RULES } from './counter-intelligence-g3';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -239,6 +241,7 @@ import { SEARCH_PAIR_RULES } from './search-pair';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
+import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -1320,6 +1323,8 @@ export const EFFECT_RULES = [
   ...REVEAL_X_CARDS_EFFECT_RULES,
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...COPY_SPELL_TWICE_EFFECT_RULES,
+  // CR 702.44a (Sunburst): "it gains sunburst" of the spell of a cast trigger.
+  ...SPELL_GAINS_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
   // CR 701.46a (Adapt): "Adapt 4".
   ...ADAPT_EFFECT_RULES,
@@ -1391,6 +1396,10 @@ export const EFFECT_RULES = [
   ...LIMIT_BREAK_G1_EFFECT_RULES,
   // Counter Blitz deck, group G (Sin, Unending Cataclysm): "put its counters on target creature you control", "shuffle this card into its owner's library".
   ...COUNTER_BLITZ_G_EFFECT_RULES,
+  // Counter Intelligence deck, group 2: "Put those counters on target permanent you control".
+  ...COUNTER_INTELLIGENCE_G2_EFFECT_RULES,
+  // Counter Intelligence deck, group 3: "~ becomes a copy of target artifact you control", "any number of target ... become 3/3 artifact creatures", "choose any number of permanents you control that had a counter put on them this way" and "those permanents phase out" start like the plain becomes, any-number, choose and those rules.
+  ...COUNTER_INTELLIGENCE_G3_EFFECT_RULES,
   ...QUANDRIX_EFFECT_RULES,
   // Endurance (Elemental Incarnation cycle): "up to one target player puts all the cards from their graveyard on the bottom of their library in a random order".
   ...BOTTOM_GRAVEYARD_EFFECT_RULES,

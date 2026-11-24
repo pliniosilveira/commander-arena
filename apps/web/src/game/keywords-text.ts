@@ -30,6 +30,10 @@ export function devourReminder(n: number, quality?: string): string {
 export const RIOT_REMINDER =
   'This permanent enters with your choice of an additional +1/+1 counter or haste.';
 
+/** The reminder of Sunburst (CR 702.44a). */
+export const SUNBURST_REMINDER =
+  'This enters with a +1/+1 counter on it for each color of mana spent to cast it if it is a creature, otherwise with a charge counter for each.';
+
 /** The answers of a riot question (CR 702.136a), as the buttons word them: `counter` and `haste`. */
 export const RIOT_ROWS: Readonly<
   Record<string, { readonly label: string; readonly detail: string }>

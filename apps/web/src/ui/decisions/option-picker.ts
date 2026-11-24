@@ -14,7 +14,7 @@ export function optionPrompt(
     Partial<
       Pick<
         ChooseOptionDecision,
-        'options' | 'riotSoFar' | 'replacement' | 'vote' | 'seat' | 'meldOrder'
+        'options' | 'riotSoFar' | 'replacement' | 'vote' | 'seat' | 'meldOrder' | 'forCost'
       >
     >,
 ): string {
@@ -49,6 +49,7 @@ export function optionPrompt(
       options: d.options,
       sourceName: d.sourceName,
       ...(d.riotSoFar === undefined ? {} : { riotSoFar: d.riotSoFar }),
+      ...(d.forCost === undefined ? {} : { forCost: d.forCost }),
       ...(d.replacement === undefined ? {} : { replacement: d.replacement }),
       ...(d.vote === undefined ? {} : { vote: d.vote }),
       ...(d.meldOrder === undefined ? {} : { meldOrder: d.meldOrder }),

@@ -786,6 +786,7 @@ export function checkFilter(
     'chosenColor',
     'notChosenType',
     'chosenPlaneswalkerType',
+    'chosenCardType',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -3109,8 +3110,12 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not counters');
     }
     const counter = (a as { counter?: unknown }).counter;
-    if (typeof counter !== 'string' || counter.length === 0) {
-      issue(out, `${path}.counter`, 'countersOnSource names the kind of counter');
+    if (counter !== undefined && (typeof counter !== 'string' || counter.length === 0)) {
+      issue(
+        out,
+        `${path}.counter`,
+        'countersOnSource names a kind of counter, or none for every kind',
+      );
     }
     return;
   }
@@ -3499,25 +3504,26 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'removeCounters':
     case 'putCounters':
-      if (cost.kind === 'removeCounters' && cost.anyKind !== undefined) {
-        // O'aka, Traveling Merchant (CR 118.3, 122.1): "Remove a counter from a nonland permanent you control": any kind, so no kind is named; one counter, off a permanent the filter names.
-        if (cost.anyKind !== true) issue(out, `${path}.anyKind`, 'anyKind is true when present');
-        if (cost.among === undefined) {
-          issue(
-            out,
-            `${path}.anyKind`,
-            'a counter of any kind comes off a permanent the among filter names',
-          );
-        }
-        if (cost.counter !== '') {
-          issue(out, `${path}.counter`, 'a counter of any kind names no kind: counter is empty');
-        }
-        if (cost.count !== 1) issue(out, `${path}.count`, 'one counter of any kind');
-      } else if (typeof cost.counter !== 'string' || cost.counter === '') {
+      // Gavel of the Righteous, Moxite Refinery: a cost that removes counters may name no kind (counters of any kind, chosen by the player).
+      if (
+        (typeof cost.counter !== 'string' || cost.counter === '') &&
+        !(cost.kind === 'removeCounters' && cost.counter === undefined)
+      ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
+      }
+      if (cost.kind === 'removeCounters' && cost.countX !== undefined) {
+        // Moxite Refinery (CR 107.3a, 602.2b): "Remove X counters": the number is the X announced, so the cost counts one.
+        if (cost.countX !== true || cost.count !== 1) {
+          issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
+        }
+      }
+      if (cost.kind === 'removeCounters' && cost.fromOne !== undefined) {
+        if (cost.fromOne !== true || cost.among === undefined) {
+          issue(out, `${path}.fromOne`, 'fromOne must be true, with among naming the permanents');
+        }
       }
       if (cost.kind === 'removeCounters' && cost.among !== undefined) {
         // Federation Fleet group D (CR 118.3, 122.1): "Remove two +1/+1 counters from among creatures you control": permanents the player controls, on the battlefield.
@@ -4235,6 +4241,8 @@ function movesObjects(e: Effect): boolean {
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
+    // Ripples of Potential (CR 701.34a): the permanents a `proliferate` put a counter on are "those permanents that had a counter put on them this way".
+    e?.kind === 'proliferate' ||
     // D-660, D-661, D-663: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
     e?.kind === 'exileUntilFound' ||
     e?.kind === 'opponentChoosesCard' ||
@@ -5575,6 +5583,8 @@ function isDelayedCastBody(e: Effect | undefined): boolean {
   if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
   // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast enters with counters.
   if (e.kind === 'spellEntersWithCounters') return true;
+  // CR 702.44a, 603.7c (Solar Array): "When you next cast an artifact spell this turn, that spell gains sunburst."
+  if (e.kind === 'spellGainsKeyword') return kindOf(e.spell) === 'triggerSubject';
   if (e.kind === 'draw') return kindOf(e.player) === 'you';
   if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): "create a token that's a copy of a non-Saga token you control": the permanent is chosen as the ability resolves, then copied.
@@ -5613,7 +5623,7 @@ export function checkDelayedCast(
     issue(
       out,
       `${path}.effect`,
-      'a delayed cast trigger copies the spell that was cast, copies a permanent it chooses, or its controller draws cards and gains life',
+      'a delayed cast trigger copies the spell that was cast or gives it sunburst, copies a permanent it chooses, or its controller draws cards and gains life',
     );
     return;
   }
@@ -5656,6 +5666,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.count`, 'chooseObjects count must be positive');
       if (e.exactly !== undefined && e.exactly !== true)
         issue(out, `${path}.exactly`, 'exactly must be true when present');
+      // Ripples of Potential: any number of the permanents the effect before it produced.
+      if (e.anyNumber !== undefined && (e.anyNumber !== true || e.exactly === true)) {
+        issue(out, `${path}.anyNumber`, 'anyNumber must be true, and is not with exactly');
+      }
+      if (e.fromMoved !== undefined) {
+        if (e.fromMoved !== true)
+          issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
+        else if (scope.movedAvailable !== true) {
+          issue(
+            out,
+            `${path}.fromMoved`,
+            'fromMoved needs an effect before it that produced objects (moved)',
+          );
+        }
+      }
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
@@ -6441,6 +6466,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         scope.auraDiesTrigger === true,
         scope.thisWay?.includes('exiledCreatures') === true,
       );
+      // Depthshaker Titan (CR 603.7c): the delayed sacrifice of the targets of the ability names a target slot the ability declares.
+      if (e.effect?.kind === 'sacrifice' && kindOf(e.effect.objects) === 'target') {
+        checkObjectSelector(
+          e.effect.objects as Extract<ObjectSelector, { kind: 'target' }>,
+          `${path}.effect.objects`,
+          scope,
+          out,
+        );
+      }
       break;
     case 'prepare':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -6536,6 +6570,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
+      break;
+    case 'spellGainsKeyword':
+      // CR 702.44a, 702.44d: the spell whose casting caused the trigger (a `castSpell` trigger or a `delayedCast`) gains Sunburst, and nothing else.
+      if (kindOf(e.spell) === 'triggerSubject') {
+        checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
+      } else {
+        issue(
+          out,
+          `${path}.spell`,
+          'spellGainsKeyword names the spell that was cast (triggerSubject)',
+        );
+      }
+      if (e.keyword?.kind !== 'sunburst') {
+        issue(out, `${path}.keyword`, 'only sunburst can be gained by a spell');
+      }
       break;
     case 'loseLifeManaValue':
       // Issue 97 (Kefka): the spells an earlier `castFree` with `remember` cast.
@@ -6936,7 +6985,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkRef(e.from, 'object', `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
       if (e.anyNumber !== undefined && e.anyNumber !== true) {
-        issue(out, `${path}.anyNumber`, 'anyNumber is true when present');
+        issue(out, `${path}.anyNumber`, 'anyNumber must be true');
       }
       break;
     case 'removeChosenCounters':
@@ -6955,7 +7004,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 122.1, 113.7a (Zack Fair): the permanent whose counters are copied is `this` or the permanent the cost sacrificed, last-known information once it is gone.
       if (kindOf(e.from) === 'sacrificedCost') checkSacrificedCost(`${path}.from`, scope, out);
       else if (kindOf(e.from) === 'triggerSubject') {
-        // CR 603.10a, 113.7a (Resourceful Defense: "put those counters on target permanent you control"): the permanent the trigger is about, as it last was once it has left.
+        // CR 603.10a, 113.7a (Resourceful Defense): the permanent a leaves-the-battlefield trigger is about, as it last was.
         checkSubjectRef(e.from, 'permanent', `${path}.from`, scope, out);
       } else if (kindOf(e.from) !== 'this') {
         issue(

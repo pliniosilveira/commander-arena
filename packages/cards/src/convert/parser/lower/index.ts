@@ -23,6 +23,8 @@ import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
 import { COUNTER_BLITZ_G_NEEDS } from './counter-blitz-g';
 import { COUNTER_GROUP_A_NEEDS } from './counter-group-a';
+import { COUNTER_INTELLIGENCE_G2_NEEDS } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_NEEDS } from './counter-intelligence-g3';
 import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
@@ -169,6 +171,8 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...LIMIT_BREAK_G1_NEEDS,
     ...COUNTER_BLITZ_G_NEEDS,
     ...COUNTER_GROUP_A_NEEDS,
+    ...COUNTER_INTELLIGENCE_G2_NEEDS,
+    ...COUNTER_INTELLIGENCE_G3_NEEDS,
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,

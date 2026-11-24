@@ -169,6 +169,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'lifeGainDouble':
+    case 'proliferateDouble':
       return true;
     case 'countersPlus':
       // CR 614.1a, 122.6: the permanents that get more counters of one kind, and how many more.

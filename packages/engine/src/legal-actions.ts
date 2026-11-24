@@ -407,7 +407,7 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // CR 614.12a: one action per option, in the decision's order (every creature type, or five colors).
       return [
         ...d.options.map((option) => ({ kind: 'chooseOption' as const, option })),
-        // CR 733: a counter taken off for a cost can be taken back with the activation.
+        // CR 733: the counters removed to pay a cost can be taken back, which rewinds the activation.
         ...(d.forCost === true ? [{ kind: 'cancel' as const }] : []),
         { kind: 'concede' },
       ];

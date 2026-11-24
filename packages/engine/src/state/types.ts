@@ -503,6 +503,11 @@ export interface StackData {
    */
   readonly manaSpent?: ManaSpent;
   /**
+   * The keywords the spell gained while it was on the stack (`spellGainsKeyword`, "it gains sunburst", CR 702.44d), one entry for each time one was gained: the permanent the spell
+   * becomes reads them as it enters (`rules/enters-keywords.ts`). Absent when none, and for an ability.
+   */
+  readonly gainedKeywords?: readonly Extract<Keyword, { readonly kind: 'sunburst' }>[];
+  /**
    * The life paid for the Phyrexian mana symbols of the spell's mana cost (CR 107.4f, 601.2h; 2 life for each symbol), written as the cost is paid: Compleated (CR 702.150a) reads it
    * as the permanent enters. Absent when no Phyrexian symbol was paid with life, and for an ability.
    */
@@ -1141,6 +1146,8 @@ export interface ActivationContext {
    * is still owed. Absent when the cost has no such part.
    */
   readonly countersLeft?: number;
+  /** The one permanent a cost "Remove X counters from an artifact or creature you control" takes all its counters from (`fromOne`): left out until the first counter has been picked. */
+  readonly removedFrom?: ObjectId;
 }
 
 export type Instruction =
@@ -1150,6 +1157,8 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly count: number;
       readonly exactly?: true;
+      readonly anyNumber?: true;
+      readonly fromMoved?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1381,6 +1390,8 @@ export type Instruction =
       readonly left: number | null;
       readonly removed: number;
       readonly chosen: string | null;
+      /** A move that takes "any number of counters": the player may stop (`left` is null), as a removal may (Resourceful Defense). */
+      readonly anyNumber?: true;
     }
   | {
       readonly kind: 'moveCounters';

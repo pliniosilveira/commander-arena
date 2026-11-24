@@ -121,13 +121,10 @@ export function makeTokens(
     // CR 714.3a: a token that is a Saga (a copy of one) enters with a lore counter too.
     const own = entersAsSaga(
       characteristics.subtypes,
-      entersWithCounters(
-        abilities,
-        {},
-        0,
-        false,
-        (a) =>
-          a.kind === 'diedThisTurn'
+      entersWithCounters(abilities, {}, 0, false, (a) =>
+        a.kind === 'manaSpent'
+          ? 0 // A token was not cast: no mana was spent on it (CR 111.1).
+          : a.kind === 'diedThisTurn'
             ? historyCount(state, a, seat)
             : a.kind === 'aggregate'
               ? amountOf(state, a, { controller: seat, source: id }, [])

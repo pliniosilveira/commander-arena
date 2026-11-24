@@ -7,7 +7,7 @@ import type { Effect } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { type Effects, failure, operand } from './clauses';
 import type { FeatureRef } from './features';
-import { objectRefOf, objectSelectorOf } from './nouns';
+import { objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
 /**
@@ -31,31 +31,6 @@ const SUPPORT: Lowering<IrClause, Effects> = {
       objects: selector.value,
       counter: '+1/+1',
       count: 1,
-    };
-    return { ok: true, value: [effect], rule: clause.rule };
-  },
-};
-
-/**
- * "If it had counters on it, put those counters on target permanent you control" (Resourceful Defense; CR 122.6, 603.10a, 113.7a): the counters, each kind as many as it had, that the permanent
- * the trigger is about had as it left the battlefield, put on the target (the engine's `putCountersOf` of the `triggerSubject`). Read only where the trigger's intervening "if" is "if it had
- * counters on it", which is what "those counters" are.
- */
-const PUT_THOSE_COUNTERS: Lowering<IrClause, Effects> = {
-  head: 'putThoseCounters',
-  id: 'lower.put-those-counters',
-  needs: ['effect:putCountersOf', 'selector:target', 'selector:triggerSubject'],
-  lower(clause, ctx) {
-    if (!ctx.hadCountersIf) return failure(clause);
-    const noun = operand(clause, 'objects');
-    if (noun?.kind !== 'noun' || noun.det !== 'target') return failure(clause);
-    const to = objectRefOf(noun, ctx);
-    if (!to.ok) return to;
-    if (to.value.kind !== 'target') return failure(clause);
-    const effect: Effect = {
-      kind: 'putCountersOf',
-      from: { kind: 'triggerSubject' },
-      to: to.value,
     };
     return { ok: true, value: [effect], rule: clause.rule };
   },
@@ -110,7 +85,6 @@ const DELAYED_DIES: Lowering<IrClause, Effects> = {
 
 export const COUNTER_GROUP_A_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SUPPORT,
-  PUT_THOSE_COUNTERS,
   CANT_BE_BLOCKED_BY_OPPONENTS,
   DELAYED_DIES,
 ];

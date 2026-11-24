@@ -72,55 +72,6 @@ export const EFFECT_SUPPORT = defineRule<Clauses>({
   },
 });
 
-/**
- * `effect.put-those-counters`: "put those counters on target permanent you control" (Resourceful Defense; CR 122.6, 603.10a, 113.7a: the counters the permanent the trigger is about had as it
- * left the battlefield, each kind as many as it had, put on another permanent). "Those counters" is read only after an intervening "if it had counters on it", which the lowering checks. Not
- * read: "that many", a kind of counter, "it" or a creature instead of "permanent", a permanent you don't control, "on it", a following clause.
- */
-export const EFFECT_PUT_THOSE_COUNTERS = defineRule<Clauses>({
-  id: 'effect.put-those-counters',
-  family: 'effect',
-  leading: ['put'],
-  cites: [
-    'CR 122.6 (Counters)',
-    'CR 603.10a (Handling Triggered Abilities)',
-    'CR 113.7a (Abilities)',
-  ],
-  examples: ['put those counters on target permanent you control'],
-  rejects: [
-    'put those counters on target permanent',
-    'put those counters on target creature you control',
-    'put those counters on it',
-    'put those counters on ~',
-    'put those +1/+1 counters on target permanent you control',
-    'put that many counters on target permanent you control',
-    'put those counter on target permanent you control',
-    'put those counters on target permanent you control and draw a card',
-    'put those counters on up to one target permanent you control',
-    'put those counters',
-  ],
-  parse: single(
-    'effect.put-those-counters',
-    sequence(
-      literal('put those counters on '),
-      refuseAt(
-        family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
-        (n) =>
-          n.det === 'target' &&
-          !n.plural &&
-          !n.upTo &&
-          n.count === undefined &&
-          n.filter.controller === 'you' &&
-          n.filter.types === undefined &&
-          n.filter.anyOf === undefined &&
-          n.filter.subtypes === undefined,
-        (_n, _ctx, start) => start,
-      ),
-    ),
-    ([, objects]) => ({ verb: 'putThoseCounters', args: { objects } }),
-  ),
-});
-
 const BLOCKERS_TAIL = /can['’]t be blocked by creatures your opponents control/iu;
 
 /**
@@ -349,7 +300,6 @@ export const EFFECT_PUT_THAT_NUMBER_COUNTERS = defineRule<Clauses>({
 
 export const COUNTER_GROUP_A_EFFECT_RULES = [
   EFFECT_SUPPORT,
-  EFFECT_PUT_THOSE_COUNTERS,
   EFFECT_PUT_THAT_NUMBER_COUNTERS,
   EFFECT_CANT_BE_BLOCKED_BY_OPPONENTS_CREATURES,
   EFFECT_CHOOSE_TARGET_DIES_RETURN,

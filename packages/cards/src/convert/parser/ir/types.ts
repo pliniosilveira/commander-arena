@@ -1108,6 +1108,16 @@ export type IrCost = IrNode &
         /** "Remove a counter from a nonland permanent you control" (CR 118.3, 122.1): a counter of any kind; `counter` is empty and `count` 1. */
         readonly anyKind?: true;
       }
+    // "Remove a counter from ~", "Remove three counters from among other artifacts, creatures, and planeswalkers you control", "Remove X counters from an artifact or creature you control"
+    // (Counter Intelligence deck, group 2, CR 118.3, 122.1, 602.2b): counters of any kind, the player choosing which. `count` how many (1 for `x`, the X announced); `what` the permanents
+    // they come off (null: the permanent with the ability); `fromOne` all of them off one permanent ("from an artifact or creature", not "from among ...").
+    | {
+        readonly kind: 'removeAnyCounters';
+        readonly count: number;
+        readonly x: boolean;
+        readonly what: IrNoun | null;
+        readonly fromOne: boolean;
+      }
     | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
     | { readonly kind: 'blight'; readonly count: number }
@@ -2212,14 +2222,15 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
   /**
-   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` on the permanent with
-   * the ability (the engine's `countersOnSource`).
+   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` (any kind when left out) on
+   * the permanent with the ability (the engine's `countersOnSource`).
    */
   | {
       readonly kind: 'ptCountersOnSource';
       readonly power: boolean;
       readonly toughness: boolean;
-      readonly counter: string;
+      /** The kind of counter; left out for "for each counter on ~" (every kind added together, Gavel of the Righteous). */
+      readonly counter?: string;
     }
   /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end
@@ -2324,6 +2335,8 @@ export interface IrKeyword extends IrNode {
   readonly gift?: 'card' | 'tappedFish';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
+  /** "Equip—Pay {3} or remove a counter from ~" (Gavel of the Righteous, CR 702.6a, 118.3): the other way to pay the equip ability, which `cost` is the first of. */
+  readonly orCost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */
   readonly quality?: string;
   /** "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */

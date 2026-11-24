@@ -23,38 +23,46 @@ const REMOVE_CHOSEN_COUNTERS: Lowering<IrClause, Effects> = {
   },
 };
 
-const MOVE_COUNTER: Lowering<IrClause, Effects> = {
-  head: 'moveCounter',
-  id: 'lower.move-counter',
-  needs: ['effect:moveCounter', 'selector:target'],
-  lower(clause, ctx) {
-    const from = arg(clause, 'from');
-    const to = arg(clause, 'to');
-    if (from?.kind !== 'noun' || to?.kind !== 'noun') return failure(clause);
-    const source = objectRefOf(from, ctx);
-    if (!source.ok) return source;
-    const destination = objectRefOf(to, ctx);
-    if (!destination.ok) return destination;
-    if (source.value.kind !== 'target' || destination.value.kind !== 'target') {
-      return failure(clause);
-    }
-    return {
-      ok: true,
-      value: [
-        {
-          kind: 'moveCounter',
-          from: source.value,
-          to: destination.value,
-          // "Move any number of counters" (Resourceful Defense, CR 122.5, 608.2d).
-          ...(arg(clause, 'anyNumber') === undefined ? {} : { anyNumber: true as const }),
-        },
-      ],
-      rule: clause.rule,
-    };
-  },
-};
+/** "Move a counter ..." (one counter) and "Move any number of counters ..." (as many as the controller likes, Resourceful Defense): the engine's `moveCounter`, with `anyNumber` for the second. */
+function moveCounterLowering(
+  head: 'moveCounter' | 'moveAnyNumberOfCounters',
+): Lowering<IrClause, Effects> {
+  return {
+    head,
+    id: head === 'moveCounter' ? 'lower.move-counter' : 'lower.move-any-number-of-counters',
+    needs: ['effect:moveCounter', 'selector:target'],
+    lower(clause, ctx) {
+      const from = arg(clause, 'from');
+      const to = arg(clause, 'to');
+      if (from?.kind !== 'noun' || to?.kind !== 'noun') return failure(clause);
+      const source = objectRefOf(from, ctx);
+      if (!source.ok) return source;
+      const destination = objectRefOf(to, ctx);
+      if (!destination.ok) return destination;
+      if (source.value.kind !== 'target' || destination.value.kind !== 'target') {
+        return failure(clause);
+      }
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'moveCounter',
+            from: source.value,
+            to: destination.value,
+            ...(head === 'moveCounter' ? {} : { anyNumber: true as const }),
+          },
+        ],
+        rule: clause.rule,
+      };
+    },
+  };
+}
+
+const MOVE_COUNTER = moveCounterLowering('moveCounter');
+const MOVE_ANY_NUMBER_OF_COUNTERS = moveCounterLowering('moveAnyNumberOfCounters');
 
 export const COUNTER_CHOICE_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REMOVE_CHOSEN_COUNTERS,
   MOVE_COUNTER,
+  MOVE_ANY_NUMBER_OF_COUNTERS,
 ];

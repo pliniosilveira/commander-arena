@@ -103,8 +103,9 @@ export const EFFECT_REMOVE_CHOSEN_COUNTERS = defineRule<Clauses>({
 
 /**
  * `effect.move-counter`: "Move a counter from target permanent you control onto a second target permanent" (CR 122.5, 115.3, 608.2d): one counter of a kind the controller chooses as the
- * effect resolves ("any number of counters" lets the controller stop). The two permanents are two targets; "a second target" and "another target" both read (CR 122.5: moving a counter from a permanent onto itself does nothing, so the
- * second need not differ). Not read: a kind of counter, "all counters" (`effect.move-all-counters`), "any number of +1/+1 counters" (a kind), plural or "up to" targets, "~", a trailing clause.
+ * effect resolves. The two permanents are two targets; "a second target" and "another target" both read (CR 122.5: moving a counter from a permanent onto itself does nothing, so the
+ * second need not differ). "Move any number of counters from ... onto ..." (Resourceful Defense) lets the controller move as many as they like, or none (`anyNumber`). Not read: a kind of
+ * counter, "all counters" (`effect.move-all-counters`), "up to" a number, plural or "up to" targets, "~", a trailing clause.
  */
 export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
   id: MOVE_ID,
@@ -119,9 +120,10 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     'move a counter from target permanent you control onto a second target permanent',
     'move a counter from target creature onto a second target creature',
     'move a counter from target permanent onto another target permanent',
-    'move a counter from target creature an opponent controls onto target creature you control',
-    // Resourceful Defense (CR 122.5, 608.2d): the controller moves counters one at a time and stops when they like.
+    // Resourceful Defense: as many as the controller likes, one at a time, or none.
     'move any number of counters from target permanent you control onto a second target permanent you control',
+    'move any number of counters from target creature onto another target creature',
+    'move a counter from target creature an opponent controls onto target creature you control',
   ],
   rejects: [
     'move a counter from target permanent onto target permanent',
@@ -129,8 +131,6 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     'move a counter from target creature onto target creature you control',
     'move a +1/+1 counter from target creature onto a second target creature',
     'move a counter from ~ onto a second target permanent',
-    'move any number of counters from target permanents onto a second target permanent',
-    'move any number of +1/+1 counters from target permanent onto a second target permanent',
     'move a counter from target permanent you control onto ~',
     'move two counters from target permanent onto a second target permanent',
     'move all counters from target permanent onto a second target permanent',
@@ -139,6 +139,14 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     'move a counter from up to one target permanent onto a second target permanent',
     'move a counter from target permanent onto a second target permanent and draw a card',
     'move a counter from target permanent onto a third target permanent',
+    'move any number of +1/+1 counters from target permanent onto a second target permanent',
+    'move any number of counters from ~ onto a second target permanent',
+    'move any number of counters from target permanent onto ~',
+    'move any number of counters from target permanent onto target permanent',
+    'move any number of counters from target permanents onto a second target permanent',
+    'move any number of counters from target permanent onto a second target permanent and draw a card',
+    'move any number of counters from target permanent onto a third target permanent',
+    'move up to two counters from target permanent onto a second target permanent',
   ],
   parse: (ctx, pos) => {
     const first = satisfy(
@@ -183,36 +191,18 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
       literal(' onto '),
     )(ctx, pos);
     if (!head.ok) return head;
-    const anyNumber = head.value[0].toLowerCase().startsWith('move any number');
     const tail = sequence(secondFor(head.value[1]), pattern(/(?=\.|$)/u))(ctx, head.pos);
     if (!tail.ok) return tail;
-    const r = {
-      ok: true as const,
-      value: [head.value[0], head.value[1], head.value[2], tail.value[0]] as const,
-      pos: tail.pos,
-    };
-    const [, from, , to] = r.value;
+    const r = { pos: tail.pos };
+    const lead = head.value[0];
+    const from = head.value[1];
+    const to = tail.value[0];
+    // CR 122.5, 608.2d: "any number of" lets the controller move none, one or more, one at a time.
+    const verb =
+      lead.toLowerCase() === 'move a counter from ' ? 'moveCounter' : 'moveAnyNumberOfCounters';
     return {
       ok: true,
-      value: [
-        makeClause(
-          MOVE_ID,
-          'moveCounter',
-          anyNumber
-            ? {
-                from,
-                to,
-                anyNumber: {
-                  kind: 'flag',
-                  value: true,
-                  span: { start: pos, end: r.pos },
-                  rule: MOVE_ID,
-                },
-              }
-            : { from, to },
-          { start: pos, end: r.pos },
-        ),
-      ],
+      value: [makeClause(MOVE_ID, verb, { from, to }, { start: pos, end: r.pos })],
       pos: r.pos,
     };
   },

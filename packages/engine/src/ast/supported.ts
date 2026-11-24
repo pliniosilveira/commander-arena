@@ -570,7 +570,11 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
-  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  const removingAmong = costs.filter(
+    (c) =>
+      c.kind === 'removeCounters' &&
+      (c.among !== undefined || c.counter === undefined || c.countX === true || c.fromOne === true),
+  );
   if (
     removingAmong.length > 1 ||
     (removingAmong.length === 1 &&
@@ -908,6 +912,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
         // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.kind === 'equip' && a.keyword.orCost !== undefined) {
+          activationCostIssues(a.keyword.orCost, `${path}.keyword.orCost`, out, ['removeCounters']);
+        }
         if (a.keyword.kind === 'equip' && a.keyword.costReducedIf !== undefined) {
           conditionIssues(
             a.keyword.costReducedIf.condition,

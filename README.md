@@ -83,6 +83,7 @@ The ready-made decks work without any setup:
 | Federation Fleet | A Commander precon led by Jean-Luc Picard, Luminary. |
 | Revival Trance | A Commander precon led by Terra, Herald of Hope. |
 | Counter Blitz | A Commander precon led by Tidus, Yuna's Guardian. |
+| Counter Intelligence | A Commander precon led by Kilo, Apogee Mind. |
 
 ## Playing with your own deck
 

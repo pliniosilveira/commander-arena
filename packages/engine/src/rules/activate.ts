@@ -41,8 +41,8 @@ import {
 } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
 import {
-  answerRemoveAnyCounterCost,
   answerRemoveCountersCost,
+  answerRemoveCountersPick,
   payRemoveCounters,
 } from './activate-remove-counters';
 import { answerUntapPermanentsCost, payUntap } from './activate-untap';
@@ -727,9 +727,9 @@ export function answerRemoveCounters(state: GameState, chosen: readonly ObjectId
   );
 }
 
-/** The answer to the question of a cost that takes a counter of any kind off one permanent (CR 118.3, 122.1): the counter comes off, then the rest of the cost goes on. */
-export function answerRemoveCountersPick(state: GameState, index: number): Result {
-  return answerRemoveAnyCounterCost(state, index, (paid, events) =>
+/** The answer to the question of a cost that removes counters of any kind (Gavel of the Righteous, Moxite Refinery): the counter the player picked comes off, then the rest of the cost goes on. */
+export function answerRemoveCountersKind(state: GameState, option: string): Result {
+  return answerRemoveCountersPick(state, option, (paid, events) =>
     payBlight(paid, events, paySacrifice),
   );
 }

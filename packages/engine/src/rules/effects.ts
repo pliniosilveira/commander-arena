@@ -149,6 +149,7 @@ import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
+import { proliferateTimes } from './proliferate-replacement';
 import {
   givesProtectionOfCardTypeChoice,
   givesProtectionOfChoice,
@@ -277,11 +278,21 @@ export function runInstruction(
   }
   if (instruction.kind === 'chooseObjects') {
     if (instruction.chosen !== null) return done(state);
-    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter((id) =>
-      matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+    // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
+    const among =
+      instruction.fromMoved === true
+        ? new Set((res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield'))
+        : null;
+    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter(
+      (id) =>
+        (among === null || among.has(id)) &&
+        matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
-    const max = Math.min(instruction.count, candidates.length);
+    const max =
+      instruction.anyNumber === true
+        ? candidates.length
+        : Math.min(instruction.count, candidates.length);
     return {
       state,
       events: [],
@@ -927,6 +938,8 @@ function runEffect(
             filter: effect.filter,
             count: effect.count,
             ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
+            ...(effect.fromMoved === true ? { fromMoved: true as const } : {}),
             chosen: null,
           },
         ],
@@ -1920,6 +1933,27 @@ function runEffect(
           ],
         });
       }
+      // CR 603.7c, 701.21a (Depthshaker Titan): "any number of target noncreature artifacts you control become 3/3 artifact creatures. Sacrifice them at the beginning of the next end
+      // step.": one delayed ability about the permanents the targets of the effect named as it was created (`boundObjects`), found later only if each is still that object on the
+      // battlefield. With no target chosen there is nothing to wait for.
+      if (effect.effect.kind === 'sacrifice' && effect.effect.objects.kind === 'target') {
+        const ids = resolveObjects(state, effect.effect.objects, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'battlefield',
+        );
+        if (ids.length === 0) return done(state);
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            { source: res.source, controller: res.controller, ability },
+          ],
+        });
+      }
       if (
         (effect.effect.kind === 'exile' ||
           effect.effect.kind === 'sacrifice' ||
@@ -2086,6 +2120,30 @@ function runEffect(
           },
         ],
       });
+    }
+
+    case 'spellGainsKeyword': {
+      // CR 702.44a, 702.44d: "it gains sunburst": the spell the cast trigger is about, if it is still a spell on the stack as this resolves, remembers the keyword; the permanent it
+      // becomes reads it as it enters (`rules/enters-keywords.ts`), one instance for each time it was gained. A copy of a spell was not cast (CR 707.10) and is not given one.
+      let next = state;
+      for (const id of resolveObjects(state, effect.spell, ctx, targets)) {
+        const spell = next.objects[id];
+        if (
+          spell === undefined ||
+          spell.zone !== 'stack' ||
+          spell.stack?.kind !== 'spell' ||
+          spell.copyOf !== undefined
+        ) {
+          continue;
+        }
+        next = patchObject(next, id, {
+          stack: {
+            ...spell.stack,
+            gainedKeywords: [...(spell.stack.gainedKeywords ?? []), effect.keyword],
+          },
+        });
+      }
+      return done(next);
     }
 
     case 'createEmblem': {
@@ -3755,7 +3813,7 @@ function runEffect(
     }
 
     case 'moveCounter': {
-      // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
+      // CR 122.5: one counter (or, with `anyNumber`, as many as the controller likes), of a kind they choose, from the first permanent to the second (rules/counter-pick.ts).
       const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
       const toId = resolveObjects(state, effect.to, ctx, targets)[0];
       if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
@@ -3768,10 +3826,10 @@ function runEffect(
             mode: 'move',
             objects: [fromId],
             to: toId,
-            // "Move any number of counters" (Resourceful Defense): no limit, and the controller may stop.
             left: effect.anyNumber === true ? null : 1,
             removed: 0,
             chosen: null,
+            ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
           },
         ],
       );
@@ -3875,11 +3933,18 @@ function runEffect(
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
       // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      // CR 701.34a, 614.1a, 614.5 (Tekuthal): each `proliferateDouble` replacement of the controller doubles how many times.
       return done(
         state,
         [],
         Array.from(
-          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          {
+            length: proliferateTimes(
+              state,
+              ctx.controller,
+              effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets),
+            ),
+          },
           () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
         ),
       );
