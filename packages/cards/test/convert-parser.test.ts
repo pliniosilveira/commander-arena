@@ -761,6 +761,7 @@ describe('unmatched abilities', () => {
       'effect.damage-it-opponents-and-their-creatures',
       'effect.damage-cant-be-prevented-this-turn',
       'effect.destroy-countered-ability-source',
+      'effect.choose-one-of-them',
       'effect.exile-that-many-from-top',
       'effect.cast-among-exiled-any-color',
       'effect.lead-gain-next-turn',

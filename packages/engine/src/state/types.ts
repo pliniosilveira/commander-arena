@@ -1604,6 +1604,8 @@ export type Instruction =
       readonly seat: SeatId;
       readonly cards: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
+      /** The controller chose (Tectonic Giant) and `moved` names the card chosen afterwards, not the others. */
+      readonly keepChosen?: true;
     }
   /**
    * "Exile the top four cards of your library in a face-down pile, then exile the top four cards in a face-up pile. An opponent chooses one of those piles. Put that pile into

@@ -3257,6 +3257,13 @@ export type Effect =
       readonly kind: 'opponentChoosesCard';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
       readonly filter: ObjectFilter;
+      /**
+       * "Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card." (Tectonic Giant, CR 608.2d, 701.13): the controller of the effect
+       * chooses, not an opponent (which opponent is not asked), and what `moved` names afterwards is the card chosen (`keepChosen`), not the others. Not without `keepChosen`.
+       */
+      readonly byController?: true;
+      /** With `byController`: afterwards `moved` names the cards chosen, and the others are left out. */
+      readonly keepChosen?: true;
     }
   /**
    * "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that

@@ -6372,6 +6372,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      if (e.byController !== undefined && e.byController !== true) {
+        issue(out, `${path}.byController`, 'byController must be true when present');
+      }
+      if (e.keepChosen !== undefined && e.keepChosen !== true) {
+        issue(out, `${path}.keepChosen`, 'keepChosen must be true when present');
+      }
+      if ((e.byController === true) !== (e.keepChosen === true)) {
+        issue(
+          out,
+          `${path}.byController`,
+          'byController and keepChosen are said together: the controller chooses the card that is kept',
+        );
+      }
       break;
     case 'exilePiles':
       // D-663 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.

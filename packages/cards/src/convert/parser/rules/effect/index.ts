@@ -46,6 +46,7 @@ import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_AMONG_EXILED_EFFECT_RULES } from './cast-among-exiled';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_ONE_OF_THEM_EFFECT_RULES } from './choose-one-of-them';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
@@ -1310,6 +1311,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
   ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
   ...DESTROY_COUNTERED_SOURCE_EFFECT_RULES,
+  ...CHOOSE_ONE_OF_THEM_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

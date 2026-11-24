@@ -619,3 +619,79 @@ describe('"When ~ enters, counter target activated or triggered ability from an 
     g.expect.zone(pinger.name, 'battlefield', { seat: 0 });
   });
 });
+
+describe('"Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card." (CR 608.2d, 701.13, 611.2a)', () => {
+  const pick = parsed(
+    'SYNTHETIC Pick One',
+    'Sorcery',
+    'Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card.',
+    { manaCost: '{1}', colors: [] },
+  );
+  const build = () =>
+    scenario()
+      .define(pick)
+      .seat(0)
+      .hand(pick.name)
+      .battlefield('Forest', 'Forest', 'Forest')
+      .library('Grizzly Bears', 'Serra Angel', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('only the chosen card can be played; the other stays in exile', () => {
+    const g = build();
+    g.act(0).cast(pick.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards('Grizzly Bears');
+    g.expect.zone('Serra Angel', 'exile', { seat: 0 });
+    expect(() => g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { pay: true })).toThrow();
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+});
+
+describe('"Whenever ~ attacks or becomes the target of a spell an opponent controls, choose one — ..." (CR 508.1, 603.2, 700.2)', () => {
+  const giant = parsed(
+    'SYNTHETIC Quake Giant',
+    'Creature — Giant',
+    'Whenever ~ attacks or becomes the target of a spell an opponent controls, choose one —\n• ~ deals 3 damage to each opponent.\n• Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card.',
+    { manaCost: '{3}{R}', power: '4', toughness: '4', colors: ['R'] },
+  );
+  const shock = parsed('SYNTHETIC Poke Spell', 'Instant', '~ deals 1 damage to any target.', {
+    manaCost: '{R}',
+    colors: ['R'],
+  });
+  const build = (active: 0 | 1) =>
+    scenario()
+      .define(giant)
+      .define(shock)
+      .seat(0)
+      .battlefield(giant.name)
+      .library('Grizzly Bears', 'Serra Angel', ...FILLER)
+      .seat(1)
+      .life(20)
+      .hand(shock.name)
+      .battlefield('Mountain')
+      .library(...FILLER)
+      .at('precombatMain', { active })
+      .build();
+
+  test('attacking: the first mode deals 3 damage to each opponent', () => {
+    const g = build(0);
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(giant.name);
+    g.act(0).chooseModes(0);
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBe(17);
+  });
+
+  test('an opponent’s spell that targets it triggers it too', () => {
+    const g = build(1);
+    g.act(1).cast(shock.name, { targets: [giant.name], pay: true });
+    g.act(0).chooseModes(0);
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBe(17);
+  });
+});

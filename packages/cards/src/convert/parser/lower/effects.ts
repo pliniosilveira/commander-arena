@@ -35,6 +35,7 @@ import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
+import { CHOOSE_ONE_OF_THEM_LOWERINGS } from './choose-one-of-them';
 import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -2888,6 +2889,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ADDITIONAL_LAND_LOWERINGS,
   ...DAMAGE_UNPREVENTABLE_LOWERINGS,
   ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
+  ...CHOOSE_ONE_OF_THEM_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
