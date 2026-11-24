@@ -1,7 +1,8 @@
 // Draconic Dissent deck (issue 167), goad group: the real Oracle lines of Bothersome Quasit and Sly Instigator read through the whole pipeline, the nodes they lower to, and the near
 // misses the grammar must not read. The engine runs what is lowered in scenario-xx-draconic-goad.test.ts and scenario-xx-draconic-quasit.test.ts.
+import { validateAbility } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { dropped, readAll } from './parser-p5-helpers';
+import { dropped, read, readAll } from './parser-p5-helpers';
 
 describe('"Goaded creatures your opponents control can\'t block." (CR 701.15b, 509.1b)', () => {
   test('the real line of Bothersome Quasit is a restriction on the goaded group', () => {
@@ -87,9 +88,19 @@ describe('"Creatures your opponents control with power less than ~\'s power are 
     ["Creatures you control with power less than ~'s power are goaded."],
     ["Creatures your opponents control with power greater than ~'s power are goaded."],
     ['Creatures your opponents control with power less than 3 are goaded.'],
-    ["Creatures your opponents control with power less than ~'s power have flying."],
   ])('another group or effect is dropped, never half read (SYNTHETIC): %s', (text) => {
     expect(dropped(text, 'creature').stoppedAt).not.toBe('');
+  });
+
+  // The grammar reads the group of the line below (the same noun as the "can't block" cards of the corpus), but the engine refuses it: only a static ability that goads may
+  // compare power with its source (the validator), so no card carrying it is supported.
+  test('a keyword for that group is refused by the engine (SYNTHETIC)', () => {
+    const [ability] = read(
+      "Creatures your opponents control with power less than ~'s power have flying.",
+      'creature',
+    ).abilities;
+    if (ability === undefined) throw new Error('not read');
+    expect(validateAbility(ability).length).toBeGreaterThan(0);
   });
 });
 
