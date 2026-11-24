@@ -39,6 +39,8 @@ import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
 import { leaveGame } from './leave-game';
 import { exemptFromLegendRule, type LegendCandidate, legendRuleDecision } from './legend-rule';
+import { completeDungeons } from './dungeon';
+import { initiativeAfterLoss } from './initiative';
 import { monarchAfterLoss } from './monarch';
 import { endBrokenPairs } from './pairing-sba';
 import { cannotLoseGame } from './player-protection';
@@ -156,6 +158,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     return { state: started.state, events: started.events, performed: true, decision: null };
   }
 
+  // CR 704.5t, 309.6, 309.7: a venture marker on the bottommost room whose dungeon is the source of no room ability waiting or on the stack: the dungeon is completed.
+  const dungeons = completeDungeons(state);
+  if (dungeons !== null) {
+    return { state: dungeons.state, events: dungeons.events, performed: true, decision: null };
+  }
+
   // 1. Find everything against the unchanged state (CR 704.3).
   const losses = lossReasons(state);
   const toGraveyard: GameObject[] = []; // CR 704.5f, not a destruction
@@ -234,6 +242,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     const handed = monarchAfterLoss(state);
     state = handed.state;
     events.push(...handed.events);
+    // CR 726.4: the same for the initiative; the player who takes it ventures (CR 726.2).
+    const initiative = initiativeAfterLoss(state);
+    state = initiative.state;
+    events.push(...initiative.events);
   }
   const clearFlag = state.seats.filter((s) => s.drewFromEmptyLibrary);
   for (const s of clearFlag) state = patchSeat(state, s.id, { drewFromEmptyLibrary: false });

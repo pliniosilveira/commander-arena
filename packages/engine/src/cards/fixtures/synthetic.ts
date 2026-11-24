@@ -119,6 +119,7 @@ import { SYNTHETIC_HULK_SEARCH_LIST } from './synthetic-hulk-search';
 import { SYNTHETIC_HYLDA_G1_LIST } from './synthetic-hylda-g1';
 import { SYNTHETIC_HYLDA_G2_LIST } from './synthetic-hylda-g2';
 import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
+import { SYNTHETIC_INITIATIVE_LIST } from './synthetic-initiative';
 import { SYNTHETIC_JESKAI_FLASHBACK_LIST } from './synthetic-jeskai-flashback';
 import { SYNTHETIC_JUMP_START_LIST } from './synthetic-jump-start';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
@@ -545,6 +546,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PLAYER_EFFECT_LIST,
   ...SYNTHETIC_PLAY_RULE_LIST,
   ...SYNTHETIC_UPKEEP_LIST,
+  ...SYNTHETIC_INITIATIVE_LIST,
   ...SYNTHETIC_ASCEND_LIST,
   ...SYNTHETIC_BOOK_EXALTED_LIST,
   ...SYNTHETIC_LATER_LIST,

@@ -3777,7 +3777,21 @@ export function loyaltyOffPlaneswalkerIssues(
   });
 }
 
-export const DESIGNATIONS = ['monarch', 'citysBlessing'];
+/** Whether a player selector can name more than one player (the effects of one player, as the designations, refuse it). */
+function namesSeveralPlayers(player: PlayerSelector | undefined): boolean {
+  return (
+    player?.kind === 'eachPlayer' ||
+    player?.kind === 'eachOpponent' ||
+    player?.kind === 'eachOtherOpponent' ||
+    player?.kind === 'eachPlayerExcept' ||
+    player?.kind === 'attackedPlayers' ||
+    player?.kind === 'triggerDamagedPlayers' ||
+    player?.kind === 'combatDamagedByNamed' ||
+    player?.kind === 'all'
+  );
+}
+
+export const DESIGNATIONS = ['monarch', 'citysBlessing', 'initiative'];
 
 /** The players a condition names: no target and no trigger subject to read there (D-131). */
 function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): void {
@@ -6879,18 +6893,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (
-        e.player?.kind === 'eachPlayer' ||
-        e.player?.kind === 'eachOpponent' ||
-        e.player?.kind === 'eachOtherOpponent' ||
-        e.player?.kind === 'eachPlayerExcept' ||
-        e.player?.kind === 'attackedPlayers' ||
-        e.player?.kind === 'triggerDamagedPlayers' ||
-        e.player?.kind === 'combatDamagedByNamed' ||
-        e.player?.kind === 'all'
-      ) {
+      if (namesSeveralPlayers(e.player)) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');
       }
+      break;
+    case 'takeInitiative':
+      // CR 726.3: one player takes the initiative, so the selector names exactly one.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (namesSeveralPlayers(e.player)) {
+        issue(out, `${path}.player`, 'only one player can have the initiative (CR 726.3)');
+      }
+      break;
+    case 'venture':
+      // CR 701.49: any number of players may venture (in APNAP order); Undercity is the one dungeon there is.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.dungeon !== 'undercity') issue(out, `${path}.dungeon`, 'the dungeon is undercity');
       break;
     case 'cascade':
       // CR 702.85a: no operand; it is the effect of "When you cast this spell" and stands nowhere else.
@@ -7727,6 +7744,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.take.elseAnyToHand`,
           'elseAnyToHand is true, for one optional card taken onto the battlefield unrevealed (to battlefield, hidden, max 1, no min or totalManaValue)',
         );
+      }
+      // CR 122.6, 614.1c: "onto the battlefield with three +1/+1 counters on it": the counters the cards put onto the battlefield enter with.
+      if (e.take?.withCounters !== undefined) {
+        const w = e.take.withCounters;
+        if (e.take.to !== 'battlefield') {
+          issue(out, `${path}.take.withCounters`, 'counters on entering are only for the battlefield');
+        }
+        if (typeof w?.counter !== 'string' || w.counter === '') {
+          issue(out, `${path}.take.withCounters.counter`, 'counter name must be non-empty');
+        }
+        if (!isCount(w?.count) || w.count < 1) {
+          issue(
+            out,
+            `${path}.take.withCounters.count`,
+            'counter count must be a positive integer',
+          );
+        }
+        if (w?.also !== undefined) {
+          issue(out, `${path}.take.withCounters.also`, 'one kind of counter is put on');
+        }
       }
       // CR 701.20, 608.2c: "any number of permanent cards from among them onto the battlefield": the cards revealed, a number the player chooses up to all of them.
       if (

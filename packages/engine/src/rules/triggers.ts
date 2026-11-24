@@ -48,6 +48,8 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import { emblemsOf } from './emblem';
 import { findLaterTriggers } from './later-triggers';
+import { findDungeonTriggers } from './dungeon';
+import { findInitiativeTriggers } from './initiative';
 import { findMonarchTriggers } from './monarch';
 import { findRingTriggers } from './ring';
 import { chaptersReached, loreChange, readAheadBlocks } from './saga';
@@ -2150,7 +2152,12 @@ export function collectTriggers(recorded: GameState, events: readonly GameEvent[
   const own = [...withDoubledTriggers(state, limited.found, events)];
   const delayed = findDelayedTriggers(state, events);
   // CR 725.2 (D-127): the monarch's two inherent abilities, which belong to no object.
-  const monarch = findMonarchTriggers(state, events);
+  const monarch = [
+    ...findMonarchTriggers(state, events),
+    // CR 726.2 (the initiative) and CR 309.4c (the room abilities of a dungeon): inherent abilities too.
+    ...findInitiativeTriggers(state, events),
+    ...findDungeonTriggers(events),
+  ];
   // CR 701.54c (D-196): the abilities of the Ring, which belong to no object either.
   const ring = findRingTriggers(state, events);
   // CR 702.62a, 702.35a (D-128): the abilities of Suspend and Madness that work from exile.

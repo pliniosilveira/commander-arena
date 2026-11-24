@@ -356,6 +356,7 @@ export function assemble(
         : {}),
       ...(s.citysBlessing ? { citysBlessing: true as const } : {}),
       ...(s.speed === null ? {} : { speed: s.speed }),
+      ...(s.dungeon === null ? {} : { dungeon: { dungeon: 'undercity' as const, room: s.dungeon } }),
     };
   });
 
@@ -405,6 +406,7 @@ export function assemble(
     lki: {},
     commanderWatch: [],
     monarch: spec.at.monarch ?? null,
+    ...(spec.at.initiative === undefined ? {} : { initiative: spec.at.initiative }),
     ...(spec.at.dayNight === undefined ? {} : { dayNight: spec.at.dayNight }),
     turnLog: EMPTY_TURN_LOG,
     pendingTriggers: [],

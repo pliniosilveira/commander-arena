@@ -33,6 +33,7 @@ import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
+import { roomChosen } from './dungeon';
 import { faceDownBy } from './face-down';
 import { isAdventureSpell, isOmenSpell } from './layouts';
 import { faceOf, targetSpecsOf } from './legality';
@@ -1331,6 +1332,43 @@ export function answerResolutionChooseOpponent(
     return null;
   }
   const updated: Instruction = { ...head, chosen: Number(option.slice('seat:'.length)) };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
+/**
+ * Records the room a venturing player chose among the arrows leaving the room their venture marker is on (CR 701.49b, 309.5a) on the instruction that asked, and continues. Null when no such
+ * question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionDungeonRoom(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'venture' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'dungeonRoom' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const room = roomChosen(option);
+  if (room === null) return null;
+  const updated: Instruction = { ...head, chosen: room };
   const event: GameEvent = {
     kind: 'optionChosen',
     seat: d.seat,

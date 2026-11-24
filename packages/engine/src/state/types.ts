@@ -9,6 +9,7 @@ import type {
   Ability,
   Cost,
   DoorValues,
+  DungeonId,
   Effect,
   EnteringCounters,
   InlineChoice,
@@ -18,6 +19,7 @@ import type {
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  UndercityRoom,
   Zone,
 } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
@@ -762,6 +764,11 @@ export interface SeatState {
    */
   readonly citysBlessing?: true;
   /**
+   * The dungeon this player is in (CR 309.2, 309.4a, 701.49): the dungeon card they own in the command zone and the room their venture marker is on. Absent while they have none
+   * (`rules/dungeon.ts`). A dungeon card is removed from the game as it is completed (CR 309.7, 704.5t). Public.
+   */
+  readonly dungeon?: { readonly dungeon: DungeonId; readonly room: UndercityRoom };
+  /**
    * The player's speed (CR 702.179b, 702.179c): a number from 1 to 4 once a rule or effect sets it, kept for the rest of the game (`rules/speed.ts`). Absent until then: a player
    * has no speed (CR 702.179b), which reads as 0 for an effect that refers to speed (CR 702.179f). Public.
    */
@@ -923,7 +930,12 @@ export type InherentAbility =
   | 'ringLoot'
   | 'ringBlocked'
   | 'ringDamage'
-  | 'speedUp';
+  | 'speedUp'
+  // CR 726.2: the three inherent abilities of the initiative (the upkeep, the steal, the venture when it is taken), and the room abilities of Undercity (CR 309.4c).
+  | 'initiativeUpkeep'
+  | 'initiativeSteal'
+  | 'initiativeTaken'
+  | `undercity:${UndercityRoom}`;
 
 export interface PendingTrigger {
   /**
@@ -1204,6 +1216,16 @@ export type Instruction =
       readonly chosen: string | null;
       /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
       readonly seat?: SeatId;
+    }
+  /**
+   * "[Player] ventures into [a dungeon]" (CR 701.49, 309.5; `venture`): `seat` moves their venture marker, enters the dungeon or completes it and enters it again. On a room with two arrows
+   * leaving it, `seat` chooses the next room (a `chooseOption` decision of purpose `dungeonRoom`, options the names of the rooms); `chosen` is null until answered. See `rules/dungeon.ts`.
+   */
+  | {
+      readonly kind: 'venture';
+      readonly seat: SeatId;
+      readonly dungeon: DungeonId;
+      readonly chosen: UndercityRoom | null;
     }
   /** Run one effect node of the resolving spell or ability. */
   | {
@@ -1703,6 +1725,8 @@ export type Instruction =
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
+      /** The counters the cards taken enter the battlefield with (`take.withCounters`, CR 122.6). */
+      readonly withCounters?: EnteringCounters;
       /** Only cards with this mana value or less may be taken (`take.manaValueAtMost`, D-145), worked out when the effect started. */
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
@@ -3126,6 +3150,11 @@ export interface GameState {
    * ability triggered. Keyed by the seat; a seat that never became the monarch has no entry. Absent in a game saved before D-231.
    */
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
+  /**
+   * The player with the initiative (CR 726.1, 726.3): one at most, absent while no effect has made anyone take it (or when the holder left the game and no player could take
+   * over, CR 726.4). Public. See `rules/initiative.ts`.
+   */
+  readonly initiative?: SeatId;
   /**
    * How many spells each player cast in the turn before the current one (CR 601.2i), by seat, written as a turn begins from `SeatState.spellsCastThisTurn`: "if no spells were cast last turn",
    * "if a player cast two or more spells last turn" (issue 345). Absent before the second turn of the game, when there is no turn before.

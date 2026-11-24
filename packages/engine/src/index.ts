@@ -63,6 +63,7 @@ export { ENGINE_VERSION } from './version';
 export type {
   AlternativeCostView,
   CombatView,
+  DungeonView,
   FaceView,
   GameView,
   MeldView,

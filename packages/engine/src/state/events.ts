@@ -4,7 +4,7 @@
  * (SPEC 17.1 A1); events describe what actually happened.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Zone } from '../ast/types';
+import type { DungeonId, UndercityRoom, Zone } from '../ast/types';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
@@ -672,6 +672,7 @@ export type GameEvent =
         | 'playerChoice'
         | 'chooseOpponent'
         | 'protector'
+        | 'dungeonRoom'
         | 'number';
       readonly option: string;
     }
@@ -769,6 +770,24 @@ export type GameEvent =
       readonly from: SeatId | null;
       readonly to: SeatId | null;
     }
+  /**
+   * `seat` took the initiative (CR 726.1, 726.3, 726.5): `from` is the player who had it (null if none; `seat` itself when they already had it, which still triggers the
+   * venture of CR 726.2).
+   */
+  | { readonly kind: 'initiativeTaken'; readonly seat: SeatId; readonly from: SeatId | null }
+  /**
+   * `seat` moved their venture marker into `room` of `dungeon` (CR 701.49a, 701.49b, 309.4a, 309.5a): `from` is the room it left, null when the dungeon was just put into the
+   * command zone. The room ability triggers from this (CR 309.4c).
+   */
+  | {
+      readonly kind: 'ventured';
+      readonly seat: SeatId;
+      readonly dungeon: DungeonId;
+      readonly room: UndercityRoom;
+      readonly from: UndercityRoom | null;
+    }
+  /** `seat` completed `dungeon` (CR 309.7, 701.49c, 704.5t): the dungeon card was removed from the game. */
+  | { readonly kind: 'dungeonCompleted'; readonly seat: SeatId; readonly dungeon: DungeonId }
   /** The game became day or night (CR 731.1, 502.2, 702.145d, 702.145g): `from` is what it was (null while it was neither), `to` what it is now. */
   | {
       readonly kind: 'dayNightChanged';
