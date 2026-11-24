@@ -5,6 +5,7 @@ import { expect, test } from 'vitest';
 import type { NewGameOptions } from '../src/game/protocol';
 import { checkPlayable, MemoryDeckStore } from '../src/import';
 import { createPrecons, snapshotClient, startOptionsFor } from '../src/precons';
+import { printingOf, setGamePrintings } from '../src/ui/board/deck-printings';
 import { startFromForm, startTableFromForm } from '../src/ui/screens/menu-model';
 import { harness, hundredCardText, supportedHundredText } from './import-helpers';
 import {
@@ -43,6 +44,27 @@ test('the menu starts a game from two prepared precons, with their cards and the
   const options = seen[0] as { humanCards: { cards: unknown[] }; aiCards: { cards: unknown[] } };
   expect(options.humanCards.cards).toHaveLength(100);
   expect(options.aiCards.cards).toHaveLength(100);
+});
+
+test('a game draws the printings of its decks, the player’s own on a card both name', async () => {
+  // Both lists name their basic land in another printing: the one the player's deck names is drawn, whatever the preparing order.
+  const named = async (id: string, printing: string) => {
+    const snapshot = await playableSnapshot(id);
+    return {
+      ...snapshot,
+      decklist: snapshot.decklist.replace('39 Forest', `39 Forest ${printing}`),
+    };
+  };
+  const precons = preconsOf([
+    await named('synthetic-a', '(aaa) 1'),
+    await named('synthetic-b', '(bbb) 2'),
+  ]);
+  setGamePrintings([]);
+  await startFromForm(async () => {}, form('synthetic-a', 'synthetic-b'), precons);
+  expect(printingOf('Forest')).toEqual({ set: 'aaa', collector: '1' });
+  // The same decks the other way round: now the other list is the player's.
+  await startFromForm(async () => {}, form('synthetic-b', 'synthetic-a'), precons);
+  expect(printingOf('Forest')).toEqual({ set: 'bbb', collector: '2' });
 });
 
 test('an empty seed is picked when the game starts; a bad seed starts nothing', async () => {

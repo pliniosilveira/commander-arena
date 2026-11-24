@@ -2,11 +2,7 @@
 // Card names here are SYNTHETIC.
 import { parseDecklist } from '@commander-arena/cards';
 import { expect, test } from 'vitest';
-import {
-  commanderPrintingOf,
-  printingOf,
-  registerDeckPrintings,
-} from '../src/ui/board/deck-printings';
+import { commanderPrintingOf, printingOf, setGamePrintings } from '../src/ui/board/deck-printings';
 import { printingInText, printingsInText, withPrinting } from '../src/ui/import/deck-text';
 
 const TEXT = [
@@ -61,7 +57,7 @@ test('a double-faced card is found by its front face and CRLF lines keep their e
 test('the board reads a chosen printing like any listed one', () => {
   const next = withPrinting(TEXT, 'Zed the Test', 'fdc', '6') ?? '';
   expect(commanderPrintingOf(next)?.printing).toEqual({ set: 'fdc', collector: '6' });
-  registerDeckPrintings(next);
+  setGamePrintings([next]);
   expect(printingOf('Zed the Test')).toEqual({ set: 'fdc', collector: '6' });
   expect(printingOf('Other Card')).toEqual({ set: 'xyz', collector: '12' });
 });
