@@ -6518,6 +6518,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         issue(out, `${path}.object`, 'changeTarget names a target spell or ability');
       }
+      // CR 115.7b: the named new target is the ability's source.
+      if (e.to !== undefined && kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'changeTarget changes a target to the source of the ability');
+      }
       break;
     case 'copySpell':
       // CR 707.10 (D-129): a target spell, or the spell whose casting caused the trigger.

@@ -186,7 +186,7 @@ function walkEffect(
         effect.object.kind === 'target'
           ? selectedFilter({ kind: 'target', id: effect.object.id }, targets)
           : null;
-      if (filter?.zone !== 'stack' || filter.singleTarget !== true) {
+      if (filter?.zone !== 'stack' || (effect.to === undefined && filter.singleTarget !== true)) {
         out.push({
           path: `${path}.object`,
           message:
