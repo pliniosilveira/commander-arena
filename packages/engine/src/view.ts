@@ -759,9 +759,14 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   if (isFaceDownTo(state, obj, viewer)) return faceDownView(state, obj);
   // CR 602.2b, 702.29a (Cycling): an ability activated from a hand is on the stack while its costs are still to be paid (an {X} is chosen first), and its source card is still in that hand:
   // nobody but its owner may learn what the card is yet, so the other seats see a face-down placeholder.
-  if (obj.stack?.kind === 'ability' && obj.stack.source !== null) {
-    const from = state.objects[obj.stack.source];
-    if (from?.zone === 'hand' && from.owner !== viewer) return faceDownView(state, obj);
+  // Only while the activation is being made (`state.casting`): once it is on the stack for good, a triggered ability from a revealed hand card (Miracle, CR 702.94b) is public.
+  if (
+    obj.stack?.kind === 'ability' &&
+    state.casting?.object === obj.id &&
+    state.casting.fromZone === 'hand' &&
+    state.casting.seat !== viewer
+  ) {
+    return faceDownView(state, obj);
   }
   const d = derive(state, obj);
   const shown = printedCard(obj);
