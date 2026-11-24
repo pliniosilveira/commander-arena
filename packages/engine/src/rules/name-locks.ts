@@ -6,6 +6,7 @@
 import type { GameObject, GameState } from '../state/types';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
+import { isFaceDown } from './face-down';
 import { hasLostAbilities } from './lost-abilities';
 
 interface Cached {
@@ -62,6 +63,6 @@ export function lockedNames(state: GameState): ReadonlySet<string> {
 export function activationLockedByName(state: GameState, obj: GameObject): boolean {
   const names = lockedNames(state);
   if (names.size === 0) return false;
-  if (obj.faceDown !== undefined) return false;
+  if (isFaceDown(obj)) return false;
   return names.has(derive(state, obj).name);
 }

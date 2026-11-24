@@ -25,7 +25,7 @@ const watching: Ability = {
 export const SYNTHETIC_G8_LIST: readonly CardDefinition[] = [
   // The same with one time counter: removing it casts the card at once.
   singleFace({
-    name: 'SYNTHETIC Exile Watcher Quick',
+    name: 'SYNTHETIC Suspend Watcher Quick',
     manaCost: ['4', 'B'],
     types: ['creature'],
     colors: ['B'],
@@ -38,7 +38,7 @@ export const SYNTHETIC_G8_LIST: readonly CardDefinition[] = [
   }),
   // "Suspend 3—{B}. Whenever a card is put into an opponent's graveyard from anywhere, if this card is suspended, you may remove a time counter from this card."
   singleFace({
-    name: 'SYNTHETIC Exile Watcher',
+    name: 'SYNTHETIC Suspend Watcher',
     manaCost: ['4', 'B'],
     types: ['creature'],
     subtypes: ['Horror'],

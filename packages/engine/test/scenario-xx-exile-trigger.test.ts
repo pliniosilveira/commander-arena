@@ -7,8 +7,8 @@ import { syntheticCard, validateCard } from '../src/index';
 import type { ScenarioGame } from '../src/testing/index';
 import { scenario } from '../src/testing/index';
 
-const WATCHER = 'SYNTHETIC Exile Watcher'; // suspend 3, the exile trigger
-const QUICK = 'SYNTHETIC Exile Watcher Quick'; // suspend 1, the exile trigger
+const WATCHER = 'SYNTHETIC Suspend Watcher'; // suspend 3, the exile trigger
+const QUICK = 'SYNTHETIC Suspend Watcher Quick'; // suspend 1, the exile trigger
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
 
 type Builder = ReturnType<typeof scenario>;

@@ -67,11 +67,8 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'creature',
     text: "Whenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
-    expect: no(
-      "spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
-      'noun.target-permanent-of-that-player',
-    ),
-    note: 'replay: 1 card; "choose up to one" is read since D-524 (a triggered ability may choose no mode, CR 700.2b); the first mode, "return target spell ... to its owner\'s hand", has no rule',
+    expect: OK,
+    note: 'replay: 1 card; "choose up to one" is read since D-524 (a triggered ability may choose no mode, CR 700.2b); read since the Hullbreaker Horror group: "return target spell ... to its owner\'s hand" is read (a spell on the stack goes to its owner\'s hand)',
   },
   {
     kind: 'instant',
