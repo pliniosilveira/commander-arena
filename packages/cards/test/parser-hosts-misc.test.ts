@@ -193,6 +193,43 @@ describe('"you may discard your hand and draw cards equal to the damage dealt to
   });
 });
 
+describe('"costs {3} less to cast if it targets a creature that was dealt damage this turn" (Bitter Downfall, CR 120.3, 601.2f)', () => {
+  test('the real line: the reduction of the spell itself, conditional on what it targets', () => {
+    const parsed = readAll(
+      'This spell costs {3} less to cast if it targets a creature that was dealt damage this turn.',
+      'instant',
+    );
+    expect(JSON.stringify(parsed.abilities)).toBe(
+      JSON.stringify([
+        {
+          kind: 'static',
+          static: { kind: 'costReduction', spells: { kind: 'this' }, amount: 3 },
+          condition: {
+            kind: 'spellTargets',
+            filter: { types: ['creature'], dealtDamageThisTurn: true },
+          },
+        },
+      ]),
+    );
+  });
+
+  test('the plain target condition keeps its own filter (SYNTHETIC)', () => {
+    const parsed = readAll(
+      'This spell costs {3} less to cast if it targets a tapped creature.',
+      'instant',
+    );
+    expect(JSON.stringify(parsed.abilities)).not.toContain('dealtDamageThisTurn');
+  });
+
+  test.each([
+    'This spell costs {3} less to cast if it targets a creature that was dealt damage.',
+    'This spell costs {3} less to cast if it targets a creature that was dealt combat damage this turn.',
+    'This spell costs {3} less to cast if it targets creatures that were dealt damage this turn.',
+  ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
+    expect(dropped(text, 'instant').reason).toBeDefined();
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 603.3d)', () => {
   test('the real line: a slot of up to as many targets as the X of the cycling cost', () => {
     const parsed = readAll(

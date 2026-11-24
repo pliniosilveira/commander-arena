@@ -1069,6 +1069,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
+    // Bitter Downfall: "a creature that was dealt damage this turn" (`ObjectFilter.dealtDamageThisTurn`).
+    'dealtDamageThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
     'exiledWithSource',
     // Espers to Magicite: "target creature card exiled this way" (`ObjectFilter.exiledThisWay`).
@@ -2126,6 +2128,8 @@ export const SELECTOR_KINDS = [
   'discardedOrFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
+  /** "A creature that was dealt damage this turn" (CR 120.3, Bitter Downfall): the engine's `ObjectFilter.dealtDamageThisTurn`. */
+  'dealtDamageThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
   'exiledWithSource',
   /** "Target creature card exiled this way" (CR 603.12, 400.7j, Espers to Magicite): the engine's `ObjectFilter.exiledThisWay`. */

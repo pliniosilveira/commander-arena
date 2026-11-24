@@ -408,6 +408,7 @@ export function checkFilter(
     'xInManaCost',
     'firstXSpellThisTurn',
     'enteredThisTurn',
+    'dealtDamageThisTurn',
     'exiledWithSource',
     'exiledThisWay',
     'putWithSource',
@@ -632,6 +633,13 @@ export function checkFilter(
         'only a permanent on the battlefield has a controller to ask',
       );
     }
+  }
+  if (f.dealtDamageThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(
+      out,
+      `${path}.dealtDamageThisTurn`,
+      'only a permanent on the battlefield was dealt damage this turn',
+    );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(
@@ -918,6 +926,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
+  f.dealtDamageThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.exiledThisWay !== undefined ||
   f.putWithSource !== undefined ||

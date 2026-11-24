@@ -133,6 +133,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:dealtDamageThisTurn',
   'selector:controllerDealtCombatDamageByAtLeast',
   'selector:modified',
   // CR 701.15b: "a goaded creature".
@@ -373,6 +374,11 @@ function lowerFilterAt(
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
+  }
+  // Bitter Downfall: "that was dealt damage this turn" (CR 120.3), read where the filter is matched against the game; never a member of a choice.
+  if (filter.dealtDamageThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:dealtDamageThisTurn');
   }
   // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2), read where the filter is matched against the game (a target slot, an `each` selector); never a member of a choice.
   if (filter.controllerDealtCombatDamageBy !== undefined) {
@@ -634,6 +640,7 @@ function lowerFilterAt(
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.dealtDamageThisTurn === true ? { dealtDamageThisTurn: true as const } : {}),
     ...(filter.controllerDealtCombatDamageBy === undefined
       ? {}
       : {

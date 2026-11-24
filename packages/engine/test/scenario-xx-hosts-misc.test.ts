@@ -338,6 +338,82 @@ describe('"discard your hand and draw cards equal to the damage dealt to target 
   });
 });
 
+describe('"costs {3} less to cast if it targets a creature that was dealt damage this turn" (CR 120.3, 601.2c, 601.2f)', () => {
+  const RECKONING = 'SYNTHETIC Bitter Reckoning';
+  const BOLT = 'Lightning Bolt';
+  const SPIDER = 'Giant Spider'; // 2/4: survives a Lightning Bolt
+  const board = () =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(RECKONING, BOLT)
+      .battlefield('Swamp', 'Swamp', 'Mountain')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(SPIDER, { label: 'hurt' })
+      .battlefield(SPIDER, { label: 'fresh' })
+      .seat(2)
+      .library(...LIBRARY)
+      .battlefield(SPIDER, { label: 'theirs2' })
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  const costOfTargeting = (g: Game, target: string) => {
+    g.act(0).cast(RECKONING, { targets: [target] });
+    return g.state.casting?.totalCost;
+  };
+
+  test('the card is valid and the filter is a listed feature', () => {
+    expect(validateCard(syntheticCard(RECKONING))).toEqual([]);
+    expect(SUPPORTED_FEATURES.selectorKinds).toContain('dealtDamageThisTurn');
+  });
+
+  test('a creature dealt damage this turn: the generic {3} is gone, only {B} is paid', () => {
+    const g = board();
+    g.act(0).cast(BOLT, { targets: ['hurt'], pay: true });
+    g.passAll();
+    expect(costOfTargeting(g, 'hurt')).toEqual(['B']);
+  });
+
+  test('a creature of another opponent that took damage counts too (three seats)', () => {
+    const g = board();
+    g.act(0).cast(BOLT, { targets: ['theirs2'], pay: true });
+    g.passAll();
+    expect(costOfTargeting(g, 'theirs2')).toEqual(['B']);
+  });
+
+  test('a creature that was not dealt damage: the full {3}{B}', () => {
+    const g = board();
+    g.act(0).cast(BOLT, { targets: ['hurt'], pay: true });
+    g.passAll();
+    expect(costOfTargeting(g, 'fresh')).toEqual(['3', 'B']);
+  });
+
+  test('with no damage dealt at all: the full cost', () => {
+    const g = board();
+    expect(costOfTargeting(g, 'hurt')).toEqual(['3', 'B']);
+  });
+
+  test('the spell destroys the creature and its controller loses 2 life', () => {
+    const g = board();
+    g.act(0).cast(BOLT, { targets: ['hurt'], pay: true });
+    g.passAll();
+    g.act(0).cast(RECKONING, { targets: ['hurt'], pay: true });
+    g.passAll();
+    expect(g.state.objects[g.id('hurt')]?.zone).toBe('graveyard');
+    g.expect.life(1, 38);
+  });
+
+  test('the damage is not remembered into the next turn', () => {
+    const g = board();
+    g.act(0).cast(BOLT, { targets: ['hurt'], pay: true });
+    g.passAll();
+    expect(g.state.turnLog.damagedObjects).toContain(g.id('hurt'));
+    g.advanceTo('precombatMain', { turn: 'next' });
+    expect(g.state.turnLog.damagedObjects ?? []).toEqual([]);
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (CR 702.29a, 107.3, 603.3d)', () => {
   const MAMMOTH = 'SYNTHETIC Artifact Mammoth';
   const RING = 'Sol Ring';

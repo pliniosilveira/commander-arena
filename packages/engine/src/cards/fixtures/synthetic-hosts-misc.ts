@@ -133,6 +133,45 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "This spell costs {3} less to cast if it targets a creature that was dealt damage this turn. Destroy target creature. Its controller loses 2 life." (CR 120.3, 601.2c, 601.2f)
+  singleFace({
+    name: 'SYNTHETIC Bitter Reckoning',
+    manaCost: ['3', 'B'],
+    types: ['instant'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'This spell costs {3} less to cast if it targets a creature that was dealt damage this turn. Destroy target creature. Its controller loses 2 life.',
+    abilities: [
+      {
+        kind: 'static',
+        static: { kind: 'costReduction', spells: { kind: 'this' }, amount: 3 },
+        condition: {
+          kind: 'spellTargets',
+          filter: { types: ['creature'], dealtDamageThisTurn: true },
+        },
+      },
+    ],
+    spell: {
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+        },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+          {
+            kind: 'loseLife',
+            player: { kind: 'controllerOf', of: { kind: 'target', id: 't1' } },
+            amount: 2,
+          },
+        ],
+      },
+    },
+  }),
   // "Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts." (CR 702.29a, 107.3, 603.3d)
   singleFace({
     name: 'SYNTHETIC Artifact Mammoth',

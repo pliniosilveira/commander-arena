@@ -800,6 +800,12 @@ export interface ObjectFilter {
    */
   readonly enteredThisTurn?: true;
   /**
+   * "Destroy target creature that was dealt damage this turn", "~ costs {3} less to cast if it targets a creature that was dealt damage this turn" (Bitter Downfall, CR 120.3, 400.7): the
+   * permanent has been dealt damage this turn (any source, any kind, damage that was prevented excluded) and is still the same object. Read from the turn log where the filter is matched
+   * against the game (a target slot, an `each` selector, a `spellTargets` condition); refused in a static ability, as `enteredThisTurn` is, and for a zone other than the battlefield.
+   */
+  readonly dealtDamageThisTurn?: true;
+  /**
    * "Target card exiled with this creature" (Lorehold group 2, CR 607.2a, 400.7): the object is a card in exile that the permanent the ability belongs to exiled with its linked
    * ability (`exile.linked`, `GameObject.linkedExile`): a card another permanent exiled, or that this one exiled before it left the battlefield and came back (a new object, CR 400.7),
    * does not match. Read where the filter is matched against the game with the source (a target slot, an `each` selector); the filter's zone is `exile`. Refused in a static ability,

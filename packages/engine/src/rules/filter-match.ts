@@ -154,6 +154,8 @@ export interface FilterContext {
   readonly discardedOrFromLibrary?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
+  /** The permanents dealt damage this turn (`dealtDamageThisTurn`, CR 120.3): the turn log, read by the caller; absent fails the flag closed. */
+  readonly damagedObjects?: readonly ObjectId[];
   /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
   readonly linkedExile?: readonly ObjectId[];
   /** The cards the resolution that created the reflexive ability moved (`exiledThisWay`, Espers to Magicite, CR 603.12, 400.7j): read by the caller; absent fails the flag closed. */
@@ -483,6 +485,9 @@ export function matchesFilterWith(
   }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
+  if (filter.dealtDamageThisTurn === true && !(ctx.damagedObjects ?? []).includes(obj.id)) {
+    return false;
+  }
   // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
   if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
   if (filter.exiledThisWay === true && !(ctx.exiledThisWay ?? []).includes(obj.id)) return false;
