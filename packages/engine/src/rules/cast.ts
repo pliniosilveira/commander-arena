@@ -1549,6 +1549,7 @@ export function answerPayment(
         activation.source,
         hasX(abilityXCost(activation.ability.cost)),
         activation.ability.cost.some((c) => c.kind === 'mana' && c.onlyChosenColor === true),
+        activation.ability.cost.some((c) => c.kind === 'mana' && c.blueAsAnyColor === true),
       )
     : // D-351 (CR 609.4b): "mana of any type can be spent to cast that spell".
       spellSpendTarget(state, spellObject, spellObject.stack?.anyManaType === true);
@@ -1633,17 +1634,21 @@ function abilitySpend(
   source: ObjectId,
   costHasX = false,
   onlyChosenColor = false,
+  blueAsAnyColor = false,
 ) {
   const obj = state.objects[source];
   const x = costHasX ? ({ hasX: true } as const) : {};
   // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability".
   const only = onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
-  if (obj === undefined) return { ability: true, ...x, ...only } as const;
+  // Grell Philosopher (CR 609.4b): blue mana may pay any color of the cost.
+  const blue = blueAsAnyColor ? ({ blueAsAnyColor: true } as const) : {};
+  if (obj === undefined) return { ability: true, ...x, ...only, ...blue } as const;
   const d = derive(state, obj);
   return {
     ability: true,
     ...x,
     ...only,
+    ...blue,
     source: { types: d.types, subtypes: d.subtypes },
   } as const;
 }

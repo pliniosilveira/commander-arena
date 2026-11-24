@@ -3141,6 +3141,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
         issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
       }
+      if (cost.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blueAsAnyColor is given by an effect to the abilities it grants, a card does not write it',
+        );
+      }
       break;
     case 'tap':
     case 'untap':
@@ -8535,6 +8542,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'gainActivatedAbilitiesOf':
       // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (e.blueAsAnyColor !== undefined && e.blueAsAnyColor !== true) {
+        issue(out, `${path}.blueAsAnyColor`, 'blueAsAnyColor must be true when present');
+      }
+      if (kindOf(e.from) === 'target') {
+        // Grell Philosopher (CR 611.2c, 613.1f): "each Horror you control gains all activated abilities of target artifact": a group, fixed as the effect resolves, gets those of a target.
+        checkRef(e.from, 'object', `${path}.from`, scope, out);
+        if (kindOf(e.to) === 'each') {
+          checkObjectSelector(e.to, `${path}.to`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.to`,
+            'the abilities of a target go to a group (each) the effect names',
+          );
+        }
+        break;
+      }
       if (kindOf(e.to) !== 'this') {
         issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
       }
@@ -8542,6 +8566,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
       } else {
         checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blue mana is spent as any color only for the abilities of a target',
+        );
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');

@@ -1,9 +1,14 @@
-// Mind Flayarrrs deck, group 7. Endless Evil and Nighthowler: the REAL Oracle text of the golden corpus goes through the grammar with no override and is played through
+// Mind Flayarrrs deck, group 7. Endless Evil, Nighthowler and Grell Philosopher: the REAL Oracle text of the golden corpus goes through the grammar with no override and is played through
 // applyAction with the scenario DSL, with three seats. Pins: CR 702.103 (Bestow; the rules text was not available, so the subrule letters are unchecked), CR 707.9b (a copy's
 // exception is part of its copiable values), CR 603.4 and 603.10a (an intervening "if" is read again as the ability resolves, the creature that died as it last was), CR 613.4c
 // (a "+X/+X" follows the board), CR 107.3c (X is what the text defines), CR 205.1a (an Aura that is not a creature).
 import { readFileSync } from 'node:fs';
-import { type CardDefinition, getView, validateCard } from '@commander-arena/engine';
+import {
+  type CardDefinition,
+  getLegalActions,
+  getView,
+  validateCard,
+} from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
@@ -162,5 +167,82 @@ describe('Endless Evil: a 1/1 copy each upkeep, and back to hand when a Horror d
     g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0, count: 1 });
     g.expect.zone(ENDLESS.name, 'graveyard', { seat: 0 });
     g.expect.noObject(ENDLESS.name, { zone: 'hand' });
+  });
+});
+
+const GRELL = real('Grell Philosopher');
+const KEYRUNE = real('Dimir Keyrune');
+
+describe('Grell Philosopher: Horrors gain the activated abilities of an opponent artifact, and blue mana pays any color for them', () => {
+  const build = (lands: readonly string[], mine = false) => {
+    const b = scenario({ seats: 3 })
+      .define(GRELL)
+      .define(KEYRUNE)
+      .seat(0)
+      .hand(GRELL.name)
+      .battlefield(...lands);
+    if (mine) b.battlefield(KEYRUNE.name);
+    return b
+      .seat(1)
+      .battlefield(...(mine ? [] : [KEYRUNE.name]))
+      .seat(2)
+      .battlefield('Mountain')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  };
+  /** The abilities of Grell itself the seat may activate now (the Keyrune's own are not counted). */
+  const activations = (g: {
+    state: Parameters<typeof getView>[0];
+    object: (name: string) => { id: string };
+  }) =>
+    getLegalActions(g.state, 0).filter(
+      (a) => a.kind === 'activate' && a.object === g.object(GRELL.name).id,
+    );
+
+  test('the card lowers to a grant from a target to a group, with the blue mana rider', () => {
+    const text = JSON.stringify(GRELL.faces[0]?.abilities);
+    expect(text).toContain('"kind":"gainActivatedAbilitiesOf"');
+    expect(text).toContain('"blueAsAnyColor":true');
+    expect(text).toContain('"kind":"upkeep"');
+  });
+
+  test('on entering it gains the ability, and two Islands pay {U}{B} (blue mana as any color)', () => {
+    const g = build(['Island', 'Island', 'Island', 'Island', 'Island']);
+    g.act(0).cast(GRELL.name, { pay: true });
+    g.passAll();
+    expect(activations(g)).toHaveLength(1);
+    g.act(0).activate(GRELL.name, { ability: 3, pay: true });
+    g.passAll();
+    // The copy of the ability turns the Horror into a 2/2 for the turn.
+    g.expect.pt(GRELL.name, 2, 2);
+    g.expect.invariants();
+  });
+
+  test('only blue mana is spent as though it were any color: a Mountain cannot pay for {B}', () => {
+    const g = build(['Island', 'Island', 'Island', 'Island', 'Mountain']);
+    g.act(0).cast(GRELL.name, { pay: true });
+    g.passAll();
+    expect(activations(g)).toHaveLength(0);
+  });
+
+  test('an artifact of its own controller is no target: nothing is gained', () => {
+    const g = build(['Island', 'Island', 'Island', 'Island', 'Island'], true);
+    g.act(0).cast(GRELL.name, { pay: true });
+    g.passAll();
+    expect(activations(g)).toHaveLength(0);
+  });
+
+  test('the grant lasts until end of turn', () => {
+    const g = build(['Island', 'Island', 'Island', 'Island', 'Island']);
+    g.act(0).cast(GRELL.name, { pay: true });
+    g.passAll();
+    expect(g.state.continuousEffects.filter((c) => c.change.kind === 'grantAbility')).toHaveLength(
+      2,
+    );
+    expect(
+      g.state.continuousEffects.every(
+        (c) => c.change.kind !== 'grantAbility' || c.until === 'endOfTurn',
+      ),
+    ).toBe(true);
   });
 });

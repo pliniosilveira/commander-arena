@@ -1599,6 +1599,11 @@ export type Cost =
        * entered (an `asEntersChoose` of `color` on the same face); with no color chosen none can pay it. Only the mana cost of an ordinary activated ability.
        */
       readonly onlyChosenColor?: true;
+      /**
+       * "You may spend blue mana as though it were mana of any color to activate those abilities." (Grell Philosopher; CR 609.4b, 602.2b): blue mana (and no other) pays a symbol of
+       * any color of this cost. Set on the copies of the abilities a `gainActivatedAbilitiesOf` with `blueAsAnyColor` gives, never written by a card.
+       */
+      readonly blueAsAnyColor?: true;
     }
   | { readonly kind: 'tap' }
   | { readonly kind: 'untap' }
@@ -2706,13 +2711,17 @@ export type Effect =
   /**
    * "This creature gains all activated abilities of that card until end of turn" (issue 159, CR 613.1f, 113.6): the permanent `to` has, until end of turn, every activated and mana
    * ability that `from` (a card or spell, read as it is as the effect resolves, or as it last was) has. They are abilities of `to`: their text says "this creature" and means it.
-   * Only in the `whenCast` effect of a `mayCast`, where `from` is the spell cast.
+   * In the `whenCast` effect of a `mayCast`, where `from` is the spell cast and `to` the permanent itself; or (Grell Philosopher, "each Horror you control gains all activated
+   * abilities of target artifact an opponent controls until end of turn", CR 611.2c, 613.1f) a group `to` the effect names as it resolves (fixed then) that gets the abilities of a
+   * `target`, read as they are as the effect resolves. `blueAsAnyColor` ("You may spend blue mana as though it were mana of any color to activate those abilities", CR 609.4b):
+   * the copies of the activated abilities given carry `blueAsAnyColor` on their mana costs, so blue mana pays any color of them (the permanent's own abilities are not changed).
    */
   | {
       readonly kind: 'gainActivatedAbilitiesOf';
-      readonly to: ObjectRef;
+      readonly to: ObjectSelector;
       readonly from: ObjectRef;
       readonly duration: 'untilEndOfTurn';
+      readonly blueAsAnyColor?: true;
     }
   /**
    * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): until end of turn the controller of this effect may cast, from their own graveyard,

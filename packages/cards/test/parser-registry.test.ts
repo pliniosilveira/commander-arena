@@ -918,6 +918,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.begin-game-on-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
   // Stage P49 (D-206): the Vraska deck's triggers, conditions and statics. A trigger follows "Whenever"; a condition follows the trigger it conditions or
   // "Then if" in a spell; the static is a line of its own.

@@ -117,6 +117,7 @@ import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
+import { GRELL_EFFECT_RULES } from './grell';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
@@ -1583,6 +1584,7 @@ export const EFFECT_RULES = [
   ...LIBRARY_RULES,
   ...PUT_RULES,
   ...RECURSION_EFFECT_RULES,
+  ...GRELL_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,
   // Aetherdrift energy deck (issue 105): "pay one or more {E}".
