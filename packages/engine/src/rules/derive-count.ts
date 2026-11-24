@@ -261,12 +261,21 @@ export function staticAmountOf(
   if (amount.kind === 'times')
     return amount.factor * countForSource(state, amount.of.filter, source, keywordsOf);
   // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".
+  // CR 604.3, 208.2a: and "1 plus the number of card types among cards in your opponents' graveyards" (a number, a count of card types).
   if (amount.kind === 'sum') {
-    return amount.of.reduce(
-      (n, part) => n + countForSource(state, part.filter, source, keywordsOf),
+    return amount.of.reduce<number>(
+      (n, part) =>
+        n +
+        (typeof part === 'number'
+          ? part
+          : part.kind === 'cardTypesAmong'
+            ? cardTypesAmongForSource(state, part.filter, source)
+            : countForSource(state, part.filter, source, keywordsOf)),
       0,
     );
   }
+  // CR 205.2a, 604.3: the card types among the cards of a zone other than the battlefield.
+  if (amount.kind === 'cardTypesAmong') return cardTypesAmongForSource(state, amount.filter, source);
   return countForSource(state, amount.filter, source, keywordsOf);
 }
 

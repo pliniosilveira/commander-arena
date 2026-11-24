@@ -653,11 +653,18 @@ export type StaticPtAmount =
   | { readonly kind: 'countersOnSource'; readonly counter: string }
   | CountAmount
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
-  | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
+  | { readonly kind: 'sum'; readonly of: readonly (CountAmount | StaticPtSumPart)[] };
+
+/**
+ * A part of a characteristic-defining ability's sum besides a count (CR 604.3, 208.2a): a whole number ("1 plus the number of ..." for a printed `1+*`) or the number of card types among
+ * cards in a zone other than the battlefield ("the number of card types among cards in your opponents' graveyards"); a plain "+N/+N" sum reads counts only (`validateCard`).
+ */
+export type StaticPtSumPart = number | Extract<Amount, { readonly kind: 'cardTypesAmong' }>;
 
 /** What a characteristic-defining ability sets a power or toughness to: a count, or a multiple of one (CR 604.3). */
 export type DefinedPtAmount =
   | CountAmount
+  | Extract<Amount, { readonly kind: 'cardTypesAmong' }>
   | Extract<Amount, { readonly kind: 'devotion' }>
   /**
    * "~'s power and toughness are each equal to your life total" (issue 145, CR 604.3, 119.1): the life total of the controller of the object (its owner outside the battlefield
@@ -666,7 +673,7 @@ export type DefinedPtAmount =
    */
   | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
-  | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
+  | { readonly kind: 'sum'; readonly of: readonly (CountAmount | StaticPtSumPart)[] };
 
 // ---- Filters and selectors
 

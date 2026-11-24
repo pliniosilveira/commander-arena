@@ -2955,7 +2955,7 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' = 'countOf',
+  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' | 'cardTypesAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -2984,7 +2984,7 @@ function checkCountOnly(
     );
   }
   if (
-    kind === 'greatestPowerAmong' &&
+    (kind === 'greatestPowerAmong' || kind === 'cardTypesAmong') &&
     filterSome(
       amount.filter,
       (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
@@ -2993,7 +2993,9 @@ function checkCountOnly(
     issue(
       out,
       `${path}.filter.zone`,
-      'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
+      kind === 'cardTypesAmong'
+        ? 'only the card types of cards outside the battlefield and the stack are counted (CR 613.8)'
+        : 'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, readsCombatOrSource)) {
@@ -3111,8 +3113,35 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, `${path}.of`, 'a sum needs at least two counts');
     } else {
       amount.of.forEach((part, i) => {
-        checkCountOnly(part, `${path}.of[${i}]`, out, 'countOf', plain);
+        // CR 604.3, 208.2a ("1 plus the number of ..."): a characteristic-defining ability's sum may also have a whole number and a count of card types among the cards of a zone.
+        if (!plain && typeof part === 'number') {
+          if (!Number.isSafeInteger(part) || part < 1) {
+            issue(out, `${path}.of[${i}]`, 'a number in a sum is a whole number of 1 or more');
+          }
+          return;
+        }
+        checkCountOnly(
+          part,
+          `${path}.of[${i}]`,
+          out,
+          !plain && (part as { kind?: string })?.kind === 'cardTypesAmong'
+            ? 'cardTypesAmong'
+            : 'countOf',
+          plain,
+        );
       });
+      if (!plain && !amount.of.some((part) => typeof part !== 'number')) {
+        issue(out, `${path}.of`, 'a sum counts something besides numbers');
+      }
+    }
+    return;
+  }
+  // CR 205.2a, 604.3 (Nighthawk Scavenger): "equal to the number of card types among cards in your opponents' graveyards": a characteristic-defining ability only.
+  if (amount?.kind === 'cardTypesAmong') {
+    if (plain) {
+      issue(out, path, 'a card type count is the amount of a characteristic-defining ability');
+    } else {
+      checkCountOnly(a, path, out, 'cardTypesAmong', false);
     }
     return;
   }

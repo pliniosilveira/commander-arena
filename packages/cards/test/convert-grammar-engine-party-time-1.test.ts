@@ -84,3 +84,86 @@ describe('texts that are not Mutavault are dropped, never half run (SYNTHETIC)',
     });
   }
 });
+
+describe("Nighthawk Scavenger: power is 1 plus the number of card types among cards in your opponents' graveyards", () => {
+  const SCAVENGER = 'Nighthawk Scavenger';
+  const scavenger = real(SCAVENGER);
+  const start = () =>
+    scenario()
+      .seat(0)
+      .define(scavenger)
+      .battlefield(SCAVENGER)
+      .graveyard('Lightning Bolt', 'Llanowar Elves')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .graveyard('Grizzly Bears', 'Forest')
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('it counts the card types of the opponents graveyards, not of its controller (CR 205.2a)', () => {
+    const g = start();
+    // Opponent: Grizzly Bears (creature) and Forest (land) = 2 types; its controller's instant and creature do not count.
+    g.expect.pt(SCAVENGER, 3, 3);
+  });
+
+  test('a card type is counted once however many cards have it', () => {
+    const g = scenario()
+      .seat(0)
+      .define(scavenger)
+      .battlefield(SCAVENGER)
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .graveyard('Grizzly Bears', 'Llanowar Elves', 'Grizzly Bears')
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.expect.pt(SCAVENGER, 2, 3);
+  });
+
+  test('with no cards in the opponents graveyards it is 1/3', () => {
+    const g = scenario()
+      .seat(0)
+      .define(scavenger)
+      .battlefield(SCAVENGER)
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.expect.pt(SCAVENGER, 1, 3);
+  });
+
+  test('a creature put into an opponent graveyard changes it as the board changes (CR 604.3)', () => {
+    const g = scenario()
+      .seat(0)
+      .define(scavenger)
+      .battlefield(SCAVENGER)
+      .hand('Lightning Bolt')
+      .battlefield('Mountain')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.expect.pt(SCAVENGER, 1, 3);
+    g.act(0).cast('Lightning Bolt', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.pt(SCAVENGER, 2, 3);
+  });
+});
+
+describe('a printed 1+* needs a line that states the whole number (SYNTHETIC)', () => {
+  const lines = [
+    // "equal to the number of ..." with a printed 1+*: the ability would not say the 1.
+    "~'s power is equal to the number of card types among cards in your opponents' graveyards.",
+    "~'s power is equal to 2 plus the number of card types among cards in your opponents' graveyards.",
+  ];
+  for (const text of lines) {
+    test(text, () => {
+      const imported = withText('Nighthawk Scavenger', `Flying\n${text}`);
+      expect(imported.support.status).toBe('unsupported');
+    });
+  }
+});

@@ -256,6 +256,45 @@ describe('a characteristic-defining ability and the "*" it needs (CR 208.2a, 604
     );
   });
 
+  test("the card types among cards in a graveyard, alone or after a whole number, define power (CR 205.2a, 604.3: Nighthawk Scavenger's 1+*)", () => {
+    const TYPES = {
+      kind: 'cardTypesAmong',
+      filter: { zone: 'graveyard', controller: 'opponent', card: true },
+    };
+    const onePlus = { kind: 'sum', of: [1, TYPES] };
+    const valid = creature([defines(onePlus)], { power: '*', toughness: 3 });
+    expect(issues(valid)).toEqual([]);
+    expect(unsupportedFeatureIssues(valid)).toEqual([]);
+    expect(issues(creature([defines(TYPES)], { power: '*', toughness: 3 }))).toEqual([]);
+    // Only a characteristic-defining ability reads it, and only from a zone outside the battlefield.
+    expectIssue(
+      issues(creature([bonus(TYPES)], { power: 2, toughness: 2 })),
+      'amount of a characteristic-defining ability',
+    );
+    expectIssue(
+      issues(
+        creature([defines({ kind: 'sum', of: [1, { ...TYPES, filter: { types: ['creature'] } }] })], {
+          power: '*',
+          toughness: 3,
+        }),
+      ),
+      'outside the battlefield and the stack',
+    );
+    // A sum of numbers counts nothing, a number must be a whole number of 1 or more, and a plain "+N/+N" sum reads counts only.
+    expectIssue(
+      issues(creature([defines({ kind: 'sum', of: [1, 2] })], { power: '*', toughness: 3 })),
+      'counts something besides numbers',
+    );
+    expectIssue(
+      issues(creature([defines({ kind: 'sum', of: [0, TYPES] })], { power: '*', toughness: 3 })),
+      'whole number of 1 or more',
+    );
+    expectIssue(
+      issues(creature([bonus({ kind: 'sum', of: [1, CREATURES] })], { power: 2, toughness: 2 })),
+      'counts objects (countOf)',
+    );
+  });
+
   test('a printed star with no ability that defines it is refused (and unsupported)', () => {
     const none = creature([], star);
     expectIssue(issues(none), "a printed '*' power needs a characteristic-defining ability");
