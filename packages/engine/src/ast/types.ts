@@ -2652,6 +2652,12 @@ export type Effect =
        * something. Always with `carriesMoved`: the card is what `moved` names in the ability. An exile of the top card of an empty library moves nothing and creates none.
        */
       readonly ifMoved?: true;
+      /**
+       * "Reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library. When you reveal a
+       * creature card this way, ..." (Yuna's Whistle; CR 603.12, 701.20): with `ifMoved`, the ability is created only when one of the objects the effects before it moved matches this
+       * filter (a card of that kind, wherever it went: the filter names no zone), and carries just the ones that match, which are what `moved` names in it.
+       */
+      readonly ifMovedMatches?: ObjectFilter;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn

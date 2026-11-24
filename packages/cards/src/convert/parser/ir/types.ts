@@ -1579,6 +1579,11 @@ export interface IrSentence extends IrNode {
    */
   readonly afterExile?: true;
   /**
+   * "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12, 701.20): a reflexive triggered ability created when the "reveal cards until" instruction before it found a card of
+   * the card type the words name (kept here in lower case). Not `reflexive`: the lowering reads it alone, and refuses it where no such reveal came before.
+   */
+  readonly afterReveal?: string;
+  /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
    * not `optional`: the question is this node's. Only in the body of a triggered ability.

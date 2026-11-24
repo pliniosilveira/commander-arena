@@ -354,6 +354,10 @@ interface SentenceOptions {
    */
   readonly afterExile?: boolean;
   /**
+   * "When you reveal a creature card this way, ..." may start the sentence (Yuna's Whistle, CR 603.12): the reflexive ability the "reveal cards until" before it creates. The text of a spell asks for it.
+   */
+  readonly afterReveal?: boolean;
+  /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
    * text of a spell asks for it, where the lowering of the whole text (`lowerSentences`) joins the roll and its rows.
@@ -557,6 +561,15 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
     let afterExile = false;
+    let afterReveal: string | undefined;
+    if (options.afterReveal === true) {
+      const lead = pattern(/when you reveal an? ([a-z]+) card this way, /iu)(ctx, start);
+      if (lead.ok) {
+        reflexive = true;
+        afterReveal = (lead.value[1] ?? '').toLowerCase();
+        at = lead.pos;
+      }
+    }
     if (options.afterDiscard === true) {
       // "When you discard a card this way, ..." (Summon: Kujata) is made by any card, the nonland one by a card that is not a land.
       const lead = choice(
@@ -727,9 +740,10 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined && !afterExile
+        ...(reflexive && afterDiscard === undefined && !afterExile && afterReveal === undefined
           ? { reflexive: true as const }
           : {}),
+        ...(afterReveal === undefined ? {} : { afterReveal }),
         ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
@@ -759,6 +773,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   dieRows: true,
   // Tip the Scales (CR 603.12): "Sacrifice a creature. When you do, ...": the lowering reads a reflexive ability only after an instruction it can tell was done.
   reflexive: true,
+  // Yuna's Whistle: "When you reveal a creature card this way, put X +1/+1 counters on target creature you control, where X is the mana value of that card."
+  afterReveal: true,
 });
 
 /**

@@ -8274,6 +8274,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'reflexive': {
       // CR 603.12 (D-135): a triggered ability of its own: its targets are its own, and it knows nothing of what the
       // resolution that created it chose or moved (the source is the same, "it" the card the source became).
+      if (e.ifMovedMatches !== undefined && e.ifMoved !== true) {
+        issue(out, `${path}.ifMovedMatches`, 'ifMovedMatches goes with ifMoved');
+      }
       if (e.afterPayment !== undefined) {
         // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
         if (e.afterPayment !== true)
@@ -8300,6 +8303,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (e.ifThisWay !== undefined) {
           issue(out, `${path}.ifMoved`, 'what triggers it is the move: no ifThisWay');
+        }
+        if (e.ifMovedMatches !== undefined) {
+          checkFilter(e.ifMovedMatches, `${path}.ifMovedMatches`, out);
         }
       } else if (scope.mayAvailable !== true) {
         issue(
