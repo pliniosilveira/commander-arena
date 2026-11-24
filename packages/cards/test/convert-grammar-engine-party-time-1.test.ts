@@ -167,3 +167,55 @@ describe('a printed 1+* needs a line that states the whole number (SYNTHETIC)', 
     });
   }
 });
+
+describe('Valiant Changeling: costs {1} less for each creature type among creatures you control, by no more than {5}', () => {
+  const CHANGELING = 'Valiant Changeling'; // {5}{W}{W}
+  const changeling = real(CHANGELING);
+
+  test('each creature type counts once: Grizzly Bears (Bear) and Llanowar Elves (Elf, Druid) make {2}{W}{W} (CR 601.2f)', () => {
+    const g = scenario()
+      .seat(0)
+      .define(changeling)
+      .hand(CHANGELING)
+      .battlefield('Grizzly Bears', 'Llanowar Elves', 'Plains', 'Plains', 'Plains', 'Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(CHANGELING, { pay: true });
+    g.expect.stack([CHANGELING]);
+  });
+
+  test('two creatures of the same type count once, and the creatures of an opponent do not count', () => {
+    const g = scenario()
+      .seat(0)
+      .define(changeling)
+      .hand(CHANGELING)
+      .battlefield('Grizzly Bears', 'Grizzly Bears', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .battlefield('Llanowar Elves', 'Grizzly Bears')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    // One type (Bear): {4}{W}{W} is six mana, so five lands cannot pay it.
+    expect(() => g.act(0).cast(CHANGELING, { pay: true })).toThrow();
+  });
+
+  test('a creature with every creature type takes off at most {5}', () => {
+    const g = scenario()
+      .seat(0)
+      .define(changeling)
+      .hand(CHANGELING)
+      .battlefield(CHANGELING, 'Plains', 'Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(CHANGELING, { pay: true });
+    g.expect.stack([CHANGELING]);
+  });
+});

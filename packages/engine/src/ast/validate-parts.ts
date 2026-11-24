@@ -2148,6 +2148,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'creatureTypesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
     case 'chosenPlayerLead':
@@ -2173,6 +2174,15 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'multiple':
       checkAmount({ ...a, of: 0 }, path, NO_SCOPE, out);
       checkStateAmount(a.of, `${path}.of`, out, label);
+      break;
+    case 'extreme':
+      // CR 608.2c (Valiant Changeling: "can't reduce ... by more than {5}"): the lesser or the greater of amounts that each read the game as it is now.
+      checkAmount({ ...a, of: [0, 0] }, path, NO_SCOPE, out);
+      if (Array.isArray(a.of)) {
+        a.of.forEach((part, i) => {
+          checkStateAmount(part, `${path}.of[${i}]`, out, label);
+        });
+      }
       break;
     case 'sum':
       checkAmount({ ...a, of: [0, 0] }, path, NO_SCOPE, out);
@@ -2362,6 +2372,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'creatureTypesAmong':
+      // CR 205.3m (Valiant Changeling): the distinct creature types among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'creatureTypesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'creatureTypesAmong counts the creature types of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'creatureTypesAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }

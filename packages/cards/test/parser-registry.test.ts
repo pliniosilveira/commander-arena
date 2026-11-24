@@ -875,6 +875,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-different-mana-value': spell(
     (e) => `Target creature gets +1/+1 until end of turn ${e}.`,
   ),
+  // Valiant Changeling (CR 205.3m): the distinct creature types among the permanents of a group.
+  'amount.for-each-creature-type': spell((e) => `Target creature gets +1/+1 until end of turn ${e}.`),
   'amount.for-each-card-type-among-those-cards': permanent(
     (e) =>
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,

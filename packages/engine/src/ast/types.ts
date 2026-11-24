@@ -267,6 +267,13 @@ export type Amount =
    */
   | { readonly kind: 'differentNamesAmong'; readonly filter: ObjectFilter }
   /**
+   * "~ costs {1} less to cast for each creature type among creatures you control" (Valiant Changeling, CR 205.3m, 205.3d): how many distinct creature types the battlefield permanents
+   * `filter` matches have between them, each counted once however many have it (a creature with every creature type, CR 702.73a, counts all of them), as the permanents have them now
+   * (layers 1 and 4). Subtypes that are not creature types (Equipment, Aura, ...) are not counted. The filter names the battlefield (or leaves it out) and reads no power, toughness,
+   * combat or source power.
+   */
+  | { readonly kind: 'creatureTypesAmong'; readonly filter: ObjectFilter }
+  /**
    * "Create a number of 5/5 Elemental tokens equal to the number of colors among permanents you control", "each opponent loses X life, where X is the number of colors among
    * permanents you control" (CR 105.2, 608.2c; Vivid): how many of the five colors the permanents `filter` matches on the battlefield have between them, each counted once
    * however many have it, colorless being no color (CR 105.2c). Read as the instruction runs, through the layers like a count. The filter names the battlefield (or leaves it out) and

@@ -97,6 +97,8 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-card-type-among-those-cards',
   // Eris, Roar of the Storm (issue 121, CR 202.3): the distinct mana values among the cards of a zone.
   'amount.for-each-different-mana-value',
+  // Valiant Changeling (CR 205.3m): the distinct creature types among the permanents of a group.
+  'amount.for-each-creature-type',
   // Issue 144 (Glimpse the Impossible): the cards the instruction before it put into the controller's graveyard.
   'amount.for-each-card-put-into-your-graveyard',
 ] as const;

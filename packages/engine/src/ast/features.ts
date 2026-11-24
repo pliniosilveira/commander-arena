@@ -1646,6 +1646,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'differentManaValuesAmong',
     // Issue 101: "the number of differently named tokens you control" (CR 201.2).
     'differentNamesAmong',
+    // CR 205.3m: "for each creature type among creatures you control" (Valiant Changeling).
+    'creatureTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
@@ -2804,6 +2806,8 @@ export const AMOUNT_KINDS = [
   'differentManaValuesAmong',
   /** "The number of differently named tokens you control" (CR 201.2, issue 101): the engine's `differentNamesAmong`. */
   'differentNamesAmong',
+  /** "For each creature type among creatures you control" (CR 205.3m): the engine's `creatureTypesAmong`. */
+  'creatureTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */

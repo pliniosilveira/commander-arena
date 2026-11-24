@@ -104,6 +104,8 @@ function reduction(): Parser<IrAmount> {
           'amount.for-each-this-way',
           // Eris, Roar of the Storm (issue 121): "costs {2} less to cast for each different mana value among ...".
           'amount.for-each-different-mana-value',
+          // Valiant Changeling (CR 205.3m): "costs {1} less to cast for each creature type among creatures you control".
+          'amount.for-each-creature-type',
         ],
       }),
     ),
@@ -172,6 +174,16 @@ const REDUCTION_IF: Parser<IrCondition> = map(
   ([, condition]) => condition,
 );
 
+/** " This effect can't reduce the amount of mana this spell costs by more than {5}." (CR 118.7a): the most the reduction takes off, a generic number. */
+const REDUCTION_CAP: Parser<IrAmount> = map(
+  spanned(
+    pattern(
+      /\s+This effect can['’]t reduce the amount of mana (?:this spell|~) costs by more than \{([1-9]\d*)\}\./iu,
+    ),
+  ),
+  ({ value, span }): IrAmount => ({ kind: 'number', value: Number(value[1]), span }),
+);
+
 /**
  * `static.self-cost-reduction`: "~ costs {2} less to cast." and "~ costs {1} less to cast for each
  * creature on the battlefield." (CR 118.7a: only the generic part of the cost is reduced; CR 113.6d:
@@ -213,8 +225,15 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {3} less to cast if it targets a tapped creature.',
     // Into the Story: a condition on an opponent's graveyard.
     '~ costs {3} less to cast if an opponent has seven or more cards in their graveyard.',
+    // Valiant Changeling (CR 205.3m, 118.7a): a count of creature types, capped.
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {5}.",
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana ~ costs by more than {5}.",
+    '~ costs {1} less to cast for each creature type among creatures you control.',
   ],
   rejects: [
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {W}.",
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {0}.",
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {5}",
     '~ costs {X} less to cast.',
     '~ costs {X} less to cast, where X is the number of creatures.',
     '~ costs {X} less to cast, where Y is the number of creatures you control.',
@@ -240,9 +259,16 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
       reduction(),
       optional(REDUCTION_IF, undefined),
       PERIOD,
+      optional(REDUCTION_CAP, undefined),
     )(ctx, pos);
     if (!r.ok) return r;
-    const effect = { kind: 'costReduction' as const, amount: r.value[1] };
+    // CR 118.7a, 601.2f (Valiant Changeling): "This effect can't reduce the amount of mana this spell costs by more than {5}": the lesser of the count and the cap.
+    const cap = r.value[4];
+    const amount: IrAmount =
+      cap === undefined
+        ? r.value[1]
+        : { kind: 'extreme', pick: 'lesser', of: [r.value[1], cap], span: r.value[1].span };
+    const effect = { kind: 'costReduction' as const, amount };
     const condition = r.value[2];
     const read = statement(
       'static.self-cost-reduction',

@@ -545,6 +545,8 @@ export type IrAmount =
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
   // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
   | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
+  // "for each creature type among creatures you control" (Valiant Changeling, CR 205.3m): the creature types the permanents of the group have between them, each once
+  | { readonly kind: 'creatureTypesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each different mana value among instant and sorcery cards in your graveyard" (Eris, issue 121, CR 202.3): the distinct mana values the cards of the group have, each once
   | { readonly kind: 'differentManaValuesAmong'; readonly of: IrNoun; readonly span: Span }
   // "equal to the number of differently named tokens you control" (Neriv, issue 101, CR 201.2): the distinct names the permanents of the group have, each once
@@ -2423,6 +2425,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'manaValueOf',
   'colorsOf',
   'cardTypesAmong',
+  'creatureTypesAmong',
   'differentNamesAmong',
   'timesKicked',
   'lifeLostThisWay',
@@ -2489,6 +2492,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'aggregate':
     case 'colorsAmong':
     case 'cardTypesAmong':
+    case 'creatureTypesAmong':
       return [amount.of];
     case 'half':
     case 'multiple':

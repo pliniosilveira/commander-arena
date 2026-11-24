@@ -502,6 +502,17 @@ export function lowerAmount(
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'cardTypesAmong', filter: filter.value }, rule };
     }
+    case 'creatureTypesAmong': {
+      // "For each creature type among creatures you control" (Valiant Changeling, CR 205.3m): the engine's `creatureTypesAmong`, of permanents on the battlefield.
+      const blocked = needs('creatureTypesAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'creatureTypesAmong', filter: filter.value }, rule };
+    }
     case 'differentNamesAmong': {
       // "The number of differently named tokens you control" (issue 101, CR 201.2): the engine's `differentNamesAmong`, of permanents on the battlefield.
       const blocked = needs('differentNamesAmong');
@@ -1173,6 +1184,7 @@ export const AMOUNT_NEEDS = [
   'amount:colorsAmong',
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
+  'amount:creatureTypesAmong',
   'amount:differentManaValuesAmong',
   'amount:differentNamesAmong',
   'amount:half',
