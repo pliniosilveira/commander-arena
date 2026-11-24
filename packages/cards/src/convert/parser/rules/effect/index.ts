@@ -230,6 +230,7 @@ import { REVIVAL_TRANCE_EFFECT_RULES } from './revival-trance';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
+import { SEARCH_EACH_RULES } from './search-each';
 import { SEARCH_PAIR_RULES } from './search-pair';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
@@ -1575,6 +1576,7 @@ export const EFFECT_RULES = [
   ...GROUP_BASE_PT_RULES,
   ...GROUP_BASE_PT_SOURCE_RULES,
   ...SEARCH_RULES,
+  ...SEARCH_EACH_RULES,
   ...PREVENT_RULES,
   ...TRANSFORM_RULES,
   ...ATTACH_RULES,
