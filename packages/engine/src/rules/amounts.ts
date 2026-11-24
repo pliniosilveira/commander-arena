@@ -339,6 +339,12 @@ export function amountOf(
     const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
     return source?.castX ?? 0;
   }
+  if (amount.kind === 'monstrousX') {
+    // CR 701.37c, 107.3c: the X of the monstrosity that made the permanent with the ability monstrous, which the permanent remembers (`GameObject.monstrousX`), or last-known
+    // information when it has left; a permanent that is not monstrous has none.
+    const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+    return source?.monstrousX ?? 0;
+  }
   if (amount.kind === 'lifePaidAsEntered') {
     // CR 119.4, 614.12, 400.7: the life the permanent paid as it entered, which it remembers (`GameObject.chosen`), or last-known information when it has left.
     const source = ctx.source === null ? null : objectOrLki(state, ctx.source);

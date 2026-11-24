@@ -32,6 +32,11 @@ export interface LowerContext {
    */
   entersX: boolean;
   /**
+   * True in the body of "When ~ becomes monstrous, ..." (every event of the trigger is the permanent itself becoming monstrous, Death Kiss, CR 701.37c): an X there is the X of the
+   * monstrosity that made it monstrous (the engine's `monstrousX`), which `validateCard` checks against a "Monstrosity X" of the face; it does not make the ability read an announced X.
+   */
+  monstrousX: boolean;
+  /**
    * True when the permanent the ability is on is gone by the time the effect runs: a "dies"
    * trigger of `~` itself, or an ability whose cost sacrifices `~` (CR 400.7: it is a new object
    * in the graveyard). An effect that acts on `~` as a permanent (tap, untap, exile, return it to
@@ -461,6 +466,7 @@ export function newContext(
     targets: [],
     usesX: false,
     entersX: false,
+    monstrousX: false,
     selfGone: false,
     costSacrifice: null,
     staticSubjectIsSelf: false,

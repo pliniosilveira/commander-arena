@@ -820,6 +820,17 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.entersX &&
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
+  // CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures your opponents control"): in the becomes monstrous trigger of the permanent itself, up to
+  // as many targets as the X of its monstrosity.
+  const upToMonstrousX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    ctx.monstrousX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody &&
+    ctx.xIs === null &&
+    noun.rule !== 'noun.up-to-x-target-graveyard-cards';
   // "When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 107.3, 603.3d): X is the X announced for the cycling cost, which the cycled
   // event carries as its number, so the slot is the engine's `upToTriggerAmount`; only the body of a cycling trigger reads it.
   const upToCycleX =
@@ -836,6 +847,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     noun.count?.kind === 'x' &&
     !upToDefinedX &&
     !upToEnteredX &&
+    !upToMonstrousX &&
     !upToCycleX;
   // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
   // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
@@ -858,7 +870,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       return failure(noun, []);
     }
   }
-  if (upToDefinedX || upToEnteredX || upToCycleX) {
+  if (upToDefinedX || upToEnteredX || upToCycleX || upToMonstrousX) {
     if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
@@ -1143,6 +1155,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:upToAmount', 'amount:enteredX']);
         if (blocked.length > 0) return failure(noun, blocked);
         upToAmount = { kind: 'enteredX' };
+      }
+      if (upToMonstrousX) {
+        const blocked = missingFeatures(['selector:upToAmount', 'amount:monstrousX']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        upToAmount = { kind: 'monstrousX' };
       }
       if (upToDefinedX) {
         const blocked = missingFeatures(['selector:upToAmount']);

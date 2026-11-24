@@ -3396,7 +3396,10 @@ function runEffect(
       }
       monstrousEvents.push({ kind: 'becameMonstrous', object: source.id });
       return {
-        ...done(patchObject(afterCounters, source.id, { monstrous: true }), monstrousEvents),
+        ...done(
+          patchObject(afterCounters, source.id, { monstrous: true, monstrousX: count }),
+          monstrousEvents,
+        ),
         performed: 1,
       };
     }
