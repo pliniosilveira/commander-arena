@@ -76,6 +76,16 @@ function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
  * nothing is attached to anything, so the statement is not lowered (the engine's `validateCard`
  * would refuse it too).
  */
+/** "For each unity counter on ~" / "for each counter on ~" (CR 122.1): the counters of the kind on the permanent with the ability, every kind when the text names none. */
+function countersOnSource(counter: string | undefined): {
+  readonly kind: 'countersOnSource';
+  readonly counter?: string;
+} {
+  return counter === undefined
+    ? { kind: 'countersOnSource' }
+    : { kind: 'countersOnSource', counter };
+}
+
 function attachedSubject(noun: IrNoun, ctx: LowerContext): LowerResult<StaticSubject> {
   const needed = noun.det === 'enchanted' ? 'Aura' : 'Equipment';
   if (!ctx.faceSubtypes.includes(needed)) return failure(noun);
@@ -468,8 +478,8 @@ function effectOf(
       return ok({
         kind: 'modifyPt',
         subject,
-        power: effect.power ? { kind: 'countersOnSource', counter: effect.counter } : 0,
-        toughness: effect.toughness ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+        power: effect.power ? countersOnSource(effect.counter) : 0,
+        toughness: effect.toughness ? countersOnSource(effect.counter) : 0,
       });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.

@@ -105,7 +105,7 @@ export function runCounterPick(
   if (ins.left !== null && ins.left <= 0) return finish();
   const picks = counterPickOptions(state, ins);
   if (picks.length === 0) return finish();
-  const mayStop = ins.mode === 'remove';
+  const mayStop = ins.mode === 'remove' || ins.anyNumber === true;
   if (ins.chosen === null) {
     // A move takes exactly one counter: with only one that can go, there is nothing to ask.
     const only = !mayStop && picks.length === 1 ? picks[0] : undefined;

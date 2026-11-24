@@ -152,7 +152,8 @@ describe('Adaptive Training Post (CR 122.1, 603.4, 603.7, 707.10)', () => {
   test.each([
     'Whenever you cast an instant or sorcery spell, if this artifact has more than three charge counters on it, put a charge counter on it.',
     'Whenever you cast an instant or sorcery spell, if target artifact has fewer than three charge counters on it, draw a card.',
-    'Whenever you cast an instant or sorcery spell, if this artifact has fewer than three counters on it, draw a card.',
+    // Counters of every kind on the artifact itself are read now (Gavel of the Righteous); another permanent's counters are not.
+    'Whenever you cast an instant or sorcery spell, if this artifact has fewer than three counters on target artifact, draw a card.',
     'Remove three charge counters from this artifact: When you next cast an instant or sorcery spell this turn, copy it and you may choose new targets for the copy and draw a card.',
     'Remove three charge counters from this artifact: When you next cast an instant or sorcery spell this turn, copy it for each creature you control.',
   ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {

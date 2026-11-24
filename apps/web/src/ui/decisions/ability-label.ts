@@ -1761,6 +1761,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
     }
+    case 'spellGainsKeyword': {
+      // CR 702.44a, 702.44d: "It gains sunburst" / "That spell gains sunburst", said of the spell of the cast trigger.
+      const spell = object(effect.spell);
+      return spell === UNSAID ? UNSAID : `${capital(spell)} gains sunburst`;
+    }
     case 'doubleSpellX':
       // CR 107.3 (Unbound Flourishing): the X of the spell that was cast.
       return object(effect.spell) === UNSAID ? UNSAID : 'Double the value of X';

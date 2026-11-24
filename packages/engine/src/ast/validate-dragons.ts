@@ -5,7 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import { CARD_TYPES, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -960,6 +960,14 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       r.addSubtypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t)))
   ) {
     issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
+  }
+  // CR 707.9b (Phyrexian Metamorph): "except it's an artifact in addition to its other types".
+  if (r.addTypes !== undefined) {
+    if (!Array.isArray(r.addTypes) || r.addTypes.length === 0) {
+      issue(out, `${path}.addTypes`, 'addTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.addTypes`, r.addTypes, CARD_TYPES, 'card type');
+    }
   }
   return true;
 }

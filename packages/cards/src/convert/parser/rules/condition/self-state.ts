@@ -10,6 +10,7 @@ import {
   fail,
   literal,
   map,
+  optional,
   type Parser,
   pattern,
   satisfy,
@@ -379,7 +380,8 @@ export const CONDITION_THIS_HAS_COUNTER = defineRule<IrCondition>({
 /**
  * `condition.this-counter-count`: "~ has fewer than three charge counters on it", "~ has three or more charge counters on it" (CR 122.1, 603.4: the number of counters of a
  * kind on the permanent compared with a number, read as the ability triggers and as it resolves). The engine's `amountIs` of `countersOn` of the permanent itself;
- * "fewer than N" is at most N - 1. Not read: another permanent's counters, "it", an unnamed kind of counter, "no counters", other comparisons.
+ * "fewer than N" is at most N - 1. With no kind named ("~ has four or more counters on it", Gavel of the Righteous) the counters of every kind added together. Not read: another
+ * permanent's counters, "it", "no counters", other comparisons.
  */
 export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
   id: 'condition.this-counter-count',
@@ -394,18 +396,21 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
     // A card the text names by a person's pronoun (Kes, Evolving Telepath): the pronoun is bound to the permanent like "it" is.
     'she has nine or more time counters on her',
     'he has three or more charge counters on him',
+    // Gavel of the Righteous: counters of every kind on the permanent itself.
+    '~ has four or more counters on it',
+    '~ has fewer than three counters on it',
+    'she has nine or more counters on her',
   ],
   rejects: [
     '~ has fewer than three charge counters on it.',
-    '~ has fewer than three counters on it',
     '~ has fewer than zero charge counters on it',
+    '~ has fewer than zero counters on it',
     '~ has fewer than three charge counters',
     '~ has fewer than three charge counters on it and',
     'it has fewer than three charge counters on it',
     'she has nine or more time counters on it',
     'she has nine or more time counters on him',
     'he has nine or more time counters on her',
-    'she has nine or more counters on her',
     'target artifact has fewer than three charge counters on it',
     '~ has more than three charge counters on it',
     '~ had fewer than three charge counters on it',
@@ -435,17 +440,17 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
           ),
         ),
         literal(' '),
-        pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
-        pattern(/ counters on (it|her|him)(?![\p{L}\p{N}])/iu),
+        optional(sequence(pattern(/[+-]\d+\/[+-]\d+|(?!counters )[a-z]+/i), literal(' ')), null),
+        pattern(/counters on (it|her|him)(?![\p{L}\p{N}])/iu),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [head, compare, , counter, tail] = r.value.value;
+    const [head, compare, , named, tail] = r.value.value;
     // "she has ... on her" and "he has ... on him" name the card by a person's pronoun, which the binding pass makes the permanent the text last named; "~ ... on it" is the permanent itself.
     const subject = (head[1] ?? '').toLowerCase();
     const object = (tail[1] ?? '').toLowerCase();
     if (object !== { '~': 'it', she: 'her', he: 'him' }[subject]) return fail(ctx, pos);
-    const name = counter[0].toLowerCase();
+    const name = named === null ? undefined : named[0][0].toLowerCase();
     if (name === 'no') return fail(ctx, pos);
     const span = r.value.span;
     return {
@@ -464,7 +469,7 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
             span,
             rule: 'condition.this-counter-count',
           },
-          counter: name,
+          ...(name === undefined ? {} : { counter: name }),
           span,
         },
         compare,

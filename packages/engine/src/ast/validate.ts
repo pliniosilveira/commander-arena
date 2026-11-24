@@ -166,6 +166,34 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."
       checkCosts(k.cost, `${path}.cost`, out);
+      // Gavel of the Righteous: "Equip—Pay {3} or remove a counter from ~": the other way to pay, the one cost of removing a counter from the Equipment itself.
+      if (k.orCost !== undefined) {
+        checkCosts(k.orCost, `${path}.orCost`, out);
+        if (
+          !Array.isArray(k.orCost) ||
+          k.orCost.length !== 1 ||
+          k.orCost.some(
+            (c) =>
+              c?.kind !== 'removeCounters' ||
+              c.among !== undefined ||
+              c.countX !== undefined ||
+              c.fromOne !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'the other way to pay an equip ability is the removal of counters from the Equipment itself',
+          );
+        }
+        if (k.costReducedIf !== undefined) {
+          issue(
+            out,
+            `${path}.orCost`,
+            'an equip ability with another way to pay has no cost reduction',
+          );
+        }
+      }
       if (Array.isArray(k.cost) && k.cost.some((c) => c?.kind === 'discardThis')) {
         issue(out, `${path}.cost`, 'discardThis is only a cost of a card in the hand');
       }
@@ -350,6 +378,15 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       } else if (kindOf(r.count) === 'diedThisTurn') {
         // Issue 101: the creatures that died this turn, read from the history as the permanent enters; no state of the game is read, so nothing more to check.
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'manaSpent') {
+        // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell the permanent entered from; the spell is the permanent itself, so it names no other.
+        if ((r.count as { of?: unknown }).of !== undefined) {
+          issue(
+            out,
+            `${path}.count.of`,
+            'an enters-with count of the mana spent is the spell the permanent came from',
+          );
+        }
       } else if (kindOf(r.count) === 'sum') {
         // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
         const parts = (r.count as { of?: unknown }).of;
@@ -1915,6 +1952,8 @@ function hasXCost(
       (c.kind === 'discard' && (c as { countX?: unknown }).countX === true) ||
       // D-488: "Sacrifice X creatures" announces X as the ability is activated.
       (c.kind === 'sacrifice' && (c as { countX?: unknown }).countX === true) ||
+      // Moxite Refinery: "Remove X counters from an artifact or creature you control" announces X as the ability is activated.
+      (c.kind === 'removeCounters' && (c as { countX?: unknown }).countX === true) ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),

@@ -149,6 +149,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - A name set by `setTypes` (CR 612.8) applies in timestamp order with layer 4, not as layer 3, and only "it's a land named X" after a returned card is read.
 - Explore emits no event and ignores APNAP order.
+- Sunburst as the number of another ability (Modular-Sunburst, CR 702.44c) is unread; a spell gains sunburst only through a cast trigger, never a permanent or for a duration.
+- Two effects that proliferate twice multiply (four times), as two damage doublers do (CR 614.5); unverified, no ruling for the pair. "Equip—Pay {3} or remove a counter" is expanded as two equip abilities.
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.

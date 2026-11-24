@@ -10,6 +10,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
+import { COUNTER_INTELLIGENCE_G2_COST_RULES } from './counter-intelligence-g2';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
 import { EXTRA_TURN_COST_RULES } from './extra-turns';
 import { FEDERATION_D_COST_RULES } from './federation-d';
@@ -962,4 +963,5 @@ export const COST_RULES = [
   ...UNTAP_PERMANENTS_COST_RULES,
   // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
   ...FEDERATION_D_COST_RULES,
+  ...COUNTER_INTELLIGENCE_G2_COST_RULES,
 ];

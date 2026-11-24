@@ -31,11 +31,14 @@ function condition(
   return { kind: 'condition', test, span: { start, end }, rule };
 }
 
-/** "N or more", "N or greater", "N or less", "N or fewer": the comparison of a whole number (CR 107.1). */
-function numberCompare(): Parser<IrComparison> {
+/** "thirty": the one number word above twenty that a count of counters uses (Lux Artillery); `quantity` reads one to twenty and one hundred. */
+const THIRTY: Parser<number> = map(pattern(/thirty(?![\p{L}\p{N}])/iu), () => 30);
+
+/** "N or more", "N or greater", "N or less", "N or fewer": the comparison of a whole number (CR 107.1). With `wide`, "thirty" too. */
+function numberCompare(wide = false): Parser<IrComparison> {
   return map(
     sequence(
-      satisfy(quantity, (n) => n >= 1),
+      satisfy(wide ? choice(THIRTY, quantity) : quantity, (n) => n >= 1),
       pattern(/ or (more|greater|less|fewer)(?![\p{L}\p{N}])/iu),
     ),
     ([value, word]): IrComparison => ({
@@ -248,6 +251,53 @@ export const CONDITION_TOTAL_STAT = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.counters-among`: "there are thirty or more counters among artifacts and creatures you control" (Lux Artillery, CR 122.1, 603.4): the counters of every kind on the objects a
+ * group names, added together, compared with a number. The engine's `amountIs` of an `aggregate` of the stat `counters`, read as the ability triggers and again as it resolves
+ * (CR 603.4). Not read: "a" counter, a kind of counter ("+1/+1 counters"), a number alone, a group that is not plural, more words after the group.
+ */
+export const CONDITION_COUNTERS_AMONG = defineRule<IrCondition>({
+  id: 'condition.counters-among',
+  family: 'condition',
+  leading: ['there'],
+  cites: ['CR 122.1 (Counters)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    'there are thirty or more counters among artifacts and creatures you control',
+    'there are 30 or more counters among creatures you control',
+    'there are five or fewer counters among permanents you control',
+  ],
+  rejects: [
+    'there are thirty or more counters',
+    'there are thirty counters among artifacts and creatures you control',
+    'there are thirty or more +1/+1 counters among creatures you control',
+    'there is one or more counter among creatures you control',
+    'there are thirty or more counters among artifacts and creatures you control.',
+    'there are zero or more counters among creatures you control',
+    'you have thirty or more counters among creatures you control',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('there are '),
+      numberCompare(true),
+      literal(' counters among '),
+      counted('condition.counters-among', true),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, compare, , of] = r.value;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = { kind: 'aggregate', how: 'total', stat: 'counters', of, span };
+    return {
+      ok: true,
+      value: condition('condition.counters-among', pos, r.pos, {
+        kind: 'amountIs',
+        amount,
+        compare,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 const OPPONENT_HAS_MORE =
   /an opponent (?:has more (life|cards in hand)|controls more (creatures|lands)) than you(?![\p{L}\p{N}])/iu;
 
@@ -358,6 +408,7 @@ export const GAME_STATE_CONDITION_RULES = [
   CONDITION_AMOUNT_COUNT,
   CONDITION_OPPONENT_CARDS_IN_GRAVEYARD,
   CONDITION_TOTAL_STAT,
+  CONDITION_COUNTERS_AMONG,
   CONDITION_OPPONENT_HAS_MORE,
 ];
 

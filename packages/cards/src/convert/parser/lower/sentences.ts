@@ -242,6 +242,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
         : lowered.value.some((e) => GROUP_BREAKERS.includes(e.kind))
           ? false
           : ctx.gainedGroup;
+    ctx.becameTarget =
+      lastLowered?.kind === 'setTypes' &&
+      lastLowered.objects.kind === 'target' &&
+      lastLowered.duration === 'permanent'
+        ? lastLowered.objects.id
+        : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastCastRemembered = lastEffect?.kind === 'castFree' && lastEffect.remember === true;
@@ -2678,7 +2684,9 @@ export function lowerDelayedCast(
   ctx.castTriggerX = before;
   if (!inner.ok) return inner;
   const effect = oneEffect(inner.value);
-  const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
+  const onlyCopy =
+    (effect.kind === 'copySpell' || effect.kind === 'spellGainsKeyword') &&
+    effect.spell.kind === 'triggerSubject';
   const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
   const [choice, copy, ...rest] = inner.value;
