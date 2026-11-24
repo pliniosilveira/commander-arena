@@ -820,6 +820,12 @@
   height: 8px;
 }
 
+/* A tile framed in its card's colours (issue 22) needs no colour bar over its art as well: the bar is drawn only on a tile
+   without that frame (an unsupported card, a face-down permanent). */
+.board-tile.has-frame .board-tile-band {
+  display: none;
+}
+
 .board-tile-name {
   /* The picture is shown as it is (issue 137: it was darkened to 62 percent so the text could be
      read on it). The name sits on a title bar of its own, as on a printed card, and the other marks
@@ -1294,30 +1300,38 @@
 .board-tile-stack,
 .board-tile-stack::before {
   position: absolute;
-  inset: 0;
-  /* Lighter than a tile and with a bright edge, so the cards behind the front one read as cards on any board. */
-  background: color-mix(in srgb, var(--text) 22%, var(--bg-raised));
-  border: 1px solid color-mix(in srgb, var(--text) 60%, var(--line));
+  /* Far lighter than a tile, with a dark edge between them, so the cards behind the front one read as cards on any board. */
+  background: color-mix(in srgb, var(--text) 75%, var(--bg-raised));
+  border: 1px solid var(--bg-sunken);
   border-radius: 6px;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--bg-sunken) 80%, transparent);
 }
 
-/* Two cards behind the front one, whatever the number: the count says how many, the stack says "several". */
+/* A stack of equal permanents: the front card is a little smaller than its tile and two cards stand behind it, up and to the
+   right, whatever the number (the count says how many, the stack says "several"). All of it is inside the tile's own box, so no
+   row clips it and no neighbour covers it. */
+.board-tile.is-group .board-tile-inner {
+  inset: 8px 12px 0 0;
+}
+
 .board-tile-stack {
-  transform: translate(6px, -6px);
+  inset: 0 0 8px 12px;
 }
 
 /* The nearer of the two, drawn over the farther one. */
 .board-tile-stack::before {
   content: "";
   inset: -1px;
-  transform: translate(-3px, 3px);
+  transform: translate(-6px, 4px);
 }
 
-/* A stack of equal permanents is tapped or untapped as a whole (grouping never mixes the two), so
-   the cards behind the front one tilt with it. */
+/* A stack is tapped or untapped as a whole (grouping never mixes the two), so the cards behind the front one tilt with it. */
 .board-tile.is-tapped .board-tile-stack {
-  transform: rotate(7deg) translate(6px, -6px);
+  transform: rotate(7deg);
+}
+
+.board-tile.is-group .board-count {
+  top: 1px;
 }
 
 /* How many cards the stack holds. Blue, so it is never read as one of the card's counters (gold). */
@@ -2049,12 +2063,6 @@
 .board-tile-inner > :not(.board-tile-art) {
   position: relative;
   z-index: 1;
-}
-
-/* A tile that keeps the drawn frame (a Saga, a split card, a battle, a face-down permanent): once its art has loaded the art says
-   which card it is, so the name is drawn only while there is no art. */
-.board-tile-inner:has(> .board-tile-art.is-loaded:not(.board-tile-top)) > .board-tile-name {
-  display: none;
 }
 
 /* The top of the printed card (card-top.ts): the image is as wide as the tile and the tile cuts it
