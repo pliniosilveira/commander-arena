@@ -301,9 +301,10 @@ describe('gains and grants of the words the engine can grant (CR 613.1f)', () =>
     expect(ENGINE_GRANTABLE).toContain('wither');
   });
 
-  test('changeling, devoid, partner, persist, undying and split second are not grantable (exalted is, since D-149)', () => {
+  test('changeling, devoid, partner, persist and split second are not grantable (exalted is, since D-149; undying is, CR 702.93)', () => {
     expect(GRANTABLE_KEYWORDS.map(([w]) => w)).toContain('exalted');
-    for (const word of ['changeling', 'devoid', 'partner', 'persist', 'undying', 'split second']) {
+    expect(GRANTABLE_KEYWORDS.map(([w]) => w)).toContain('undying');
+    for (const word of ['changeling', 'devoid', 'partner', 'persist', 'split second']) {
       expect(SIMPLE_KEYWORDS.map(([w]) => w)).toContain(word);
       expect(GRANTABLE_KEYWORDS.map(([w]) => w)).not.toContain(word);
       expect(keywordKind(word)).toBeDefined();
