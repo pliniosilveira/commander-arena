@@ -688,6 +688,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'legendRuleDoesntApply':
     case 'chosenTypeGroups':
     case 'graveyardEncore':
+    case 'graveyardUnearth':
       return [...sliverLordNeeds(effect)];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':

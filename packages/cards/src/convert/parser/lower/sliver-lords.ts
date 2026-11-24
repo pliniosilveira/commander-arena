@@ -6,13 +6,19 @@
  */
 import type { Ability, ObjectFilter } from '@commander-arena/engine';
 import type { IrAbility, IrNoun, IrStaticEffect } from '../ir/types';
+import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter } from './nouns';
 import type { LowerFailure, LowerResult } from './types';
 
 type Static = Extract<IrAbility, { kind: 'static' }>;
 
-const KINDS = ['legendRuleDoesntApply', 'chosenTypeGroups', 'graveyardEncore'] as const;
+const KINDS = [
+  'legendRuleDoesntApply',
+  'chosenTypeGroups',
+  'graveyardEncore',
+  'graveyardUnearth',
+] as const;
 
 export function isSliverLordStatic(effect: IrStaticEffect): boolean {
   return (KINDS as readonly string[]).includes(effect.kind);
@@ -27,6 +33,8 @@ export function sliverLordNeeds(effect: IrStaticEffect): readonly FeatureRef[] {
       return ['static:giveChosenCreatureType'];
     case 'graveyardEncore':
       return ['static:grantEncoreToGraveyardCards'];
+    case 'graveyardUnearth':
+      return ['static:grantUnearthToGraveyardCards'];
     default:
       return [];
   }
@@ -36,6 +44,7 @@ export const SLIVER_LORD_NEEDS: readonly FeatureRef[] = [
   'static:legendRuleDoesntApply',
   'static:giveChosenCreatureType',
   'static:grantEncoreToGraveyardCards',
+  'static:grantUnearthToGraveyardCards',
 ];
 
 const failureOf = (node: Static, needs: readonly FeatureRef[] = []): LowerFailure => ({
@@ -79,6 +88,24 @@ export function lowerSliverLordStatic(ability: Static): LowerResult<readonly Abi
       ok: true,
       value: [
         { kind: 'static', static: { kind: 'grantEncoreToGraveyardCards', what: what.value } },
+      ],
+      rule: ability.rule,
+    };
+  }
+  // CR 702.84a (Solemn Doomguide): Unearth with a plain mana cost.
+  if (effect.kind === 'graveyardUnearth') {
+    if (statement.subject.det !== 'you') return failureOf(ability);
+    const what = cardsOf(effect.cards);
+    if (!what.ok) return what;
+    const cost = lowerCost(effect.cost);
+    if (!cost.ok) return cost;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: { kind: 'grantUnearthToGraveyardCards', what: what.value, cost: [cost.value] },
+        },
       ],
       rule: ability.rule,
     };

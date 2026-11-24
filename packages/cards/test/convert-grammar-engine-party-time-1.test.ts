@@ -2,11 +2,11 @@
 // card with no override, is defined in an engine scenario and is played through applyAction. Pins: CR 205.1b (a land that becomes a creature is still a land), CR 205.3m (all creature
 // types), CR 611.2a (until end of turn), CR 613.1d (types), CR 613.4b (base power and toughness).
 import { readFileSync } from 'node:fs';
-import { CREATURE_TYPES, type CardDefinition } from '@commander-arena/engine';
+import { type CardDefinition, CREATURE_TYPES } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
 
 const GOLDEN = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -193,7 +193,15 @@ describe('Valiant Changeling: costs {1} less for each creature type among creatu
       .seat(0)
       .define(changeling)
       .hand(CHANGELING)
-      .battlefield('Grizzly Bears', 'Grizzly Bears', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains')
+      .battlefield(
+        'Grizzly Bears',
+        'Grizzly Bears',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+      )
       .library('Plains', 'Plains')
       .seat(1)
       .battlefield('Llanowar Elves', 'Grizzly Bears')
@@ -368,5 +376,55 @@ describe('Folk Hero: commander creatures you own have "Whenever you cast a spell
     const g = start();
     g.act(0).cast({ name: 'Grizzly Bears', zone: 'hand', seat: 0, nth: 0 }, { pay: true });
     expect(g.state.stack.length).toBe(2);
+  });
+});
+
+describe("Solemn Doomguide: each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}", () => {
+  const DOOMGUIDE = 'Solemn Doomguide';
+  const doomguide = real(DOOMGUIDE);
+  const creature = (name: string, subtype: string): CardDefinition =>
+    parsed(name, `Creature — ${subtype}`, '', {
+      manaCost: '{B}',
+      colors: ['B'],
+      power: '1',
+      toughness: '1',
+    });
+  const CLERIC = 'SYNTHETIC Graveyard Cleric';
+  const GOBLIN = 'SYNTHETIC Graveyard Goblin';
+  const start = () =>
+    scenario()
+      .seat(0)
+      .define(doomguide)
+      .define(creature(CLERIC, 'Cleric'))
+      .define(creature(GOBLIN, 'Goblin'))
+      .battlefield(DOOMGUIDE, 'Swamp', 'Swamp', 'Swamp')
+      .graveyard(CLERIC, GOBLIN)
+      .library('Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('a Cleric card in the graveyard can be unearthed for {1}{B}; a Goblin card cannot (CR 702.84a)', () => {
+    const g = start();
+    g.act(0).activate(CLERIC, { ability: 1, pay: true });
+    g.passAll();
+    g.expect.zone(CLERIC, 'battlefield', { seat: 0 });
+    g.expect.derived(CLERIC, { keywords: ['haste'] });
+    expect(() => start().act(0).activate(GOBLIN, { ability: 1, pay: true })).toThrow();
+  });
+
+  test('without Solemn Doomguide the Cleric has no such ability', () => {
+    const g = scenario()
+      .seat(0)
+      .define(creature(CLERIC, 'Cleric'))
+      .battlefield('Swamp', 'Swamp')
+      .graveyard(CLERIC)
+      .library('Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    expect(() => g.act(0).activate(CLERIC, { ability: 1, pay: true })).toThrow();
   });
 });

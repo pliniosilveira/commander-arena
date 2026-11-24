@@ -1100,7 +1100,10 @@ export function lowerDefinedPt(
   }
   // CR 205.2a, 604.3 (Nighthawk Scavenger): "the number of card types among cards in your opponents' graveyards", alone or after a whole number ("1 plus", the printed `1+*`).
   if (count.kind === 'cardTypesAmong') return cardTypesInDefinedPt(count, ctx, rule);
-  if (count.kind === 'sum' && count.of.some((p) => p.kind === 'number' || p.kind === 'cardTypesAmong')) {
+  if (
+    count.kind === 'sum' &&
+    count.of.some((p) => p.kind === 'number' || p.kind === 'cardTypesAmong')
+  ) {
     const missing = missingFeatures(['amount:sum']);
     if (missing.length > 0) return { ok: false, needs: missing, at: count.span, rule };
     const parts: (Extract<Amount, { kind: 'countOf' | 'cardTypesAmong' }> | number)[] = [];

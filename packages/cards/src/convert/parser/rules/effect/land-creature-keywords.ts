@@ -344,7 +344,12 @@ export const EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES = defineRule<Clauses>({
       rule: ALL_TYPES_ID,
     };
     const clause: IrClause = {
-      ...makeClause(ALL_TYPES_ID, 'becomes', { objects: subject, types: typeList, basePt }, pt.span),
+      ...makeClause(
+        ALL_TYPES_ID,
+        'becomes',
+        { objects: subject, types: typeList, basePt },
+        pt.span,
+      ),
       duration,
     };
     return { ok: true, value: [clause], pos: r.pos };

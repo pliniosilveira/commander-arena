@@ -275,7 +275,8 @@ export function staticAmountOf(
     );
   }
   // CR 205.2a, 604.3: the card types among the cards of a zone other than the battlefield.
-  if (amount.kind === 'cardTypesAmong') return cardTypesAmongForSource(state, amount.filter, source);
+  if (amount.kind === 'cardTypesAmong')
+    return cardTypesAmongForSource(state, amount.filter, source);
   return countForSource(state, amount.filter, source, keywordsOf);
 }
 

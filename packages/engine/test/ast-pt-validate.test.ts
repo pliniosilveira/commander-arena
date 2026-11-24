@@ -273,10 +273,13 @@ describe('a characteristic-defining ability and the "*" it needs (CR 208.2a, 604
     );
     expectIssue(
       issues(
-        creature([defines({ kind: 'sum', of: [1, { ...TYPES, filter: { types: ['creature'] } }] })], {
-          power: '*',
-          toughness: 3,
-        }),
+        creature(
+          [defines({ kind: 'sum', of: [1, { ...TYPES, filter: { types: ['creature'] } }] })],
+          {
+            power: '*',
+            toughness: 3,
+          },
+        ),
       ),
       'outside the battlefield and the stack',
     );

@@ -913,7 +913,10 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
       optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
       // Folk Hero (CR 205.3m, 702.73a): "a spell that shares a creature type with ~", a spell that has a creature type the source of the ability has.
-      optional(pattern(/ that shares a creature type with (?:~|this creature)(?![\p{L}\p{N}'’])/iu), null),
+      optional(
+        pattern(/ that shares a creature type with (?:~|this creature)(?![\p{L}\p{N}'’])/iu),
+        null,
+      ),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
       optional(choice(AIMED, AIMED_SELF, AIMED_ANY), null),
@@ -923,7 +926,10 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     if (!r.ok) return r;
     const [actor, spell, unowned, colored, shares, aimed, alternative] = r.value;
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
-    if (shares !== null && (unowned !== null || colored !== null || aimed !== null || alternative !== null)) {
+    if (
+      shares !== null &&
+      (unowned !== null || colored !== null || aimed !== null || alternative !== null)
+    ) {
       return fail(ctx, pos);
     }
     if (unowned !== null && (colored !== null || aimed !== null || alternative !== null)) {

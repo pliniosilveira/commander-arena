@@ -1567,6 +1567,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types." (CR 613.1d), "Each Sliver creature card in your graveyard has encore {X}" (CR 702.141a).
     'giveChosenCreatureType',
     'grantEncoreToGraveyardCards',
+    // "Each creature card in your graveyard that's a Cleric ... has unearth {1}{B}" (CR 702.84a).
+    'grantUnearthToGraveyardCards',
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
@@ -2702,6 +2704,8 @@ export const STATIC_KINDS = [
   'giveChosenCreatureType',
   /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
   'grantEncoreToGraveyardCards',
+  /** "Each creature card in your graveyard that's a Cleric has unearth {1}{B}" (CR 702.84a): the engine's `grantUnearthToGraveyardCards`. */
+  'grantUnearthToGraveyardCards',
 ] as const;
 export type StaticKind = (typeof STATIC_KINDS)[number];
 

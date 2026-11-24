@@ -2269,6 +2269,11 @@ export type IrStaticEffect =
    * (the statement's subject, `you`) have Encore with the cost the mana value of the card.
    */
   | { readonly kind: 'graveyardEncore'; readonly cards: IrNoun }
+  /**
+   * "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}." (Solemn Doomguide, CR 702.84a, 613.1f): the cards of `cards` in the graveyard of
+   * the controller (the statement's subject, `you`) have Unearth with the plain mana cost `cost`.
+   */
+  | { readonly kind: 'graveyardUnearth'; readonly cards: IrNoun; readonly cost: IrCost }
   | { readonly kind: 'raw'; readonly text: string };
 
 /** One more subject of a statement and what it gets or has: "~ gets +2/+2 and creatures you control have vigilance". */

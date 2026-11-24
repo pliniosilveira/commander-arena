@@ -688,6 +688,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.alsoCardsAndSpells`, 'alsoCardsAndSpells is true or absent');
       }
       break;
+    case 'grantUnearthToGraveyardCards':
     case 'grantEncoreToGraveyardCards':
       // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.
       if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
@@ -711,6 +712,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           `${path}.what`,
           'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
         );
+      }
+      // CR 702.84a: the Unearth it gives is checked as a printed one is.
+      if (s.kind === 'grantUnearthToGraveyardCards') {
+        checkKeyword({ kind: 'unearth', cost: s.cost }, `${path}.cost`, out);
       }
       break;
     case 'creatureOffBattlefield':

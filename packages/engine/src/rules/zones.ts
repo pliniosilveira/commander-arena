@@ -1029,6 +1029,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
+    // CR 702.84a, 613.1f: the Unearth was one a static ability gave the card in the graveyard, which its face does not have.
+    ...(to === 'battlefield' &&
+    request.alt === 'unearth' &&
+    printed !== null &&
+    definitionOf(next, printed).faces[faceIndex]?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'unearth',
+    ) !== true
+      ? { unearthGranted: true as const }
+      : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").
     ...(to === 'battlefield' && riotGivesHaste(riotAnswers) ? { riotHaste: true as const } : {}),
     // CR 715.3d: an Adventure that resolved is exiled, and its owner may cast the card from there.

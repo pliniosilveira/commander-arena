@@ -8415,7 +8415,17 @@ export type StaticEffect =
    * a graveyard has it at once, a card that leaves does not), and is not given to a card that has an Encore of its own (it keeps that one). A permanent that lost all its abilities
    * gives nothing (CR 613.1f).
    */
-  | { readonly kind: 'grantEncoreToGraveyardCards'; readonly what: ObjectFilter };
+  | { readonly kind: 'grantEncoreToGraveyardCards'; readonly what: ObjectFilter }
+  /**
+   * "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}." (Solemn Doomguide, CR 702.84a, 613.1f, 604.3): as `grantEncoreToGraveyardCards`, a static
+   * ability of a permanent on the battlefield that gives the cards of its controller's graveyard that `what` matches an Unearth ability with the fixed cost `cost`. It works from the graveyard only,
+   * is read as the cards are looked at, and a card that has an Unearth of its own has one instance of the keyword. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantUnearthToGraveyardCards';
+      readonly what: ObjectFilter;
+      readonly cost: readonly Cost[];
+    };
 
 // ---- Abilities (CR 113)
 
