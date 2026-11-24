@@ -542,6 +542,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
+  'condition.discarded-card-matches': permanent(
+    (e) => `{T}, Discard a card: Draw a card. If ${e}, you gain 1 life.`,
+  ),
   'condition.gift-promised': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Issue 100 (Transcendent Dragon): the intervening "if" of an enters trigger of the permanent itself.
   'condition.was-cast': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),

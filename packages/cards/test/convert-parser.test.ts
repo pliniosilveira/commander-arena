@@ -556,6 +556,7 @@ describe('unmatched abilities', () => {
       'condition.this-is-token',
       'condition.this-has-no-counters',
       'condition.this-has-counter-count',
+      'condition.discarded-card-matches',
       'condition.exiled-this-way',
       'condition.it-matches',
       'condition.its-mana-value',
