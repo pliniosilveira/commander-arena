@@ -153,6 +153,8 @@ export const EFFECT_YOU_EXILE = defineRule<Clauses>({
     'target player exiles ~',
   ],
   parse: (ctx, pos) => {
+    // Looked at first, so that a "You may ..." that is read by another rule stops where it always did.
+    if (!/^you exile /iu.test(ctx.text.slice(pos))) return fail(ctx, pos);
     const lead = literal('you ')(ctx, pos);
     if (!lead.ok) return lead;
     const exiled = family<Clauses>('effect', { only: ['effect.exile'] })(ctx, lead.pos);
@@ -193,30 +195,37 @@ export const EFFECT_ADD_COUNTERS_RING_BEARER = defineRule<Clauses>({
     'put a +1/+1 counter on each Ring-bearer',
     'put a +1/+1 counter on your Ring-bearers',
   ],
-  parse: single(
-    'effect.add-counters-ring-bearer',
-    sequence(
-      optional(literal('you '), null),
-      literal('put '),
-      family<IrAmount>('amount', { only: ['amount.number', 'amount.article'] }),
-      literal(' '),
-      map(
-        spanned(pattern(/[+-]\d+\/[+-]\d+/u)),
-        ({ value, span }): IrCounterSpec => ({
-          kind: 'counterSpec',
-          name: value[0],
-          span,
-          rule: 'effect.add-counters-ring-bearer',
-        }),
-      ),
-      pattern(/ counters? on your Ring-bearer(?![\p{L}\p{N}-])/u),
-    ),
-    ([, , count, , counter]) => ({
-      verb: 'addCountersRingBearer',
-      args: { count, counter },
-    }),
-  ),
+  parse: (ctx, pos) => {
+    // Looked at first, so that a "You may ..." or another "put" stops where it always did.
+    if (!/^(?:you )?put [^.]* counters? on your Ring-bearer/iu.test(ctx.text.slice(pos)))
+      return fail(ctx, pos);
+    return RING_BEARER_COUNTERS(ctx, pos);
+  },
 });
+
+const RING_BEARER_COUNTERS = single(
+  'effect.add-counters-ring-bearer',
+  sequence(
+    optional(literal('you '), null),
+    literal('put '),
+    family<IrAmount>('amount', { only: ['amount.number', 'amount.article'] }),
+    literal(' '),
+    map(
+      spanned(pattern(/[+-]\d+\/[+-]\d+/u)),
+      ({ value, span }): IrCounterSpec => ({
+        kind: 'counterSpec',
+        name: value[0],
+        span,
+        rule: 'effect.add-counters-ring-bearer',
+      }),
+    ),
+    pattern(/ counters? on your Ring-bearer(?![\p{L}\p{N}-])/u),
+  ),
+  ([, , count, , counter]) => ({
+    verb: 'addCountersRingBearer',
+    args: { count, counter },
+  }),
+);
 
 export const COUNCIL_VOTES_EFFECT_RULES = [
   EFFECT_ADD_COUNTERS_RING_BEARER,
