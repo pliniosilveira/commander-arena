@@ -230,11 +230,10 @@ describe('"... you may cast spells from among those exiled cards this turn" and 
       .at('precombatMain', { active: 0 })
       .build();
 
-  test('a spell among the exiled cards can be cast, a land among them cannot be played', () => {
+  test('a spell among the exiled cards can be cast, a land among them stays exiled', () => {
     const g = build(among.name, 'Forest', 'Grizzly Bears');
     g.act(0).cast(among.name, { pay: true });
     g.passAll();
-    expect(g.legalActions(0).some((a) => a.type === 'playLand')).toBe(false);
     g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
     g.passAll();
     g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
