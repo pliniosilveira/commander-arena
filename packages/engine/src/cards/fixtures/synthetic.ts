@@ -35,6 +35,7 @@ import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
 import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
+import { SYNTHETIC_CHOSEN_SUBJECT_LIST } from './synthetic-chosen-subject';
 import { SYNTHETIC_CHOSEN_WALKER_LIST } from './synthetic-chosen-walker';
 import { SYNTHETIC_COIN_LIST } from './synthetic-coin';
 import { SYNTHETIC_COLOR_AMONG_MANA_LIST } from './synthetic-color-among-mana';
@@ -483,6 +484,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
   ...SYNTHETIC_CHOSEN_WALKER_LIST,
+  ...SYNTHETIC_CHOSEN_SUBJECT_LIST,
   ...SYNTHETIC_HASHATON_G5_LIST,
   ...SYNTHETIC_EMBALM_LIST,
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
