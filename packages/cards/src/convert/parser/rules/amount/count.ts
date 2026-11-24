@@ -316,6 +316,28 @@ function cards(plural: boolean): Parser<IrFilter> {
     };
     return { ok: true, value: { zone: 'graveyard', controller: { noun: controller } }, pos: r.pos };
   };
+  // Guiltfeeder (CR 108.3, 404.1): "for each card in their graveyard": the cards the player of the instruction owns ("defending player loses 1 life for each card in their graveyard"); the
+  // lowering names that player, and refuses the words where the instruction has no one player.
+  const theirZone: Parser<{
+    zone: 'hand' | 'graveyard';
+    controller: { readonly noun: IrNoun };
+  }> = (ctx, pos) => {
+    const r = pattern(/ in their (hand|graveyard)(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const start = pos + ' in '.length;
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'their' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start, end: start + 'their'.length },
+      rule: 'noun.their-zone',
+    };
+    const zone = (r.value[1] ?? '').toLowerCase() === 'hand' ? 'hand' : 'graveyard';
+    return { ok: true, value: { zone, controller: { noun } }, pos: r.pos };
+  };
   const where = choice<{
     zone: 'hand' | 'graveyard' | 'library';
     controller?:
@@ -340,6 +362,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'opponent' as const,
     })),
     itsControllerGraveyard,
+    theirZone,
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersZone,
   );
