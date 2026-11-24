@@ -831,38 +831,56 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
   } as const;
-  const payable = ([0, 1] as const).filter((option) =>
-    canPaySpellCost(
-      state,
-      casting.seat,
-      request.spell,
-      spellCost(state, { ...request, costOption: option }),
-    ),
-  );
-  if (payable.length !== 2) {
+  const payable = choice
+    .map((_, option) => option)
+    .filter((option) =>
+      canPaySpellCost(
+        state,
+        casting.seat,
+        request.spell,
+        spellCost(state, { ...request, costOption: option }),
+      ),
+    );
+  if (payable.length < 2) {
     const only = payable[0] ?? 0;
     return toHarmonize(
       patchObject(state, casting.object, { stack: { ...stack, costOption: only } }),
       events,
     );
   }
-  const info = sourceInfo(state, casting.object);
   return ok(
     setPending(
       { ...state, casting: { ...casting, stage: 'kicker' } },
-      {
-        kind: 'confirmOptional',
-        seat: casting.seat,
-        source: casting.object,
-        sourceName: info?.name ?? '',
-        sourceOracleText: info?.oracleText ?? '',
-        purpose: 'costChoice',
-        cost: choice[0],
-        otherCost: choice[1],
-      },
+      costChoiceDecision(state, casting.seat, casting.object, choice, payable),
     ),
     events,
   );
+}
+
+/**
+ * The question of the additional cost choice (CR 118.8, 601.2b, D-181) between the ways `ways` (indexes into the face's choice, at least two): accepting pays the first, declining the
+ * second; with three ways declining asks again between the other two (`costWays`), so every way has a yes-or-no question of its own to answer.
+ */
+function costChoiceDecision(
+  state: GameState,
+  seat: SeatId,
+  object: ObjectId,
+  choice: readonly (readonly Cost[])[],
+  ways: readonly number[],
+): NewDecision {
+  const info = sourceInfo(state, object);
+  return {
+    kind: 'confirmOptional',
+    seat,
+    source: object,
+    sourceName: info?.name ?? '',
+    sourceOracleText: info?.oracleText ?? '',
+    purpose: 'costChoice',
+    cost: choice[ways[0] ?? 0] ?? [],
+    otherCost: choice[ways[1] ?? 1] ?? [],
+    costWays: ways,
+    ...(ways.length > 2 ? { moreCost: choice[ways[2] ?? 2] ?? [] } : {}),
+  };
 }
 
 /** The choice is recorded before X so the spell can use the number exiled to determine its cost. */
@@ -891,8 +909,23 @@ export function answerCostChoice(state: GameState, first: boolean): Result {
   }
   const stack = getObject(state, casting.object).stack;
   if (!stack) return fail('The spell is not on the stack');
+  const ways = d.costWays ?? [0, 1];
+  if (!first && ways.length > 2) {
+    // CR 601.2b: the other two ways are asked between next.
+    const face = faceOf(state, getObject(state, casting.object));
+    const choice = face?.additionalCostChoice;
+    if (choice === undefined) return fail('The spell has no additional cost choice');
+    return ok(
+      setPending(
+        state,
+        costChoiceDecision(state, casting.seat, casting.object, choice, ways.slice(1)),
+      ),
+      [],
+    );
+  }
+  const option = first ? ways[0] : ways[1];
   const next = patchObject({ ...state, pending: null }, casting.object, {
-    stack: { ...stack, costOption: first ? 0 : 1 },
+    stack: { ...stack, costOption: option ?? 0 },
   });
   return toHarmonize(next, []);
 }

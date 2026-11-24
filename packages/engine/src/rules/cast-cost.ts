@@ -313,7 +313,7 @@ export interface CostRequest {
    * Which way the caster pays the face's additional cost choice (`CardFace.additionalCostChoice`, D-181): left out, the one the spell on the stack
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
-  readonly costOption?: 0 | 1;
+  readonly costOption?: number;
   /**
    * The creature a harmonize cost taps (CR 702.180a), or null for none: left out, what the spell on the stack says (`StackData.harmonizeTap`) and, while nothing is
    * chosen yet, the most any creature could take off when `optimistic`.
@@ -350,9 +350,11 @@ export function replicateCostFor(
   return null;
 }
 
-/** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
-function costOptionsOf(face: CardFace | null): readonly (0 | 1 | undefined)[] {
-  return face?.additionalCostChoice === undefined ? [undefined] : [0, 1];
+/** The ways the caster could pay the additional cost choice of the face: all of them, or `undefined` once for a face with no choice (D-181). */
+function costOptionsOf(face: CardFace | null): readonly (number | undefined)[] {
+  return face?.additionalCostChoice === undefined
+    ? [undefined]
+    : face.additionalCostChoice.map((_, way) => way);
 }
 
 /**

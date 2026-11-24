@@ -443,7 +443,7 @@ export interface StackData {
    * The option of the face's additional cost choice the caster picked as the spell was cast (`CardFace.additionalCostChoice`, CR 118.8, 601.2b, D-181):
    * 0 the first ("sacrifice an artifact or creature"), 1 the second ("pay {4}"). Absent when the face has no such choice.
    */
-  readonly costOption?: 0 | 1;
+  readonly costOption?: number;
   /**
    * The creature the caster tapped to reduce a harmonize cost (CR 702.180a, 702.180b), or null when they chose none: its power in generic mana is taken off the
    * total cost. Absent until the choice is made, and for a spell not cast for its harmonize cost.

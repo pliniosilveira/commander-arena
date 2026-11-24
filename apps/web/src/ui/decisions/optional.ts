@@ -571,6 +571,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
     // Cancel rewinds the cast (CR 733).
     const first = additionalWayText(d.cost ?? []);
     const second = additionalWayText(d.otherCost ?? []);
+    if (d.moreCost !== undefined) {
+      // Three ways: the first button takes the first way, the second goes on to the choice between the other two (declining asks again).
+      const third = additionalWayText(d.moreCost);
+      return {
+        prompt: `${d.sourceName}: ${first}, ${second}, or ${third}, as an additional cost?`,
+        yes: first.replace(/^./, (c) => c.toUpperCase()),
+        no: `Another way: ${second} or ${third}`,
+        cancellable: true,
+      };
+    }
     return {
       prompt: `${d.sourceName}: ${first}, or ${second}, as an additional cost?`,
       yes: first.replace(/^./, (c) => c.toUpperCase()),
