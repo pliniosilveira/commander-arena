@@ -25,6 +25,7 @@ import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
 import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
+import { THAT_NUMBER_AMOUNT_RULES } from './that-number';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
 /** The number words of Oracle text: one to twenty (stage P28: "thirteen tapped Zombie tokens"). */
@@ -532,6 +533,8 @@ export const AMOUNT_RULES = [
   AMOUNT_ARTICLE,
   AMOUNT_THAT_MUCH,
   AMOUNT_THAT_MANY,
+  // Yuna, Grand Summoner: "that number" of the counters a permanent had.
+  ...THAT_NUMBER_AMOUNT_RULES,
   // Before the older "equal to ..." rules: it reads the values they stop short of (a sum, "half ..., rounded down"),
   // and leaves the plain count and the plain power to them.
   ...VALUE_AMOUNT_RULES,

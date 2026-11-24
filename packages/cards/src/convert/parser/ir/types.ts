@@ -994,6 +994,10 @@ export interface IrCondition extends IrNode {
         readonly stat: 'power' | 'toughness';
         readonly types: readonly string[];
       }
+    // Wakka, Devoted Guardian (CR 122.6, 603.4): "a counter was put on ~ this turn": a counter (of the kind, when named) put on the permanent with the ability this turn by anyone
+    | { readonly kind: 'counterPutOnSelf'; readonly counter?: string }
+    // Shelinda, Yevon Acolyte (CR 208.1, 608.2c): "its power is less than ~'s power": the power of the permanent the trigger is about against the permanent with the ability
+    | { readonly kind: 'subjectPowerLessThanSelf' }
     // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
     | {
         readonly kind: 'putCountersThisTurn';

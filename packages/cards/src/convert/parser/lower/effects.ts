@@ -67,6 +67,7 @@ import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
+import { COUNTER_GROUP_A_LOWERINGS } from './counter-group-a';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -1972,6 +1973,14 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
     const objectsArg = arg(clause, 'objects');
+    // "that creature" names the permanent a trigger about another permanent is about (Sphere Grid): in a trigger about ~ itself it has no antecedent.
+    if (
+      objectsArg?.kind === 'noun' &&
+      objectsArg.rule === 'noun.that-object' &&
+      (ctx.itIsSelf || ctx.owner === 'spell')
+    ) {
+      return failure(clause);
+    }
     if (
       clause.optional &&
       !(
@@ -2837,6 +2846,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
   ...LIMIT_BREAK_G1_LOWERINGS,
+  ...COUNTER_GROUP_A_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
@@ -2950,23 +2960,27 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                 ? 'objectMatches'
                 : test === 'subjectGreaterPower'
                   ? 'subjectGreaterPt'
-                  : test === 'discardedThisWay' ||
-                      test === 'putCountersThisWay' ||
-                      test === 'discardedSpellThisWay' ||
-                      test === 'destroyedThisWay' ||
-                      test === 'searchedThisWay'
-                    ? 'thisWayAtLeast'
-                    : test === 'otherAttachedToHost' || test === 'xAtLeast'
-                      ? 'amountIs'
-                      : test === 'attackersAtYou'
-                        ? 'attackersAtYouAtLeast'
-                        : test === 'attackedHasMoreLife'
-                          ? 'attackedHasMoreLifeThanOtherOpponent'
-                          : test === 'controlsThat'
-                            ? 'subjectControlledByYou'
-                            : test === 'thatPlayersTurn'
-                              ? 'triggerPlayerTurn'
-                              : test;
+                  : test === 'counterPutOnSelf'
+                    ? 'counterPutOnThisThisTurn'
+                    : test === 'subjectPowerLessThanSelf'
+                      ? 'subjectPowerLessThanThis'
+                      : test === 'discardedThisWay' ||
+                          test === 'putCountersThisWay' ||
+                          test === 'discardedSpellThisWay' ||
+                          test === 'destroyedThisWay' ||
+                          test === 'searchedThisWay'
+                        ? 'thisWayAtLeast'
+                        : test === 'otherAttachedToHost' || test === 'xAtLeast'
+                          ? 'amountIs'
+                          : test === 'attackersAtYou'
+                            ? 'attackersAtYouAtLeast'
+                            : test === 'attackedHasMoreLife'
+                              ? 'attackedHasMoreLifeThanOtherOpponent'
+                              : test === 'controlsThat'
+                                ? 'subjectControlledByYou'
+                                : test === 'thatPlayersTurn'
+                                  ? 'triggerPlayerTurn'
+                                  : test;
     return failure(
       clause,
       kind === 'raw' ||

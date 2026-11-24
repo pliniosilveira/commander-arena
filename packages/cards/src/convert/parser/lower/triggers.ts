@@ -1244,6 +1244,61 @@ function hadCountersThatMany(ability: Triggered): Triggered {
   return { ...ability, body: { ...ability.body, sentences } };
 }
 
+/**
+ * "Whenever another permanent you control is put into a graveyard from the battlefield, if it had one or more counters on it, you may put that number of +1/+1 counters on target creature."
+ * (Yuna, Grand Summoner; CR 603.10a, 113.7a, 122.1): in the body of a trigger about another permanent whose intervening "if" says it had counters on it, "that number" is the number of counters
+ * of every kind the permanent had as it left, which the engine reads from its last-known information (`countersOn` of the `triggerSubject`, no kind named). Only the words "that number".
+ */
+function hadCountersThatNumber(ability: Triggered): Triggered {
+  const test = ability.interveningIf?.test;
+  if (
+    test?.kind !== 'hadCounters' ||
+    test.oneOrMore !== true ||
+    test.counter !== undefined ||
+    ability.modal !== undefined ||
+    ability.trigger.subject === undefined ||
+    ability.trigger.subject.det === 'self'
+  ) {
+    return ability;
+  }
+  const counters = (amount: IrAmount): IrAmount => ({
+    kind: 'countersOn',
+    of: {
+      kind: 'noun',
+      det: 'triggerSubject',
+      filter: { raw: 'it' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: amount.span,
+      rule: ability.interveningIf?.rule ?? 'condition.had-counters',
+    },
+    span: amount.span,
+  });
+  const retarget = (amount: IrAmount): IrAmount =>
+    amount.kind === 'thisWay' &&
+    amount.thatMany === true &&
+    amount.words.length === 1 &&
+    amount.words[0] === 'number'
+      ? counters(amount)
+      : amount;
+  const sentences = ability.body.sentences.map((sentence) => ({
+    ...sentence,
+    clauses: sentence.clauses.map(
+      (clause): IrClause => ({
+        ...clause,
+        args: Object.fromEntries(
+          Object.entries(clause.args).map(([key, arg]) => [
+            key,
+            isIrAmount(arg) ? retarget(arg) : arg,
+          ]),
+        ),
+      }),
+    ),
+  }));
+  return { ...ability, body: { ...ability.body, sentences } };
+}
+
 /** The count a prime-number condition reads, inside the intervening "if" (alone or joined with others by "and"). */
 function primeCountOf(condition: IrCondition | undefined): IrAmount | null {
   const test = condition?.test;
@@ -1369,7 +1424,9 @@ function lowerTriggeredAbility(
   if (taken === null) return failure(written);
   const { once, doOnce } = taken;
   // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
-  const ability = hadCountersThatMany(conditionAmountThatMany(eventAmountThatMany(taken.ability)));
+  const ability = hadCountersThatNumber(
+    hadCountersThatMany(conditionAmountThatMany(eventAmountThatMany(taken.ability))),
+  );
   // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
   // lowering of those does not carry the flag into.
   if (doOnce && ability.modal !== undefined) return failure(written);
@@ -1442,6 +1499,7 @@ function lowerTriggeredAbility(
   const ifWritten = ability.interveningIf ?? lift.condition;
   // "..., if you gained life this turn, distribute up to that many ...": "that many" is the life gained (CR 119.3, 603.4).
   ctx.lifeGainedIf = ifWritten?.test.kind === 'lifeGainedThisTurn' && ifWritten.test.atLeast === 1;
+  ctx.hadCountersIf = false;
   if (ifWritten?.test.kind === 'hadCounters') {
     // "..., if it had counters on it, ..." (stage P33, D-150): a part of the filter of the trigger (see `foldHadCounters`).
     const [only] = triggers;
@@ -1452,6 +1510,8 @@ function lowerTriggeredAbility(
     if (folded !== null) {
       triggers[0] = folded;
       foldedCounters = true;
+      // "put those counters on ..." (Resourceful Defense) is the counters of the permanent the intervening "if" says had some.
+      ctx.hadCountersIf = ifWritten.test.counter === undefined;
     } else {
       // "When ~ dies, if it had one or more -1/-1 counters on it, ..." (Oft-Nabbed Goat, CR 603.10a, 122.1): the permanent itself, as it last was, had a counter of the kind the text names
       // (the engine's `sourceHasCounter`, which Persist and Undying read). "That many" of the body is the number of those counters.
@@ -1799,7 +1859,21 @@ function lowerTriggeredAbility(
     rest.every((c) => !c.optional) &&
     sentences[0]?.clauses[0] === first &&
     missingFeatures(['effect:may']).length === 0;
-  if (optional && !mayFirst && ((others.length !== 1 && !chain) || conditional)) {
+  // Tidus, Yuna's Guardian (CR 608.2d, 603.5): "you may draw a card and proliferate": the one "you may" of one sentence is for everything it joins with "and" (the parse marks each clause of it
+  // optional), so the engine's `optional`
+  // of the whole ability (all or nothing) is the question. Only the one sentence of the text, its first clause the offered one, no condition, and "and" between every clause ("then" says
+  // an order the text of an offer does not, and is left to its own readings).
+  const mayAnd =
+    optional &&
+    !chain &&
+    !mayFirst &&
+    !conditional &&
+    first?.optional === true &&
+    rest.length > 0 &&
+    sentences.filter(ownMay).length === 1 &&
+    rest.every((c) => c.optional && c.verb === 'proliferate') &&
+    others.slice(0, -1).every((c) => c.connector === 'and');
+  if (optional && !mayFirst && !mayAnd && ((others.length !== 1 && !chain) || conditional)) {
     return failure(ability);
   }
   // A "you may" of the whole ability beside an offer would be two questions for one effect.
