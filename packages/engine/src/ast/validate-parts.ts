@@ -5792,6 +5792,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
       }
       break;
+    case 'balance':
+      // CR 101.4, 701.21a, 701.9 (Magus of the Balance): every player keeps the smallest number of lands, cards in hand or creatures.
+      if (!isOneOf(e.what, ['lands', 'hand', 'creatures'])) {
+        issue(out, `${path}.what`, "balance is about 'lands', 'hand' or 'creatures'");
+      }
+      break;
     case 'keepOrSacrifice':
       // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);

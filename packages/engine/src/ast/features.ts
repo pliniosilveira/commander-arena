@@ -235,6 +235,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrifice',
     // Slaughter the Strong: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (`keepOrSacrifice`).
     'keepOrSacrifice',
+    // Magus of the Balance: "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest" (`balance`).
+    'balance',
     'moveToZone',
     'counter',
     'draw',
@@ -3063,6 +3065,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exile: true,
   sacrifice: true,
   keepOrSacrifice: true,
+  balance: true,
   moveToZone: true,
   counter: true,
   draw: true,

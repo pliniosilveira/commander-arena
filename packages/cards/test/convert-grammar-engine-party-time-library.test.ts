@@ -330,7 +330,7 @@ describe('Aven Mindcensor (If an opponent would search a library, that player se
     expect(legalOf(g)).toHaveLength(1);
   });
 
-  test("the controller of the Mindcensor searches the whole library", () => {
+  test('the controller of the Mindcensor searches the whole library', () => {
     const g = board(false);
     g.act(0).cast(SEEKER.name, { pay: true });
     g.passAll();
@@ -353,6 +353,81 @@ describe('Aven Mindcensor (If an opponent would search a library, that player se
     g.act(1).cast(SEEKER.name, { pay: true });
     g.passAll();
     g.expect.zone('Plains', 'library', { seat: 1 });
+    expect(g.state.pending?.kind).toBe('priority');
+  });
+});
+
+describe('Magus of the Balance ({4}{W}, {T}, Sacrifice this creature: Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and sacrifice creatures the same way.)', () => {
+  const MAGUS = real('Magus of the Balance');
+  const six = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
+  const board = () => {
+    const b = scenario().define(MAGUS).seat(0).battlefield(MAGUS.name, { label: 'magus' });
+    for (const l of six) b.battlefield('Plains', { label: l });
+    b.battlefield(BEARS, { label: 'a1' })
+      .battlefield('Giant Spider', { label: 'a2' })
+      .hand('Island', 'Island', 'Island', 'Island')
+      .library(...FILLER)
+      .seat(1)
+      .battlefield('Island')
+      .battlefield('Island')
+      .battlefield(BEARS, { label: 'b1' })
+      .hand('Plains')
+      .library(...FILLER);
+    return b.at('precombatMain', { active: 0, turn: 1 }).build();
+  };
+
+  test('lands, cards in hand and creatures are cut down to the smallest number any player has (CR 101.4)', () => {
+    const g = board();
+    g.act(0).activate(MAGUS.name, { pay: true });
+    g.passAll();
+    // Lands: seat 0 controls six (the Magus was sacrificed as a cost, so it is no creature), seat 1 two: seat 0 keeps two.
+    g.act(0).choosePermanents('l1', 'l2');
+    // Cards in hand: seat 0 holds four, seat 1 one: seat 0 discards three.
+    g.act(0).chooseCards('Island[1]', 'Island[2]', 'Island[3]');
+    // Creatures: seat 0 has two, seat 1 one.
+    g.act(0).choosePermanents('a1');
+    const mine = g.state.seats[0];
+    expect(mine?.hand).toHaveLength(1);
+    // Three cards discarded and the Magus, sacrificed as a cost, plus the four lands and the creature sacrificed.
+    expect(mine?.graveyard).toHaveLength(3 + 1 + 4 + 1);
+    const onField = (seat: number) =>
+      g.state.battlefield.filter((id) => g.state.objects[id]?.owner === seat).length;
+    expect(onField(0)).toBe(2 + 1);
+    expect(onField(1)).toBe(3);
+    expect(g.state.seats[1]?.hand).toHaveLength(1);
+  });
+
+  test('with three players the smallest of all three is kept, and a player at the minimum chooses nothing', () => {
+    const g = scenario({ seats: 3 })
+      .define(MAGUS)
+      .seat(0)
+      .battlefield(MAGUS.name)
+      .battlefield('Plains', { label: 'l1' })
+      .battlefield('Plains', { label: 'l2' })
+      .battlefield('Plains', { label: 'l3' })
+      .battlefield('Plains', { label: 'l4' })
+      .battlefield('Plains', { label: 'l5' })
+      .battlefield('Plains', { label: 'l6' })
+      .library(...FILLER)
+      .seat(1)
+      .battlefield('Island', { label: 'i1' })
+      .battlefield('Island', { label: 'i2' })
+      .battlefield('Island', { label: 'i3' })
+      .library(...FILLER)
+      .seat(2)
+      .battlefield('Swamp', { label: 's1' })
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).activate(MAGUS.name, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents('l1');
+    g.act(1).choosePermanents('i1');
+    g.expect.zone('Swamp', 'battlefield', { seat: 2 });
+    // Seat 0: the Magus and five lands; seat 1: two lands; seat 2 lost nothing.
+    expect(g.state.seats[0]?.graveyard).toHaveLength(6);
+    expect(g.state.seats[1]?.graveyard).toHaveLength(2);
+    expect(g.state.seats[2]?.graveyard).toHaveLength(0);
     expect(g.state.pending?.kind).toBe('priority');
   });
 });

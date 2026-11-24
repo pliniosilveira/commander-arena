@@ -299,6 +299,14 @@ const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|that card|them|those cards) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
 /**
+ * "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and
+ * sacrifice creatures the same way." (Magus of the Balance, CR 101.4, 608.2d, 701.9, 701.21a): two sentences that are one instruction (`effect.balance`).
+ */
+const EACH_PLAYER_CHOOSES_FEWEST_LANDS =
+  /(?:^|: |, )each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest\.$/i;
+const DISCARD_AND_SACRIFICE_SAME_WAY =
+  /^players discard cards and sacrifice creatures the same way\.$/i;
+/**
  * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for
  * as long as it remains exiled, and mana of any type can be spent to cast that spell." (Gonti, Lord of Luxury, CR 401.2, 406.3, 609.4b): two sentences that are one instruction
  * (`effect.look-exile-cast-any-type`).
@@ -1290,6 +1298,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EACH_PLAYER_CHOOSES_FEWEST_LANDS) &&
+      said(b, DISCARD_AND_SACRIFICE_SAME_WAY)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
     } else if (
       a !== undefined &&
       b !== undefined &&

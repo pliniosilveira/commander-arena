@@ -303,7 +303,12 @@ export function runDiscard(
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
   // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
   const count =
-    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
+    instruction.anyNumber === true || instruction.hand === true
+      ? hand.length
+      : instruction.leave !== undefined
+        ? // CR 701.9 (Magus of the Balance): all but the cards the player keeps.
+          Math.max(0, hand.length - instruction.leave)
+        : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined
@@ -340,9 +345,11 @@ export function runDiscard(
       ? hand.length === 0
         ? []
         : null
-      : hand.length <= count && !choice
-        ? hand
-        : null);
+      : instruction.leave !== undefined && count === 0
+        ? []
+        : hand.length <= count && !choice
+          ? hand
+          : null);
   if (chosen === null) {
     const max = Math.min(count, hand.length);
     const decision: Omit<ChooseCardsDecision, 'id'> = {

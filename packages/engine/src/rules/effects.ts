@@ -1060,6 +1060,50 @@ function runEffect(
       };
     }
 
+    case 'balance': {
+      // CR 101.4, 608.2d, 701.21a, 701.9 (Magus of the Balance): every player counts what they have; each keeps the smallest number, chosen in APNAP order, and the rest go at once.
+      const seats = resolvePlayers(state, { kind: 'eachPlayer' }, ctx, targets);
+      const [first, ...later] = seats;
+      if (first === undefined) return done(state);
+      if (effect.what === 'hand') {
+        const keep = Math.min(...seats.map((seat) => getSeat(state, seat).hand.length));
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'discard' as const,
+              seat: first,
+              count: 0,
+              leave: keep,
+              chosen: null,
+              ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+            },
+          ],
+        );
+      }
+      const filter: ObjectFilter =
+        effect.what === 'lands' ? { types: ['land'] } : { types: ['creature'] };
+      const keep = Math.min(
+        ...seats.map((seat) => controlledCandidates(state, seat, res.source, filter).length),
+      );
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseSacrifice' as const,
+            filter,
+            count: 0,
+            keepCountExactly: keep,
+            chosen: null,
+            seat: first,
+            ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+          },
+        ],
+      );
+    }
+
     case 'keepOrSacrifice': {
       // CR 101.4, 608.2d (Slaughter the Strong): every player the effect names chooses, the active player first, then nothing is sacrificed until the last has chosen.
       const seats = resolvePlayers(state, effect.players, ctx, targets);

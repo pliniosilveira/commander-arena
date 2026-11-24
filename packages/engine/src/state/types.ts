@@ -1241,6 +1241,8 @@ export type Instruction =
       readonly keepPowerAtMost?: number;
       /** `keepOrSacrifice` with `keepAtMost` (Archfiend of Depravity): the player keeps at most this many of the permanents that match, instead of a total power. */
       readonly keepCountAtMost?: number;
+      /** `balance` (Magus of the Balance): the player keeps exactly this many of the permanents that match (all of them when they control no more), the rest are sacrificed. `count` is 0. */
+      readonly keepCountExactly?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1792,6 +1794,8 @@ export type Instruction =
       readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
+      /** `balance` (Magus of the Balance, CR 701.9): the player discards all but this many cards (none when the hand holds no more); `count` is 0. */
+      readonly leave?: number;
       /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
       readonly hand?: true;
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */

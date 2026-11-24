@@ -113,7 +113,23 @@ const LOOK_EXILE_CAST_ANY_TYPE: Lowering<IrClause, Effects> = {
   },
 };
 
+/** One part of Balance (Magus of the Balance, CR 701.9, 701.21a): the engine's `balance` of lands, of the hand or of creatures. */
+function balancePart(
+  head: string,
+  what: 'lands' | 'hand' | 'creatures',
+): Lowering<IrClause, Effects> {
+  return {
+    head,
+    id: `lower.${head}`,
+    needs: ['effect:balance'],
+    lower: (clause) => ({ ok: true, value: [{ kind: 'balance', what }], rule: clause.rule }),
+  };
+}
+
 export const PARTY_TIME_LIBRARY_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  balancePart('balanceLands', 'lands'),
+  balancePart('balanceHand', 'hand'),
+  balancePart('balanceCreatures', 'creatures'),
   LOOK_EXILE_CAST_ANY_TYPE,
   EXILE_ANY_NUMBER_UNTIL_LEAVES,
   LOOK_TAKE_KINDS,

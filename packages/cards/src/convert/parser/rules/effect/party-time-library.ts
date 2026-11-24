@@ -16,7 +16,7 @@ import type { IrArg, IrFlag, IrNoun, IrNounList } from '../../ir/types';
 import { defineRule, family } from '../registry';
 import { UNTIL_SOURCE_LEAVES } from './angels';
 import { TAKEN_CARD } from './library';
-import { type Clauses, single } from './operands';
+import { type Clauses, makeClause, single } from './operands';
 
 /** The clauses of a rule that read "you may" themselves are optional (the sentence reader marks the same offer when it strips the words first). */
 function asOffer(parser: Parser<Clauses>): Parser<Clauses> {
@@ -185,7 +185,52 @@ export const EFFECT_LOOK_EXILE_CAST_ANY_TYPE = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.balance`: "each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players
+ * discard cards and sacrifice creatures the same way" (CR 101.4, 608.2d, 701.9, 701.21a: the instruction of Balance, in three parts: lands, cards in hand, creatures). Two sentences that
+ * `splitSentences` keeps together. Three clauses, one engine `balance` for each part. Not read: another part, another order, "a player", only the lands.
+ */
+export const EFFECT_BALANCE = defineRule<Clauses>({
+  id: 'effect.balance',
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 101.4 (Golden Rules)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 701.9 (Discard)',
+    'CR 701.21a (Sacrifice)',
+  ],
+  examples: [
+    'each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and sacrifice creatures the same way',
+  ],
+  rejects: [
+    'each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest',
+    'each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards the same way',
+    'each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the most, then sacrifices the rest. Players discard cards and sacrifice creatures the same way',
+    'each opponent chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and sacrifice creatures the same way',
+    'each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players sacrifice creatures and discard cards the same way',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.balance';
+    const r = pattern(
+      /each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest\. players discard cards and sacrifice creatures the same way(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [
+        makeClause(id, 'balanceLands', {}, span),
+        makeClause(id, 'balanceHand', {}, span),
+        makeClause(id, 'balanceCreatures', {}, span),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 export const PARTY_TIME_LIBRARY_EFFECT_RULES = [
+  EFFECT_BALANCE,
   EFFECT_LOOK_EXILE_CAST_ANY_TYPE,
   EFFECT_EXILE_ANY_NUMBER_UNTIL_LEAVES,
   EFFECT_LOOK_TAKE_KINDS,

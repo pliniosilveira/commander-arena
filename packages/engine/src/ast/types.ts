@@ -3554,6 +3554,16 @@ export type Effect =
       readonly byController?: true;
     }
   /**
+   * "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and
+   * sacrifice creatures the same way." (Magus of the Balance, CR 101.4, 608.2d, 701.21a, 701.9): one of the three parts, as an effect of its own (a card says them in a row: `lands`,
+   * `hand`, `creatures`). Every player still in the game counts the lands (or creatures) they control, or the cards in their hand; the smallest number is what each player keeps. The
+   * players choose which to keep in APNAP order (a player with no more than that number keeps all and chooses nothing), and then all the others are sacrificed (discarded) at once.
+   */
+  | {
+      readonly kind: 'balance';
+      readonly what: 'lands' | 'hand' | 'creatures';
+    }
+  /**
    * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (Slaughter the Strong, CR 608.2d,
    * 701.21a, 101.4, 208.1): each player the selector names, in APNAP order, chooses among the permanents that match `filter` that they control (the matching permanents of one
    * player only) any set whose power adds up to at most `totalPowerAtMost` (power as `derive` gives it as the effect resolves, a negative power subtracting, CR 208.1), the ones
