@@ -1148,6 +1148,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenPlaneswalkerType',
     // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
     'chooseCreatureTypePlayers',
+    // CR 608.2d (Mirkwood Trapper): `chooseObjects.chooser`, "that player chooses an attacking creature".
+    'chooseObjectsChooser',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
     // "The player to your right" (Hithlain Rope): `PlayerSelector` `playerToYourRight`.
@@ -2226,6 +2228,8 @@ export const SELECTOR_KINDS = [
   'chosenPlaneswalkerType',
   /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
   'chooseCreatureTypePlayers',
+  /** "That player chooses an attacking creature" (CR 608.2d, Mirkwood Trapper): the engine's `chooseObjects.chooser`. */
+  'chooseObjectsChooser',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
   /** "The player to your right" (Hithlain Rope): the engine's `PlayerSelector` `playerToYourRight`. */

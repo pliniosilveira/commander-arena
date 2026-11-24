@@ -1687,6 +1687,8 @@ export interface IrTrigger extends IrNode {
   readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
+  /** 'attackBatch' "Whenever a player attacks you" (Mirkwood Trapper, CR 508.1b): a creature of the declaration was declared as attacking the controller of the ability as a player. */
+  readonly attackedYou?: true;
   /**
    * 'lifeGained' and 'lifeLost': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.

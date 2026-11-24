@@ -2344,6 +2344,11 @@ export type Effect =
       readonly count: number;
       /** "Put two +1/+1 counters on a creature you control" (D-653): the controller must choose `count` permanents (or all there are when fewer), not up to that many. */
       readonly exactly?: true;
+      /**
+       * "That player chooses an attacking creature" (Mirkwood Trapper, CR 608.2d, 603.2): the player this selector names (one player; the first when it names several) makes the choice, not the
+       * controller of the ability, among the permanents the filter matches whoever controls them. Nothing is asked when that player is no longer in the game.
+       */
+      readonly chooser?: PlayerSelector;
     }
   /**
    * "Choose a creature type" as the effect resolves (CR 205.3m, 608.2d): the controller chooses. With `players` (Harsh Mercy: "Each player chooses a creature type", CR 101.4): each player the
@@ -5783,6 +5788,12 @@ export type Trigger =
        * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
        */
       readonly attackedEnchantedPlayer?: true;
+      /**
+       * "Whenever a player attacks you" (Mirkwood Trapper, CR 508.1b, 603.2): only when at least one creature of the declaration was declared as attacking the controller of this ability as a
+       * player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
+       * Not with `eachAttackedPlayer` or `attackedEnchantedPlayer`.
+       */
+      readonly attackedYou?: true;
       /**
        * "Whenever one or more Demons you control attack a player" (CR 508.1b, 508.6, 603.2c, Demonic Covenant): one occurrence for each player the declaration attacks (as a player: an
        * attack on a planeswalker or a battle is not an attack on its controller or protector), counting only the creatures declared as attacking that player: the ability triggers once for

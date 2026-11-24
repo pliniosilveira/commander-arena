@@ -91,6 +91,19 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (t.eachAttackedPlayer !== undefined && t.eachAttackedPlayer !== true) {
         issue(out, `${path}.eachAttackedPlayer`, 'eachAttackedPlayer is true when present');
       }
+      if (t.attackedYou !== undefined && t.attackedYou !== true) {
+        issue(out, `${path}.attackedYou`, 'attackedYou is true when present');
+      }
+      if (
+        t.attackedYou === true &&
+        (t.eachAttackedPlayer === true || t.attackedEnchantedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedYou`,
+          'attackedYou does not go with eachAttackedPlayer or attackedEnchantedPlayer',
+        );
+      }
       if (t.eachAttackedPlayer === true && t.attackedEnchantedPlayer === true) {
         issue(
           out,

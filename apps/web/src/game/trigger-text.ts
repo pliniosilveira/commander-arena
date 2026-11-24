@@ -728,6 +728,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
           : null;
       }
+      // Mirkwood Trapper (CR 508.1b): "Whenever a player attacks you", once for a declaration that attacks the controller as a player.
+      if (trigger.attackedYou === true) {
+        return trigger.who === 'any' && trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever a player attacks you'
+          : null;
+      }
       // D-187: "Whenever you attack" is one creature or more, said without the count.
       // D-218: "Whenever one or more creatures attack" (any player).
       if (trigger.who === 'any') return `Whenever one or more ${things} attack`;

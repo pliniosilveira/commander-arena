@@ -1065,6 +1065,10 @@ function matches(
       ) {
         return false;
       }
+      // CR 508.1b (Mirkwood Trapper): "Whenever a player attacks you": a creature was declared as attacking the controller of this ability as a player.
+      if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
+        return false;
+      }
       return attackBatchCount(state, trigger, occ.attackers ?? [], ctx) >= trigger.atLeast;
     }
     case 'chapter':

@@ -2341,6 +2341,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'attackersAtYouAtLeast reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
           );
         }
+        // CR 603.4, 508.1b (Mirkwood Trapper): the declaration is what `attackersAttackedYou` reads.
+        if (
+          conditionHas(a.interveningIf, 'attackersAttackedYou') &&
+          a.trigger?.kind !== 'attackBatch'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackersAttackedYou reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
+          );
+        }
         if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {
           issue(
             out,
