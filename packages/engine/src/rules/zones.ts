@@ -1159,6 +1159,17 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       ],
     };
   }
+  // CR 400.7a (Eight-and-a-Half-Tails): an effect that changed the color of a permanent spell on the stack goes on applying to the permanent the spell becomes.
+  if (to === 'battlefield' && old.zone === 'stack') {
+    next = {
+      ...next,
+      continuousEffects: next.continuousEffects.map((e) =>
+        e.change.kind === 'setColors' && e.objects.includes(old.id)
+          ? { ...e, objects: [...e.objects, newId] }
+          : e,
+      ),
+    };
+  }
   // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the permanent a creature spell with that rider becomes has the abilities.
   if (
     to === 'battlefield' &&

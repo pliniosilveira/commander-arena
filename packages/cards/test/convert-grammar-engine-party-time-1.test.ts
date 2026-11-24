@@ -219,3 +219,45 @@ describe('Valiant Changeling: costs {1} less for each creature type among creatu
     g.expect.stack([CHANGELING]);
   });
 });
+
+describe('Eight-and-a-Half-Tails: {1}: Target spell or permanent becomes white until end of turn', () => {
+  const TAILS = 'Eight-and-a-Half-Tails';
+  const tails = real(TAILS);
+  const start = () =>
+    scenario()
+      .seat(0)
+      .define(tails)
+      .hand('Llanowar Elves')
+      .battlefield(TAILS, 'Forest', 'Forest', 'Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('a permanent becomes white (CR 105.3, 613.1e) until the end of the turn', () => {
+    const g = start();
+    g.act(0).activate(TAILS, { ability: 1, targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.derived('Grizzly Bears', { colors: ['W'] });
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.derived('Grizzly Bears', { colors: ['G'] });
+  });
+
+  test('a spell on the stack becomes white, and the permanent it becomes is white too (ruling of 2016-06-08)', () => {
+    const g = start();
+    g.act(0).cast('Llanowar Elves', { pay: true });
+    g.act(0).activate(TAILS, {
+      ability: 1,
+      targets: [{ name: 'Llanowar Elves', zone: 'stack' }],
+      pay: true,
+    });
+    g.pass();
+    g.pass();
+    g.expect.derived('Llanowar Elves', { colors: ['W'] });
+    g.passAll();
+    g.expect.zone('Llanowar Elves', 'battlefield', { seat: 0 });
+    g.expect.derived('Llanowar Elves', { colors: ['W'] });
+  });
+});
