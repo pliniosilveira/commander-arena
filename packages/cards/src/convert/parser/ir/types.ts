@@ -456,6 +456,8 @@ export interface IrFilter {
   readonly exiledWithSelf?: true;
   /** "target creature card exiled this way" (Espers to Magicite, CR 603.12): a card in exile that the resolution before the reflexive ability exiled (the engine's `exiledThisWay`). */
   readonly exiledThisWay?: true;
+  /** "with power less than or equal to the amassed Army's power" (Grishnákh, CR 603.12, 701.47a): the engine's `powerAtMostMoved`, read in the reflexive ability after an amass. */
+  readonly powerAtMostMoved?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
   readonly putWithSelf?: true;
   /**

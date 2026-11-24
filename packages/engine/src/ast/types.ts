@@ -808,6 +808,12 @@ export interface ObjectFilter {
    */
   readonly exiledThisWay?: true;
   /**
+   * "Target creature with power less than or equal to the amassed Army's power" (Grishnákh, Brash Instigator; CR 603.12, 701.47a, 208.1): the object's power now is at most the power of the
+   * first object the resolution that created the reflexive ability moved (`reflexive.carriesMoved`: the Army an `amass` chose), as that object is now. An object with no power matches
+   * nothing, and so does any when the ability carries no object. Read only in a target slot of such a reflexive ability.
+   */
+  readonly powerAtMostMoved?: true;
+  /**
    * "Creature put onto the battlefield with this Aura" (CR 303.4, 400.7, 702.5a; Animate Dead): the object is a permanent that an effect of the source of the filter (an Aura) put
    * onto the battlefield with `moveToZone.putWithSource`, and it is still that same object (one that left and came back is a new object, CR 400.7). Read where the filter is matched
    * against the game with the source: an enchant ability's filter (the Aura it belongs to is the source), a target slot, an `each` selector. The filter's zone is the battlefield.

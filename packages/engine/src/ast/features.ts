@@ -1071,6 +1071,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exiledWithSource',
     // Espers to Magicite: "target creature card exiled this way" (`ObjectFilter.exiledThisWay`).
     'exiledThisWay',
+    // Grishnákh, Brash Instigator: "target creature ... with power less than or equal to the amassed Army's power" (`ObjectFilter.powerAtMostMoved`).
+    'powerAtMostMoved',
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
@@ -2128,6 +2130,8 @@ export const SELECTOR_KINDS = [
   'exiledWithSource',
   /** "Target creature card exiled this way" (CR 603.12, 400.7j, Espers to Magicite): the engine's `ObjectFilter.exiledThisWay`. */
   'exiledThisWay',
+  /** "With power less than or equal to the amassed Army's power" (CR 603.12, 701.47a, Grishnákh): the engine's `ObjectFilter.powerAtMostMoved`. */
+  'powerAtMostMoved',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */

@@ -236,3 +236,67 @@ describe('In the Darkness Bind Them', () => {
     g.expect.zone(THREE, 'battlefield', { seat: 2 });
   });
 });
+
+describe('Grishnákh, Brash Instigator', () => {
+  const GRISHNAKH = real('Grishnákh, Brash Instigator');
+  const THREE = 'SYNTHETIC Vanilla 3/3';
+  const KING = parsed('SYNTHETIC Parsed King', 'Legendary Creature — Elf', '', {
+    manaCost: '{G}',
+    power: '1',
+    toughness: '1',
+  });
+  const PEON = parsed('SYNTHETIC Parsed Peon', 'Creature — Elf', '', {
+    manaCost: '{G}',
+    power: '1',
+    toughness: '1',
+  });
+
+  function cast() {
+    const g = withCards(scenario({ seats: 3 }), GRISHNAKH, KING, PEON)
+      .seat(0)
+      .hand(GRISHNAKH.name)
+      .library('Island', { count: 8 })
+      .battlefield('Mountain', 'Swamp', 'Swamp')
+      .seat(1)
+      .library('Island', { count: 8 })
+      .battlefield(THREE, KING.name)
+      .battlefield(BEARS, { tapped: true })
+      .seat(2)
+      .library('Island', { count: 8 })
+      .battlefield(PEON.name)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(GRISHNAKH.name, { pay: true });
+    g.passAll();
+    return g;
+  }
+
+  test('amasses Orcs 2, and the reflexive ability takes a nonlegendary creature of any opponent with power at most the Army power (CR 603.12, 701.47a, 613.1b)', () => {
+    const g = cast();
+    g.expect.pt('Orc Army', 2, 2);
+    // The ability that "When you do" created is on the stack with its own target, chosen as it went there.
+    expect(() => g.act(0).chooseTargets({ name: THREE, seat: 1 })).toThrow();
+    expect(() => g.act(0).chooseTargets({ name: KING.name, seat: 1 })).toThrow();
+    g.act(0).chooseTargets({ name: PEON.name, seat: 2 });
+    g.passAll();
+    g.expect.zone(PEON.name, 'battlefield', { seat: 0 });
+    g.expect.derived(PEON.name, { keywords: ['haste'] });
+    g.expect.invariants();
+  });
+
+  test('a creature of seat 1 with power equal to the Army power is a legal target, and is untapped when taken', () => {
+    const g = cast();
+    g.act(0).chooseTargets({ name: BEARS, seat: 1 });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.tapped(BEARS, false);
+  });
+
+  test('the creature goes back at end of turn (CR 514.2)', () => {
+    const g = cast();
+    g.act(0).chooseTargets({ name: PEON.name, seat: 2 });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.zone(PEON.name, 'battlefield', { seat: 2 });
+  });
+});

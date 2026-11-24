@@ -1405,6 +1405,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-of-that-player': permanent(
     (e) => `At the beginning of each opponent's upkeep, tap ${e}.`,
   ),
+  // Grishnákh: the target of the reflexive ability after an amass.
+  'noun.target-permanent-power-at-most-amassed': permanent(
+    (e) =>
+      `When ~ enters, amass Orcs 2. When you do, until end of turn, gain control of ${e}. Untap that creature.`,
+  ),
   'condition.card-types-among': permanent(
     (e) =>
       `At the beginning of each opponent's upkeep, if ${e}, tap target creature that player controls.`,

@@ -26,6 +26,39 @@ const DURATION = optional(
 );
 
 /**
+ * The object of a control change: one permanent, a target, the permanent with the ability or the one an earlier word of the text names, or a group of the battlefield
+ * ("each noncommander creature", "all artifacts that player controls"); never "up to" or a player.
+ */
+const GAIN_CONTROL_OBJECT = // One permanent: a target, or "that artifact" and "it" for what the text named before. A plural, "up to" and a player are other nouns.
+  refuseAt(
+    family<IrNoun>('noun', {
+      only: [
+        'noun.target-permanent',
+        // Ahoy Mateys group 7 (Admiral Beckett Brass): "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn".
+        'noun.target-permanent-controller-dealt-damage-by',
+        // Hosts of Mordor deck (Wake the Dragon): "gain control of target artifact that player controls", the player of the combat damage event of a trigger.
+        'noun.target-permanent-of-that-player',
+        // Limit Break deck, group 4 (Hellkite Tyrant): "gain control of all artifacts that player controls", a group of the permanents the player the text named controls.
+        'noun.all-permanents-of-that-player',
+        // Hosts of Mordor deck (Subjugate the Hobbits): "gain control of each noncommander creature with mana value 3 or less", a group of the battlefield.
+        'noun.each-permanent',
+        // Hosts of Mordor deck (Grishnákh): "target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's power".
+        'noun.target-permanent-power-at-most-amassed',
+        'noun.that-object',
+        'noun.it',
+        'noun.self',
+      ],
+    }),
+    (n) =>
+      (!n.plural ||
+        n.rule === 'noun.all-permanents-of-that-player' ||
+        n.rule === 'noun.each-permanent') &&
+      !n.upTo &&
+      n.filter.player === undefined,
+    (_n, _ctx, start) => start,
+  );
+
+/**
  * `effect.gain-control`: "gain control of target creature until end of turn", "gain control of that artifact until the end of your next turn",
  * "gain control of target artifact for as long as you control ~", "gain control of target creature" (CR 613.1b: a control-changing effect is
  * applied in layer 2; CR 611.2a: its duration is the one it states, and none stated means the rest of the game; CR 611.2c: the permanent is
@@ -81,36 +114,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
   ],
   parse: single(
     RULE,
-    sequence(
-      literal('gain control of '),
-      // One permanent: a target, or "that artifact" and "it" for what the text named before. A plural, "up to" and a player are other nouns.
-      refuseAt(
-        family<IrNoun>('noun', {
-          only: [
-            'noun.target-permanent',
-            // Ahoy Mateys group 7 (Admiral Beckett Brass): "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn".
-            'noun.target-permanent-controller-dealt-damage-by',
-            // Hosts of Mordor deck (Wake the Dragon): "gain control of target artifact that player controls", the player of the combat damage event of a trigger.
-            'noun.target-permanent-of-that-player',
-            // Limit Break deck, group 4 (Hellkite Tyrant): "gain control of all artifacts that player controls", a group of the permanents the player the text named controls.
-            'noun.all-permanents-of-that-player',
-            // Hosts of Mordor deck (Subjugate the Hobbits): "gain control of each noncommander creature with mana value 3 or less", a group of the battlefield.
-            'noun.each-permanent',
-            'noun.that-object',
-            'noun.it',
-            'noun.self',
-          ],
-        }),
-        (n) =>
-          (!n.plural ||
-            n.rule === 'noun.all-permanents-of-that-player' ||
-            n.rule === 'noun.each-permanent') &&
-          !n.upTo &&
-          n.filter.player === undefined,
-        (_n, _ctx, start) => start,
-      ),
-      DURATION,
-    ),
+    sequence(literal('gain control of '), GAIN_CONTROL_OBJECT, DURATION),
     ([, objects, ended]) => {
       const duration: IrDuration | undefined =
         ended === null
@@ -121,6 +125,55 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
         args: { objects },
         ...(duration === undefined ? {} : { duration }),
       };
+    },
+  ),
+});
+
+/**
+ * `effect.lead-gain-control`: "until end of turn, gain control of target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's power"
+ * (Grishnákh, Brash Instigator, CR 613.1b, 611.2a): `effect.gain-control` with its duration said first, as "Until end of turn, target creature gets +2/+2" says it. Only "until end of
+ * turn", and no duration after the object.
+ */
+export const EFFECT_LEAD_GAIN_CONTROL = defineRule<Clauses>({
+  id: 'effect.lead-gain-control',
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 613.1b (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 514.2 (Cleanup Step)',
+  ],
+  examples: [
+    'until end of turn, gain control of target creature',
+    'Until end of turn, gain control of target creature an opponent controls',
+    "until end of turn, gain control of target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's power",
+  ],
+  rejects: [
+    'until end of turn, gain control of target creature until end of turn',
+    'until end of turn, gain control of target creatures',
+    'until end of turn, gain control of up to one target creature',
+    'until your next turn, gain control of target creature',
+    'until the end of turn, gain control of target creature',
+    'until end of turn gain control of target creature',
+    'until end of turn, gains control of target creature',
+    'until end of turn, gain control of target player',
+    'until end of turn, gain control of target creature and untap it',
+  ],
+  parse: single(
+    'effect.lead-gain-control',
+    sequence(
+      spanned(literal('until end of turn, ')),
+      literal('gain control of '),
+      GAIN_CONTROL_OBJECT,
+    ),
+    ([lead, , objects]) => {
+      const duration: IrDuration = {
+        kind: 'duration',
+        scope: 'untilEndOfTurn',
+        span: lead.span,
+        rule: 'effect.lead-gain-control',
+      };
+      return { verb: 'gainControl', args: { objects }, duration };
     },
   ),
 });
@@ -337,6 +390,7 @@ export const EFFECT_CONTROL_WHILE_REMAINS = defineRule<Clauses>({
 
 export const CONTROL_EFFECT_RULES = [
   EFFECT_GAIN_CONTROL,
+  EFFECT_LEAD_GAIN_CONTROL,
   EFFECT_GAIN_CONTROL_PER_OPPONENT,
   EFFECT_GAIN_CONTROL_FOR_PLAYER,
   EFFECT_CONTROL_WHILE_REMAINS,

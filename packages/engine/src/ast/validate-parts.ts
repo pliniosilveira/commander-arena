@@ -413,6 +413,7 @@ export function checkFilter(
     'enteredThisTurn',
     'exiledWithSource',
     'exiledThisWay',
+    'powerAtMostMoved',
     'putWithSource',
     'singleTarget',
     'modified',
@@ -925,6 +926,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.exiledThisWay !== undefined ||
+  f.powerAtMostMoved !== undefined ||
   f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
@@ -4165,6 +4167,8 @@ function movesObjects(e: Effect): boolean {
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
     e?.kind === 'populate' ||
+    // CR 701.47a (Grishnákh): the Army an `amass` chose is "the amassed Army" of the reflexive ability that follows it.
+    e?.kind === 'amass' ||
     // Twilight Diviner: the token `copyOneOfTriggerCards` made is "it".
     e?.kind === 'copyOneOfTriggerCards' ||
     // D-145: the card found by a `revealUntil` is "it".
@@ -8314,7 +8318,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.12, 400.7j: a slot for "card exiled this way" reads the objects the reflexive ability carries.
       if (
         e.carriesMoved !== true &&
-        JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true')
+        (JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true') ||
+          JSON.stringify(e.targets ?? null).includes('"powerAtMostMoved":true'))
       ) {
         issue(
           out,
