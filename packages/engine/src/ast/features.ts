@@ -132,6 +132,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
     'doOnlyOnceEachTurn',
+    // CR 305.1, 603.2c (Deep Gnome Terramancer): "Whenever one or more lands enter under an opponent's control without being played" (`entersBatch.notPlayed`).
+    'entersNotPlayed',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
     // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
@@ -150,6 +152,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAlsoGraveyard',
     // Death Toll deck: "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (`ChooseSelector.minCardTypes`, and `fromMoved` among the cards exiled).
     'chooseMinCardTypes',
+    // Glorious Protector (CR 610.3, 608.2d): "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (`moveToZone.untilSourceLeaves` of an `anyNumber` choice of permanents).
+    'chooseExileUntilLeaves',
+    // Harper Recruiter (CR 701.20, 608.2d): "You may reveal a Cleric card, a Rogue card, ... and/or a Wizard card from among them" (`lookAtTop` `take.kinds`).
+    'lookTakeKinds',
+    // Gonti, Lord of Luxury (CR 401.2, 406.3): "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (`lookAtTop.from`).
+    'lookTakeFromPlayer',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -229,6 +237,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrifice',
     // Slaughter the Strong: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (`keepOrSacrifice`).
     'keepOrSacrifice',
+    // Magus of the Balance: "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest" (`balance`).
+    'balance',
     'moveToZone',
     'counter',
     'draw',
@@ -1530,6 +1540,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
     'damageCantBePrevented',
     'damageAsThoughWither',
+    // CR 701.23, 614.1a: "If an opponent would search a library, that player searches the top four cards of that library instead."
+    'opponentSearchTopOnly',
     // D-377 (CR 702.16): "You have protection from the chosen card type."
     'playerProtection',
     // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
@@ -1933,6 +1945,8 @@ export const ABILITY_FEATURES = [
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
   'doOnlyOnceEachTurn',
+  /** "Whenever one or more lands enter under an opponent's control without being played" (Deep Gnome Terramancer, CR 305.1, 603.2c): the engine's `entersBatch` with `notPlayed`. */
+  'entersNotPlayed',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
   /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
@@ -1951,6 +1965,12 @@ export const ABILITY_FEATURES = [
   'chooseAlsoGraveyard',
   /** "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (Death Toll deck, CR 205.2a, 608.2d): the engine's `ChooseSelector.minCardTypes` of a `moveToZone` into exile, then `fromMoved` among the cards exiled. */
   'chooseMinCardTypes',
+  /** "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (Glorious Protector, CR 610.3, 608.2d): the engine's `moveToZone` into exile with `untilSourceLeaves` of an `anyNumber` choice among the controller's permanents. */
+  'chooseExileUntilLeaves',
+  /** "You may reveal a Cleric card, a Rogue card, a Warrior card, and/or a Wizard card from among them and put those cards into your hand" (Harper Recruiter, CR 608.2d): the engine's `lookAtTop` with `take.kinds`. */
+  'lookTakeKinds',
+  /** "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, CR 401.2, 406.3): the engine's `lookAtTop` with `from`. */
+  'lookTakeFromPlayer',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -2669,6 +2689,8 @@ export const STATIC_KINDS = [
   /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
   'damageCantBePrevented',
   'damageAsThoughWither',
+  /** "If an opponent would search a library, that player searches the top four cards of that library instead" (Aven Mindcensor, CR 701.23): the engine's `opponentSearchTopOnly`. */
+  'opponentSearchTopOnly',
   /** "You have protection from the chosen card type" (CR 702.16, D-377): the engine's `playerProtection`. */
   'playerProtection',
   /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */
@@ -2994,6 +3016,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
+  entersNotPlayed: true,
   manaSpentRider: true,
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
@@ -3003,6 +3026,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
   chooseMinCardTypes: true,
+  chooseExileUntilLeaves: true,
+  lookTakeKinds: true,
+  lookTakeFromPlayer: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   moveFaceDownLand: true,
@@ -3063,6 +3089,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exile: true,
   sacrifice: true,
   keepOrSacrifice: true,
+  balance: true,
   moveToZone: true,
   counter: true,
   draw: true,

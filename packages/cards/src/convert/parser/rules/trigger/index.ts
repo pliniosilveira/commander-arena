@@ -62,6 +62,7 @@ import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
+import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
@@ -1459,6 +1460,7 @@ export const TRIGGER_RULES = [
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  ...PARTY_TIME_LIBRARY_TRIGGER_RULES,
   // Syr Konrad: "another creature dies, or a creature card is put into a graveyard from anywhere other than the battlefield, or a creature card leaves your graveyard" (a prefix
   // of which `trigger.dies` would read, so it comes first).
   ...GRAVEYARD_EVENTS_TRIGGER_RULES,

@@ -66,6 +66,7 @@ export type AngelStaticEffect = Extract<
       | 'cantGainLife'
       | 'damageCantBePrevented'
       | 'damageAsThoughWither'
+      | 'opponentSearchTopOnly'
       | 'preventDamageToThis'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
@@ -80,6 +81,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'cantGainLife' ||
     effect.kind === 'damageCantBePrevented' ||
     effect.kind === 'damageAsThoughWither' ||
+    effect.kind === 'opponentSearchTopOnly' ||
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
@@ -231,6 +233,17 @@ export function lowerAngelStatic(
         abilities.push({ kind: 'static', static: { kind: 'cantGainLife', who: effect.who } });
         break;
       }
+      case 'opponentSearchTopOnly': {
+        // CR 701.23, 614.1a: a rule of the game about the opponents of the controller; the line is its own statement.
+        if (effects.length !== 1) return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:opponentSearchTopOnly']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'opponentSearchTopOnly', count: effect.count },
+        });
+        break;
+      }
       case 'damageCantBePrevented':
       case 'damageAsThoughWither': {
         // CR 615.12, 702.80a: a rule of the game, whoever controls the permanent; the line is its own statement.
@@ -293,6 +306,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:cantGainLife',
   'static:damageCantBePrevented',
   'static:damageAsThoughWither',
+  'static:opponentSearchTopOnly',
   'static:preventDamageToThis',
   'static:cantCastThis',
   'condition:ownTurnNumber',

@@ -1060,6 +1060,50 @@ function runEffect(
       };
     }
 
+    case 'balance': {
+      // CR 101.4, 608.2d, 701.21a, 701.9 (Magus of the Balance): every player counts what they have; each keeps the smallest number, chosen in APNAP order, and the rest go at once.
+      const seats = resolvePlayers(state, { kind: 'eachPlayer' }, ctx, targets);
+      const [first, ...later] = seats;
+      if (first === undefined) return done(state);
+      if (effect.what === 'hand') {
+        const keep = Math.min(...seats.map((seat) => getSeat(state, seat).hand.length));
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'discard' as const,
+              seat: first,
+              count: 0,
+              leave: keep,
+              chosen: null,
+              ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+            },
+          ],
+        );
+      }
+      const filter: ObjectFilter =
+        effect.what === 'lands' ? { types: ['land'] } : { types: ['creature'] };
+      const keep = Math.min(
+        ...seats.map((seat) => controlledCandidates(state, seat, res.source, filter).length),
+      );
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseSacrifice' as const,
+            filter,
+            count: 0,
+            keepCountExactly: keep,
+            chosen: null,
+            seat: first,
+            ...(later.length === 0 ? {} : { together: { later, held: [] } }),
+          },
+        ],
+      );
+    }
+
     case 'keepOrSacrifice': {
       // CR 101.4, 608.2d (Slaughter the Strong): every player the effect names chooses, the active player first, then nothing is sacrificed until the last has chosen.
       const seats = resolvePlayers(state, effect.players, ctx, targets);
@@ -1276,6 +1320,13 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // CR 610.3a, 610.3b (Glorious Protector): "... until this creature leaves the battlefield": if it has left already, as the exile would happen, nothing is exiled.
+        if (
+          effect.untilSourceLeaves === true &&
+          (res.source === null || state.objects[res.source]?.zone !== 'battlefield')
+        ) {
+          return { ...done(state), lastMoved: [] };
+        }
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
@@ -1287,6 +1338,13 @@ function runEffect(
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              ...(effect.untilSourceLeaves === true && res.source !== null
+                ? { untilLeaves: res.source }
+                : {}),
+              // CR 608.2d: "any number of non-Angel creatures you control": none up to all of the candidates.
+              ...(sel.anyNumber === true && sel.minCardTypes === undefined
+                ? { anyNumber: true as const }
+                : {}),
               filter: sel.filter,
               // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
               ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined
@@ -3386,6 +3444,13 @@ function runEffect(
       // bottom in a random order" (rules/look-take.ts).
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // Gonti (CR 608.2b): "target opponent's library": the one player the selector names; with none (the target is gone) nothing is looked at.
+      let libraryOf: SeatId | undefined;
+      if (effect.from !== undefined) {
+        libraryOf = resolvePlayers(state, effect.from, ctx, targets)[0];
+        if (libraryOf === undefined) return done(state);
+      }
+      const unlinked = effect.take.to === 'exileFaceDownUnlinked';
       return done(
         state,
         [],
@@ -3394,10 +3459,14 @@ function runEffect(
             kind: 'lookTake',
             stage: 'take',
             seat: res.controller,
+            ...(libraryOf === undefined ? {} : { libraryOf }),
+            ...(unlinked ? { unlinked: true as const } : {}),
             count,
             filter: effect.take.filter,
             max: effect.take.max,
-            ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
+            ...(effect.take.to === undefined
+              ? {}
+              : { to: unlinked ? ('exileFaceDown' as const) : effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
             // CR 202.3 (D-145): "with mana value less than or equal to the number of lands you control", worked out as the effect runs.
@@ -3413,6 +3482,10 @@ function runEffect(
             ...(effect.take.elseAnyToHand === true ? { elseAnyToHand: true as const } : {}),
             // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
             ...(effect.take.all === true ? { all: true as const } : {}),
+            // Harper Recruiter: one card for each of several kinds.
+            ...(effect.take.kinds === undefined
+              ? {}
+              : { kinds: effect.take.kinds, kindAt: 0, picked: [] as ObjectId[] }),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
             ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,

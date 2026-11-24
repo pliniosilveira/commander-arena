@@ -257,6 +257,13 @@ function occurrences(
         ) {
           return [];
         }
+        // CR 305.1 (Deep Gnome Terramancer): "without being played": the land was put onto the battlefield by an effect, so no `landPlayed` event names it.
+        if (
+          trigger.notPlayed === true &&
+          batch.events.some((e) => e.kind === 'landPlayed' && e.object === event.to)
+        ) {
+          return [];
+        }
         return [{ subject: event.to, seat: null }];
       }
       // A token was never in a graveyard, and was not cast.

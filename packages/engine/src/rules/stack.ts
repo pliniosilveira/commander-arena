@@ -737,7 +737,9 @@ export function answerResolutionChoice(
   const asked = state.pending;
   if (
     head.kind === 'chooseSacrifice' &&
-    (head.keepPowerAtMost !== undefined || head.keepCountAtMost !== undefined)
+    (head.keepPowerAtMost !== undefined ||
+      head.keepCountAtMost !== undefined ||
+      head.keepCountExactly !== undefined)
   ) {
     if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
     const sacrificed = asked.legal.filter(

@@ -1423,6 +1423,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the permanents that enter are on the battlefield: no zone, stackKind or combat',
         );
       }
+      if (t.notPlayed !== undefined && t.notPlayed !== true) {
+        issue(out, `${path}.notPlayed`, 'notPlayed must be true when present');
+      }
       if (t.fromGraveyard !== undefined && t.fromGraveyard !== true) {
         issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
       }

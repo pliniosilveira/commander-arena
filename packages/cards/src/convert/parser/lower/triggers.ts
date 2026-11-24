@@ -703,9 +703,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
-      const missing = missingFeatures(['trigger:entersBatch']);
+      // CR 305.1 (Deep Gnome Terramancer): "without being played".
+      const notPlayed = t.args.notPlayed?.kind === 'flag' && t.args.notPlayed.value;
+      const missing = missingFeatures([
+        'trigger:entersBatch',
+        ...(notPlayed ? (['ability:entersNotPlayed'] as const) : []),
+      ]);
       if (missing.length > 0) return failure(t, missing);
-      return ok({ kind: 'entersBatch', what: filter.value });
+      return ok({
+        kind: 'entersBatch',
+        what: filter.value,
+        ...(notPlayed ? { notPlayed: true as const } : {}),
+      });
     }
     case 'castOrCopy': {
       // "Whenever you cast or copy an instant or sorcery spell" (stage P65, D-218, CR 707.10): the cast trigger of the controller, a copy too.

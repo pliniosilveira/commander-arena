@@ -24,6 +24,7 @@ import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
+import { searchTopLimit } from './global-statics';
 import { discardOne } from './madness';
 import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
@@ -69,10 +70,13 @@ export function searchCandidates(
   zones: readonly SearchZone[] = ['library'],
 ): ObjectId[] {
   const found: { id: ObjectId; name: string }[] = [];
+  // CR 701.23, 614.1a (Aven Mindcensor): an opponent of the controller of such a permanent searches only the top cards of the library.
+  const topOnly = searchTopLimit(state, seat);
   // CR 701.23a: the cards of every zone searched ("your graveyard, hand, and/or library") that match, in one list.
   for (const zone of zones) {
     const scoped: ObjectFilter = { ...filter, zone };
-    for (const id of getSeat(state, seat)[zone]) {
+    const cards = getSeat(state, seat)[zone];
+    for (const id of zone === 'library' && topOnly !== null ? cards.slice(0, topOnly) : cards) {
       const obj = state.objects[id];
       if (obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source })) {
         found.push({ id, name: derive(state, obj).name });
@@ -299,7 +303,12 @@ export function runDiscard(
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
   // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
   const count =
-    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
+    instruction.anyNumber === true || instruction.hand === true
+      ? hand.length
+      : instruction.leave !== undefined
+        ? // CR 701.9 (Magus of the Balance): all but the cards the player keeps.
+          Math.max(0, hand.length - instruction.leave)
+        : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined
@@ -336,9 +345,11 @@ export function runDiscard(
       ? hand.length === 0
         ? []
         : null
-      : hand.length <= count && !choice
-        ? hand
-        : null);
+      : instruction.leave !== undefined && count === 0
+        ? []
+        : hand.length <= count && !choice
+          ? hand
+          : null);
   if (chosen === null) {
     const max = Math.min(count, hand.length);
     const decision: Omit<ChooseCardsDecision, 'id'> = {

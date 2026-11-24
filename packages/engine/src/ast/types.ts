@@ -3577,6 +3577,16 @@ export type Effect =
       readonly byController?: true;
     }
   /**
+   * "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and
+   * sacrifice creatures the same way." (Magus of the Balance, CR 101.4, 608.2d, 701.21a, 701.9): one of the three parts, as an effect of its own (a card says them in a row: `lands`,
+   * `hand`, `creatures`). Every player still in the game counts the lands (or creatures) they control, or the cards in their hand; the smallest number is what each player keeps. The
+   * players choose which to keep in APNAP order (a player with no more than that number keeps all and chooses nothing), and then all the others are sacrificed (discarded) at once.
+   */
+  | {
+      readonly kind: 'balance';
+      readonly what: 'lands' | 'hand' | 'creatures';
+    }
+  /**
    * "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (Slaughter the Strong, CR 608.2d,
    * 701.21a, 101.4, 208.1): each player the selector names, in APNAP order, chooses among the permanents that match `filter` that they control (the matching permanents of one
    * player only) any set whose power adds up to at most `totalPowerAtMost` (power as `derive` gives it as the effect resolves, a negative power subtracting, CR 208.1), the ones
@@ -3668,6 +3678,13 @@ export type Effect =
        * and a source that is a permanent (the ability of an Aura).
        */
       readonly putWithSource?: true;
+      /**
+       * "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (Glorious Protector, CR 610.3, 608.2d): the permanents chosen as the effect
+       * resolves (a `choose` selector with `anyNumber` and `optional`, among the battlefield permanents the controller controls) are exiled and return to the battlefield under their
+       * owners' control when the permanent the ability belongs to leaves it, as `exile.until` does (CR 610.3a, 610.3b: if it has left already, nothing is exiled; a token is gone, CR 111.7).
+       * Only with `to` `exile`, in an ability of a permanent.
+       */
+      readonly untilSourceLeaves?: true;
     }
   /**
    * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard" (CR 701.6a, 614.1a): with `exileInstead` each spell
@@ -4575,6 +4592,13 @@ export type Effect =
       readonly kind: 'lookAtTop';
       readonly count: Amount;
       /**
+       * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, Lord of Luxury,
+       * CR 401.2, 406.3, 608.2d): whose library is looked at, a selector that names exactly one player (a target or an opponent); left out, the controller's own. The controller looks at
+       * the cards and chooses; the cards belong to the owner of the library, which is where the rest go (the bottom). Only with `take.to` `exileFaceDownUnlinked`, `hand`... (see
+       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom`.
+       */
+      readonly from?: PlayerSelector;
+      /**
        * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
        * (D-396, CR 701.20a): the cards are revealed, not looked at: all of the cards (the top `count`, fewer when the library holds fewer) are shown to every
        * player (one `cardsRevealed` event, public, before anything is taken) and the cards taken are not revealed again; no `topCardsLooked`. They stay in the library
@@ -4596,7 +4620,15 @@ export type Effect =
          * 401.4): the card taken stays where it is, in the library, unrevealed, and what is left goes where `rest` says (the bottom), so it is the top card afterwards; with `hidden`,
          * `min` and `max` of 1, no `tapped`, `totalManaValue`, `all` or `elseAnyToHand`, and `rest` the bottom or the graveyard.
          */
-        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
+        // `exileFaceDownUnlinked` (Gonti, CR 406.3): exiled face down as `exileFaceDown` is, but no permanent remembers the card: it is what `moved` names afterwards, for a `mayPlay` of it
+        // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` and `max` of 1, and the rest on the bottom in a random order.
+        readonly to?:
+          | 'hand'
+          | 'battlefield'
+          | 'exileFaceDown'
+          | 'exileFaceDownUnlinked'
+          | 'castFree'
+          | 'top';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.
@@ -4631,6 +4663,12 @@ export type Effect =
          * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'` or `'hand'` ("Put all land cards revealed this way into your hand", Mulch).
          */
         readonly all?: true;
+        /**
+         * "You may reveal a Cleric card, a Rogue card, a Warrior card, and/or a Wizard card from among them and put those cards into your hand" (Harper Recruiter, CR 701.20, 608.2d): one
+         * card for each filter, none or one, each a different card (the player is asked for the filters in this order, and a card already chosen is not offered again). `max` is the number of
+         * filters and `filter` is left empty (`{}`). Only with `to` the hand (or left out), and with no `min`, `hidden`, `all`, `tapped`, `totalManaValue`, `manaValueAtMost` or `elseAnyToHand`.
+         */
+        readonly kinds?: readonly ObjectFilter[];
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
@@ -5305,7 +5343,16 @@ export type Trigger =
    * graveyard, is part of the batch (the zone each came from is read as the event happens, so the others do not count, and a batch with none of them does not trigger). The ability's
    * `triggerCards` are the permanents of the batch that the trigger names, in the order they entered.
    */
-  | { readonly kind: 'entersBatch'; readonly what: ObjectFilter; readonly fromGraveyard?: true }
+  | {
+      readonly kind: 'entersBatch';
+      readonly what: ObjectFilter;
+      readonly fromGraveyard?: true;
+      /**
+       * "Whenever one or more lands enter under an opponent's control without being played" (Deep Gnome Terramancer, CR 305.1, 603.2c): a land put onto the battlefield by an effect,
+       * not played (no `landPlayed` event for it in the events being looked at), is part of the batch; a played land is not.
+       */
+      readonly notPlayed?: true;
+    }
   /**
    * "Whenever [a creature] blocks" (CR 509.1g, 702.45a, D-120): once for each creature declared as a blocker
    * in the declare blockers step, the blocker being the subject. A creature that blocks two attackers
@@ -8202,6 +8249,12 @@ export type StaticEffect =
    * is as usual. Read from the abilities of the permanents on the battlefield after the layers. A source that already has wither or infect changes nothing. No condition.
    */
   | { readonly kind: 'damageAsThoughWither' }
+  /**
+   * "If an opponent would search a library, that player searches the top four cards of that library instead." (Aven Mindcensor, CR 701.23, 614.1a, 604.1): while the permanent has the
+   * ability, a search of a library by an opponent of its controller finds only among the top `count` cards of that library (the library is shuffled afterwards as the search says). Read from
+   * the abilities of the permanents on the battlefield after the layers (`rules/global-statics.ts`); with several, the smallest number applies. No condition.
+   */
+  | { readonly kind: 'opponentSearchTopOnly'; readonly count: number }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (D-380, CR 122.6, 101.2, 604.1; the Hashaton deck, Darksteel Angel): while the permanent has the
    * ability, no counter of the kind `counter` is put on a permanent `subject` names (a group, `this`, or `attached`), by any means: an effect that puts counters

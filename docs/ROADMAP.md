@@ -585,3 +585,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- Aven Mindcensor limits only a search of the searcher's own library; searches of another player's library or of other zones are not limited.

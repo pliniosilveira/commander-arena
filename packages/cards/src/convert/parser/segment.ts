@@ -296,8 +296,25 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
  */
 const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
-  /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
+  /^you may reveal [^.]* from among them and put (?:it|that card|them|those cards) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/**
+ * "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and
+ * sacrifice creatures the same way." (Magus of the Balance, CR 101.4, 608.2d, 701.9, 701.21a): two sentences that are one instruction (`effect.balance`).
+ */
+const EACH_PLAYER_CHOOSES_FEWEST_LANDS =
+  /(?:^|: |, )each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest\.$/i;
+const DISCARD_AND_SACRIFICE_SAME_WAY =
+  /^players discard cards and sacrifice creatures the same way\.$/i;
+/**
+ * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for
+ * as long as it remains exiled, and mana of any type can be spent to cast that spell." (Gonti, Lord of Luxury, CR 401.2, 406.3, 609.4b): two sentences that are one instruction
+ * (`effect.look-exile-cast-any-type`).
+ */
+const LOOK_EXILE_ONE_FACE_DOWN =
+  /(?:^|, )look at the top [^.]* cards of [^.]* library, exile one of them face down, then put the rest [^.]*\.$/i;
+const MAY_CAST_THAT_CARD_ANY_TYPE =
+  /^you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell\.$/i;
 /**
  * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
  * CR 115.1, 608.2c): the second sentence says what is done with the cards the first one targets, so the two are one instruction (`effect.put-one-per-graveyard`).
@@ -1284,6 +1301,22 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       b !== undefined &&
+      said(a, EACH_PLAYER_CHOOSES_FEWEST_LANDS) &&
+      said(b, DISCARD_AND_SACRIFICE_SAME_WAY)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, LOOK_EXILE_ONE_FACE_DOWN) &&
+      said(b, MAY_CAST_THAT_CARD_ANY_TYPE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
       said(a, LOOK_AT_TOP) &&
       said(b, SPLIT_THE_TOP)
     ) {
@@ -1739,7 +1772,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     // Issue 81 (Omnath): "If you would lose unspent mana, that mana becomes colorless instead." is a static ability of the permanent about its controller's pool (`static.unspent-mana-colorless`).
     (/ would /.test(text) &&
       / instead\b/.test(text) &&
-      !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text))
+      !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text) &&
+      // Aven Mindcensor: "If an opponent would search a library, that player searches the top four cards of that library instead." is a static ability of the permanent (`static.opponent-search-top-only`).
+      !/^if an opponent would search a library, that player searches the top \w+ cards of that library instead\.$/iu.test(
+        text,
+      ))
   ) {
     return { ...base, head: 'replacement' };
   }

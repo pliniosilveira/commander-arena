@@ -4247,6 +4247,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
+    // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
+    (e?.kind === 'lookAtTop' && e.take?.to === 'exileFaceDownUnlinked') ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -4522,13 +4524,26 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
     sel.greatest !== undefined ||
     sel.least !== undefined ||
     sel.dealtCombatDamageToYou !== undefined ||
-    (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
+    // Glorious Protector (CR 608.2d, 610.3): "exile any number of ... creatures you control until ~ leaves the battlefield" is the one other place an `anyNumber` choice goes, among
+    // the permanents on the battlefield (`moveToZone.until`, checked with the move).
+    (sel.anyNumber !== undefined &&
+      sel.minCardTypes === undefined &&
+      (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(
       out,
       path,
       'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least',
     );
+  }
+  if (sel.anyNumber !== undefined && sel.minCardTypes === undefined) {
+    if (sel.anyNumber !== true || sel.optional !== true || sel.count !== undefined) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        'anyNumber of a move choice is true, with optional and no count (the player may choose none)',
+      );
+    }
   }
   // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
   if (sel.minCardTypes !== undefined) {
@@ -5858,6 +5873,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
       }
       break;
+    case 'balance':
+      // CR 101.4, 701.21a, 701.9 (Magus of the Balance): every player keeps the smallest number of lands, cards in hand or creatures.
+      if (!isOneOf(e.what, ['lands', 'hand', 'creatures'])) {
+        issue(out, `${path}.what`, "balance is about 'lands', 'hand' or 'creatures'");
+      }
+      break;
     case 'keepOrSacrifice':
       // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
@@ -7048,14 +7069,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.
       if (e.to === 'exile') {
         const chosen = kindOf(e.objects) === 'choose' ? (e.objects as ChooseSelector) : null;
+        // Glorious Protector (CR 610.3): permanents of the controller chosen and exiled until the permanent with the ability leaves the battlefield.
+        const untilExile =
+          e.untilSourceLeaves === true &&
+          chosen !== null &&
+          chosen.anyNumber === true &&
+          (chosen.filter?.zone ?? 'battlefield') === 'battlefield';
         if (
-          chosen === null ||
-          (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard')
+          !untilExile &&
+          (chosen === null ||
+            (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard'))
         ) {
           issue(
             out,
             `${path}.to`,
             "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
+          );
+        }
+      }
+      // Glorious Protector (CR 610.3): "until this creature leaves the battlefield" is for a choice of permanents exiled by an ability of a permanent.
+      if (e.untilSourceLeaves !== undefined) {
+        if (
+          e.untilSourceLeaves !== true ||
+          e.to !== 'exile' ||
+          scope.owner !== 'ability' ||
+          kindOf(e.objects) !== 'choose' ||
+          (e.objects as ChooseSelector).anyNumber !== true ||
+          ((e.objects as ChooseSelector).filter?.zone ?? 'battlefield') !== 'battlefield'
+        ) {
+          issue(
+            out,
+            `${path}.untilSourceLeaves`,
+            "untilSourceLeaves is true, with to 'exile' and an anyNumber choice of permanents on the battlefield, in an ability of a permanent",
           );
         }
       }
@@ -7173,10 +7218,77 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isCount(e.take?.max) || e.take.max < 1) {
         issue(out, `${path}.take.max`, 'max must be a positive integer');
       }
+      // Gonti (CR 406.3, 608.2d): the library of one other player, one card of it exiled face down and remembered by nobody; the rest on the bottom of that library in a random order.
+      if (e.from !== undefined) {
+        checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      }
+      if ((e.from !== undefined) !== (e.take?.to === 'exileFaceDownUnlinked')) {
+        issue(
+          out,
+          `${path}.from`,
+          "from (another player's library) and take.to 'exileFaceDownUnlinked' go together",
+        );
+      }
+      if (
+        e.take?.to === 'exileFaceDownUnlinked' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.kinds !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.all !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.manaValueAtMost !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          e.rest !== 'bottomRandom')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order",
+        );
+      }
+      // Harper Recruiter: one card for each of several kinds, put into the hand.
+      if (e.take?.kinds !== undefined) {
+        const kinds = e.take.kinds;
+        if (!Array.isArray(kinds) || kinds.length < 2) {
+          issue(out, `${path}.take.kinds`, 'kinds is a list of two or more filters');
+        } else {
+          for (const [i, k] of kinds.entries()) checkFilter(k, `${path}.take.kinds[${i}]`, out);
+          if (e.take.max !== kinds.length) {
+            issue(out, `${path}.take.max`, 'max is the number of kinds');
+          }
+        }
+        if (
+          (e.take.to !== undefined && e.take.to !== 'hand') ||
+          e.take.min !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.all !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.manaValueAtMost !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          Object.keys(e.take.filter ?? {}).length > 0
+        ) {
+          issue(
+            out,
+            `${path}.take`,
+            'a take of one card for each kind goes into the hand, with an empty filter and no min, hidden, all, tapped, totalManaValue, manaValueAtMost or elseAnyToHand',
+          );
+        }
+      }
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree', 'top'])
+        !isOneOf(e.take.to, [
+          'hand',
+          'battlefield',
+          'exileFaceDown',
+          'exileFaceDownUnlinked',
+          'castFree',
+          'top',
+        ])
       ) {
         issue(
           out,

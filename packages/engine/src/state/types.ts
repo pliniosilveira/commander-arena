@@ -1246,6 +1246,8 @@ export type Instruction =
       readonly keepPowerAtMost?: number;
       /** `keepOrSacrifice` with `keepAtMost` (Archfiend of Depravity): the player keeps at most this many of the permanents that match, instead of a total power. */
       readonly keepCountAtMost?: number;
+      /** `balance` (Magus of the Balance): the player keeps exactly this many of the permanents that match (all of them when they control no more), the rest are sacrificed. `count` is 0. */
+      readonly keepCountExactly?: number;
       readonly chosen: readonly ObjectId[] | null;
       /** The player who sacrifices, when it is not the controller of the effect ("defending player sacrifices"). */
       readonly seat?: SeatId;
@@ -1533,6 +1535,8 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "... until this creature leaves the battlefield" (`moveToZone.untilSourceLeaves`, CR 610.3): the permanent whose leaving returns the cards exiled. */
+      readonly untilLeaves?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1664,6 +1668,10 @@ export type Instruction =
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
       readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
+      /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
+      readonly libraryOf?: SeatId;
+      /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
+      readonly unlinked?: true;
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
@@ -1681,6 +1689,10 @@ export type Instruction =
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
       readonly revealed?: true;
+      /** One card for each of these filters, asked in turn (`take.kinds`, Harper Recruiter): `kindAt` is the filter being asked, `picked` the cards chosen so far. */
+      readonly kinds?: readonly ObjectFilter[];
+      readonly kindAt?: number;
+      readonly picked?: readonly ObjectId[];
       /** The remaining cards are left, ordered or randomized as the effect says. */
       readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
       readonly chosen: readonly ObjectId[] | null;
@@ -1787,6 +1799,8 @@ export type Instruction =
       readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
+      /** `balance` (Magus of the Balance, CR 701.9): the player discards all but this many cards (none when the hand holds no more); `count` is 0. */
+      readonly leave?: number;
       /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
       readonly hand?: true;
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */

@@ -145,6 +145,7 @@ import {
   recipientOf,
 } from './nouns';
 import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
+import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
@@ -2784,6 +2785,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DANITHA_G2_LOWERINGS,
   // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
   ...DEATH_TOLL_WINTER_LOWERINGS,
+  ...PARTY_TIME_LIBRARY_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
