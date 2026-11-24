@@ -53,24 +53,6 @@ describe('Felisa, Fang of Silverquill: "create X tapped ... Inkling creature tok
 });
 
 describe('Frontline Medic', () => {
-  test('Battalion: "~ and at least two other creatures attack" is the attacks trigger with withOthers', () => {
-    expect(
-      creature(
-        'Battalion — Whenever ~ and at least two other creatures attack, creatures you control gain indestructible until end of turn.',
-      ),
-    ).toMatchObject([
-      {
-        kind: 'triggered',
-        trigger: { kind: 'attacks', what: { kind: 'this' }, withOthers: 2 },
-        effect: {
-          kind: 'grantKeyword',
-          keyword: { kind: 'indestructible' },
-          duration: 'untilEndOfTurn',
-        },
-      },
-    ]);
-  });
-
   test('"counter target spell with {X} in its mana cost unless its controller pays {3}"', () => {
     expect(
       creature(

@@ -103,10 +103,10 @@ describe('the static amount "countersOnSource" (CR 122.1)', () => {
     expect(messages(withAbility(BRUTE, lord(unity, unity)))).toEqual([]);
   });
 
-  test('a missing kind is refused', () => {
+  test('an empty kind is refused (leaving the kind out counts every kind)', () => {
     const bad = { kind: 'countersOnSource', counter: '' };
     expect(messages(withAbility(BRUTE, lord(bad, 0))).join(' | ')).toContain(
-      'countersOnSource names the kind of counter',
+      'countersOnSource names a kind of counter',
     );
   });
 });

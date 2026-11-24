@@ -8,12 +8,13 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { zoneList } from '../state/ops';
+import { seatsInOrder, zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
+import { greatestAmong } from './sacrifice-choice';
 import { matchesFilter } from './select';
 import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
@@ -253,8 +254,12 @@ export function runChooseMove(
           );
         })
       : fromCards && instruction.anyOwner === true
-        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
-          (instruction.among ?? []).filter((id) => {
+        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter. Without `among`
+          // (Extract from Darkness, CR 404.1: "a creature card from a graveyard") every card of every graveyard.
+          (
+            instruction.among ??
+            seatsInOrder(state, chooser).flatMap((seat) => zoneList(state, 'graveyard', seat))
+          ).filter((id) => {
             const obj = state.objects[id];
             const { controller: _owner, ...described } = instruction.filter;
             return (
@@ -287,7 +292,18 @@ export function runChooseMove(
               (id) => instruction.among === undefined || instruction.among.includes(id),
             )
           : controlledCandidates(state, chooser, res.source, instruction.filter);
-  const legal = legalAll.filter((id) => !chosenBefore.includes(id));
+  // "A creature with the greatest mana value among creatures they control" (`moveToZone.player`, CR 608.2d): only the candidates tied for the extreme value of the stat can be chosen.
+  const extreme =
+    instruction.greatest !== undefined
+      ? ({ stat: instruction.greatest, which: 'greatest' } as const)
+      : instruction.least !== undefined
+        ? ({ stat: instruction.least, which: 'least' } as const)
+        : undefined;
+  const legal = (
+    extreme === undefined || fromCards || legalAll.length === 0
+      ? legalAll
+      : greatestAmong(state, legalAll, extreme.stat, extreme.which)
+  ).filter((id) => !chosenBefore.includes(id));
   // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
   // shown it even when none can be chosen; an empty hand shows nothing.
   const looked =
@@ -366,19 +382,21 @@ export function runChooseMove(
                       ? 'from among the cards exiled this way'
                       : instruction.among !== undefined
                         ? 'from among the cards put into your graveyard'
-                        : zone === 'exile'
-                          ? 'exiled with this permanent'
-                          : instruction.graveyardOf !== undefined
-                            ? instruction.graveyardOf === chooser
-                              ? 'from your graveyard'
-                              : "from an opponent's graveyard"
-                            : instruction.alsoGraveyard === true
-                              ? 'from your hand or graveyard'
-                              : zone === 'command'
-                                ? 'from your command zone'
-                                : instruction.handOf !== undefined
-                                  ? 'from their hand'
-                                  : `from your ${zone}`
+                        : instruction.anyOwner === true
+                          ? 'from a graveyard'
+                          : zone === 'exile'
+                            ? 'exiled with this permanent'
+                            : instruction.graveyardOf !== undefined
+                              ? instruction.graveyardOf === chooser
+                                ? 'from your graveyard'
+                                : "from an opponent's graveyard"
+                              : instruction.alsoGraveyard === true
+                                ? 'from your hand or graveyard'
+                                : zone === 'command'
+                                  ? 'from your command zone'
+                                  : instruction.handOf !== undefined
+                                    ? 'from their hand'
+                                    : `from your ${zone}`
                   } to put ${WHERE[instruction.to]}`.replace(
                     'from among the cards put into your graveyard',
                     instruction.anyOwner === true

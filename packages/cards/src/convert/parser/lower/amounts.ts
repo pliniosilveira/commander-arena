@@ -43,6 +43,10 @@ function statSource(
 > {
   const ref = objectRefOf(of, ctx, { triggerSubject: true, sacrificed: true });
   if (!ref.ok) return ref;
+  // Lothlórien Blade (CR 603.2, 113.7a): in "Whenever equipped creature attacks, ...", "its power" is that of the creature whose attack it was, the trigger's subject.
+  if (ref.value.kind === 'attached' && ctx.attachedTrigger) {
+    return { ok: true, value: { kind: 'triggerSubject' }, rule };
+  }
   if (ref.value.kind === 'target') {
     const id = ref.value.id;
     const spec = ctx.targets.find((t) => t.id === id);
@@ -163,6 +167,7 @@ export function lowerAmount(
           kind: 'countersOn',
           of: of.value,
           ...(amount.counter === undefined ? {} : { counter: amount.counter }),
+          ...(amount.kinds === true ? { kinds: true as const } : {}),
         },
         rule,
       };
@@ -456,15 +461,23 @@ export function lowerAmount(
         // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
         // as the count is made.
         const itsController = controller.noun.det === 'controllerOf';
+        // Cavern-Hoard Dragon (CR 109.4, 608.2c): "for each artifact that player controls" after "deals combat damage to a player": the player the trigger is about, read as the count is made.
+        const triggerPlayer = controller.noun.det === 'triggerActor';
         if (
           controller.orPlaneswalkerController === true ||
-          (controller.noun.det !== 'target' && !itsController)
+          (controller.noun.det !== 'target' &&
+            controller.noun.det !== 'anaphor' &&
+            !itsController &&
+            !triggerPlayer)
         ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const named = playerSelectorOf(controller.noun, ctx);
         if (!named.ok) return named;
-        if (named.value.kind !== (itsController ? 'controllerOf' : 'target')) {
+        if (
+          named.value.kind !==
+          (itsController ? 'controllerOf' : triggerPlayer ? 'triggerPlayer' : 'target')
+        ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const { controller: _named, ...rest } = amount.of.filter;
@@ -628,7 +641,15 @@ export function lowerAmount(
       // CR 903.3, 202.3 (stage P32, D-147): the greatest mana value among the controller's commanders, in any zone, as printed.
       const blocked = needs('commanderManaValue');
       if (blocked !== null) return blocked;
-      return { ok: true, value: { kind: 'commanderManaValue' }, rule };
+      // Visions of Glory (CR 903.3, 108.3): "a commander you own on the battlefield or in the command zone": only the commanders in those zones.
+      return {
+        ok: true,
+        value: {
+          kind: 'commanderManaValue',
+          ...(amount.zones === undefined ? {} : { zones: amount.zones }),
+        },
+        rule,
+      };
     }
     case 'commanderCasts': {
       // CR 903.8 (stage P68, D-229): the times the controller's commanders were cast from the command zone.
@@ -648,6 +669,24 @@ export function lowerAmount(
       const player = playerSelectorOf(amount.of, ctx);
       if (!player.ok) return player;
       return { ok: true, value: { kind: 'lifeTotalOf', player: player.value }, rule };
+    }
+    case 'greatestCountOfAnOpponent': {
+      const blocked = needs('greatestCountOfAnOpponent');
+      if (blocked !== null) return blocked;
+      // Only permanents: a card outside the battlefield has an owner, not a controller.
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'greatestCountOfAnOpponent', filter: filter.value }, rule };
+    }
+    case 'damageDealtToThisTurn': {
+      const blocked = needs('damageDealtToThisTurn');
+      if (blocked !== null) return blocked;
+      const player = playerSelectorOf(amount.of, ctx);
+      if (!player.ok) return player;
+      return { ok: true, value: { kind: 'damageDealtToThisTurn', player: player.value }, rule };
     }
     case 'commanderColors': {
       const blocked = needs('commanderColors');
@@ -929,6 +968,7 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
     f.controllerDamagedBySource === true ||
     f.modified === true ||
     f.goaded === true ||
+    f.enteredThisTurn === true ||
     // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
     (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
     typeof f.controller === 'object' ||
@@ -1039,6 +1079,8 @@ export function lowerStaticAmount(
   rule: string,
 ): LowerResult<StaticPtAmount> {
   if (amount.kind === 'commanderManaValue') {
+    // A static power or toughness reads every commander, not those in a zone (the engine refuses it).
+    if (amount.zones !== undefined) return { ok: false, needs: [], at: amount.span, rule };
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderManaValue' }, rule } : lowered;
   }
@@ -1197,6 +1239,8 @@ export const AMOUNT_NEEDS = [
   'amount:commanderManaValue',
   'amount:commanderCasts',
   'amount:lifeTotalOf',
+  'amount:damageDealtToThisTurn',
+  'amount:greatestCountOfAnOpponent',
   'amount:colorsAmong',
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',

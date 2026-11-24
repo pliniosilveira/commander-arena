@@ -14,6 +14,7 @@ import {
   answerDiscardCost,
   answerExileCost,
   answerRemoveCounters,
+  answerRemoveCountersKind,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -124,11 +125,13 @@ import {
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
   answerResolutionProtector,
+  answerResolutionRemoveCounters,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
   answerResolutionRiot,
   answerResolutionSearchMay,
+  answerResolutionSearchPut,
   answerResolutionUnlessConfirm,
   answerResolutionUnlessPayment,
   continueResolution,
@@ -477,6 +480,9 @@ function answerConfirm(
   // CR 608.2d, 701.23: "may search" is answered by the player who would search.
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
+  // CR 608.2d, 701.23 (`search.mayPut`): "you may put that card onto the battlefield", else it goes into the hand.
+  if (d.purpose === 'searchPut')
+    return finishResolutionAnswer(answerResolutionSearchPut(state, accept));
   const head = state.resolution?.queue[0]?.kind;
   if (
     head === 'confirmOptional' ||
@@ -591,6 +597,11 @@ function answerChooseOption(
     // CR 702.16a, 608.2d (D-514): the card type the controller chose for "gains protection from the card type of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
+  }
+  if (d.purpose === 'counterPick' && d.forCost === true) {
+    // CR 118.3, 122.1, 602.2b: the counter the activating player picks to remove for the cost of an ability.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return answerRemoveCountersKind(state, option);
   }
   if (d.purpose === 'counterPick') {
     // CR 122.1, 122.5, 608.2d: the counter the controller takes (or "Done") for "remove any number of counters" and "move a counter".
@@ -1109,6 +1120,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
       if (d.purpose === 'entersCopy')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
+      if (d.purpose === 'entersRemoveCounters')
+        return finishResolutionAnswer(answerResolutionRemoveCounters(state, action.objects));
       // CR 702.82a (D-185): the creatures sacrificed as a permanent with devour enters.
       if (d.purpose === 'devour')
         return finishResolutionAnswer(answerResolutionDevour(state, action.objects));
@@ -1201,6 +1215,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       return fail('Accept or decline');
     }
     case 'chooseOption': {
+      // CR 733: the counters removed to pay a cost can be taken back with `cancel`, which rewinds the activation.
+      if (d.forCost === true && action.kind === 'cancel') return cancelCast(state);
       if (action.kind !== 'chooseOption') return fail('Choose one of the options');
       return answerChooseOption(state, seat, d, action.option);
     }

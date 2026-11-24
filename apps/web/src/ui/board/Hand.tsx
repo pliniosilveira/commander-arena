@@ -21,6 +21,21 @@ const MIN_STEP_SHARE = 0.55;
  * taller window (`.board-hand`), and a card shows that much of itself.
  */
 const MIN_SHOWN = 108;
+/** A card under the pointer grows by this factor from its bottom edge and rises this far (`.board-hand-card:hover`). */
+const LIFT_SCALE = 1.2;
+const LIFT_RISE = 14;
+/** Room above a lifted card for its outline and shadow. */
+const LIFT_MARGIN = 8;
+
+/**
+ * How far above the hand area a lifted card reaches: the hand's scroll box clips what leaves it, so it is that much taller than
+ * the area. A fixed 110px cut the top of the card where the area is short or the cards are large (the table board, a larger text
+ * size).
+ */
+export function handRise(cardH: number, shown: number): number {
+  return Math.max(0, Math.ceil(cardH * LIFT_SCALE + LIFT_RISE + LIFT_MARGIN - shown));
+}
+
 /** Room at each side of the cards, so the lifted first and last card are not cut. */
 const FAN_PAD = 20;
 
@@ -139,6 +154,7 @@ export function Hand({
     <section
       className={`board-hand ${active ? 'is-active-area' : 'is-idle-area'}`}
       ref={ref}
+      style={{ '--hand-rise': `${handRise(Math.round(BASE_H * scale), shown)}px` } as CSSProperties}
       aria-label={`Your hand, ${cards.length} cards`}
     >
       <div className="board-hand-fan" ref={fanRef}>

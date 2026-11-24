@@ -23,11 +23,13 @@ import type { GameObject, GameState } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
+import { countersOfKind } from './counters-of-kind';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
 import { effectsOn } from './effects-on';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
+import { cardsOf } from './melded';
 import { partySizeOf } from './party';
 
 /**
@@ -195,9 +197,25 @@ export function cardTypesAmongForSource(
  * (the front face of a double-faced card, CR 712.8a, 202.3b), the largest of them; 0 with no commander. It reads the card, not the
  * permanent: no layer can change it, which keeps layer 7 free of loops (CR 613.8).
  */
-export function commandersManaValue(state: GameState, seat: GameObject['controller']): number {
+export function commandersManaValue(
+  state: GameState,
+  seat: GameObject['controller'],
+  zones?: readonly ('battlefield' | 'command')[],
+): number {
   let best = 0;
   for (const card of getSeat(state, seat).commanders) {
+    // CR 903.3, 108.3 (Visions of Glory): only a commander of the player (a card they own) that is now in one of the zones counts.
+    if (
+      zones !== undefined &&
+      !Object.values(state.objects).some(
+        (o) =>
+          cardsOf(o).includes(card) &&
+          (o.zone === 'battlefield' || o.zone === 'command') &&
+          zones.includes(o.zone),
+      )
+    ) {
+      continue;
+    }
     const cost = definitionOf(state, card).faces[0]?.manaCost ?? null;
     if (cost !== null) best = Math.max(best, manaValue(cost));
   }
@@ -267,7 +285,8 @@ export function staticAmountOf(
   if (amount.kind === 'unspentMana')
     return getSeat(state, controllerOf(state, source)).manaPool.length;
   // CR 122.1, 613.4c (Call for Unity): the counters of the kind on the permanent that has the ability.
-  if (amount.kind === 'countersOnSource') return source.counters[amount.counter] ?? 0;
+  // Gavel of the Righteous: with no kind named, the counters of every kind on it added together.
+  if (amount.kind === 'countersOnSource') return countersOfKind(source.counters, amount.counter);
   if (amount.kind === 'commanderManaValue')
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')

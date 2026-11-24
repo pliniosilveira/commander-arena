@@ -9,6 +9,8 @@ import { CASTING_KEYWORD_RULES } from './casting';
 import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COMPANION_KEYWORD_RULES } from './companion';
 import { COPY_KEYWORD_RULES } from './copies';
+import { COUNTER_BLITZ_C_KEYWORD_RULES } from './counter-blitz-c';
+import { COUNTER_INTELLIGENCE_G2_KEYWORD_RULES } from './counter-intelligence-g2';
 import { DECK_LIMIT_KEYWORD_RULES } from './deck-limit';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
 import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
@@ -170,6 +172,10 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // CR 702.82c: "Devour Food 3", the variant with a quality.
     'Devour Food 3',
     'Trample, riot',
+    // CR 702.44a: Sunburst, alone and in a list (its reminder text is stripped before the line is read).
+    'Sunburst',
+    'sunburst',
+    'Flying, sunburst',
     // D-264 (CR 702.131b): Ascend on a permanent.
     'Ascend',
     'ascend',
@@ -417,6 +423,8 @@ export const KEYWORD_RULES = [
   // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "Equip {2}. This ability costs {2} less to activate if ..." starts like the plain equip, which reads a prefix of it: tried first.
   ...AHOY_G10_KEYWORD_RULES,
   ...ATTACHMENT_KEYWORD_RULES,
+  // Counter Intelligence deck, group 2: "Equip—Pay {3} or remove a counter from ~."
+  ...COUNTER_INTELLIGENCE_G2_KEYWORD_RULES,
   ...CASTING_KEYWORD_RULES,
   ...ALT_COST_KEYWORD_RULES,
   ...UPKEEP_KEYWORD_RULES,
@@ -426,6 +434,7 @@ export const KEYWORD_RULES = [
   ...LIVING_WEAPON_KEYWORD_RULES,
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
+  ...COUNTER_BLITZ_C_KEYWORD_RULES,
   ...WARD_CREW_RULES,
   // CR 702.184a (Station).
   ...STATION_KEYWORD_RULES,

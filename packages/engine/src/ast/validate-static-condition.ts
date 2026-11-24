@@ -145,12 +145,8 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       const amount = c.amount;
       // CR 613.8: the counters on this permanent belong to no layer, so `countersOn` of `this` may be read.
       if (typeof amount !== 'number' && amount?.kind === 'countersOn') {
-        if (amount.counter === undefined) {
-          issue(
-            out,
-            `${path}.amount.counter`,
-            "a static ability's condition names the kind of counter",
-          );
+        if (amount.counter !== undefined && typeof amount.counter !== 'string') {
+          issue(out, `${path}.amount.counter`, 'the kind of counter is a name');
         }
         if (amount.of?.kind !== 'this') {
           issue(
@@ -201,13 +197,22 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       }
       return;
     }
+    case 'enteredThisTurn': // D-151: the turn log, which no layer changes
+      // CR 400.7: "another Elf" leaves out the permanent the condition belongs to, which a static ability's layer 4 and 5 reading does not know.
+      if (c.other === true) {
+        issue(
+          out,
+          `${path}.other`,
+          "a static ability's condition does not read 'another' permanent that entered this turn",
+        );
+      }
+      return;
     case 'yourTurn': // D-206: the active player, which no layer changes
     case 'thisEnteredThisTurn': // D-423: the turn log, which no layer changes
     case 'controlCommander':
     case 'lifeTotal':
     case 'opponentPoisonAtLeast':
     case 'ownTurnNumber': // D-149: the turns the controller has had, which no layer changes
-    case 'enteredThisTurn': // D-151: the turn log, which no layer changes
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the spells cast this turn, from the turn log, which no layer changes

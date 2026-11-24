@@ -31,6 +31,7 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+import { objectOption, seatOption } from './vote-options';
 
 export { devotionCostOf, devotionOf, devotionSymbols } from './devotion';
 
@@ -330,6 +331,24 @@ export function amountOf(
   if (amount.kind === 'playerCount') {
     return resolvePlayers(state, amount.of, ctx, targets).length;
   }
+  if (amount.kind === 'greatestCountOfAnOpponent') {
+    // CR 109.4: each opponent still in the game in turn is "you" of the filter; the greatest of the counts.
+    let greatest = 0;
+    for (const seat of opponentsOf(state, ctx.controller)) {
+      const count = countMatching(
+        state,
+        { ...amount.filter, controller: 'you' },
+        { ...ctx, controller: seat },
+      );
+      if (count > greatest) greatest = count;
+    }
+    return greatest;
+  }
+  if (amount.kind === 'damageDealtToThisTurn') {
+    // CR 120.3: the damage every source has dealt to the player this turn (damage prevented was never dealt).
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : (state.turnLog.damageTaken[seat] ?? 0);
+  }
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;
@@ -385,6 +404,13 @@ export function amountOf(
   if (amount.kind === 'cardsInHandOfAffected') return 0;
   // D-194: "the number of profit votes": the players who voted for that option in the vote of this resolution (CR 701.38a).
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
+  // CR 701.38a, 701.38b (Círdan the Shipwright): the votes for the player who is "you" here (each player, in a `forEachPlayer` that runs as each).
+  if (amount.kind === 'votesReceived') return ctx.votes?.[seatOption(ctx.controller)] ?? 0;
+  // CR 701.38a, 701.38b (Trap the Trespassers): the votes for the permanent `of` names (as it is now).
+  if (amount.kind === 'votesForObject') {
+    const id = resolveObjects(state, amount.of, ctx, targets)[0];
+    return id === undefined ? 0 : (ctx.votes?.[objectOption(id)] ?? 0);
+  }
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
   if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
@@ -516,6 +542,10 @@ export function stateAmountOf(
       if (id === undefined) return 0;
       // CR 113.7a: an object that left the battlefield is read as it last existed.
       const obj = state.objects[id] ?? state.lki[id]?.object;
+      // CR 122.1: "for each kind of counter on it" counts the kinds the object has at least one counter of.
+      if (amount.kinds === true) {
+        return Object.values(obj?.counters ?? {}).filter((n) => n > 0).length;
+      }
       return countersOfKind(obj?.counters, amount.counter);
     }
     case 'aggregate': {
@@ -552,7 +582,7 @@ export function stateAmountOf(
     case 'commanderColors':
       return commanderIdentity(state, ctx.controller).length;
     case 'commanderManaValue':
-      return commandersManaValue(state, ctx.controller);
+      return commandersManaValue(state, ctx.controller, amount.zones);
     case 'commanderCasts': {
       if (amount.player !== undefined) {
         // CR 903.8: the player the selector names ("target player ... they've cast").

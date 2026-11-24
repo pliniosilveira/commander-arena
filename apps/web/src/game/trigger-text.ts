@@ -359,21 +359,22 @@ function tappedThings(filter: ObjectFilter, plural: boolean): string | null {
   return REGULAR_NOUNS.has(noun) ? [`${noun}s`, ...rest].join(' ') : null;
 }
 
-const WHOSE_STEP: Readonly<Record<'you' | 'each' | 'opponent', string>> = {
+const WHOSE_STEP: Readonly<Record<'you' | 'each' | 'opponent' | 'monarch', string>> = {
   you: 'your',
+  monarch: "the monarch's",
   each: "each player's",
   opponent: "each opponent's",
 };
 
 /** "At the beginning of combat on your turn", "At the beginning of each opponent's upkeep". */
-function stepWording(step: TriggerStep, whose: 'you' | 'each' | 'opponent'): string {
+function stepWording(step: TriggerStep, whose: 'you' | 'each' | 'opponent' | 'monarch'): string {
   // The two steps that are not "<player>'s <step>" read "on <player's> turn".
   if (step === 'beginCombat' || step === 'combatEnd') {
     const word = step === 'beginCombat' ? 'combat' : 'the end of combat';
     if (whose === 'each') {
       return `At the beginning of each ${step === 'beginCombat' ? 'combat' : 'end of combat'}`;
     }
-    return `At the beginning of ${word} on ${whose === 'you' ? 'your' : "each opponent's"} turn`;
+    return `At the beginning of ${word} on ${whose === 'you' ? 'your' : whose === 'monarch' ? "the monarch's" : "each opponent's"} turn`;
   }
   const w = STEP_WORDS[step];
   if (whose === 'each') return `At the beginning of each ${w}`;
@@ -490,6 +491,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'surveils':
       // CR 701.25 (Galadriel group 1): once each time the player surveils.
       return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
+    case 'votingFinished':
+      // CR 701.38a (Erestor of the Council): once each time every player has voted in a vote.
+      return 'Whenever players finish voting';
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): once each time the player wins a coin flip.
       return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;
@@ -708,6 +712,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'damageToPlayerPrevented': {
+      // CR 615.6: "Whenever damage that would be dealt to you is prevented".
+      const to = { you: 'you', opponent: 'an opponent', player: 'a player' }[trigger.who];
+      return `Whenever damage that would be dealt to ${to} is prevented`;
+    }
     case 'unblockedAttackBatch':
       // CR 509.1h, 508.1b: the creatures of an opponent that attack you and have no blocker.
       return "Whenever one or more creatures an opponent controls attack you and aren't blocked";
@@ -726,6 +735,25 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       if (trigger.eachAttackedPlayer === true) {
         return trigger.who === 'you' && trigger.atLeast === 1
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
+          : null;
+      }
+      // CR 508.1b (Lulu, Stern Guardian; Mirkwood Trapper): "Whenever an opponent attacks you", "Whenever a player attacks you".
+      if (trigger.attackedYou === true) {
+        if (trigger.atLeast === 1 && trigger.what === undefined) {
+          if (trigger.who === 'opponent') return 'Whenever an opponent attacks you';
+          if (trigger.who === 'any') return 'Whenever a player attacks you';
+        }
+        return null;
+      }
+      // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
+      if (trigger.includesSource === true) {
+        const others = trigger.atLeast - 1;
+        return `Whenever this creature and at least ${SMALL_COUNT_WORDS[others] ?? String(others)} other creatures attack`;
+      }
+      // Frontier Warmonger (CR 508.1b, 506.3): only the creatures attacking one of your opponents or a planeswalker they control.
+      if (trigger.attackingYourOpponents === true) {
+        return trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever one or more creatures attack one of your opponents or a planeswalker they control'
           : null;
       }
       // D-187: "Whenever you attack" is one creature or more, said without the count.

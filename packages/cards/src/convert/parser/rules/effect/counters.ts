@@ -38,6 +38,8 @@ const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-
 const COUNTER_OPERANDS = [
   'noun.self',
   'noun.it',
+  // CR 608.2c (Sphere Grid): "put a +1/+1 counter on that creature", the permanent the trigger is about.
+  'noun.that-object',
   // Stage P49 (D-206): "put two +1/+1 counters on that token" (the token the sentence before made).
   'noun.that-token',
   'noun.target-permanent',
@@ -50,6 +52,10 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Counter Blitz deck, group C (Collective Effort): "each creature target player controls".
+  'noun.each-permanent-of-target-player',
+  // Monstrosity of the Lake: "Tap all creatures your opponents control, then put a stun counter on each of those creatures." (the binding pass turns the words into the group before)
+  'noun.paired-creatures',
 ] as const;
 
 /**
@@ -57,11 +63,34 @@ const COUNTER_OPERANDS = [
  * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
  */
 const ADD_COUNTERS_OPERANDS = [
+  // Lulu, Stern Guardian: "put a stun counter on target creature attacking you" (before the plain target, which would stop at "creature").
+  'noun.target-creature-attacking-you-plain',
   ...COUNTER_OPERANDS,
+  // "Choose target creature attacking you. Put a stun counter on that creature.": the object the sentence before named (CR 608.2c).
+  'noun.that-object',
   'noun.a-permanent',
   // "each of up to two Soldiers you control": a resolving choice of up to that many.
   'noun.each-of-up-to-permanents',
 ] as const;
+
+/**
+ * "each of those creatures" after "put a +1/+1 counter on" (Unbreakable Formation, CR 608.2c): the group the sentence before named, bound like "each of them" to the most recent plural
+ * group of the text. Read here, with the one verb that needs it, and not as a noun of its own: the same words say the creature a soulbond pair is with (`noun.paired-creatures`).
+ */
+const EACH_OF_THOSE_CREATURES: Parser<IrNoun> = map(
+  spanned(pattern(/each of those creatures(?![\p{L}\p{N}'’])/iu)),
+  ({ span }): IrNoun => ({
+    kind: 'noun',
+    det: 'anaphor',
+    // The binding pass reads these words: the plural antecedent, as it reads "each of them".
+    filter: { raw: 'each of them' },
+    upTo: false,
+    plural: true,
+    other: false,
+    span,
+    rule: 'effect.add-counters',
+  }),
+);
 
 export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   id: 'effect.add-counters',
@@ -77,6 +106,9 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put two +1/+1 counters on it',
     'put two +1/+1 counters on that token',
     'put a stun counter on each of them',
+    // Lulu, Stern Guardian (CR 608.2c, 508.1b): the object an earlier sentence named, and a target attacking you.
+    'put a stun counter on that creature',
+    'put a stun counter on target creature attacking you',
     'put X +1/+1 counters on target creature',
     'put X +1/+1 counters on ~',
     'put X charge counters on ~',
@@ -92,14 +124,19 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'you put two +1/+1 counters on a creature you control',
     'put two +1/+1 counters on a creature you control',
     'put a +1/+1 counter on each of up to two Soldiers you control',
+    'put a +1/+1 counter on that creature',
+    // Unbreakable Formation (CR 608.2c): the group the sentence before named.
+    'put a +1/+1 counter on each of those creatures',
   ],
   rejects: [
     'you put two +1/+1 counters on target creature and draw a card',
     'put X +1/+1 counters on it for each time it was kicked',
     'put a +1/+1 counter on it for each time',
     'put a +1/+1 counter on it for each creature',
-    'put a +1/+1 counter on that creature',
+    'put a +1/+1 counter on that creatures',
     'put a +1/+1 counter on each of those',
+    'put a +1/+1 counter on each of those creature',
+    'put a +1/+1 counter on each of those permanents',
     'put a +1/+1 counter on each of it',
     'put a card from your hand onto the battlefield',
     'put Y +1/+1 counters on ~',
@@ -133,7 +170,10 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
           }),
         ),
         pattern(/ counters? on /i),
-        operands(ADD_COUNTERS_OPERANDS, 'effect.add-counters'),
+        choice<IrNoun | IrNounList>(
+          operands(ADD_COUNTERS_OPERANDS, 'effect.add-counters'),
+          EACH_OF_THOSE_CREATURES,
+        ),
         optional(FOR_EACH_TAIL, null),
       ),
       ([, count, , , , , each]) => each === null || scaled(count, each) !== null,
@@ -141,65 +181,6 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     ([, count, , counter, , objects, each]) => ({
       verb: 'addCounters',
       args: { count: each === null ? count : (scaled(count, each) ?? count), counter, objects },
-    }),
-  ),
-});
-
-/**
- * `effect.add-counters-each-of-those`: "put a +1/+1 counter on each of those creatures" (Unbreakable Formation, CR 608.2c, 122.1): counters on the group an earlier instruction of the text
- * named, which the binding pass resolves as it does "those creatures". Its words are those of `noun.paired-creatures` (a static ability), so the group is read here, after "counters on".
- * Not read: a count with "for each", "those creatures you control", "each of those" alone, other things than creatures.
- */
-export const EFFECT_ADD_COUNTERS_EACH_OF_THOSE = defineRule<Clauses>({
-  id: 'effect.add-counters-each-of-those',
-  family: 'effect',
-  leading: ['put'],
-  cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 122.1 (Counters)'],
-  examples: [
-    'put a +1/+1 counter on each of those creatures',
-    'put two +1/+1 counters on each of those creatures',
-  ],
-  rejects: [
-    'put a +1/+1 counter on each of those creatures you control',
-    'put a +1/+1 counter on each of those',
-    'put a +1/+1 counter on each of those creatures for each creature you control',
-    'put a +1/+1 counter on each of those permanents',
-    'put a +1/+1 counter on those creatures',
-  ],
-  parse: single(
-    'effect.add-counters-each-of-those',
-    sequence(
-      literal('put '),
-      family<IrAmount>('amount', { only: ['amount.number', 'amount.article'] }),
-      literal(' '),
-      map(
-        spanned(pattern(COUNTER_NAME)),
-        ({ value, span }): IrCounterSpec => ({
-          kind: 'counterSpec',
-          name: value[0].toLowerCase(),
-          span,
-          rule: 'effect.add-counters-each-of-those',
-        }),
-      ),
-      pattern(/ counters? on /i),
-      spanned(pattern(/each of those creatures(?![\p{L}\p{N}'’])(?! you control)/iu)),
-    ),
-    ([, count, , counter, , group]) => ({
-      verb: 'addCounters',
-      args: {
-        count,
-        counter,
-        objects: {
-          kind: 'noun',
-          det: 'anaphor',
-          filter: { raw: 'those creatures' },
-          upTo: false,
-          plural: true,
-          other: false,
-          span: group.span,
-          rule: 'effect.add-counters-each-of-those',
-        } satisfies IrNoun,
-      },
     }),
   ),
 });
@@ -774,7 +755,6 @@ export const COUNTER_RULES = [
   // Before the plain rule, which would read the first half and leave " and a +1/+1 counter on ..." unread.
   EFFECT_ADD_COUNTERS_SELF_AND_OTHER,
   EFFECT_ADD_COUNTERS_OTHER_AND_SELF,
-  EFFECT_ADD_COUNTERS_EACH_OF_THOSE,
   EFFECT_ADD_COUNTERS,
   EFFECT_DOUBLE_COUNTERS,
   EFFECT_DOUBLE_PLAYER_COUNTERS,

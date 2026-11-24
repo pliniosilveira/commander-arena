@@ -31,8 +31,9 @@ import { LOOK_BACK_TRIGGER_KINDS } from '../ast/features';
 import type { Ability, Trigger, TriggerStep, TriggerSubject, Zone } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageRecipient } from '../state/combat-types';
+import type { VoteCast } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getSeat } from '../state/ops';
+import { getSeat, opponentsOf } from '../state/ops';
 import type {
   DelayedTrigger,
   GameObject,
@@ -124,6 +125,13 @@ interface Occurrence {
   readonly blocker?: ObjectId;
   /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
+  /** For `votingFinished` (CR 701.38a): who voted for what in the vote that finished. */
+  readonly votes?: readonly VoteCast[];
+  /**
+   * For `attackBatch`: as `attackers`, one entry for each: the player the creature was declared as attacking, or the controller of the planeswalker it was declared as
+   * attacking; null for a creature that attacks a battle (CR 508.1b, 506.3), which is neither (`attackingYourOpponents`).
+   */
+  readonly attackersAt?: readonly (SeatId | null)[];
 }
 
 /** The controller of a damage source, as it is or as it last was (CR 113.7a); null when unknown. */
@@ -276,10 +284,6 @@ function occurrences(
       if (event.kind !== 'attackersDeclared') return [];
       // CR 506.5, 702.83b: a creature attacks alone if it is the only creature declared as an attacker.
       if (trigger.alone === true && event.attackers.length !== 1) return [];
-      // CR 508.1, 603.2 (Battalion): "and at least two other creatures attack": the declaration holds the creature and that many others.
-      if (trigger.withOthers !== undefined && event.attackers.length - 1 < trigger.withOthers) {
-        return [];
-      }
       return event.attackers.map((a) => ({
         subject: a.object,
         seat: event.seat,
@@ -402,6 +406,19 @@ function occurrences(
     case 'dealtDamageToPlayer':
       // CR 120.2, 603.2c, 603.2g: damage of any kind to a player, once for each source and each player; damage prevented entirely, or 0, has no `damageDealt` event.
       return event.kind === 'damageDealt' && event.to.kind === 'player' && event.amount > 0
+        ? [
+            {
+              subject: event.source,
+              seat: null,
+              damaged: event.to,
+              damage: event.amount,
+              player: event.to.seat,
+            },
+          ]
+        : [];
+    case 'damageToPlayerPrevented':
+      // CR 615.6, 603.2c: damage that would be dealt to a player and was prevented, once for each source and each player; `amount` is the part prevented.
+      return event.kind === 'damagePrevented' && event.to.kind === 'player' && event.amount > 0
         ? [
             {
               subject: event.source,
@@ -735,6 +752,14 @@ function occurrences(
               seat: event.seat,
               player: event.seat,
               attackers: event.attackers.map((a) => a.object),
+              attackersAt: event.attackers.map((a) => {
+                if (a.target.kind === 'player') return a.target.seat;
+                const attacked = state.objects[a.target.object];
+                return attacked !== undefined &&
+                  derive(state, attacked).types.includes('planeswalker')
+                  ? controllerOf(state, attacked)
+                  : null;
+              }),
               attacked: event.attackers.flatMap((a) =>
                 a.target.kind === 'player' ? [a.target.seat] : [],
               ),
@@ -774,6 +799,11 @@ function occurrences(
     case 'classLevel':
       return event.kind === 'classLevelReached' && event.level === trigger.level
         ? [{ subject: event.object, seat: null }]
+        : [];
+    case 'votingFinished':
+      // CR 701.38a (Erestor of the Council): every player has voted in a vote of any spell or ability; the record of the votes goes to the ability.
+      return event.kind === 'votesRevealed'
+        ? [{ subject: null, seat: null, votes: event.cast }]
         : [];
     default: {
       const unreachable: never = trigger;
@@ -1080,7 +1110,15 @@ function matches(
       ) {
         return false;
       }
-      return attackBatchCount(state, trigger, occ.attackers ?? [], ctx) >= trigger.atLeast;
+      // CR 508.1b: "Whenever an opponent attacks you": the controller of the ability was declared as attacked, as a player.
+      if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
+        return false;
+      }
+      // CR 508.1, 603.2c (Frontline Medic): "Whenever ~ and at least two other creatures attack": the permanent itself is one of the creatures counted.
+      return (
+        attackBatchMembers(state, trigger, occ, candidate.controller, candidate.id, ctx).length >=
+        trigger.atLeast
+      );
     }
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
@@ -1148,6 +1186,8 @@ function matches(
     case 'step':
       // CR 503 to 514: whose turn it is, relative to the controller of the ability.
       if (trigger.whose === 'you') return occ.seat === candidate.controller;
+      // CR 725.2, 603.2b: the active player is the monarch as the step begins.
+      if (trigger.whose === 'monarch') return state.monarch !== null && occ.seat === state.monarch;
       return trigger.whose === 'each' || occ.seat !== candidate.controller;
     case 'drawn':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
@@ -1191,6 +1231,7 @@ function matches(
       // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants).
       return trigger.to === 'player' || damaged.seat !== candidate.controller;
     }
+    case 'damageToPlayerPrevented':
     case 'dealtDamageToPlayer': {
       const damaged = occ.damaged;
       if (damaged?.kind !== 'player') return false;
@@ -1247,6 +1288,8 @@ function matches(
         matchesWhat(state, trigger.what, objectOrLki(state, earlier), candidate),
       );
     }
+    case 'votingFinished':
+      return true;
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -1268,6 +1311,8 @@ function isRelevant(event: GameEvent): boolean {
       );
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
+    case 'damagePrevented':
+      return true; // CR 615.6 (Selfless Squire): "whenever damage that would be dealt to you is prevented"
     case 'scried':
     case 'surveiled':
     case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
@@ -1294,6 +1339,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'doorUnlocked': // CR 709.5h
     case 'ringTempted':
     case 'classLevelReached':
+    case 'votesRevealed': // CR 701.38a: "whenever players finish voting"
       return true;
     case 'counterAdded':
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
@@ -1308,19 +1354,31 @@ function isRelevant(event: GameEvent): boolean {
   }
 }
 
-/** CR 603.2c: how many creatures of a declaration an `attackBatch` trigger counts (all of them when it names no filter). */
-function attackBatchCount(
+/**
+ * CR 603.2c: the creatures of a declaration an `attackBatch` trigger counts (all of them when it names no filter). CR 508.1b, 506.3 (Frontier Warmonger): with
+ * `attackingYourOpponents`, only those declared as attacking an opponent of `controller` as a player or a planeswalker an opponent controls. CR 508.1 (Frontline Medic): with
+ * `includesSource`, none unless the permanent with the ability (`source`) is among them, as it counts too.
+ */
+function attackBatchMembers(
   state: GameState,
   trigger: Extract<Trigger, { kind: 'attackBatch' }>,
-  attackers: readonly ObjectId[],
+  occ: Pick<Occurrence, 'attackers' | 'attackersAt'>,
+  controller: SeatId,
+  source: ObjectId,
   ctx: SelectContext,
-): number {
-  if (trigger.what === undefined) return attackers.length;
-  const filter = trigger.what;
-  return attackers.filter((id) => {
+): ObjectId[] {
+  const attackers = occ.attackers ?? [];
+  const opponents = trigger.attackingYourOpponents === true ? opponentsOf(state, controller) : [];
+  const members = attackers.filter((id, i) => {
+    if (trigger.attackingYourOpponents === true) {
+      const at = occ.attackersAt?.[i];
+      if (at === undefined || at === null || !opponents.includes(at)) return false;
+    }
+    if (trigger.what === undefined) return true;
     const creature = objectOrLki(state, id);
-    return creature !== null && matchesFilter(state, creature, filter, ctx);
-  }).length;
+    return creature !== null && matchesFilter(state, creature, trigger.what, ctx);
+  });
+  return trigger.includesSource === true && !members.includes(source) ? [] : members;
 }
 
 /** The battlefield as it was before the events happened, by undoing their zone changes. */
@@ -1662,10 +1720,14 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             // CR 508.1 (issue 81, The Ur-Sphinx): "that many" is the creatures of the declaration the batch trigger counted.
             ...(ability.trigger.kind === 'attackBatch' && occ.attackers !== undefined
               ? {
-                  damage: attackBatchCount(state, ability.trigger, occ.attackers, {
-                    controller: candidate.controller,
-                    source: id,
-                  }),
+                  damage: attackBatchMembers(
+                    state,
+                    ability.trigger,
+                    occ,
+                    candidate.controller,
+                    id,
+                    { controller: candidate.controller, source: id },
+                  ).length,
                 }
               : {}),
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
@@ -1673,10 +1735,20 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ...(occ.blocker === undefined ? {} : { cards: [occ.blocker] }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
+            // CR 603.2c: "those creatures" of a batch that counts only the creatures attacking an opponent are those, not every creature declared.
             ...(occ.attackers === undefined || ability.trigger.kind !== 'attackBatch'
               ? {}
-              : { attackers: occ.attackers }),
+              : {
+                  attackers:
+                    ability.trigger.attackingYourOpponents === true
+                      ? attackBatchMembers(state, ability.trigger, occ, candidate.controller, id, {
+                          controller: candidate.controller,
+                          source: id,
+                        })
+                      : occ.attackers,
+                }),
             ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
+            ...(occ.votes === undefined ? {} : { votes: occ.votes }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'
               ? {
@@ -1960,6 +2032,17 @@ function findDelayedTriggers(
       triggered: [],
     };
     const trigger = delayed.ability.trigger;
+    // CR 603.7, 603.2c (Forth Eorlingas!): a delayed ability of the one-or-more kind is found as the batch triggers of a permanent are, once for each player damaged in one run of events.
+    if (trigger.kind === 'combatDamageBatch') {
+      found.push(
+        ...batchTriggers(state, events, [delayed.source], () => ({
+          ...candidate,
+          triggered: [{ index: -1, ability: delayed.ability }],
+        })),
+      );
+      remaining.push(delayed);
+      continue;
+    }
     const matched = events
       .flatMap((event) => occurrences(state, trigger, event, null))
       .filter(
@@ -2037,16 +2120,32 @@ function limitOncePerTurn(
  * types the permanent has as it got them. A counter no player put (`counterAdded` with no `by`) and a permanent that is gone are not recorded.
  */
 function recordCountersPut(state: GameState, events: readonly GameEvent[]): GameState {
+  // CR 122.6 (Wakka): every counter put on a permanent, by anyone or by no player, for "if a counter was put on this creature this turn".
+  const putOn = events.flatMap((e) =>
+    e.kind === 'counterAdded' && e.count >= 1 && state.objects[e.object]?.zone === 'battlefield'
+      ? [{ object: e.object, counter: e.counter }]
+      : [],
+  );
+  const logged: GameState =
+    putOn.length === 0
+      ? state
+      : {
+          ...state,
+          turnLog: {
+            ...state.turnLog,
+            countersPutOn: [...(state.turnLog.countersPutOn ?? []), ...putOn],
+          },
+        };
   const put = events.flatMap((e) => {
     if (e.kind !== 'counterAdded' || e.by === undefined || e.count < 1) return [];
     const obj = state.objects[e.object];
     if (obj === undefined || obj.zone !== 'battlefield') return [];
     return [{ seat: e.by, counter: e.counter, types: [...derive(state, obj).types] }];
   });
-  if (put.length === 0) return state;
+  if (put.length === 0) return logged;
   return {
-    ...state,
-    turnLog: { ...state.turnLog, countersPut: [...(state.turnLog.countersPut ?? []), ...put] },
+    ...logged,
+    turnLog: { ...logged.turnLog, countersPut: [...(logged.turnLog.countersPut ?? []), ...put] },
   };
 }
 

@@ -13,11 +13,20 @@ const IMAGE_H = 680;
 
 /**
  * Where the type line ends on the regular modern frame, as a share of the card's height. Measured
- * on five cards the owner supplied (a creature, an enchantment, a land, a multicoloured card).
+ * on five cards the owner supplied (a creature, an enchantment, a land, a multicoloured card), then
+ * lowered from 0.632: that cut showed a thin strip of the frame under the type box (issue 579).
  */
-const REGULAR_CUT = 0.632;
+const REGULAR_CUT = 0.626;
 /** A planeswalker's type line stands higher (measured on one modern planeswalker). */
 const PLANESWALKER_CUT = 0.55;
+/**
+ * A melded permanent is drawn as its combined face, a card image of its own whose type line stands a little higher than a regular
+ * card's. Measured on Scryfall's images of Brisela, Voice of Nightmares, Chittering Host, Hanweir, the Writhing Township, Mishra,
+ * Lost to Phyrexia, Titania, Gaea Incarnate and Ragnarok, Divine Deliverance (the type line ends at 420 or 421 of 680 pixels).
+ */
+const MELD_CUT = 0.62;
+/** The one melded planeswalker, Urza, Planeswalker: its type line ends at 390 of 680 pixels. */
+const MELD_PLANESWALKER_CUT = 0.575;
 /**
  * The printed black border, as a share of the card's width: it is trimmed off the sides and the
  * top, so the frame of the tile is the only border around the picture. `board.css` trims by the
@@ -40,9 +49,10 @@ export interface CardTop {
 }
 
 const REGULAR: CardTop = { cover: 1 };
-const PLANESWALKER: CardTop = {
-  cover: shownHeight(PLANESWALKER_CUT) / shownHeight(REGULAR_CUT),
-};
+const coverOf = (cut: number): CardTop => ({ cover: shownHeight(cut) / shownHeight(REGULAR_CUT) });
+const PLANESWALKER = coverOf(PLANESWALKER_CUT);
+const MELD = coverOf(MELD_CUT);
+const MELD_PLANESWALKER = coverOf(MELD_PLANESWALKER_CUT);
 
 /** Subtypes whose frame has its art at the side, so the top of the card is half rules text. */
 const SIDE_ART: ReadonlySet<string> = new Set(['Saga', 'Class', 'Case']);
@@ -50,16 +60,17 @@ const SIDE_ART: ReadonlySet<string> = new Set(['Saga', 'Class', 'Case']);
 /**
  * How the top of an object's card is drawn on its tile, or null when the tile keeps the drawn frame
  * over the art alone: a face-down permanent and the frames with no type line under the art (a split
- * card or a Room, a Saga, a Class, a Case, a battle, a melded permanent). A token is cut where a
+ * card or a Room, a Saga, a Class, a Case, a battle). A melded permanent has a cut of its own. A token is cut where a
  * card is: its printed type line stands lower, so its tile shows the title and the art.
  */
 export function cardTopOf(o: ObjectView): CardTop | null {
   if (isFaceDownPermanent(o)) return null;
-  if (o.meld !== undefined) return null;
   if (o.layout === 'split' || o.layout === 'saga' || o.layout === 'class') return null;
   if (o.types.includes('battle')) return null;
   if (o.subtypes.some((s) => SIDE_ART.has(s))) return null;
-  return o.types.includes('planeswalker') ? PLANESWALKER : REGULAR;
+  const walker = o.types.includes('planeswalker');
+  if (o.meld !== undefined) return walker ? MELD_PLANESWALKER : MELD;
+  return walker ? PLANESWALKER : REGULAR;
 }
 
 /** The height of a tile, or of a card in a hand or a zone viewer, `w` wide that shows a regular card's top. */

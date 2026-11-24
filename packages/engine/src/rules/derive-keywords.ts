@@ -667,6 +667,15 @@ function affinityAbility(filter: ObjectFilter): Ability {
 }
 
 /**
+ * CR 702.125a: "Undaunted" means "This spell costs {1} less to cast for each opponent you have": a static ability that functions on the stack (CR 113.6d), a cost reduction of
+ * the spell itself by the opponents of its caster still in the game (CR 702.125b, 102.2), counted as the cost is determined (CR 601.2f). Each instance applies (CR 702.125c).
+ */
+const UNDAUNTED_ABILITY: Ability = {
+  kind: 'static',
+  static: { kind: 'costReduction', spells: { kind: 'this' }, amount: { kind: 'opponentCount' } },
+};
+
+/**
  * CR 702.84a: "Unearth [cost]" means "[Cost]: Return this card from your graveyard to the battlefield. It gains
  * haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of
  * putting it anywhere else. Activate only as a sorcery." It functions only from the graveyard; the `unearth`
@@ -902,6 +911,10 @@ export function expansionOf(ability: Ability): Ability[] {
           ability.keyword.restriction,
           ability.keyword.costReducedIf,
         ),
+        // CR 702.6a, 702.6d (Gavel of the Righteous): "Equip—Pay {3} or remove a counter from ~": the other way to pay is another equip ability, the player picks by activating it.
+        ...(ability.keyword.orCost === undefined
+          ? []
+          : [equipAbility(ability.keyword.orCost, ability.keyword.restriction)]),
       ];
     case 'reconfigure':
       return reconfigureAbilities(ability.keyword.cost);
@@ -974,6 +987,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [embalmAbility(ability.keyword.cost)];
     case 'affinity':
       return [affinityAbility(ability.keyword.filter)];
+    case 'undaunted':
+      return [UNDAUNTED_ABILITY];
     case 'echo':
       return [echoAbility(ability.keyword.cost)];
     case 'cumulativeUpkeep':

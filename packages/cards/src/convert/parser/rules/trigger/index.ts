@@ -24,7 +24,6 @@ import {
 } from '../../combinators';
 import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { romanValue } from '../../roman';
-import { quantity } from '../amount/index';
 import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
@@ -38,6 +37,7 @@ import { CLASS_TRIGGER_RULES } from './class';
 import { COIN_FLIP_TRIGGER_RULES } from './coin-flip';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
+import { DAMAGE_PREVENTED_TRIGGER_RULES } from './damage-prevented';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
@@ -62,11 +62,14 @@ import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
+import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
 import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
+import { PLAYER_ATTACKS_TRIGGER_RULES } from './player-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { RIDERS_C_TRIGGER_RULES } from './riders-c';
 import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
@@ -80,6 +83,7 @@ import {
 import { TROYAN2_TRIGGER_RULES } from './troyan2';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
+import { VOTING_TRIGGER_RULES } from './voting';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -436,57 +440,6 @@ export const TRIGGER_ATTACKS_ALONE = defineRule<IrTrigger>({
           subject: r.value[0],
         }),
         alone: true,
-      },
-      pos: r.pos,
-    };
-  },
-});
-
-/**
- * `trigger.attacks-with-others`: "~ and at least two other creatures attack" (Battalion, Frontline Medic; CR 207.2c ability word, 508.1, 603.2): the engine's `attacks` of this
- * creature with `withOthers`, the number of other creatures the same declaration must hold. Not read: another subject, "one other", "at most", more words after "attack".
- */
-export const TRIGGER_ATTACKS_WITH_OTHERS = defineRule<IrTrigger>({
-  id: 'trigger.attacks-with-others',
-  family: 'trigger',
-  leading: ['~'],
-  cites: [
-    'CR 207.2c (Ability Words)',
-    'CR 508.1 (Declare Attackers Step)',
-    'CR 603.2 (Handling Triggered Abilities)',
-  ],
-  examples: [
-    '~ and at least two other creatures attack',
-    '~ and at least three other creatures attack',
-  ],
-  rejects: [
-    '~ and at least two other creatures attacks',
-    '~ and at least two other creatures attack alone',
-    '~ and at least two other creatures attack you',
-    '~ and at least one other creature attack',
-    '~ and two other creatures attack',
-    '~ and at most two other creatures attack',
-    'a creature and at least two other creatures attack',
-    '~ attacks',
-  ],
-  parse: (ctx, pos) => {
-    const r = sequence(
-      spanned(literal('~')),
-      literal(' and at least '),
-      satisfy(quantity, (n) => n >= 2),
-      pattern(/ other creatures attack(?![\p{L}\p{N}'’])/iu),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    const span = { start: pos, end: r.pos };
-    return {
-      ok: true,
-      value: {
-        ...trigger('trigger.attacks-with-others', span, 'attacks', {
-          subject: makeNoun('trigger.attacks-with-others', r.value[0].span, 'self', {
-            raw: '~',
-          }),
-        }),
-        withOthers: r.value[2],
       },
       pos: r.pos,
     };
@@ -1246,6 +1199,7 @@ function stepRule(
   word: string,
   more: { readonly examples: readonly string[]; readonly rejects: readonly string[] },
   bare = false,
+  monarch = false,
 ) {
   return defineRule<IrTrigger>({
     id,
@@ -1259,13 +1213,27 @@ function stepRule(
     parse: (ctx, pos) => {
       const r = sequence(
         literal('the beginning of '),
-        stepOwner(bare),
+        monarch
+          ? choice(
+              // CR 725.2: "the monarch's end step" is the turn of whoever is the monarch as it begins (before "the ", the bare reading of `stepOwner`).
+              map(pattern(/the monarch['’]s /i), () => 'monarch' as const),
+              stepOwner(bare),
+            )
+          : stepOwner(bare),
         pattern(new RegExp(`${word}(?![\\p{L}\\p{N}])`, 'iu')),
       )(ctx, pos);
       if (!r.ok) return r;
       const span = { start: pos, end: r.pos };
-      const actor = makeNoun(id, span, r.value[1], { raw: r.value[1] });
-      return { ok: true, value: trigger(id, span, event, { actor }), pos: r.pos };
+      const owner = r.value[1] === 'monarch' ? 'eachPlayer' : r.value[1];
+      const actor = makeNoun(id, span, owner, { raw: owner });
+      return {
+        ok: true,
+        value: {
+          ...trigger(id, span, event, { actor }),
+          ...(r.value[1] === 'monarch' ? { monarchTurn: true as const } : {}),
+        },
+        pos: r.pos,
+      };
     },
   });
 }
@@ -1299,8 +1267,15 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of each end step',
       'the beginning of the end step',
       "the beginning of each opponent's end step",
+      // Archivist of Gondor (CR 725.2, 603.2b): the end step of the turn of the monarch.
+      "the beginning of the monarch's end step",
+      'the beginning of the monarch’s end step',
     ],
     rejects: [
+      "the beginning of the monarch's upkeep",
+      "the beginning of the monarch's",
+      'the beginning of the monarch end step',
+      "the beginning of each monarch's end step",
       'the beginning of the next end step',
       "the beginning of your opponent's end step",
       'the beginning of your upkeep',
@@ -1308,6 +1283,7 @@ export const TRIGGER_END_STEP = stepRule(
       'the beginning of the upkeep',
     ],
   },
+  true,
   true,
 );
 
@@ -1451,12 +1427,17 @@ export const TRIGGER_RULES = [
   ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
+  // Riders of Rohan group C: "~ and at least two other creatures attack", "one or more creatures attack one of your opponents or a planeswalker they control" (before the plainer "one or more creatures attack").
+  ...RIDERS_C_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
   // Landroval: "two or more creatures you control attack a player".
   ...ATTACK_A_PLAYER_TRIGGER_RULES,
   // Issue 160 (D-629): "Whenever enchanted player is attacked".
   ...ENCHANTED_PLAYER_TRIGGER_RULES,
+  // Mirkwood Trapper: "a player attacks you" and "a player attacks".
+  ...PLAYER_ATTACKS_TRIGGER_RULES,
+  ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
@@ -1480,7 +1461,6 @@ export const TRIGGER_RULES = [
   // Before the plain event: "attacks" is a prefix of "attacks alone" and of "attacks you or a planeswalker you control"
   // (stage P29), and the first rule that reads a prefix wins.
   TRIGGER_ATTACKS_YOU,
-  TRIGGER_ATTACKS_WITH_OTHERS,
   TRIGGER_ATTACKS_ALONE,
   // Stage P32 (D-147): "attacks while you don't control another Dinosaur", of which "attacks" is a prefix.
   ...DINOSAUR_TRIGGER_RULES,
@@ -1502,6 +1482,8 @@ export const TRIGGER_RULES = [
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
   // Issue 190 (Sun Droplet): "you're dealt damage".
   ...PLAYER_DEALT_DAMAGE_TRIGGER_RULES,
+  // Riders of Rohan deck, group D (Selfless Squire): "damage that would be dealt to you is prevented".
+  ...DAMAGE_PREVENTED_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".
   ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".
@@ -1523,6 +1505,7 @@ export const TRIGGER_RULES = [
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
   ...COIN_FLIP_TRIGGER_RULES,
+  ...VOTING_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".

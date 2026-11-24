@@ -81,6 +81,8 @@ function perCounter(counter: string, count: Counted): string {
   if (count.kind === 'enteredThisTurn' || count.kind === 'diedThisTurn') {
     return `${counterWords(counter, 1)} on it for each of ${amountPhrase(count).replace(/^the number of /, 'the ')}`;
   }
+  // Arwen: "equal to ~'s toughness" has no group of permanents to count; the words cannot say it.
+  if (!('filter' in count)) return 'an additional counter on it';
   const things =
     thingsPhrase(asCreatures(count.filter), false)?.replace(' on the battlefield', '') ?? null;
   if (things === null) return 'an additional counter on it';

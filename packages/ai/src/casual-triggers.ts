@@ -129,6 +129,13 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
       return isTarget(effect.objects, id) ? help() : null;
     case 'addCounters':
       return isTarget(effect.objects, id) ? (effect.counter === '-1/-1' ? harm() : help()) : null;
+    // Resourceful Defense, Rikku, Together Forever: counters moved onto a permanent, "can't be blocked by creatures your opponents control" and a creature that comes back to hand when it dies
+    // are all for the controller's own permanents.
+    case 'putCountersOf':
+      return isTarget(effect.to, id) ? help() : null;
+    case 'cantBeBlockedByPlayer':
+    case 'delayedDies':
+      return isTarget(effect.objects, id) ? help() : null;
     case 'modifyPt':
       return isTarget(effect.objects, id)
         ? !shrinks(effect.power) && !shrinks(effect.toughness)

@@ -18,7 +18,7 @@ import type {
   TokenDefinition,
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
-import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { keywordKind, landwalkOf, plainKeyword } from '../rules/keyword/vocabulary';
 import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
@@ -66,7 +66,14 @@ import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { COUNCIL_VOTES_LOWERINGS } from './council-votes';
+import { COUNTER_BLITZ_C_LOWERINGS } from './counter-blitz-c';
+import { COUNTER_BLITZ_E_LOWERINGS } from './counter-blitz-e';
+import { COUNTER_BLITZ_G_LOWERINGS } from './counter-blitz-g';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
+import { COUNTER_GROUP_A_LOWERINGS } from './counter-group-a';
+import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -80,6 +87,8 @@ import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
+import { ELVEN_COUNCIL_REVEAL_LOWERINGS } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
@@ -121,6 +130,7 @@ import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KEFKA_LOWERINGS } from './kefka';
+import { KIMAHRI_LOWERINGS } from './kimahri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
@@ -130,6 +140,7 @@ import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
 import { MELD_LOWERINGS } from './meld';
+import { MONARCH_LOWERINGS } from './monarch';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
 import { NEXT_SPELL_LOWERINGS } from './next-spell';
 import { NIV_LOWERINGS } from './niv';
@@ -148,6 +159,7 @@ import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { PLAYER_CHOOSES_ATTACKER_LOWERINGS } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
@@ -170,8 +182,11 @@ import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
+import { RIDERS_B_LOWERINGS } from './riders-b';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
+import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
@@ -326,7 +341,10 @@ function simple(
             { thisCard: true, triggerSubject: true, moved: true }
           : verb === 'tap' || verb === 'untap'
             ? { moved: true }
-            : {},
+            : verb === 'explore'
+              ? // "Whenever a creature you control enters, it explores." (Path of Discovery, CR 701.44a): the creature whose entering caused the trigger.
+                { triggerSubject: true }
+              : {},
       ),
   };
 }
@@ -418,10 +436,14 @@ const DAMAGE: Lowering<IrClause, Effects> = {
         if (blocked.length > 0) return failure(clause, blocked);
         const ref = objectRefOf(source, ctx, { triggerSubject: true });
         if (!ref.ok) return ref;
-        if (ref.value.kind !== 'target' && ref.value.kind !== 'triggerSubject') {
+        // Lothlórien Blade (CR 603.2, 113.7a): "Whenever equipped creature attacks, it deals damage equal to its power ...": the creature whose attack it was, the trigger's subject.
+        if (ref.value.kind === 'attached' && ctx.attachedTrigger) {
+          from = { kind: 'triggerSubject' };
+        } else if (ref.value.kind !== 'target' && ref.value.kind !== 'triggerSubject') {
           return failure(clause);
+        } else {
+          from = ref.value;
         }
-        from = ref.value;
       }
     }
     const amount = amountArg(clause, 'amount', ctx);
@@ -624,7 +646,8 @@ const RETURN: Lowering<IrClause, Effects> = {
       zone === 'battlefield' &&
       chosen?.kind === 'noun' &&
       /^it$/iu.test(chosen.filter.raw.trim()) &&
-      !ctx.itIsCard
+      !ctx.itIsCard &&
+      !ctx.diesTrigger
     ) {
       // Meren of Clan Nel Toth: "Choose target creature card in your graveyard. ... return it to the battlefield": "it" is the card the earlier instruction chose from a graveyard (CR 608.2c).
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
@@ -649,7 +672,9 @@ const RETURN: Lowering<IrClause, Effects> = {
       chosen?.kind === 'noun' &&
       zone === 'battlefield' &&
       chosen.det === 'triggerSubject' &&
-      /^that card/iu.test(chosen.filter.raw)
+      // "Whenever a creature you control without flying dies, return it to the battlefield ..." (Luminous Broodmoth): "it" of a dies trigger is the card too (CR 603.10a).
+      (/^that card/iu.test(chosen.filter.raw) ||
+        (ctx.diesTrigger && /^it$/iu.test(chosen.filter.raw.trim())))
     ) {
       const blocked = missingFeatures(['selector:triggerCard', 'selector:triggerSubject']);
       if (blocked.length > 0) return failure(clause, blocked);
@@ -704,6 +729,26 @@ const RETURN: Lowering<IrClause, Effects> = {
       /^(?:that|the chosen) /iu.test(chosen.filter.raw)
     ) {
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
+      // Gilraen, Dúnedain Protector (CR 400.7j, 608.2c): "Exile another target creature you control. You may return that card to the battlefield": the card the exile before it moved.
+      const exiledBefore = chosen.ref !== undefined && ctx.exiledRef === chosen.ref;
+      if (exiledBefore && zone === 'battlefield') {
+        const blocked = missingFeatures(['selector:moved']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        return {
+          ok: true,
+          value: [
+            {
+              kind: 'moveToZone',
+              objects: { kind: 'moved' },
+              to: 'battlefield',
+              controller: to.whose ?? 'you',
+              ...(to.tapped === true ? { tapped: true } : {}),
+              ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+            },
+          ],
+          rule: clause.rule,
+        };
+      }
       if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
         return failure(clause);
       }
@@ -925,6 +970,36 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       value: limit === undefined ? lowered.value : { ...lowered.value, manaValueAtMost: limit },
     };
     const optional = may?.kind === 'flag' && may.value;
+    // Extract from Darkness (CR 404.1, 608.2d): "you put a creature card from a graveyard onto the battlefield under your control": the cards of every graveyard are the candidates
+    // (`fromAnyGraveyard`; the validator asks for `controller: 'you'`, which the engine does not read for it).
+    const everyGraveyard = arg(clause, 'everyGraveyard');
+    if (everyGraveyard !== undefined) {
+      if (
+        everyGraveyard.kind !== 'flag' ||
+        !everyGraveyard.value ||
+        optional ||
+        limit !== undefined ||
+        arg(clause, 'alsoGraveyard') !== undefined ||
+        arg(clause, 'count') !== undefined ||
+        to.attacking === true ||
+        to.tapped === true ||
+        filter.value.zone !== 'graveyard' ||
+        filter.value.controller !== undefined
+      ) {
+        return failure(clause);
+      }
+      const move: Effect = {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: { ...filter.value, controller: 'you' },
+          fromAnyGraveyard: true,
+        },
+        to: 'battlefield',
+      };
+      ctx.searched = named.ref ?? null;
+      return { ok: true, value: [move], rule: clause.rule };
+    }
     // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
     const both = arg(clause, 'alsoGraveyard');
     // Issue 103 (CR 701.38b, 608.2c): "You may put a permanent card from your hand onto the battlefield for each free vote": up to that many cards, chosen as it resolves.
@@ -1084,6 +1159,7 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
     case 'thatColor':
     case 'anyOneColorX':
     case 'anyCombinationX':
+    case 'couldProduceThatType':
     case 'producedType':
       // Only the effect of a triggered mana ability, which `lowerTappedForMana` builds itself.
       return null;
@@ -1091,9 +1167,12 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
     case 'anyCombination':
-      return spec.what.distinct === true
-        ? { kind: 'anyCombination', count: spec.what.count, distinct: true }
-        : { kind: 'anyCombination', count: spec.what.count };
+      return {
+        kind: 'anyCombination',
+        count: spec.what.count,
+        ...(spec.what.distinct === true ? { distinct: true as const } : {}),
+        ...(spec.what.colors === undefined ? {} : { colors: spec.what.colors }),
+      };
     case 'combination':
       // The engine stores a combination in the order W, U, B, R, G, C (CR 106.4: the pool does not
       // order mana), so {R}{W} is `['W', 'R']`.
@@ -1160,6 +1239,36 @@ const PREVENT_DAMAGE_PER_PREVENTED: Lowering<IrClause, Effects> = {
     return {
       ok: true,
       value: [{ ...prevented, perPrevented: { token: created.token } }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "If damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it." (Gatta and Luzzu, CR 615.5, 122.6): the shield `lower.prevent-damage` makes
+ * for the creature, and the counters the engine puts on it for the damage it prevents (`preventDamage.countersPrevented`). Only +1/+1 counters.
+ */
+const PREVENT_DAMAGE_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'preventDamageCounters',
+  id: 'lower.prevent-damage-counters',
+  needs: ['effect:preventDamage', 'duration:untilEndOfTurn', 'selector:countersPerPrevented'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const { counter, ...rest } = clause.args;
+    if (counter?.kind !== 'counterSpec' || counter.name !== '+1/+1') return failure(clause);
+    const shield = PREVENT_DAMAGE.lower({ ...clause, verb: 'preventDamage', args: rest }, ctx);
+    if (!shield.ok) return shield;
+    const [prevented, ...others] = shield.value;
+    if (
+      prevented?.kind !== 'preventDamage' ||
+      others.length > 0 ||
+      prevented.to.kind !== 'target'
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ ...prevented, countersPrevented: counter.name }],
       rule: clause.rule,
     };
   },
@@ -1253,7 +1362,7 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
           {
             kind: 'chooseOne',
             times: spec.what.count,
-            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+            options: (spec.what.colors ?? (['W', 'U', 'B', 'R', 'G'] as const)).map((color) => ({
               label: `{${color}}`,
               effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
             })),
@@ -1973,6 +2082,14 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
     const objectsArg = arg(clause, 'objects');
+    // "that creature" names the permanent a trigger about another permanent is about (Sphere Grid): in a trigger about ~ itself it has no antecedent.
+    if (
+      objectsArg?.kind === 'noun' &&
+      objectsArg.rule === 'noun.that-object' &&
+      (ctx.itIsSelf || ctx.owner === 'spell')
+    ) {
+      return failure(clause);
+    }
     if (
       clause.optional &&
       !(
@@ -2046,6 +2163,21 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // Unbreakable Formation (CR 608.2c, 611.2c): "put a +1/+1 counter on each of those creatures" is the group a sentence before named, taken again as it stands now. A counter
+    // changes what a filter that reads power, toughness or counters means, so only a group named by its kind of permanent (never by what it can do or has) is taken again.
+    const eachGroup =
+      objectsArg?.kind === 'noun' &&
+      objectsArg.det === 'anaphor' &&
+      objectsArg.plural &&
+      objectsArg.ref !== undefined
+        ? ctx.eachMentions.get(objectsArg.ref)
+        : undefined;
+    if (
+      eachGroup !== undefined &&
+      !(eachGroup.kind === 'each' && namesKindOnly(eachGroup.filter))
+    ) {
+      return failure(clause);
+    }
     // Canopy Gargantuan (CR 608.2c): "that creature" in the count is the creature of the group each placement is for.
     const eachRef =
       objectsArg?.kind === 'noun' && objectsArg.det === 'each' ? (objectsArg.ref ?? null) : null;
@@ -2079,6 +2211,20 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     );
   },
 };
+
+/** The keys of a filter that name a kind of permanent and its controller, and nothing a +1/+1 counter, damage or a keyword could change. */
+const KIND_KEYS: ReadonlySet<string> = new Set([
+  'types',
+  'notTypes',
+  'subtypes',
+  'supertypes',
+  'controller',
+  'zone',
+  'token',
+  'colors',
+]);
+const namesKindOnly = (filter: object): boolean =>
+  Object.keys(filter).every((key) => KIND_KEYS.has(key));
 
 /**
  * "Double the number of +1/+1 counters on target creature you control" (CR 701.10, 122.6): the engine's `doubleCounters`, one for each object
@@ -2405,6 +2551,14 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       abilities.push({ kind: 'keyword', keyword: { kind: 'toxic', count: Number(toxic[1]) } });
       continue;
     }
+    // "with islandwalk" (Chasm Skulker, CR 702.14a): a landwalk of the token itself, with its land type.
+    const landType = landwalkOf(word);
+    if (landType !== undefined) {
+      const unsupportedWalk = missingFeatures(['ability:keyword', 'keyword:landwalk']);
+      if (unsupportedWalk.length > 0) return { ok: false, needs: unsupportedWalk, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'landwalk', landType } });
+      continue;
+    }
     const kind = keywordKind(word);
     if (kind === undefined) return { ok: false, needs: [], ...at };
     const unsupported = missingFeatures(['ability:keyword', `keyword:${kind}`]);
@@ -2708,6 +2862,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXTRA_TURN,
   DELAYED_DRAW,
   COPY_SPELL,
+  SPELL_GAINS_KEYWORD,
   EXILE_ON_RESOLVE,
   CHANGE_TARGET,
   libraryVerb('scry'),
@@ -2752,6 +2907,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SEARCH,
   PREVENT_DAMAGE,
   PREVENT_DAMAGE_PER_PREVENTED,
+  PREVENT_DAMAGE_COUNTERS,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
@@ -2805,6 +2961,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...KIMAHRI_LOWERINGS,
+  ...RIDERS_B_LOWERINGS,
   ...COPY_CHOSEN_TOKEN_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
@@ -2832,20 +2990,29 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...COUNCIL_VOTES_LOWERINGS,
+  ...SECRET_VOTES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
+  ...ELVEN_COUNCIL_REVEAL_LOWERINGS,
   ...REVEAL_TOP_CARD_LOWERINGS,
   ...NIV_LOWERINGS,
   ...LIMIT_BREAK_G1_LOWERINGS,
+  ...COUNTER_BLITZ_G_LOWERINGS,
+  ...COUNTER_GROUP_A_LOWERINGS,
+  ...COUNTER_INTELLIGENCE_G2_LOWERINGS,
+  ...COUNTER_INTELLIGENCE_G3_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
   ...BOTTOM_GRAVEYARD_LOWERINGS,
+  ...ELVEN_COUNCIL_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
   ...EXILE_UNTIL_CAST_LOWERINGS,
   ...DAMAGE_BATCH_LOWERINGS,
+  ...MONARCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,
@@ -2856,6 +3023,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
+  ...COUNTER_BLITZ_C_LOWERINGS,
+  ...COUNTER_BLITZ_E_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...RETURNED_LAND_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
@@ -2886,6 +3055,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
   ...SLIVER_D_LOWERINGS,
+  // Mirkwood Trapper: "that player chooses an attacking creature".
+  ...PLAYER_CHOOSES_ATTACKER_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
@@ -2953,23 +3124,27 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                 ? 'objectMatches'
                 : test === 'subjectGreaterPower'
                   ? 'subjectGreaterPt'
-                  : test === 'discardedThisWay' ||
-                      test === 'putCountersThisWay' ||
-                      test === 'discardedSpellThisWay' ||
-                      test === 'destroyedThisWay' ||
-                      test === 'searchedThisWay'
-                    ? 'thisWayAtLeast'
-                    : test === 'otherAttachedToHost' || test === 'xAtLeast'
-                      ? 'amountIs'
-                      : test === 'attackersAtYou'
-                        ? 'attackersAtYouAtLeast'
-                        : test === 'attackedHasMoreLife'
-                          ? 'attackedHasMoreLifeThanOtherOpponent'
-                          : test === 'controlsThat'
-                            ? 'subjectControlledByYou'
-                            : test === 'thatPlayersTurn'
-                              ? 'triggerPlayerTurn'
-                              : test;
+                  : test === 'counterPutOnSelf'
+                    ? 'counterPutOnThisThisTurn'
+                    : test === 'subjectPowerLessThanSelf'
+                      ? 'subjectPowerLessThanThis'
+                      : test === 'discardedThisWay' ||
+                          test === 'putCountersThisWay' ||
+                          test === 'discardedSpellThisWay' ||
+                          test === 'destroyedThisWay' ||
+                          test === 'searchedThisWay'
+                        ? 'thisWayAtLeast'
+                        : test === 'otherAttachedToHost' || test === 'xAtLeast'
+                          ? 'amountIs'
+                          : test === 'attackersAtYou'
+                            ? 'attackersAtYouAtLeast'
+                            : test === 'attackedHasMoreLife'
+                              ? 'attackedHasMoreLifeThanOtherOpponent'
+                              : test === 'controlsThat'
+                                ? 'subjectControlledByYou'
+                                : test === 'thatPlayersTurn'
+                                  ? 'triggerPlayerTurn'
+                                  : test;
     return failure(
       clause,
       kind === 'raw' ||
@@ -3008,5 +3183,19 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
   }
   // A permission ("you may play that card") is no choice the engine asks about: the clause is read with or without the words.
   if (clause.optional && lowering.acceptsOptional !== true) return failure(clause);
-  return lowering.lower(clause, ctx);
+  const times = clause.args.repeatFor;
+  if (times === undefined) return lowering.lower(clause, ctx);
+  // "For each Redhorn Pass vote, search ..." (issue 17, CR 608.2c, 701.38b): the instruction is done as many times as there are votes for the option, one after the other.
+  const blocked = missingFeatures(['effect:repeat']);
+  if (blocked.length > 0) return failure(clause, blocked);
+  if (times.kind !== 'votesFor') return failure(clause);
+  const count = lowerAmount(times, ctx, clause.rule);
+  if (!count.ok) return count;
+  const { repeatFor: _repeated, ...args } = clause.args;
+  const once = lowering.lower({ ...clause, args }, ctx);
+  if (!once.ok) return once;
+  if (once.value.length !== 1) return failure(clause);
+  const [effect] = once.value;
+  if (effect === undefined) return failure(clause);
+  return { ok: true, value: [{ kind: 'repeat', times: count.value, effect }], rule: clause.rule };
 }

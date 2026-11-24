@@ -308,7 +308,7 @@ export function parseFaceText(
       }),
     );
   }
-  const linked = groupLevels(linkExile(abilities));
+  const linked = groupLevels(linkExile(withChosenCardType(abilities)));
   for (const at of linked.refused) {
     const line = lineOf[at];
     if (line === undefined) continue;
@@ -364,10 +364,11 @@ function joinInsteadLines(lines: readonly string[]): string[] {
  * "Metalcraft — If you control three or more artifacts, exile that creature." (Dispatch) are two paragraphs of one spell, and "that creature" is the one
  * the first targeted. Each line is read alone, so the second one has nothing to refer to; the pair is read as one text, as the same two sentences
  * of one line are, and only when the second line says "it" or "that <thing>" after the verb of an instruction on an object. A pair that does not read as one
- * is unread as a whole, as the line was alone.
+ * is unread as a whole, as the line was alone. Unbreakable Formation (CR 207.2c, 608.2c): "Addendum — If you cast this spell during your main phase, put a +1/+1 counter on each of those
+ * creatures ..." is the second paragraph of a spell whose first paragraph named the creatures ("Creatures you control gain indestructible until end of turn.").
  */
 const REFERENCE_LINE =
-  /^(?:If [^\n]+?, untap those lands\.|If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.|Return that card from your graveyard to the battlefield instead if [^\n]+\.)$/u;
+  /^(?:If you cast ~ during your main phase, [^\n]*?\bthose creatures\b[^\n]*\.|If [^\n]+?, untap those lands\.|If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.|Return that card from your graveyard to the battlefield instead if [^\n]+\.)$/u;
 
 function joinReferenceLines(lines: readonly string[]): string[] {
   const out: string[] = [];
@@ -549,6 +550,34 @@ function linkedEffect(effect: Effect): Effect {
 }
 
 /**
+ * "As ~ enters, choose artifact, creature, enchantment, instant, or sorcery. Spells you cast of the chosen type cost {1} less to cast." (Cloud Key, CR 205.2a, 607.2d): "the chosen
+ * type" of the cost reduction is the card type of the choice the face makes as it enters, not a creature type. The words of the line do not say which, so a face that chooses a card type
+ * (and no creature type) reads them as the card type: the engine's `chosenCardType`. A face that chooses a creature type keeps `chosenType`.
+ */
+function withChosenCardType(abilities: readonly Ability[]): readonly Ability[] {
+  const asks = (what: string) =>
+    abilities.some(
+      (a) =>
+        a.kind === 'replacement' &&
+        a.replacement.kind === 'asEntersChoose' &&
+        a.replacement.what === what,
+    );
+  if (!asks('cardType') || asks('creatureType')) return abilities;
+  return abilities.map((a) => {
+    if (
+      a.kind !== 'static' ||
+      a.static.kind !== 'costReduction' ||
+      'kind' in a.static.spells ||
+      a.static.spells.chosenType !== true
+    ) {
+      return a;
+    }
+    const { chosenType: _chosen, ...rest } = a.static.spells;
+    return { ...a, static: { ...a.static, spells: { ...rest, chosenCardType: true as const } } };
+  });
+}
+
+/**
  * "Imprint — When this creature enters, you may exile target nontoken creature." and "As long as a card exiled with this creature is a
  * creature card, ..." (stage P31, D-140, CR 607.2a): "exiled with ~" names the cards the other ability of the same permanent exiled, so
  * the two are linked. The static ability that reads the cards is kept only when exactly one triggered or activated ability of the face
@@ -569,7 +598,10 @@ function linkExile(abilities: readonly Ability[]): {
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||
         // Lorehold group 2 (CR 607.2a): "Choose target card exiled with ~": a target slot of the cards the permanent exiled.
-        JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true')))
+        JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true') ||
+        // Shelob, Dread Weaver (CR 607.2a): "Put a creature card exiled with ~ into its owner's graveyard" as a cost reads the cards the permanent exiled.
+        (a.kind === 'activated' &&
+          JSON.stringify(a.cost ?? null).includes('"putLinkedExileInGraveyard"'))))
       ? [i]
       : [],
   );
@@ -594,8 +626,9 @@ function linkExile(abilities: readonly Ability[]): {
   }
   const [only] = exilers;
   const one = only !== undefined ? abilities[only] : undefined;
+  // Shelob, Dread Weaver: several abilities may read the cards the one exile ability remembers.
   const linkable =
-    readers.length === 1 &&
+    readers.length >= 1 &&
     replacers.length === 0 &&
     exilers.length === 1 &&
     one !== undefined &&

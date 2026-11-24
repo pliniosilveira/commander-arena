@@ -168,8 +168,8 @@ describe('what stays unread (never half-executed)', () => {
 
   test.each([
     [
-      'When ~ enters, target player becomes the monarch.',
-      'another player (the engine names one player; not built)',
+      'When ~ enters, any number of target players become the monarch.',
+      'several players (one monarch at a time; not built)',
     ],
     ['When ~ enters, each opponent becomes the monarch.', 'CR 725.3: one monarch at a time'],
     ['When ~ enters, its controller becomes the monarch.', 'another player'],

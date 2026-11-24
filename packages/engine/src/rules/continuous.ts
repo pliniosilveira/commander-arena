@@ -24,7 +24,9 @@ import type {
   ContinuousEffect,
   GameObject,
   GameState,
+  StackAbility,
 } from '../state/types';
+import { manaSymbolsOf } from './alt-costs';
 import { controllerOf } from './control';
 import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
@@ -242,6 +244,7 @@ export function runBecomeCopy(
   node: Extract<Effect, { kind: 'becomeCopy' }>,
   ctx: SelectContext,
   targets: readonly ChosenTarget[],
+  resolving?: StackAbility | null,
 ): StepOutcome {
   const sourceId = resolveObjects(state, node.of, ctx, targets)[0];
   const source =
@@ -250,6 +253,16 @@ export function runBecomeCopy(
     (id) => state.objects[id]?.zone === 'battlefield',
   );
   if (source === undefined || affected.length === 0) return done(state);
+  // CR 707.9b (Kimahri, Valiant Guardian): "... and this ability": the ability that is resolving is one of the copy's.
+  if (node.withThisAbility === true) {
+    if (resolving === undefined || resolving === null) return done(state);
+    return copyEffect(
+      state,
+      { ...node, abilities: [...(node.abilities ?? []), resolving] },
+      source,
+      affected,
+    );
+  }
   return copyEffect(state, node, source, affected);
 }
 
@@ -366,19 +379,41 @@ export function runCreaturesCantAttackYou(
   state: GameState,
   node: Extract<Effect, { kind: 'creaturesCantAttackYou' }>,
   ctx: SelectContext,
+  targets: readonly ChosenTarget[] = [],
 ): StepOutcome {
+  // CR 603.7c: the one player whose creatures are barred is found as the effect runs; with none (the player has left the game) nothing is barred.
+  let of: SeatId | undefined;
+  if (node.player !== undefined) {
+    [of] = resolvePlayers(state, node.player, ctx, targets);
+    if (of === undefined) return done(state);
+  }
   const [timestamp, stamped] = allocateTimestamp(state);
   const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
   const created: ContinuousEffect = {
     id: `ce${timestamp}`,
     timestamp,
     objects: [],
-    until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
-    change: {
-      kind: 'creaturesCantAttackPlayer',
-      filter: node.creatures,
-      controller: ctx.controller,
-    },
+    // CR 511.3 (End of Combat Step): "this combat" lasts until the end of combat step ends.
+    until:
+      node.duration === 'thisCombat'
+        ? 'endOfCombat'
+        : { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    change:
+      node.tax === undefined
+        ? {
+            kind: 'creaturesCantAttackPlayer',
+            filter: node.creatures,
+            controller: ctx.controller,
+            ...(of === undefined ? {} : { of }),
+          }
+        : {
+            // CR 508.1d, 508.1h (Summon: Yojimbo): a tax on attacking, not a ban.
+            kind: 'attackTaxPlayer',
+            filter: node.creatures,
+            controller: ctx.controller,
+            symbols: manaSymbolsOf(node.tax),
+            source: ctx.source,
+          },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
 }

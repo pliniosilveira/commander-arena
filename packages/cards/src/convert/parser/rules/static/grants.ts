@@ -469,7 +469,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature has flying, first strike and vigilance.',
     "Enchanted creature can't attack or block alone.",
     "Enchanted creature can't attack you or planeswalkers.",
-    "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack your opponents.",
     'Enchanted creature loses flying and flying.',
     'Enchanted creature loses.',
     "Enchanted creature can attack as though it didn't have defender.",

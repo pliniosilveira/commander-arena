@@ -10,6 +10,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
+import { COUNTER_INTELLIGENCE_G2_COST_RULES } from './counter-intelligence-g2';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
 import { EXTRA_TURN_COST_RULES } from './extra-turns';
 import { FEDERATION_D_COST_RULES } from './federation-d';
@@ -19,6 +20,7 @@ import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
 import { PAY_ENERGY_COST_RULES } from './pay-energy';
+import { PUT_LINKED_EXILE_COST_RULES } from './put-linked-exile';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -957,6 +959,7 @@ export const COST_RULES = [
   ...HOFRI_COST_RULES,
   // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
   ...EXTRA_TURN_COST_RULES,
+  ...PUT_LINKED_EXILE_COST_RULES,
   // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,
@@ -981,4 +984,5 @@ export const COST_RULES = [
   ...UNTAP_PERMANENTS_COST_RULES,
   // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
   ...FEDERATION_D_COST_RULES,
+  ...COUNTER_INTELLIGENCE_G2_COST_RULES,
 ];

@@ -183,6 +183,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'annihilator',
         // CR 702.189a: firebending carries a number, checked by `checkGrantedParameter`; each instance granted triggers separately.
         'firebending',
+        // CR 702.121b: melee, given by a static ability (Depthshaker Titan); each instance granted triggers separately.
+        'melee',
         // D-638: ward carries a cost, checked by `checkGrantedParameter`; each instance granted is a triggered ability of its own.
         'ward',
         // D-478: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.

@@ -14,6 +14,7 @@ import type {
 } from '../ast/types';
 import type { CardType, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
+import type { VoteCast } from '../state/decisions';
 import {
   getObject,
   getSeat,
@@ -26,7 +27,7 @@ import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../stat
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { countersOfKind } from './counters-of-kind';
-import { defendingPlayerOf } from './defending';
+import { defendingPlayerOfAbility } from './defending';
 import { derive } from './derive';
 import { keywordKindsOf } from './derive-keywords';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
@@ -36,7 +37,9 @@ import { commanderCardOf, successorsOf } from './melded';
 import { isModified } from './modified';
 import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
+import { ringBearerOf } from './ring-bearer';
 import { objectOrLki } from './source-info';
+import { objectOfOption, seatOfOption } from './vote-options';
 
 export interface SelectContext {
   readonly controller: SeatId;
@@ -109,6 +112,8 @@ export interface SelectContext {
   readonly thisWay?: ThisWayCounts;
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /** Who voted for what in the latest vote of this resolution, or in the vote that triggered the ability (CR 701.38a): what `votesReceived`, `votedObjects`, `eachOpponentWhoVoted` and `perVote` read. */
+  readonly voteCast?: readonly VoteCast[];
   /** The natural result of the latest die the resolution rolled, for the amount `dieResult` (CR 706.2, Galadriel group 3). Absent where none was rolled: the amount is 0. */
   readonly dieResult?: number;
   /**
@@ -333,7 +338,7 @@ export function matchesFilter(
     ...(filter.manaValueX === true ? xFilterContext(state, ctx) : {}),
     ...(filter.controller === 'defendingPlayer'
       ? (() => {
-          const seat = defendingPlayerOf(state, ctx.source);
+          const seat = defendingPlayerOfAbility(state, ctx);
           return seat === null ? {} : { defendingPlayer: seat };
         })()
       : {}),
@@ -352,12 +357,24 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    ...(filter.dealtDamageThisTurn === true
+      ? { damagedObjects: state.turnLog.damagedObjects ?? [] }
+      : {}),
     // CR 607.2a, 400.7 (Lorehold group 2): the cards the source exiled with its linked ability; a source that left the battlefield is a new object with none.
     ...(filter.exiledWithSource === true
       ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
       : {}),
     // CR 603.12, 400.7j (Espers to Magicite): the cards the resolution that created the reflexive ability exiled.
     ...(filter.exiledThisWay === true ? { exiledThisWay: ctx.moved ?? [] } : {}),
+    // CR 208.1, 603.12, 701.47a (Grishnákh): the Army the amass before the reflexive ability chose, as it is now.
+    ...(filter.powerAtMostMoved === true
+      ? (() => {
+          const first = ctx.moved?.[0];
+          const army = first === undefined ? undefined : state.objects[first];
+          const power = army === undefined ? null : derive(state, army).power;
+          return power === null ? {} : { movedPower: power };
+        })()
+      : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     // CR 205.2a, 701.21a (Braids): "shares a card type with it" after a sacrifice reads the permanent sacrificed first in this resolution, as it last was.
     // CR 205.3m, 113.7a (Titan of Littjara): "shares a creature type with it" of an ability about its own source reads the source, as it is or as it last was.
@@ -395,8 +412,10 @@ function readsGame(f: ObjectFilter): boolean {
     f.putFromBattlefieldThisTurn === true ||
     f.discardedOrFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.dealtDamageThisTurn === true ||
     f.exiledWithSource === true ||
     f.exiledThisWay === true ||
+    f.powerAtMostMoved === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
     f.notTriggerCard === true ||
@@ -706,10 +725,12 @@ function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext):
   if (spec.what.kind === 'objectOrSpell') {
     // CR 115.1 (issue 81): "target spell or creature": the permanents the filter matches, then the spells on the stack the spell filter matches. A spell never targets itself
     // while it is being put on the stack.
-    const { filter: permanents, spell: spells } = spec.what;
+    const { filter: permanents, spell: spells, card: cards } = spec.what;
     for (const [filter, zone] of [
       [permanents, 'battlefield'],
       [spells, 'stack'],
+      // CR 115.1, 404.1 (Endless Detour): "or card in a graveyard": the cards of any graveyard the card filter matches.
+      ...(cards === undefined ? [] : [[cards, 'graveyard'] as const]),
     ] as const) {
       for (const id of objectsInZone(state, zone)) {
         const obj = getObject(state, id);
@@ -870,6 +891,17 @@ export function resolveObjects(
       return [...(ctx.sacrificed ?? [])];
     case 'eachObject':
       return ctx.eachObject === undefined ? [] : [ctx.eachObject];
+    case 'votedObjects': {
+      // CR 701.38a, 701.38b (Trap the Trespassers): the permanents on the battlefield with one or more votes, in the order they were first voted for.
+      const ids: ObjectId[] = [];
+      for (const c of ctx.voteCast ?? []) {
+        const id = objectOfOption(c.option);
+        if (id !== null && !ids.includes(id) && state.objects[id]?.zone === 'battlefield') {
+          ids.push(id);
+        }
+      }
+      return ids;
+    }
     case 'sacrificedCost':
       // D-133, CR 602.2c: the permanents sacrificed as the cost of the ability that is resolving (gone now: last-known
       // information is read through their old ids).
@@ -882,6 +914,11 @@ export function resolveObjects(
           : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
       const host = source?.attachedTo ?? null;
       return host !== null && state.objects[host] !== undefined ? [host] : [];
+    }
+    case 'ringBearer': {
+      // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer", the creature that has the designation of the controller and is under their control now.
+      const bearer = ringBearerOf(state, ctx.controller);
+      return bearer === null ? [] : [bearer.id];
     }
     case 'putWithThis': {
       // CR 400.7, 603.10a (Animate Dead): the permanents on the battlefield that were put there with the object the ability belongs to, which may have left already (its id is what they remember).
@@ -1054,10 +1091,12 @@ export function resolvePlayers(
       const battlefield = objectsInZone(state, 'battlefield');
       return apnapOrder(
         state,
-        seatsInOrder(state, ctx.controller).filter((seat) =>
-          battlefield.some((id) =>
-            matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
-          ),
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) =>
+            (selector.opponentsOnly !== true || seat !== ctx.controller) &&
+            battlefield.some((id) =>
+              matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+            ),
         ),
       );
     }
@@ -1079,7 +1118,7 @@ export function resolvePlayers(
     }
     case 'defendingPlayer': {
       // CR 508.5: the player the source creature attacks (or attacked), D-110.
-      const seat = defendingPlayerOf(state, ctx.source);
+      const seat = defendingPlayerOfAbility(state, ctx);
       return seat === null ? [] : [seat];
     }
     case 'chosenPlayer':
@@ -1133,6 +1172,30 @@ export function resolvePlayers(
           : (ctx.thisWay?.discardedBy ?? [])
         ).filter(
           (seat) => !getSeat(state, seat).hasLost && (named === undefined || named.includes(seat)),
+        ),
+      );
+    }
+    case 'eachPlayerWithoutVotes': {
+      // CR 701.38a, 101.4 (Círdan the Shipwright): "each player who received no votes": no vote of the record was for them.
+      const cast = ctx.voteCast ?? [];
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) => !cast.some((c) => seatOfOption(c.option) === seat),
+        ),
+      );
+    }
+    case 'eachOpponentWhoVoted': {
+      // CR 701.38a, 701.38d, 101.4 (Erestor of the Council): an opponent who voted for a choice the controller voted for (`same`), or for one the controller did not vote for
+      // (`different`); with several votes one player may be both.
+      const cast = ctx.voteCast ?? [];
+      const mine = cast.filter((c) => c.seat === ctx.controller).map((c) => c.option);
+      return apnapOrder(
+        state,
+        opponentsOf(state, ctx.controller).filter((seat) =>
+          cast.some(
+            (c) => c.seat === seat && mine.includes(c.option) === (selector.choice === 'same'),
+          ),
         ),
       );
     }

@@ -8,12 +8,15 @@ import { useDeckChoices } from '../use-deck-choices';
 /** One side of the versus card: the deck as the deck picker shows it (art, name, commander). */
 export function Side({
   who,
+  seat,
   label,
   deck,
   fallbackCommander,
   fallbackColors,
 }: {
   who: string;
+  /** The seat that plays the deck: its commander is drawn in the printing its list names. */
+  seat: number;
   /** The caption above the deck name. */
   label: string;
   deck: DeckChoice | undefined;
@@ -26,7 +29,13 @@ export function Side({
     <div className="dec-versus-side" data-versus-side={who}>
       {commander !== '' && (
         // No search for a special commander printing here: the deck's own printing (the one chosen for it, or its list's) is drawn.
-        <Art name={commander} isToken={false} version="normal" className="dec-versus-card" />
+        <Art
+          name={commander}
+          isToken={false}
+          owner={seat}
+          version="normal"
+          className="dec-versus-card"
+        />
       )}
       <span className="dec-versus-text">
         <span className="dec-versus-who">{label}</span>
@@ -64,6 +73,7 @@ export function Versus({ view }: { view: GameView }) {
       <div className="dec-versus" data-versus>
         <Side
           who="you"
+          seat={view.viewer}
           label="You"
           deck={choices.find((d) => d.id === options?.humanDeck)}
           fallbackCommander={mine?.name ?? ''}
@@ -75,6 +85,7 @@ export function Versus({ view }: { view: GameView }) {
         <div className="dec-versus-opponent">
           <Side
             who="opponent"
+            seat={theirSeat?.id ?? 1}
             label="Opponent"
             deck={choices.find((d) => d.id === options?.aiDeck)}
             fallbackCommander={theirs?.name ?? ''}

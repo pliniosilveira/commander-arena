@@ -219,6 +219,7 @@ export interface CastHandle {
     | 'payment'
     | 'behold'
     | 'additionalExile'
+    | 'linkedExile'
     | 'harmonize'
     | 'sacrifice'
     | 'discard'

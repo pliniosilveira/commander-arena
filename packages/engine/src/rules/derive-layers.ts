@@ -214,6 +214,8 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'firebending',
   'myriad',
   'extort',
+  // CR 702.121b: if a creature has multiple instances of melee, each triggers separately.
+  'melee',
   'demonstrate',
   'storm',
   'cascade',

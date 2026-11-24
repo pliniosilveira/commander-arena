@@ -71,8 +71,7 @@ async function saveDeck(page: Page, name: string, text: string): Promise<void> {
   await page.getByLabel(/^Decklist/).fill(text);
   await page.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText(`Saved "${name}".`)).toBeVisible();
+  await expect(page.getByText(`Imported and saved "${name}".`)).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
 }
 

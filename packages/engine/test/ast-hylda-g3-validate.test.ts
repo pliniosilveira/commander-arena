@@ -131,7 +131,7 @@ describe('countOf with a player named by a target (CR 109.4, 608.2c)', () => {
     ).toContain('is an object but a player is required here');
   });
 
-  test.each([{ kind: 'you' }, { kind: 'eachOpponent' }, { kind: 'triggerPlayer' }])(
+  test.each([{ kind: 'you' }, { kind: 'eachOpponent' }, { kind: 'defendingPlayer' }])(
     'another way to name the player is not read in a count: %j',
     (who) => {
       expect(

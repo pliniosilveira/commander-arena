@@ -11,17 +11,46 @@
 import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
 import { effectsOn } from './effects-on';
+import { type StaticControl, staticControls } from './static-control';
+
+const NO_STATICS: readonly StaticControl[] = [];
 
 /**
  * The controller of `obj` (CR 110.2): for a permanent on the battlefield the stored controller as the layer 2 effects on it change it, for any
  * other object (a spell or ability on the stack, a card in a hand or a graveyard) the stored one.
  */
 export function controllerOf(state: GameState, obj: GameObject): SeatId {
-  if (obj.zone !== 'battlefield' || state.continuousEffects.length === 0) return obj.controller;
+  if (obj.zone !== 'battlefield') return obj.controller;
+  return layerTwo(state, obj, true);
+}
+
+/**
+ * `controllerOf` without the static control effects (`static-control.ts`): who controls `obj` as far as the effects of resolved spells and abilities go. What
+ * `settleStaticControl` (`rules/static-control-sync.ts`) compares with, to see a static effect begin or end.
+ */
+export function controllerWithoutStatics(state: GameState, obj: GameObject): SeatId {
+  if (obj.zone !== 'battlefield') return obj.controller;
+  return layerTwo(state, obj, false);
+}
+
+/**
+ * The layer 2 effects on `obj` applied in timestamp order (CR 613.1b, 613.7): the continuous effects of change `control` and, with `statics`, the static ability "The
+ * monarch controls enchanted creature." of what is attached to it, which does nothing while there is no monarch.
+ */
+function layerTwo(state: GameState, obj: GameObject, statics: boolean): SeatId {
+  const fixed = statics ? (staticControls(state).get(obj.id) ?? NO_STATICS) : NO_STATICS;
+  if (state.continuousEffects.length === 0 && fixed.length === 0) return obj.controller;
   let seat = obj.controller;
+  let next = 0;
+  // CR 725.1: with no monarch the static effect does nothing; with one, that player controls the permanent.
+  const monarch = (): void => {
+    if (state.monarch !== null) seat = state.monarch;
+  };
   for (const e of effectsOn(state, obj.id)) {
+    for (; next < fixed.length && (fixed[next]?.timestamp ?? 0) < e.timestamp; next++) monarch();
     if (e.change.kind === 'control') seat = e.change.seat;
   }
+  for (; next < fixed.length; next++) monarch();
   return seat;
 }
 

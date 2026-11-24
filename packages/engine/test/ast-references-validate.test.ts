@@ -103,6 +103,8 @@ describe('amounts that read an object', () => {
       'commanderManaValue',
       'commanderCasts',
       'lifeTotalOf',
+      'damageDealtToThisTurn',
+      'greatestCountOfAnOpponent',
       'playerCount',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
@@ -147,6 +149,8 @@ describe('amounts that read an object', () => {
       'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
+      'votesReceived',
+      'votesForObject',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
       // CR 122.1: the experience counters a player has.
