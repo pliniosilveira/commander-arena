@@ -19,6 +19,8 @@ export interface CardPrint {
   readonly small: string | null;
   readonly normal: string;
   readonly large: string;
+  /** The cropped art, which the board draws on a small tile; null when Scryfall gives none. */
+  readonly artCrop: string | null;
 }
 
 export function cardPrintsUrl(name: string): string {
@@ -51,6 +53,7 @@ export function parseCardPrints(answer: unknown): readonly CardPrint[] {
     const large = str(uris?.large) || normal;
     if (!HOST.test(normal) || !HOST.test(large)) continue;
     const small = str(uris?.small);
+    const artCrop = str(uris?.art_crop);
     const frameEffects = Array.isArray(card.frame_effects) ? card.frame_effects : [];
     const frames = [
       card.border_color === 'borderless' && 'Borderless',
@@ -70,6 +73,7 @@ export function parseCardPrints(answer: unknown): readonly CardPrint[] {
       small: HOST.test(small) ? small : null,
       normal,
       large,
+      artCrop: HOST.test(artCrop) ? artCrop : null,
     });
   }
   return prints;
