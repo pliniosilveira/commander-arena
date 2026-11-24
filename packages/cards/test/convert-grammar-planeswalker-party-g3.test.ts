@@ -1,5 +1,5 @@
 // Planeswalker Party deck (issue 132), group 3: "the number of players who control more lands than you" (Oreskos Explorer's X). The lines are SYNTHETIC: the card itself also needs its
-// reveal as a sentence of its own after the definition of X, which is not built yet (docs/ROADMAP.md).
+// reveal as a sentence of its own after the definition of X.
 import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
 
 const SIBLINGS: readonly Line[] = [

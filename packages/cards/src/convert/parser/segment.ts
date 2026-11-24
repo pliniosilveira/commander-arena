@@ -528,6 +528,12 @@ const REVEAL_UNTIL_CHOSEN_TYPE_FIRST =
   /^reveal cards from the top of your library until you reveal X creature cards of the chosen type, where X is [^.]*\.$/i;
 const PUT_THOSE_CARDS_SHUFFLE_REST =
   /^put those cards onto the battlefield, then shuffle the rest of the revealed cards into your library\.$/i;
+/**
+ * "Search your library for up to X Plains cards, where X is the number of players who control more lands than you. Reveal those cards, put them into your hand, then shuffle."
+ * (Oreskos Explorer, CR 107.3c, 701.23): two sentences that are one instruction, kept together for `effect.search`: the definition of X is a sentence of its own.
+ */
+const SEARCH_UP_TO_X_FIRST = /^search your library for up to X [^.,]*, where X is [^.]*\.$/i;
+const REVEAL_THOSE_PUT_SHUFFLE = /^reveal those cards, put them into your hand, then shuffle\.$/i;
 const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
 
 /**
@@ -1302,6 +1308,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, REVEAL_UNTIL_CHOSEN_TYPE_FIRST) &&
       said(b, PUT_THOSE_CARDS_SHUFFLE_REST)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, SEARCH_UP_TO_X_FIRST) &&
+      said(b, REVEAL_THOSE_PUT_SHUFFLE)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
