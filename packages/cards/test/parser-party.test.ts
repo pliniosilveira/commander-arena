@@ -235,3 +235,85 @@ describe('"~ is also a Cleric, Rogue, Warrior, and Wizard" (Burakos)', () => {
     g.expect.pt('SYNTHETIC Party Scribe', 2, 2);
   });
 });
+
+describe('casting party spells from the top of the library (Nalia de’Arnise)', () => {
+  const CAST =
+    'You may cast Cleric, Rogue, Warrior, and Wizard spells from the top of your library.';
+  const COMBAT =
+    'At the beginning of combat on your turn, if you have a full party, put a +1/+1 counter on each creature you control and those creatures gain deathtouch until end of turn.';
+
+  test('lowers to castFromTopOfLibrary of spells with any of the four creature types', () => {
+    const face = readAll(CAST, 'creature', ['Human', 'Rogue']);
+    expect(face.abilities).toMatchObject([
+      {
+        kind: 'static',
+        static: {
+          kind: 'castFromTopOfLibrary',
+          spells: {
+            anyOf: [
+              { subtypes: ['Cleric'] },
+              { subtypes: ['Rogue'] },
+              { subtypes: ['Warrior'] },
+              { subtypes: ['Wizard'] },
+            ],
+          },
+        },
+      },
+    ]);
+  });
+
+  test('the full-party combat ability is read', () => {
+    const face = readAll(COMBAT, 'creature', ['Human', 'Rogue']);
+    expect(face.abilities[0]).toMatchObject({
+      kind: 'triggered',
+      interveningIf: { kind: 'amountIs', amount: PARTY, compare: { cmp: 'atLeast', value: 4 } },
+    });
+  });
+
+  test('is not read with "or", a plural or an unknown type', () => {
+    for (const text of [
+      'You may cast Cleric, Rogue, Warrior, or Wizard spells from the top of your library.',
+      'You may cast Clerics and Rogues spells from the top of your library.',
+      'You may cast Cleric and Goblinoid spells from the top of your library.',
+    ]) {
+      expect(dropped(text, 'creature').reason, text).toBeDefined();
+    }
+  });
+
+  test('the engine lets you cast a Cleric from the top, and not a Goblin', () => {
+    const lowered = readAll(CAST, 'creature', ['Human', 'Rogue']).abilities;
+    const base = syntheticCard('SYNTHETIC Party Scribe');
+    const [baseFace] = base.faces;
+    if (baseFace === undefined) throw new Error('no face');
+    const card = {
+      ...base,
+      name: 'SYNTHETIC Lowered Nalia',
+      faces: [
+        {
+          ...baseFace,
+          name: 'SYNTHETIC Lowered Nalia',
+          power: 3,
+          toughness: 3,
+          abilities: lowered,
+        },
+      ],
+    };
+    expect(validateCard(card)).toEqual([]);
+    const game = (top: string) =>
+      scenario()
+        .seat(0)
+        .define(card)
+        .battlefield('SYNTHETIC Lowered Nalia', 'Plains')
+        .library(top, 'Plains', 'Plains')
+        .seat(1)
+        .library('Island', { count: 4 })
+        .at('precombatMain', { active: 0 })
+        .build();
+    const cleric = game('SYNTHETIC Party Cleric');
+    cleric.expect.legal(0, { cast: { name: 'SYNTHETIC Party Cleric', zone: 'library', seat: 0 } });
+    const other = game('SYNTHETIC Party Commoner');
+    other.expect.illegal(0, {
+      cast: { name: 'SYNTHETIC Party Commoner', zone: 'library', seat: 0 },
+    });
+  });
+});
