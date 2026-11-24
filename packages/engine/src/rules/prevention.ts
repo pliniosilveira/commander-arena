@@ -25,7 +25,6 @@ import { allocateTimestamp, objectsInZone } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
 import { endOf } from './control-effects';
 import { derive } from './derive';
-import { staticConditionHolds } from './static-conditions';
 import {
   isPlayerSelector,
   matchesFilter,
@@ -34,6 +33,7 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+import { staticConditionHolds } from './static-conditions';
 import { done, type StepOutcome } from './step-outcome';
 
 type PreventNode = Extract<Effect, { kind: 'preventDamage' }>;

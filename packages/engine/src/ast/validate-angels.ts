@@ -291,7 +291,11 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         );
       }
       if (kindOf(s.subject) === 'attached' && s.removeCounter !== undefined) {
-        issue(out, `${path}.removeCounter`, 'a prevention of the attached permanent removes no counter');
+        issue(
+          out,
+          `${path}.removeCounter`,
+          'a prevention of the attached permanent removes no counter',
+        );
       }
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);

@@ -15,6 +15,7 @@ import { ALSO_TYPES_STATIC_RULES } from './also-types';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
+import { ATTACHED_CONDITION_STATIC_RULES } from './attached-conditions';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
@@ -108,6 +109,8 @@ export const STATIC_RULES = [
   ...DEATH_TOLL_C_STATIC_RULES,
   // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard."
   ...ALSO_TYPES_STATIC_RULES,
+  // Multiclass Baldric: "Equipped creature has lifelink if you control a Cleric, deathtouch if ...", "As long as you have a full party, prevent all damage that would be dealt to equipped creature."
+  ...ATTACHED_CONDITION_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
   // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.

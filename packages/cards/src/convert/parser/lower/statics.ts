@@ -1157,6 +1157,45 @@ export function lowerStatic(ability: Static, ctx: LowerContext): LowerResult<rea
 }
 
 /**
+ * "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ..." (CR 611.3a, 613.1f): one static ability for each keyword, with that keyword's
+ * own condition (the same lowering as a statement with one condition, once for each effect). The conditions name no keyword and no power or toughness (CR 613.8).
+ */
+function lowerEffectConditions(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const { effectConditions = [] } = statement;
+  if (
+    effectConditions.length !== statement.effects.length ||
+    statement.condition !== undefined ||
+    statement.also !== undefined
+  ) {
+    return failure(ability);
+  }
+  const abilities: Ability[] = [];
+  for (const [i, effect] of statement.effects.entries()) {
+    const written = effectConditions[i];
+    if (written === undefined) return failure(ability);
+    ctx.staticCondition = true;
+    ctx.staticSubjectIsSelf = false;
+    const lowered = lowerCondition(written, true, ctx);
+    ctx.staticCondition = false;
+    if (!lowered.ok) return lowered;
+    if (conditionNamesLayerValue(lowered.value)) return failure(ability);
+    const done = lowerPart(
+      { subject: statement.subject, effects: [effect] },
+      ability,
+      lowered.value,
+      ctx,
+    );
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * "• Temur — Creatures you control get +1/+0 and have trample and haste." (CR 607.2d, 614.12; Frostcliff Siege): the changes work only while the permanent has the option
  * it chose as it entered, which the engine reads as the static condition `chosenOption` (what no layer changes).
  */
@@ -1181,6 +1220,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   const { statement } = ability;
   const [first, ...more] = statement.effects;
   if (first === undefined) return failure(ability);
+  // CR 611.3a, 613.1f (Multiclass Baldric): "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ...": each keyword with its own condition.
+  if (statement.effectConditions !== undefined) return lowerEffectConditions(ability, ctx);
   if (statement.option !== undefined && first.kind !== 'doubleTriggers') {
     return lowerOptionStatic(ability, ctx);
   }
