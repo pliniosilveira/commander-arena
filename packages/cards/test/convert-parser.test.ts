@@ -623,6 +623,7 @@ describe('unmatched abilities', () => {
       'condition.first-combat-phase',
       'condition.combat-damaged-by',
       'condition.not-declared-attacker',
+      'condition.youre-defending-player',
       'condition.damage-dealt-by-type',
       'condition.entered-from-graveyard',
       'condition.cost-contains-x',

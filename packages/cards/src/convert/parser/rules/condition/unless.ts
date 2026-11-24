@@ -12,6 +12,16 @@ import { defineRule, family, spanned } from '../registry';
 
 /** The player who pays: a pronoun the binding pass resolves ("that player", "they") or "you". */
 const PAYER = choice(
+  // Kazuul, Tyrant of the Cliffs (CR 118.12a): "unless that creature's controller pays {3}": the controller of the object a trigger is about, read as `noun.its-controller` is.
+  map(
+    sequence(
+      satisfy(family<IrNoun>('noun', { only: ['noun.its-controller'] }), (n) =>
+        /^that creature['’]s controller$/i.test(n.filter.raw ?? ''),
+      ),
+      literal(' pays '),
+    ),
+    ([noun]): IrNoun => noun,
+  ),
   map(spanned(literal('that player pays ')), ({ span }): IrNoun => anaphor(span, 'that player')),
   map(spanned(literal('they pay ')), ({ span }): IrNoun => anaphor(span, 'they')),
   map(
@@ -65,6 +75,7 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     // Nazgûl Battle-Mace (CR 119.4, 118.3): a payment of life.
     'unless that player pays 3 life',
     'unless you pay 2 life',
+    "unless that creature's controller pays {3}",
   ],
   rejects: [
     'unless that player pays {X}',
@@ -76,6 +87,7 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     'unless any opponent pays {1}',
     'unless an opponent pays {1}',
     'unless its controller pays {1}',
+    "unless that creature's controller pay {3}",
     'unless that player pays {R/W}',
     'unless that player pays {1} or discards a card',
     'if that player pays {1}',
