@@ -344,6 +344,7 @@ export function CardFace({
             name={art.name}
             back={art.back}
             isToken={object.isToken || object.emblem === true}
+            emblem={object.emblem === true}
             {...(object.tokenDefinition === undefined
               ? {}
               : { tokenDefinition: object.tokenDefinition })}
@@ -382,6 +383,7 @@ export function CardFace({
             name={art.name}
             back={art.back}
             isToken={object.isToken || object.emblem === true}
+            emblem={object.emblem === true}
             {...(object.tokenDefinition === undefined
               ? {}
               : { tokenDefinition: object.tokenDefinition })}

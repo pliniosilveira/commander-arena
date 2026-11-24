@@ -6,15 +6,21 @@
  * Tokens use a cached exact search of their original definition instead (`token-art.ts`).
  */
 import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
-import { type CSSProperties, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
 import { useListedArt } from './commander-art';
 import type { ArtVersion } from './image-uris';
-import { useTokenArt } from './token-art';
+import { createFailureMemory, RETRY_AFTER_MS } from './lookup-cache';
+import { useEmblemArt, useTokenArt } from './token-art';
 
 export type { ArtVersion } from './image-uris';
 
-const failed = new Set<string>();
+/**
+ * Pictures that failed to load. A burst of requests to Scryfall's image redirect is rate limited, and a picture that failed for that reason
+ * stayed blank for the session: it is asked for again after a wait, up to `RETRIES` times.
+ */
+const failed = createFailureMemory();
+const RETRIES = 3;
 
 /** The image URL for a card name, or null for cards that have no Scryfall image. */
 export function imageUrl(
@@ -57,6 +63,8 @@ interface ArtProps {
   readonly className: string;
   readonly style?: CSSProperties;
   readonly tokenDefinition?: TokenDefinition;
+  /** The object is an emblem: its card is found by name among Scryfall's emblems (the Ring); an effect's generic emblem has none. */
+  readonly emblem?: boolean;
   /** Load at once instead of when scrolled near (a battlefield tile: Safari never loads those it deems offscreen, issue 474). */
   readonly eager?: boolean;
 }
@@ -70,9 +78,11 @@ export function Art({
   className,
   style,
   tokenDefinition,
+  emblem = false,
   eager = false,
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
+  const emblemUrl = useEmblemArt(emblem ? name : null, version);
   // The printing the deck's list names (a precon from Archidekt, or the one the player chose): the front face only, as the lookup
   // answers it. A commander is drawn like any other card, never in a special printing searched for.
   const listed = useListedArt(
@@ -83,11 +93,13 @@ export function Art({
   // Issue 32: a token that is a copy of a card has the card's mana cost (no real token has one) and no token card of its
   // own on Scryfall, so it is drawn with the art of the card it copies.
   const copiesACard = tokenDefinition !== undefined && tokenDefinition.manaCost !== null;
-  const url = copiesACard
-    ? imageUrl(name, false, version, back)
-    : tokenDefinition === undefined
-      ? (listed.url ?? imageUrl(name, isToken, version, back))
-      : tokenUrl;
+  const url = emblem
+    ? emblemUrl
+    : copiesACard
+      ? imageUrl(name, false, version, back)
+      : tokenDefinition === undefined
+        ? (listed.url ?? imageUrl(name, isToken, version, back))
+        : tokenUrl;
   if (url === null) return null;
   return <LoadedArt key={url} url={url} className={className} style={style} eager={eager} />;
 }
@@ -106,6 +118,16 @@ function LoadedArt({
   const [state, setState] = useState<'loading' | 'loaded' | 'failed'>(
     failed.has(url) ? 'failed' : 'loading',
   );
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (state !== 'failed' || attempt >= RETRIES) return;
+    const timer = setTimeout(() => {
+      failed.clear(url);
+      setAttempt((n) => n + 1);
+      setState('loading');
+    }, RETRY_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [state, attempt, url]);
   if (state === 'failed') return null;
   return (
     <img
@@ -119,7 +141,7 @@ function LoadedArt({
       draggable={false}
       onLoad={() => setState('loaded')}
       onError={() => {
-        failed.add(url);
+        failed.mark(url);
         setState('failed');
       }}
     />
