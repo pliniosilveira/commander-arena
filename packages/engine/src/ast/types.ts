@@ -1115,6 +1115,13 @@ export interface ObjectFilter {
    */
   readonly targetsObject?: ObjectFilter;
   /**
+   * "Counter target activated or triggered ability from an artifact or enchantment source" (Green Slime, CR 113.7a, 113.3b, 109.1): an ability on the stack whose source (the object that
+   * generated it, as it is or as it last was on the battlefield) is an object this filter matches. Only with `stackKind` `ability` (or `activatedAbility`/`triggeredAbility`); the
+   * inner filter names permanents on the battlefield and no stack kind. Read where a filter is matched against the game (a target slot); refused in a static ability and where `derive`
+   * matches filters.
+   */
+  readonly abilitySource?: ObjectFilter;
+  /**
    * "A spell that targets a player" (CR 115.1, 601.2c, Shiko and Narset, Unified: "copy that spell if it targets a permanent or player", read as a disjunction of `targetsObject`
    * of a permanent and this): a spell or ability on the stack with at least one chosen target that is a player. Read as `targetsObject` is, with the same limits.
    * `'you'` (Siren Stormtamer: "counter target spell or ability that targets you or a creature you control", CR 115.1, 601.2c): the target is the player the filter is read for

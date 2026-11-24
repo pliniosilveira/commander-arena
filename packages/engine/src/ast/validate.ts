@@ -538,6 +538,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
             f.keywords !== undefined ||
             f.notKeywords !== undefined ||
             f.targetsObject !== undefined ||
+            f.abilitySource !== undefined ||
             readsCombatOrSource(f),
         )
       ) {

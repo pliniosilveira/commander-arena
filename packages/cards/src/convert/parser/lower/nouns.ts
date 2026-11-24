@@ -459,6 +459,15 @@ function lowerFilterAt(
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
+  // Green Slime (CR 113.7a): "from an artifact or enchantment source", an ability on the stack.
+  let abilitySource: ObjectFilter | undefined;
+  if (filter.abilitySource !== undefined) {
+    if (inner || filter.stackKind === undefined) return bad([]);
+    parts.push('selector:abilitySource');
+    const from = lowerFilterAt(filter.abilitySource, noun, true, false, false);
+    if (!from.ok) return from;
+    abilitySource = from.value;
+  }
   // Siren Stormtamer (CR 115.1, 601.2c): "that targets you": a chosen target that is the controller of the ability, a member of the choice that also reads "a creature you control".
   let targetsPlayer: 'you' | undefined;
   if (filter.targetsYou === true) {
@@ -674,6 +683,7 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(abilitySource === undefined ? {} : { abilitySource }),
     ...(targetsPlayer === undefined ? {} : { targetsPlayer }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),

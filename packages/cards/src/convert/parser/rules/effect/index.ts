@@ -77,6 +77,7 @@ import { DEATH_TOLL_B_EFFECT_RULES } from './death-toll-b';
 import { DEATH_TOLL_C_EFFECT_RULES } from './death-toll-c';
 import { DEATH_TOLL_WINTER_EFFECT_RULES } from './death-toll-winter';
 import { DELAYED_RULES } from './delayed';
+import { DESTROY_COUNTERED_SOURCE_EFFECT_RULES } from './destroy-countered-source';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
@@ -1105,6 +1106,7 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
         only: [
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
+          'noun.target-ability-from-source',
           'noun.target-activated-or-triggered-ability',
           // Issue 105 (Disallow).
           'noun.target-spell-activated-or-triggered-ability',
@@ -1307,6 +1309,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
   ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
   ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
+  ...DESTROY_COUNTERED_SOURCE_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

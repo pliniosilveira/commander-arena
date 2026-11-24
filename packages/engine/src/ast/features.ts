@@ -1118,6 +1118,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'targetCountAtLeast',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
+    // Exit from Exile deck (Green Slime): "counter target activated or triggered ability from an artifact or enchantment source" (`ObjectFilter.abilitySource`).
+    'abilitySource',
     // "copy that spell if it targets a permanent or player" (`ObjectFilter.targetsPlayer`).
     'targetsPlayer',
     // "a spell or ability that targets you" (`ObjectFilter.targetsPlayer` of 'you').
@@ -2176,6 +2178,8 @@ export const SELECTOR_KINDS = [
   'searchAnyNumber',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
+  /** "An ability from an artifact source" (CR 113.7a): the engine's `ObjectFilter.abilitySource`. */
+  'abilitySource',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
   'targetsPlayer',
   /** "That targets you" (Siren Stormtamer, CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer` of `'you'`. */

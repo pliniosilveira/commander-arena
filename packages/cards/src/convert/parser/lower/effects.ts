@@ -77,6 +77,7 @@ import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
 import { DEATH_TOLL_C_LOWERINGS } from './death-toll-c';
 import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
+import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
@@ -2886,6 +2887,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...SLIVER_D_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...DAMAGE_UNPREVENTABLE_LOWERINGS,
+  ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

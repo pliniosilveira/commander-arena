@@ -964,6 +964,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
+  'noun.target-ability-from-source': spell((e) => `Counter ${e}.`),
+  'effect.destroy-countered-ability-source': spell(
+    () =>
+      "Counter target activated or triggered ability from an artifact source. If a permanent's ability is countered this way, destroy that permanent.",
+  ),
   'noun.up-to-one-target-spell': spell(
     (e) =>
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,

@@ -310,6 +310,8 @@ export interface IrFilter {
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
   readonly targets?: IrFilter;
+  /** "from an artifact or enchantment source" (Green Slime, CR 113.7a): the source of the ability on the stack the filter names is an object this filter matches (the engine's `abilitySource`). */
+  readonly abilitySource?: IrFilter;
   /** "that targets only a single creature you control" (issue 144, CR 115.9c): a spell whose chosen targets are one object of this kind, however many times it was chosen. */
   readonly targetsOnly?: IrFilter;
   /** "that targets you" (Siren Stormtamer, CR 115.1, 601.2c): a spell or ability with a chosen target that is the player the filter is read for ("you"). Only a member of a choice on the stack. */

@@ -1425,6 +1425,16 @@ function runEffect(
       if (effect.exileInstead === true) {
         return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
       }
+      // CR 113.7a, 701.6a (Green Slime): "If a permanent's ability is countered this way, destroy that permanent": the permanents on the battlefield that were the sources of the abilities
+      // countered are what `moved` names afterwards. A countered spell names nothing (it is a card that goes to a graveyard, and no instruction reads it).
+      const sources = ids.flatMap((id) => {
+        const stack = state.objects[id]?.stack;
+        const source = stack?.kind === 'ability' ? stack.source : null;
+        return source !== null && state.objects[source]?.zone === 'battlefield' ? [source] : [];
+      });
+      if (sources.length > 0 || ids.some((id) => state.objects[id]?.stack?.kind === 'ability')) {
+        return { ...done(state, events, moveInstructions(ids, 'graveyard')), lastMoved: sources };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 

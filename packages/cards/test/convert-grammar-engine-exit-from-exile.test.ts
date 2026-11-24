@@ -564,3 +564,58 @@ describe('"Whenever ~ becomes the target of a spell, ~ deals 2 damage to that sp
     expect(g.state.seats[1]?.life).toBe(18);
   });
 });
+
+describe('"When ~ enters, counter target activated or triggered ability from an artifact or enchantment source. If a permanent\'s ability is countered this way, destroy that permanent." (CR 701.6a, 701.8, 113.7a)', () => {
+  const slime = parsed(
+    'SYNTHETIC Ability Slime',
+    'Creature — Ooze',
+    "Flash\nWhen ~ enters, counter target activated or triggered ability from an artifact or enchantment source. If a permanent's ability is countered this way, destroy that permanent.",
+    { manaCost: '{1}{U}', power: '2', toughness: '2', colors: ['U'] },
+  );
+  const idol = parsed('SYNTHETIC Life Idol', 'Artifact', '{1}: You gain 3 life.', {
+    manaCost: '{1}',
+    colors: [],
+  });
+  const pinger = parsed('SYNTHETIC Life Elf', 'Creature — Elf', '{1}: You gain 3 life.', {
+    manaCost: '{1}',
+    power: '1',
+    toughness: '1',
+    colors: [],
+  });
+  const build = (source: string) =>
+    scenario()
+      .define(slime)
+      .define(idol)
+      .define(pinger)
+      .seat(0)
+      .life(20)
+      .battlefield(source, 'Island')
+      .library(...FILLER)
+      .seat(1)
+      .hand(slime.name)
+      .battlefield('Island', 'Island')
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('an ability of an artifact is countered and the artifact is destroyed', () => {
+    const g = build(idol.name);
+    g.act(0).activate(idol.name, { pay: true });
+    g.pass(0);
+    g.act(1).cast(slime.name, { pay: true });
+    g.passAll();
+    expect(g.state.seats[0]?.life).toBe(20);
+    g.expect.zone(idol.name, 'graveyard', { seat: 0 });
+  });
+
+  test('an ability of a creature is not a legal target: it resolves', () => {
+    const g = build(pinger.name);
+    g.act(0).activate(pinger.name, { pay: true });
+    g.pass(0);
+    g.act(1).cast(slime.name, { pay: true });
+    g.passAll();
+    // No legal target: the trigger is removed, the ability resolves and the elf stays.
+    expect(g.state.seats[0]?.life).toBe(23);
+    g.expect.zone(pinger.name, 'battlefield', { seat: 0 });
+  });
+});

@@ -674,6 +674,27 @@ export function checkFilter(
     }
     checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
   }
+  // CR 113.7a (Green Slime): "from an artifact or enchantment source": an ability on the stack, whose source is a permanent the inner filter describes.
+  if (f.abilitySource !== undefined) {
+    if (f.stackKind === undefined || f.stackKind === 'spell') {
+      issue(
+        out,
+        `${path}.abilitySource`,
+        'the source of an ability is read for a filter with a stackKind of an ability',
+      );
+    }
+    if (
+      filterSome(f.abilitySource, (m) => m.zone !== undefined && m.zone !== 'battlefield') ||
+      filterSome(f.abilitySource, (m) => m.stackKind !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.abilitySource`,
+        'the source of an ability is a permanent on the battlefield: no zone or stackKind',
+      );
+    }
+    checkFilter(f.abilitySource, `${path}.abilitySource`, out);
+  }
   // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
   if (f.targetsPlayer !== undefined) {
     if (f.targetsPlayer !== true && f.targetsPlayer !== 'you') {
@@ -927,6 +948,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.goaded !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined ||
+  f.abilitySource !== undefined ||
   f.targetsPlayer !== undefined;
 
 /**
@@ -4156,7 +4178,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
     // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
-    (e?.kind === 'counter' && e.exileInstead === true) ||
+    // CR 113.7a (Green Slime): the permanents whose abilities a `counter` countered are "that permanent" ("If a permanent's ability is countered this way, destroy that permanent").
+    e?.kind === 'counter' ||
     e?.kind === 'createToken' ||
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
