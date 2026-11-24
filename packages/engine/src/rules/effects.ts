@@ -188,6 +188,7 @@ import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { increaseSpeed } from './speed';
+import { runPlayerSpellsCostLess } from './spell-discount';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
 import { TIME_COUNTER } from './time-counter';
@@ -2410,6 +2411,9 @@ function runEffect(
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);
+    case 'playerSpellsCostLess':
+      // CR 601.2f, 118.7a, 611.2a: "Until your next turn, ... spells that player casts cost {2} less to cast" (rules/spell-discount.ts).
+      return runPlayerSpellsCostLess(state, effect, ctx, targets);
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
       return runNextSpellPayLife(state, res);

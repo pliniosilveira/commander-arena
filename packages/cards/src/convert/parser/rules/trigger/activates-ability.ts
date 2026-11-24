@@ -208,8 +208,67 @@ export const TRIGGER_ACTIVATE_ABILITY_OF_KINDS = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.activate-any-ability`: "you activate an ability that isn't a mana ability" (CR 602.2, 605.1a, 603.2; the emblem of Rowan Kenrith): the engine's `activatesAbility` with `anySource`, any ability that uses the stack, also one of a card in a hand or a graveyard and a loyalty ability (a mana ability is never put on the stack,
+ * CR 605.1a). Only the controller ("you"): another player's activation of "an ability" is a different reading, as the parser tests of Wizened Mentor pin. Not read: "of a permanent" (the
+ * other rules), a mana ability, the past tense, "an ability" alone, "abilities", "an opponent", "a player".
+ */
+export const TRIGGER_ACTIVATE_ANY_ABILITY = defineRule<IrTrigger>({
+  id: 'trigger.activate-any-ability',
+  family: 'trigger',
+  leading: ['you'],
+  cites: [
+    'CR 602.2 (Activating Activated Abilities)',
+    'CR 605.1a (Activated Mana Abilities)',
+    'CR 603.2 (Handling Triggered Abilities)',
+  ],
+  examples: ["you activate an ability that isn't a mana ability"],
+  rejects: [
+    "an opponent activates an ability that isn't a mana ability",
+    "a player activates an ability that isn't a mana ability",
+    "you activates an ability that isn't a mana ability",
+    "an opponent activate an ability that isn't a mana ability",
+    "you activated an ability that isn't a mana ability",
+    "you activate an ability of a permanent that isn't a mana ability",
+    'you activate an ability',
+    'you activate a mana ability',
+    "each opponent activates an ability that isn't a mana ability",
+    "you activate abilities that aren't mana abilities",
+    "you activate an ability that isn't a mana ability or",
+    "you activate an ability that isn't a mana ability and",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      new RegExp(
+        `(you activate) an ability that (?:isn['’]t|is not) a mana ability${NOT_IN_WORD}(?!\\s+(?:or|and)${NOT_IN_WORD})`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const words = (r.value[1] ?? '').replace(/ activates?$/iu, '');
+    const span: Span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'activatesAbility',
+        actor: actorNoun(words, pos),
+        // The ability activated is what "it" of "copy it" says (CR 707.10, 113.7a), so it is the subject the binding pass seeds.
+        subject: makeNoun('trigger.activate-any-ability', span, 'a', { raw: 'ability' }),
+        args: {
+          anySource: { kind: 'flag', value: true, span, rule: 'trigger.activate-any-ability' },
+        },
+        span,
+        rule: 'trigger.activate-any-ability',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const ACTIVATES_ABILITY_TRIGGER_RULES = [
   TRIGGER_ACTIVATE_ABILITY,
   TRIGGER_ACTIVATE_ABILITY_OF_KIND,
   TRIGGER_ACTIVATE_ABILITY_OF_KINDS,
+  TRIGGER_ACTIVATE_ANY_ABILITY,
 ].map(quietly);

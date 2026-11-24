@@ -123,6 +123,7 @@ import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KEFKA_LOWERINGS } from './kefka';
+import { KENRITH_LOWERINGS } from './kenrith';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
@@ -2940,6 +2941,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
+  ...KENRITH_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
   ...KEFKA_LOWERINGS,
