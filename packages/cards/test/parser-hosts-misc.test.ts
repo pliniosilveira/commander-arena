@@ -100,6 +100,41 @@ describe('"tap all creatures your opponents control, then put a stun counter on 
   });
 });
 
+describe('"it deals 3 damage divided as you choose among one, two, or three targets" (Inferno Titan, CR 601.2d, 603.3d)', () => {
+  const SLOT = [{ id: 't1', what: { kind: 'anyTarget' }, min: 1, max: 3, divide: { total: 3 } }];
+  const EFFECT = { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } };
+
+  test('the real line: an enters trigger and an attacks trigger, each dividing 3 among one to three targets', () => {
+    const parsed = readAll(
+      'Whenever ~ enters or attacks, it deals 3 damage divided as you choose among one, two, or three targets.',
+      'creature',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        targets: SLOT,
+        effect: EFFECT,
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        targets: SLOT,
+        effect: EFFECT,
+      },
+    ]);
+  });
+
+  test.each([
+    'When ~ enters, it deals 3 damage divided as you choose among one, two or three targets.',
+    'When ~ enters, it deals 3 damage divided as you choose among one, two, or four targets.',
+    'When ~ enters, it deals 3 damage divided as you choose among one, two, or three target creatures.',
+    'When ~ enters, it deals 3 damage divided among one, two, or three targets.',
+  ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
+    expect(dropped(text, 'creature').reason).toBeDefined();
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 603.3d)', () => {
   test('the real line: a slot of up to as many targets as the X of the cycling cost', () => {
     const parsed = readAll(

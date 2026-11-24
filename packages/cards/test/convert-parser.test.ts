@@ -1243,6 +1243,7 @@ describe('unmatched abilities', () => {
       'noun.other-targets',
       'noun.one-or-two-targets',
       'noun.one-or-two-targets-bare',
+      'noun.one-two-or-three-targets-bare',
       'noun.all-tokens',
       'noun.that-object',
       'noun.target-creatures-battlefield-or-graveyard',

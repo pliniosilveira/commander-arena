@@ -70,6 +70,33 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever this enters or attacks, it deals 3 damage divided as you choose among one, two, or three targets." (CR 601.2d, 603.3d, 115.4)
+  singleFace({
+    name: 'SYNTHETIC Ember Colossus',
+    manaCost: ['4', 'R', 'R'],
+    types: ['creature'],
+    subtypes: ['Giant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 6,
+    toughness: 6,
+    oracleText:
+      'Whenever this enters or attacks, it deals 3 damage divided as you choose among one, two, or three targets.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        targets: [{ id: 't1', what: { kind: 'anyTarget' }, min: 1, max: 3, divide: { total: 3 } }],
+        effect: { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } },
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        targets: [{ id: 't1', what: { kind: 'anyTarget' }, min: 1, max: 3, divide: { total: 3 } }],
+        effect: { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } },
+      },
+    ],
+  }),
   // "Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts." (CR 702.29a, 107.3, 603.3d)
   singleFace({
     name: 'SYNTHETIC Artifact Mammoth',

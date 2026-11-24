@@ -143,6 +143,126 @@ describe('"you may pay {5}. If you do, tap all creatures your opponents control,
   });
 });
 
+describe('"it deals 3 damage divided as you choose among one, two, or three targets" (CR 601.2d, 603.3d, 115.4)', () => {
+  const COLOSSUS = 'SYNTHETIC Ember Colossus';
+  const BEARS = 'Grizzly Bears';
+  const board = () =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(COLOSSUS)
+      .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(BEARS, { label: 'bears1' })
+      .seat(2)
+      .library(...LIBRARY)
+      .battlefield(BEARS, { label: 'bears2' })
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  /** The targets decision of the trigger: the slot, with the total to divide. */
+  const slot = (g: Game) => {
+    const d = g.state.pending;
+    if (d?.kind !== 'targets') throw new Error(`expected a targets decision, got ${d?.kind}`);
+    return d.specs[0];
+  };
+
+  const divide = (
+    g: Game,
+    shares: readonly { to: { player: 1 | 2 } | string; share: number }[],
+  ) => {
+    const targets = shares.map(({ to, share }) =>
+      typeof to === 'string'
+        ? { kind: 'object' as const, id: g.id(to), specId: 't1', share }
+        : { kind: 'player' as const, seat: to.player, specId: 't1', share },
+    );
+    return g.act(0).try.action({ kind: 'chooseTargets', targets } as never);
+  };
+
+  test('the card is valid', () => {
+    expect(validateCard(syntheticCard(COLOSSUS))).toEqual([]);
+  });
+
+  test('the slot takes one to three targets of any kind and divides 3', () => {
+    const g = board();
+    g.act(0).cast(COLOSSUS, { pay: true });
+    g.passAll();
+    expect(slot(g)).toMatchObject({ min: 1, max: 3, divide: 3 });
+  });
+
+  test('3 damage to one opponent', () => {
+    const g = board();
+    g.act(0).cast(COLOSSUS, { pay: true });
+    g.passAll();
+    expect(divide(g, [{ to: { player: 2 }, share: 3 }]).ok).toBe(true);
+    g.passAll();
+    g.expect.life(2, 37);
+    g.expect.life(1, 40);
+  });
+
+  test('1 damage to each of three targets: two different opponents and a creature', () => {
+    const g = board();
+    g.act(0).cast(COLOSSUS, { pay: true });
+    g.passAll();
+    expect(
+      divide(g, [
+        { to: { player: 1 }, share: 1 },
+        { to: { player: 2 }, share: 1 },
+        { to: 'bears1', share: 1 },
+      ]).ok,
+    ).toBe(true);
+    g.passAll();
+    g.expect.life(1, 39);
+    g.expect.life(2, 39);
+    expect(g.state.objects[g.id('bears1')]?.damage).toBe(1);
+  });
+
+  test('2 and 1: a creature takes 2 (it dies) and a player 1', () => {
+    const g = board();
+    g.act(0).cast(COLOSSUS, { pay: true });
+    g.passAll();
+    expect(
+      divide(g, [
+        { to: 'bears2', share: 2 },
+        { to: { player: 1 }, share: 1 },
+      ]).ok,
+    ).toBe(true);
+    g.passAll();
+    expect(g.state.objects[g.id('bears2')]?.zone).toBe('graveyard');
+    g.expect.life(1, 39);
+  });
+
+  test.each([
+    ['a share of 0', [2, 0, 1]],
+    ['shares that add up to 2', [1, 1]],
+    ['shares that add up to 4', [2, 2]],
+  ])('%s is refused: each target needs at least 1 and all 3 are divided', (_name, shares) => {
+    const g = board();
+    g.act(0).cast(COLOSSUS, { pay: true });
+    g.passAll();
+    const to = [{ player: 1 as const }, { player: 2 as const }, 'bears1'];
+    const r = divide(
+      g,
+      shares.map((share, i) => ({ to: to[i] as never, share })),
+    );
+    expect(r.ok).toBe(false);
+  });
+
+  test('four targets are refused', () => {
+    const g = board();
+    g.act(0).cast(COLOSSUS, { pay: true });
+    g.passAll();
+    const r = divide(g, [
+      { to: { player: 1 }, share: 1 },
+      { to: { player: 2 }, share: 1 },
+      { to: 'bears1', share: 1 },
+      { to: 'bears2', share: 1 },
+    ]);
+    expect(r.ok).toBe(false);
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (CR 702.29a, 107.3, 603.3d)', () => {
   const MAMMOTH = 'SYNTHETIC Artifact Mammoth';
   const RING = 'Sol Ring';
