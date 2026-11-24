@@ -25,6 +25,7 @@ import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
+import { ELVEN_COUNCIL_REVEAL_NEEDS } from './elven-council-reveal';
 import { EXILED_WITH_NEEDS } from './exiled-with';
 import type { FeatureRef } from './features';
 import { FINALE_NEEDS } from './finale';
@@ -171,6 +172,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,
+    ...ELVEN_COUNCIL_REVEAL_NEEDS,
     ...REVEAL_TOP_CARD_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,

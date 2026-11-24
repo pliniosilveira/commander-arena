@@ -7163,6 +7163,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
           checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else if (typeof limit === 'object' && limit?.kind === 'x') {
+          // CR 107.3a, 202.3 (Genesis Wave): "mana value X or less", the X announced for the spell.
+          checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);
         } else {
           checkStateAmount(limit, `${path}.take.manaValueAtMost`, out, 'a mana value limit');
         }
@@ -7205,6 +7208,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.take.elseAnyToHand`,
           'elseAnyToHand is true, for one optional card taken onto the battlefield unrevealed (to battlefield, hidden, max 1, no min or totalManaValue)',
+        );
+      }
+      // CR 701.20, 608.2c: "any number of permanent cards from among them onto the battlefield": the cards revealed, a number the player chooses up to all of them.
+      if (
+        e.take?.any !== undefined &&
+        (e.take.any !== true ||
+          e.revealAll !== true ||
+          e.take.to !== 'battlefield' ||
+          e.take.max !== 1 ||
+          e.take.all !== undefined ||
+          e.take.min !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.elseAnyToHand !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take.any`,
+          'any is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield, with max 1 and no all, min, totalManaValue, hidden or elseAnyToHand',
         );
       }
       // D-396 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.

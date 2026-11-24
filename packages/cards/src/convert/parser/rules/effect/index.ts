@@ -80,6 +80,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
@@ -1371,6 +1372,8 @@ export const EFFECT_RULES = [
   ...GIDEON_EFFECT_RULES,
   // CR 701.20a, 119.3: 'you and target opponent each reveal the top card of your library. You each lose life ...' starts like the plain player rules, so it is tried first.
   ...REVEAL_TOP_DUEL_EFFECT_RULES,
+  // Elven Council deck: 'each opponent reveals the top card of their library. If any of those cards shares a card type ...' starts like the plain player rules, so it is tried first.
+  ...ELVEN_COUNCIL_REVEAL_EFFECT_RULES,
   ...HEXPROOF_LOSS_EFFECT_RULES,
   ...GOAD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".

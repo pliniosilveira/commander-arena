@@ -178,6 +178,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copyEntersFromGraveyard',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
+    // "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (`lookAtTop` with `take.any`, CR 701.20, 202.3).
+    'lookTakeAny',
+    // "If any of those cards shares a card type with that spell" (`objectMatches` of `moved` with `any` and `sharesCardTypeWith`, CR 205.2a, 608.2c).
+    'movedSharesTypeWithSpell',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
     'delayedReturnToCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "Return that creature to its owner's hand at the beginning of the next end step" (a delayed `moveToZone` to the hand of the `moved` objects).
@@ -1968,6 +1972,10 @@ export const ABILITY_FEATURES = [
   'copyEntersFromGraveyard',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
+  /** "You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (CR 701.20, 202.3): the engine's `lookAtTop` with `take.any`. */
+  'lookTakeAny',
+  /** "If any of those cards shares a card type with that spell" (CR 205.2a, 608.2c): the engine's `objectMatches` of `moved` with `any`, its filter reading `sharesCardTypeWith` of the spell the trigger is about. */
+  'movedSharesTypeWithSpell',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
   'delayedReturnToCommandZone',
   /** "Return that creature to its owner's hand at the beginning of the next end step" (Zara, CR 603.7c, 108.3): a `delayedTrigger` of a `moveToZone` to the hand of the `moved` objects. */
@@ -2998,6 +3006,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   copyEntersWithX: true,
   copyEntersFromGraveyard: true,
   lookTakeAll: true,
+  lookTakeAny: true,
+  movedSharesTypeWithSpell: true,
   delayedReturnToCommandZone: true,
   delayedReturnToHand: true,
   modeCost: true,
