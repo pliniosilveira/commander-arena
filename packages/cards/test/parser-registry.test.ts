@@ -932,6 +932,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
+  'trigger.activate-ability-of-kinds': whenever,
   'trigger.targets-activated-batch': whenever,
   'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
   'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
@@ -1089,6 +1090,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
+  'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,

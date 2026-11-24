@@ -2043,6 +2043,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       break;
     case 'replacement':
       checkReplacement(a.replacement, `${path}.replacement`, out);
+      checkGraveyardAbility(a, path, out);
       break;
     case 'level':
       // CR 716.2a (D-235): the abilities a class level bar adds from level `level` on: two or more of them is not a thing, a nested bar is not either.

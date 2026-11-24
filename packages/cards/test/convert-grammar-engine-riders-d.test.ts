@@ -30,9 +30,10 @@ const anthem = real("Marshal's Anthem");
 const greyHost = real('Grey Host Reinforcements');
 const squire = real('Selfless Squire');
 const mentor = real('Harsh Mentor');
+const departed = real('Dearly Departed');
 
 describe('the real cards are valid', () => {
-  test.each([anthem, greyHost, squire, mentor])('$name', (card) => {
+  test.each([anthem, greyHost, squire, mentor, departed])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 });
@@ -283,5 +284,82 @@ describe('Harsh Mentor', () => {
     g.act(0).activate('myNeedle', { targets: ['bears'] });
     g.passAll();
     g.expect.life(0, 40);
+  });
+});
+
+describe('Dearly Departed', () => {
+  const KNIGHT = 'Youthful Knight'; // a 2/1 Human Knight
+  const start = (graveyard: readonly string[] = [departed.name]) =>
+    scenario({ seats: 3 })
+      .define(departed)
+      .seat(0)
+      .hand(KNIGHT, BEARS)
+      .battlefield('Plains', { count: 4 })
+      .battlefield('Forest')
+      .graveyard(...graveyard)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .seat(2)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('while it is in your graveyard, a Human creature you cast enters with a +1/+1 counter (CR 113.6b, 614.12)', () => {
+    const g = start();
+    g.act(0).cast(KNIGHT, { pay: true });
+    g.passAll();
+    g.expect.counters(KNIGHT, { '+1/+1': 1 });
+    g.expect.pt(KNIGHT, 3, 2);
+  });
+
+  test('a creature that is not a Human gets nothing', () => {
+    const g = start();
+    g.act(0).cast(BEARS, { pay: true });
+    g.passAll();
+    g.expect.counters(BEARS, {});
+  });
+
+  test('the effect is cumulative: two copies in the graveyard give two counters', () => {
+    const g = start([departed.name, departed.name]);
+    g.act(0).cast(KNIGHT, { pay: true });
+    g.passAll();
+    g.expect.counters(KNIGHT, { '+1/+1': 2 });
+  });
+
+  test("an opponent's Human gets nothing from a graveyard that is not theirs", () => {
+    const g = scenario({ seats: 3 })
+      .define(departed)
+      .seat(0)
+      .graveyard(departed.name)
+      .library(...FILLER)
+      .seat(1)
+      .hand(KNIGHT)
+      .battlefield('Plains', { count: 2 })
+      .library(...FILLER)
+      .seat(2)
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 3 })
+      .build();
+    g.act(1).cast(KNIGHT, { pay: true });
+    g.passAll();
+    g.expect.counters(KNIGHT, {});
+  });
+
+  test('on the battlefield it does nothing: the ability works from the graveyard only', () => {
+    const g = scenario()
+      .define(departed)
+      .seat(0)
+      .hand(KNIGHT)
+      .battlefield('Plains', { count: 4 })
+      .battlefield(departed.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(KNIGHT, { pay: true });
+    g.passAll();
+    g.expect.counters(KNIGHT, {});
   });
 });

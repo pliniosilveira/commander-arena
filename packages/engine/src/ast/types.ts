@@ -8457,7 +8457,15 @@ export type Ability =
        */
       readonly functionsIn?: 'graveyard';
     }
-  | { readonly kind: 'replacement'; readonly replacement: Replacement }
+  | {
+      readonly kind: 'replacement';
+      readonly replacement: Replacement;
+      /**
+       * "As long as this card is in your graveyard, each Human creature you control enters with an additional +1/+1 counter on it." (Dearly Departed, CR 113.6b, 614.1c, 614.12): the
+       * replacement works while its card is in its owner's graveyard, and not on the battlefield; "you" is the owner of the card. Only an `othersEnterWithCounters` replacement.
+       */
+      readonly functionsIn?: 'graveyard';
+    }
   | {
       readonly kind: 'triggered';
       readonly trigger: Trigger;

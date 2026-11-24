@@ -8,6 +8,7 @@
  * made without the entering permanent, which is not there yet ("for each Angel you already control").
  */
 import type { Replacement } from '../ast/types';
+import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
 import { historyCount } from './amounts';
 import { controllerOf } from './control';
@@ -24,6 +25,19 @@ export function groupEntryCounters(state: GameState, entering: GameObject): Reco
   const sources = [...state.battlefield].sort(
     (a, b) => (state.objects[a]?.timestamp ?? 0) - (state.objects[b]?.timestamp ?? 0),
   );
+  const apply = (r: OthersEnter, ctx: { controller: SeatId; source: ObjectId }): void => {
+    if (!matchesFilter(state, entering, { ...r.what, zone: 'battlefield' }, ctx)) return;
+    // D-183: "for each mana from an artifact source spent to cast it": the spell the entering permanent came from.
+    const count =
+      typeof r.count === 'number'
+        ? r.count
+        : r.count.kind === 'manaSpent'
+          ? manaSpentOf(entering, r.count.fromType, r.count.snow === true)
+          : r.count.kind === 'enteredThisTurn' || r.count.kind === 'diedThisTurn'
+            ? historyCount(state, r.count, ctx.controller)
+            : countMatching(state, r.count.filter, ctx);
+    if (count > 0) added[r.counter] = (added[r.counter] ?? 0) + count;
+  };
   for (const id of [...sources, entering.id]) {
     const permanent = id === entering.id ? entering : state.objects[id];
     if (permanent === undefined) continue;
@@ -35,23 +49,31 @@ export function groupEntryCounters(state: GameState, entering: GameObject): Reco
     for (const ability of abilities) {
       if (
         ability.kind !== 'replacement' ||
-        ability.replacement.kind !== 'othersEnterWithCounters'
+        ability.replacement.kind !== 'othersEnterWithCounters' ||
+        // CR 113.6b: an ability that works from the graveyard does not work on the battlefield.
+        ability.functionsIn === 'graveyard'
       ) {
         continue;
       }
-      const r: OthersEnter = ability.replacement;
-      const ctx = { controller: controllerOf(state, permanent), source: id };
-      if (!matchesFilter(state, entering, { ...r.what, zone: 'battlefield' }, ctx)) continue;
-      // D-183: "for each mana from an artifact source spent to cast it": the spell the entering permanent came from.
-      const count =
-        typeof r.count === 'number'
-          ? r.count
-          : r.count.kind === 'manaSpent'
-            ? manaSpentOf(entering, r.count.fromType, r.count.snow === true)
-            : r.count.kind === 'enteredThisTurn' || r.count.kind === 'diedThisTurn'
-              ? historyCount(state, r.count, ctx.controller)
-              : countMatching(state, r.count.filter, ctx);
-      if (count > 0) added[r.counter] = (added[r.counter] ?? 0) + count;
+      apply(ability.replacement, { controller: controllerOf(state, permanent), source: id });
+    }
+  }
+  // CR 113.6b, 614.12 (Dearly Departed): the abilities of the cards in the graveyards that work from there, for their owner, one effect for each card (the effects add up).
+  for (const [owner, seat] of state.seats.entries()) {
+    for (const id of seat.graveyard) {
+      const card = state.objects[id]?.card;
+      const definition = card === null || card === undefined ? undefined : state.cards[card];
+      const face =
+        definition === undefined ? undefined : state.definitions[definition.definition]?.faces[0];
+      for (const ability of face?.abilities ?? []) {
+        if (
+          ability.kind === 'replacement' &&
+          ability.replacement.kind === 'othersEnterWithCounters' &&
+          ability.functionsIn === 'graveyard'
+        ) {
+          apply(ability.replacement, { controller: owner, source: id });
+        }
+      }
     }
   }
   return added;
