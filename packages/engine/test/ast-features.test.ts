@@ -197,6 +197,7 @@ describe('the dimensions', () => {
       'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
+      'loyaltyAbilityActivatedThisTurn',
       'thisAttackedThisTurn',
       'dieResult',
       // CR 701.30d: "If you win" after a clash.

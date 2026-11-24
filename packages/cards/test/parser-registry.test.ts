@@ -1001,6 +1001,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
+  'condition.didnt-activate-loyalty': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you lose 2 life.`,
+  ),
   'condition.youre-defending-player': permanent(
     (e) => `Whenever a creature an opponent controls attacks, if ${e}, you gain 1 life.`,
   ),
