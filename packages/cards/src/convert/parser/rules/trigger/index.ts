@@ -400,53 +400,6 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
 });
 
 /**
- * `trigger.attacks-one-of-your-opponents`: "a creature an opponent controls attacks one of your opponents" (Death Kiss, CR 508.5: the defending player of an attacking creature is
- * the player it attacks, the controller of the planeswalker it attacks or the protector of the battle it attacks; CR 508.1b, 603.2). The engine's `attacks` with `at: 'yourOpponents'`:
- * the defending player is an opponent of the controller of the ability. The subject is the attacker, so "its" in the body is the creature.
- */
-export const TRIGGER_ATTACKS_ONE_OF_YOUR_OPPONENTS = defineRule<IrTrigger>({
-  id: 'trigger.attacks-one-of-your-opponents',
-  family: 'trigger',
-  leading: ['~', 'another', 'a', 'an'],
-  cites: [
-    'CR 508.5 (Declare Attackers Step)',
-    'CR 508.1b (Declare Attackers Step)',
-    'CR 603.2 (Handling Triggered Abilities)',
-  ],
-  examples: [
-    'a creature an opponent controls attacks one of your opponents',
-    'a creature attacks one of your opponents',
-    'another creature attacks one of your opponents',
-  ],
-  rejects: [
-    'a creature attacks one of your opponent',
-    'a creature attacks one of your opponents or you',
-    'a creature attacks one of your opponents alone',
-    'a creature attacks one of their opponents',
-    'a creature attacks one of your opponents and',
-    'a creature attacks two of your opponents',
-    'a creature attack one of your opponents',
-  ],
-  parse: (ctx, pos) => {
-    const r = sequence(
-      triggerSubject('trigger.attacks-one-of-your-opponents'),
-      pattern(/ attacks one of your opponents(?![\p{L}\p{N}])/iu),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    return {
-      ok: true,
-      value: {
-        ...trigger('trigger.attacks-one-of-your-opponents', { start: pos, end: r.pos }, 'attacks', {
-          subject: r.value[0],
-        }),
-        at: 'yourOpponents' as const,
-      },
-      pos: r.pos,
-    };
-  },
-});
-
-/**
  * `trigger.attacks-alone`: "~ attacks alone", "a creature you control attacks alone", "equipped creature
  * attacks alone" (CR 506.5: a creature attacks alone if it is the only creature declared as an attacker;
  * stage P21, the engine's `attacks` with `alone`, D-110). It is the event of Exalted, so it is the same
@@ -1508,7 +1461,6 @@ export const TRIGGER_RULES = [
   // Before the plain event: "attacks" is a prefix of "attacks alone" and of "attacks you or a planeswalker you control"
   // (stage P29), and the first rule that reads a prefix wins.
   TRIGGER_ATTACKS_YOU,
-  TRIGGER_ATTACKS_ONE_OF_YOUR_OPPONENTS,
   TRIGGER_ATTACKS_ALONE,
   // Stage P32 (D-147): "attacks while you don't control another Dinosaur", of which "attacks" is a prefix.
   ...DINOSAUR_TRIGGER_RULES,

@@ -484,7 +484,6 @@ describe('unmatched abilities', () => {
       'trigger.permanent-put-into-graveyard',
       'trigger.dies',
       'trigger.attacks-you',
-      'trigger.attacks-one-of-your-opponents',
       'trigger.attacks-alone',
       'trigger.attacks-while',
       'trigger.attacks-first-time',

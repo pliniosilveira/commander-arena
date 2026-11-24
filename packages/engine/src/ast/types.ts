@@ -5758,7 +5758,7 @@ export type Trigger =
        * the player it attacks, the controller of the planeswalker or the protector of the battle it attacks.
        * `yourOpponents` ("attacks one of your opponents", CR 508.5): the defending player of the creature as it was declared (read as for `defendingYou`) is an opponent of the controller of this ability.
        */
-      readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents' | 'opponent';
+      readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'opponent';
     }
   /**
    * "Whenever you cast a spell", "whenever an opponent casts a spell" (CR 601.2i, 603.2): `by` is the

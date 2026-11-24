@@ -91,12 +91,14 @@ describe('the attack trigger: a creature an opponent controls attacks one of you
     g.expect.invariants();
   });
 
-  test('an opponent attacks a planeswalker an opponent of yours controls: the defending player is that opponent (CR 508.5), so it triggers', () => {
+  // CR 508.1b, 508.6: "attacks one of your opponents" is read as attacking a player, the repository's reading of the wording (the trigger rule `trigger.attacks-you`, shared with the
+  // other cards that say it); an attack on a planeswalker is not an attack on the player. The Scryfall rulings of Death Kiss were not available to check it.
+  test('an opponent attacks a planeswalker an opponent of yours controls: it does not trigger (it attacks a permanent, not the player)', () => {
     const g = board();
     g.advanceTo('declareAttackers', { attack: false });
     g.act(1).attack('bears', 'walker');
     g.passAll();
-    g.expect.pt('bears', 4, 2);
+    g.expect.pt('bears', 2, 2);
     g.expect.invariants();
   });
 

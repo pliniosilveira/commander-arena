@@ -922,18 +922,12 @@ function matchesWhat(
  */
 function attacksAt(
   state: GameState,
-  at: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents' | 'opponent' | undefined,
+  at: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'opponent' | undefined,
   target: AttackTarget | undefined,
   you: SeatId,
 ): boolean {
   if (at === undefined) return true;
   if (target === undefined) return false;
-  // CR 508.5 (Death Kiss): "attacks one of your opponents": the defending player (the player attacked, or the controller of the planeswalker or the protector of the battle attacked)
-  // is an opponent of the controller of this ability, so an attack on `you` or on a permanent `you` control or protect does not count.
-  if (at === 'yourOpponents') {
-    const defender = defenderOf(state, target);
-    return defender !== null && opponentsOf(state, you).includes(defender);
-  }
   // CR 508.1b, 508.6: "attacks one of your opponents": a player other than the controller, as a player.
   if (at === 'opponent') return target.kind === 'player' && target.seat !== you;
   if (target.kind === 'player') return target.seat === you;
