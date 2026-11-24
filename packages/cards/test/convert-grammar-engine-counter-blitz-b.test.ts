@@ -49,9 +49,7 @@ describe('O\'aka, Traveling Merchant: "{T}, Remove a counter from a nonland perm
         { kind: 'tap' },
         {
           kind: 'removeCounters',
-          counter: '',
           count: 1,
-          anyKind: true,
           among: { controller: 'you', notTypes: ['land'] },
         },
       ],

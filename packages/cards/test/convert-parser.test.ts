@@ -785,7 +785,6 @@ describe('unmatched abilities', () => {
       'effect.tap-and-stun-those-creatures',
       'effect.adapt',
       'effect.support',
-      'effect.put-those-counters',
       'effect.put-that-number-counters',
       'effect.cant-be-blocked-by-opponents-creatures',
       'effect.choose-target-dies-return',
