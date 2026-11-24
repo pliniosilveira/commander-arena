@@ -402,6 +402,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     // "As long as this card is in your graveyard and you control a Mountain, ..." (stage P34, D-152, CR 113.6b): the ability works from the
     // graveyard, which the engine says as `functionsIn`; what follows "and" is the condition of the engine.
     const grave = pattern(/(?:this card|~) is in your graveyard/iu)(ctx, lead.pos);
+    // "~" in place of "this card" is read only before the enters-with-counters group below; every other ability keeps its own words.
+    const tildeGrave = grave.ok && ctx.text.slice(lead.pos, grave.pos).startsWith('~');
     let condition: IrCondition | undefined;
     let at: number;
     if (grave.ok) {
@@ -440,6 +442,7 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
         };
       }
     }
+    if (tildeGrave) return fail(ctx, at);
     const tax = family<IrStatic>('static', { only: ['static.attack-tax'] })(ctx, at);
     if (tax.ok) {
       if (condition === undefined) return fail(ctx, at);
