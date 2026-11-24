@@ -4,6 +4,7 @@
  */
 import type { ObjectView } from '@commander-arena/engine';
 import { groupEqual, type TileEntry } from './group';
+import { stackShape } from './stack-shape';
 
 export interface RowSpec {
   /** Tile height in pixels (fixed by the row's available height). */
@@ -61,11 +62,22 @@ export function layoutRow(
       overflow: false,
     };
   }
-  const roomy = fitTiles(piles.length, width, spec);
+  // A stack shows a card for each copy, beside its tile (`stack-shape.ts`): that room is the row's too.
+  const fitOf = (entries: readonly TileEntry[]) =>
+    fitTiles(entries.length, width, {
+      ...spec,
+      extraW:
+        (spec.extraW ?? 0) +
+        entries.reduce(
+          (n, e) => n + (e.kind === 'group' ? stackShape(e.objects.length).extraW : 0),
+          0,
+        ),
+    });
+  const roomy = fitOf(piles);
   const pairs =
     roomy.tileW >= spec.preferredW && !roomy.overflow ? piles : groupEqual(objects, extraKey, 2);
   const entries = pairs.length < piles.length ? pairs : piles;
-  const fit = entries === piles ? roomy : fitTiles(entries.length, width, spec);
+  const fit = entries === piles ? roomy : fitOf(entries);
   return {
     entries,
     tileW: fit.tileW,

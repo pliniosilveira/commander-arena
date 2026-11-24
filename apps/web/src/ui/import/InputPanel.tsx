@@ -40,7 +40,6 @@ export function InputPanel({
   onName,
   onImport,
   onExample,
-  onSave,
   precon = null,
 }: {
   text: string;
@@ -53,8 +52,7 @@ export function InputPanel({
   onImport: () => void;
   /** Fills in the list of an installed precon; null when none is installed (no button then). */
   onExample: (() => void) | null;
-  onSave: () => void;
-  /** Set while a precon is being edited: the name is fixed and Save keeps your version of it. */
+  /** Set while a precon is being edited: the name is fixed and Import keeps your version of it. */
   precon?: EditingPrecon | null;
 }) {
   const empty = text.trim() === '';
@@ -73,8 +71,8 @@ export function InputPanel({
             {precon.edited
               ? 'You saved a version of it; that is the one the menu uses.'
               : 'It is still the list that came with the app.'}{' '}
-            Change the list, press Import to check it, then save: your version is kept in this
-            browser only, and the built-in deck is never changed.
+            Change the list and press Import: it is checked and your version is kept in this browser
+            only. The built-in deck is never changed.
           </p>
           <div className="imp-buttons">
             <button type="button" className="scr-btn" disabled={running} onClick={precon.onReset}>
@@ -122,14 +120,6 @@ export function InputPanel({
             Fill in an example
           </button>
         )}
-        <button
-          type="button"
-          className="scr-btn"
-          disabled={running || empty || name.trim() === ''}
-          onClick={onSave}
-        >
-          {precon === null ? 'Save deck' : 'Save my version'}
-        </button>
         <span role="status" aria-live="polite" className="scr-help">
           {saveMessage}
         </span>
