@@ -883,6 +883,18 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
   }
+  // Brainstealer Dragon (CR 108.3, 110.2): "a nonland permanent an opponent owns enters under your control, they lose life ...": "they" is the opponent who owns it, since the permanent
+  // is under your control.
+  if (
+    only.event === 'enters' &&
+    only.rule === 'trigger.enters-under-your-control-opponent-owned' &&
+    only.actor === undefined
+  ) {
+    return {
+      selector: { kind: 'ownerOf', of: { kind: 'triggerSubject' } },
+      needs: ['selector:ownerOf', 'selector:triggerSubject'],
+    };
+  }
   // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information. The player of "whenever a creature an
   // opponent controls enters" is the controller of the permanent that entered (CR 110.2a): "that player".
   if (

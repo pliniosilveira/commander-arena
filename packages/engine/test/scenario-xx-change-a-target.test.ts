@@ -65,7 +65,11 @@ const targetsOf = (g: ScenarioGame, name: string) =>
 /** Every player passes until the top of the stack has resolved or a decision is waiting. */
 function resolveTop(g: ScenarioGame): void {
   const size = g.state.stack.length;
-  for (let i = 0; i < 8 && g.state.stack.length === size && g.state.pending?.kind === 'priority'; i++) {
+  for (
+    let i = 0;
+    i < 8 && g.state.stack.length === size && g.state.pending?.kind === 'priority';
+    i++
+  ) {
     g.pass();
   }
 }

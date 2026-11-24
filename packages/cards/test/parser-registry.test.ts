@@ -363,6 +363,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attacks-unblocked': whenever,
   'trigger.or': whenever,
   'trigger.landfall': whenever,
+  // Brainstealer Dragon.
+  'trigger.enters-under-your-control-opponent-owned': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
   'trigger.enters-from-graveyard': whenever,
