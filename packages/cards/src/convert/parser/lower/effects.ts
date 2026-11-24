@@ -2076,7 +2076,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
-      { triggerSubject: true, moved: true, token: true },
+      { triggerSubject: true, moved: true, token: true, eachMention: true },
     );
   },
 };

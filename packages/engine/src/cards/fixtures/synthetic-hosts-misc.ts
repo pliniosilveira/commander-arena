@@ -26,6 +26,50 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "When this enters, you may pay {5}. If you do, tap all creatures your opponents control, then put a stun counter on each of those creatures." (CR 701.26a, 122.1d, 608.2c)
+  singleFace({
+    name: 'SYNTHETIC Frost Leviathan',
+    manaCost: ['4', 'U', 'U'],
+    types: ['creature'],
+    subtypes: ['Serpent'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 5,
+    toughness: 5,
+    oracleText:
+      'When this enters, you may pay {5}. If you do, tap all creatures your opponents control, then put a stun counter on each of those creatures.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: {
+          kind: 'mayPay',
+          cost: [{ kind: 'mana', symbols: ['5'] }],
+          effect: {
+            kind: 'sequence',
+            effects: [
+              {
+                kind: 'tap',
+                objects: {
+                  kind: 'each',
+                  filter: { zone: 'battlefield', types: ['creature'], controller: 'opponent' },
+                },
+              },
+              {
+                kind: 'addCounters',
+                objects: {
+                  kind: 'each',
+                  filter: { zone: 'battlefield', types: ['creature'], controller: 'opponent' },
+                },
+                counter: 'stun',
+                count: 1,
+              },
+            ],
+          },
+        },
+      },
+    ],
+  }),
   // "Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts." (CR 702.29a, 107.3, 603.3d)
   singleFace({
     name: 'SYNTHETIC Artifact Mammoth',

@@ -50,6 +50,8 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Monstrosity of the Lake: "Tap all creatures your opponents control, then put a stun counter on each of those creatures." (the binding pass turns the words into the group before)
+  'noun.paired-creatures',
 ] as const;
 
 /**

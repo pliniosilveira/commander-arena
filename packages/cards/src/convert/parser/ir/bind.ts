@@ -155,7 +155,7 @@ function classify(raw: string): Pronoun | null {
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'each of them') return { kind: 'plural', each: true };
-  if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
+  if (word === 'them' || /^(?:each of )?those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
@@ -337,7 +337,8 @@ class Binder {
           (a) =>
             a.kind === 'object' &&
             (a.tokens !== true || pronoun.each === true) &&
-            (a.noun.plural || (a.noun.det === 'each' && /^those /iu.test(noun.filter.raw.trim()))),
+            (a.noun.plural ||
+              (a.noun.det === 'each' && /^(?:each of )?those /iu.test(noun.filter.raw.trim()))),
         );
         break;
       case 'other':
@@ -467,6 +468,10 @@ class Binder {
     };
     if (noun.det === 'anaphor') {
       out = this.resolveAnaphor(out);
+    } else if (noun.det === 'pair' && this.clauseVerb === 'addCounters') {
+      // "Tap all creatures your opponents control, then put a stun counter on each of those creatures" (CR 608.2c): counters are put on no soulbond pair, so the words name the group of the
+      // instruction before, as "those creatures" does.
+      out = this.resolveAnaphor({ ...out, det: 'anaphor', plural: true });
     } else if (noun.det === 'target') {
       const ref = ownTargetRef ?? `t${++this.scope.targetCount}`;
       out = { ...out, ref };

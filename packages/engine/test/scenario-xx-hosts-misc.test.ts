@@ -85,6 +85,64 @@ describe('"Add two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b, 
   });
 });
 
+describe('"you may pay {5}. If you do, tap all creatures your opponents control, then put a stun counter on each of those creatures" (CR 701.26a, 122.1d, 608.2c)', () => {
+  const LEVIATHAN = 'SYNTHETIC Frost Leviathan';
+  const BEARS = 'Grizzly Bears';
+  const board = () =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(LEVIATHAN)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island', 'Island')
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island', 'Island')
+      .battlefield(BEARS, { label: 'mine' })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(BEARS, { label: 'theirs1' })
+      .battlefield(BEARS, { label: 'theirs1b', tapped: true })
+      .seat(2)
+      .library(...LIBRARY)
+      .battlefield(BEARS, { label: 'theirs2' })
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  const stun = (g: Game, label: string): number =>
+    g.state.objects[g.id(label)]?.counters?.stun ?? 0;
+  const tapped = (g: Game, label: string): boolean | undefined =>
+    g.state.objects[g.id(label)]?.tapped;
+
+  test('the card is valid', () => {
+    expect(validateCard(syntheticCard(LEVIATHAN))).toEqual([]);
+  });
+
+  test('paid: every creature of every opponent is tapped and gets one stun counter, yours is untouched', () => {
+    const g = board();
+    g.act(0).cast(LEVIATHAN, { pay: true });
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).payAuto();
+    g.passAll();
+    for (const l of ['theirs1', 'theirs1b', 'theirs2']) {
+      expect(tapped(g, l), l).toBe(true);
+      expect(stun(g, l), l).toBe(1);
+    }
+    expect(tapped(g, 'mine')).toBe(false);
+    expect(stun(g, 'mine')).toBe(0);
+  });
+
+  test('not paid: nothing is tapped and no counter is placed', () => {
+    const g = board();
+    g.act(0).cast(LEVIATHAN, { pay: true });
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    for (const l of ['theirs1', 'theirs2']) {
+      expect(tapped(g, l), l).toBe(false);
+      expect(stun(g, l), l).toBe(0);
+    }
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (CR 702.29a, 107.3, 603.3d)', () => {
   const MAMMOTH = 'SYNTHETIC Artifact Mammoth';
   const RING = 'Sol Ring';

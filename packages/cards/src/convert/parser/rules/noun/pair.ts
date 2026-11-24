@@ -9,7 +9,7 @@ import { defineRule, node } from '../registry';
  * `noun.paired-creatures`: "each of those creatures" (CR 702.95b: abilities of a creature that is paired may refer to the creature it is paired with), the subject of
  * "As long as ~ is paired with another creature, each of those creatures has ...": the permanent itself and the creature it is paired with. The engine's static subject
  * `pair`. The verb is singular, as the words of "each" are ("has", "gets"). Not read: "both creatures", "those creatures" and "each of those" alone (other nouns), "each of
- * those creatures you control", "each other creature", and the words as the target of an effect, where no permanent is paired.
+ * those creatures you control", "each other creature", and the words as the target of an effect, where no permanent is paired (the one exception is the counters of "Tap all creatures ..., then put a stun counter on each of those creatures": the binding pass reads the words as the group before).
  */
 export const NOUN_PAIRED_CREATURES = defineRule<IrNoun>({
   id: 'noun.paired-creatures',
