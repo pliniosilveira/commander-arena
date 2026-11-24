@@ -582,7 +582,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'definesPt':
       return [
         'static:characteristicPt',
-        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+        effect.count.kind === 'lifeTotalOf'
+          ? 'amount:lifeTotalOf'
+          : effect.count.kind === 'partySize'
+            ? 'amount:partySize'
+            : 'amount:countOf',
       ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.

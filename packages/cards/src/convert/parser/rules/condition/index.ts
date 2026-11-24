@@ -46,6 +46,7 @@ import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
+import { PARTY_CONDITION_RULES } from './party';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
 import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
@@ -665,6 +666,8 @@ export const CONDITION_RULES = [
   CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
   ...EXPERIENCE_CONDITION_RULES,
+  // CR 700.8c: "you have a full party".
+  ...PARTY_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

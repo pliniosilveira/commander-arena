@@ -1095,7 +1095,14 @@ interface CardWords {
 export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
-  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' | 'fromTheirs' | 'fromPlayers' = 'from',
+  preposition:
+    | 'from'
+    | 'in'
+    | 'inAny'
+    | 'fromThatPlayer'
+    | 'fromTheirs'
+    | 'fromPlayers'
+    | 'sharedZone' = 'from',
   // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
   // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
   amountLimit?: Parser<IrAmount>,
@@ -1107,7 +1114,11 @@ export function graveyardPhrase(
   andList = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | 'defendingPlayer' | undefined> =
-    preposition === 'fromTheirs'
+    preposition === 'sharedZone'
+      ? // Thwart the Grave: "Return target creature card and up to one target Cleric creature card from your graveyard": the first card has no zone words of its own, the last
+        // one's "from ..." says where both lie. The caller gives the first the owner of the last.
+        map(pattern(/(?= and (?:up to one )?target )/i), () => undefined)
+      : preposition === 'fromTheirs'
       ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
         // graveyard, so no owner. The caller reads it only after "each player".
         map(literal(' from their graveyard'), () => undefined)

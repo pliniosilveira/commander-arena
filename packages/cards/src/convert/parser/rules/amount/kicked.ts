@@ -99,4 +99,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-different-mana-value',
   // Issue 144 (Glimpse the Impossible): the cards the instruction before it put into the controller's graveyard.
   'amount.for-each-card-put-into-your-graveyard',
+  // CR 700.8: the creatures in the controller's party.
+  'amount.for-each-party-creature',
 ] as const;

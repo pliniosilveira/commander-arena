@@ -585,6 +585,8 @@ export type IrAmount =
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
   // "the number of experience counters you have" (Meren of Clan Nel Toth, CR 122.1): the experience counters the controller has now
   | { readonly kind: 'experienceCounters'; readonly span: Span }
+  // "the number of creatures in your party" (CR 700.8): the party of the controller, up to one each of Cleric, Rogue, Warrior and Wizard
+  | { readonly kind: 'partySize'; readonly span: Span }
   // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-638, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
   | {
       readonly kind: 'spellsCastThisTurn';
@@ -2434,6 +2436,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'diedThisTurn',
   'cardsDrawnThisTurn',
   'experienceCounters',
+  'partySize',
   'spellsCastThisTurn',
   'greatestManaValueCast',
   'cardsToGraveyardThisTurn',

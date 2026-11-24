@@ -10,6 +10,7 @@ import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { ENERGY_PAID_AMOUNT_RULES } from './energy-paid';
 import { EXPERIENCE_AMOUNT_RULES } from './experience';
+import { PARTY_AMOUNT_RULES } from './party';
 import { F144_AMOUNT_RULES } from './f144';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
@@ -527,6 +528,8 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
   // Meren of Clan Nel Toth: "the number of experience counters you have".
   ...EXPERIENCE_AMOUNT_RULES,
+  // Party (CR 700.8): "for each creature in your party".
+  ...PARTY_AMOUNT_RULES,
   AMOUNT_NUMBER,
   AMOUNT_X,
   AMOUNT_ARTICLE,
