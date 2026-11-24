@@ -3645,6 +3645,13 @@ export type Effect =
        * and a source that is a permanent (the ability of an Aura).
        */
       readonly putWithSource?: true;
+      /**
+       * "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (Glorious Protector, CR 610.3, 608.2d): the permanents chosen as the effect
+       * resolves (a `choose` selector with `anyNumber` and `optional`, among the battlefield permanents the controller controls) are exiled and return to the battlefield under their
+       * owners' control when the permanent the ability belongs to leaves it, as `exile.until` does (CR 610.3a, 610.3b: if it has left already, nothing is exiled; a token is gone, CR 111.7).
+       * Only with `to` `exile`, in an ability of a permanent.
+       */
+      readonly untilSourceLeaves?: true;
     }
   /**
    * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard" (CR 701.6a, 614.1a): with `exileInstead` each spell

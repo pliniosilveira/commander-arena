@@ -176,6 +176,7 @@ import {
 import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
+import { PARTY_TIME_LIBRARY_EFFECT_RULES } from './party-time-library';
 import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
@@ -1344,6 +1345,7 @@ export const EFFECT_RULES = [
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
+  ...PARTY_TIME_LIBRARY_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

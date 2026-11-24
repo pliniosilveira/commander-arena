@@ -150,6 +150,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAlsoGraveyard',
     // Death Toll deck: "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (`ChooseSelector.minCardTypes`, and `fromMoved` among the cards exiled).
     'chooseMinCardTypes',
+    // Glorious Protector (CR 610.3, 608.2d): "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (`moveToZone.untilSourceLeaves` of an `anyNumber` choice of permanents).
+    'chooseExileUntilLeaves',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -1940,6 +1942,8 @@ export const ABILITY_FEATURES = [
   'chooseAlsoGraveyard',
   /** "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (Death Toll deck, CR 205.2a, 608.2d): the engine's `ChooseSelector.minCardTypes` of a `moveToZone` into exile, then `fromMoved` among the cards exiled. */
   'chooseMinCardTypes',
+  /** "You may exile any number of non-Angel creatures you control until this creature leaves the battlefield" (Glorious Protector, CR 610.3, 608.2d): the engine's `moveToZone` into exile with `untilSourceLeaves` of an `anyNumber` choice among the controller's permanents. */
+  'chooseExileUntilLeaves',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -2984,6 +2988,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
   chooseMinCardTypes: true,
+  chooseExileUntilLeaves: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   moveFaceDownLand: true,

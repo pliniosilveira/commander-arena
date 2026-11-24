@@ -1276,6 +1276,13 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // CR 610.3a, 610.3b (Glorious Protector): "... until this creature leaves the battlefield": if it has left already, as the exile would happen, nothing is exiled.
+        if (
+          effect.untilSourceLeaves === true &&
+          (res.source === null || state.objects[res.source]?.zone !== 'battlefield')
+        ) {
+          return { ...done(state), lastMoved: [] };
+        }
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
@@ -1287,6 +1294,13 @@ function runEffect(
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              ...(effect.untilSourceLeaves === true && res.source !== null
+                ? { untilLeaves: res.source }
+                : {}),
+              // CR 608.2d: "any number of non-Angel creatures you control": none up to all of the candidates.
+              ...(sel.anyNumber === true && sel.minCardTypes === undefined
+                ? { anyNumber: true as const }
+                : {}),
               filter: sel.filter,
               // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
               ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined

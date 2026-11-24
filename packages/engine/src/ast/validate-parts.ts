@@ -4441,13 +4441,26 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
     sel.greatest !== undefined ||
     sel.least !== undefined ||
     sel.dealtCombatDamageToYou !== undefined ||
-    (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
+    // Glorious Protector (CR 608.2d, 610.3): "exile any number of ... creatures you control until ~ leaves the battlefield" is the one other place an `anyNumber` choice goes, among
+    // the permanents on the battlefield (`moveToZone.until`, checked with the move).
+    (sel.anyNumber !== undefined &&
+      sel.minCardTypes === undefined &&
+      (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(
       out,
       path,
       'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least',
     );
+  }
+  if (sel.anyNumber !== undefined && sel.minCardTypes === undefined) {
+    if (sel.anyNumber !== true || sel.optional !== true || sel.count !== undefined) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        'anyNumber of a move choice is true, with optional and no count (the player may choose none)',
+      );
+    }
   }
   // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
   if (sel.minCardTypes !== undefined) {
@@ -6967,14 +6980,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.
       if (e.to === 'exile') {
         const chosen = kindOf(e.objects) === 'choose' ? (e.objects as ChooseSelector) : null;
+        // Glorious Protector (CR 610.3): permanents of the controller chosen and exiled until the permanent with the ability leaves the battlefield.
+        const untilExile =
+          e.untilSourceLeaves === true &&
+          chosen !== null &&
+          chosen.anyNumber === true &&
+          (chosen.filter?.zone ?? 'battlefield') === 'battlefield';
         if (
-          chosen === null ||
-          (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard')
+          !untilExile &&
+          (chosen === null ||
+            (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard'))
         ) {
           issue(
             out,
             `${path}.to`,
             "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
+          );
+        }
+      }
+      // Glorious Protector (CR 610.3): "until this creature leaves the battlefield" is for a choice of permanents exiled by an ability of a permanent.
+      if (e.untilSourceLeaves !== undefined) {
+        if (
+          e.untilSourceLeaves !== true ||
+          e.to !== 'exile' ||
+          scope.owner !== 'ability' ||
+          kindOf(e.objects) !== 'choose' ||
+          (e.objects as ChooseSelector).anyNumber !== true ||
+          ((e.objects as ChooseSelector).filter?.zone ?? 'battlefield') !== 'battlefield'
+        ) {
+          issue(
+            out,
+            `${path}.untilSourceLeaves`,
+            "untilSourceLeaves is true, with to 'exile' and an anyNumber choice of permanents on the battlefield, in an ability of a permanent",
           );
         }
       }
