@@ -1799,6 +1799,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'myriad',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
+  // CR 702.101a, 702.101b (Extort): "Other creatures you control have extort"; each instance granted is a triggered ability of its own, like afflict's.
+  'extort',
 ];
 
 /** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
