@@ -802,7 +802,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'buyback'
     | 'exileMore'
     | 'exert'
-    | 'clash';
+    | 'clash'
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield": `source` is the card in `seat`'s hand; accepting puts it onto the battlefield.
+    | 'openingHand';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.

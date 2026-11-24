@@ -619,6 +619,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'beginGameOnBattlefield':
+      return ['static:beginGameOnBattlefield'];
     case 'creatureOffBattlefield':
       return ['static:creatureOffBattlefield'];
     case 'chosenType':
@@ -1562,6 +1564,19 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the card's own pregame option.
+  if (first.kind === 'beginGameOnBattlefield') {
+    if (more.length > 0 || statement.subject.det !== 'self' || statement.condition !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures(['ability:static', ...needsOf(first)]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'beginGameOnBattlefield' } }],
+      rule: ability.rule,
+    };
+  }
   if (first.kind === 'noMaxHandSize') {
     if (more.length > 0 || statement.subject.det !== 'you') return failure(ability);
     return lowerNoMaximum(ability);
@@ -1690,6 +1705,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
   'static:creatureOffBattlefield',
+  'static:beginGameOnBattlefield',
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',

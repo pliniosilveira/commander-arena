@@ -286,9 +286,8 @@ export function additionalWayText(costs: readonly Cost[]): string {
 export function additionalCostChoiceText(choice: readonly (readonly Cost[])[] | undefined): string {
   if (choice === undefined) return '';
   const ways = choice.map(additionalWayText);
-  const last = ways.length > 2 ? `, or ${ways[ways.length - 1]}` : ` or ${ways[1]}`;
-  const head = ways.length > 2 ? ways.slice(0, -1).join(', ') : (ways[0] ?? '');
-  return `${head.replace(/^./, (c) => c.toUpperCase())}${last}`;
+  const text = `${ways.slice(0, -1).join(', ')}, or ${ways[ways.length - 1]}`;
+  return text.replace(/^./, (c) => c.toUpperCase());
 }
 
 export { tappedWhat };

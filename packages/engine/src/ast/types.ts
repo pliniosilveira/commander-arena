@@ -7662,6 +7662,12 @@ export type StaticEffect =
       readonly kind: 'noMaximumHandSize';
     }
   /**
+   * "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6, unchecked here: the Leylines): after the mulligans and before the first turn
+   * begins, starting with the starting player in turn order, each player who kept a hand with such a card in it is asked, card by card, whether it begins on the battlefield. It does
+   * nothing on the battlefield or in any other zone, and it cannot be granted.
+   */
+  | { readonly kind: 'beginGameOnBattlefield' }
+  /**
    * "You may play an additional land on each of your turns." and "You may play two additional lands on each of
    * your turns." (CR 305.2, D-125): the number of lands its controller can play in a turn is raised by `count`
    * (a positive whole number) for as long as the permanent is on the battlefield with the ability (CR 305.2a:

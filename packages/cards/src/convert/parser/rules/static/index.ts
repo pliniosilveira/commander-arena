@@ -42,6 +42,7 @@ import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
 import { MELD_STATIC_RULES } from './meld';
 import { OMNATH_STATIC_RULES } from './omnath';
+import { STATIC_BEGIN_GAME_ON_BATTLEFIELD } from './opening-hand';
 import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
@@ -103,6 +104,7 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  STATIC_BEGIN_GAME_ON_BATTLEFIELD,
   // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
   ...DEATH_TOLL_C_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.

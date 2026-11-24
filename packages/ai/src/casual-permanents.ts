@@ -448,6 +448,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     return { kind: 'acceptOptional' };
   }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
+  // CR 103.6: "begin the game with this card on the battlefield?" (a Leyline): a free permanent, so the agent always takes it.
+  if (d.purpose === 'openingHand') return { kind: 'acceptOptional' };
   // D-272: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
   if (d.purpose === 'pairReturn') return answerPairReturn(view, d);
   if (d.cost !== undefined) {
