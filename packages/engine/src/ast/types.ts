@@ -4266,6 +4266,18 @@ export type Effect =
    */
   | { readonly kind: 'moveCountersOnto'; readonly counter: string; readonly to: ObjectFilter }
   /**
+   * "Move a loyalty counter from this artifact onto that planeswalker." (CR 122.1, 122.6; Gatewatch Beacon): up to `count` counters of the kind `counter` are taken off the permanent with the
+   * ability and put on each permanent `to` names (the one the trigger is about, `triggerSubject`), as the effect runs. With none on the source, or the source gone, nothing moves; a
+   * permanent that can't have counters of the kind (CR 122.6) gets none, and the counters taken off are gone. The counters go on as the effect of a spell or ability, so a replacement
+   * of counters put on a permanent applies (CR 614.1a). Only the effect of an ability of a permanent, whose source is that permanent.
+   */
+  | {
+      readonly kind: 'moveCounterFromThis';
+      readonly counter: string;
+      readonly count: number;
+      readonly to: ObjectSelector;
+    }
+  /**
    * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
    * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
    * "You may play X additional lands this turn." (Nahiri's Lithoforming, CR 107.3a, 305.2): `count` may be an amount, read as the effect runs; with 0 or less nothing is added.

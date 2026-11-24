@@ -6660,6 +6660,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.count`, 'blight puts a positive whole number of -1/-1 counters');
       }
       break;
+    case 'moveCounterFromThis':
+      // CR 122.1: a kind of counter, a positive whole number of them, and the permanent they go on.
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'moveCounterFromThis names a kind of counter');
+      }
+      if (!isCount(e.count) || e.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'moveCounterFromThis moves a positive whole number of counters',
+        );
+      }
+      // The permanent the counters go on: the one the trigger is about (the engine reads `triggerSubject` only where a node says so) or a target.
+      if (kindOf(e.to) === 'triggerSubject') {
+        checkSubjectRef(e.to as ObjectRef, 'permanent', `${path}.to`, scope, out);
+      } else {
+        checkObjectSelector(e.to, `${path}.to`, scope, out);
+      }
+      break;
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): a kind of counter and the permanents it moves onto.
       if (typeof e.counter !== 'string' || e.counter === '') {

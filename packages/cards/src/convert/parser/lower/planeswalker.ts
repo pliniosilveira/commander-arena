@@ -10,7 +10,7 @@ import type { IrClause, IrQuotedAbility } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
 import type { FeatureRef } from './features';
 import { lateLowerers } from './late';
-import { playerSelectorOf } from './nouns';
+import { objectSelectorOf, playerSelectorOf } from './nouns';
 import { type LowerContext, type Lowering, type LowerResult, newContext } from './types';
 
 /** "Empower Jace 6." (CR 701.71a): the engine's `empowerJace`, a positive number of loyalty counters (an X is not read). */
@@ -145,10 +145,34 @@ export const GET_EMBLEM: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Move a loyalty counter from ~ onto that planeswalker" (Gatewatch Beacon; CR 122.1, 122.6): the engine's `moveCounterFromThis`. The permanent the counter goes on is the one the
+ * trigger is about, which the pronoun names (`triggerSubject`).
+ */
+const MOVE_COUNTER_FROM_SELF: Lowering<IrClause, Effects> = {
+  head: 'moveCounterFromThis',
+  id: 'lower.move-counter-from-self',
+  needs: ['effect:moveCounterFromThis', 'selector:triggerSubject'],
+  lower(clause, ctx) {
+    const counter = arg(clause, 'counter');
+    const to = arg(clause, 'objects');
+    if (counter?.kind !== 'counterSpec' || to?.kind !== 'noun') return failure(clause);
+    const selector = objectSelectorOf(to, ctx, { triggerSubject: true });
+    if (!selector.ok) return selector;
+    if (selector.value.kind !== 'triggerSubject') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'moveCounterFromThis', counter: counter.name, count: 1, to: selector.value }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
+  'effect:moveCounterFromThis',
   'effect:setLifeTotal',
   'effect:exchangeLifeWithPt',
   'ability:static',
@@ -159,6 +183,7 @@ export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
 export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EMPOWER_JACE,
   GET_EMBLEM,
+  MOVE_COUNTER_FROM_SELF,
   SET_LIFE_TOTAL,
   EXCHANGE_LIFE_PT,
 ];

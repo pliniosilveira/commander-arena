@@ -816,6 +816,7 @@ describe('unmatched abilities', () => {
       'effect.exile-graveyard-card-types',
       'effect.put-permanent-from-among-exiled',
       'effect.damage-exile-if-dies',
+      'effect.move-counter-from-self',
       'effect.damage',
       'effect.damage-count',
       'effect.bite',

@@ -2089,6 +2089,40 @@ function runEffect(
       // CR 701.68a (Blight): the controller chooses a creature they control and puts the counters on it as the instruction runs (rules/blight-effect.ts).
       return done(state, [], [{ kind: 'blight', count: effect.count, chosen: null }]);
 
+    case 'moveCounterFromThis': {
+      // CR 122.1, 122.6 (Gatewatch Beacon): the counters come off the permanent of the ability and go on the permanent the trigger is about; what the destination can't have is lost.
+      const sourceId = ctx.source;
+      const source = sourceId === null ? undefined : state.objects[sourceId];
+      if (sourceId === null || source === undefined || source.zone !== 'battlefield') {
+        return done(state);
+      }
+      const have = source.counters[effect.counter] ?? 0;
+      const moved = Math.min(effect.count, have);
+      if (moved <= 0) return done(state);
+      const [destination] = resolveObjects(state, effect.to, ctx, targets);
+      if (destination === undefined || destination === sourceId) return done(state);
+      if (state.objects[destination]?.zone !== 'battlefield') return done(state);
+      let next = patchObject(state, sourceId, {
+        counters: { ...source.counters, [effect.counter]: have - moved },
+      });
+      const events: GameEvent[] = [
+        { kind: 'counterRemoved', object: sourceId, counter: effect.counter, count: moved },
+      ];
+      const put = putCountersOn(
+        state,
+        next,
+        destination,
+        effect.counter,
+        moved,
+        ctx.controller,
+        counterBlockers(state),
+        counterBonuses(state),
+      );
+      next = put.state;
+      events.push(...put.events);
+      return done(next, events);
+    }
+
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): the counters move one at a time, each a choice of the controller, as the instruction runs (rules/move-counters.ts).
       return done(

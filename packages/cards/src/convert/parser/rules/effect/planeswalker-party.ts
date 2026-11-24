@@ -1,8 +1,9 @@
 /**
  * Effect rules of the Planeswalker Party deck (issue 132).
  */
-import { fail, pattern, sequence } from '../../combinators';
-import { defineRule, family, quietly } from '../registry';
+import { fail, literal, pattern, sequence } from '../../combinators';
+import type { IrCounterSpec, IrNoun } from '../../ir/types';
+import { defineRule, family, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
 const ID = 'effect.damage-exile-if-dies';
@@ -68,4 +69,65 @@ export const EFFECT_DAMAGE_EXILE_IF_DIES = defineRule<Clauses>({
   },
 });
 
-export const PLANESWALKER_PARTY_EFFECT_RULES = [quietly(EFFECT_DAMAGE_EXILE_IF_DIES)];
+const MOVE_ID = 'effect.move-counter-from-self';
+
+/**
+ * `effect.move-counter-from-self`: "move a loyalty counter from ~ onto that planeswalker" (Gatewatch Beacon; CR 122.1, 122.6): one counter of a named kind from the permanent with the
+ * ability onto the permanent the trigger is about. The engine's `moveCounterFromThis`. Not read: "any number" (`effect.move-counters-onto-others`), a number of counters other than "a",
+ * the counters of another permanent, a target, another noun than "that [type]".
+ */
+export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
+  id: MOVE_ID,
+  family: 'effect',
+  leading: ['move'],
+  cites: [
+    'CR 122.1 (Counters)',
+    'CR 122.6 (Counters)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'move a loyalty counter from ~ onto that planeswalker',
+    'move a +1/+1 counter from ~ onto that creature',
+  ],
+  rejects: [
+    'move a loyalty counter from ~ onto target planeswalker',
+    'move two loyalty counters from ~ onto that planeswalker',
+    'move a loyalty counter from target planeswalker onto that planeswalker',
+    'move any number of loyalty counters from ~ onto that planeswalker',
+    'move a loyalty counter from ~ onto that planeswalker and draw a card',
+    'move a loyalty counter from ~ onto that',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('move a '),
+      spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+      literal(' counter from ~ onto '),
+      family<IrNoun>('noun', { only: ['noun.that-object'] }),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, counterWord, , noun] = r.value;
+    const counter: IrCounterSpec = {
+      kind: 'counterSpec',
+      name: counterWord.value[0].toLowerCase(),
+      span: counterWord.span,
+      rule: MOVE_ID,
+    };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          MOVE_ID,
+          'moveCounterFromThis',
+          { counter, objects: noun },
+          { start: pos, end: r.pos },
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const PLANESWALKER_PARTY_EFFECT_RULES = [
+  quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
+  quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+];

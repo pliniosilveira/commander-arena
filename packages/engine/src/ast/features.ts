@@ -481,6 +481,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDropThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
+    // Gatewatch Beacon: "move a loyalty counter from this artifact onto that planeswalker" (CR 122.1).
+    'moveCounterFromThis',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -3215,6 +3217,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   blight: true,
   additionalLandDropThisTurn: true,
   moveCountersOnto: true,
+  moveCounterFromThis: true,
   createEmblem: true,
   delayedSacrifice: true,
   myriad: true,
