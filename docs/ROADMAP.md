@@ -139,7 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
-- A search that only finds and reveals a card, followed by "you may put that card onto the battlefield" and "if you don't, put it into your hand" (Scholar of New Horizons), is unread: the search needs a destination.
+- An as-enters choice of any number of other permanents whose counters are removed, with the count setting the counters the entering permanent gets (Sin, Unending Cataclysm), is unread: it needs a new decision.
 - Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
